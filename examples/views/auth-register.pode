@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <title>Auth Register</title>
+        <link rel="stylesheet" type="text/css" href="/styles/simple.css">
+    </head>
+    <body>
+
+        Hello, this is a register page!
+        <br />
+
+        <p>
+            <a href='/'>Home</a>
+            <a href='/about'>About</a>
+        </p>
+
+        <form action="/logout" method="post">
+            <div>
+                <input type="submit" value="Logout"/>
+            </div>
+        </form>
+
+    </body>
+</html>

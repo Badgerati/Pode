@@ -17,6 +17,7 @@ Start-PodeServer -Threads 2 {
 
     Add-PodeVerb -Verb 'HELLO' -ScriptBlock {
         Write-PodeTcpClient -Message "HI"
+        'here' | Out-Default
     }
 
     Add-PodeVerb -Verb 'HELLO2 :username' -ScriptBlock {

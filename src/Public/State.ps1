@@ -20,16 +20,15 @@ Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
 .EXAMPLE
 Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
 #>
-function Set-PodeState
-{
+function Set-PodeState {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [object]
         $Value,
 
@@ -39,7 +38,7 @@ function Set-PodeState
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw "Pode has not been initialised"
+        throw 'Pode has not been initialised'
     }
 
     if ($null -eq $Scope) {
@@ -70,11 +69,10 @@ If supplied, the state's value and scope will be returned as a hashtable.
 .EXAMPLE
 Get-PodeState -Name 'Data'
 #>
-function Get-PodeState
-{
+function Get-PodeState {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
@@ -83,7 +81,7 @@ function Get-PodeState
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw "Pode has not been initialised"
+        throw 'Pode has not been initialised'
     }
 
     if ($WithScope) {
@@ -113,8 +111,7 @@ $names = Get-PodeStateNames -Scope '<scope>'
 .EXAMPLE
 $names = Get-PodeStateNames -Pattern '^\w+[0-9]{0,2}$'
 #>
-function Get-PodeStateNames
-{
+function Get-PodeStateNames {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -127,7 +124,7 @@ function Get-PodeStateNames
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw "Pode has not been initialised"
+        throw 'Pode has not been initialised'
     }
 
     if ($null -eq $Scope) {
@@ -138,19 +135,19 @@ function Get-PodeStateNames
     $keys = $tempState.Keys
 
     if ($Scope.Length -gt 0) {
-        $keys = @(foreach($key in $keys) {
-            if ($tempState[$key].Scope -iin $Scope) {
-                $key
-            }
-        })
+        $keys = @(foreach ($key in $keys) {
+                if ($tempState[$key].Scope -iin $Scope) {
+                    $key
+                }
+            })
     }
 
     if (![string]::IsNullOrWhiteSpace($Pattern)) {
-        $keys = @(foreach($key in $keys) {
-            if ($key -imatch $Pattern) {
-                $key
-            }
-        })
+        $keys = @(foreach ($key in $keys) {
+                if ($key -imatch $Pattern) {
+                    $key
+                }
+            })
     }
 
     return $keys
@@ -169,18 +166,17 @@ The name of the state object.
 .EXAMPLE
 Remove-PodeState -Name 'Data'
 #>
-function Remove-PodeState
-{
+function Remove-PodeState {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw "Pode has not been initialised"
+        throw 'Pode has not been initialised'
     }
 
     $value = $PodeContext.Server.State[$Name].Value
@@ -207,6 +203,9 @@ An optional array of state object names to exclude from being saved. (This has a
 .PARAMETER Include
 An optional array of state object names to only include when being saved.
 
+.PARAMETER Depth
+Saved JSON maximum depth. Will be passed to ConvertTo-JSON's -Depth parameter. Default is 10.
+
 .PARAMETER Compress
 If supplied, the saved JSON will be compressed.
 
@@ -219,11 +218,10 @@ Save-PodeState -Path './state.json' -Exclude Name1, Name2
 .EXAMPLE
 Save-PodeState -Path './state.json' -Scope Users
 #>
-function Save-PodeState
-{
+function Save-PodeState {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
@@ -239,13 +237,17 @@ function Save-PodeState
         [string[]]
         $Include,
 
+        [Parameter()]
+        [int16]
+        $Depth = 10,
+
         [switch]
         $Compress
     )
 
     # error if attempting to use outside of the pode server
     if ($null -eq $PodeContext.Server.State) {
-        throw "Pode has not been initialised"
+        throw 'Pode has not been initialised'
     }
 
     # get the full path to save the state
@@ -301,7 +303,7 @@ function Save-PodeState
     }
 
     # save the state
-    $null = ConvertTo-Json -InputObject $state -Depth 10 -Compress:$Compress | Out-File -FilePath $Path -Force
+    $null = ConvertTo-Json -InputObject $state -Depth $Depth -Compress:$Compress | Out-File -FilePath $Path -Force
 }
 
 <#
@@ -317,24 +319,29 @@ The path to a JSON file that contains the state information.
 .PARAMETER Merge
 If supplied, the state loaded from the JSON file will be merged with the current state, instead of overwriting it.
 
+.PARAMETER Depth
+Saved JSON maximum depth. Will be passed to ConvertFrom-JSON's -Depth parameter (Powershell >=6). Default is 10.
+
 .EXAMPLE
 Restore-PodeState -Path './state.json'
 #>
-function Restore-PodeState
-{
+function Restore-PodeState {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
         [switch]
-        $Merge
+        $Merge,
+
+        [int16]
+        $Depth = 10
     )
 
     # error if attempting to use outside of the pode server
     if ($null -eq $PodeContext.Server.State) {
-        throw "Pode has not been initialised"
+        throw 'Pode has not been initialised'
     }
 
     # get the full path to the state
@@ -347,7 +354,7 @@ function Restore-PodeState
     $state = @{}
 
     if (Test-PodeIsPSCore) {
-        $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth 10)
+        $state = (Get-Content $Path -Force | ConvertFrom-Json -AsHashtable -Depth $Depth)
     }
     else {
         $props = (Get-Content $Path -Force | ConvertFrom-Json).psobject.properties
@@ -398,18 +405,17 @@ The name of the state object.
 .EXAMPLE
 Test-PodeState -Name 'Data'
 #>
-function Test-PodeState
-{
+function Test-PodeState {
     [CmdletBinding()]
     [OutputType([bool])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw "Pode has not been initialised"
+        throw 'Pode has not been initialised'
     }
 
     return $PodeContext.Server.State.ContainsKey($Name)

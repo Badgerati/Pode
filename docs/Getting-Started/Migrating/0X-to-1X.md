@@ -186,7 +186,7 @@ There is a new [`New-PodeMiddleware`](../../../Functions/Middleware/New-PodeMidd
 
 ([Tutorial](../../../Tutorials/Middleware/Types/Sessions))
 
-The `session` function has now been replaced by the new [`Enable-PodeSessionMiddleware`](../../../Functions/Middleware/Enable-PodeSessionMiddleware) function. With the new function, not only will it automatically enabled session middleware for you, but the old `-Options` hashtable has now been converted into proper function parameters.
+The `session` function has now been replaced by the new [`Enable-PodeSessionMiddleware`](../../../Functions/Sessions/Enable-PodeSessionMiddleware) function. With the new function, not only will it automatically enabled session middleware for you, but the old `-Options` hashtable has now been converted into proper function parameters.
 
 ### CSRF
 

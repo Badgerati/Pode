@@ -205,15 +205,11 @@ namespace Pode
 
             // query string
             var reqQuery = reqMeta[1].Trim();
-            if (!string.IsNullOrWhiteSpace(reqQuery))
-            {
-                var qmIndex = reqQuery.IndexOf("?");
-                QueryString = HttpUtility.ParseQueryString(qmIndex > 0 ? reqQuery.Substring(qmIndex) : reqQuery);
-            }
-            else
-            {
-                QueryString = default(NameValueCollection);
-            }
+            var qmIndex = string.IsNullOrEmpty(reqQuery) ? 0 : reqQuery.IndexOf("?");
+
+            QueryString = qmIndex > 0
+                ? HttpUtility.ParseQueryString(reqQuery.Substring(qmIndex))
+                : default(NameValueCollection);
 
             // http protocol version
             Protocol = (reqMeta[2] ?? "HTTP/1.1").Trim();

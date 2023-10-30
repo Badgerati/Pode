@@ -1,14 +1,12 @@
 using namespace Pode
 
-function Test-PodeWebSocketsExist
-{
+function Test-PodeWebSocketsExist {
     return (($null -ne $PodeContext.Server.WebSockets) -and (($PodeContext.Server.WebSockets.Enabled) -or ($PodeContext.Server.WebSockets.Connections.Count -gt 0)))
 }
 
-function Find-PodeWebSocket
-{
+function Find-PodeWebSocket {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -16,8 +14,7 @@ function Find-PodeWebSocket
     return $PodeContext.Server.WebSockets.Connections[$Name]
 }
 
-function New-PodeWebSocketReceiver
-{
+function New-PodeWebSocketReceiver {
     if ($null -ne $PodeContext.Server.WebSockets.Receiver) {
         return
     }
@@ -37,8 +34,7 @@ function New-PodeWebSocketReceiver
     }
 }
 
-function Start-PodeWebSocketRunspace
-{
+function Start-PodeWebSocketRunspace {
     if (!(Test-PodeWebSocketsExist)) {
         return
     }
@@ -46,31 +42,27 @@ function Start-PodeWebSocketRunspace
     # script for listening out of for incoming requests
     $receiveScript = {
         param(
-            [Parameter(Mandatory=$true)]
+            [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
             $Receiver,
 
-            [Parameter(Mandatory=$true)]
+            [Parameter(Mandatory = $true)]
             [int]
             $ThreadId
         )
 
-        try
-        {
-            while ($Receiver.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-            {
+        try {
+            while ($Receiver.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 # get request
                 $request = (Wait-PodeTask -Task $Receiver.GetWebSocketRequestAsync($PodeContext.Tokens.Cancellation.Token))
 
-                try
-                {
-                    try
-                    {
+                try {
+                    try {
                         $WsEvent = @{
-                            Request = $request
-                            Data = $null
-                            Files = $null
-                            Lockable = $PodeContext.Threading.Lockables.Global
+                            Request   = $request
+                            Data      = $null
+                            Files     = $null
+                            Lockable  = $PodeContext.Threading.Lockables.Global
                             Timestamp = [datetime]::UtcNow
                         }
 
@@ -117,7 +109,7 @@ function Start-PodeWebSocketRunspace
     # script to keep websocket server receiving until cancelled
     $waitScript = {
         param(
-            [Parameter(Mandatory=$true)]
+            [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
             $Receiver
         )

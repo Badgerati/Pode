@@ -1,7 +1,6 @@
-function Start-PodeAzFuncServer
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Start-PodeAzFuncServer {
+    param(
+        [Parameter(Mandatory = $true)]
         $Data
     )
 
@@ -16,10 +15,8 @@ function Start-PodeAzFuncServer
 
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
 
-    try
-    {
-        try
-        {
+    try {
+        try {
             # get the request
             $request = $Data.Request
 
@@ -30,33 +27,33 @@ function Start-PodeAzFuncServer
 
             # reset event data
             $global:WebEvent = @{
-                OnEnd = @()
-                Auth = @{}
-                Response = $response
-                Request = $request
-                Lockable = $PodeContext.Threading.Lockables.Global
-                Path = [string]::Empty
-                Method = $request.Method.ToLowerInvariant()
-                Query = $request.Query
-                Endpoint = @{
+                OnEnd            = @()
+                Auth             = @{}
+                Response         = $response
+                Request          = $request
+                Lockable         = $PodeContext.Threading.Lockables.Global
+                Path             = [string]::Empty
+                Method           = $request.Method.ToLowerInvariant()
+                Query            = $request.Query
+                Endpoint         = @{
                     Protocol = ($request.Url -split '://')[0]
-                    Address = $null
-                    Name = $null
+                    Address  = $null
+                    Name     = $null
                 }
-                ContentType = $null
-                ErrorType = $null
-                Cookies = @{}
-                PendingCookies = @{}
-                Parameters = $null
-                Data = $null
-                Files = $null
-                Streamed = $false
-                Route = $null
-                StaticContent = $null
-                Timestamp = [datetime]::UtcNow
+                ContentType      = $null
+                ErrorType        = $null
+                Cookies          = @{}
+                PendingCookies   = @{}
+                Parameters       = $null
+                Data             = $null
+                Files            = $null
+                Streamed         = $false
+                Route            = $null
+                StaticContent    = $null
+                Timestamp        = [datetime]::UtcNow
                 TransferEncoding = $null
-                AcceptEncoding = $null
-                Ranges = $null
+                AcceptEncoding   = $null
+                Ranges           = $null
             }
 
             $WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'host') -split ':')[0]
@@ -82,8 +79,7 @@ function Start-PodeAzFuncServer
 
             # invoke global and route middleware
             if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware))
-                {
+                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
                         if ($WebEvent.StaticContent.IsDownload) {
@@ -123,10 +119,9 @@ function Start-PodeAzFuncServer
     }
 }
 
-function Start-PodeAwsLambdaServer
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Start-PodeAwsLambdaServer {
+    param(
+        [Parameter(Mandatory = $true)]
         $Data
     )
 
@@ -141,49 +136,47 @@ function Start-PodeAwsLambdaServer
 
     $PodeContext.Server.Middleware = ($inbuilt_middleware + $PodeContext.Server.Middleware)
 
-    try
-    {
-        try
-        {
+    try {
+        try {
             # get the request
             $request = $Data
 
             # setup the response
             $response = @{
                 StatusCode = 200
-                Headers = @{}
-                Body = [string]::Empty
+                Headers    = @{}
+                Body       = [string]::Empty
             }
 
             # reset event data
             $global:WebEvent = @{
-                OnEnd = @()
-                Auth = @{}
-                Response = $response
-                Request = $request
-                Lockable = $PodeContext.Threading.Lockables.Global
-                Path = [System.Web.HttpUtility]::UrlDecode($request.path)
-                Method = $request.httpMethod.ToLowerInvariant()
-                Query = $request.queryStringParameters
-                Endpoint = @{
+                OnEnd            = @()
+                Auth             = @{}
+                Response         = $response
+                Request          = $request
+                Lockable         = $PodeContext.Threading.Lockables.Global
+                Path             = [System.Web.HttpUtility]::UrlDecode($request.path)
+                Method           = $request.httpMethod.ToLowerInvariant()
+                Query            = $request.queryStringParameters
+                Endpoint         = @{
                     Protocol = $null
-                    Address = $null
-                    Name = $null
+                    Address  = $null
+                    Name     = $null
                 }
-                ContentType = $null
-                ErrorType = $null
-                Cookies = @{}
-                PendingCookies = @{}
-                Parameters = $null
-                Data = $null
-                Files = $null
-                Streamed = $false
-                Route = $null
-                StaticContent = $null
-                Timestamp = [datetime]::UtcNow
+                ContentType      = $null
+                ErrorType        = $null
+                Cookies          = @{}
+                PendingCookies   = @{}
+                Parameters       = $null
+                Data             = $null
+                Files            = $null
+                Streamed         = $false
+                Route            = $null
+                StaticContent    = $null
+                Timestamp        = [datetime]::UtcNow
                 TransferEncoding = $null
-                AcceptEncoding = $null
-                Ranges = $null
+                AcceptEncoding   = $null
+                Ranges           = $null
             }
 
             $WebEvent.Endpoint.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
@@ -195,8 +188,7 @@ function Start-PodeAwsLambdaServer
 
             # invoke global and route middleware
             if ((Invoke-PodeMiddleware -Middleware $PodeContext.Server.Middleware -Route $WebEvent.Path)) {
-                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware))
-                {
+                if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
                         if ($WebEvent.StaticContent.IsDownload) {
@@ -233,10 +225,10 @@ function Start-PodeAwsLambdaServer
         }
 
         return (@{
-            'statusCode' = $response.StatusCode;
-            'headers' = $response.Headers;
-            'body' = $response.Body;
-        } | ConvertTo-Json -Depth 10 -Compress)
+                'statusCode' = $response.StatusCode
+                'headers'    = $response.Headers
+                'body'       = $response.Body
+            } | ConvertTo-Json -Depth 10 -Compress)
     }
     catch {
         $_ | Write-PodeErrorLog

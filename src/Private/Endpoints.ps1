@@ -1,5 +1,4 @@
-function Find-PodeEndpoints
-{
+function Find-PodeEndpoints {
     param(
         [Parameter()]
         [ValidateSet('', 'Http', 'Https')]
@@ -21,8 +20,8 @@ function Find-PodeEndpoints
     if ([string]::IsNullOrWhiteSpace($EndpointName)) {
         $endpoints += @{
             Protocol = $Protocol
-            Address = $Address
-            Name = [string]::Empty
+            Address  = $Address
+            Name     = [string]::Empty
         }
     }
 
@@ -33,8 +32,8 @@ function Find-PodeEndpoints
             if ($null -ne $_endpoint) {
                 $endpoints += @{
                     Protocol = $_endpoint.Protocol
-                    Address = $_endpoint.RawAddress
-                    Name = $name
+                    Address  = $_endpoint.RawAddress
+                    Name     = $name
                 }
             }
         }
@@ -51,10 +50,9 @@ function Find-PodeEndpoints
     return $endpoints
 }
 
-function Get-PodeEndpoints
-{
+function Get-PodeEndpoints {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp')]
         [string[]]
         $Type
@@ -85,10 +83,9 @@ function Get-PodeEndpoints
     return $endpoints
 }
 
-function Test-PodeEndpointProtocol
-{
+function Test-PodeEndpointProtocol {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Http', 'Https', 'Ws', 'Wss', 'Smtp', 'Smtps', 'Tcp', 'Tcps')]
         [string]
         $Protocol
@@ -98,8 +95,7 @@ function Test-PodeEndpointProtocol
     return ($null -ne $endpoint)
 }
 
-function Get-PodeEndpointType
-{
+function Get-PodeEndpointType {
     param(
         [Parameter()]
         [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
@@ -108,16 +104,29 @@ function Get-PodeEndpointType
     )
 
     switch ($Protocol) {
-        { $_ -iin @('http', 'https') } { 'Http' }
-        { $_ -iin @('ws', 'wss') } { 'Ws' }
-        { $_ -iin @('smtp', 'smtps') } { 'Smtp' }
-        { $_ -iin @('tcp', 'tcps') } { 'Tcp' }
-        default { $Protocol }
+        { $_ -iin @('http', 'https') } {
+            'Http'
+        }
+
+        { $_ -iin @('ws', 'wss') } {
+            'Ws'
+        }
+
+        { $_ -iin @('smtp', 'smtps') } {
+            'Smtp'
+        }
+
+        { $_ -iin @('tcp', 'tcps') } {
+            'Tcp'
+        }
+
+        default {
+            $Protocol
+        }
     }
 }
 
-function Get-PodeEndpointRunspacePoolName
-{
+function Get-PodeEndpointRunspacePoolName {
     param(
         [Parameter()]
         [ValidateSet('Http', 'Https', 'Smtp', 'Smtps', 'Tcp', 'Tcps', 'Ws', 'Wss')]
@@ -126,18 +135,31 @@ function Get-PodeEndpointRunspacePoolName
     )
 
     switch ($Protocol) {
-        { $_ -iin @('http', 'https') } { 'Web' }
-        { $_ -iin @('ws', 'wss') } { 'Signals' }
-        { $_ -iin @('smtp', 'smtps') } { 'Smtp' }
-        { $_ -iin @('tcp', 'tcps') } { 'Tcp' }
-        default { $Protocol }
+        { $_ -iin @('http', 'https') } {
+            'Web'
+        }
+
+        { $_ -iin @('ws', 'wss') } {
+            'Signals'
+        }
+
+        { $_ -iin @('smtp', 'smtps') } {
+            'Smtp'
+        }
+
+        { $_ -iin @('tcp', 'tcps') } {
+            'Tcp'
+        }
+
+        default {
+            $Protocol
+        }
     }
 }
 
-function Test-PodeEndpoints
-{
+function Test-PodeEndpoints {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp')]
         [string]
         $Type
@@ -148,8 +170,7 @@ function Test-PodeEndpoints
 
 }
 
-function Find-PodeEndpointName
-{
+function Find-PodeEndpointName {
     param(
         [Parameter()]
         [string]
@@ -206,11 +227,11 @@ function Find-PodeEndpointName
 
     # try and find endpoint for address
     $key = @(foreach ($k in $PodeContext.Server.EndpointsMap.Keys) {
-        if ($k -imatch $key) {
-            $k
-            break
-        }
-    })[0]
+            if ($k -imatch $key) {
+                $k
+                break
+            }
+        })[0]
 
     if (![string]::IsNullOrWhiteSpace($key) -and $PodeContext.Server.EndpointsMap.ContainsKey($key)) {
         return $PodeContext.Server.EndpointsMap[$key]
@@ -229,11 +250,11 @@ function Find-PodeEndpointName
 
     # try and find endpoint for local address
     $key = @(foreach ($k in $PodeContext.Server.EndpointsMap.Keys) {
-        if ($k -imatch $key) {
-            $k
-            break
-        }
-    })[0]
+            if ($k -imatch $key) {
+                $k
+                break
+            }
+        })[0]
 
     if (![string]::IsNullOrWhiteSpace($key) -and $PodeContext.Server.EndpointsMap.ContainsKey($key)) {
         return $PodeContext.Server.EndpointsMap[$key]
@@ -249,11 +270,11 @@ function Find-PodeEndpointName
 
     # try and find endpoint for any address
     $key = @(foreach ($k in $PodeContext.Server.EndpointsMap.Keys) {
-        if ($k -imatch $key) {
-            $k
-            break
-        }
-    })[0]
+            if ($k -imatch $key) {
+                $k
+                break
+            }
+        })[0]
 
     if (![string]::IsNullOrWhiteSpace($key) -and $PodeContext.Server.EndpointsMap.ContainsKey($key)) {
         return $PodeContext.Server.EndpointsMap[$key]
@@ -267,9 +288,8 @@ function Find-PodeEndpointName
     return $null
 }
 
-function Get-PodeEndpointByName
-{
-    param (
+function Get-PodeEndpointByName {
+    param(
         [Parameter()]
         [string]
         $Name,

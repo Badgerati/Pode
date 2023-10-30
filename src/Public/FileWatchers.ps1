@@ -53,9 +53,8 @@ Add-PodeFileWatcher -Path '/temp/logs' -EventName Created -NotifyFilter Creation
 .EXAMPLE
 $watcher = Add-PodeFileWatcher -Path '/temp/logs' -Exclude *.txt -ScriptBlock {} -PassThru
 #>
-function Add-PodeFileWatcher
-{
-    [CmdletBinding(DefaultParameterSetName='Script')]
+function Add-PodeFileWatcher {
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
     param(
         [Parameter()]
         [string]
@@ -66,15 +65,15 @@ function Add-PodeFileWatcher
         [string[]]
         $EventName = @('Changed', 'Created', 'Deleted', 'Renamed'),
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $FilePath,
 
@@ -165,22 +164,22 @@ function Add-PodeFileWatcher
 
     # add the file watcher
     $PodeContext.Fim.Items[$Name] = @{
-        Name = $Name
-        Events = @($EventName)
-        Path = $Path
-        Placeholders = @{
-            Path = $rgxPath
+        Name                  = $Name
+        Events                = @($EventName)
+        Path                  = $Path
+        Placeholders          = @{
+            Path  = $rgxPath
             Exist = $hasPlaceholders
         }
-        Script = $ScriptBlock
-        UsingVariables = $usingVars
-        Arguments = $ArgumentList
-        NotifyFilters = @($NotifyFilter)
+        Script                = $ScriptBlock
+        UsingVariables        = $usingVars
+        Arguments             = $ArgumentList
+        NotifyFilters         = @($NotifyFilter)
         IncludeSubdirectories = !$NoSubdirectories.IsPresent
-        InternalBufferSize = $InternalBufferSize
-        Exclude = $Exclude
-        Include = $Include
-        Paths = $paths
+        InternalBufferSize    = $InternalBufferSize
+        Exclude               = $Exclude
+        Include               = $Include
+        Paths                 = $paths
     }
 
     # return?
@@ -202,11 +201,10 @@ The Name of the File Watcher.
 .EXAMPLE
 if (Test-PodeFileWatcher -Name WatcherName) { }
 #>
-function Test-PodeFileWatcher
-{
+function Test-PodeFileWatcher {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -230,8 +228,7 @@ Get-PodeFileWatcher
 .EXAMPLE
 Get-PodeFileWatcher -Name Name1, Name2
 #>
-function Get-PodeFileWatcher
-{
+function Get-PodeFileWatcher {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -244,14 +241,14 @@ function Get-PodeFileWatcher
     # further filter by file watcher names
     if (($null -ne $Name) -and ($Name.Length -gt 0)) {
         $watchers = @(foreach ($_name in $Name) {
-            foreach ($watcher in $watchers) {
-                if ($watcher.Name -ine $_name) {
-                    continue
-                }
+                foreach ($watcher in $watchers) {
+                    if ($watcher.Name -ine $_name) {
+                        continue
+                    }
 
-                $watcher
-            }
-        })
+                    $watcher
+                }
+            })
     }
 
     # return
@@ -271,11 +268,10 @@ The Name of the File Watcher to be removed.
 .EXAMPLE
 Remove-PodeFileWatcher -Name 'Logs'
 #>
-function Remove-PodeFileWatcher
-{
+function Remove-PodeFileWatcher {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -293,8 +289,7 @@ Removes all File Watchers.
 .EXAMPLE
 Clear-PodeFileWatchers
 #>
-function Clear-PodeFileWatchers
-{
+function Clear-PodeFileWatchers {
     [CmdletBinding()]
     param()
 
@@ -317,8 +312,7 @@ Use-PodeFileWatchers
 .EXAMPLE
 Use-PodeFileWatchers -Path './my-watchers'
 #>
-function Use-PodeFileWatchers
-{
+function Use-PodeFileWatchers {
     [CmdletBinding()]
     param(
         [Parameter()]

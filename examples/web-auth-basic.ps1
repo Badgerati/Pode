@@ -25,6 +25,9 @@ Start-PodeServer -Threads 2 {
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
+    # request logging
+    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
+
     # setup basic auth (base64> username:password in header)
     New-PodeAuthScheme -Basic -Realm 'Pode Example Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         param($username, $password)
@@ -33,6 +36,7 @@ Start-PodeServer -Threads 2 {
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{
                 User = @{
+                    Username = 'morty'
                     ID ='M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'
@@ -43,35 +47,10 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
-    # POST request to get list of users (since there's no session, authentication will always happen)
+    # POST request to get current user (since there's no session, authentication will always happen)
     Add-PodeRoute -Method Post -Path '/users' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
-            Users = @(
-                @{
-                    Name = 'Deep Thought'
-                    Age = 42
-                },
-                @{
-                    Name = 'Leeroy Jenkins'
-                    Age = 1337
-                }
-            )
-        }
-    }
-
-    # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -ScriptBlock {
-        Write-PodeJsonResponse -Value @{
-            Users = @(
-                @{
-                    Name = 'Deep Thought'
-                    Age = 42
-                },
-                @{
-                    Name = 'Leeroy Jenkins'
-                    Age = 1337
-                }
-            )
+            User = (Get-PodeAuthUser)
         }
     }
 

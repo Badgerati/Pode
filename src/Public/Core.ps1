@@ -62,15 +62,14 @@ Start-PodeServer -Interval 10 { /* logic */ }
 .EXAMPLE
 Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda { /* logic */ }
 #>
-function Start-PodeServer
-{
-    [CmdletBinding(DefaultParameterSetName='Script')]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=0, ParameterSetName='Script')]
+function Start-PodeServer {
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $FilePath,
 
@@ -121,7 +120,7 @@ function Start-PodeServer
         [switch]
         $Browse,
 
-        [Parameter(ParameterSetName='File')]
+        [Parameter(ParameterSetName = 'File')]
         [switch]
         $CurrentPath
     )
@@ -243,8 +242,7 @@ Closes the Pode server.
 .EXAMPLE
 Close-PodeServer
 #>
-function Close-PodeServer
-{
+function Close-PodeServer {
     [CmdletBinding()]
     param()
 
@@ -261,8 +259,7 @@ Restarts the Pode server.
 .EXAMPLE
 Restart-PodeServer
 #>
-function Restart-PodeServer
-{
+function Restart-PodeServer {
     [CmdletBinding()]
     param()
 
@@ -324,8 +321,7 @@ Start-PodeStaticServer -Address '127.0.0.3' -Port 8000
 .EXAMPLE
 Start-PodeStaticServer -Path '/installers' -DownloadOnly
 #>
-function Start-PodeStaticServer
-{
+function Start-PodeStaticServer {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -423,11 +419,10 @@ pode build
 .EXAMPLE
 pode start
 #>
-function Pode
-{
+function Pode {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true)]
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateSet('init', 'test', 'start', 'install', 'build')]
         [Alias('a')]
         [string]
@@ -445,18 +440,18 @@ function Pode
 
     # default config data that's used to populate on init
     $map = @{
-        'name' = $name;
-        'version' = '1.0.0';
-        'description' = '';
-        'main' = './server.ps1';
-        'scripts' = @{
-            'start' = './server.ps1';
-            'install' = 'yarn install --force --ignore-scripts --modules-folder pode_modules';
-            "build" = 'psake';
-            'test' = 'invoke-pester ./tests/*.ps1'
-        };
-        'author' = '';
-        'license' = 'MIT';
+        'name'        = $name
+        'version'     = '1.0.0'
+        'description' = ''
+        'main'        = './server.ps1'
+        'scripts'     = @{
+            'start'   = './server.ps1'
+            'install' = 'yarn install --force --ignore-scripts --modules-folder pode_modules'
+            'build'   = 'psake'
+            'test'    = 'invoke-pester ./tests/*.ps1'
+        }
+        'author'      = ''
+        'license'     = 'MIT'
     }
 
     # check and load config if already exists
@@ -490,8 +485,7 @@ function Pode
         }
     }
 
-    switch ($Action.ToLowerInvariant())
-    {
+    switch ($Action.ToLowerInvariant()) {
         'init' {
             $v = Read-Host -Prompt "name ($($map.name))"
             if (![string]::IsNullOrWhiteSpace($v)) { $map.name = $v }
@@ -499,12 +493,12 @@ function Pode
             $v = Read-Host -Prompt "version ($($map.version))"
             if (![string]::IsNullOrWhiteSpace($v)) { $map.version = $v }
 
-            $map.description = Read-Host -Prompt "description"
+            $map.description = Read-Host -Prompt 'description'
 
             $v = Read-Host -Prompt "entry point ($($map.main))"
             if (![string]::IsNullOrWhiteSpace($v)) { $map.main = $v; $map.scripts.start = $v }
 
-            $map.author = Read-Host -Prompt "author"
+            $map.author = Read-Host -Prompt 'author'
 
             $v = Read-Host -Prompt "license ($($map.license))"
             if (![string]::IsNullOrWhiteSpace($v)) { $map.license = $v }
@@ -573,11 +567,10 @@ Stops the Application from appearing on the taskbar.
 .EXAMPLE
 Show-PodeGui -Title 'MyApplication' -WindowState 'Maximized'
 #>
-function Show-PodeGui
-{
+function Show-PodeGui {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Title,
 
@@ -722,6 +715,9 @@ A quick description of the Endpoint - normally used in OpenAPI.
 .PARAMETER Acknowledge
 An optional Acknowledge message to send to clients when they first connect, for TCP and SMTP endpoints only.
 
+.PARAMETER SslProtocol
+One or more optional SSL Protocols this endpoints supports. (Default: SSL3/TLS12 - Just TLS12 on MacOS).
+
 .PARAMETER CRLFMessageEnd
 If supplied, TCP endpoints will expect incoming data to end with CRLF.
 
@@ -758,10 +754,9 @@ Add-PodeEndpoint -Address 127.0.0.2 -Hostname dev.pode.com -Port 8443 -Protocol 
 .EXAMPLE
 Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '2A9467F7D3940243D6C07DE61E7FCCE292'
 #>
-function Add-PodeEndpoint
-{
-    [CmdletBinding(DefaultParameterSetName='Default')]
-    param (
+function Add-PodeEndpoint {
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    param(
         [Parameter()]
         [string]
         $Address = 'localhost',
@@ -779,45 +774,45 @@ function Add-PodeEndpoint
         [string]
         $Protocol,
 
-        [Parameter(Mandatory=$true, ParameterSetName='CertFile')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertFile')]
         [string]
         $Certificate = $null,
 
-        [Parameter(ParameterSetName='CertFile')]
+        [Parameter(ParameterSetName = 'CertFile')]
         [string]
         $CertificatePassword = $null,
 
-        [Parameter(ParameterSetName='CertFile')]
+        [Parameter(ParameterSetName = 'CertFile')]
         [string]
         $CertificateKey = $null,
 
-        [Parameter(Mandatory=$true, ParameterSetName='CertThumb')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertThumb')]
         [string]
         $CertificateThumbprint,
 
-        [Parameter(Mandatory=$true, ParameterSetName='CertName')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertName')]
         [string]
         $CertificateName,
 
-        [Parameter(ParameterSetName='CertName')]
-        [Parameter(ParameterSetName='CertThumb')]
+        [Parameter(ParameterSetName = 'CertName')]
+        [Parameter(ParameterSetName = 'CertThumb')]
         [System.Security.Cryptography.X509Certificates.StoreName]
         $CertificateStoreName = 'My',
 
-        [Parameter(ParameterSetName='CertName')]
-        [Parameter(ParameterSetName='CertThumb')]
+        [Parameter(ParameterSetName = 'CertName')]
+        [Parameter(ParameterSetName = 'CertThumb')]
         [System.Security.Cryptography.X509Certificates.StoreLocation]
         $CertificateStoreLocation = 'CurrentUser',
 
-        [Parameter(Mandatory=$true, ParameterSetName='CertRaw')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CertRaw')]
         [X509Certificate]
         $X509Certificate = $null,
 
-        [Parameter(ParameterSetName='CertFile')]
-        [Parameter(ParameterSetName='CertThumb')]
-        [Parameter(ParameterSetName='CertName')]
-        [Parameter(ParameterSetName='CertRaw')]
-        [Parameter(ParameterSetName='CertSelf')]
+        [Parameter(ParameterSetName = 'CertFile')]
+        [Parameter(ParameterSetName = 'CertThumb')]
+        [Parameter(ParameterSetName = 'CertName')]
+        [Parameter(ParameterSetName = 'CertRaw')]
+        [Parameter(ParameterSetName = 'CertSelf')]
         [ValidateSet('Implicit', 'Explicit')]
         [string]
         $TlsMode = 'Implicit',
@@ -838,13 +833,18 @@ function Add-PodeEndpoint
         [string]
         $Acknowledge,
 
+        [Parameter()]
+        [ValidateSet('Ssl2', 'Ssl3', 'Tls', 'Tls11', 'Tls12', 'Tls13')]
+        [string[]]
+        $SslProtocol = $null,
+
         [switch]
         $CRLFMessageEnd,
 
         [switch]
         $Force,
 
-        [Parameter(ParameterSetName='CertSelf')]
+        [Parameter(ParameterSetName = 'CertSelf')]
         [switch]
         $SelfSigned,
 
@@ -866,7 +866,7 @@ function Add-PodeEndpoint
 
     # if RedirectTo is supplied, then a Name is mandatory
     if (![string]::IsNullOrWhiteSpace($RedirectTo) -and [string]::IsNullOrWhiteSpace($Name)) {
-        throw "A Name is required for the endpoint if the RedirectTo parameter is supplied"
+        throw 'A Name is required for the endpoint if the RedirectTo parameter is supplied'
     }
 
     # get the type of endpoint
@@ -917,52 +917,60 @@ function Add-PodeEndpoint
 
     # protocol must be https for client certs, or hosted behind a proxy like iis
     if (($Protocol -ine 'https') -and !(Test-PodeIsHosted) -and $AllowClientCertificate) {
-        throw "Client certificates are only supported on HTTPS endpoints"
+        throw 'Client certificates are only supported on HTTPS endpoints'
     }
 
     # explicit tls is only supported for smtp/tcp
     if (($type -inotin @('smtp', 'tcp')) -and ($TlsMode -ieq 'explicit')) {
-        throw "The Explicit TLS mode is only supported on SMTPS and TCPS endpoints"
+        throw 'The Explicit TLS mode is only supported on SMTPS and TCPS endpoints'
     }
 
     # ack message is only for smtp/tcp
     if (($type -inotin @('smtp', 'tcp')) -and ![string]::IsNullOrEmpty($Acknowledge)) {
-        throw "The Acknowledge message is only supported on SMTP and TCP endpoints"
+        throw 'The Acknowledge message is only supported on SMTP and TCP endpoints'
     }
 
     # crlf message end is only for tcp
     if (($type -ine 'tcp') -and $CRLFMessageEnd) {
-        throw "The CRLF message end check is only supported on TCP endpoints"
+        throw 'The CRLF message end check is only supported on TCP endpoints'
     }
 
     # new endpoint object
     $obj = @{
-        Name = $Name
-        Description = $Description
-        Address = $null
-        RawAddress = $null
-        Port = $null
-        IsIPAddress = $true
-        HostName = $Hostname
+        Name         = $Name
+        Description  = $Description
+        Address      = $null
+        RawAddress   = $null
+        Port         = $null
+        IsIPAddress  = $true
+        HostName     = $Hostname
         FriendlyName = $Hostname
-        Url = $null
-        Ssl = (@('https', 'wss', 'smtps', 'tcps') -icontains $Protocol)
-        Protocol = $Protocol.ToLowerInvariant()
-        Type = $type.ToLowerInvariant()
-        Runspace = @{
+        Url          = $null
+        Ssl          = @{
+            Enabled   = (@('https', 'wss', 'smtps', 'tcps') -icontains $Protocol)
+            Protocols = $PodeContext.Server.Sockets.Ssl.Protocols
+        }
+        Protocol     = $Protocol.ToLowerInvariant()
+        Type         = $type.ToLowerInvariant()
+        Runspace     = @{
             PoolName = (Get-PodeEndpointRunspacePoolName -Protocol $Protocol)
         }
-        Default = $Default.IsPresent
-        Certificate = @{
-            Raw = $X509Certificate
-            SelfSigned = $SelfSigned
+        Default      = $Default.IsPresent
+        Certificate  = @{
+            Raw                    = $X509Certificate
+            SelfSigned             = $SelfSigned
             AllowClientCertificate = $AllowClientCertificate
-            TlsMode = $TlsMode
+            TlsMode                = $TlsMode
         }
-        Tcp = @{
-            Acknowledge = $Acknowledge
+        Tcp          = @{
+            Acknowledge    = $Acknowledge
             CRLFMessageEnd = $CRLFMessageEnd
         }
+    }
+
+    # set ssl protocols
+    if (!(Test-PodeIsEmpty $SslProtocol)) {
+        $obj.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $SslProtocol)
     }
 
     # set the ip for the context (force to localhost for IIS)
@@ -999,18 +1007,17 @@ function Add-PodeEndpoint
 
     # has this endpoint been added before? (for http/https we can just not add it again)
     $exists = ($PodeContext.Server.Endpoints.Values | Where-Object {
-        ($_.FriendlyName -ieq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl -eq $obj.Ssl) -and ($_.Type -ieq $obj.Type)
-    } | Measure-Object).Count
+        ($_.FriendlyName -ieq $obj.FriendlyName) -and ($_.Port -eq $obj.Port) -and ($_.Ssl.Enabled -eq $obj.Ssl.Enabled) -and ($_.Type -ieq $obj.Type)
+        } | Measure-Object).Count
 
     # if we're dealing with a certificate, attempt to import it
     if (!(Test-PodeIsHosted) -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
         if (@('https', 'wss', 'smtps', 'tcps') -inotcontains $Protocol) {
-            throw "Certificate supplied for non-HTTPS/WSS endpoint"
+            throw 'Certificate supplied for non-HTTPS/WSS endpoint'
         }
 
-        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant())
-        {
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'certfile' {
                 $obj.Certificate.Raw = Get-PodeCertificateByFile -Certificate $Certificate -Password $CertificatePassword -Key $CertificateKey
             }
@@ -1103,8 +1110,7 @@ Get-PodeEndpoint -Protocol Http
 .EXAMPLE
 Get-PodeEndpoint -Name Admin, User
 #>
-function Get-PodeEndpoint
-{
+function Get-PodeEndpoint {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -1147,23 +1153,23 @@ function Get-PodeEndpoint
         }
 
         $endpoints = @(foreach ($endpoint in $endpoints) {
-            if ($endpoint.Address.ToString() -ine $Address) {
-                continue
-            }
+                if ($endpoint.Address.ToString() -ine $Address) {
+                    continue
+                }
 
-            $endpoint
-        })
+                $endpoint
+            })
     }
 
     # if we have a hostname, filter
     if (![string]::IsNullOrWhiteSpace($Hostname)) {
         $endpoints = @(foreach ($endpoint in $endpoints) {
-            if ($endpoint.Hostname.ToString() -ine $Hostname) {
-                continue
-            }
+                if ($endpoint.Hostname.ToString() -ine $Hostname) {
+                    continue
+                }
 
-            $endpoint
-        })
+                $endpoint
+            })
     }
 
     # if we have a port, filter
@@ -1177,12 +1183,12 @@ function Get-PodeEndpoint
         }
 
         $endpoints = @(foreach ($endpoint in $endpoints) {
-            if ($endpoint.Port -ne $Port) {
-                continue
-            }
+                if ($endpoint.Port -ne $Port) {
+                    continue
+                }
 
-            $endpoint
-        })
+                $endpoint
+            })
     }
 
     # if we have a protocol, filter
@@ -1192,25 +1198,25 @@ function Get-PodeEndpoint
         }
 
         $endpoints = @(foreach ($endpoint in $endpoints) {
-            if ($endpoint.Protocol -ine $Protocol) {
-                continue
-            }
+                if ($endpoint.Protocol -ine $Protocol) {
+                    continue
+                }
 
-            $endpoint
-        })
+                $endpoint
+            })
     }
 
     # further filter by endpoint names
     if (($null -ne $Name) -and ($Name.Length -gt 0)) {
         $endpoints = @(foreach ($_name in $Name) {
-            foreach ($endpoint in $endpoints) {
-                if ($endpoint.Name -ine $_name) {
-                    continue
-                }
+                foreach ($endpoint in $endpoints) {
+                    if ($endpoint.Name -ine $_name) {
+                        continue
+                    }
 
-                $endpoint
-            }
-        })
+                    $endpoint
+                }
+            })
     }
 
     # return

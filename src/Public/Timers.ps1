@@ -41,19 +41,18 @@ Add-PodeTimer -Name 'RunAfter60secs' -Interval 10 -Skip 6 -ScriptBlock { /* logi
 .EXAMPLE
 Add-PodeTimer -Name 'Args' -Interval 2 -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
 #>
-function Add-PodeTimer
-{
-    [CmdletBinding(DefaultParameterSetName='Script')]
-    param (
-        [Parameter(Mandatory=$true)]
+function Add-PodeTimer {
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
+    param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Interval,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
@@ -65,7 +64,7 @@ function Add-PodeTimer
         [int]
         $Skip = 0,
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $FilePath,
 
@@ -117,18 +116,18 @@ function Add-PodeTimer
     # add the timer
     $PodeContext.Timers.Enabled = $true
     $PodeContext.Timers.Items[$Name] = @{
-        Name = $Name
-        Interval = $Interval
-        Limit = $Limit
-        Count = 0
-        Skip = $Skip
+        Name            = $Name
+        Interval        = $Interval
+        Limit           = $Limit
+        Count           = 0
+        Skip            = $Skip
         NextTriggerTime = $NextTriggerTime
         LastTriggerTime = $null
-        Script = $ScriptBlock
-        UsingVariables = $usingVars
-        Arguments = $ArgumentList
-        OnStart = $OnStart
-        Completed = $false
+        Script          = $ScriptBlock
+        UsingVariables  = $usingVars
+        Arguments       = $ArgumentList
+        OnStart         = $OnStart
+        Completed       = $false
     }
 }
 
@@ -149,11 +148,10 @@ An array of arguments to supply to the Timer's ScriptBlock.
 .EXAMPLE
 Invoke-PodeTimer -Name 'timer-name'
 #>
-function Invoke-PodeTimer
-{
+function Invoke-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -184,11 +182,10 @@ The Name of Timer to be removed.
 .EXAMPLE
 Remove-PodeTimer -Name 'SaveState'
 #>
-function Remove-PodeTimer
-{
+function Remove-PodeTimer {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name
     )
@@ -206,8 +203,7 @@ Removes all Timers.
 .EXAMPLE
 Clear-PodeTimers
 #>
-function Clear-PodeTimers
-{
+function Clear-PodeTimers {
     [CmdletBinding()]
     param()
 
@@ -236,11 +232,10 @@ Any new Arguments for the Timer.
 .EXAMPLE
 Edit-PodeTimer -Name 'Hello' -Interval 10
 #>
-function Edit-PodeTimer
-{
+function Edit-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -298,8 +293,7 @@ Get-PodeTimer
 .EXAMPLE
 Get-PodeTimer -Name Name1, Name2
 #>
-function Get-PodeTimer
-{
+function Get-PodeTimer {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -312,14 +306,14 @@ function Get-PodeTimer
     # further filter by timer names
     if (($null -ne $Name) -and ($Name.Length -gt 0)) {
         $timers = @(foreach ($_name in $Name) {
-            foreach ($timer in $timers) {
-                if ($timer.Name -ine $_name) {
-                    continue
-                }
+                foreach ($timer in $timers) {
+                    if ($timer.Name -ine $_name) {
+                        continue
+                    }
 
-                $timer
-            }
-        })
+                    $timer
+                }
+            })
     }
 
     # return
@@ -339,11 +333,10 @@ The Name of the Timer.
 .EXAMPLE
 if (Test-PodeTimer -Name TimerName) { }
 #>
-function Test-PodeTimer
-{
+function Test-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
@@ -367,8 +360,7 @@ Use-PodeTimers
 .EXAMPLE
 Use-PodeTimers -Path './my-timers'
 #>
-function Use-PodeTimers
-{
+function Use-PodeTimers {
     [CmdletBinding()]
     param(
         [Parameter()]

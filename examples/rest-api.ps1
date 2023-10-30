@@ -9,6 +9,9 @@ Start-PodeServer {
 
     Add-PodeEndpoint -Address * -Port 8086 -Protocol Http
 
+    # request logging
+    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
+
     # can be hit by sending a GET request to "localhost:8086/api/test"
     Add-PodeRoute -Method Get -Path '/api/test' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'hello' = 'world'; }

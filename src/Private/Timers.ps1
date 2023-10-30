@@ -1,7 +1,6 @@
-function Find-PodeTimer
-{
+function Find-PodeTimer {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name
@@ -10,20 +9,17 @@ function Find-PodeTimer
     return $PodeContext.Timers.Items[$Name]
 }
 
-function Test-PodeTimersExist
-{
+function Test-PodeTimersExist {
     return (($null -ne $PodeContext.Timers) -and (($PodeContext.Timers.Enabled) -or ($PodeContext.Timers.Items.Count -gt 0)))
 }
 
-function Start-PodeTimerRunspace
-{
+function Start-PodeTimerRunspace {
     if (!(Test-PodeTimersExist)) {
         return
     }
 
     $script = {
-        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested)
-        {
+        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             $_now = [DateTime]::Now
 
             # only run timers that haven't completed, and have a next trigger in the past
@@ -65,10 +61,9 @@ function Start-PodeTimerRunspace
     Add-PodeRunspace -Type Main -ScriptBlock $script
 }
 
-function Invoke-PodeInternalTimer
-{
+function Invoke-PodeInternalTimer {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         $Timer,
 
         [Parameter()]
@@ -79,7 +74,7 @@ function Invoke-PodeInternalTimer
     try {
         $global:TimerEvent = @{
             Lockable = $PodeContext.Threading.Lockables.Global
-            Sender = $Timer
+            Sender   = $Timer
         }
 
         # add main timer args

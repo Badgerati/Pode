@@ -1,6 +1,49 @@
 # Release Notes
 
+## v2.9.0
+
+Date: 30th October 2023
+
+```plain
+### Features
+* #992: Introduces new Authorisation middleware support
+
+### Enhancements
+* #588: Adds support for merging Authentication methods into a new Authentication method
+* #1082, #1107: Adds a new "Running" event type, which will be triggered once all Runspaces have started
+* #1101: Adds a new `-SslProtocol` parameter to `Add-PodeEndpoint`, to allow setting SSL Protocols per endpoint
+* #1106: Adds two new Security functions to control the hiding/showing of the Server header in responses
+* #1142: The `Test-PodeJwt` function is now public (thanks @alan-null!)
+* #1163: Adds a new "Session" authentication method, useful if you need multiple authentication methods and the user can choose one
+
+### Bugs
+* #1030: Fixes an issue with some Authentication methods when `-AsCredential` was supplied on the scheme
+* #1081: Don't attempt to parse the query string if there is no query string supplied
+* #1083: Fixes a time-zone issue when verifying JWT "exp" and "nbf" properties (thanks @avin3sh!)
+* #1087: Fixes an SMTP body parsing issue when multiple headers are in the request
+* #1093: Allow greater JSON depths to be used when saving/restoring State (thanks @plk!)
+* #1125: Fixes an issue where Verbs weren't being cleared down appropriately on server restart
+* #1130: When request logging is enabled, and an authenticated user is available, the username will now be used and not "-"
+* #1137: Fixes the loading of AutoImport configuration - it was being ignored!
+
+### Documentation
+* #1078: Adds release dates to the releases notes page
+* #1099: Adds a reference to the "Protected Users" group in the AD Authentication page
+* #1115, #1116: Fixes incorrect ports in Example scripts (thanks @ArieHein!)
+* #1117, #1118, #1119: Fixes markdown syntax in pages (thanks @ArieHein!)
+* #1123: Adds reference link about using the SecretManagement module in automation scenarios
+* #1133: Fixes broken links to functions (thanks @Chris--A!)
+* #1141: Updates the IIS page to reference the use of Maximum Worker Processes, and Sessions being stored in-memory
+
+### Packaging
+* #1169: Adds a `.vscode` workspace settings file, with PowerShell code formatting settings
+* #1170: Bumps the Alpine version to 3.17, and Ubuntu to 22.04 in Dockerfiles
+* #1171: Bumps the versions of MkDocs and the Material theme
+```
+
 ## v2.8.0
+
+Date: 2nd February 2023
 
 ```plain
 ### Features
@@ -36,6 +79,8 @@
 
 ## v2.7.2
 
+Date: 18th October 2022
+
 ```plain
 ### Enhancements
 * #1002: Adds a `-KeepCredential` switch for `Add-PodeAuthWindowsAd` (thanks @TheBakaBandit!)
@@ -52,6 +97,8 @@
 
 ## v2.7.1
 
+Date: 21st July 2022
+
 ```plain
 ### Bugs
 * #990: Fix SMTP attachment name parsing, when the name contains a space
@@ -61,6 +108,8 @@
 ```
 
 ## v2.7.0
+
+Date: 22nd June 2022
 
 ```plain
 ### Features
@@ -91,12 +140,16 @@
 
 ## v2.6.2
 
+Date: 2nd March 2022
+
 ```plain
 ### Bugs
 * #948: Hotfix to resolve issue with importing ActiveDirectory module into runspaces
 ```
 
 ## v2.6.1
+
+Date: 21st February 2022
 
 ```plain
 ### Bugs
@@ -111,6 +164,8 @@
 ```
 
 ## v2.6.0
+
+Date: 10th February 2022
 
 ```plain
 ### Features
@@ -138,12 +193,16 @@
 
 ## v2.5.2
 
+Date: 4th January 2022
+
 ```plain
 ### Bugs
 * #892: Fixes a bug with importing modules, where the wrong file was being used
 ```
 
 ## v2.5.1
+
+Date: 21st December 2021
 
 ```plain
 ### Bugs
@@ -160,6 +219,8 @@
 ```
 
 ## v2.5.0
+
+Date: 13th November 2021
 
 ```plain
 ### Enhancements
@@ -199,6 +260,8 @@
 
 ## v2.4.2
 
+Date: 13th September 2021
+
 ```plain
 ### Bugs
 * #810: Fixes a Local/UTC datetime issue on Cookies, expiring sessions early
@@ -213,6 +276,8 @@
 ```
 
 ## v2.4.1
+
+Date: 9th August 2021
 
 ```plain
 ### Enhancements
@@ -230,6 +295,8 @@
 ```
 
 ## v2.4.0
+
+Date: 21st July 2021
 
 ```plain
 ### Features
@@ -255,6 +322,8 @@
 
 ## v2.3.0
 
+Date: 1st June 2021
+
 ```plain
 ### Features
 * #723: Add support for logging to Windows Event Viewer
@@ -277,12 +346,16 @@
 
 ## v2.2.3
 
+Date: 10th April 2021
+
 ```plain
 ### Bugs
 * #736: Fix issue with v2.2.2 PowerShell Gallery packaging
 ```
 
 ## v2.2.2
+
+Date: 9th April 2021
 
 ```plain
 ### Enhancements
@@ -295,6 +368,8 @@
 
 ## v2.2.1
 
+Date: 27th March 2021
+
 ```plain
 ### Bugs
 * #716: Fix bug with `$TimerEvent` object within Timers
@@ -303,6 +378,8 @@
 ```
 
 ## v2.2.0
+
+Date: 21st March 2021
 
 ```plain
 ### Features
@@ -325,6 +402,8 @@
 
 ## v2.1.1
 
+Date: 19th February 2021
+
 ```plain
 ### Enhancements
 * #693: Add OperationId OpenAPI support on routes (thanks @glatzert)
@@ -340,6 +419,8 @@
 ```
 
 ## v2.1.0
+
+Date: 3rd February 2021
 
 ```plain
 ### Enhancements
@@ -368,6 +449,8 @@
 
 ## v2.0.3
 
+Date: 21st December 2020
+
 ```plain
 ### Bugs
 * #641: Fix an issue with Invalid Request Lines being received when running via SSL and using a Proxy
@@ -379,12 +462,16 @@
 
 ## v2.0.2
 
+Date: 5th December 2020
+
 ```plain
 ### Bugs
 * #636: Fixes bug with OAuth2 RedirectUrl when behind IIS
 ```
 
 ## v2.0.1
+
+Date: 29th November 2020
 
 ```plain
 ### Bugs
@@ -393,6 +480,8 @@
 ```
 
 ## v2.0.0
+
+Date: 14th September 2020
 
 ```plain
 ### Features
@@ -425,12 +514,16 @@
 
 ## v1.8.4
 
+Date: 16th October 2020
+
 ```plain
 ### Bugs
 * #615: Fixes a bug with Azure Functions V3, where the sys property has now been removed
 ```
 
 ## v1.8.3
+
+Date: 20th September 2020
 
 ```plain
 ### Enhancements
@@ -440,12 +533,16 @@
 
 ## v1.8.2
 
+Date: 31st July 2020
+
 ```plain
 ### Bugs
 * #594: Add `Import-PodeSnapIn` to FunctionsToExport list
 ```
 
 ## v1.8.1
+
+Date: 26th June 2020
 
 ```plain
 ### Bugs
@@ -454,6 +551,8 @@
 ```
 
 ## v1.8.0
+
+Date: 24th May 2020
 
 ```plain
 ### Enhancements
@@ -481,12 +580,16 @@
 
 ## v1.7.3
 
+Date: 10th May 2020
+
 ```plain
 ### Bugs
 * #554: Fixes an issue where HTML static files would be treated as dynamic files
 ```
 
 ## v1.7.2
+
+Date: 27th April 2020
 
 ```plain
 ### Bugs
@@ -495,12 +598,16 @@
 
 ## v1.7.1
 
+Date: 17th April 2020
+
 ```plain
 ### Bugs
 * #534: Fixes an issue with IIS Windows Authentication when using foreign trusted domains (thanks @RobinBeismann!)
 ```
 
 ## v1.7.0
+
+Date: 10th April 2020
 
 ```plain
 ### Features
@@ -525,6 +632,8 @@
 
 ## v1.6.1
 
+Date: 7th March 2020
+
 ```plain
 ### Bugs
 * 495: Fix issue with parsing query strings when using the Pode server type
@@ -535,6 +644,8 @@
 ```
 
 ## v1.6.0
+
+Date: 3rd March 2020
 
 ```plain
 ### Features
@@ -556,6 +667,8 @@
 
 ## v1.5.0
 
+Date: 2nd February 2020
+
 ```plain
 ### Features
 * #218: Adds OpenAPI with Swagger and ReDoc support
@@ -574,6 +687,8 @@
 
 ## v1.4.0
 
+Date: 10th January 2020
+
 ```plain
 ### Enhancements
 * #447: Sessions can now be used via Headers for better CLI support
@@ -588,6 +703,8 @@
 ```
 
 ## v1.3.0
+
+Date: 27th December 2019
 
 ```plain
 ### Enhancements
@@ -606,6 +723,8 @@
 
 ## v1.2.1
 
+Date: 2nd December 2019
+
 ```plain
 ### Enhancements
 * #415: New functions for invoking Timer and Schedules adhoc
@@ -618,6 +737,8 @@
 ```
 
 ## v1.2.0
+
+Date: 13th November 2019
 
 ```plain
 ### Features
@@ -640,6 +761,8 @@
 
 ## v1.1.0
 
+Date: 28th September 2019
+
 ```plain
 ### Features
 * #376: *Experimental* support for cross-platform HTTPS!
@@ -655,6 +778,8 @@
 
 ## v1.0.1
 
+Date: 4th September 2019
+
 ```plain
 ### Bugs
 * #367: If a "server.psd1" file is not present, Logging will not work
@@ -662,6 +787,8 @@
 ```
 
 ## v1.0.0
+
+Date: 2nd September 2019
 
 ```plain
 ### Features
@@ -702,6 +829,8 @@
 
 ## v0.32.0
 
+Date: 28th June 2019
+
 ```plain
 ### Enhancements
 * #270: Support on `gui` to specify the width and height of the window
@@ -716,6 +845,8 @@
 ```
 
 ## v0.31.0
+
+Date: 11th June 2019
 
 ```plain
 ### Features
@@ -732,6 +863,8 @@
 
 ## v0.30.0
 
+Date: 26th May 2019
+
 ```plain
 ### Enhancements
 * #245: Support for Windows AD group validation on the inbuilt 'windows-ad' authentication validator
@@ -747,6 +880,8 @@
 ```
 
 ## v0.29.0
+
+Date: 10th May 2019
 
 ```plain
 ### Enhancements
@@ -765,12 +900,16 @@
 
 ## v0.28.1
 
+Date: 16th April 2019
+
 ```plain
 ### Bugs
 * #226: Adds the "gui" function to export list
 ```
 
 ## v0.28.0
+
+Date: 13th April 2019
 
 ```plain
 ### Features
@@ -790,12 +929,16 @@
 
 ## v0.27.3
 
+Date: 4th April 2019
+
 ```plain
 ### Bugs
 * #217: Binding to hostname throws error
 ```
 
 ## v0.27.2
+
+Date: 27th March 2019
 
 ```plain
 ### Bugs
@@ -804,6 +947,8 @@
 
 ## v0.27.1
 
+Date: 16th March 2019
+
 ```plain
 ### Bugs
 * #199: Fix issues with relative paths when running server as a service
@@ -811,6 +956,8 @@
 ```
 
 ## v0.27.0
+
+Date: 14th March 2019
 
 ```plain
 ### Features
@@ -835,6 +982,8 @@
 
 ## v0.26.0
 
+Date: 17th February 2019
+
 ```plain
 ### Features
 * #162: Basic support for local modules in "package.json" on "pode install"
@@ -845,6 +994,8 @@
 ```
 
 ## v0.25.0
+
+Date: 5th February 2019
 
 ```plain
 ### Features
@@ -864,6 +1015,8 @@
 
 ## v0.24.0
 
+Date: 18th January 2019
+
 ```plain
 ### Features
 * #125: Helper support function for uploading files from a web form
@@ -879,6 +1032,8 @@
 
 ## v0.23.0
 
+Date: 24th December 2018
+
 ```plain
 ### Features
 * #77: Ability to run a web server, and view it through a Desktop Application (Windows only)
@@ -893,6 +1048,8 @@
 
 ## v0.22.0
 
+Date: 7th December 2018
+
 ```plain
 ### Enhancements
 * #123: Ability to remove a `route`
@@ -903,6 +1060,8 @@
 ```
 
 ## v0.21.0
+
+Date: 2nd November 2018
 
 ```plain
 ### Enhancements
@@ -922,6 +1081,8 @@
 
 ## v0.20.0
 
+Date: 20th October 2018
+
 ```plain
 ### Documentation
 * Extended documentation for third-party template engines
@@ -940,6 +1101,8 @@
 
 ## v0.19.1
 
+Date: 9th October 2018
+
 ```plain
 ### Documentation
 * #91: This release contains far better documentation for Pode: https://badgerati.github.io/Pode
@@ -955,6 +1118,8 @@
 
 ## v0.19.0
 
+Date: 14th September 2018
+
 ```plain
 ### Features
 * #84: Session cookie support, with in-mem/custom data storage
@@ -966,6 +1131,8 @@
 
 ## v0.18.0
 
+Date: 25th August 2018
+
 ```plain
 ### Features
 * #78: Middleware support for web servers, allowing custom logic and extension modules on web request/responses
@@ -975,6 +1142,8 @@
 ```
 
 ## v0.17.0
+
+Date: 19th August 2018
 
 ```plain
 ### Features
@@ -988,6 +1157,8 @@
 
 ## v0.16.0
 
+Date: 8th August 2018
+
 ```plain
 ### Features
 * #66: Support for basic rate limiting of requests per x seconds from IPs
@@ -999,6 +1170,8 @@
 ```
 
 ## v0.15.0
+
+Date: 13th July 2018
 
 ```plain
 
@@ -1012,6 +1185,8 @@
 ```
 
 ## v0.14.0
+
+Date: 6th July 2018
 
 ```plain
 ### Features
@@ -1028,12 +1203,16 @@
 
 ## v0.13.0
 
+Date: 23rd June 2018
+
 ```plain
 ### Features
 * #40: Ability to add variables to a shared state, so you can re-use variables in timers, loggers, and routes
 ```
 
 ## v0.12.0
+
+Date: 15th June 2018
 
 ```plain
 ### Features
@@ -1047,12 +1226,16 @@
 
 ## v0.11.3
 
+Date: 10th June 2018
+
 ```plain
 ### Bugs and Enhancements
 * #22: Proper fix for high CPU usage, by using `Task.Wait` with `CancellationTokens`; A Runspace is setup to monitor for key presses, and on `Ctrl+C` will `Cancel()` the token and terminate Pode
 ```
 
 ## v0.11.2
+
+Date: 8th June 2018
 
 ```plain
 ### Bugs
@@ -1061,12 +1244,16 @@
 
 ## v0.11.1
 
+Date: 1st June 2018
+
 ```plain
 ### Bugs
 * #16: Status and Include functions were missing from module export list
 ```
 
 ## v0.11.0
+
+Date: 30th May 2018
 
 ```plain
 ### Features

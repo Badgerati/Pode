@@ -38,20 +38,19 @@ Add-PodeVerb -Verb 'Quit' -Close
 .EXAMPLE
 Add-PodeVerb -Verb 'StartTls' -UpgradeToSsl
 #>
-function Add-PodeVerb
-{
-    [CmdletBinding(DefaultParameterSetName='Script')]
+function Add-PodeVerb {
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Verb,
 
-        [Parameter(ParameterSetName='Script')]
+        [Parameter(ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $FilePath,
 
@@ -101,22 +100,22 @@ function Add-PodeVerb
     # add the verb(s)
     Write-Verbose "Adding Verb: $($Verb)"
     $PodeContext.Server.Verbs[$Verb] += @(foreach ($_endpoint in $endpoints) {
-        @{
-            Logic = $ScriptBlock
-            UsingVariables = $usingVars
-            Endpoint = @{
-                Protocol = $_endpoint.Protocol
-                Address = $_endpoint.Address.Trim()
-                Name = $_endpoint.Name
+            @{
+                Logic          = $ScriptBlock
+                UsingVariables = $usingVars
+                Endpoint       = @{
+                    Protocol = $_endpoint.Protocol
+                    Address  = $_endpoint.Address.Trim()
+                    Name     = $_endpoint.Name
+                }
+                Arguments      = $ArgumentList
+                Verb           = $Verb
+                Connection     = @{
+                    UpgradeToSsl = $UpgradeToSsl
+                    Close        = $Close
+                }
             }
-            Arguments = $ArgumentList
-            Verb = $Verb
-            Connection = @{
-                UpgradeToSsl = $UpgradeToSsl
-                Close = $Close
-            }
-        }
-    })
+        })
 }
 
 <#
@@ -138,11 +137,10 @@ Remove-PodeVerb -Verb 'Hello'
 .EXAMPLE
 Remove-PodeVerb -Verb 'Hello :username' -EndpointName User
 #>
-function Remove-PodeVerb
-{
+function Remove-PodeVerb {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Verb,
 
@@ -161,8 +159,8 @@ function Remove-PodeVerb
 
     # remove the verb's logic
     $PodeContext.Server.Verbs[$Verb] = @($PodeContext.Server.Verbs[$Verb] | Where-Object {
-        $_.Endpoint.Name -ine $EndpointName
-    })
+            $_.Endpoint.Name -ine $EndpointName
+        })
 
     # if the verb has no more logic, just remove it
     if ((Get-PodeCount $PodeContext.Server.Verbs[$Verb]) -eq 0) {
@@ -180,8 +178,7 @@ Removes all added Verbs.
 .EXAMPLE
 Clear-PodeVerbs
 #>
-function Clear-PodeVerbs
-{
+function Clear-PodeVerbs {
     [CmdletBinding()]
     param()
 
@@ -207,8 +204,7 @@ Get-PodeVerb -Verb 'Hello'
 .EXAMPLE
 Get-PodeVerb -Verb 'Hello :username' -EndpointName User
 #>
-function Get-PodeVerb
-{
+function Get-PodeVerb {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -237,14 +233,14 @@ function Get-PodeVerb
     # further filter by endpoint names
     if (($null -ne $EndpointName) -and ($EndpointName.Length -gt 0)) {
         $verbs = @(foreach ($name in $EndpointName) {
-            foreach ($v in $verbs) {
-                if ($v.Endpoint.Name -ine $name) {
-                    continue
-                }
+                foreach ($v in $verbs) {
+                    if ($v.Endpoint.Name -ine $name) {
+                        continue
+                    }
 
-                $v
-            }
-        })
+                    $v
+                }
+            })
     }
 
     # return
@@ -267,8 +263,7 @@ Use-PodeVerbs
 .EXAMPLE
 Use-PodeVerbs -Path './my-verbs'
 #>
-function Use-PodeVerbs
-{
+function Use-PodeVerbs {
     [CmdletBinding()]
     param(
         [Parameter()]

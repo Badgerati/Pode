@@ -1,5 +1,4 @@
-function Update-PodeServerRequestMetrics
-{
+function Update-PodeServerRequestMetrics {
     param(
         [Parameter()]
         [hashtable]
@@ -33,8 +32,7 @@ function Update-PodeServerRequestMetrics
     }
 }
 
-function Update-PodeServerSignalMetrics
-{
+function Update-PodeServerSignalMetrics {
     param(
         [Parameter()]
         [hashtable]

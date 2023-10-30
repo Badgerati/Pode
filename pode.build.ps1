@@ -1,4 +1,4 @@
-param (
+param(
     [string]
     $Version = ''
 )
@@ -8,43 +8,38 @@ param (
 #>
 
 $Versions = @{
-    Pester = '4.8.0'
-    MkDocs = '1.4.2'
+    Pester      = '4.8.0'
+    MkDocs      = '1.5.3'
     PSCoveralls = '1.0.0'
-    SevenZip = '18.5.0.20180730'
-    DotNet = '7.0.1'
-    Checksum = '0.2.0'
-    MkDocsTheme = '9.0.2'
-    PlatyPS = '0.14.2'
+    SevenZip    = '18.5.0.20180730'
+    DotNet      = '7.0.1'
+    Checksum    = '0.2.0'
+    MkDocsTheme = '9.4.6'
+    PlatyPS     = '0.14.2'
 }
 
 <#
 # Helper Functions
 #>
 
-function Test-PodeBuildIsWindows
-{
+function Test-PodeBuildIsWindows {
     $v = $PSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }
 
-function Test-PodeBuildIsGitHub
-{
+function Test-PodeBuildIsGitHub {
     return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
 }
 
-function Test-PodeBuildCanCodeCoverage
-{
+function Test-PodeBuildCanCodeCoverage {
     return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
 }
 
-function Get-PodeBuildService
-{
+function Get-PodeBuildService {
     return 'github-actions'
 }
 
-function Test-PodeBuildCommand($cmd)
-{
+function Test-PodeBuildCommand($cmd) {
     $path = $null
 
     if (Test-PodeBuildIsWindows) {
@@ -57,13 +52,11 @@ function Test-PodeBuildCommand($cmd)
     return (![string]::IsNullOrWhiteSpace($path))
 }
 
-function Get-PodeBuildBranch
-{
+function Get-PodeBuildBranch {
     return ($env:GITHUB_REF -ireplace 'refs\/heads\/', '')
 }
 
-function Invoke-PodeBuildInstall($name, $version)
-{
+function Invoke-PodeBuildInstall($name, $version) {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
     if (Test-PodeBuildIsWindows) {
@@ -84,8 +77,7 @@ function Invoke-PodeBuildInstall($name, $version)
     }
 }
 
-function Install-PodeBuildModule($name)
-{
+function Install-PodeBuildModule($name) {
     if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions[$name] })) {
         return
     }
@@ -95,8 +87,7 @@ function Install-PodeBuildModule($name)
     Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
 }
 
-function Invoke-PodeBuildDotnetBuild($target)
-{
+function Invoke-PodeBuildDotnetBuild($target) {
     dotnet build --configuration Release --self-contained --framework $target
     if (!$?) {
         throw "dotnet build failed for $($target)"
@@ -354,17 +345,17 @@ task DocsHelpBuild DocsDeps, {
         $updated = $false
 
         $content = (Get-Content -Path $_.FullName | ForEach-Object {
-            $line = $_
+                $line = $_
 
-            while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
-                $updated = $true
-                $name = $Matches['name']
-                $char = $Matches['char']
-                $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
-            }
+                while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
+                    $updated = $true
+                    $name = $Matches['name']
+                    $char = $Matches['char']
+                    $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
+                }
 
-            $line
-        })
+                $line
+            })
 
         if ($updated) {
             $content | Out-File -FilePath $_.FullName -Force -Encoding ascii

@@ -36,6 +36,9 @@ At present there are just two registration types implemented for registering sec
 * [Secret Management](../Types/SecretManagement) (powershell module)
 * [Custom](../Types/Custom)
 
+!!! tip
+    For the SecretManagement module you can read a "getting started" [guide for it here](https://learn.microsoft.com/en-us/powershell/utility-modules/secretmanagement/how-to/using-secrets-in-automation?view=ps-modules) when using the module in automated scenarios.
+
 ### Initialise
 
 If there is any logic that needs to be invoked before a vault is registered, such as connecting to a cloud provider first (ie: `Connect-AzAccount`), this can be achieved via the `-InitScriptBlock` parameter on [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault).
@@ -190,7 +193,6 @@ Mount-PodeSecret -Name 'SecretName2' -Vault 'VaultName' -Key 'SecretKeyNameInVau
 ## Adhoc
 
 There is also support for creating/updating, retrieving, and removing secrets in an adhoc manor from registered vaults - without having to mount them.
-
 
 ### Create
 

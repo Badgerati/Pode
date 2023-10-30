@@ -44,7 +44,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # GET request to get list of users (since there's no session, authentication will always happen, but, we're allowing anon access)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -Anon -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'Validate' -AllowAnon -ScriptBlock {
         if (Test-PodeAuthUser) {
             Write-PodeJsonResponse -Value @{
                 Users = @(

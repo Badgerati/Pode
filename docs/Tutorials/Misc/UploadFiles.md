@@ -39,6 +39,7 @@ The following HTML is an example of a `<form>` for a simple sign-up flow. Here t
 The inputs will be POSTed to the server, and accessible via the [web event](../../WebEvent)'s `.Data` and `.Files`.
 
 For the `.Data`:
+
 ```powershell
 $WebEvent.Data['username']     # the username entered
 $WebEvent.Data['password']     # the password entered
@@ -46,6 +47,7 @@ $WebEvent.Data['avatar']       # the name of the file (assume image.png)
 ```
 
 For the `.Files`:
+
 ```powershell
 $WebEvent.Files['image.png']   # the bytes of the uploaded file
 ```
@@ -59,7 +61,6 @@ If you use the `multiple` property then all the file names will be available und
 ## CLI
 
 You can upload files from the CLI by using `Invoke-WebRequest` (or `Invoke-RestMethod`), and to do so you'll need to pass the `-Form` parameter. Assuming you have the following Route to save some "avatar" file:
-
 
 ```powershell
 Start-PodeServer {

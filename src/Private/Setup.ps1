@@ -1,6 +1,5 @@
-function Invoke-PodePackageScript
-{
-    param (
+function Invoke-PodePackageScript {
+    param(
         [Parameter()]
         [string]
         $ActionScript
@@ -13,9 +12,8 @@ function Invoke-PodePackageScript
     Invoke-Expression -Command $ActionScript
 }
 
-function Install-PodeLocalModules
-{
-    param (
+function Install-PodeLocalModules {
+    param(
         [Parameter()]
         $Modules = $null
     )

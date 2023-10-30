@@ -10,6 +10,11 @@
         Your session will expire on $($data.Expiry)
         <br />
 
+        <p>
+            <a href='/about'>About</a>
+            <a href='/register'>Register</a>
+        </p>
+
         <form action="/logout" method="post">
             <div>
                 <input type="submit" value="Logout"/>

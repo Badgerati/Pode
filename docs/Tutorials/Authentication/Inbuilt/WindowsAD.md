@@ -149,3 +149,7 @@ New-PodeAuthScheme -Form | Add-PodeAuthWindowsAd -Name 'Login' -ScriptBlock {
     return @{ Message = 'Authorisation failed' }
 }
 ```
+
+## Protected Users
+
+In Windows AD there is a "Protected Users" group that you can assign users into. If users in this group are trying to use your site, then they will fail authentication. Unfortunately, this is just a secure feature of Windows AD, and the only way around this is to take the affected users out of the Protected Users group.

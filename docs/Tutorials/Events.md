@@ -8,6 +8,11 @@ Pode lets you register scripts to be run when certain server events are triggere
 * Browser
 * Crash
 * Stop
+* Running
+
+And these events are triggered in the following order:
+
+![event_flow](../../images/event-flow.png)
 
 ## Overview
 
@@ -33,28 +38,32 @@ $evt = Get-PodeEvent -Type Start -Name '<name>'
 
 ### Start
 
-Scripts registered to the `Start` event will all be invoked just after the server's main scriptblock has been invoked - ie: the `-ScriptBlock` supplied to [`Start-PodeServer`](../../Functions/Core/Start-PodeServer).
+Scripts registered to the `Start` event will all be invoked just after the `-ScriptBlock` supplied to [`Start-PodeServer`](../../Functions/Core/Start-PodeServer) has been invoked, and just before the runspaces for Pode have been opened.
+
+If you need the runspaces to be opened, you'll want to look at the `Running` event below.
 
 These scripts will also be re-invoked after a server restart has occurred.
 
 ### Terminate
 
-Scripts registered to the `Terminate` event will all be invoked just before the server terminates. Ie, when the `Terminating...` message usually appears in the terminal, the script will run just after this and just before the `Done` message.
-
-These script *will not* run when a Restart is triggered.
+Scripts registered to the `Terminate` event will all be invoked just before the server terminates. Ie, when the `Terminating...` message usually appears in the terminal, the script will run just after this and just before the `Done` message. Runspaces at this point will still be open.
 
 ### Restart
 
-Scripts registered to the `Restart` event will all be invoked whenever an internal server restart occurs. This could be due to file monitoring, auto-restarting, `Ctrl+R`, or [`Restart-PodeServer`](../../Functions/Core/Restart-PodeServer). They will be invoked just after the `Restarting...` message appears in the terminal, and just before the `Done` message.
+Scripts registered to the `Restart` event will all be invoked whenever an internal server restart occurs. This could be due to file monitoring, auto-restarting, `Ctrl+R`, or [`Restart-PodeServer`](../../Functions/Core/Restart-PodeServer). They will be invoked just after the `Restarting...` message appears in the terminal, and just before the `Done` message. Runspaces at this point will still be open.
 
 ### Browser
 
-Scripts registered to the `Browser` event will all be invoked whenever the server is told to open a browser, ie: when `Ctrl+B` is pressed.
+Scripts registered to the `Browser` event will all be invoked whenever the server is told to open a browser, ie: when `Ctrl+B` is pressed. Runspaces at this point will still be open.
 
 ### Crash
 
-Scripts registered to the `Crash` event will all be invoked if the server ever terminates due to an exception being thrown. If a Crash event it triggered, then Terminate will not be triggered.
+Scripts registered to the `Crash` event will all be invoked if the server ever terminates due to an exception being thrown. If a Crash event it triggered, then Terminate will not be triggered. Runspaces at this point will still be open, but there could be a chance not all of them will be available as the crash could have occurred from a runspace error.
 
 ### Stop
 
-Scripts registered to the `Stop` event will all be invoked when the server stops and closes. This event will be fired after either the Terminate or Crash events - which ever one causes the server to ultimately stop.
+Scripts registered to the `Stop` event will all be invoked when the server stops and closes. This event will be fired after either the Terminate or Crash events - which ever one causes the server to ultimately stop. Runspaces at this point will still be open.
+
+### Running
+
+Scripts registered to the `Running` event will all be run soon after the `Start` event, even after a `Restart`. At this point all of the runspaces will have been opened and available for use.

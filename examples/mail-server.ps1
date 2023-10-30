@@ -42,6 +42,7 @@ Start-PodeServer -Threads 2 {
         Write-Host '|'
         $SmtpEvent.Email | Out-Default
         $SmtpEvent.Request | out-default
+        $SmtpEvent.Email.Headers | out-default
         Write-Host '- - - - - - - - - - - - - - - - - -'
     }
 

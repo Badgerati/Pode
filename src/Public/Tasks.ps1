@@ -23,19 +23,18 @@ Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
 .EXAMPLE
 Add-PodeTask -Name 'Example1' -ScriptBlock { return Get-SomeObject }
 #>
-function Add-PodeTask
-{
-    [CmdletBinding(DefaultParameterSetName='Script')]
+function Add-PodeTask {
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $FilePath,
 
@@ -59,10 +58,10 @@ function Add-PodeTask
     # add the task
     $PodeContext.Tasks.Enabled = $true
     $PodeContext.Tasks.Items[$Name] = @{
-        Name = $Name
-        Script = $ScriptBlock
+        Name           = $Name
+        Script         = $ScriptBlock
         UsingVariables = $usingVars
-        Arguments = (Protect-PodeValue -Value $ArgumentList -Default @{})
+        Arguments      = (Protect-PodeValue -Value $ArgumentList -Default @{})
     }
 }
 
@@ -79,11 +78,10 @@ The Maximum number of Tasks to run.
 .EXAMPLE
 Set-PodeTaskConcurrency -Maximum 10
 #>
-function Set-PodeTaskConcurrency
-{
+function Set-PodeTaskConcurrency {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Maximum
     )
@@ -138,11 +136,10 @@ $task = Invoke-PodeTask -Name 'Example1'
 .EXAMPLE
 Invoke-PodeTask -Name 'Example1' | Wait-PodeTask -Timeout 3
 #>
-function Invoke-PodeTask
-{
+function Invoke-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -188,11 +185,10 @@ The Name of Task to be removed.
 .EXAMPLE
 Remove-PodeTask -Name 'Example1'
 #>
-function Remove-PodeTask
-{
+function Remove-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name
     )
@@ -210,8 +206,7 @@ Removes all Tasks.
 .EXAMPLE
 Clear-PodeTasks
 #>
-function Clear-PodeTasks
-{
+function Clear-PodeTasks {
     [CmdletBinding()]
     param()
 
@@ -237,11 +232,10 @@ Any new Arguments for the Task.
 .EXAMPLE
 Edit-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeNewLogic }
 #>
-function Edit-PodeTask
-{
+function Edit-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -290,8 +284,7 @@ Get-PodeTask
 .EXAMPLE
 Get-PodeTask -Name Example1, Example2
 #>
-function Get-PodeTask
-{
+function Get-PodeTask {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -304,14 +297,14 @@ function Get-PodeTask
     # further filter by task names
     if (($null -ne $Name) -and ($Name.Length -gt 0)) {
         $tasks = @(foreach ($_name in $Name) {
-            foreach ($task in $tasks) {
-                if ($task.Name -ine $_name) {
-                    continue
-                }
+                foreach ($task in $tasks) {
+                    if ($task.Name -ine $_name) {
+                        continue
+                    }
 
-                $task
-            }
-        })
+                    $task
+                }
+            })
     }
 
     # return
@@ -334,8 +327,7 @@ Use-PodeTasks
 .EXAMPLE
 Use-PodeTasks -Path './my-tasks'
 #>
-function Use-PodeTasks
-{
+function Use-PodeTasks {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -359,11 +351,10 @@ The Task to be closed.
 .EXAMPLE
 Invoke-PodeTask -Name 'Example1' | Close-PodeTask
 #>
-function Close-PodeTask
-{
+function Close-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Task
     )
@@ -384,11 +375,10 @@ The Task to be check.
 .EXAMPLE
 Invoke-PodeTask -Name 'Example1' | Test-PodeTaskCompleted
 #>
-function Test-PodeTaskCompleted
-{
+function Test-PodeTaskCompleted {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Task
     )
@@ -415,12 +405,11 @@ $context = Wait-PodeTask -Task $listener.GetContextAsync()
 .EXAMPLE
 $result = Invoke-PodeTask -Name 'Example1' | Wait-PodeTask
 #>
-function Wait-PodeTask
-{
+function Wait-PodeTask {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         $Task,
 
         [Parameter()]
@@ -436,5 +425,5 @@ function Wait-PodeTask
         return (Wait-PodeTaskInternal -Task $Task -Timeout $Timeout)
     }
 
-    throw "Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]"
+    throw 'Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]'
 }

@@ -12,7 +12,7 @@ To start using Bearer authentication in Pode you can use `New-PodeAuthScheme -Be
 
 ```powershell
 Start-PodeServer {
-    New-PodeAuthScheme -Bearer | Add-PodeAuth -Name 'Authenticate' -ScriptBlock {
+    New-PodeAuthScheme -Bearer | Add-PodeAuth -Name 'Authenticate' -Sessionless -ScriptBlock {
         param($token)
 
         # check if the token is valid, and get user

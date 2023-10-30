@@ -1,6 +1,5 @@
-function Read-PodeStreamToEnd
-{
-    param (
+function Read-PodeStreamToEnd {
+    param(
         [Parameter()]
         $Stream,
 
@@ -13,14 +12,13 @@ function Read-PodeStreamToEnd
     }
 
     return (Use-PodeStream -Stream ([System.IO.StreamReader]::new($Stream, $Encoding)) {
-        return $args[0].ReadToEnd()
-    })
+            return $args[0].ReadToEnd()
+        })
 }
 
-function Read-PodeByteLineFromByteArray
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Read-PodeByteLineFromByteArray {
+    param(
+        [Parameter(Mandatory = $true)]
         [byte[]]
         $Bytes,
 
@@ -52,16 +50,15 @@ function Read-PodeByteLineFromByteArray
 
     # grab the portion of the bytes array - which is our line
     return @{
-        Bytes       = $Bytes[$StartIndex..$fIndex];
-        StartIndex  = $StartIndex;
-        EndIndex    = $index;
+        Bytes      = $Bytes[$StartIndex..$fIndex]
+        StartIndex = $StartIndex
+        EndIndex   = $index
     }
 }
 
-function Get-PodeByteLinesFromByteArray
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Get-PodeByteLinesFromByteArray {
+    param(
+        [Parameter(Mandatory = $true)]
         [byte[]]
         $Bytes,
 
@@ -90,17 +87,16 @@ function Get-PodeByteLinesFromByteArray
         }
 
         # add the line, and get the next one
-        $lines += ,$Bytes[$index..$fIndex]
+        $lines += , $Bytes[$index..$fIndex]
         $index = $nextIndex + 1
     }
 
     return $lines
 }
 
-function ConvertFrom-PodeStreamToBytes
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function ConvertFrom-PodeStreamToBytes {
+    param(
+        [Parameter(Mandatory = $true)]
         $Stream
     )
 
@@ -116,9 +112,8 @@ function ConvertFrom-PodeStreamToBytes
     return $ms.ToArray()
 }
 
-function ConvertFrom-PodeValueToBytes
-{
-    param (
+function ConvertFrom-PodeValueToBytes {
+    param(
         [Parameter()]
         [string]
         $Value,
@@ -130,9 +125,8 @@ function ConvertFrom-PodeValueToBytes
     return $Encoding.GetBytes($Value)
 }
 
-function ConvertFrom-PodeBytesToString
-{
-    param (
+function ConvertFrom-PodeBytesToString {
+    param(
         [Parameter()]
         [byte[]]
         $Bytes,
@@ -156,22 +150,20 @@ function ConvertFrom-PodeBytesToString
     return $value
 }
 
-function Get-PodeNewLineBytes
-{
-    param (
+function Get-PodeNewLineBytes {
+    param(
         [Parameter()]
         $Encoding = [System.Text.Encoding]::UTF8
     )
 
     return @{
-        NewLine = @($Encoding.GetBytes("`n"))[0];
-        Return  = @($Encoding.GetBytes("`r"))[0];
+        NewLine = @($Encoding.GetBytes("`n"))[0]
+        Return  = @($Encoding.GetBytes("`r"))[0]
     }
 }
 
-function Test-PodeByteArrayIsBoundary
-{
-    param (
+function Test-PodeByteArrayIsBoundary {
+    param(
         [Parameter()]
         [byte[]]
         $Bytes,
@@ -198,9 +190,8 @@ function Test-PodeByteArrayIsBoundary
     return (ConvertFrom-PodeBytesToString $Bytes $Encoding).StartsWith($Boundary)
 }
 
-function Remove-PodeNewLineBytesFromArray
-{
-    param (
+function Remove-PodeNewLineBytesFromArray {
+    param(
         [Parameter()]
         $Bytes,
 

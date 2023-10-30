@@ -1,16 +1,15 @@
-function Invoke-PodeHMACSHA256Hash
-{
-    [CmdletBinding(DefaultParameterSetName='String')]
+function Invoke-PodeHMACSHA256Hash {
+    [CmdletBinding(DefaultParameterSetName = 'String')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value,
 
-        [Parameter(Mandatory=$true, ParameterSetName='String')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'String')]
         [string]
         $Secret,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Bytes')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bytes')]
         [byte[]]
         $SecretBytes
     )
@@ -20,26 +19,25 @@ function Invoke-PodeHMACSHA256Hash
     }
 
     if ($SecretBytes.Length -eq 0) {
-        throw "No secret supplied for HMAC256 hash"
+        throw 'No secret supplied for HMAC256 hash'
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA256]::new($SecretBytes)
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
-function Invoke-PodeHMACSHA384Hash
-{
-    [CmdletBinding(DefaultParameterSetName='String')]
+function Invoke-PodeHMACSHA384Hash {
+    [CmdletBinding(DefaultParameterSetName = 'String')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value,
 
-        [Parameter(Mandatory=$true, ParameterSetName='String')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'String')]
         [string]
         $Secret,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Bytes')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bytes')]
         [byte[]]
         $SecretBytes
     )
@@ -49,26 +47,25 @@ function Invoke-PodeHMACSHA384Hash
     }
 
     if ($SecretBytes.Length -eq 0) {
-        throw "No secret supplied for HMAC384 hash"
+        throw 'No secret supplied for HMAC384 hash'
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA384]::new($SecretBytes)
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
-function Invoke-PodeHMACSHA512Hash
-{
-    [CmdletBinding(DefaultParameterSetName='String')]
+function Invoke-PodeHMACSHA512Hash {
+    [CmdletBinding(DefaultParameterSetName = 'String')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value,
 
-        [Parameter(Mandatory=$true, ParameterSetName='String')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'String')]
         [string]
         $Secret,
 
-        [Parameter(Mandatory=$true, ParameterSetName='Bytes')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bytes')]
         [byte[]]
         $SecretBytes
     )
@@ -78,17 +75,16 @@ function Invoke-PodeHMACSHA512Hash
     }
 
     if ($SecretBytes.Length -eq 0) {
-        throw "No secret supplied for HMAC512 hash"
+        throw 'No secret supplied for HMAC512 hash'
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA512]::new($SecretBytes)
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
-function Invoke-PodeSHA256Hash
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Invoke-PodeSHA256Hash {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Value
@@ -98,10 +94,9 @@ function Invoke-PodeSHA256Hash
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
-function Invoke-PodeSHA1Hash
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Invoke-PodeSHA1Hash {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Value
@@ -111,14 +106,13 @@ function Invoke-PodeSHA1Hash
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
-function ConvertTo-PodeBase64Auth
-{
+function ConvertTo-PodeBase64Auth {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Username,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Password
     )
@@ -126,10 +120,9 @@ function ConvertTo-PodeBase64Auth
     return [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("$($Username):$($Password)"))
 }
 
-function Invoke-PodeMD5Hash
-{
-    param (
-        [Parameter(Mandatory=$true)]
+function Invoke-PodeMD5Hash {
+    param(
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Value
@@ -139,25 +132,23 @@ function Invoke-PodeMD5Hash
     return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::ASCII.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
 }
 
-function Get-PodeRandomBytes
-{
-    param (
+function Get-PodeRandomBytes {
+    param(
         [Parameter()]
         [int]
         $Length = 16
     )
 
     return (Use-PodeStream -Stream ([System.Security.Cryptography.RandomNumberGenerator]::Create()) {
-        param($p)
-        $bytes = [byte[]]::new($Length)
-        $p.GetBytes($bytes)
-        return $bytes
-    })
+            param($p)
+            $bytes = [byte[]]::new($Length)
+            $p.GetBytes($bytes)
+            return $bytes
+        })
 }
 
-function New-PodeSalt
-{
-    param (
+function New-PodeSalt {
+    param(
         [Parameter()]
         [int]
         $Length = 8
@@ -167,9 +158,8 @@ function New-PodeSalt
     return [System.Convert]::ToBase64String($bytes)
 }
 
-function New-PodeGuid
-{
-    param (
+function New-PodeGuid {
+    param(
         [Parameter()]
         [int]
         $Length = 16,
@@ -199,15 +189,14 @@ function New-PodeGuid
     return $guid
 }
 
-function Invoke-PodeValueSign
-{
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+function Invoke-PodeValueSign {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Value,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Secret
@@ -216,15 +205,14 @@ function Invoke-PodeValueSign
     return "s:$($Value).$(Invoke-PodeHMACSHA256Hash -Value $Value -Secret $Secret)"
 }
 
-function Invoke-PodeValueUnsign
-{
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+function Invoke-PodeValueUnsign {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Value,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Secret
@@ -253,40 +241,13 @@ function Invoke-PodeValueUnsign
     return $raw
 }
 
-function Test-PodeJwt
-{
+function New-PodeJwtSignature {
     param(
-        [Parameter(Mandatory=$true)]
-        [pscustomobject]
-        $Payload
-    )
-
-    $now = [datetime]::Now
-    $unixStart = [datetime]::new(1970, 1, 1)
-
-    # validate expiry
-    if (![string]::IsNullOrWhiteSpace($Payload.exp)) {
-        if ($now -gt $unixStart.AddSeconds($Payload.exp)) {
-            throw "The JWT has expired"
-        }
-    }
-
-    # validate not-before
-    if (![string]::IsNullOrWhiteSpace($Payload.nbf)) {
-        if ($now -lt $unixStart.AddSeconds($Payload.nbf)) {
-            throw "The JWT is not yet valid for use"
-        }
-    }
-}
-
-function New-PodeJwtSignature
-{
-    param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Algorithm,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Token,
 
@@ -296,11 +257,11 @@ function New-PodeJwtSignature
     )
 
     if (($Algorithm -ine 'none') -and (($null -eq $SecretBytes) -or ($SecretBytes.Length -eq 0))) {
-        throw "No Secret supplied for JWT signature"
+        throw 'No Secret supplied for JWT signature'
     }
 
     if (($Algorithm -ieq 'none') -and (($null -ne $secretBytes) -and ($SecretBytes.Length -gt 0))) {
-        throw "Expected no secret to be supplied for no signature"
+        throw 'Expected no secret to be supplied for no signature'
     }
 
     $sig = $null
@@ -333,10 +294,9 @@ function New-PodeJwtSignature
     return $sig
 }
 
-function ConvertTo-PodeBase64UrlValue
-{
+function ConvertTo-PodeBase64UrlValue {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value,
 
@@ -355,10 +315,9 @@ function ConvertTo-PodeBase64UrlValue
     return $Value
 }
 
-function ConvertFrom-PodeJwtBase64Value
-{
+function ConvertFrom-PodeJwtBase64Value {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value
     )
@@ -369,9 +328,17 @@ function ConvertFrom-PodeJwtBase64Value
 
     # add padding
     switch ($Value.Length % 4) {
-        1 { $Value = $Value.Substring(0, $Value.Length - 1) }
-        2 { $Value += '==' }
-        3 { $Value += '=' }
+        1 {
+            $Value = $Value.Substring(0, $Value.Length - 1)
+        }
+
+        2 {
+            $Value += '=='
+        }
+
+        3 {
+            $Value += '='
+        }
     }
 
     # convert base64 to string
@@ -379,7 +346,7 @@ function ConvertFrom-PodeJwtBase64Value
         $Value = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Value))
     }
     catch {
-        throw "Invalid Base64 encoded value found in JWT"
+        throw 'Invalid Base64 encoded value found in JWT'
     }
 
     # return json
@@ -387,6 +354,6 @@ function ConvertFrom-PodeJwtBase64Value
         return ($Value | ConvertFrom-Json)
     }
     catch {
-        throw "Invalid JSON value found in JWT"
+        throw 'Invalid JSON value found in JWT'
     }
 }

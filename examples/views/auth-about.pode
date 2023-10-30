@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <title>Auth About</title>
+        <link rel="stylesheet" type="text/css" href="/styles/simple.css">
+    </head>
+    <body>
+
+        Hello, this is an about page!
+        <br />
+
+        <p>
+            <a href='/'>Home</a>
+            <a href='/register'>Register</a>
+        </p>
+
+        <form action="/logout" method="post">
+            <div>
+                <input type="submit" value="Logout"/>
+            </div>
+        </form>
+
+    </body>
+</html>

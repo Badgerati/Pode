@@ -6,30 +6,34 @@ The following is a set of guidelines for contributing to Pode on GitHub. These a
 
 ## Table of Contents
 
-* [Code of Conduct](#code-of-conduct)
-* [I just have a Question](#i-just-have-a-question)
-* [About Pode](#about-pode)
-* [How to Contribute](#how-to-contribute)
-  * [Issues](#issues)
-  * [Branch Names](#branch-names)
-  * [Pull Requests](#pull-requests)
-  * [Building](#building)
-  * [Testing](#testing)
-  * [Documentation](#documentation)
-* [Styleguide](#styleguide)
-  * [Code](#code)
-  * [Comments](#comments)
-    * [General](#general)
-    * [Help](#help)
-  * [PowerShell Commandlets](#powershell-commandlets)
-    * [Foreach-Object](#foreach-object)
-    * [Where-Object](#where-object)
-    * [Select-Object](#select-object)
-    * [Measure-Object](#measure-object)
+- [Contributing to Pode](#contributing-to-pode)
+  - [Table of Contents](#table-of-contents)
+  - [Code of Conduct](#code-of-conduct)
+  - [I just have a Question](#i-just-have-a-question)
+  - [About Pode](#about-pode)
+  - [How to Contribute](#how-to-contribute)
+    - [Issues](#issues)
+    - [Branch Names](#branch-names)
+    - [Pull Requests](#pull-requests)
+    - [Building](#building)
+    - [Testing](#testing)
+    - [Documentation](#documentation)
+    - [Importing](#importing)
+  - [Styleguide](#styleguide)
+    - [Editor](#editor)
+    - [Code](#code)
+    - [Comments](#comments)
+      - [General](#general)
+      - [Help](#help)
+    - [PowerShell Commandlets](#powershell-commandlets)
+      - [Foreach-Object](#foreach-object)
+      - [Where-Object](#where-object)
+      - [Select-Object](#select-object)
+      - [Measure-Object](#measure-object)
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the Pode's [Code of Conduct](../.github/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+This project, and everyone participating in it, is governed by the Pode's [Code of Conduct](../.github/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ## I just have a Question
 
@@ -111,22 +115,20 @@ When editing Pode and you need to import the local dev module for testing, you w
 
 ## Styleguide
 
+### Editor
+
+You can use whatever editor you like, but it's recommended to use Visual Studio Code. To help with this style guide, specifically for PowerShell, Pode has code formatting workspace setting which will automatically format the files on save.
+
 ### Code
 
 In general, observe the coding style used within the file/project and mimic that as best as you can. Some standards that are typical are:
 
-* Bracers (`{}`) on the function header should be on a new line, such as:
+* Bracers  (`{}`) should be on the same line of the statement they following, such as `function`, `foreach`, `if`, etc.
 ```powershell
-function Add-Something
-{
-    # logic
-}
-```
-
-* Bracers  (`{}`) should be on the same line of other calls, such as `foreach`, `if`, etc.
-```powershell
-foreach ($item in $items) {
-    # logic
+function Add-Something {
+    foreach ($item in $items) {
+        # logic
+    }
 }
 ```
 
@@ -135,8 +137,7 @@ foreach ($item in $items) {
   * Ensure public functions always declare `[CmdletBinding()]` attribute.
   * Ensure parameter names, types, and attributes are declared on new lines - not all on one line.
 ```powershell
-function Add-Something
-{
+function Add-Something {
     [CmdletBinding()]
     param(
         [Parameter()]

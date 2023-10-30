@@ -13,11 +13,10 @@ The Maximum number of threads available to process WebSocket connection messages
 .EXAMPLE
 Set-PodeWebSocketConcurrency -Maximum 5
 #>
-function Set-PodeWebSocketConcurrency
-{
+function Set-PodeWebSocketConcurrency {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Maximum
     )
@@ -84,23 +83,22 @@ Connect-PodeWebSocket -Name 'Example' -Url 'ws://example.com/some/socket' -FileP
 .EXAMPLE
 Connect-PodeWebSocket -Name 'Example' -Url 'ws://example.com/some/socket' -ScriptBlock { ... } -ContentType 'text/xml'
 #>
-function Connect-PodeWebSocket
-{
-    [CmdletBinding(DefaultParameterSetName='Script')]
+function Connect-PodeWebSocket {
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Url,
 
-        [Parameter(ParameterSetName='Script')]
+        [Parameter(ParameterSetName = 'Script')]
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory=$true, ParameterSetName='File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $FilePath,
 
@@ -138,11 +136,11 @@ function Connect-PodeWebSocket
     }
 
     $PodeContext.Server.WebSockets.Connections[$Name] = @{
-        Name = $Name
-        Url = $Url
-        Logic = $ScriptBlock
+        Name           = $Name
+        Url            = $Url
+        Logic          = $ScriptBlock
         UsingVariables = $usingVars
-        Arguments = $ArgumentList
+        Arguments      = $ArgumentList
     }
 }
 
@@ -159,8 +157,7 @@ The Name of the WebSocket connection (optional if in the scope where $WsEvent is
 .EXAMPLE
 Disconnect-PodeWebSocket -Name 'Example'
 #>
-function Disconnect-PodeWebSocket
-{
+function Disconnect-PodeWebSocket {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -173,7 +170,7 @@ function Disconnect-PodeWebSocket
     }
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
-        throw "No Name for a WebSocket to disconnect from supplied"
+        throw 'No Name for a WebSocket to disconnect from supplied'
     }
 
     if (Test-PodeWebSocket -Name $Name) {
@@ -194,8 +191,7 @@ The Name of the WebSocket connection (optional if in the scope where $WsEvent is
 .EXAMPLE
 Remove-PodeWebSocket -Name 'Example'
 #>
-function Remove-PodeWebSocket
-{
+function Remove-PodeWebSocket {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -208,7 +204,7 @@ function Remove-PodeWebSocket
     }
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
-        throw "No Name for a WebSocket to remove supplied"
+        throw 'No Name for a WebSocket to remove supplied'
     }
 
     $PodeContext.Server.WebSockets.Receiver.RemoveWebSocket($Name)
@@ -237,8 +233,7 @@ An optional message Type. (default: Text)
 .EXAMPLE
 Send-PodeWebSocket -Name 'Example' -Message @{ message = 'Hello, there' }
 #>
-function Send-PodeWebSocket
-{
+function Send-PodeWebSocket {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -265,7 +260,7 @@ function Send-PodeWebSocket
 
     # do we have a name?
     if ([string]::IsNullOrWhiteSpace($Name)) {
-        throw "No Name for a WebSocket to send message to supplied"
+        throw 'No Name for a WebSocket to send message to supplied'
     }
 
     # do the socket exist?
@@ -302,8 +297,7 @@ Reset-PodeWebSocket -Name 'Example'
 .EXAMPLE
 Reset-PodeWebSocket -Name 'Example' -Url 'ws://example.com/some/socket'
 #>
-function Reset-PodeWebSocket
-{
+function Reset-PodeWebSocket {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -321,7 +315,7 @@ function Reset-PodeWebSocket
     }
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
-        throw "No Name for a WebSocket to reset supplied"
+        throw 'No Name for a WebSocket to reset supplied'
     }
 
     if (Test-PodeWebSocket -Name $Name) {
@@ -342,11 +336,10 @@ The Name of the WebSocket connection.
 .EXAMPLE
 Test-PodeWebSocket -Name 'Example'
 #>
-function Test-PodeWebSocket
-{
+function Test-PodeWebSocket {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )

@@ -47,6 +47,10 @@ Add-PodeRoute -Method Get -Path '/' -Authentication 'Login' -AllowAnon -ScriptBl
 
 Now, when an authenticated user hits the page, they're shown the original personal greeting page with view counter. However, when an unauthenticated user hits the page they are shown a generic greeting with a login button.
 
+The [`Test-PodeAuthUser`](../../../../Functions/Authentication/Test-PodeAuthUser) will check both the `$WebEvent.Auth` and `$WebEvent.Session` objects for an authenticated user. You can force the function to only check the former by supplying `-IgnoreSession`.
+
+You can also retrieve the user object using [`Get-PodeAuthUser`](../../../../Functions/Authentication/Get-PodeAuthUser). Under most circumstances you'll be able to access the authenticated user at `$WebEvent.Auth.User`, however if you're relying on Sessions and a Route without Authentication configured then you'll ave to use this function. Similar to above, you can supply `-IgnoreSession` here as well.
+
 ## Example Code
 
 This is the full code for the server above:

@@ -1,6 +1,5 @@
-function Start-PodeInternalServer
-{
-    param (
+function Start-PodeInternalServer {
+    param(
         [Parameter()]
         $Request,
 
@@ -8,8 +7,7 @@ function Start-PodeInternalServer
         $Browse
     )
 
-    try
-    {
+    try {
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
 
@@ -50,8 +48,7 @@ function Start-PodeInternalServer
         New-PodeRunspacePools
         Open-PodeRunspacePools
 
-        if (!$PodeContext.Server.IsServerless)
-        {
+        if (!$PodeContext.Server.IsServerless) {
             # start runspace for loggers
             Start-PodeLoggingRunspace
 
@@ -81,8 +78,7 @@ function Start-PodeInternalServer
 
         # - serverless
         elseif ($PodeContext.Server.IsServerless) {
-            switch ($PodeContext.Server.ServerlessType.ToUpperInvariant())
-            {
+            switch ($PodeContext.Server.ServerlessType.ToUpperInvariant()) {
                 'AZUREFUNCTIONS' {
                     Start-PodeAzFuncServer -Data $Request
                 }
@@ -97,8 +93,7 @@ function Start-PodeInternalServer
         else {
             # start each server type
             foreach ($_type in $PodeContext.Server.Types) {
-                switch ($_type.ToUpperInvariant())
-                {
+                switch ($_type.ToUpperInvariant()) {
                     'SMTP' {
                         $endpoints += (Start-PodeSmtpServer)
                     }
@@ -135,6 +130,9 @@ function Start-PodeInternalServer
         # set the start time of the server (start and after restart)
         $PodeContext.Metrics.Server.StartTime = [datetime]::UtcNow
 
+        # run running event hooks
+        Invoke-PodeEvent -Type Running
+
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
             Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
@@ -148,10 +146,8 @@ function Start-PodeInternalServer
     }
 }
 
-function Restart-PodeInternalServer
-{
-    try
-    {
+function Restart-PodeInternalServer {
+    try {
         # inform restart
         Write-PodeHost 'Restarting server...' -NoNewline -ForegroundColor Cyan
 
@@ -173,8 +169,11 @@ function Restart-PodeInternalServer
         # clear up timers, schedules and loggers
         $PodeContext.Server.Routes | Clear-PodeHashtableInnerKeys
         $PodeContext.Server.Handlers | Clear-PodeHashtableInnerKeys
-        $PodeContext.Server.Verbs | Clear-PodeHashtableInnerKeys
         $PodeContext.Server.Events | Clear-PodeHashtableInnerKeys
+
+        if ($null -ne $PodeContext.Server.Verbs) {
+            $PodeContext.Server.Verbs.Clear()
+        }
 
         $PodeContext.Server.Views.Clear()
         $PodeContext.Timers.Items.Clear()
@@ -226,18 +225,19 @@ function Restart-PodeInternalServer
 
         # set view engine back to default
         $PodeContext.Server.ViewEngine = @{
-            Type = 'html'
-            Extension = 'html'
-            ScriptBlock = $null
+            Type           = 'html'
+            Extension      = 'html'
+            ScriptBlock    = $null
             UsingVariables = $null
-            IsDynamic = $false
+            IsDynamic      = $false
         }
 
         # clear up cookie sessions
         $PodeContext.Server.Sessions.Clear()
 
         # clear up authentication methods
-        $PodeContext.Server.Authentications.Clear()
+        $PodeContext.Server.Authentications.Methods.Clear()
+        $PodeContext.Server.Authorisations.Methods.Clear()
 
         # clear up shared state
         $PodeContext.Server.State.Clear()
@@ -268,7 +268,8 @@ function Restart-PodeInternalServer
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
-        Write-PodeHost " Done" -ForegroundColor Green
+        # done message
+        Write-PodeHost ' Done' -ForegroundColor Green
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
@@ -280,8 +281,7 @@ function Restart-PodeInternalServer
     }
 }
 
-function Test-PodeServerKeepOpen
-{
+function Test-PodeServerKeepOpen {
     # if we have any timers/schedules/fim - keep open
     if ((Test-PodeTimersExist) -or (Test-PodeSchedulesExist) -or (Test-PodeFileWatchersExist)) {
         return $true
