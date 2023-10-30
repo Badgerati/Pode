@@ -2,7 +2,7 @@
 
 ## v2.9.0
 
-Date: TBC
+Date: 30th October 2023
 
 ```plain
 ### Features
