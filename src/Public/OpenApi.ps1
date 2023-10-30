@@ -230,6 +230,9 @@ Creates an OpenAPI Server property.
 .DESCRIPTION
 Creates an OpenAPI Server property.
 
+.LINK
+https://swagger.io/docs/specification/api-host-and-base-path/
+
 .PARAMETER Url
 Server or path to local server.
 
@@ -271,6 +274,12 @@ Gets the OpenAPI definition.
 
 .DESCRIPTION
 Gets the OpenAPI definition for custom use in routes, or other functions.
+
+.LINK
+https://swagger.io/docs/specification/
+
+.LINK
+https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md
 
 .PARAMETER Format
 Return the definition  in a specific format 'Json', 'Json-Compress', 'Yaml', 'HashTable'
@@ -600,6 +609,15 @@ Adds a reusable component for responses.
 .DESCRIPTION
 Adds a reusable component for responses.
 
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
+.LINK
+https://swagger.io/docs/specification/serialization/
+
 .PARAMETER Name
 The reference Name of the response.
 
@@ -678,6 +696,15 @@ Sets the definition of a request for a route.
 .DESCRIPTION
 Sets the definition of a request for a route.
 
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
+.LINK
+https://swagger.io/docs/specification/serialization/
+
 .PARAMETER Route
 The route to set a request definition, usually from -PassThru on Add-PodeRoute.
 
@@ -737,6 +764,18 @@ Creates a Request Body definition for routes.
 
 .DESCRIPTION
 Creates a Request Body definition for routes from the supplied content-types and schemas.
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
+.LINK
+https://swagger.io/docs/specification/serialization/
+
+.LINK
+https://swagger.io/docs/specification/describing-request-body/
 
 .PARAMETER Reference
 A reference name from an existing component request body.
@@ -809,10 +848,22 @@ function New-PodeOARequestBody {
 
 <#
 .SYNOPSIS
-Adds a reusable component for a request body.
+Adds a reusable component schema
 
 .DESCRIPTION
-Adds a reusable component for a request body.
+Adds a reusable component  schema.
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
+.LINK
+https://swagger.io/docs/specification/serialization/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
 
 .PARAMETER Name
 The reference Name of the schema.
@@ -851,10 +902,22 @@ function Add-PodeOAComponentSchema {
 
 <#
 .SYNOPSIS
-Adds a reusable component for a request body.
+Adds a reusable component for a Header schema.
 
 .DESCRIPTION
-Adds a reusable component for a request body.
+Adds a reusable component for a Header schema.
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
+.LINK
+https://swagger.io/docs/specification/serialization/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
 
 .PARAMETER Name
 The reference Name of the schema.
@@ -888,6 +951,12 @@ Validate a parameter with a provided schema.
 
 .DESCRIPTION
 Validate the parameter of a method against it's own schema
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
 
 .PARAMETER Json
 The object in Json format to validate
@@ -942,6 +1011,15 @@ Adds a reusable component for a request body.
 
 .DESCRIPTION
 Adds a reusable component for a request body.
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
+.LINK
+https://swagger.io/docs/specification/describing-request-body/
 
 .PARAMETER Name
 The reference Name of the request body.
@@ -1001,6 +1079,15 @@ Adds a reusable component for a request parameter.
 .DESCRIPTION
 Adds a reusable component for a request parameter.
 
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
+.LINK
+https://swagger.io/docs/specification/describing-parameters/
+
 .PARAMETER Name
 The reference Name of the parameter.
 
@@ -1038,6 +1125,12 @@ Creates a new OpenAPI integer property.
 
 .DESCRIPTION
 Creates a new OpenAPI integer property, for Schemas or Parameters.
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
 
 .PARAMETER ParamsList
 Used to pipeline multiple properties
@@ -1295,6 +1388,12 @@ Creates a new OpenAPI number property.
 .DESCRIPTION
 Creates a new OpenAPI number property, for Schemas or Parameters.
 
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
 .PARAMETER ParamsList
 Used to pipeline multiple properties
 
@@ -1550,6 +1649,12 @@ Creates a new OpenAPI string property.
 
 .DESCRIPTION
 Creates a new OpenAPI string property, for Schemas or Parameters.
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
 
 .PARAMETER ParamsList
 Used to pipeline multiple properties
@@ -1824,6 +1929,12 @@ Creates a new OpenAPI boolean property.
 .DESCRIPTION
 Creates a new OpenAPI boolean property, for Schemas or Parameters.
 
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
 .PARAMETER ParamsList
 Used to pipeline multiple properties
 
@@ -2034,6 +2145,12 @@ Creates a new OpenAPI object property from other properties.
 
 .DESCRIPTION
 Creates a new OpenAPI object property from other properties, for Schemas or Parameters.
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
 
 .PARAMETER ParamsList
 Used to pipeline multiple properties
@@ -2264,6 +2381,12 @@ Creates a new OpenAPI object combining schemas and properties.
 .DESCRIPTION
 Creates a new OpenAPI object combining schemas and properties.
 
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
 .PARAMETER ParamsList
 Used to pipeline an object definition
 
@@ -2363,6 +2486,12 @@ Creates a OpenAPI schema reference property.
 
 .DESCRIPTION
 Creates a new OpenAPI component schema reference from another OpenAPI schema.
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
 
 .PARAMETER ParamsList
 Used to pipeline multiple properties
@@ -2592,6 +2721,12 @@ Converts an OpenAPI property into a Request Parameter.
 
 .DESCRIPTION
 Converts an OpenAPI property (such as from New-PodeOAIntProperty) into a Request Parameter.
+
+.LINK
+https://swagger.io/docs/specification/describing-parameters/
+
+.LINK
+https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#parameterObject
 
 .PARAMETER In
 Where in the Request can the parameter be found?
@@ -2828,6 +2963,9 @@ Sets metadate for the supplied route.
 .DESCRIPTION
 Sets metadate for the supplied route, such as Summary and Tags.
 
+.LINK
+https://swagger.io/docs/specification/paths-and-operations/
+
 .PARAMETER Route
 The route to update info, usually from -PassThru on Add-PodeRoute.
 
@@ -2913,6 +3051,24 @@ Adds a route that enables a viewer to display OpenAPI docs, such as Swagger, ReD
 
 .DESCRIPTION
 Adds a route that enables a viewer to display OpenAPI docs, such as Swagger, ReDoc, RapiDoc, StopLight, Explorer, RapiPdf  or Bookmarks.
+
+.LINK
+https://github.com/mrin9/RapiPdf
+
+.LINK
+https://github.com/Authress-Engineering/openapi-explorer
+
+.LINK
+https://github.com/stoplightio/elements
+
+.LINK
+https://github.com/rapi-doc/RapiDoc
+
+.LINK
+https://github.com/Redocly/redoc
+
+.LINK
+https://github.com/swagger-api/swagger-ui
 
 .PARAMETER Type
 The Type of OpenAPI viewer to use.
@@ -3044,6 +3200,12 @@ Define an external docs reference.
 .DESCRIPTION
 Define an external docs reference.
 
+.LINK
+https://swagger.io/docs/specification/grouping-operations-with-tags/
+
+.LINK
+https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externalDocumentationObject
+
 .PARAMETER Name
 The Name of the reference.
 
@@ -3093,6 +3255,12 @@ Add an external docs reference to the OpenApi document.
 
 .DESCRIPTION
 Add an external docs reference to the OpenApi document.
+
+.LINK
+https://swagger.io/docs/specification/api-general-info/
+
+.LINK
+https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externalDocumentationObject
 
 .PARAMETER Reference
 The Name assigned to a previoulsy created External Doc reference (created by New-PodeOAExternalDoc)
@@ -3156,6 +3324,12 @@ Creates a OpenAPI Tag reference property.
 .DESCRIPTION
 Creates a new OpenAPI tag reference.
 
+.LINK
+https://swagger.io/docs/specification/grouping-operations-with-tags/
+
+.LINK
+https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#tagObject
+
 .PARAMETER Name
 The Name of the tag.
 
@@ -3211,6 +3385,12 @@ Creates an OpenAPI non-essential metadata.
 .DESCRIPTION
 Creates an OpenAPI non-essential metadata like TermOfService, license and so on.
 The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.
+
+.LINK
+https://swagger.io/docs/specification/api-general-info/
+
+.LINK
+https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#infoObject
 
 .PARAMETER TermsOfService
 A URL to the Terms of Service for the API. MUST be in the format of a URL.
