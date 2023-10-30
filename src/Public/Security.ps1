@@ -110,11 +110,8 @@ The Name of the security header.
 .PARAMETER Value
 The Value of the security header.
 
-.PARAMETER Add
-Add the value to the header instead of replacing it
-
-.PARAMETER Casing
-If specified upper or lower case the header value.
+.PARAMETER Append
+Append the value to the header instead of replacing it
 
 .EXAMPLE
 Add-PodeSecurityHeader -Name 'X-Header-Name' -Value 'SomeValue'
@@ -132,36 +129,24 @@ function Add-PodeSecurityHeader {
 
         [Parameter()]
         [switch]
-        $Add,
-
-        [Parameter()]
-        [ValidateSet('Upper', 'Lower')]
-        [string]
-        $Casing
+        $Append
     )
 
     if (![string]::IsNullOrWhiteSpace($Value)) {
-        if ($add -and $PodeContext.Server.Security.Headers.ContainsKey($Name)) {
+        if ($Append -and $PodeContext.Server.Security.Headers.ContainsKey($Name)) {
             $Headers = $PodeContext.Server.Security.Headers[$Name].split(',')
-            if ($Headers -contains $Value) {
-                return
-            } else {
+            if ($Headers -inotcontains $Value) {
                 $Headers += $Value
                 $PodeContext.Server.Security.Headers[$Name] = (($Headers.trim() | Select-Object -Unique) -join ', ')
+            } else {
+                $return
             }
         } else {
             $PodeContext.Server.Security.Headers[$Name] = $Value
         }
-
-        if ($Casing) {
-            if ($Casing -ieq 'Upper') {
-                $PodeContext.Server.Security.Headers[$Name] = $PodeContext.Server.Security.Headers[$Name].ToUpperInvariant()
-            } elseif ($Casing -ieq 'Lower') {
-                $PodeContext.Server.Security.Headers[$Name] = $PodeContext.Server.Security.Headers[$Name].ToLowerInvariant()
-            }
-        }
     }
 }
+
 <#
 .SYNOPSIS
 Removes definition for specified security header.
@@ -1398,10 +1383,11 @@ Automatically populate the list of allowed Methods based on the defined Routes.
 This parameter can works in conjuntion with the parameter Methods, if Methods is not including '*'
 
 .PARAMETER CrossDomainXhrRequests
-Add 'x-requested-with' and 'crossdomain' to the list of allowed headers
+Add 'x-requested-with' to the list of allowed headers
 More info available here:
 https://fetch.spec.whatwg.org/
 https://learn.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-7.0#credentials-in-cross-origin-requests
+https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 
 .EXAMPLE
 Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
@@ -1453,7 +1439,7 @@ function Set-PodeSecurityAccessControl {
         if ($Methods -icontains '*') {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value '*'
         } else {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value ($Methods -join ', ') -Casing Upper
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value ($Methods -join ', ')
         }
     }
 
@@ -1475,15 +1461,13 @@ function Set-PodeSecurityAccessControl {
             $Headers += 'Authorization'
         }
 
-        if ($CrossDomainXhrRequests){
+        if ($CrossDomainXhrRequests) {
             if ([string]::IsNullOrWhiteSpace($Headers)) {
                 $Headers = @()
             }
-
-            $Headers += 'crossdomain'
             $Headers += 'x-requested-with'
         }
-        Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value (($Headers | Select-Object -Unique) -join ', ') -Casing Lower
+        Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value (($Headers | Select-Object -Unique) -join ', ')
     }
 
     if ($AutoHeaders) {
@@ -1491,8 +1475,8 @@ function Set-PodeSecurityAccessControl {
             throw 'The * wildcard for Headers, is not comptatibile with the AutoHeaders switch'
         }
 
-        Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value 'content-type' -Add -Casing Lower
-        $PodeContext.Server.OpenAPI.hiddenComponents.autoHeaders = $true
+        Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value 'content-type' -Append
+        $PodeContext.Server.Security.autoHeaders = $true
     }
 
     if ($AutoMethods) {
@@ -1500,9 +1484,9 @@ function Set-PodeSecurityAccessControl {
             throw 'The * wildcard for Methods, is not comptatibile with the AutoMethods switch'
         }
         if ($WithOptions) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value 'OPTIONS' -add
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value 'Options' -Append
         }
-        $PodeContext.Server.OpenAPI.hiddenComponents.autoMethods = $true
+        $PodeContext.Server.Security.autoMethods = $true
     }
 
     # duration

@@ -2689,9 +2689,8 @@ function ConvertTo-PodeOAParameter {
             if ($Property.description ) {
                 $prop.description = $Property.description
             }
-            if ($In -ieq 'Header' -and $PodeContext.Server.OpenAPI.hiddenComponents.autoHeaders) {
-                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ContentSchemas[$type] -Add -Casing Lower
-                #Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $type -Add -Casing Lower
+            if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ContentSchemas[$type] -Append
             }
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
@@ -2703,16 +2702,16 @@ function ConvertTo-PodeOAParameter {
         $prop = @{
             '$ref' = "#/components/parameters/$($ComponentParameter)"
         }
-        if ($PodeContext.Server.OpenAPI.components.parameters.$Name.In -eq 'Header' -and $PodeContext.Server.OpenAPI.hiddenComponents.autoHeaders) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Add -Casing Lower
+        if ($PodeContext.Server.OpenAPI.components.parameters.$Name.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Append
         }
     } else {
         # non-object/array only
         if (@('array', 'object') -icontains $Property.type) {
             throw 'OpenApi request parameter cannot be an array of object'
         }
-        if ($In -ieq 'Header' -and $PodeContext.Server.OpenAPI.hiddenComponents.autoHeaders -and $Property.name) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Property.name -Add -Casing Lower
+        if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders -and $Property.name) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Property.name -Append
         }
         # build the base parameter
         $prop = @{
