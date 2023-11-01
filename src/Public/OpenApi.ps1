@@ -2002,19 +2002,19 @@ function New-PodeOABoolProperty {
         $Name,
 
         [Parameter()]
-        [bool]
-        $Default = $false,
+        [string]
+        $Default = 'false',
 
         [Parameter()]
         [string]
         $Description,
 
         [Parameter()]
-        [bool]
+        [string]
         $Example,
 
         [Parameter()]
-        [bool[]]
+        [string[]]
         $Enum,
 
         [Parameter()]
@@ -2104,7 +2104,11 @@ function New-PodeOABoolProperty {
         }
 
         if ($Default) {
-            $param.default = $Default
+            if ([bool]::TryParse($Default, [ref]$null) -or $Enum -icontains $Default) {
+                $param.default = $Default
+            } else {
+                throw "The default value is not a boolean and it's not part of the enum"
+            }
         }
 
         if ($MaxItems) {
@@ -2166,6 +2170,9 @@ A Description of the property.
 
 .PARAMETER Example
 An example of a parameter value
+
+.PARAMETER XmlName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
 
 .PARAMETER Deprecated
 If supplied, the object will be treated as Deprecated where supported.
@@ -2232,6 +2239,10 @@ function New-PodeOAObjectProperty {
         [Parameter()]
         [String]
         $Example,
+
+        [Parameter()]
+        [string]
+        $XmlName,
 
         [switch]
         $Deprecated,
@@ -2345,6 +2356,10 @@ function New-PodeOAObjectProperty {
             $param.maxProperties = $MaxProperties
         }
 
+        if ($XmlName) {
+            $param.xmlName = $XmlName
+        }
+
         if ($Xml) {
             $param.xml = $Xml
         }
@@ -2454,13 +2469,16 @@ function Merge-PodeOAProperty {
         if ($ObjectDefinitions) {
             foreach ($schema in $ObjectDefinitions) {
                 if ($schema -is [System.Object[]] -or ($schema -is [hashtable] -and $schema.type -ine 'object')) {
-                    throw "Only properties of type Object can be associated with $type"
+                    throw "Only properties of type Object can be associated with $($param.type)"
                 }
                 $param.schemas += $schema
             }
         }
 
         if ($Discriminator ) {
+            if ($type.ToLower() -eq 'allof' ) {
+                throw 'Discriminator parameter is not compatible with allOf'
+            }
             $param.discriminator = $Discriminator
         }
 
@@ -2695,6 +2713,8 @@ function New-PodeOASchemaProperty {
             if ($Xml) {
                 $param.xml = $Xml
             }
+        } elseif ($Description) {
+            Write-PodeHost "New-PodeOASchemaProperty $ComponentSchema - Description can only be applied to an array"
         }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
@@ -3289,10 +3309,6 @@ function Add-PodeOAExternalDoc {
         $Reference,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'NewRef')]
-        [string]
-        $Name,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'NewRef')]
         [ValidateScript({ $_ -imatch '^https?://.+' })]
         $Url,
 
@@ -3300,22 +3316,20 @@ function Add-PodeOAExternalDoc {
         [string]
         $Description
     )
-
-    if ($Reference) {
+    if ($PSCmdlet.ParameterSetName -ieq 'NewRef') {
+        $param = @{url = $Url }
+        if ($Description) {
+            $param.description = $Description
+        }
+        $PodeContext.Server.OpenAPI.externalDocs = $param
+    } else {
         if ( !(Test-PodeOAExternalDoc -Name $Reference)) {
             throw "The ExternalDoc doesn't exist: $Reference"
         }
         $PodeContext.Server.OpenAPI.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Reference]
-    } else {
-        $param = @{}
-        if ($Description) {
-            $param.description = $Description
-        }
-        $param['url'] = $Url
-        $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Name] = $param
-        $PodeContext.Server.OpenAPI.externalDocs = $param
     }
 }
+
 
 <#
 .SYNOPSIS
