@@ -2153,10 +2153,44 @@ Describe 'New-PodeOAObjectProperty' {
             $result.OpenApi.deprecated | Should -Be  $null
         }
     }
-    Context 'ConvertTo-PodeOAParameter' {
 
-        BeforeEach {   }
-    Context 'ConvertTo-PodeOAParameter - Path'{
+    Context 'Add-PodeOAComponentParameter' {
+        it 'default' {
+            Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required)
+            $result = $PodeContext.Server.OpenAPI.components.parameters['PetIdParam']
+            $result | Should -Not -Be $null
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 6
+            $result.meta | Should -BeOfType [hashtable]
+            $result.meta.Count | Should -Be 0
+            $result.name | Should -Be 'petId'
+            $result.description | Should -Be 'ID of the pet'
+            $result.type | Should -Be 'integer'
+            $result.format | Should -Be 'int64'
+            $result.required | Should -BeTrue
+        }
+        it 'From Pipeline' {
+            New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required| Add-PodeOAComponentParameter -Name 'PetIdParam'
+            $result = $PodeContext.Server.OpenAPI.components.parameters['PetIdParam']
+            $result | Should -Not -Be $null
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 6
+            $result.meta | Should -BeOfType [hashtable]
+            $result.meta.Count | Should -Be 0
+            $result.name | Should -Be 'petId'
+            $result.description | Should -Be 'ID of the pet'
+            $result.type | Should -Be 'integer'
+            $result.format | Should -Be 'int64'
+            $result.required | Should -BeTrue
+        }
+        it 'throw error' {
+            {
+            Add-PodeOAComponentParameter   -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' | New-PodeOAObjectProperty )}|
+            Should -Throw -ExpectedMessage 'The Parameter has no name. Please provide a name to this component using -Name property'
+        }
+    }
+
+    Context 'ConvertTo-PodeOAParameter - Path' {
 
         It 'Path - Properties - No switches' {
             $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Path
@@ -2199,6 +2233,137 @@ Describe 'New-PodeOAObjectProperty' {
             $result.schema.items.type | Should -Be 'integer'
             $result.schema.items.format | Should -Be 'int64'
         }
+
+        It 'Path - -ComponentParameter - No switches' {
+            Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Path )
+            $result = ConvertTo-PodeOAParameter -ComponentParameter 'PetIdParam'
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 1
+            $result['$ref'] | Should -Be '#/components/parameters/PetIdParam'
+        }
+
+        It 'Path - ContentSchemas - No switches' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat'
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 5
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'path'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeTrue
+            $result.allowEmptyValue | Should -BeFalse
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+
+        It 'Path - ContentSchemas - Required' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat' -Required
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 5
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'path'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeTrue
+            $result.allowEmptyValue | Should -BeFalse
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+
+        It 'Path - ContentSchemas - AllowEmptyValue' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat' -AllowEmptyValue
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 6
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'path'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeTrue
+            $result.allowEmptyValue | Should -BeTrue
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+    }
+
+
+    Context 'ConvertTo-PodeOAParameter - Header' {
+
+        It 'Header - Properties - No switches' {
+            $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Header
+            $result | Should -Not -Be $null
+            $result | Should -BeOfType [hashtable]
+            $result.name | Should -Be 'petId'
+            $result.description | Should -Be 'ID of the pet'
+            $result.in | Should -Be 'header'
+            $result.explode | Should -BeFalse
+            $result.allowEmptyValue | Should -BeFalse
+            $result.deprecated | Should -BeFalse
+            $result.style | Should -BeNullOrEmpty
+            $result.required | Should -BeTrue
+            $result.schema | Should -BeOfType [hashtable]
+            $result.schema.Count | Should -Be 2
+            $result.schema.type | Should -Be 'array'
+            $result.schema.items | Should -BeOfType [hashtable]
+            $result.schema.items.Count | Should -Be 2
+            $result.schema.items.type | Should -Be 'integer'
+            $result.schema.items.format | Should -Be 'int64'
+        }
+
+        It 'Header - Properties - Explode' {
+            $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Header -Explode
+            $result | Should -Not -Be $null
+            $result | Should -BeOfType [hashtable]
+            $result.name | Should -Be 'petId'
+            $result.description | Should -Be 'ID of the pet'
+            $result.in | Should -Be 'header'
+            $result.required | Should -BeTrue
+            $result.explode | Should -BeTrue
+            $result.allowEmptyValue | Should -BeFalse
+            $result.deprecated | Should -BeFalse
+            $result.style | Should -BeNullOrEmpty
+            $result.schema | Should -BeOfType [hashtable]
+            $result.schema.Count | Should -Be 2
+            $result.schema.type | Should -Be 'array'
+            $result.schema.items | Should -BeOfType [hashtable]
+            $result.schema.items.Count | Should -Be 2
+            $result.schema.items.type | Should -Be 'integer'
+            $result.schema.items.format | Should -Be 'int64'
+        }
+
         It 'Header - Properties - No switches' {
             $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Header
             $result | Should -Not -Be $null
@@ -2207,6 +2372,136 @@ Describe 'New-PodeOAObjectProperty' {
             $result.description | Should -Be 'ID of the pet'
             $result.in | Should -Be 'header'
             $result.required | Should -BeTrue
+            $result.schema | Should -BeOfType [hashtable]
+            $result.schema.Count | Should -Be 2
+            $result.schema.type | Should -Be 'array'
+            $result.schema.items | Should -BeOfType [hashtable]
+            $result.schema.items.Count | Should -Be 2
+            $result.schema.items.type | Should -Be 'integer'
+            $result.schema.items.format | Should -Be 'int64'
+        }
+
+        It 'Header - -ComponentParameter - No switches' {
+            Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Header )
+            $result = ConvertTo-PodeOAParameter -ComponentParameter 'PetIdParam'
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 1
+            $result['$ref'] | Should -Be '#/components/parameters/PetIdParam'
+        }
+
+        It 'Header - ContentSchemas - No switches' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat'
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 4
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'header'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeFalse
+            $result.allowEmptyValue | Should -BeFalse
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+
+        It 'Header - ContentSchemas - Required' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat' -Required
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 5
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'header'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeTrue
+            $result.allowEmptyValue | Should -BeFalse
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+
+        It 'Header - ContentSchemas - AllowEmptyValue' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat' -AllowEmptyValue
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 5
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'header'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeFalse
+            $result.allowEmptyValue | Should -BeTrue
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+    }
+
+
+    Context 'ConvertTo-PodeOAParameter - Cookie' {
+
+        It 'Cookie - Properties - No switches' {
+            $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Cookie
+            $result | Should -Not -Be $null
+            $result | Should -BeOfType [hashtable]
+            $result.name | Should -Be 'petId'
+            $result.description | Should -Be 'ID of the pet'
+            $result.in | Should -Be 'cookie'
+            $result.explode | Should -BeFalse
+            $result.allowEmptyValue | Should -BeFalse
+            $result.deprecated | Should -BeFalse
+            $result.style | Should -BeNullOrEmpty
+            $result.required | Should -BeTrue
+            $result.schema | Should -BeOfType [hashtable]
+            $result.schema.Count | Should -Be 2
+            $result.schema.type | Should -Be 'array'
+            $result.schema.items | Should -BeOfType [hashtable]
+            $result.schema.items.Count | Should -Be 2
+            $result.schema.items.type | Should -Be 'integer'
+            $result.schema.items.format | Should -Be 'int64'
+        }
+
+        It 'Cookie - Properties - Explode' {
+            $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Cookie -Explode
+            $result | Should -Not -Be $null
+            $result | Should -BeOfType [hashtable]
+            $result.name | Should -Be 'petId'
+            $result.description | Should -Be 'ID of the pet'
+            $result.in | Should -Be 'cookie'
+            $result.required | Should -BeTrue
+            $result.explode | Should -BeTrue
+            $result.allowEmptyValue | Should -BeFalse
+            $result.deprecated | Should -BeFalse
+            $result.style | Should -BeNullOrEmpty
             $result.schema | Should -BeOfType [hashtable]
             $result.schema.Count | Should -Be 2
             $result.schema.type | Should -Be 'array'
@@ -2231,6 +2526,137 @@ Describe 'New-PodeOAObjectProperty' {
             $result.schema.items.type | Should -Be 'integer'
             $result.schema.items.format | Should -Be 'int64'
         }
+
+        It 'Cookie - -ComponentParameter - No switches' {
+            Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Cookie )
+            $result = ConvertTo-PodeOAParameter -ComponentParameter 'PetIdParam'
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 1
+            $result['$ref'] | Should -Be '#/components/parameters/PetIdParam'
+        }
+
+        It 'Cookie - ContentSchemas - No switches' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat'
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 4
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'cookie'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeFalse
+            $result.allowEmptyValue | Should -BeFalse
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+
+        It 'Cookie - ContentSchemas - Required' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat' -Required
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 5
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'cookie'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeTrue
+            $result.allowEmptyValue | Should -BeFalse
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+
+        It 'Cookie - ContentSchemas - AllowEmptyValue' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat' -AllowEmptyValue
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 5
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'cookie'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeFalse
+            $result.allowEmptyValue | Should -BeTrue
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+    }
+
+
+    Context 'ConvertTo-PodeOAParameter - Query' {
+
+        It 'Query - Properties - No switches' {
+            $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Query
+            $result | Should -Not -Be $null
+            $result | Should -BeOfType [hashtable]
+            $result.name | Should -Be 'petId'
+            $result.description | Should -Be 'ID of the pet'
+            $result.in | Should -Be 'query'
+            $result.explode | Should -BeFalse
+            $result.allowEmptyValue | Should -BeFalse
+            $result.deprecated | Should -BeFalse
+            $result.style | Should -BeNullOrEmpty
+            $result.required | Should -BeTrue
+            $result.schema | Should -BeOfType [hashtable]
+            $result.schema.Count | Should -Be 2
+            $result.schema.type | Should -Be 'array'
+            $result.schema.items | Should -BeOfType [hashtable]
+            $result.schema.items.Count | Should -Be 2
+            $result.schema.items.type | Should -Be 'integer'
+            $result.schema.items.format | Should -Be 'int64'
+        }
+
+        It 'Query - Properties - Explode' {
+            $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Query -Explode
+            $result | Should -Not -Be $null
+            $result | Should -BeOfType [hashtable]
+            $result.name | Should -Be 'petId'
+            $result.description | Should -Be 'ID of the pet'
+            $result.in | Should -Be 'query'
+            $result.required | Should -BeTrue
+            $result.explode | Should -BeTrue
+            $result.allowEmptyValue | Should -BeFalse
+            $result.deprecated | Should -BeFalse
+            $result.style | Should -BeNullOrEmpty
+            $result.schema | Should -BeOfType [hashtable]
+            $result.schema.Count | Should -Be 2
+            $result.schema.type | Should -Be 'array'
+            $result.schema.items | Should -BeOfType [hashtable]
+            $result.schema.items.Count | Should -Be 2
+            $result.schema.items.type | Should -Be 'integer'
+            $result.schema.items.format | Should -Be 'int64'
+        }
+
         It 'Query - Properties - No switches' {
             $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Query
             $result | Should -Not -Be $null
@@ -2248,89 +2674,88 @@ Describe 'New-PodeOAObjectProperty' {
             $result.schema.items.format | Should -Be 'int64'
         }
 
-        It 'Path - -ComponentParameter - No switches' {
-            Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Path )
+        It 'Query - -ComponentParameter - No switches' {
+            Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Query )
             $result = ConvertTo-PodeOAParameter -ComponentParameter 'PetIdParam'
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [hashtable]
             $result.Count | Should -Be 1
-            $result['$ref']|Should -Be '#/components/parameters/PetIdParam'
+            $result['$ref'] | Should -Be '#/components/parameters/PetIdParam'
         }
 
-        It 'Path - ContentSchemas - No switches' {
+        It 'Query - ContentSchemas - No switches' {
             Add-PodeOAComponentSchema -Name 'Cat' -Schema (
                 New-PodeOAObjectProperty  -Properties  @(
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                 ))
-            $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat'
+            $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat'
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 4
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'query'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeFalse
+            $result.allowEmptyValue | Should -BeFalse
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
+
+        It 'Query - ContentSchemas - Required' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat' -Required
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [hashtable]
             $result.Count | Should -Be 5
             $result.name | Should -Be 'Cat'
-            $result.in | Should -Be 'path'
-            $result.description | Should -Be 'Feline description'
-            $result.required | Should -Betrue
-            $result.content|  Should -Not -BeNullOrEmpty
-            $result.content|  Should -BeOfType [hashtable]
-            $result.content.Count | Should -Be 1
-            $result.content.'application/json' |Should -BeOfType [hashtable]
-            $result.content.'application/json'.Count |Should -Be 1
-            $result.content.'application/json'.schema |Should -BeOfType [hashtable]
-            $result.content.'application/json'.schema.Count |Should -Be 1
-            $result.content.'application/json'.schema['$ref'] |Should -Be '#/components/schemas/Cat'
-        }
-    }
-        It 'Header - ContentSchemas - No switches' {
-            $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Header
-            $result | Should -Not -Be $null
-            $result | Should -BeOfType [hashtable]
-            $result.name | Should -Be 'petId'
-            $result.description | Should -Be 'ID of the pet'
-            $result.in | Should -Be 'header'
-            $result.required | Should -BeTrue
-            $result.schema | Should -BeOfType [hashtable]
-            $result.schema.Count | Should -Be 2
-            $result.schema.type | Should -Be 'array'
-            $result.schema.items | Should -BeOfType [hashtable]
-            $result.schema.items.Count | Should -Be 2
-            $result.schema.items.type | Should -Be 'integer'
-            $result.schema.items.format | Should -Be 'int64'
-        }
-        It 'Cookie - ContentSchemas - No switches' {
-            $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Cookie
-            $result | Should -Not -Be $null
-            $result | Should -BeOfType [hashtable]
-            $result.name | Should -Be 'petId'
-            $result.description | Should -Be 'ID of the pet'
-            $result.in | Should -Be 'cookie'
-            $result.required | Should -BeTrue
-            $result.schema | Should -BeOfType [hashtable]
-            $result.schema.Count | Should -Be 2
-            $result.schema.type | Should -Be 'array'
-            $result.schema.items | Should -BeOfType [hashtable]
-            $result.schema.items.Count | Should -Be 2
-            $result.schema.items.type | Should -Be 'integer'
-            $result.schema.items.format | Should -Be 'int64'
-        }
-        It 'Query - ContentSchemas - No switches' {
-            $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Query
-            $result | Should -Not -Be $null
-            $result | Should -BeOfType [hashtable]
-            $result.name | Should -Be 'petId'
-            $result.description | Should -Be 'ID of the pet'
             $result.in | Should -Be 'query'
+            $result.description | Should -Be 'Feline description'
             $result.required | Should -BeTrue
-            $result.schema | Should -BeOfType [hashtable]
-            $result.schema.Count | Should -Be 2
-            $result.schema.type | Should -Be 'array'
-            $result.schema.items | Should -BeOfType [hashtable]
-            $result.schema.items.Count | Should -Be 2
-            $result.schema.items.type | Should -Be 'integer'
-            $result.schema.items.format | Should -Be 'int64'
+            $result.allowEmptyValue | Should -BeFalse
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
         }
 
+        It 'Query - ContentSchemas - AllowEmptyValue' {
+            Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                New-PodeOAObjectProperty  -Properties  @(
+                    (New-PodeOABoolProperty -Name 'friendly'),
+                        (New-PodeOAStringProperty -Name 'name')
+                ))
+            $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -ContentSchemas  'Cat' -AllowEmptyValue
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [hashtable]
+            $result.Count | Should -Be 5
+            $result.name | Should -Be 'Cat'
+            $result.in | Should -Be 'query'
+            $result.description | Should -Be 'Feline description'
+            $result.required | Should -BeFalse
+            $result.allowEmptyValue | Should -BeTrue
+            $result.content | Should -Not -BeNullOrEmpty
+            $result.content | Should -BeOfType [hashtable]
+            $result.content.Count | Should -Be 1
+            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json'.Count | Should -Be 1
+            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema.Count | Should -Be 1
+            $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+        }
     }
-
-
 }

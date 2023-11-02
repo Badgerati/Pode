@@ -2769,6 +2769,9 @@ A Description of the property.
 .PARAMETER Explode
 If supplied, controls how arrays are serialized in query parameters
 
+.PARAMETER Required
+If supplied, the object will be treated as Required where supported.(Applicable only to ContentSchema)
+
 .PARAMETER AllowEmptyValue
 If supplied, allow the parameter to be empty
 
@@ -2820,6 +2823,11 @@ function ConvertTo-PodeOAParameter {
         [Switch]
         $Explode,
 
+        [Parameter( ParameterSetName = 'ContentSchemas')]
+        [Switch]
+        $Required,
+
+        [Parameter( ParameterSetName = 'ContentSchemas')]
         [Parameter( ParameterSetName = 'Properties')]
         [Switch]
         $AllowEmptyValue,
@@ -2856,6 +2864,9 @@ function ConvertTo-PodeOAParameter {
         if ($Description ) {
             $prop.description = $Description
         }
+        if ($Required.IsPresent ) {
+            $prop['required'] = $Required.ToBool()
+        }
         if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ContentSchemas  -Append
         }
@@ -2887,6 +2898,7 @@ function ConvertTo-PodeOAParameter {
         if ($Property.description ) {
             $prop.description = $Property.description
         }
+
 
         if ($Property.Array) {
             $prop.schema = @{
