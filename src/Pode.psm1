@@ -33,7 +33,11 @@ Get-ChildItem "$($root)/Public/*.ps1" | ForEach-Object { . ([System.IO.Path]::Ge
 # get functions from memory and compare to existing to find new functions added
 $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
 $aliases = Get-ChildItem Alias: | Where-Object { $sysaliases -notcontains $_ }
-
-
 # export the module's public functions
-Export-ModuleMember -Function ($funcs.Name) -Alias $aliases.Name
+if($funcs){
+    if ($aliases){
+        Export-ModuleMember -Function ($funcs.Name) -Alias $aliases.Name
+    }else{
+        Export-ModuleMember -Function ($funcs.Name)
+    }
+}

@@ -300,9 +300,9 @@ An optional route filter for routes that should be included in the definition. (
 If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
 
 .EXAMPLE
-$defInJson = Get-PodeOpenApiDefinition -Json
+$defInJson = Get-PodeOADefinition -Json
 #>
-function Get-PodeOpenApiDefinition {
+function Get-PodeOADefinition {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -2468,7 +2468,8 @@ function Merge-PodeOAProperty {
         $param.schemas = @()
         if ($ObjectDefinitions) {
             foreach ($schema in $ObjectDefinitions) {
-                if ($schema -is [System.Object[]] -or ($schema -is [hashtable] -and $schema.type -ine 'object')) {
+                if ($schema -is [System.Object[]] -or ($schema -is [hashtable] -and
+                (($schema.type -ine 'object') -and !$schema.object))) {
                     throw "Only properties of type Object can be associated with $($param.type)"
                 }
                 $param.schemas += $schema
@@ -2715,7 +2716,7 @@ function New-PodeOASchemaProperty {
             }
         } elseif ($Description) {
             $ex = [System.Exception]::new("New-PodeOASchemaProperty $ComponentSchema - Description can only be applied to an array")
-            $ex | Write-PodeErrorLog -Level Warning 
+            $ex | Write-PodeErrorLog -Level Warning
         }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
@@ -3518,6 +3519,11 @@ function Add-PodeOAInfo {
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
     New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer
 }
+
 if (!(Test-Path Alias:Enable-PodeOA)) {
     New-Alias Enable-PodeOA -Value Enable-PodeOpenApi
+}
+
+if (!(Test-Path Alias:Get-PodeOpenApiDefinition)) {
+    New-Alias Get-PodeOpenApiDefinition -Value Get-PodeOADefinition
 }

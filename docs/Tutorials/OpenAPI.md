@@ -35,7 +35,7 @@ When you enable OpenAPI, and don't set any other OpenAPI data, the following is 
 
 ### Get Definition
 
-Instead of defining a route to return the definition, you can write the definition to the response whenever you want, and in any route, using the [`Get-PodeOpenApiDefinition`](../../Functions/OpenApi/Get-PodeOpenApiDefinition) function. This could be useful in certain scenarios like in Azure Functions, where you can enable OpenAPI, and then write the definition to the response of a GET request if some query parameter is set; eg: `?openapi=1`.
+Instead of defining a route to return the definition, you can write the definition to the response whenever you want, and in any route, using the [`Get-PodeOADefinition`](../../Functions/OpenApi/Get-PodeOADefinition) function. This could be useful in certain scenarios like in Azure Functions, where you can enable OpenAPI, and then write the definition to the response of a GET request if some query parameter is set; eg: `?openapi=1`.
 
 For example:
 
@@ -47,6 +47,28 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 }
 ```
 
+## Typical OpenAPI configuration
+Pode is rich of functions to create and configure an OpenApi spec. Here is a typical code you should use to initiate an OpenApi spec
+
+```powershell 
+#Initialize OpenApi
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification. ...'    -DisableMinimalDefinitions
+# Additional OpenApi Info
+Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
+# Endpoint for the API
+Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
+# OpenApi external documentation links
+New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
+# OpenApi documentation viewer
+Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
+Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc'
+Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc'
+Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight'
+Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer'
+Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf'
+Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
+```
 ## Authentication
 
 Any authentication defined, either by [`Add-PodeAuthMiddleware`](../../Functions/Authentication/Add-PodeAuthMiddleware), or using the `-Authentication` parameter on Routes, will be automatically added to the `security` section of the OpenAPI definition.
@@ -149,7 +171,7 @@ Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
         (New-PodeOAStringProperty -Name 'city' -Required | ConvertTo-PodeOAParameter -In Query)
     )
 ```
-or if you prefer to use the pipeline 
+or if you prefer to use the pipeline
 ```powershell
 Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
     Write-PodeJsonResponse -Value @{
@@ -158,7 +180,7 @@ Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
     }
 } -PassThru | New-PodeOAStringProperty -Name 'name' -Required | ConvertTo-PodeOAParameter -In Query |
                 New-PodeOAStringProperty -Name 'city' -Required | ConvertTo-PodeOAParameter -In Query |
-                Set-PodeOARequest 
+                Set-PodeOARequest
 ```
 
 #### Payload
@@ -500,27 +522,139 @@ As JSON, this could look as follows:
 }
 ```
 
-### oneOf,anyOf and allOf Keywords 
+### oneOf,anyOf and allOf Keywords
 
 OpenAPI 3.x provides several keywords which you can use to combine schemas. You can use these keywords to create a complex schema or validate a value against multiple criteria.
 - oneOf – validates the value against exactly one of the subschemas
 - allOf – validates the value against all the subschemas
 - anyOf – validates the value against any (one or more) of the subschemas
 
-You can use the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/Merge-PodeOAProperty)` function to merge multiple properties.
+You can use the [`Merge-PodeOAProperty`](../../Functions/OpenApi/Merge-PodeOAProperty)` function to merge multiple properties.
 
-## Swagger and ReDoc
+
+
+Unlike the  [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function that combine and convert multiple properties [`Merge-PodeOAProperty`](../../Functions/OpenApi/Merge-PodeOAProperty)` can define a relation between the properties
+
+For example, the following will create an something like an C Union object using an Integer, String, and a Boolean:
+
+```powershell
+Merge-PodeOAProperty -Type OneOf -ObjectDefinitions @(
+            (New-PodeOAIntProperty -Name 'userId' -Object),
+            (New-PodeOAStringProperty -Name 'name' -Object),
+            (New-PodeOABoolProperty -Name 'enabled' -Object)
+        )
+```
+Or
+```powershell
+New-PodeOAIntProperty -Name 'userId' -Object |
+        New-PodeOAStringProperty -Name 'name' -Object |
+        New-PodeOABoolProperty -Name 'enabled' -Object |
+        Merge-PodeOAProperty -Type OneOf
+```
+
+As JSON, this could look as follows:
+
+```json
+{
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  ]
+}
+```
+You can also suply Component Schema created using Add-PodeOAComponentSchema [`Add-PodeOAComponentSchema`](../../Functions/OpenApi/Add-PodeOAComponentSchema) For example, if we took the above:
+
+```powershell
+    Add-PodeOAComponentSchema -Name 'User' -Schema (
+        New-PodeOAObjectProperty -Name 'User' -Xml @{'name' = 'user' } -Properties  (
+            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 -ReadOnly |
+                New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
+                New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
+                New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+                New-PodeOAStringProperty -Name 'email' -Format email -Example 'john@email.com' |
+                New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+                New-PodeOAStringProperty -Name 'password' -Format Password -Example '12345' -Required |
+                New-PodeOAStringProperty -Name 'phone' -Example '12345' |
+                New-PodeOAIntProperty -Name 'userStatus'-Format int32 -Description 'User Status' -Example 1
+        ))
+
+    New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
+        New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
+        New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
+        New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required |
+        New-PodeOAObjectProperty -Name 'Address' -Xml @{'name' = 'address' } -Description 'Shipping Address' |
+        Add-PodeOAComponentSchema -Name 'Address'
+
+    Merge-PodeOAProperty -Type AllOf -ObjectDefinitions 'Address','User'
+
+```
+
+As JSON, this could look as follows:
+
+```json
+{
+  "allOf": [
+    {
+      "$ref": "#/components/schemas/Address"
+    },
+    {
+      "$ref": "#/components/schemas/User"
+    }
+  ]
+}
+```
+
+
+## OpenApi Documentation pages
 
 If you're not using a custom OpenAPI viewer, then you can use one of the inbuilt ones with Pode - either Swagger and ReDoc, or both!
 
 For both you can customise the path to access the page on, but by default Swagger is at `/swagger` and ReDoc is at `/redoc`. If you've written your own custom OpenAPI definition then you can also set a custom path to fetch the definition.
 
-To enable either you can use the [`Enable-PodeOpenApiViewer`](../../Functions/OpenApi/Enable-PodeOpenApiViewer) function:
+To enable either you can use the [`Enable-PodeOAViewer`](../../Functions/OpenApi/Enable-PodeOAViewer) function:
 
 ```powershell
 # for swagger at "/docs/swagger"
 Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger' -DarkMode
 
-# or ReDoc at the default "/redoc"
+# and ReDoc at the default "/redoc"
 Enable-PodeOpenApiViewer -Type ReDoc
+
+# and RapiDoc at "/docs/rapidoc"
+Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
+
+# and StopLight at "/docs/stoplight"
+Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight'
+
+# and Explorer at "/docs/explorer"
+Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer'
+
+# and RapiPdf at "/docs/rapipdf"
+Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf'
+
+# plus a bookmark page with the link to all documentation
+Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
 ```

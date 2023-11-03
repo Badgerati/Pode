@@ -48,8 +48,12 @@ Some useful links:
                 New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
                 New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
                 New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required
-        ))#>
-
+        ))
+        Merge-PodeOAProperty -Type OneOf -ObjectDefinitions @(
+            (New-PodeOAIntProperty -Name 'userId' -Object),
+            (New-PodeOAStringProperty -Name 'name' -Object),
+            (New-PodeOABoolProperty -Name 'enabled' -Object)
+        )|Add-PodeOAComponentSchema -Name 'Test123'
 
     New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
         New-PodeOAObjectProperty -Name 'User' -Xml @{'name' = 'user' } -Properties  (
@@ -60,7 +64,7 @@ Some useful links:
             New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
             New-PodeOAObjectProperty -Name 'test' | Add-PodeOAComponentSchema -Name 'Test'
 
-
+#>
 
     New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
         New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
@@ -100,6 +104,8 @@ Some useful links:
                 New-PodeOAStringProperty -Name 'phone' -Example '12345' |
                 New-PodeOAIntProperty -Name 'userStatus'-Format int32 -Description 'User Status' -Example 1
         ))
+
+        Merge-PodeOAProperty -Type AllOf -ObjectDefinitions 'Address','User'| Add-PodeOAComponentSchema -Name 'aaaaa'
 
     Add-PodeOAComponentSchema -Name 'Tag' -Schema (
         New-PodeOAObjectProperty -Name 'Tag' -Xml @{'name' = 'tag' } -Properties  (
@@ -447,6 +453,6 @@ Some useful links:
     }
 
 
-    # $yaml= Get-PodeOpenApiDefinition -Format Yaml
-    # $json=  Get-PodeOpenApiDefinition -Format Json
+    # $yaml= PodeOADefinition -Format Yaml
+    # $json=  PodeOADefinition -Format Json
 }
