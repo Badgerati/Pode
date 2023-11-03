@@ -53,11 +53,11 @@ Describe 'Schedules' {
 
     It 'schedule updates state value - full cron' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/test1" -Method Get
-        $result.Result | Should Be 1337
+        $result.Result | Should -Be 1337
     }
 
     It 'schedule updates state value - short cron' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/test2" -Method Get
-        $result.Result | Should Be 314
+        $result.Result | Should -Be 314
     }
 }

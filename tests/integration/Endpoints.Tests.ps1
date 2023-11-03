@@ -45,26 +45,26 @@ Describe 'Endpoint Requests' {
 
     It 'responds back with pong1' {
         $result = Invoke-RestMethod -Uri "$($Endpoint1)/ping-1" -Method Get
-        $result.Result | Should Be 'Pong1'
+        $result.Result | Should -Be 'Pong1'
     }
 
     It 'fails pong1 on second endpoint' {
-        { Invoke-RestMethod -Uri "$($Endpoint2)/ping-1" -Method Get -ErrorAction Stop } | Should Throw '404'
+        { Invoke-RestMethod -Uri "$($Endpoint2)/ping-1" -Method Get -ErrorAction Stop } | Should -Throw -ExpectedMessage '*404*'
     }
 
     It 'responds back with pong2' {
         $result = Invoke-RestMethod -Uri "$($Endpoint2)/ping-2" -Method Get
-        $result.Result | Should Be 'Pong2'
+        $result.Result | Should -Be 'Pong2'
     }
 
     It 'fails pong2 on first endpoint' {
-        { Invoke-RestMethod -Uri "$($Endpoint1)/ping-2" -Method Get -ErrorAction Stop } | Should Throw '404'
+        { Invoke-RestMethod -Uri "$($Endpoint1)/ping-2" -Method Get -ErrorAction Stop } | Should -Throw -ExpectedMessage '*404*'
     }
 
     It 'responds back with pong all' {
         $result = Invoke-RestMethod -Uri "$($Endpoint1)/ping-all" -Method Get
-        $result.Result | Should Be 'PongAll'
+        $result.Result | Should -Be 'PongAll'
         $result = Invoke-RestMethod -Uri "$($Endpoint2)/ping-all" -Method Get
-        $result.Result | Should Be 'PongAll'
+        $result.Result | Should -Be 'PongAll'
     }
 }

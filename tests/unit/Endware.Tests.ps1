@@ -1,6 +1,8 @@
-$path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+}
 
 Describe 'Invoke-PodeEndware' {
     It 'Returns for no endware' {
@@ -36,7 +38,7 @@ Describe 'Invoke-PodeEndware' {
 Describe 'Add-PodeEndware' {
     Context 'Invalid parameters supplied' {
         It 'Throws null logic error' {
-            { Add-PodeEndware -ScriptBlock $null } | Should Throw 'because it is null'
+            { Add-PodeEndware -ScriptBlock $null } | Should -Throw -ExpectedMessage '*because it is null*'
         }
     }
 
@@ -46,8 +48,8 @@ Describe 'Add-PodeEndware' {
 
             Add-PodeEndware -ScriptBlock { write-host 'end1' }
 
-            $PodeContext.Server.Endware.Length | Should Be 1
-            $PodeContext.Server.Endware[0].Logic.ToString() | Should Be ({ Write-Host 'end1' }).ToString()
+            $PodeContext.Server.Endware.Length | Should -Be 1
+            $PodeContext.Server.Endware[0].Logic.ToString() | Should -Be ({ Write-Host 'end1' }).ToString()
         }
 
         It 'Adds two Endwares to list' {
@@ -56,9 +58,9 @@ Describe 'Add-PodeEndware' {
             Add-PodeEndware -ScriptBlock { write-host 'end1' }
             Add-PodeEndware -ScriptBlock { write-host 'end2' }
 
-            $PodeContext.Server.Endware.Length | Should Be 2
-            $PodeContext.Server.Endware[0].Logic.ToString() | Should Be ({ Write-Host 'end1' }).ToString()
-            $PodeContext.Server.Endware[1].Logic.ToString() | Should Be ({ Write-Host 'end2' }).ToString()
+            $PodeContext.Server.Endware.Length | Should -Be 2
+            $PodeContext.Server.Endware[0].Logic.ToString() | Should -Be ({ Write-Host 'end1' }).ToString()
+            $PodeContext.Server.Endware[1].Logic.ToString() | Should -Be ({ Write-Host 'end2' }).ToString()
         }
     }
 }

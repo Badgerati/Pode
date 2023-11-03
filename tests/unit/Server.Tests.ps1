@@ -1,33 +1,36 @@
-$path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
-$PodeContext = @{
-    Server = $null
-    Metrics = @{ Server = @{ StartTime = [datetime]::UtcNow } }
-    RunspacePools = @{}
-}
+
+    $PodeContext = @{
+        Server        = $null
+        Metrics       = @{ Server = @{ StartTime = [datetime]::UtcNow } }
+        RunspacePools = @{}
+    } }
 
 Describe 'Start-PodeInternalServer' {
-    Mock Add-PodePSInbuiltDrives { }
-    Mock Invoke-PodeScriptBlock { }
-    Mock New-PodeRunspaceState { }
-    Mock New-PodeRunspacePools { }
-    Mock Start-PodeLoggingRunspace { }
-    Mock Start-PodeTimerRunspace { }
-    Mock Start-PodeScheduleRunspace { }
-    Mock Start-PodeGuiRunspace { }
-    Mock Start-Sleep { }
-    Mock New-PodeAutoRestartServer { }
-    Mock Start-PodeSmtpServer { }
-    Mock Start-PodeTcpServer { }
-    Mock Start-PodeWebServer { }
-    Mock Start-PodeServiceServer { }
-    Mock Import-PodeModulesIntoRunspaceState { }
-    Mock Import-PodeSnapinsIntoRunspaceState { }
-    Mock Import-PodeFunctionsIntoRunspaceState { }
-    Mock Invoke-PodeEvent { }
-    Mock Write-Verbose { }
+    BeforeAll {
+        Mock Add-PodePSInbuiltDrives { }
+        Mock Invoke-PodeScriptBlock { }
+        Mock New-PodeRunspaceState { }
+        Mock New-PodeRunspacePools { }
+        Mock Start-PodeLoggingRunspace { }
+        Mock Start-PodeTimerRunspace { }
+        Mock Start-PodeScheduleRunspace { }
+        Mock Start-PodeGuiRunspace { }
+        Mock Start-Sleep { }
+        Mock New-PodeAutoRestartServer { }
+        Mock Start-PodeSmtpServer { }
+        Mock Start-PodeTcpServer { }
+        Mock Start-PodeWebServer { }
+        Mock Start-PodeServiceServer { }
+        Mock Import-PodeModulesIntoRunspaceState { }
+        Mock Import-PodeSnapinsIntoRunspaceState { }
+        Mock Import-PodeFunctionsIntoRunspaceState { }
+        Mock Invoke-PodeEvent { }
+        Mock Write-Verbose { } }
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {} }
@@ -87,162 +90,163 @@ Describe 'Start-PodeInternalServer' {
 }
 
 Describe 'Restart-PodeInternalServer' {
-    Mock Write-Host { }
-    Mock Close-PodeRunspaces { }
-    Mock Remove-PodePSDrives { }
-    Mock Open-PodeConfiguration { return $null }
-    Mock Start-PodeInternalServer { }
-    Mock Write-PodeErrorLog { }
-    Mock Close-PodeDisposable { }
-    Mock Invoke-PodeEvent { }
-
+    BeforeAll {
+        Mock Write-Host { }
+        Mock Close-PodeRunspaces { }
+        Mock Remove-PodePSDrives { }
+        Mock Open-PodeConfiguration { return $null }
+        Mock Start-PodeInternalServer { }
+        Mock Write-PodeErrorLog { }
+        Mock Close-PodeDisposable { }
+        Mock Invoke-PodeEvent { }
+    }
     It 'Resetting the server values' {
         $PodeContext = @{
-            Tokens = @{
+            Tokens    = @{
                 Cancellation = New-Object System.Threading.CancellationTokenSource
-                Restart = New-Object System.Threading.CancellationTokenSource
+                Restart      = New-Object System.Threading.CancellationTokenSource
             }
-            Server = @{
-                Routes = @{
-                    GET = @{ 'key' = 'value' }
+            Server    = @{
+                Routes          = @{
+                    GET  = @{ 'key' = 'value' }
                     POST = @{ 'key' = 'value' }
                 }
-                Handlers = @{
+                Handlers        = @{
                     SMTP = @{}
                 }
-                Verbs = @{
+                Verbs           = @{
                     key = @{}
                 }
-                Logging = @{
+                Logging         = @{
                     Types = @{ 'key' = 'value' }
                 }
-                Middleware = @{ 'key' = 'value' }
-                Endpoints = @{ 'key' = 'value' }
-                EndpointsMap = @{ 'key' = 'value' }
-                Endware = @{ 'key' = 'value' }
-                ViewEngine = @{
-                    Type = 'pode'
+                Middleware      = @{ 'key' = 'value' }
+                Endpoints       = @{ 'key' = 'value' }
+                EndpointsMap    = @{ 'key' = 'value' }
+                Endware         = @{ 'key' = 'value' }
+                ViewEngine      = @{
+                    Type      = 'pode'
                     Extension = 'pode'
-                    Script = $null
+                    Script    = $null
                     IsDynamic = $true
                 }
-                Cookies = @{}
-                Sessions = @{ 'key' = 'value' }
+                Cookies         = @{}
+                Sessions        = @{ 'key' = 'value' }
                 Authentications = @{
                     Methods = @{ 'key' = 'value' }
                 }
-                Authorisations = @{
+                Authorisations  = @{
                     Methods = @{ 'key' = 'value' }
                 }
-                State = @{ 'key' = 'value' }
-                Output = @{
+                State           = @{ 'key' = 'value' }
+                Output          = @{
                     Variables = @{ 'key' = 'value' }
                 }
-                Configuration = @{ 'key' = 'value' }
-                Sockets = @{
+                Configuration   = @{ 'key' = 'value' }
+                Sockets         = @{
                     Listeners = @()
-                    Queues = @{
+                    Queues    = @{
                         Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
                     }
                 }
-                Signals = @{
+                Signals         = @{
                     Listeners = @()
-                    Queues = @{
-                        Sockets = @{}
+                    Queues    = @{
+                        Sockets     = @{}
                         Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
                     }
                 }
-                OpenAPI = @{}
-                BodyParsers = @{}
-                AutoImport = @{
-                    Modules = @{ Exported = @() }
-                    Snapins = @{ Exported = @() }
-                    Functions = @{ Exported = @() }
-                    SecretVaults = @{ 
+                OpenAPI         = @{}
+                BodyParsers     = @{}
+                AutoImport      = @{
+                    Modules      = @{ Exported = @() }
+                    Snapins      = @{ Exported = @() }
+                    Functions    = @{ Exported = @() }
+                    SecretVaults = @{
                         SecretManagement = @{ Exported = @() }
                     }
                 }
-                Views = @{ 'key' = 'value' }
-                Events = @{
+                Views           = @{ 'key' = 'value' }
+                Events          = @{
                     Start = @{}
                 }
-                Modules = @{}
-                Security = @{
+                Modules         = @{}
+                Security        = @{
                     Headers = @{}
-                    Cache = @{
-                        ContentSecurity  = @{}
+                    Cache   = @{
+                        ContentSecurity   = @{}
                         PermissionsPolicy = @{}
                     }
                 }
-                Secrets = @{
+                Secrets         = @{
                     Vaults = @{}
-                    Keys = @{}
+                    Keys   = @{}
                 }
             }
-            Metrics = @{
+            Metrics   = @{
                 Server = @{
                     RestartCount = 0
                 }
             }
-            Timers = @{
+            Timers    = @{
                 Enabled = $true
-                Items = @{
+                Items   = @{
                     key = 'value'
                 }
             }
             Schedules = @{
-                Enabled = $true
-                Items = @{
+                Enabled   = $true
+                Items     = @{
                     key = 'value'
                 }
                 Processes = @{}
             }
-            Tasks = @{
+            Tasks     = @{
                 Enabled = $true
-                Items = @{
+                Items   = @{
                     key = 'value'
                 }
                 Results = @{}
             }
-            Fim = @{
+            Fim       = @{
                 Enabled = $true
-                Items = @{
+                Items   = @{
                     key = 'value'
                 }
             }
             Threading = @{
-                Lockables = @{ Custom = @{} }
-                Mutexes = @{}
+                Lockables  = @{ Custom = @{} }
+                Mutexes    = @{}
                 Semaphores = @{}
             }
         }
 
         Restart-PodeInternalServer | Out-Null
 
-        $PodeContext.Server.Routes['GET'].Count | Should Be 0
-        $PodeContext.Server.Logging.Types.Count | Should Be 0
-        $PodeContext.Server.Middleware.Count | Should Be 0
-        $PodeContext.Server.Endware.Count | Should Be 0
-        $PodeContext.Server.Sessions.Count | Should Be 0
-        $PodeContext.Server.Authentications.Methods.Count | Should Be 0
-        $PodeContext.Server.State.Count | Should Be 0
-        $PodeContext.Server.Configuration | Should Be $null
+        $PodeContext.Server.Routes['GET'].Count | Should -Be 0
+        $PodeContext.Server.Logging.Types.Count | Should -Be 0
+        $PodeContext.Server.Middleware.Count | Should -Be 0
+        $PodeContext.Server.Endware.Count | Should -Be 0
+        $PodeContext.Server.Sessions.Count | Should -Be 0
+        $PodeContext.Server.Authentications.Methods.Count | Should -Be 0
+        $PodeContext.Server.State.Count | Should -Be 0
+        $PodeContext.Server.Configuration | Should -Be $null
 
-        $PodeContext.Timers.Items.Count | Should Be 0
-        $PodeContext.Schedules.Items.Count | Should Be 0
+        $PodeContext.Timers.Items.Count | Should -Be 0
+        $PodeContext.Schedules.Items.Count | Should -Be 0
 
-        $PodeContext.Server.ViewEngine.Type | Should Be 'html'
-        $PodeContext.Server.ViewEngine.Extension | Should Be 'html'
-        $PodeContext.Server.ViewEngine.ScriptBlock | Should Be $null
-        $PodeContext.Server.ViewEngine.UsingVariables | Should Be $null
-        $PodeContext.Server.ViewEngine.IsDynamic | Should Be $false
+        $PodeContext.Server.ViewEngine.Type | Should -Be 'html'
+        $PodeContext.Server.ViewEngine.Extension | Should -Be 'html'
+        $PodeContext.Server.ViewEngine.ScriptBlock | Should -Be $null
+        $PodeContext.Server.ViewEngine.UsingVariables | Should -Be $null
+        $PodeContext.Server.ViewEngine.IsDynamic | Should -Be $false
 
-        $PodeContext.Metrics.Server.RestartCount | Should Be 1
+        $PodeContext.Metrics.Server.RestartCount | Should -Be 1
     }
 
     It 'Catches exception and throws it' {
         Mock Write-Host { throw 'some error' }
         Mock Write-PodeErrorLog {}
-        { Restart-PodeInternalServer } | Should Throw 'some error'
+        { Restart-PodeInternalServer } | Should -Throw -ExpectedMessage 'some error'
     }
 }

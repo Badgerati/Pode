@@ -39,6 +39,6 @@ Describe 'Timers' {
 
     It 'timer updates state value' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/test1" -Method Get
-        $result.Result | Should Be 1337
+        $result.Result | Should -Be 1337
     }
 }

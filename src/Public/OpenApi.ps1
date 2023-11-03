@@ -811,7 +811,7 @@ function New-PodeOARequestBody {
 
         [Parameter(ParameterSetName = 'Schema')]
         [string]
-        $Description = $null,
+        $Description,
 
         [Parameter(ParameterSetName = 'Schema')]
         [switch]
@@ -2714,7 +2714,8 @@ function New-PodeOASchemaProperty {
                 $param.xml = $Xml
             }
         } elseif ($Description) {
-            Write-PodeHost "New-PodeOASchemaProperty $ComponentSchema - Description can only be applied to an array"
+            $ex = [System.Exception]::new("New-PodeOASchemaProperty $ComponentSchema - Description can only be applied to an array")
+            $ex | Write-PodeErrorLog -Level Warning 
         }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
@@ -2760,7 +2761,7 @@ The name of an existing component parameter to be reused.
 .PARAMETER ContentType
 The content-types to be use with  component schema
 
-.PARAMETER ContentSchemas
+.PARAMETER ContentSchema
 The component schema to use.
 
 .PARAMETER Description
@@ -2793,7 +2794,7 @@ function ConvertTo-PodeOAParameter {
     [CmdletBinding(DefaultParameterSetName = 'Reference')]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Properties')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchema')]
         [ValidateSet('Cookie', 'Header', 'Path', 'Query')]
         [string]
         $In,
@@ -2808,14 +2809,14 @@ function ConvertTo-PodeOAParameter {
         [string]
         $ComponentParameter,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchema')]
         [String]
-        $ContentSchemas,
+        $ContentSchema,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchemas')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchema')]
         $ContentType,
 
-        [Parameter( ParameterSetName = 'ContentSchemas')]
+        [Parameter( ParameterSetName = 'ContentSchema')]
         [String]
         $Description,
 
@@ -2823,11 +2824,11 @@ function ConvertTo-PodeOAParameter {
         [Switch]
         $Explode,
 
-        [Parameter( ParameterSetName = 'ContentSchemas')]
+        [Parameter( ParameterSetName = 'ContentSchema')]
         [Switch]
         $Required,
 
-        [Parameter( ParameterSetName = 'ContentSchemas')]
+        [Parameter( ParameterSetName = 'ContentSchema')]
         [Parameter( ParameterSetName = 'Properties')]
         [Switch]
         $AllowEmptyValue,
@@ -2838,25 +2839,25 @@ function ConvertTo-PodeOAParameter {
         $Style
     )
 
-    if ($PSCmdlet.ParameterSetName -ieq 'ContentSchemas') {
-        if (Test-PodeIsEmpty $ContentSchemas) {
+    if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema') {
+        if (Test-PodeIsEmpty $ContentSchema) {
             return $null
         }
         # ensure all content types are valid
-        if ($ContentType -inotmatch '^\w+\/[\w\.\+-]+$') {
+        if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
             throw "Invalid content-type found for schema: $($type)"
         }
-        if (!(Test-PodeOAComponentSchema -Name $ContentSchemas )) {
-            throw "The OpenApi component request parameter doesn't exist: $($ContentSchemas )"
+        if (!(Test-PodeOAComponentSchema -Name $ContentSchema )) {
+            throw "The OpenApi component request parameter doesn't exist: $($ContentSchema )"
         }
-        $Property = $PodeContext.Server.OpenAPI.components.schemas[$ContentSchemas ]
+        $Property = $PodeContext.Server.OpenAPI.components.schemas[$ContentSchema ]
         $prop = @{
             in      = $In.ToLowerInvariant()
-            name    = $ContentSchemas
+            name    = $ContentSchema
             content = @{
                 $ContentType = @{
                     schema = @{
-                        '$ref' = "#/components/schemas/$($ContentSchemas )"
+                        '$ref' = "#/components/schemas/$($ContentSchema )"
                     }
                 }
             }
@@ -2868,7 +2869,7 @@ function ConvertTo-PodeOAParameter {
             $prop['required'] = $Required.ToBool()
         }
         if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ContentSchemas  -Append
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ContentSchema  -Append
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
@@ -2990,7 +2991,7 @@ function ConvertTo-PodeOAParameter {
             $prop['required'] = $Property.required
         }
         # remove default for required parameter
-        if (!$Property.required -and $PSCmdlet.ParameterSetName -ine 'ContentSchemas') {
+        if (!$Property.required -and $PSCmdlet.ParameterSetName -ine 'ContentSchema') {
             if ( $prop.ContainsKey('schema') -and $Property.default) {
                 $prop.schema['default'] = $Property.default
             }

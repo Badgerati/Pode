@@ -1,13 +1,14 @@
-$path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+BeforeAll {
+    $path = $PSCommandPath 
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
-$PodeContext = @{ 'Server' = $null; }
-
+    $PodeContext = @{ 'Server' = $null; }
+}
 Describe 'Test-PodeIPAccess' {
     Context 'Invalid parameters' {
         It 'Throws error for invalid IP' {
-            { Test-PodeIPAccess -IP $null -Limit 1 -Seconds 1 } | Should Throw "argument is null"
+            { Test-PodeIPAccess -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ExpectedMessage '*argument is null*'
         }
     }
 }
@@ -15,13 +16,14 @@ Describe 'Test-PodeIPAccess' {
 Describe 'Test-PodeIPLimit' {
     Context 'Invalid parameters' {
         It 'Throws error for invalid IP' {
-            { Test-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should Throw "argument is null"
+            { Test-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ExpectedMessage '*argument is null*'
         }
     }
 }
 
 Describe 'Add-PodeLimitRule' {
-    Mock Add-PodeIPLimit { }
+    BeforeAll {
+        Mock Add-PodeIPLimit { } }
 
     Context 'Valid parameters' {
         It 'Adds single IP address' {
@@ -47,8 +49,9 @@ Describe 'Add-PodeLimitRule' {
 }
 
 Describe 'Add-PodeAccessRule' {
-    Mock Add-PodeIPAccess { }
-
+    BeforeAll {
+        Mock Add-PodeIPAccess { }
+    }
     Context 'Valid parameters' {
         It 'Adds single IP address' {
             Add-PodeAccessRule -Access 'Allow' -Type 'IP' -Values '127.0.0.1'
@@ -75,23 +78,23 @@ Describe 'Add-PodeAccessRule' {
 Describe 'Add-PodeIPLimit' {
     Context 'Invalid parameters' {
         It 'Throws error for invalid IP' {
-            { Add-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should Throw "because it is an empty string"
+            { Add-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ExpectedMessage '*because it is an empty string*'
         }
 
         It 'Throws error for negative limit' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit -1 -Seconds 1 } | Should Throw '0 or less'
+            { Add-PodeIPLimit -IP '127.0.0.1' -Limit -1 -Seconds 1 } | Should -Throw -ExpectedMessage '*0 or less*'
         }
 
         It 'Throws error for negative seconds' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds -1 } | Should Throw '0 or less'
+            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds -1 } | Should -Throw -ExpectedMessage '*0 or less*'
         }
 
         It 'Throws error for zero limit' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 0 -Seconds 1 } | Should Throw '0 or less'
+            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 0 -Seconds 1 } | Should -Throw -ExpectedMessage '*0 or less*'
         }
 
         It 'Throws error for zero seconds' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds 0 } | Should Throw '0 or less'
+            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds 0 } | Should -Throw -ExpectedMessage '*0 or less*'
         }
     }
 
@@ -101,21 +104,21 @@ Describe 'Add-PodeIPLimit' {
             Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds 1
 
             $a = $PodeContext.Server.Limits.Rules.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('127.0.0.1') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('127.0.0.1') | Should -Be $true
 
             $k = $a['127.0.0.1']
-            $k.Limit | Should Be 1
-            $k.Seconds | Should Be 1
+            $k.Limit | Should -Be 1
+            $k.Seconds | Should -Be 1
 
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
         }
 
         It 'Adds any IP to limit' {
@@ -123,21 +126,21 @@ Describe 'Add-PodeIPLimit' {
             Add-PodeIPLimit -IP 'all' -Limit 1 -Seconds 1
 
             $a = $PodeContext.Server.Limits.Rules.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('all') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('all') | Should -Be $true
 
             $k = $a['all']
-            $k.Limit | Should Be 1
-            $k.Seconds | Should Be 1
+            $k.Limit | Should -Be 1
+            $k.Seconds | Should -Be 1
 
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(0, 0, 0, 0)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(0, 0, 0, 0)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(255, 255, 255, 255)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(255, 255, 255, 255)
         }
 
         It 'Adds a subnet mask to limit' {
@@ -145,22 +148,22 @@ Describe 'Add-PodeIPLimit' {
             Add-PodeIPLimit -IP '10.10.0.0/24' -Limit 1 -Seconds 1
 
             $a = $PodeContext.Server.Limits.Rules.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('10.10.0.0/24') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('10.10.0.0/24') | Should -Be $true
 
             $k = $a['10.10.0.0/24']
-            $k.Limit | Should Be 1
-            $k.Seconds | Should Be 1
-            $k.Grouped | Should Be $false
+            $k.Limit | Should -Be 1
+            $k.Seconds | Should -Be 1
+            $k.Grouped | Should -Be $false
 
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(10, 10, 0, 0)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(10, 10, 0, 0)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(10, 10, 0, 255)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(10, 10, 0, 255)
         }
 
         It 'Adds a grouped subnet mask to limit' {
@@ -168,27 +171,27 @@ Describe 'Add-PodeIPLimit' {
             Add-PodeIPLimit -IP '10.10.0.0/24' -Limit 1 -Seconds 1 -Group
 
             $a = $PodeContext.Server.Limits.Rules.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('10.10.0.0/24') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('10.10.0.0/24') | Should -Be $true
 
             $k = $a['10.10.0.0/24']
-            $k.Limit | Should Be 1
-            $k.Seconds | Should Be 1
-            $k.Grouped | Should Be $true
+            $k.Limit | Should -Be 1
+            $k.Seconds | Should -Be 1
+            $k.Grouped | Should -Be $true
 
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(10, 10, 0, 0)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(10, 10, 0, 0)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(10, 10, 0, 255)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(10, 10, 0, 255)
         }
 
         It 'Throws error for invalid IP' {
             $PodeContext.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
-            { Add-PodeIPLimit -IP '256.0.0.0' -Limit 1 -Seconds 1 } | Should Throw 'invalid ip address'
+            { Add-PodeIPLimit -IP '256.0.0.0' -Limit 1 -Seconds 1 } | Should -Throw -ExpectedMessage '*invalid ip address*'
         }
     }
 }
@@ -200,18 +203,18 @@ Describe 'Add-PodeIPAccess' {
             Add-PodeIPAccess -Access 'Allow' -IP '127.0.0.1'
 
             $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('127.0.0.1') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('127.0.0.1') | Should -Be $true
 
             $k = $a['127.0.0.1']
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
         }
 
         It 'Adds any IP to allow' {
@@ -219,18 +222,18 @@ Describe 'Add-PodeIPAccess' {
             Add-PodeIPAccess -Access 'Allow' -IP 'all'
 
             $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('all') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('all') | Should -Be $true
 
             $k = $a['all']
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(0, 0, 0, 0)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(0, 0, 0, 0)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(255, 255, 255, 255)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(255, 255, 255, 255)
         }
 
         It 'Adds a subnet mask to allow' {
@@ -238,18 +241,18 @@ Describe 'Add-PodeIPAccess' {
             Add-PodeIPAccess -Access 'Allow' -IP '10.10.0.0/24'
 
             $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('10.10.0.0/24') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('10.10.0.0/24') | Should -Be $true
 
             $k = $a['10.10.0.0/24']
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(10, 10, 0, 0)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(10, 10, 0, 0)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(10, 10, 0, 255)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(10, 10, 0, 255)
         }
 
         It 'Adds an IP to deny' {
@@ -257,18 +260,18 @@ Describe 'Add-PodeIPAccess' {
             Add-PodeIPAccess -Access 'Deny' -IP '127.0.0.1'
 
             $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('127.0.0.1') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('127.0.0.1') | Should -Be $true
 
             $k = $a['127.0.0.1']
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
         }
 
         It 'Adds any IP to deny' {
@@ -276,18 +279,18 @@ Describe 'Add-PodeIPAccess' {
             Add-PodeIPAccess -Access 'Deny' -IP 'all'
 
             $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('all') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('all') | Should -Be $true
 
             $k = $a['all']
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(0, 0, 0, 0)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(0, 0, 0, 0)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(255, 255, 255, 255)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(255, 255, 255, 255)
         }
 
         It 'Adds a subnet mask to deny' {
@@ -295,18 +298,18 @@ Describe 'Add-PodeIPAccess' {
             Add-PodeIPAccess -Access 'Deny' -IP '10.10.0.0/24'
 
             $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('10.10.0.0/24') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('10.10.0.0/24') | Should -Be $true
 
             $k = $a['10.10.0.0/24']
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(10, 10, 0, 0)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(10, 10, 0, 0)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(10, 10, 0, 255)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(10, 10, 0, 255)
         }
 
         It 'Adds an IP to allow and removes one from deny' {
@@ -316,33 +319,33 @@ Describe 'Add-PodeIPAccess' {
             Add-PodeIPAccess -Access 'Deny' -IP '127.0.0.1'
 
             $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('127.0.0.1') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('127.0.0.1') | Should -Be $true
 
-            # add to allow, deny should be removed
+            # add to allow, deny Should -Be removed
             Add-PodeIPAccess -Access 'Allow' -IP '127.0.0.1'
 
             # check allow
             $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('127.0.0.1') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('127.0.0.1') | Should -Be $true
 
             $k = $a['127.0.0.1']
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
 
             # check deny
             $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 0
-            $a.ContainsKey('127.0.0.1') | Should Be $false
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 0
+            $a.ContainsKey('127.0.0.1') | Should -Be $false
         }
 
         It 'Adds an IP to deny and removes one from allow' {
@@ -352,38 +355,38 @@ Describe 'Add-PodeIPAccess' {
             Add-PodeIPAccess -Access 'Allow' -IP '127.0.0.1'
 
             $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('127.0.0.1') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('127.0.0.1') | Should -Be $true
 
-            # add to deny, allow should be removed
+            # add to deny, allow Should -Be removed
             Add-PodeIPAccess -Access 'Deny' -IP '127.0.0.1'
 
             # check deny
             $a = $PodeContext.Server.Access.Deny.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 1
-            $a.ContainsKey('127.0.0.1') | Should Be $true
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 1
+            $a.ContainsKey('127.0.0.1') | Should -Be $true
 
             $k = $a['127.0.0.1']
-            $k.Lower | Should Not Be $null
-            $k.Lower.Family | Should Be 'InterNetwork'
-            $k.Lower.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Lower | Should -Not -Be $null
+            $k.Lower.Family | Should -Be 'InterNetwork'
+            $k.Lower.Bytes | Should -Be @(127, 0, 0, 1)
 
-            $k.Upper | Should Not Be $null
-            $k.Upper.Family | Should Be 'InterNetwork'
-            $k.Upper.Bytes | Should Be @(127, 0, 0, 1)
+            $k.Upper | Should -Not -Be $null
+            $k.Upper.Family | Should -Be 'InterNetwork'
+            $k.Upper.Bytes | Should -Be @(127, 0, 0, 1)
 
             # check allow
             $a = $PodeContext.Server.Access.Allow.IP
-            $a | Should Not Be $null
-            $a.Count | Should Be 0
-            $a.ContainsKey('127.0.0.1') | Should Be $false
+            $a | Should -Not -Be $null
+            $a.Count | Should -Be 0
+            $a.ContainsKey('127.0.0.1') | Should -Be $false
         }
 
         It 'Throws error for invalid IP' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            { Add-PodeIPAccess -Access 'Allow' -IP '256.0.0.0' } | Should Throw 'invalid ip address'
+            { Add-PodeIPAccess -Access 'Allow' -IP '256.0.0.0' } | Should -Throw -ExpectedMessage '*invalid ip address*'
         }
     }
 }
@@ -406,7 +409,7 @@ Describe 'Get-PodeCsrfMiddleware' {
         Mock Test-PodeCsrfConfigured { return $true }
         Mock New-PodeMiddleware { return { write-host 'hello' } }
 
-        (Get-PodeCsrfMiddleware).ToString() | Should Be ({ write-host 'hello' }).ToString()
+        (Get-PodeCsrfMiddleware).ToString() | Should -Be ({ write-host 'hello' }).ToString()
     }
 }
 
@@ -416,15 +419,17 @@ Describe 'New-PodeCsrfToken' {
         Mock New-PodeCsrfSecret { return 'secret' }
         Mock New-PodeSalt { return 'salt' }
         Mock Invoke-PodeSHA256Hash { return 'salt-secret' }
-        New-PodeCsrfToken | Should Be 't:salt.salt-secret'
+        New-PodeCsrfToken | Should -Be 't:salt.salt-secret'
     }
 }
 
 Describe 'Initialize-PodeCsrf' {
     It 'Runs csrf setup using sessions' {
         $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
-            'Csrf' = @{ 'Name' = 'Key' }
-        }}}
+                    'Csrf' = @{ 'Name' = 'Key' }
+                }
+            }
+        }
 
         Mock Test-PodeCsrfConfigured { return $false }
         Mock Test-PodeSessionsConfigured { return $true }
@@ -432,16 +437,18 @@ Describe 'Initialize-PodeCsrf' {
 
         Initialize-PodeCsrf -IgnoreMethods @('Get')
 
-        $PodeContext.Server.Cookies.Csrf.Name | Should Be 'pode.csrf'
-        $PodeContext.Server.Cookies.Csrf.UseCookies | Should Be $false
-        $PodeContext.Server.Cookies.Csrf.Secret | Should Be ''
-        $PodeContext.Server.Cookies.Csrf.IgnoredMethods | Should Be @('Get')
+        $PodeContext.Server.Cookies.Csrf.Name | Should -Be 'pode.csrf'
+        $PodeContext.Server.Cookies.Csrf.UseCookies | Should -Be $false
+        $PodeContext.Server.Cookies.Csrf.Secret | Should -Be ''
+        $PodeContext.Server.Cookies.Csrf.IgnoredMethods | Should -Be @('Get')
     }
 
     It 'Runs csrf setup using cookies' {
         $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
-            'Csrf' = @{ 'Name' = 'Key' }
-        }}}
+                    'Csrf' = @{ 'Name' = 'Key' }
+                }
+            }
+        }
 
         Mock Test-PodeCsrfConfigured { return $false }
         Mock Test-PodeSessionsConfigured { return $false }
@@ -449,158 +456,176 @@ Describe 'Initialize-PodeCsrf' {
 
         Initialize-PodeCsrf -IgnoreMethods @('Get') -UseCookies
 
-        $PodeContext.Server.Cookies.Csrf.Name | Should Be 'pode.csrf'
-        $PodeContext.Server.Cookies.Csrf.UseCookies | Should Be $true
-        $PodeContext.Server.Cookies.Csrf.Secret | Should Be 'secret'
-        $PodeContext.Server.Cookies.Csrf.IgnoredMethods | Should Be @('Get')
+        $PodeContext.Server.Cookies.Csrf.Name | Should -Be 'pode.csrf'
+        $PodeContext.Server.Cookies.Csrf.UseCookies | Should -Be $true
+        $PodeContext.Server.Cookies.Csrf.Secret | Should -Be 'secret'
+        $PodeContext.Server.Cookies.Csrf.IgnoredMethods | Should -Be @('Get')
     }
 }
 
 Describe 'Get-PodeCsrfToken' {
     It 'Returns the token from the payload' {
         $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
-            'Csrf' = @{ 'Name' = 'Key' }
-        }}}
+                    'Csrf' = @{ 'Name' = 'Key' }
+                }
+            }
+        }
 
         $WebEvent = @{ 'Data' = @{
-            'Key' = 'Token'
-        }}
+                'Key' = 'Token'
+            }
+        }
 
-        Get-PodeCsrfToken | Should Be 'Token'
+        Get-PodeCsrfToken | Should -Be 'Token'
     }
 
     It 'Returns the token from the query string' {
         $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
-            'Csrf' = @{ 'Name' = 'Key' }
-        }}}
-
-        $WebEvent = @{
-            'Data' = @{};
-            'Query' = @{ 'Key' = 'Token' };
+                    'Csrf' = @{ 'Name' = 'Key' }
+                }
+            }
         }
 
-        Get-PodeCsrfToken | Should Be 'Token'
+        $WebEvent = @{
+            'Data'  = @{}
+            'Query' = @{ 'Key' = 'Token' }
+        }
+
+        Get-PodeCsrfToken | Should -Be 'Token'
     }
 
     It 'Returns the token from the headers' {
         $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
-            'Csrf' = @{ 'Name' = 'Key' }
-        }}}
+                    'Csrf' = @{ 'Name' = 'Key' }
+                }
+            }
+        }
 
         $WebEvent = @{
-            'Data' = @{};
-            'Query' = @{};
+            'Data'    = @{}
+            'Query'   = @{}
             'Request' = @{ 'Headers' = @{ 'Key' = 'Token' } }
         }
 
-        Get-PodeCsrfToken | Should Be 'Token'
+        Get-PodeCsrfToken | Should -Be 'Token'
     }
 
     It 'Returns no token' {
         $PodeContext = @{ 'Server' = @{ 'Cookies' = @{
-            'Csrf' = @{ 'Name' = 'Key' }
-        }}}
+                    'Csrf' = @{ 'Name' = 'Key' }
+                }
+            }
+        }
 
         $WebEvent = @{
-            'Data' = @{};
-            'Query' = @{};
+            'Data'    = @{}
+            'Query'   = @{}
             'Request' = @{ 'Headers' = @{} }
         }
 
-        Get-PodeCsrfToken | Should Be $null
+        Get-PodeCsrfToken | Should -Be $null
     }
 }
 
 Describe 'Test-PodeCsrfToken' {
     It 'Returns false for no secret' {
-        Test-PodeCsrfToken -Secret '' -Token 'value' | Should Be $false
+        Test-PodeCsrfToken -Secret '' -Token 'value' | Should -Be $false
     }
 
     It 'Returns false for no token' {
-        Test-PodeCsrfToken -Secret 'key' -Token '' | Should Be $false
+        Test-PodeCsrfToken -Secret 'key' -Token '' | Should -Be $false
     }
 
     It 'Returns false for no tag on token' {
-        Test-PodeCsrfToken -Secret 'key' -Token 'value' | Should Be $false
+        Test-PodeCsrfToken -Secret 'key' -Token 'value' | Should -Be $false
     }
 
     It 'Returns false for no period in token' {
-        Test-PodeCsrfToken -Secret 'key' -Token 't:value' | Should Be $false
+        Test-PodeCsrfToken -Secret 'key' -Token 't:value' | Should -Be $false
     }
 
     It 'Returns false for token mismatch' {
         Mock New-PodeCsrfToken { return 'value2' }
-        Test-PodeCsrfToken -Secret 'key' -Token 't:value1.signed' | Should Be $false
+        Test-PodeCsrfToken -Secret 'key' -Token 't:value1.signed' | Should -Be $false
     }
 
     It 'Returns true for token match' {
         Mock Restore-PodeCsrfToken { return 't:value1.signed' }
-        Test-PodeCsrfToken -Secret 'key' -Token 't:value1.signed' | Should Be $true
+        Test-PodeCsrfToken -Secret 'key' -Token 't:value1.signed' | Should -Be $true
     }
 }
 
 Describe 'New-PodeCsrfSecret' {
     It 'Returns an existing secret' {
         Mock Get-PodeCsrfSecret { return 'key' }
-        New-PodeCsrfSecret | Should Be 'key'
+        New-PodeCsrfSecret | Should -Be 'key'
     }
 
     It 'Returns a new secret' {
         Mock Get-PodeCsrfSecret { return '' }
         Mock New-PodeGuid { return 'new-key' }
         Mock Set-PodeCsrfSecret { }
-        New-PodeCsrfSecret | Should Be 'new-key'
+        New-PodeCsrfSecret | Should -Be 'new-key'
     }
 }
 
 Describe 'New-PodeCsrfToken' {
+
     It 'Throws error for csrf not being configured' {
         $PodeContext = @{ 'Server' = @{
-            'Cookies' = @{ 'Csrf' = $null }
-        }}
+                'Cookies' = @{ 'Csrf' = $null }
+            }
+        }
 
-        { New-PodeCsrfToken } | Should Throw 'not been initialised'
+        { New-PodeCsrfToken } | Should -Throw -ExpectedMessage '*not been initialised*'
     }
 
-    Mock Invoke-PodeSHA256Hash { return "$($Value)" }
 
-    $PodeContext = @{ 'Server' = @{
-        'Cookies' = @{ 'Csrf' = @{ 'key' = 'value' } }
-    }}
 
     It 'Returns a token for new secret/salt' {
+        Mock Invoke-PodeSHA256Hash { return "$($Value)" }
+
+        $PodeContext = @{ 'Server' = @{
+                'Cookies' = @{ 'Csrf' = @{ 'key' = 'value' } }
+            }
+        }
         Mock New-PodeCsrfSecret { return 'new-key' }
         Mock New-PodeSalt { return 'new-salt' }
-        New-PodeCsrfToken | Should Be 't:new-salt.new-salt-new-key'
+        New-PodeCsrfToken | Should -Be 't:new-salt.new-salt-new-key'
     }
 }
 
 Describe 'Restore-PodeCsrfToken' {
-    Mock Invoke-PodeSHA256Hash { return "$($Value)" }
+    BeforeAll { Mock Invoke-PodeSHA256Hash { return "$($Value)" }
 
-    $PodeContext = @{ 'Server' = @{
-        'Cookies' = @{ 'Csrf' = @{ 'key' = 'value' } }
-    }}
+        $PodeContext = @{ 'Server' = @{
+                'Cookies' = @{ 'Csrf' = @{ 'key' = 'value' } }
+            }
+        } }
 
     It 'Returns a token for an existing secret/salt' {
-        Restore-PodeCsrfToken -Secret 'key' -Salt 'salt' | Should Be 't:salt.salt-key'
+
+        Restore-PodeCsrfToken -Secret 'key' -Salt 'salt' | Should -Be 't:salt.salt-key'
     }
 }
 
 Describe 'Set-PodeCsrfSecret' {
-    $PodeContext = @{ 'Server' = @{
-        'Cookies' = @{ 'Csrf' = @{ 'Name' = 'pode.csrf' } }
-    }}
+    BeforeAll {
+        $PodeContext = @{ 'Server' = @{
+                'Cookies' = @{ 'Csrf' = @{ 'Name' = 'pode.csrf' } }
+            }
+        } }
 
     It 'Sets the secret agaisnt the session' {
         $PodeContext.Server.Cookies.Csrf.UseCookies = $false
         $WebEvent = @{ 'Session' = @{
-             'Data' = @{}
-        } }
+                'Data' = @{}
+            }
+        }
 
         Set-PodeCsrfSecret -Secret 'some-secret'
 
-        $WebEvent.Session.Data['pode.csrf'] | Should Be 'some-secret'
+        $WebEvent.Session.Data['pode.csrf'] | Should -Be 'some-secret'
     }
 
     It 'Sets the secret agaisnt a cookie' {
@@ -614,24 +639,27 @@ Describe 'Set-PodeCsrfSecret' {
 }
 
 Describe 'Get-PodeCsrfSecret' {
-    $PodeContext = @{ 'Server' = @{
-        'Cookies' = @{ 'Csrf' = @{ 'Name' = 'pode.csrf' } }
-    }}
+    BeforeAll {
+        $PodeContext = @{ 'Server' = @{
+                'Cookies' = @{ 'Csrf' = @{ 'Name' = 'pode.csrf' } }
+            }
+        } }
 
     It 'Gets the secret from the session' {
         $PodeContext.Server.Cookies.Csrf.UseCookies = $false
         $WebEvent = @{ 'Session' = @{
-             'Data' = @{ 'pode.csrf' = 'some-secret' }
-        } }
+                'Data' = @{ 'pode.csrf' = 'some-secret' }
+            }
+        }
 
-        Get-PodeCsrfSecret | Should Be 'some-secret'
+        Get-PodeCsrfSecret | Should -Be 'some-secret'
     }
 
     It 'Gets the secret from a cookie' {
         $PodeContext.Server.Cookies.Csrf.UseCookies = $true
         Mock Get-PodeCookie { return @{ 'Value' = 'some-secret' } }
 
-        Get-PodeCsrfSecret | Should Be 'some-secret'
+        Get-PodeCsrfSecret | Should -Be 'some-secret'
 
         Assert-MockCalled Get-PodeCookie -Times 1 -Scope It
     }

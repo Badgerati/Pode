@@ -1,8 +1,10 @@
-$path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+}
 Describe 'Start-PodeAzFuncServer' {
+    BeforeAll{
     function Push-OutputBinding($Name, $Value) {
         return @{ Name = $Name; Value = $Value }
     }
@@ -19,9 +21,9 @@ Describe 'Start-PodeAzFuncServer' {
     Mock Set-PodeServerHeader { }
     Mock Set-PodeResponseStatus { }
     Mock Update-PodeServerRequestMetrics { }
-
+}
     It 'Throws error for null data' {
-        { Start-PodeAzFuncServer -Data $null } | Should Throw 'because it is null'
+        { Start-PodeAzFuncServer -Data $null } | Should -Throw -ExpectedMessage '*because it is null*'
     }
 
     It 'Runs the server, fails middleware with no route' {
@@ -39,8 +41,8 @@ Describe 'Start-PodeAzFuncServer' {
             }
         }
 
-        $result.Name | Should Be 'Response'
-        $result.Value | Should Not Be $null
+        $result.Name | Should -Be 'Response'
+        $result.Value | Should -Not -Be $null
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
@@ -61,8 +63,8 @@ Describe 'Start-PodeAzFuncServer' {
             }
         }
 
-        $result.Name | Should Be 'Response'
-        $result.Value | Should Not Be $null
+        $result.Name | Should -Be 'Response'
+        $result.Value | Should -Not -Be $null
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
@@ -83,8 +85,8 @@ Describe 'Start-PodeAzFuncServer' {
             }
         }
 
-        $result.Name | Should Be 'Response'
-        $result.Value | Should Not Be $null
+        $result.Name | Should -Be 'Response'
+        $result.Value | Should -Not -Be $null
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
@@ -106,8 +108,8 @@ Describe 'Start-PodeAzFuncServer' {
             }
         }
 
-        $result.Name | Should Be 'Response'
-        $result.Value | Should Not Be $null
+        $result.Name | Should -Be 'Response'
+        $result.Value | Should -Not -Be $null
 
         Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
@@ -129,7 +131,7 @@ Describe 'Start-PodeAzFuncServer' {
             }
         }
 
-        { Start-PodeAzFuncServer -Data $d } | Should Throw 'some error'
+        { Start-PodeAzFuncServer -Data $d } | Should -Throw -ExpectedMessage 'some error'
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
@@ -137,6 +139,7 @@ Describe 'Start-PodeAzFuncServer' {
 }
 
 Describe 'Start-PodeAwsLambdaServer' {
+    BeforeAll{
     Mock Get-PodePublicMiddleware { }
     Mock Get-PodeRouteValidateMiddleware { }
     Mock Get-PodeBodyMiddleware { }
@@ -148,10 +151,10 @@ Describe 'Start-PodeAwsLambdaServer' {
     Mock Invoke-PodeEndware { }
     Mock Set-PodeServerHeader { }
     Mock Set-PodeResponseStatus { }
-    Mock Update-PodeServerRequestMetrics { }
+    Mock Update-PodeServerRequestMetrics { }}
 
     It 'Throws error for null data' {
-        { Start-PodeAwsLambdaServer -Data $null } | Should Throw 'because it is null'
+        { Start-PodeAwsLambdaServer -Data $null } | Should -Throw -ExpectedMessage '*because it is null*'
     }
 
     It 'Runs the server, fails middleware with no route' {
@@ -164,7 +167,7 @@ Describe 'Start-PodeAwsLambdaServer' {
             path = '/api/users'
         }
 
-        $result | Should Not Be $null
+        $result | Should -Not -Be $null
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
@@ -180,7 +183,7 @@ Describe 'Start-PodeAwsLambdaServer' {
             path = '/api/users'
         }
 
-        $result | Should Not Be $null
+        $result | Should -Not -Be $null
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 2 -Scope It
@@ -197,7 +200,7 @@ Describe 'Start-PodeAwsLambdaServer' {
             path = '/api/users'
         }
 
-        $result | Should Not Be $null
+        $result | Should -Not -Be $null
 
         Assert-MockCalled Set-PodeResponseStatus -Times 1 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It
@@ -214,7 +217,7 @@ Describe 'Start-PodeAwsLambdaServer' {
             path = '/api/users'
         }
 
-        { Start-PodeAwsLambdaServer -Data $d } | Should Throw 'some error'
+        { Start-PodeAwsLambdaServer -Data $d } | Should -Throw -ExpectedMessage 'some error'
 
         Assert-MockCalled Set-PodeResponseStatus -Times 0 -Scope It
         Assert-MockCalled Invoke-PodeMiddleware -Times 1 -Scope It

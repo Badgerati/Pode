@@ -8,7 +8,7 @@ param(
 #>
 
 $Versions = @{
-    Pester      = '4.8.0'
+    Pester      = '5.5.0'
     MkDocs      = '1.5.3'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
@@ -279,14 +279,24 @@ task Test Build, TestDeps, {
     }
 
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
+    # get default from static property
+    $configuration = [PesterConfiguration]::Default
+    $configuration.run.path= @('./tests/unit', './tests/integration')
+    $configuration.run.PassThru=$true
+    $configuration.CodeCoverage.OutputFormat = 'NUnitXml'
 
+    $configuration.TestResult.OutputPath = $Script:TestResultFile
     # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
-        $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
-    }
-    else {
-        $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
+        $configuration.CodeCoverage.Enabled = $true
+
+        #  $Script:TestStatus = Invoke-Pester -Path './tests/unit', './tests/integration'  -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
+        $Script:TestStatus = Invoke-Pester   -Configuration $configuration
+    } else {
+        $configuration.Output.Verbosity= 'Detailed'
+        $Script:TestStatus = Invoke-Pester  -Configuration $configuration
+        #  $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
     }
 }, PushCodeCoverage, CheckFailedTests
 
