@@ -149,6 +149,17 @@ Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
         (New-PodeOAStringProperty -Name 'city' -Required | ConvertTo-PodeOAParameter -In Query)
     )
 ```
+or if you prefer to use the pipeline 
+```powershell
+Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
+    Write-PodeJsonResponse -Value @{
+        Name = 'Rick'
+        UserId = $WebEvent.Query['name']
+    }
+} -PassThru | New-PodeOAStringProperty -Name 'name' -Required | ConvertTo-PodeOAParameter -In Query |
+                New-PodeOAStringProperty -Name 'city' -Required | ConvertTo-PodeOAParameter -In Query |
+                Set-PodeOARequest 
+```
 
 #### Payload
 
@@ -369,6 +380,16 @@ There are two ways to define objects:
 
 1. Similar to arrays, you can use the `-Object` switch on the simple properties.
 2. You can use the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function to combine multiple properties.
+
+
+### oneOf,anyOf and allOf Keywords 
+
+OpenAPI 3.x provides several keywords which you can use to combine schemas. You can use these keywords to create a complex schema or validate a value against multiple criteria.
+- oneOf – validates the value against exactly one of the subschemas
+- allOf – validates the value against all the subschemas
+- anyOf – validates the value against any (one or more) of the subschemas
+
+You can use the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/Merge-PodeOAProperty)` function to merge multiple preoperies
 
 #### Simple
 
