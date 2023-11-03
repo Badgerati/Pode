@@ -382,15 +382,6 @@ There are two ways to define objects:
 2. You can use the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function to combine multiple properties.
 
 
-### oneOf,anyOf and allOf Keywords 
-
-OpenAPI 3.x provides several keywords which you can use to combine schemas. You can use these keywords to create a complex schema or validate a value against multiple criteria.
-- oneOf – validates the value against exactly one of the subschemas
-- allOf – validates the value against all the subschemas
-- anyOf – validates the value against any (one or more) of the subschemas
-
-You can use the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/Merge-PodeOAProperty)` function to merge multiple preoperies
-
 #### Simple
 
 If you use the `-Object` switch on the simple property function, this will automatically wrap the property as an object. The Name for this is required.
@@ -508,6 +499,15 @@ As JSON, this could look as follows:
     ]
 }
 ```
+
+### oneOf,anyOf and allOf Keywords 
+
+OpenAPI 3.x provides several keywords which you can use to combine schemas. You can use these keywords to create a complex schema or validate a value against multiple criteria.
+- oneOf – validates the value against exactly one of the subschemas
+- allOf – validates the value against all the subschemas
+- anyOf – validates the value against any (one or more) of the subschemas
+
+You can use the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/Merge-PodeOAProperty)` function to merge multiple properties.
 
 ## Swagger and ReDoc
 
