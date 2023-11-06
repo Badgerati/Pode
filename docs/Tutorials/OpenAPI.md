@@ -47,10 +47,10 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 }
 ```
 
-## Typical OpenAPI configuration
+## OpenAPI configuration Best Practice
 Pode is rich of functions to create and configure an OpenApi spec. Here is a typical code you should use to initiate an OpenApi spec
 
-```powershell 
+```powershell
 #Initialize OpenApi
 Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification. ...'    -DisableMinimalDefinitions
 # Additional OpenApi Info

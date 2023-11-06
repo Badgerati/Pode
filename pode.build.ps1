@@ -1,6 +1,9 @@
 param(
     [string]
-    $Version = ''
+    $Version = '',
+    [string]
+    [ValidateSet(  'None', 'Normal' , 'Detailed', 'Diagnostic')]
+    $PesterVerbosity = 'Normal'
 )
 
 <#
@@ -44,8 +47,7 @@ function Test-PodeBuildCommand($cmd) {
 
     if (Test-PodeBuildIsWindows) {
         $path = (Get-Command $cmd -ErrorAction Ignore)
-    }
-    else {
+    } else {
         $path = (which $cmd)
     }
 
@@ -63,15 +65,12 @@ function Invoke-PodeBuildInstall($name, $version) {
         if (Test-PodeBuildCommand 'choco') {
             choco install $name --version $version -y
         }
-    }
-    else {
+    } else {
         if (Test-PodeBuildCommand 'brew') {
             brew install $name
-        }
-        elseif (Test-PodeBuildCommand 'apt-get') {
+        } elseif (Test-PodeBuildCommand 'apt-get') {
             sudo apt-get install $name -y
-        }
-        elseif (Test-PodeBuildCommand 'yum') {
+        } elseif (Test-PodeBuildCommand 'yum') {
             sudo yum install $name -y
         }
     }
@@ -88,12 +87,13 @@ function Install-PodeBuildModule($name) {
 }
 
 function Invoke-PodeBuildDotnetBuild($target) {
-    dotnet build --configuration Release --self-contained --framework $target
+    $AssemblyVersion=($Version)? "-p:Version=$Version" : ''
+    dotnet build --configuration Release --self-contained --framework $target $AssemblyVersion
     if (!$?) {
         throw "dotnet build failed for $($target)"
     }
 
-    dotnet publish --configuration Release --self-contained --framework $target --output ../Libs/$target
+    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
     if (!$?) {
         throw "dotnet publish failed for $($target)"
     }
@@ -116,8 +116,7 @@ task StampVersion {
 task PrintChecksum {
     if (Test-PodeBuildIsWindows) {
         $Script:Checksum = (checksum -t sha256 $Version-Binaries.zip)
-    }
-    else {
+    } else {
         $Script:Checksum = (shasum -a 256 ./$Version-Binaries.zip | awk '{ print $1 }').ToUpper()
     }
 
@@ -200,8 +199,7 @@ task Build BuildDeps, {
         Invoke-PodeBuildDotnetBuild -target 'netstandard2.0'
         Invoke-PodeBuildDotnetBuild -target 'net6.0'
         Invoke-PodeBuildDotnetBuild -target 'net7.0'
-    }
-    finally {
+    } finally {
         Pop-Location
     }
 }
@@ -281,22 +279,20 @@ task Test Build, TestDeps, {
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
     # get default from static property
     $configuration = [PesterConfiguration]::Default
-    $configuration.run.path= @('./tests/unit', './tests/integration')
-    $configuration.run.PassThru=$true
-    $configuration.CodeCoverage.OutputFormat = 'NUnitXml'
-
+    $configuration.run.path = @('./tests/unit', './tests/integration')
+    $configuration.run.PassThru = $true
+    $configuration.TestResult.OutputFormat = 'NUnitXml'
+    $configuration.Output.Verbosity = $PesterVerbosity
     $configuration.TestResult.OutputPath = $Script:TestResultFile
     # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
         $configuration.CodeCoverage.Enabled = $true
-
-        #  $Script:TestStatus = Invoke-Pester -Path './tests/unit', './tests/integration'  -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
+        $configuration.CodeCoverage.Path = $srcFiles
         $Script:TestStatus = Invoke-Pester   -Configuration $configuration
     } else {
-        $configuration.Output.Verbosity= 'Detailed'
+        $configuration.Output.Verbosity = 'Detailed'
         $Script:TestStatus = Invoke-Pester  -Configuration $configuration
-        #  $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
     }
 }, PushCodeCoverage, CheckFailedTests
 
@@ -316,8 +312,7 @@ task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
         Write-Host "Pushing coverage for $($branch) from $($service)"
         $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch
         Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
-    }
-    catch {
+    } catch {
         $_.Exception | Out-Default
     }
 }

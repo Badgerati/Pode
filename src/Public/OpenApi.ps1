@@ -225,25 +225,49 @@ function Enable-PodeOpenApi {
 
 <#
 .SYNOPSIS
-Creates an OpenAPI Server property.
+Creates an OpenAPI Server Object.
 
 .DESCRIPTION
-Creates an OpenAPI Server property.
+Creates an OpenAPI Server Object.
 
 .LINK
 https://swagger.io/docs/specification/api-host-and-base-path/
 
 .PARAMETER Url
-Server or path to local server.
+A URL to the target host.  This URL supports Server Variables and MAY be relative, to indicate that the host location is relative to the location where the OpenAPI document is being served.
+Variable substitutions will be made when a variable is named in `{`brackets`}`.
 
 .PARAMETER Description
-Description of the server.
+An optional string describing the host designated by the URL. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation.
+
+.PARAMETER Variables
+A map between a variable name and its value.  The value is used for substitution in the server's URL template.
 
 .EXAMPLE
 Add-PodeOAServerEndpoint -Url 'https://myserver.io/api' -Description 'My test server'
 
 .EXAMPLE
 Add-PodeOAServerEndpoint -Url '/api' -Description 'My local server'
+
+.EXAMPLE
+Add-PodeOAServerEndpoint -Url "https://{username}.gigantic-server.com:{port}/{basePath}" -Description "The production API server" `
+    -Variable   @{
+        username = @{
+            default = 'demo'
+            description = 'this value is assigned by the service provider, in this example gigantic-server.com'
+        }
+        port = @{
+            enum = @('System.Object[]')  # Assuming 'System.Object[]' is a placeholder for actual values
+            default = 8443
+        }
+        basePath = @{
+            default = 'v2'
+        }
+    }
+}
+
+
+
 #>
 function Add-PodeOAServerEndpoint {
     param (
@@ -252,7 +276,9 @@ function Add-PodeOAServerEndpoint {
         [string]
         $Url,
         [string]
-        $Description
+        $Description,
+        [System.Collections.Specialized.OrderedDictionary]
+        $Variables
     )
 
     if (! $PodeContext.Server.OpenAPI.servers) {
@@ -261,6 +287,10 @@ function Add-PodeOAServerEndpoint {
     $lUrl = [ordered]@{url = $Url }
     if ($Description) {
         $lUrl.description = $Description
+    }
+
+    if ($Variables){
+        $lUrl.variables = $Variables
     }
     $PodeContext.Server.OpenAPI.servers += $lUrl
 }
@@ -646,6 +676,7 @@ function Add-PodeOAComponentResponse {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -878,6 +909,7 @@ function Add-PodeOAComponentSchema {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -932,6 +964,7 @@ function Add-PodeOAComponentHeaderSchema {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -1043,6 +1076,7 @@ function Add-PodeOAComponentRequestBody {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -1098,9 +1132,10 @@ The Parameter to use for the component (from ConvertTo-PodeOAParameter)
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query | Add-PodeOAComponentParameter -Name 'UserIdParam'
 #>
 function Add-PodeOAComponentParameter {
-    [CmdletBinding( )]
+    [CmdletBinding()]
     param(
-        [Parameter( )]
+        [Parameter()]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -1206,6 +1241,7 @@ function New-PodeOAIntProperty {
         $ParamsList,
 
         [Parameter()]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -1468,6 +1504,7 @@ function New-PodeOANumberProperty {
         $ParamsList,
 
         [Parameter()]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -1736,6 +1773,7 @@ function New-PodeOAStringProperty {
         $ParamsList,
 
         [Parameter()]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -1998,6 +2036,7 @@ function New-PodeOABoolProperty {
         $ParamsList,
 
         [Parameter()]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -2225,6 +2264,7 @@ function New-PodeOAObjectProperty {
         $ParamsList,
 
         [Parameter()]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -2579,6 +2619,7 @@ function New-PodeOASchemaProperty {
         $ParamsList,
 
         [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -3271,6 +3312,7 @@ Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc 'Sw
 function New-PodeOAExternalDoc {
     param(
         [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -3385,6 +3427,7 @@ Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDo
 function Add-PodeOATag {
     param(
         [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 

@@ -1657,7 +1657,7 @@ Describe 'OpenApi' {
             $PodeContext.Server.OpenAPI.components.schemas['Category'] | Should -Not -BeNullOrEmpty
             $result = $PodeContext.Server.OpenAPI.components.schemas['Category']
             $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [ordered]
+            $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.type | Should -Be 'object'
             $result.xml | Should -Not -BeNullOrEmpty
@@ -1667,12 +1667,12 @@ Describe 'OpenApi' {
             $result.properties | Should -BeOfType [hashtable]
             $result.properties.Count | Should -Be 2
             $result.properties.name | Should -Not -BeNullOrEmpty
-            $result.properties.name | Should -BeOfType [ordered]
+            $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.properties.name.Count | Should -Be 2
             $result.properties.name.type | Should -Be 'string'
             $result.properties.name.example | Should -Be 'Dogs'
             $result.properties.id | Should -Not -BeNullOrEmpty
-            $result.properties.id | Should -BeOfType [ordered]
+            $result.properties.id | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.properties.id.Count | Should -Be 3
             $result.properties.id.type | Should -Be 'integer'
             $result.properties.id.example | Should -Be 1
@@ -1686,7 +1686,7 @@ Describe 'OpenApi' {
             $PodeContext.Server.OpenAPI.components.schemas['Category'] | Should -Not -BeNullOrEmpty
             $result = $PodeContext.Server.OpenAPI.components.schemas['Category']
             $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [ordered]
+            $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.type | Should -Be 'object'
             $result.xml | Should -Not -BeNullOrEmpty
@@ -1696,12 +1696,12 @@ Describe 'OpenApi' {
             $result.properties | Should -BeOfType [hashtable]
             $result.properties.Count | Should -Be 2
             $result.properties.name | Should -Not -BeNullOrEmpty
-            $result.properties.name | Should -BeOfType [ordered]
+            $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.properties.name.Count | Should -Be 2
             $result.properties.name.type | Should -Be 'string'
             $result.properties.name.example | Should -Be 'Dogs'
             $result.properties.id | Should -Not -BeNullOrEmpty
-            $result.properties.id | Should -BeOfType [ordered]
+            $result.properties.id | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.properties.id.Count | Should -Be 3
             $result.properties.id.type | Should -Be 'integer'
             $result.properties.id.example | Should -Be 1
@@ -2801,7 +2801,7 @@ Describe 'OpenApi' {
             $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
             $result = $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit']
             $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [ordered]
+            $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'calls per hour allowed by the user'
             $result.type | Should -Be 'integer'
@@ -2812,7 +2812,7 @@ Describe 'OpenApi' {
             $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
             $result = $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit']
             $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [ordered]
+            $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'calls per hour allowed by the user'
             $result.type | Should -Be 'integer'
