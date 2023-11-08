@@ -2005,8 +2005,13 @@ Describe 'OpenApi' {
     Context 'Add-PodeOAInfo' {
 
         It 'Valid values' {
-            Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
+            Add-PodeOAInfo  -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description 'A description' `
+                -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' `
+                -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
             $PodeContext.Server.OpenAPI.info | Should -Not -BeNullOrEmpty
+            $PodeContext.Server.OpenAPI.info.title | Should -Be 'Swagger Petstore - OpenAPI 3.0'
+            $PodeContext.Server.OpenAPI.info.version | Should -Be '1.0.17'
+            $PodeContext.Server.OpenAPI.info.description | Should -Be 'A description'
             $PodeContext.Server.OpenAPI.info.license | Should -Not -BeNullOrEmpty
             $PodeContext.Server.OpenAPI.info.license.name | Should -Be 'Apache 2.0'
             $PodeContext.Server.OpenAPI.info.license.url | Should -Be 'http://www.apache.org/licenses/LICENSE-2.0.html'
