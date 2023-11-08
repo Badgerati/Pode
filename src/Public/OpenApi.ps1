@@ -9,15 +9,16 @@ Enables the OpenAPI default route in Pode, as well as setting up details like Ti
 An optional custom route path to access the OpenAPI definition. (Default: /openapi)
 
 .PARAMETER Title
-The Title of the API.
+The Title of the API. (Deprecated -  Use Add-PodeOAInfo)
 
 .PARAMETER Version
-The Version of the API. (Default: 0.0.0)
+The Version of the API.   (Deprecated -  Use Add-PodeOAInfo)
 The OpenAPI Specification is versioned using Semantic Versioning 2.0.0 (semver) and follows the semver specification.
 https://semver.org/spec/v2.0.0.html
 
 .PARAMETER Description
-A short description of the API. CommonMark syntax MAY be used for rich text representation.
+A short description of the API. (Deprecated -  Use Add-PodeOAInfo)
+CommonMark syntax MAY be used for rich text representation.
 https://spec.commonmark.org/
 
 .PARAMETER OpenApiVersion
@@ -61,7 +62,7 @@ Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*' -RestrictRoutes
 
 .EXAMPLE
-Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My API' -Version '1.0.beta' -NoCompress -Mode 'Donwload'
+Enable-PodeOpenApi -Path '/docs/openapi'   -NoCompress -Mode 'Donwload' -DisableMinimalDefinitions
 #>
 function Enable-PodeOpenApi {
     [CmdletBinding()]
@@ -71,20 +72,19 @@ function Enable-PodeOpenApi {
         [string]
         $Path = '/openapi',
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(ParameterSetName='Deprecated')]
         [string]
         $Title,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Deprecated')]
         [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$')]
         [string]
-        $Version = '0.0.0',
+        $Version,
 
-        [Parameter()]
+        [Parameter(ParameterSetName='Deprecated')]
         [string]
         $Description,
 
-        [Parameter()]
         [ValidateSet('3.0.3', '3.0.2', '3.0.1')]
         [string]
         $OpenApiVersion = '3.0.3',
@@ -101,29 +101,29 @@ function Enable-PodeOpenApi {
         [switch]
         $RestrictRoutes,
 
-        [Parameter()]
         [ValidateSet('View', 'Download')]
         [String]
         $Mode = 'view',
 
-        [Parameter()]
         [ValidateSet('Json', 'Json-Compress', 'Yaml')]
         [String]
         $MarkupLanguage = 'Json',
 
-        [Parameter()]
         [switch]
         $EnableSchemaValidation,
 
-        [Parameter()]
         [ValidateRange(1, 100)]
         [int]
         $Depth = 20,
 
-        [Parameter()]
         [switch]
         $DisableMinimalDefinitions
     )
+
+    if ($PSCmdlet.ParameterSetName -eq 'Deprecated') {
+        Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
+    }
+
     $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.ToBool()
     # initialise openapi info
     $PodeContext.Server.OpenAPI.Version = $OpenApiVersion
@@ -136,9 +136,12 @@ function Enable-PodeOpenApi {
         Mode           = $Mode
         MarkupLanguage = $MarkupLanguage
     }
-
-    $PodeContext.Server.OpenAPI.info.title = $Title
-    $PodeContext.Server.OpenAPI.info.version = $Version
+    if ( $Title) {
+        $PodeContext.Server.OpenAPI.info.title = $Title
+    }
+    if ($Version) {
+        $PodeContext.Server.OpenAPI.info.version = $Version
+    }
 
     if ($Description ) {
         $PodeContext.Server.OpenAPI.info.description = $Description
@@ -289,7 +292,7 @@ function Add-PodeOAServerEndpoint {
         $lUrl.description = $Description
     }
 
-    if ($Variables){
+    if ($Variables) {
         $lUrl.variables = $Variables
     }
     $PodeContext.Server.OpenAPI.servers += $lUrl
@@ -3474,6 +3477,19 @@ https://swagger.io/docs/specification/api-general-info/
 .LINK
 https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#infoObject
 
+.PARAMETER Title
+The Title of the API.
+
+.PARAMETER Version
+The Version of the API.
+The OpenAPI Specification is versioned using Semantic Versioning 2.0.0 (semver) and follows the semver specification.
+https://semver.org/spec/v2.0.0.html
+
+.PARAMETER Description
+A short description of the API.
+CommonMark syntax MAY be used for rich text representation.
+https://spec.commonmark.org/
+
 .PARAMETER TermsOfService
 A URL to the Terms of Service for the API. MUST be in the format of a URL.
 
@@ -3499,15 +3515,28 @@ Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' 
 function Add-PodeOAInfo {
     param(
         [Parameter()]
+        [string]
+        $Title,
+
+        [Parameter()]
+        [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$')]
+        [string]
+        $Version ,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
         [ValidateScript({ $_ -imatch '^https?://.+' })]
         [string]
         $TermsOfService,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter( )]
         [string]
-        $License,
+        $LicenseName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter( )]
         [ValidateScript({ $_ -imatch '^https?://.+' })]
         [string]
         $LicenseUrl,
@@ -3527,11 +3556,42 @@ function Add-PodeOAInfo {
         $ContactUrl
     )
 
-    $Info = @{
-        'license' = @{
-            'name' = $License
-            'url'  = $LicenseUrl
+    $Info = @{}
+
+    if ($LicenseName) {
+        $Info.license = @{
+            'name' = $LicenseName
         }
+    }
+    if ($LicenseUrl) {
+        if ( $Info.license ) {
+            $Info.license.url = $LicenseUrl
+        } else {
+            throw 'The OpenAPI property license.name is required. Use -LicenseName'
+        }
+    }
+
+
+    if ($Title) {
+        $Info.title = $Title
+    } elseif (  $PodeContext.Server.OpenAPI.info.title) {
+        $Info.title = $PodeContext.Server.OpenAPI.info.title
+    } else {
+        throw 'The OpenAPI property info.title is required. Use -Title'
+    }
+
+    if ($Version) {
+        $Info.version = $Version
+    } elseif ( $PodeContext.Server.OpenAPI.info.version) {
+        $Info.version = $PodeContext.Server.OpenAPI.info.version
+    } else {
+        $Info.version = '1.0.0'
+    }
+
+    if ($Description ) {
+        $Info.description = $Description
+    } elseif ( $PodeContext.Server.OpenAPI.info.description) {
+        $Info.description = $PodeContext.Server.OpenAPI.info.description
     }
 
     if ($TermsOfService) {
@@ -3553,8 +3613,7 @@ function Add-PodeOAInfo {
             $Info['contact'].url = $ContactUrl
         }
     }
-
-    $PodeContext.Server.OpenAPI.info += $Info
+    $PodeContext.Server.OpenAPI.info = $Info
 
 }
 

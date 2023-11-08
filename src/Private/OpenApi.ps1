@@ -382,7 +382,9 @@ function Get-PodeOpenApiDefinitionInternal {
         [hashtable]
         $MetaInfo
     )
-
+if (!$PodeContext.Server.OpenAPI.Version){
+    throw 'OpenApi openapi field is required'
+}
     # set the openapi version
     $def = [ordered]@{
         openapi = $PodeContext.Server.OpenAPI.Version
@@ -395,10 +397,16 @@ function Get-PodeOpenApiDefinitionInternal {
     #overwite default values
     if ($MetaInfo.Title) {
         $def.info.title = $MetaInfo.Title
+    } else {
+        throw 'OpenApi info.title field is required'
     }
+
     if ($MetaInfo.Version) {
         $def.info.version = $MetaInfo.Version
+    } else {
+        throw 'OpenApi info.version field is required'
     }
+
     if ($MetaInfo.Description) {
         $def.info.description = $MetaInfo.Description
     }
