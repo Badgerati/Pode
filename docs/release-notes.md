@@ -1,5 +1,46 @@
 # Release Notes
 
+## v2.9.0
+
+Date: 30th October 2023
+
+```plain
+### Features
+* #992: Introduces new Authorisation middleware support
+
+### Enhancements
+* #588: Adds support for merging Authentication methods into a new Authentication method
+* #1082, #1107: Adds a new "Running" event type, which will be triggered once all Runspaces have started
+* #1101: Adds a new `-SslProtocol` parameter to `Add-PodeEndpoint`, to allow setting SSL Protocols per endpoint
+* #1106: Adds two new Security functions to control the hiding/showing of the Server header in responses
+* #1142: The `Test-PodeJwt` function is now public (thanks @alan-null!)
+* #1163: Adds a new "Session" authentication method, useful if you need multiple authentication methods and the user can choose one
+
+### Bugs
+* #1030: Fixes an issue with some Authentication methods when `-AsCredential` was supplied on the scheme
+* #1081: Don't attempt to parse the query string if there is no query string supplied
+* #1083: Fixes a time-zone issue when verifying JWT "exp" and "nbf" properties (thanks @avin3sh!)
+* #1087: Fixes an SMTP body parsing issue when multiple headers are in the request
+* #1093: Allow greater JSON depths to be used when saving/restoring State (thanks @plk!)
+* #1125: Fixes an issue where Verbs weren't being cleared down appropriately on server restart
+* #1130: When request logging is enabled, and an authenticated user is available, the username will now be used and not "-"
+* #1137: Fixes the loading of AutoImport configuration - it was being ignored!
+
+### Documentation
+* #1078: Adds release dates to the releases notes page
+* #1099: Adds a reference to the "Protected Users" group in the AD Authentication page
+* #1115, #1116: Fixes incorrect ports in Example scripts (thanks @ArieHein!)
+* #1117, #1118, #1119: Fixes markdown syntax in pages (thanks @ArieHein!)
+* #1123: Adds reference link about using the SecretManagement module in automation scenarios
+* #1133: Fixes broken links to functions (thanks @Chris--A!)
+* #1141: Updates the IIS page to reference the use of Maximum Worker Processes, and Sessions being stored in-memory
+
+### Packaging
+* #1169: Adds a `.vscode` workspace settings file, with PowerShell code formatting settings
+* #1170: Bumps the Alpine version to 3.17, and Ubuntu to 22.04 in Dockerfiles
+* #1171: Bumps the versions of MkDocs and the Material theme
+```
+
 ## v2.8.0
 
 Date: 2nd February 2023
