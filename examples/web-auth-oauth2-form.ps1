@@ -18,7 +18,7 @@ Note: You'll need to register a new app in Azure, and note you clientId, secret,
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http -Default
+    Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http -Default
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set the view engine

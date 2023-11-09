@@ -86,8 +86,7 @@ function New-PodeAccessScheme {
     if (!$Custom -and (Test-PodeIsEmpty $ScriptBlock) -and [string]::IsNullOrWhiteSpace($Path)) {
         if ($Type -ieq 'user') {
             $Path = 'Username'
-        }
-        else {
+        } else {
             $Path = "$($Type)s"
         }
     }
@@ -112,6 +111,9 @@ Or they can be used independant of Authentication/Routes for custom scenarios.
 
 .PARAMETER Name
 A unique Name for the Access method.
+
+.PARAMETER Description
+A short description used by OpenAPI.
 
 .PARAMETER Scheme
 The access Scheme to use for retrieving credentials (From New-PodeAccessScheme).
@@ -146,6 +148,9 @@ function Add-PodeAccess {
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
+
+        [string]
+        $Description,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
@@ -183,6 +188,7 @@ function Add-PodeAccess {
     # add access object
     $PodeContext.Server.Authorisations.Methods[$Name] = @{
         Name        = $Name
+        Description = $Description
         Scheme      = $Scheme
         ScriptBlock = $scriptObj
         Arguments   = $ArgumentList
@@ -562,8 +568,7 @@ function Test-PodeAccessRoute {
     # get route access values
     if ($access.Scheme.IsCustom) {
         $routeAccess = $WebEvent.Route.AccessMeta.Custom[$access.Name]
-    }
-    else {
+    } else {
         $routeAccess = $WebEvent.Route.AccessMeta[$access.Scheme.Type]
     }
 

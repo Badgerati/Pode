@@ -382,9 +382,9 @@ function Get-PodeOpenApiDefinitionInternal {
         [hashtable]
         $MetaInfo
     )
-if (!$PodeContext.Server.OpenAPI.Version){
-    throw 'OpenApi openapi field is required'
-}
+    if (!$PodeContext.Server.OpenAPI.Version) {
+        throw 'OpenApi openapi field is required'
+    }
     # set the openapi version
     $def = [ordered]@{
         openapi = $PodeContext.Server.OpenAPI.Version
@@ -397,14 +397,10 @@ if (!$PodeContext.Server.OpenAPI.Version){
     #overwite default values
     if ($MetaInfo.Title) {
         $def.info.title = $MetaInfo.Title
-    } else {
-        throw 'OpenApi info.title field is required'
     }
 
     if ($MetaInfo.Version) {
         $def.info.version = $MetaInfo.Version
-    } else {
-        throw 'OpenApi info.version field is required'
     }
 
     if ($MetaInfo.Description) {
@@ -439,22 +435,72 @@ if (!$PodeContext.Server.OpenAPI.Version){
         if ($null -eq $def.components.securitySchemes) {
             $def.components.securitySchemes = @{}
         }
+        $authNames =(Expand-PodeAuthMerge -Names $PodeContext.Server.Authentications.Methods.Keys)
 
-        foreach ($authName in $PodeContext.Server.Authentications.Methods.Keys) {
+        foreach ($authName in $authNames) {
             $authType = (Find-PodeAuth -Name $authName).Scheme
             $_authName = ($authName -replace '\s+', '')
 
             $_authObj = @{}
             if ($authType.Scheme -ieq 'apikey') {
-                $_authObj = @{
+                $_authObj = [ordered]@{
                     type = $authType.Scheme
                     in   = $authType.Arguments.Location.ToLowerInvariant()
                     name = $authType.Arguments.LocationName
+                }
+                if ($authType.Arguments.Description) {
+                    $_authObj.description = $authType.Arguments.Description
+                }
+            } elseif ($authType.Scheme -ieq 'oauth2') {
+                if ($authType.Arguments.Urls.Token -and $authType.Arguments.Urls.Authorise) {
+                    $oAuthFlow = 'authorizationCode'
+                } elseif ($authType.Arguments.Urls.Token ) {
+                    if ($null -ne $authType.InnerScheme) {
+                        if ($authType.InnerScheme.Name -ieq 'basic' -or $authType.InnerScheme.Name -ieq 'form') {
+                            $oAuthFlow = 'password'
+                        } else {
+                            $oAuthFlow = 'implicit'
+                        }
+                    }
+                }
+                $_authObj = [ordered]@{
+                    type = $authType.Scheme
+                }
+                if ($authType.Arguments.Description) {
+                    $_authObj.description = $authType.Arguments.Description
+                }
+                $_authObj.flows = @{
+                    $oAuthFlow = [ordered]@{
+                    }
+                }
+                if ($authType.Arguments.Urls.Token) {
+                    $_authObj.flows.$oAuthFlow.tokenUrl = $authType.Arguments.Urls.Token
+                }
+
+                if ($authType.Arguments.Urls.Authorise) {
+                    $_authObj.flows.$oAuthFlow.authorizationUrl = $authType.Arguments.Urls.Authorise
+                }
+                if ($authType.Arguments.Urls.Refresh) {
+                    $_authObj.flows.$oAuthFlow.refreshUrl = $authType.Arguments.Urls.Refresh
+                }
+
+                $_authObj.flows.$oAuthFlow.scopes = @{}
+                if ($authType.Arguments.Scopes ) {
+                    foreach ($scope in $authType.Arguments.Scopes  ) {
+                        if ($PodeContext.Server.Authorisations.Methods.ContainsKey($scope) -and $PodeContext.Server.Authorisations.Methods[$scope].Scheme.Type -ieq 'Scope' -and $PodeContext.Server.Authorisations.Methods[$scope].Description) {
+                            $_authObj.flows.$oAuthFlow.scopes[$scope] = $PodeContext.Server.Authorisations.Methods[$scope].Description
+                        } else {
+                            $_authObj.flows.$oAuthFlow.scopes[$scope] = 'No description.'
+                        }
+                    }
                 }
             } else {
                 $_authObj = @{
                     type   = $authType.Scheme.ToLowerInvariant()
                     scheme = $authType.Name.ToLowerInvariant()
+                }
+                if ($authType.Arguments.Description) {
+                    $_authObj.description = $authType.Arguments.Description
                 }
             }
 
@@ -530,24 +576,14 @@ if (!$PodeContext.Server.OpenAPI.Version){
                     $pm.requestBody = $_route.OpenApi.RequestBody
                 }
                 if ($_route.OpenApi.Authentication.Count -gt 0) {
-                    $pm.security = @($_route.OpenApi.Authentication)
-                }
-                $pm.responses = $_route.OpenApi.Responses
-                #servers     = $null
-                # add path's http method to defintition
-                $def.paths[$_route.OpenApi.Path][$method] = $pm
-                # add global authentication for route
-                if (($null -ne $def['security']) -and ($def['security'].Length -gt 0)) {
-                    foreach ($sec in $PodeContext.Server.OpenAPI.Security) {
-                        if ([string]::IsNullOrWhiteSpace($sec.Route) -or ($sec.Route -ieq '/') -or ($sec.Route -ieq $_route.OpenApi.Path) -or ($_route.OpenApi.Path -imatch "^$($sec.Route)$")) {
-                            if (!$def.paths[$_route.OpenApi.Path][$method].security) {
-                                $def.paths[$_route.OpenApi.Path][$method].security = @($sec.Definition)
-                            } else {
-                                $def.paths[$_route.OpenApi.Path][$method].security += $sec.Definition
-                            }
-                        }
+                    $pm.security = @()
+                    foreach ($sct in (Expand-PodeAuthMerge -Names $_route.OpenApi.Authentication.Keys)) {
+                        $pm.security += @{ $sct = $_route.AccessMeta.Scope }
                     }
                 }
+                $pm.responses = $_route.OpenApi.Responses
+                # add path's http method to defintition
+                $def.paths[$_route.OpenApi.Path][$method] = $pm
 
                 # add any custom server endpoints for route
                 foreach ($_route in $_routes) {
