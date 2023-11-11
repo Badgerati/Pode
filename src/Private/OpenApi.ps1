@@ -435,13 +435,14 @@ function Get-PodeOpenApiDefinitionInternal {
         if ($null -eq $def.components.securitySchemes) {
             $def.components.securitySchemes = @{}
         }
-        $authNames =(Expand-PodeAuthMerge -Names $PodeContext.Server.Authentications.Methods.Keys)
+        $authNames = (Expand-PodeAuthMerge -Names $PodeContext.Server.Authentications.Methods.Keys)
 
         foreach ($authName in $authNames) {
             $authType = (Find-PodeAuth -Name $authName).Scheme
             $_authName = ($authName -replace '\s+', '')
 
             $_authObj = @{}
+
             if ($authType.Scheme -ieq 'apikey') {
                 $_authObj = [ordered]@{
                     type = $authType.Scheme
@@ -503,7 +504,6 @@ function Get-PodeOpenApiDefinitionInternal {
                     $_authObj.description = $authType.Arguments.Description
                 }
             }
-
             $def.components.securitySchemes[$_authName] = $_authObj
         }
 
@@ -512,7 +512,7 @@ function Get-PodeOpenApiDefinitionInternal {
         }
     }
 
-    if ($MetaInfo) {
+    if ($MetaInfo.RouteFilter) {
         $filter = "^$($MetaInfo.RouteFilter)"
     } else {
         $filter = ''
@@ -578,7 +578,11 @@ function Get-PodeOpenApiDefinitionInternal {
                 if ($_route.OpenApi.Authentication.Count -gt 0) {
                     $pm.security = @()
                     foreach ($sct in (Expand-PodeAuthMerge -Names $_route.OpenApi.Authentication.Keys)) {
-                        $pm.security += @{ $sct = $_route.AccessMeta.Scope }
+                        if ($PodeContext.Server.Authentications.Methods.$sct.Scheme.Scheme -ieq 'oauth2') {
+                            $pm.security += @{ $sct = $_route.AccessMeta.Scope }
+                        } else {
+                            $pm.security += @{$sct = @() }
+                        }
                     }
                 }
                 $pm.responses = $_route.OpenApi.Responses

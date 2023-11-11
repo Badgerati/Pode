@@ -217,18 +217,18 @@ Some useful links:
 
         }
     }
-    <#   New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Login' -Sessionless -ScriptBlock {
         param($username, $password)
         # check if the user is valid
         return @{ User = $user }
     }
-      # jwt with no signature:
+    # jwt with no signature:
     New-PodeAuthScheme -Bearer -AsJWT | Add-PodeAuth -Name 'Jwt' -Sessionless -ScriptBlock {
         param($payload)
 
         return ConvertFrom-PodeJwt -Token $payload
     }
-#>
+    
 
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'read' -Description 'Grant read-only access to all your data except for the account and user info'
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'write' -Description 'Grant write-only access to all your data except for the account and user info'
@@ -240,7 +240,7 @@ Some useful links:
     $clientSecret = 'acascascasca>zzzcz'
     $tenantId = '56456232'
 
-    $InnerScheme = New-PodeAuthScheme -Form
+    <#     $InnerScheme = New-PodeAuthScheme -Form
     $scheme = New-PodeAuthScheme `
         -OAuth2 `
         -ClientId $ClientId `
@@ -250,14 +250,23 @@ Some useful links:
         -UserUrl 'https://graph.microsoft.com/oidc/userinfo' `
         -RedirectUrl $RedirectUrl `
         -InnerScheme $InnerScheme `
-        -Middleware $Middleware `
+       # -Middleware $Middleware `
         -Scope 'read', 'write', 'profile'
     $scheme | Add-PodeAuth -Name 'Login-OAuth2' -FailureUrl '/LoginOAuth2' -SuccessUrl '/' -ScriptBlock {
         param($user, $accessToken, $refreshToken)
         return @{ User = $user }
+    }#>
+    New-PodeAuthScheme `
+        -OAuth2 `
+        -ClientId $ClientId `
+        -ClientSecret $ClientSecret `
+        -AuthoriseUrl 'http://example.org/api/oauth/dialog' `
+        -TokenUrl 'http://example.org/api/oauth/token' `
+        -Scope 'read', 'write' | Add-PodeAuth -Name 'Login-OAuth2' -FailureUrl '/LoginOAuth2' -SuccessUrl '/' -ScriptBlock {
+        param($user, $accessToken, $refreshToken)
+        return @{ User = $user }
     }
-
-    Merge-PodeAuth -Name 'test' -Authentication 'Login-OAuth2','api_key'
+    Merge-PodeAuth -Name 'test' -Authentication 'Login-OAuth2', 'api_key'
 
     Add-PodeRouteGroup -Path '/api/v3'   -Routes {
         #PUT
@@ -297,7 +306,7 @@ Some useful links:
                     message = $Validate.message -join ', '
                 }
             }
-        } | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' -Tags 'pet' -OperationId 'addPet' -PassThru  |
+        } | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' -Tags 'pet' -OperationId 'addPet' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'PetBodySchema' ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -ContentSchemas @{
@@ -481,6 +490,6 @@ Some useful links:
     }
 
 
-      $yaml= PodeOADefinition -Format Yaml
+    $yaml = PodeOADefinition -Format Yaml
     # $json=  PodeOADefinition -Format Json
 }
