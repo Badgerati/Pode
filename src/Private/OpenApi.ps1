@@ -157,7 +157,7 @@ function Test-PodeOAComponentSchema {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.components.schemas.ContainsKey($Name)
+    return $PodeContext.Server.OpenAPI.components.schemas.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.schemas.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentResponse {
@@ -167,7 +167,7 @@ function Test-PodeOAComponentResponse {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.components.responses.ContainsKey($Name)
+    return $PodeContext.Server.OpenAPI.components.responses.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.responses.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentRequestBody {
@@ -177,7 +177,7 @@ function Test-PodeOAComponentRequestBody {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.components.requestBodies.ContainsKey($Name)
+    return $PodeContext.Server.OpenAPI.components.requestBodies.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.requestBodies.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentParameter {
@@ -186,7 +186,7 @@ function Test-PodeOAComponentParameter {
         [string]
         $Name
     )
-    return $PodeContext.Server.OpenAPI.components.parameters.ContainsKey($Name)
+    return $PodeContext.Server.OpenAPI.components.parameters.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.parameters.keys -ccontains $Name
 }
 
 
@@ -719,11 +719,14 @@ function Set-PodeOAGlobalAuth {
         $PodeContext.Server.OpenAPI.Security = @()
     }
 
-    $PodeContext.Server.OpenAPI.Security += @{
-        Definition = @{
-            "$($Name -replace '\s+', '')" = @()
+    foreach ($authName in  (Expand-PodeAuthMerge -Names $Name)) {
+        $authType = Get-PodeAuth $authName
+        $PodeContext.Server.OpenAPI.Security += @{
+            Definition = @{
+                "$($authName -replace '\s+', '')" = @($authType.Scheme.Arguments.Scopes )
+            }
+            Route      = (ConvertTo-PodeRouteRegex -Path $Route)
         }
-        Route      = (ConvertTo-PodeRouteRegex -Path $Route)
     }
 }
 

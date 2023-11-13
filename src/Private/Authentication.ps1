@@ -2110,8 +2110,8 @@ function Expand-PodeAuthMerge {
     foreach ($authName in  $Names) {
         $_auth = $PodeContext.Server.Authentications.Methods[ $authName]
         if ( $_auth.merged) {
-            foreach ($a in $_auth.Authentications) {
-                $authNames[$a] = ''
+            foreach ($key in( Expand-PodeAuthMerge -Names $_auth.Authentications)){
+                $authNames[$key]=''
             }
         } else {
             $authNames[$_auth.Name] = ''

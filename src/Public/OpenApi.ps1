@@ -72,16 +72,16 @@ function Enable-PodeOpenApi {
         [string]
         $Path = '/openapi',
 
-        [Parameter(ParameterSetName='Deprecated')]
+        [Parameter(ParameterSetName = 'Deprecated')]
         [string]
         $Title,
 
-        [Parameter(ParameterSetName='Deprecated')]
+        [Parameter(ParameterSetName = 'Deprecated')]
         [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$')]
         [string]
         $Version,
 
-        [Parameter(ParameterSetName='Deprecated')]
+        [Parameter(ParameterSetName = 'Deprecated')]
         [string]
         $Description,
 
@@ -465,7 +465,6 @@ function Add-PodeOAResponse {
         $StatusCode,
 
         [Parameter(ParameterSetName = 'Schema')]
-        [Parameter(ParameterSetName = 'SchemaDefault')]
         [hashtable]
         $ContentSchemas,
 
@@ -476,27 +475,22 @@ function Add-PodeOAResponse {
         $HeaderSchemas,
 
         [Parameter(ParameterSetName = 'Schema')]
-        [Parameter(ParameterSetName = 'SchemaDefault')]
         [string]
         $Description = $null,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
-        [Parameter(ParameterSetName = 'ReferenceDefault')]
         [string]
         $Reference,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'ReferenceDefault')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
+        [Parameter()]
         [switch]
         $Default,
 
         [Parameter(ParameterSetName = 'Schema')]
-        [Parameter(ParameterSetName = 'SchemaDefault')]
         [switch]
         $ContentArray,
 
-        [Parameter(ParameterSetName = 'Schema')]
-        [Parameter(ParameterSetName = 'SchemaDefault')]
+        [Parameter(ParameterSetName = 'Schema')] 
         [switch]
         $HeaderArray,
 
@@ -2621,7 +2615,7 @@ function New-PodeOASchemaProperty {
         [hashtable[]]
         $ParamsList,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
@@ -2690,7 +2684,9 @@ function New-PodeOASchemaProperty {
         if ( !(Test-PodeOAComponentSchema -Name $ComponentSchema)) {
             throw "The OpenApi component schema doesn't exist: $ComponentSchema"
         }
-
+        if (! $Name) {
+            $Name = $ComponentSchema
+        }
         $param = @{
             name   = $Name
             type   = 'schema'

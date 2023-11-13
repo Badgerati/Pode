@@ -65,7 +65,6 @@ Some useful links:
             New-PodeOAObjectProperty -Name 'test' | Add-PodeOAComponentSchema -Name 'Test'
 
 #>
-
     New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
         New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
         New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
@@ -120,9 +119,16 @@ Some useful links:
                 New-PodeOASchemaProperty -Name 'category' -ComponentSchema 'Category' |
                 New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
                 New-PodeOAStringProperty -Name 'photoUrls' -Array |
-                New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag' |
+              #  New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag' |
+              New-PodeOASchemaProperty   -ComponentSchema 'Tag' |
                 New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold')
         ))
+
+
+        Add-PodeRoute -PassThru -Method Get -Path '/pets' -ScriptBlock {
+            Write-PodeJsonResponse -Value (Get-Pets -All) -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns all pets from the system that the user has access to'   -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'A list of pets.' -Default -ContentSchemas (@{  'application/json' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array })
     <#   Alternative :
         Add-PodeOAComponentSchema -Name 'Pet' -Schema (
         New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' } -Properties @(
@@ -228,7 +234,7 @@ Some useful links:
 
         return ConvertFrom-PodeJwt -Token $payload
     }
-    
+
 
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'read' -Description 'Grant read-only access to all your data except for the account and user info'
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'write' -Description 'Grant write-only access to all your data except for the account and user info'
@@ -268,6 +274,8 @@ Some useful links:
     }
     Merge-PodeAuth -Name 'test' -Authentication 'Login-OAuth2', 'api_key'
 
+
+    Add-PodeAuthMiddleware -Name test -Authentication 'test' -Route '/api/*'
     Add-PodeRouteGroup -Path '/api/v3'   -Routes {
         #PUT
         Add-PodeRoute -PassThru -Method Put -Path '/pet' -ScriptBlock {
