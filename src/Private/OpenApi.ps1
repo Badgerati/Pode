@@ -14,7 +14,7 @@ function ConvertTo-PodeOAContentTypeSchema {
 
     # ensure all content types are valid
     foreach ($type in $Schemas.Keys) {
-        if ($type -inotmatch '^\w+\/[\w\.\+-]+$') {
+        if ($type -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
             throw "Invalid content-type found for schema: $($type)"
         }
     }
@@ -71,7 +71,11 @@ function ConvertTo-PodeOAObjectSchema {
         [switch]
         $Array
     )
-
+    # manage generic schema json conversion issue
+    if ( $Schemas.ContainsKey('*/*')) {
+        $Schemas['"*/*"'] = $Schemas['*/*']
+        $Schemas.Remove('*/*')
+    }
     # convert each schema to openapi format
     $obj = @{}
     foreach ($type in $Schemas.Keys) {
@@ -721,9 +725,15 @@ function Set-PodeOAGlobalAuth {
 
     foreach ($authName in  (Expand-PodeAuthMerge -Names $Name)) {
         $authType = Get-PodeAuth $authName
+        if ($authType.Scheme.Arguments.Scopes) {
+            $Scopes = @($authType.Scheme.Arguments.Scopes )
+        } else {
+            $Scopes = @()
+        }
+        @($authType.Scheme.Arguments.Scopes )
         $PodeContext.Server.OpenAPI.Security += @{
             Definition = @{
-                "$($authName -replace '\s+', '')" = @($authType.Scheme.Arguments.Scopes )
+                "$($authName -replace '\s+', '')" = $Scopes
             }
             Route      = (ConvertTo-PodeRouteRegex -Path $Route)
         }

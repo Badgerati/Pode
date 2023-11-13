@@ -465,6 +465,7 @@ function Add-PodeOAResponse {
         $StatusCode,
 
         [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
         [hashtable]
         $ContentSchemas,
 
@@ -474,23 +475,28 @@ function Add-PodeOAResponse {
         [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] })]
         $HeaderSchemas,
 
-        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
         [string]
-        $Description = $null,
+        $Description  ,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [Parameter(ParameterSetName = 'ReferenceDefault')]
         [string]
         $Reference,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ReferenceDefault')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
         [switch]
         $Default,
 
         [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
         [switch]
         $ContentArray,
 
-        [Parameter(ParameterSetName = 'Schema')] 
+        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
         [switch]
         $HeaderArray,
 
@@ -2866,6 +2872,7 @@ function ConvertTo-PodeOAParameter {
         $Explode,
 
         [Parameter( ParameterSetName = 'ContentSchema')]
+        [Parameter( ParameterSetName = 'Properties')]
         [Switch]
         $Required,
 
@@ -2941,6 +2948,9 @@ function ConvertTo-PodeOAParameter {
             $prop.description = $Property.description
         }
 
+        if ($Required.IsPresent ) {
+            $prop['required'] = $Required.ToBool()
+        }
 
         if ($Property.Array) {
             $prop.schema = @{
@@ -3028,7 +3038,7 @@ function ConvertTo-PodeOAParameter {
 
         if ($In -ieq 'Path') {
             $prop['required'] = $true
-        } elseif ($Property.required ) {
+        } elseif (!$Required.IsPresent -and $Property.required ) {
             $prop['required'] = $Property.required
         }
         # remove default for required parameter

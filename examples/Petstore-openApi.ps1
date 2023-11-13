@@ -119,16 +119,12 @@ Some useful links:
                 New-PodeOASchemaProperty -Name 'category' -ComponentSchema 'Category' |
                 New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
                 New-PodeOAStringProperty -Name 'photoUrls' -Array |
-              #  New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag' |
-              New-PodeOASchemaProperty   -ComponentSchema 'Tag' |
+                New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag' |
                 New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold')
         ))
 
 
-        Add-PodeRoute -PassThru -Method Get -Path '/pets' -ScriptBlock {
-            Write-PodeJsonResponse -Value (Get-Pets -All) -StatusCode 200
-        } | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns all pets from the system that the user has access to'   -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'A list of pets.' -Default -ContentSchemas (@{  'application/json' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array })
+
     <#   Alternative :
         Add-PodeOAComponentSchema -Name 'Pet' -Schema (
         New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' } -Properties @(
@@ -180,6 +176,19 @@ Some useful links:
                 New-PodeOAStringProperty -Name 'message'
         )
     )
+
+
+    Add-PodeRoute -PassThru -Method Get -Path '/peta/:id' -ScriptBlock {
+        Write-PodeJsonResponse -Value (Get-Pet -Id $WebEvent.Parameters['id']) -StatusCode 200
+    } |
+        Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
+        Set-PodeOARequest -PassThru -Parameters @(
+        (  New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
+        Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -ContentSchemas (@{  '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+        Add-PodeOAResponse -Default  -Description 'error payload' -ContentSchemas (@{  'text/html' = 'ApiResponse' }) -PassThru
+
+
+
 
 
 
@@ -256,7 +265,7 @@ Some useful links:
         -UserUrl 'https://graph.microsoft.com/oidc/userinfo' `
         -RedirectUrl $RedirectUrl `
         -InnerScheme $InnerScheme `
-       # -Middleware $Middleware `
+        # -Middleware $Middleware `
         -Scope 'read', 'write', 'profile'
     $scheme | Add-PodeAuth -Name 'Login-OAuth2' -FailureUrl '/LoginOAuth2' -SuccessUrl '/' -ScriptBlock {
         param($user, $accessToken, $refreshToken)
