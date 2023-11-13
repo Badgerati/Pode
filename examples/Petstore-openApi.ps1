@@ -284,6 +284,27 @@ Some useful links:
     Merge-PodeAuth -Name 'test' -Authentication 'Login-OAuth2', 'api_key'
 
 
+
+    Add-PodeRoute -PassThru -Method Put -Path '/paet' -ScriptBlock {
+        $JsonPet = ConvertTo-Json $WebEvent.data
+       if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet){
+            Write-PodeJsonResponse -Value @{} -StatusCode 200
+        } else {
+            Write-PodeJsonResponse -Value @{} -StatusCode 405
+        }
+    } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatePetWithForm' -PassThru |
+        Set-PodeOARequest  -Parameters @(
+          (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
+        ) -RequestBody (New-PodeOARequestBody -Required -ContentSchemas (@{
+            'application/x-www-form-urlencoded' = New-PodeOAObjectProperty -Properties @(
+              (New-PodeOAStringProperty -Name 'name' -Description 'Updated name of the pet'),
+              (New-PodeOAStringProperty -Name 'status' -Description 'Updated status of the pet' -Required)
+              )
+            })
+          ) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -ContentSchemas (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+        Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -ContentSchemas  (@{  'application/json' = '' ; 'application/xml' = '' })
+
     Add-PodeAuthMiddleware -Name test -Authentication 'test' -Route '/api/*'
     Add-PodeRouteGroup -Path '/api/v3'   -Routes {
         #PUT
@@ -403,7 +424,7 @@ Some useful links:
 
         Add-PodeRoute -PassThru -Method post -Path '/store/order' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
-        } | Set-PodeOARouteInfo -Summary 'Place an order for a pet' -Description 'Place a new order in the store' -Tags 'store' -OperationId 'placeOrder' -PassThru |
+        } | Set-PodeOARouteInfo -Deprecated -Summary 'Place an order for a pet' -Description 'Place a new order in the store' -Tags 'store' -OperationId 'placeOrder' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Required -ContentSchemas (@{ 'application/json' = 'Order'; 'application/xml' = 'Order'; 'application/x-www-form-urlencoded' = 'Order' } )) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentSchemas (@{  'application/json' = 'Order' ; 'application/xml' = 'Order' }) -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
