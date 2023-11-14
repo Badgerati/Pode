@@ -816,3 +816,85 @@ function Resolve-PodeOAReferences {
     return   $ComponentSchema
 }
 
+
+
+
+function New-PodeOAPropertyInternal {
+    param (
+        [String]
+        $Type,
+        [hashtable]$Params
+    )
+    $param = @{
+        name = $Params.Name
+        type = $Type
+        meta = @{}
+    }
+
+    if ($Params.Description ) {
+        $param.description = $Params.Description
+    }
+
+    if ($Params.Array.IsPresent ) {
+        $param.array = $Params.Array.ToBool()
+    }
+
+    if ($Params.Object.IsPresent ) {
+        $param.object = $Params.Object.ToBool()
+    }
+
+    if ($Params.Required.IsPresent ) {
+        $param.required = $Params.Required.ToBool()
+    }
+
+    if ($Params.Deprecated.IsPresent ) {
+        $param.deprecated = $Params.Deprecated.ToBool()
+    }
+
+    if ($Params.Nullable.IsPresent ) {
+        $param.meta['nullable'] = $Params.Nullable.ToBool()
+    }
+
+
+    if ($Params.WriteOnly.IsPresent ) {
+        $param.meta['writeOnly'] = $Params.WriteOnly.ToBool()
+    }
+
+    if ($Params.ReadOnly.IsPresent ) {
+        $param.meta['readOnly'] = $Params.ReadOnly.ToBool()
+    }
+
+    if ($Params.Example ) {
+        $param.meta['example'] = $Params.Example
+    }
+
+    if ($Params.UniqueItems.IsPresent ) {
+        $param.uniqueItems = $Params.UniqueItems.ToBool()
+    }
+
+    if ($Params.MaxItems) {
+        $param.maxItems = $Params.MaxItems
+    }
+
+    if ($Params.MinItems) {
+        $param.minItems = $Params.MinItems
+    }
+
+    if ($Params.XmlName) {
+        $param.xmlName = $Params.XmlName
+    }
+
+    if ($Params.Enum) {
+        $param.enum = $Params.Enum
+    }
+
+    if ($Params.ExternalDocs) {
+        if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
+            throw "The ExternalDoc doesn't exist: $ExternalDoc"
+        }
+        $param.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
+    }
+
+    return $param
+}
+

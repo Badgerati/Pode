@@ -1157,6 +1157,8 @@ function Add-PodeOAComponentParameter {
     $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter
 }
 
+
+
 <#
 .SYNOPSIS
 Creates a new OpenAPI integer property.
@@ -1193,6 +1195,10 @@ The integer must be in multiples of the supplied value.
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER ExternalDoc
+If supplied, add an additional external documentation for this operation.
+The parameter is created by Add-PodeOAExternalDoc
 
 .PARAMETER Example
 An example of a parameter value
@@ -1255,7 +1261,7 @@ function New-PodeOAIntProperty {
 
         [Parameter()]
         [int]
-        $Default ,
+        $Default,
 
         [Parameter()]
         [int]
@@ -1272,6 +1278,10 @@ function New-PodeOAIntProperty {
         [Parameter()]
         [string]
         $Description,
+
+        [Parameter()]
+        [string]
+        $ExternalDoc,
 
         [Parameter()]
         [String]
@@ -1320,52 +1330,7 @@ function New-PodeOAIntProperty {
         $MaxItems
     )
     begin {
-
-        $param = @{
-            name = $Name
-            type = 'integer'
-            meta = @{}
-        }
-
-        if ($Description ) {
-            $param.description = $Description
-        }
-
-        if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool()
-        }
-
-        if ($Object.IsPresent ) {
-            $param.object = $Object.ToBool()
-        }
-
-        if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool()
-        }
-
-        if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool()
-        }
-
-        if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool()
-        }
-
-        if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool()
-        }
-
-        if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool()
-        }
-
-        if ($Example ) {
-            $param.meta['example'] = $Example
-        }
-
-        if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool()
-        }
+        $param = New-PodeOAPropertyInternal -type 'integer' -Params $PSBoundParameters
 
         if ($Default) {
             $param.default = $Default
@@ -1373,22 +1338,6 @@ function New-PodeOAIntProperty {
 
         if ($Format) {
             $param.format = $Format.ToLowerInvariant()
-        }
-
-        if ($MaxItems) {
-            $param.maxItems = $MaxItems
-        }
-
-        if ($MinItems) {
-            $param.minItems = $MinItems
-        }
-
-        if ($Enum) {
-            $param.enum = $Enum
-        }
-
-        if ($XmlName) {
-            $param.xmlName = $XmlName
         }
 
         if ($Minimum -ne [int]::MinValue) {
@@ -1456,6 +1405,10 @@ The number must be in multiples of the supplied value.
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER ExternalDoc
+If supplied, add an additional external documentation for this operation.
+The parameter is created by Add-PodeOAExternalDoc
 
 .PARAMETER Example
 An example of a parameter value
@@ -1537,6 +1490,10 @@ function New-PodeOANumberProperty {
         $Description,
 
         [Parameter()]
+        [string]
+        $ExternalDoc,
+
+        [Parameter()]
         [String]
         $Example,
 
@@ -1583,52 +1540,7 @@ function New-PodeOANumberProperty {
         $MaxItems
     )
     begin {
-
-        $param = @{
-            name = $Name
-            type = 'number'
-            meta = @{}
-        }
-
-        if ($Description ) {
-            $param.description = $Description
-        }
-
-        if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool()
-        }
-
-        if ($Object.IsPresent ) {
-            $param.object = $Object.ToBool()
-        }
-
-        if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool()
-        }
-
-        if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool()
-        }
-
-        if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool()
-        }
-
-        if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool()
-        }
-
-        if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool()
-        }
-
-        if ($Example ) {
-            $param.meta['example'] = $Example
-        }
-
-        if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool()
-        }
+        $param = New-PodeOAPropertyInternal -type 'number' -Params $PSBoundParameters
 
         if ($Default) {
             $param.default = $Default
@@ -1636,22 +1548,6 @@ function New-PodeOANumberProperty {
 
         if ($Format) {
             $param.format = $Format.ToLowerInvariant()
-        }
-
-        if ($MaxItems) {
-            $param.maxItems = $MaxItems
-        }
-
-        if ($MinItems) {
-            $param.minItems = $MinItems
-        }
-
-        if ($Enum) {
-            $param.enum = $Enum
-        }
-
-        if ($XmlName) {
-            $param.xmlName = $XmlName
         }
 
         if ($Minimum -ne [double]::MinValue) {
@@ -1716,6 +1612,10 @@ A Regex pattern that the string must match.
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER ExternalDoc
+If supplied, add an additional external documentation for this operation.
+The parameter is created by Add-PodeOAExternalDoc
 
 .PARAMETER Example
 An example of a parameter value
@@ -1804,6 +1704,10 @@ function New-PodeOAStringProperty {
         $Description,
 
         [Parameter()]
+        [string]
+        $ExternalDoc,
+
+        [Parameter()]
         [String]
         $Example,
 
@@ -1864,52 +1768,7 @@ function New-PodeOAStringProperty {
         } elseif ($Format) {
             $_format = $Format
         }
-
-        $param = @{
-            name = $Name
-            type = 'string'
-            meta = @{}
-        }
-
-        if ($Description ) {
-            $param.description = $Description
-        }
-
-        if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool()
-        }
-
-        if ($Object.IsPresent ) {
-            $param.object = $Object.ToBool()
-        }
-
-        if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool()
-        }
-
-        if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool()
-        }
-
-        if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool()
-        }
-
-        if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool()
-        }
-
-        if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool()
-        }
-
-        if ($Example ) {
-            $param.meta['example'] = $Example
-        }
-
-        if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool()
-        }
+        $param = New-PodeOAPropertyInternal -type 'string' -Params $PSBoundParameters
 
         if ($Default) {
             $param.default = $Default
@@ -1917,22 +1776,6 @@ function New-PodeOAStringProperty {
 
         if ($Format -or $CustomFormat) {
             $param.format = $_format.ToLowerInvariant()
-        }
-
-        if ($MaxItems) {
-            $param.maxItems = $MaxItems
-        }
-
-        if ($MinItems) {
-            $param.minItems = $MinItems
-        }
-
-        if ($Enum) {
-            $param.enum = $Enum
-        }
-
-        if ($XmlName) {
-            $param.xmlName = $XmlName
         }
 
         if ($Pattern) {
@@ -1987,6 +1830,10 @@ The default value of the property. (Default: $false)
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER ExternalDoc
+If supplied, add an additional external documentation for this operation.
+The parameter is created by Add-PodeOAExternalDoc
 
 .PARAMETER Example
 An example of a parameter value
@@ -2053,6 +1900,10 @@ function New-PodeOABoolProperty {
 
         [Parameter()]
         [string]
+        $ExternalDoc,
+
+        [Parameter()]
+        [string]
         $Example,
 
         [Parameter()]
@@ -2098,52 +1949,7 @@ function New-PodeOABoolProperty {
         $MaxItems
     )
     begin {
-
-        $param = @{
-            name = $Name
-            type = 'boolean'
-            meta = @{}
-        }
-
-        if ($Description ) {
-            $param.description = $Description
-        }
-
-        if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool()
-        }
-
-        if ($Object.IsPresent ) {
-            $param.object = $Object.ToBool()
-        }
-
-        if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool()
-        }
-
-        if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool()
-        }
-
-        if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool()
-        }
-
-        if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool()
-        }
-
-        if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool()
-        }
-
-        if ($Example ) {
-            $param.meta['example'] = $Example
-        }
-
-        if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool()
-        }
+        $param = New-PodeOAPropertyInternal -type 'boolean' -Params $PSBoundParameters
 
         if ($Default) {
             if ([bool]::TryParse($Default, [ref]$null) -or $Enum -icontains $Default) {
@@ -2153,21 +1959,6 @@ function New-PodeOABoolProperty {
             }
         }
 
-        if ($MaxItems) {
-            $param.maxItems = $MaxItems
-        }
-
-        if ($MinItems) {
-            $param.minItems = $MinItems
-        }
-
-        if ($Enum) {
-            $param.enum = $Enum
-        }
-
-        if ($XmlName) {
-            $param.xmlName = $XmlName
-        }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
@@ -2209,6 +2000,10 @@ An array of other int/string/etc properties wrap up as an object.
 
 .PARAMETER Description
 A Description of the property.
+
+.PARAMETER ExternalDoc
+If supplied, add an additional external documentation for this operation.
+The parameter is created by Add-PodeOAExternalDoc
 
 .PARAMETER Example
 An example of a parameter value
@@ -2280,6 +2075,10 @@ function New-PodeOAObjectProperty {
         $Description,
 
         [Parameter()]
+        [string]
+        $ExternalDoc,
+
+        [Parameter()]
         [String]
         $Example,
 
@@ -2328,13 +2127,7 @@ function New-PodeOAObjectProperty {
         $Xml
     )
     begin {
-
-        $param = @{
-            name = $Name
-            type = 'object'
-            meta = @{}
-        }
-
+        $param = New-PodeOAPropertyInternal -type 'object' -Params $PSBoundParameters
         if ($Properties) {
             $param.properties = $Properties
             $PropertiesFromPipeline = $false
@@ -2343,52 +2136,8 @@ function New-PodeOAObjectProperty {
             $PropertiesFromPipeline = $true
         }
 
-        if ($Description ) {
-            $param.description = $Description
-        }
-
-        if ($Array.IsPresent ) {
-            $param.array = $Array.ToBool()
-        }
-
-        if ($Required.IsPresent ) {
-            $param.required = $Required.ToBool()
-        }
-
-        if ($Deprecated.IsPresent ) {
-            $param.deprecated = $Deprecated.ToBool()
-        }
-
-        if ($Nullable.IsPresent ) {
-            $param.meta['nullable'] = $Nullable.ToBool()
-        }
-
-        if ($WriteOnly.IsPresent ) {
-            $param.meta['writeOnly'] = $WriteOnly.ToBool()
-        }
-
-        if ($ReadOnly.IsPresent ) {
-            $param.meta['readOnly'] = $ReadOnly.ToBool()
-        }
-
-        if ($Example ) {
-            $param.meta['example'] = $Example
-        }
-
-        if ($UniqueItems.IsPresent ) {
-            $param.uniqueItems = $UniqueItems.ToBool()
-        }
-
         if ($Default) {
             $param.default = $Default
-        }
-
-        if ($MaxItems) {
-            $param.maxItems = $MaxItems
-        }
-
-        if ($MinItems) {
-            $param.minItems = $MinItems
         }
 
         if ($MinProperties) {
@@ -2397,10 +2146,6 @@ function New-PodeOAObjectProperty {
 
         if ($MaxProperties) {
             $param.maxProperties = $MaxProperties
-        }
-
-        if ($XmlName) {
-            $param.xmlName = $XmlName
         }
 
         if ($Xml) {
@@ -3070,6 +2815,10 @@ A quick Summary of the route.
 .PARAMETER Description
 A longer Description of the route.
 
+.PARAMETER ExternalDoc
+If supplied, add an additional external documentation for this operation.
+The parameter is created by Add-PodeOAExternalDoc
+
 .PARAMETER OperationId
 Sets the OperationId of the route.
 
@@ -3103,6 +2852,10 @@ function Set-PodeOARouteInfo {
 
         [Parameter()]
         [string]
+        $ExternalDoc,
+
+        [Parameter()]
+        [string]
         $OperationId,
 
         [Parameter()]
@@ -3129,6 +2882,14 @@ function Set-PodeOARouteInfo {
         if ($Tags) {
             $r.OpenApi.Tags = $Tags
         }
+
+        if ($ExternalDocs){
+            if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
+                throw "The ExternalDoc doesn't exist: $ExternalDoc"
+            }
+            $r.OpenApi.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
+        }
+
         $r.OpenApi.Swagger = $true
         if ($Deprecated.IsPresent) {
             $r.OpenApi.Deprecated = $Deprecated.ToBool()
@@ -3499,7 +3260,7 @@ https://spec.commonmark.org/
 .PARAMETER TermsOfService
 A URL to the Terms of Service for the API. MUST be in the format of a URL.
 
-.PARAMETER License
+.PARAMETER LicenseName
 The license name used for the API.
 
 .PARAMETER LicenseUrl
