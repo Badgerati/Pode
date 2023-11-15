@@ -40,12 +40,16 @@ Describe 'OpenApi' {
         }
         $global:PodeContext = GetPodeContext
 
-
-
     }
 
 
     Context 'New-PodeOAIntProperty' {
+
+        # Check if the function exists
+        It 'New-PodeOAIntProperty function exists' {
+            Get-Command New-PodeOAIntProperty | Should -Not -Be $null
+        }
+
         It 'NoSwitches' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt'
@@ -376,6 +380,12 @@ Describe 'OpenApi' {
 
 
     Context 'New-PodeOANumberProperty' {
+
+        # Check if the function exists
+        It 'New-PodeOANumberProperty function exists' {
+            Get-Command New-PodeOANumberProperty | Should -Not -Be $null
+        }
+
         It 'NoSwitches' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber'
@@ -703,6 +713,12 @@ Describe 'OpenApi' {
     }
 
     Context 'New-PodeOABoolProperty' {
+
+        # Check if the function exists
+        It 'New-PodeOABoolProperty function exists' {
+            Get-Command New-PodeOABoolProperty | Should -Not -Be $null
+        }
+
         It 'NoSwitches' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool'
@@ -967,6 +983,12 @@ Describe 'OpenApi' {
 
 
     Context 'New-PodeOAStringProperty' {
+
+        # Check if the function exists
+        It 'New-PodeOAStringProperty function exists' {
+            Get-Command New-PodeOAStringProperty | Should -Not -Be $null
+        }
+
         It 'NoSwitches' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString'
@@ -1294,6 +1316,12 @@ Describe 'OpenApi' {
     }
 
     Context 'New-PodeOAObjectProperty' {
+
+        # Check if the function exists
+        It 'New-PodeOAObjectProperty function exists' {
+            Get-Command New-PodeOAObjectProperty | Should -Not -Be $null
+        }
+
         It 'NoSwitches' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject'
@@ -1719,6 +1747,12 @@ Describe 'OpenApi' {
                     (New-PodeOAStringProperty -Name 'name')
                 ))
         }
+
+        # Check if the function exists
+        It 'New-PodeOASchemaProperty function exists' {
+            Get-Command New-PodeOASchemaProperty | Should -Not -Be $null
+        }
+
         It 'Standard' {
             $result = New-PodeOASchemaProperty -Name 'testSchema' -ComponentSchema 'Cat'
             $result | Should -Not -BeNullOrEmpty
@@ -1919,6 +1953,11 @@ Describe 'OpenApi' {
                 ))
         }
 
+        # Check if the function exists
+        It 'Merge-PodeOAProperty function exists' {
+            Get-Command Merge-PodeOAProperty | Should -Not -Be $null
+        }
+
         It 'OneOf' {
             $result = Merge-PodeOAProperty   -Type OneOf -Discriminator 'name'   -ObjectDefinitions @('Pet',
               (New-PodeOAObjectProperty  -Properties  @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name'))))
@@ -2004,6 +2043,11 @@ Describe 'OpenApi' {
     }
     Context 'Add-PodeOAInfo' {
 
+        # Check if the function exists
+        It 'Add-PodeOAInfo function exists' {
+            Get-Command Add-PodeOAInfo | Should -Not -Be $null
+        }
+
         It 'Valid values' {
             Add-PodeOAInfo  -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description 'A description' `
                 -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' `
@@ -2023,6 +2067,12 @@ Describe 'OpenApi' {
     }
 
     Context 'New-PodeOAExternalDoc' {
+
+        # Check if the function exists
+        It 'New-PodeOAExternalDoc function exists' {
+            Get-Command New-PodeOAExternalDoc | Should -Not -Be $null
+        }
+
         It 'Valid values' {
             New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
             $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs['SwaggerDocs'] | Should -Not -BeNullOrEmpty
@@ -2033,6 +2083,11 @@ Describe 'OpenApi' {
 
 
     Context 'Add-PodeOAExternalDoc' {
+
+        # Check if the function exists
+        It 'Add-PodeOAExternalDoc function exists' {
+            Get-Command Add-PodeOAExternalDoc | Should -Not -Be $null
+        }
 
         It 'values' {
             Add-PodeOAExternalDoc -Description 'Find out more about Swagger' -Url 'http://swagger.io'
@@ -2058,6 +2113,11 @@ Describe 'OpenApi' {
     }
 
     Context 'Add-PodeOATag' {
+        # Check if the function exists
+        It 'Add-PodeOATag function exists' {
+            Get-Command Add-PodeOATag | Should -Not -Be $null
+        }
+
         It 'Valid values' {
             New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
             Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc 'SwaggerDocs'
@@ -2097,6 +2157,11 @@ Describe 'OpenApi' {
             Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc 'SwaggerDocs'
         }
 
+        # Check if the function exists
+        It 'Set-PodeOARouteInfo function exists' {
+            Get-Command Set-PodeOARouteInfo | Should -Not -Be $null
+        }
+
         It 'No switches' {
             $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet'
             $Route.OpenApi | Should -Not -BeNullOrEmpty
@@ -2132,6 +2197,12 @@ Describe 'OpenApi' {
     }
 
     Context 'Add-PodeOAComponentParameter' {
+
+        # Check if the function exists
+        It 'Add-PodeOAComponentParameter function exists' {
+            Get-Command Add-PodeOAComponentParameter | Should -Not -Be $null
+        }
+
         it 'default' {
             Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required)
             $result = $PodeContext.Server.OpenAPI.components.parameters['PetIdParam']
@@ -2167,7 +2238,13 @@ Describe 'OpenApi' {
         }
     }
     Context 'ConvertTo-PodeOAParameter' {
-        Context 'ConvertTo-PodeOAParameter - Path' {
+
+        # Check if the function exists
+        It 'ConvertTo-PodeOAParameter function exists' {
+            Get-Command ConvertTo-PodeOAParameter | Should -Not -Be $null
+        }
+
+        Describe 'ConvertTo-PodeOAParameter - Path' {
 
             It 'Path - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Path
@@ -2297,7 +2374,7 @@ Describe 'OpenApi' {
         }
 
 
-        Context 'ConvertTo-PodeOAParameter - Header' {
+        Describe 'ConvertTo-PodeOAParameter - Header' {
 
             It 'Header - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Header
@@ -2444,7 +2521,7 @@ Describe 'OpenApi' {
         }
 
 
-        Context 'ConvertTo-PodeOAParameter - Cookie' {
+        Describe 'ConvertTo-PodeOAParameter - Cookie' {
 
             It 'Cookie - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Cookie
@@ -2590,7 +2667,7 @@ Describe 'OpenApi' {
         }
 
 
-        Context 'ConvertTo-PodeOAParameter - Query' {
+        Describe 'ConvertTo-PodeOAParameter - Query' {
 
             It 'Query - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Query
@@ -2736,7 +2813,7 @@ Describe 'OpenApi' {
             }
         }
     }
-    Context 'Add-PodeOAComponentRequestBody' {
+    Describe 'Add-PodeOAComponentRequestBody' {
         BeforeEach {
             Add-PodeOAComponentSchema -Name 'Cat' -Schema (
                 New-PodeOAObjectProperty  -Properties  @(
@@ -2744,6 +2821,11 @@ Describe 'OpenApi' {
                         (New-PodeOAStringProperty -Name 'name')
                 ))
         }
+        # Check if the function exists
+        It 'Add-PodeOAComponentRequestBody function exists' {
+            Get-Command Add-PodeOAComponentRequestBody | Should -Not -Be $null
+        }
+
         it 'default' {
             Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -ContentSchema (@{ 'application/json' = 'Cat'; 'application/xml' = 'Cat'; 'application/x-www-form-urlencoded' = 'Cat' })
             $result = $PodeContext.Server.OpenAPI.components.requestBodies['PetBodySchema']
@@ -2799,8 +2881,12 @@ Describe 'OpenApi' {
         }
     }
 
-    Context 'Add-PodeOAComponentHeaderSchema' {
+    Describe 'Add-PodeOAComponentHeaderSchema' {
 
+        # Check if the function exists
+        It 'Add-PodeOAComponentHeaderSchema function exists' {
+            Get-Command Add-PodeOAComponentHeaderSchema | Should -Not -Be $null
+        }
         it 'default' {
             Add-PodeOAComponentHeaderSchema -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
             $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
@@ -2826,6 +2912,36 @@ Describe 'OpenApi' {
     }
 
 
+    Describe 'New-PodeOAExample Tests' {
+
+        # Check if the function exists
+        It 'New-PodeOAExample function exists' {
+            Get-Command New-PodeOAExample | Should -Not -Be $null
+        }
+
+        # Test return type
+        It 'Returns an OrderedHashtable' {
+            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example @{ summary = 'JSON Example'; }
+            $example | Should -BeOfType [System.Management.Automation.OrderedHashtable]
+        }
+
+        # Test output for a single MediaType
+        It 'Correctly creates example for a single MediaType' {
+            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example @{ summary = 'JSON Example'; }
+            $example['application/json'].Keys -Contains 'user' | Should -Be $true
+            $example['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true
+        }
+
+        # Test merging behavior
+        It 'Correctly merges examples for multiple MediaTypes' {
+            $result = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example @{ summary = 'JSON Example'; } |
+                New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Example @{ summary = 'XML Example'; }
+
+            $result.Count -eq 2 | Should -Be $true
+            $result['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true
+            $result['application/xml']['user'].summary -eq 'XML Example' | Should -Be $true
+        }
+    }
 
 
 

@@ -823,6 +823,11 @@ A Description of the request body.
 .PARAMETER Required
 If supplied, the request body will be flagged as required.
 
+.PARAMETER Examples
+Supplied an Example of the media type.  The example object SHOULD be in the correct format as specified by the media type.
+The `example` field is mutually exclusive of the `examples` field.
+Furthermore, if referencing a `schema` which contains an example, the `example` value SHALL _override_ the example provided by the schema.
+
 .EXAMPLE
 New-PodeOARequestBody -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
@@ -849,9 +854,16 @@ function New-PodeOARequestBody {
 
         [Parameter(ParameterSetName = 'Schema')]
         [switch]
-        $Required
-    )
+        $Required,
 
+        [Parameter()]
+        [System.Management.Automation.OrderedHashtable]
+        $Examples
+
+    )
+    if ($Example -and $Examples) {
+        throw 'Parameter -Examples and -Example are mutually exclusive'
+    }
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'schema' {
             $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas }
@@ -863,7 +875,18 @@ function New-PodeOARequestBody {
             if ( $Description) {
                 $param['description'] = $Description
             }
-
+            if ($Examples) {
+                if ( $Examples.'*/*') {
+                    $Examples['"*/*"'] = $Examples['*/*']
+                    $Examples.Remove('*/*')
+                }
+                foreach ($k in  $Examples.Keys ) {
+                    if (!$param.content.ContainsKey($k)) {
+                        $param.content[$k] = @{}
+                    }
+                    $param.content.$k.examples = $Examples.$k
+                }
+            }
             return $param
         }
 
@@ -2883,7 +2906,7 @@ function Set-PodeOARouteInfo {
             $r.OpenApi.Tags = $Tags
         }
 
-        if ($ExternalDocs){
+        if ($ExternalDocs) {
             if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
                 throw "The ExternalDoc doesn't exist: $ExternalDoc"
             }
@@ -3383,6 +3406,70 @@ function Add-PodeOAInfo {
     $PodeContext.Server.OpenAPI.info = $Info
 
 }
+
+
+<#
+.SYNOPSIS
+Creates a new OpenAPI example.
+
+.DESCRIPTION
+Creates a new OpenAPI example.
+
+.PARAMETER ParamsList
+Used to pipeline multiple properties
+
+.PARAMETER MediaType
+The Media Type associated with the Example.
+
+.PARAMETER Name
+The Name of the Example.
+
+.PARAMETER Example
+An example
+
+
+.EXAMPLE
+Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
+#>
+function New-PodeOAExample {
+    [OutputType([System.Management.Automation.OrderedHashtable ])]
+    param(
+        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
+        [System.Management.Automation.OrderedHashtable ]
+        $ParamsList,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $MediaType,
+
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [System.Management.Automation.OrderedHashtable]
+        $Example
+    )
+    begin {
+        $param = [ordered]@{
+            $MediaType = @{
+                $Name = $Example
+            }
+        }
+    }
+    process {
+    }
+    end {
+        if ($ParamsList) {
+            $param.GetEnumerator() | ForEach-Object { $ParamsList[$_.Key] = $_.Value }
+            return $ParamsList
+        } else {
+            return [System.Management.Automation.OrderedHashtable] $param
+        }
+    }
+}
+
 
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {

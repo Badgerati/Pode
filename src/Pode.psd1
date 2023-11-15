@@ -297,6 +297,7 @@
         'Add-PodeOAComponentHeaderSchema',
         'Merge-PodeOAProperty',
         'Add-PodeOAServerEndpoint',
+        'New-PodeOAExample',
 
         # Metrics
         'Get-PodeServerUptime',

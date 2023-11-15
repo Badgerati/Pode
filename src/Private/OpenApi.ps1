@@ -90,29 +90,35 @@ function ConvertTo-PodeOAObjectSchema {
         }
         # add a shared component schema reference
         if ($Schemas[$type] -is [string]) {
-            if (@('string', 'integer' , 'number', 'boolean' ) -icontains $Schemas[$type]) {
-                if ($Array) {
-                    $obj[$type].schema.items = @{
-                        'type' = $Schemas[$type].ToLower()
+            if (![string]::IsNullOrEmpty($Schemas[$type])) {
+                #Check for empty reference
+                if (@('string', 'integer' , 'number', 'boolean' ) -icontains $Schemas[$type]) {
+                    if ($Array) {
+                        $obj[$type].schema.items = @{
+                            'type' = $Schemas[$type].ToLower()
+                        }
+                    } else {
+                        $obj[$type].schema = @{
+                            'type' = $Schemas[$type].ToLower()
+                        }
                     }
                 } else {
-                    $obj[$type].schema = @{
-                        'type' = $Schemas[$type].ToLower()
+                    if ( !(Test-PodeOAComponentSchema -Name $Schemas[$type])) {
+                        throw "The OpenApi component schema doesn't exist: $($Schemas[$type])"
+                    }
+                    if ($Array) {
+                        $obj[$type].schema.items = @{
+                            '$ref' = "#/components/schemas/$($Schemas[$type])"
+                        }
+                    } else {
+                        $obj[$type].schema = @{
+                            '$ref' = "#/components/schemas/$($Schemas[$type])"
+                        }
                     }
                 }
             } else {
-                if ( !(Test-PodeOAComponentSchema -Name $Schemas[$type])) {
-                    throw "The OpenApi component schema doesn't exist: $($Schemas[$type])"
-                }
-                if ($Array) {
-                    $obj[$type].schema.items = @{
-                        '$ref' = "#/components/schemas/$($Schemas[$type])"
-                    }
-                } else {
-                    $obj[$type].schema = @{
-                        '$ref' = "#/components/schemas/$($Schemas[$type])"
-                    }
-                }
+                # Create an empty content
+                $obj[$type] = @{}
             }
         }
         # add a set schema object
@@ -161,7 +167,7 @@ function Test-PodeOAComponentSchema {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.components.schemas.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.schemas.keys -ccontains $Name
+    return  $PodeContext.Server.OpenAPI.components.schemas.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.schemas.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentResponse {
