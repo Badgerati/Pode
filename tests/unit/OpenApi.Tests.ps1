@@ -2303,7 +2303,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat'
+                $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat'
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 5
@@ -2328,7 +2328,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat' -Required
+                $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 5
@@ -2353,7 +2353,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat' -AllowEmptyValue
+                $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -AllowEmptyValue
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 6
@@ -2450,7 +2450,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat'
+                $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat'
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 4
@@ -2475,7 +2475,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat' -Required
+                $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 5
@@ -2500,7 +2500,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat' -AllowEmptyValue
+                $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -AllowEmptyValue
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 5
@@ -2596,7 +2596,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat'
+                $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat'
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 4
@@ -2621,7 +2621,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat' -Required
+                $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 5
@@ -2646,7 +2646,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat' -AllowEmptyValue
+                $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -AllowEmptyValue
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 5
@@ -2743,7 +2743,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat'
+                $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat'
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 4
@@ -2768,7 +2768,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat' -Required
+                $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 5
@@ -2793,7 +2793,7 @@ Describe 'OpenApi' {
                     (New-PodeOABoolProperty -Name 'friendly'),
                         (New-PodeOAStringProperty -Name 'name')
                     ))
-                $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -ContentSchema  'Cat' -AllowEmptyValue
+                $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -AllowEmptyValue
                 $result | Should -Not -BeNullOrEmpty
                 $result | Should -BeOfType [hashtable]
                 $result.Count | Should -Be 5
@@ -2921,25 +2921,28 @@ Describe 'OpenApi' {
 
         # Test return type
         It 'Returns an OrderedHashtable' {
-            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example @{ summary = 'JSON Example'; }
+            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
             $example | Should -BeOfType [System.Management.Automation.OrderedHashtable]
         }
 
         # Test output for a single MediaType
         It 'Correctly creates example for a single MediaType' {
-            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example @{ summary = 'JSON Example'; }
+            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
             $example['application/json'].Keys -Contains 'user' | Should -Be $true
             $example['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true
+            $example['application/json']['user'].externalValue -eq 'http://external.com' | Should -Be $true
         }
 
         # Test merging behavior
         It 'Correctly merges examples for multiple MediaTypes' {
-            $result = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example @{ summary = 'JSON Example'; } |
-                New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Example @{ summary = 'XML Example'; }
+            $result = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary   'JSON Example' -Value '[]' |
+                New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Summary 'XML Example' -Value '<>'
 
             $result.Count -eq 2 | Should -Be $true
             $result['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true
             $result['application/xml']['user'].summary -eq 'XML Example' | Should -Be $true
+            $result['application/json']['user'].value -eq '[]' | Should -Be $true
+            $result['application/xml']['user'].value -eq '<>' | Should -Be $true
         }
     }
 
@@ -2960,7 +2963,7 @@ Describe 'OpenApi' {
 
     }
 
-    Describe "Add-PodeOAComponentExample Tests" {
+    Describe 'Add-PodeOAComponentExample Tests' {
         BeforeEach {
             # Mock the Pode context object
             $Global:PodeContext = @{
@@ -2973,24 +2976,19 @@ Describe 'OpenApi' {
                 }
             }
         }
-        
-        It "Adds an example to the OpenAPI components" {
-            $exampleData = @{
-                summary = "An example summary"
-                value = "Some example value"
-            }
 
-            Add-PodeOAComponentExample -Name 'exampleName' -Example $exampleData
+        It 'Adds an example to the OpenAPI components' {
+            Add-PodeOAComponentExample -Name 'exampleName' -Summary 'An example summary'  -Value   'Some example value'
 
-            $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].summary | Should -Be "An example summary"
-            $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].value | Should -Be "Some example value"
+            $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].summary | Should -Be 'An example summary'
+            $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].value | Should -Be 'Some example value'
         }
 
-        It "Should throw an error if Name is not provided" {
-            { Add-PodeOAComponentExample -Example @{ summary = "An example"; value = "Value" } } | Should -Throw
+        It 'Should throw an error if Name is not provided' {
+            { Add-PodeOAComponentExample -Summary  'An example' -Value  'Value' } | Should -Throw
         }
 
-        It "Should throw an error if Example is not provided" {
+        It 'Should throw an error if Example is not provided' {
             { Add-PodeOAComponentExample -Name 'exampleName' } | Should -Throw
         }
     }

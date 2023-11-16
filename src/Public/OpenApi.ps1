@@ -2569,6 +2569,10 @@ A Description of the property.
 .PARAMETER Explode
 If supplied, controls how arrays are serialized in query parameters
 
+.PARAMETER AllowReserved
+If supplied, determines whether the parameter value SHOULD allow reserved characters, as defined by RFC3986 :/?#[]@!$&'()*+,;= to be included without percent-encoding.
+This property only applies to parameters with an in value of query. The default value is false.
+
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.(Applicable only to ContentSchema)
 
@@ -2578,6 +2582,16 @@ If supplied, allow the parameter to be empty
 .PARAMETER Style
 If supplied,  defines how multiple values are delimited. Possible styles depend on the parameter location: path, query, header or cookie.
 
+.PARAMETER Example
+Example of the parameter's potential value. The example SHOULD match the specified schema and encoding properties if present.
+The Example parameter is mutually exclusive of the Examples parameter.
+Furthermore, if referencing a Schema  that contains an example, the Example value SHALL _override_ the example provided by the schema.
+To represent examples of media types that cannot naturally be represented in JSON or YAML, a string value can contain the example with escaping where necessary.
+
+.PARAMETER Examples
+Examples of the parameter's potential value. Each example SHOULD contain a value in the correct format as specified in the parameter encoding.
+The Examples parameter is mutually exclusive of the Example parameter.
+Furthermore, if referencing a Schema that contains an example, the Examples value SHALL _override_ the example provided by the schema.
 
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query
@@ -2610,7 +2624,7 @@ function ConvertTo-PodeOAParameter {
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchema')]
         [String]
-        $ContentSchema,
+        $Schema,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchema')]
         $ContentType,
@@ -2633,6 +2647,22 @@ function ConvertTo-PodeOAParameter {
         [Switch]
         $AllowEmptyValue,
 
+        [Parameter( ParameterSetName = 'ContentSchema')]
+        [Parameter( ParameterSetName = 'Properties')]
+        [Switch]
+        $AllowReserved,
+
+        [Parameter( ParameterSetName = 'ContentSchema')]
+        [Parameter( ParameterSetName = 'Properties')]
+        [String]
+        $Example,
+
+        [Parameter( ParameterSetName = 'ContentSchema')]
+        [Parameter( ParameterSetName = 'Properties')]
+        [System.Management.Automation.OrderedHashtable]
+        $Examples,
+
+        [Parameter( ParameterSetName = 'ContentSchema')]
         [Parameter( ParameterSetName = 'Properties')]
         [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
         [string]
@@ -2640,24 +2670,24 @@ function ConvertTo-PodeOAParameter {
     )
 
     if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema') {
-        if (Test-PodeIsEmpty $ContentSchema) {
+        if (Test-PodeIsEmpty $Schema) {
             return $null
         }
         # ensure all content types are valid
         if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
             throw "Invalid content-type found for schema: $($type)"
         }
-        if (!(Test-PodeOAComponentSchema -Name $ContentSchema )) {
-            throw "The OpenApi component request parameter doesn't exist: $($ContentSchema )"
+        if (!(Test-PodeOAComponentSchema -Name $Schema )) {
+            throw "The OpenApi component request parameter doesn't exist: $($Schema )"
         }
-        $Property = $PodeContext.Server.OpenAPI.components.schemas[$ContentSchema ]
+        $Property = $PodeContext.Server.OpenAPI.components.schemas[$Schema ]
         $prop = @{
             in      = $In.ToLowerInvariant()
-            name    = $ContentSchema
+            name    = $Schema
             content = @{
                 $ContentType = @{
                     schema = @{
-                        '$ref' = "#/components/schemas/$($ContentSchema )"
+                        '$ref' = "#/components/schemas/$($Schema )"
                     }
                 }
             }
@@ -2669,7 +2699,7 @@ function ConvertTo-PodeOAParameter {
             $prop['required'] = $Required.ToBool()
         }
         if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ContentSchema  -Append
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Schema  -Append
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
@@ -2733,6 +2763,9 @@ function ConvertTo-PodeOAParameter {
         }
     }
     if ($Property) {
+        if ($Example -and $Examples) {
+            throw '-Example and -Examples are mutually exclusive'
+        }
         if ($Style) {
             switch ($in.ToLower()) {
                 'path' {
@@ -2771,6 +2804,15 @@ function ConvertTo-PodeOAParameter {
             $prop['allowEmptyValue'] = $AllowEmptyValue.ToBool()
         }
 
+        if ($AllowReserved.IsPresent) {
+            $prop['allowReserved'] = $AllowReserved.ToBool()
+        }
+
+        if ($Example ) {
+            $prop['example'] = $Example
+        } elseif ($Examples) {
+            $prop['examples'] = $Examples
+        }
 
         if ($Property.deprecated) {
             $prop['deprecated'] = $Property.deprecated
@@ -3408,15 +3450,27 @@ The Media Type associated with the Example.
 .PARAMETER Name
 The Name of the Example.
 
-.PARAMETER Example
-An example
+.PARAMETER Summary
+Short description for the example
+
+.PARAMETER Description
+Long description for the example.
+
+.PARAMETER Value
+Embedded literal example. The  value Parameter and ExternalValue parameter are mutually exclusive.
+To represent examples of media types that cannot naturally represented in JSON or YAML, use a string value to contain the example, escaping where necessary.
+
+.PARAMETER ExternalValue
+A URL that points to the literal example. This provides the capability to reference examples that cannot easily be included in JSON or YAML documents.
+The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
+
 
 .EXAMPLE
- New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Example  @{ summary = 'User Example in Plain text'; externalValue = 'http://foo.bar/examples/user-example.txt' }
+ New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
 .EXAMPLE
  $example =
-    New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example  @{ summary = 'User Example'; externalValue = 'http://foo.bar/examples/user-example.json' } |
-        New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Example  @{ summary = 'User Example in XML'; externalValue = 'http://foo.bar/examples/user-example.xml' }
+    New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary = 'User Example' -ExternalValue = 'http://foo.bar/examples/user-example.json'  |
+        New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Summary = 'User Example in XML' -ExternalValue = 'http://foo.bar/examples/user-example.xml'
 
 #>
 function New-PodeOAExample {
@@ -3429,7 +3483,7 @@ function New-PodeOAExample {
         [System.Management.Automation.OrderedHashtable ]
         $ParamsList,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter( )]
         [string]
         $MediaType,
 
@@ -3438,9 +3492,21 @@ function New-PodeOAExample {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Inbuilt')]
-        [System.Management.Automation.OrderedHashtable]
-        $Example,
+        [Parameter( ParameterSetName = 'Inbuilt')]
+        [string]
+        $Summary,
+
+        [Parameter( ParameterSetName = 'Inbuilt')]
+        [string]
+        $Description,
+
+        [Parameter(  ParameterSetName = 'Inbuilt')]
+        [object]
+        $Value,
+
+        [Parameter(  ParameterSetName = 'Inbuilt')]
+        [string]
+        $ExternalValue,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
@@ -3454,14 +3520,35 @@ function New-PodeOAExample {
             }
             $Name = $Reference
             $Example = @{'$ref' = "#/components/examples/$Reference" }
-        }
-        $param = [ordered]@{
-            $MediaType = @{
-                $Name = $Example
+        } else {
+            if ( $ExternalValue -and $Value) {
+                throw '-Value or -ExternalValue are mutually exclusive'
+            }
+            $Example = [ordered]@{ }
+            if ($Summary) {
+                $Example.summary = $Summary
+            }
+            if ($Description) {
+                $Example.description = $Description
+            }
+            if ($Value) {
+                $Example.value = $Value
+            } elseif ($ExternalValue) {
+                $Example.externalValue = $ExternalValue
+            } else {
+                throw '-Value or -ExternalValue are mandatory'
             }
         }
+        $param = [ordered]@{}
+        if ($MediaType){
+            $param.MediaType = @{
+                $Name = $Example
+            }
+        }else{
+            $param.$Name = $Example
+        }
     }
-    process { 
+    process {
     }
     end {
         if ($ParamsList) {
@@ -3497,6 +3584,7 @@ An example
 Add-PodeOAComponentExample -name 'frog-example' -Example  @{ summary = "An example of a frog with a cat's name"; 'value' = @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' }}
 #>
 function Add-PodeOAComponentExample {
+    [CmdletBinding(DefaultParameterSetName = 'Value')]
     param(
 
         [Parameter(Mandatory = $true)]
@@ -3504,10 +3592,33 @@ function Add-PodeOAComponentExample {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true)]
-        [System.Management.Automation.OrderedHashtable]
-        $Example
+        [string]
+        $Summary,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Value')]
+        [object]
+        $Value,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'ExternalValue')]
+        [string]
+        $ExternalValue
     )
+    $Example = [ordered]@{ }
+    if ($Summary) {
+        $Example.summary = $Summary
+    }
+    if ($Description) {
+        $Example.description = $Description
+    }
+    if ($Value) {
+        $Example.value = $Value
+    } elseif ($ExternalValue) {
+        $Example.externalValue = $ExternalValue
+    }
     $PodeContext.Server.OpenAPI.components.examples[$Name] = $Example
 }
 

@@ -284,10 +284,10 @@ Some useful links:
     Merge-PodeAuth -Name 'test' -Authentication 'Login-OAuth2', 'api_key'
 
     $ex =
-    New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example  @{ summary = 'User Example'; externalValue = 'http://foo.bar/examples/user-example.json' } |
-        New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Example  @{ summary = 'User Example in XML'; externalValue = 'http://foo.bar/examples/user-example.xml' } |
-        New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Example  @{ summary = 'User Example in Plain text'; externalValue = 'http://foo.bar/examples/user-example.txt' } |
-        New-PodeOAExample -MediaType '*/*' -Name 'user' -Example @{ summary = 'User example in other forma'; externalValue = 'http://foo.bar/examples/user-example.whatever' }
+    New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary   'User Example' -ExternalValue  'http://foo.bar/examples/user-example.json'  |
+        New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Summary   'User Example in XML' -ExternalValue  'http://foo.bar/examples/user-example.xml'  |
+        New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Summary   'User Example in Plain text' -ExternalValue 'http://foo.bar/examples/user-example.txt' |
+        New-PodeOAExample -MediaType '*/*' -Name 'user' -Summary   'User example in other forma' -ExternalValue  'http://foo.bar/examples/user-example.whatever'
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/pat/:petId' -ScriptBlock {
@@ -316,7 +316,11 @@ Some useful links:
         }
     } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet' -PassThru |
         Set-PodeOARequest  -Parameters @(
-          (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
+          (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required -Examples (
+            New-PodeOAExample   -Name 'user' -Summary   'User Example' -Value  'http://foo.bar/examples/user-example.json'  |
+          New-PodeOAExample   -Name 'user1' -Summary   'User Example in XML' -Value  'http://foo.bar/examples/user-example.xml'  |
+          New-PodeOAExample   -Name 'user2' -Summary   'User Example in Plain text' -Value 'http://foo.bar/examples/user-example.txt' |
+          New-PodeOAExample  -Name 'user3' -Summary   'User example in other forma' -Value  'http://foo.bar/examples/user-example.whatever' ))
         ) -RequestBody (New-PodeOARequestBody -Required -ContentSchemas (@{
                     'application/x-www-form-urlencoded' = New-PodeOAObjectProperty -Properties @(
               (New-PodeOAStringProperty -Name 'name' -Description 'Updated name of the pet'),
@@ -345,12 +349,12 @@ Some useful links:
 
 
     $ex =
-    New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example  @{ summary = 'User Example'; externalValue = 'http://foo.bar/examples/user-example.json' } |
-        New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Example  @{ summary = 'User Example in XML'; externalValue = 'http://foo.bar/examples/user-example.xml' } |
-        New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Example  @{ summary = 'User Example in Plain text'; externalValue = 'http://foo.bar/examples/user-example.txt' } |
-        New-PodeOAExample -MediaType '*/*' -Name 'user' -Example @{ summary = 'User example in other forma'; externalValue = 'http://foo.bar/examples/user-example.whatever' }
+    New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'User Example' -ExternalValue   'http://foo.bar/examples/user-example.json' |
+        New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Summary   'User Example in XML' -ExternalValue   'http://foo.bar/examples/user-example.xml' |
+        New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Summary  'User Example in Plain text' -ExternalValue   'http://foo.bar/examples/user-example.txt' |
+        New-PodeOAExample -MediaType '*/*' -Name 'user' -Summary   'User example in other forma' -ExternalValue  'http://foo.bar/examples/user-example.whatever'
 
-    Add-PodeOAComponentExample -name 'frog-example' -Example  @{ summary = "An example of a frog with a cat's name"; 'value' = @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' } }
+    Add-PodeOAComponentExample -name 'frog-example' -Summary   "An example of a frog with a cat's name" -Value @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' }
 
     Add-PodeRoute -PassThru -Method Put -Path '/paet3/:petId' -ScriptBlock {
         $JsonPet = ConvertTo-Json $WebEvent.data
@@ -363,8 +367,8 @@ Some useful links:
         Set-PodeOARequest  -Parameters @(
                   (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
         ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -ContentSchemas @{ 'application/json' = 'Pet' } -Examples (
-                New-PodeOAExample -MediaType 'application/json' -Name 'cat' -Example   @{ summary = 'An example of a cat' ; value  = @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } } |
-                    New-PodeOAExample -MediaType 'application/json' -Name 'dog' -Example  @{ summary = "An example of a dog with a cat's name"; value  = @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } } |
+                New-PodeOAExample -MediaType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
+                    New-PodeOAExample -MediaType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
                     New-PodeOAExample -MediaType 'application/json' -Reference 'frog-example'
                 )
 
