@@ -2944,6 +2944,57 @@ Describe 'OpenApi' {
     }
 
 
+    BeforeAll {
+        # Mock the Pode context object
+        $Global:PodeContext = @{
+            Server = @{
+                OpenAPI = @{
+                    components = @{
+                        examples = @{}
+                    }
+                }
+            }
+        }
+
+        # Define the function if not already loaded
+
+    }
+
+    Describe "Add-PodeOAComponentExample Tests" {
+        BeforeEach {
+            # Mock the Pode context object
+            $Global:PodeContext = @{
+                Server = @{
+                    OpenAPI = @{
+                        components = @{
+                            examples = @{}
+                        }
+                    }
+                }
+            }
+        }
+        
+        It "Adds an example to the OpenAPI components" {
+            $exampleData = @{
+                summary = "An example summary"
+                value = "Some example value"
+            }
+
+            Add-PodeOAComponentExample -Name 'exampleName' -Example $exampleData
+
+            $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].summary | Should -Be "An example summary"
+            $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].value | Should -Be "Some example value"
+        }
+
+        It "Should throw an error if Name is not provided" {
+            { Add-PodeOAComponentExample -Example @{ summary = "An example"; value = "Value" } } | Should -Throw
+        }
+
+        It "Should throw an error if Example is not provided" {
+            { Add-PodeOAComponentExample -Name 'exampleName' } | Should -Throw
+        }
+    }
+
 
 
     Context 'Pet Object example' {

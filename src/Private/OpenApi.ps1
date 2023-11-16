@@ -167,8 +167,21 @@ function Test-PodeOAComponentSchema {
         $Name
     )
 
-    return  $PodeContext.Server.OpenAPI.components.schemas.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.schemas.keys -ccontains $Name
+    return  $PodeContext.Server.OpenAPI.components.schemas.keys -ccontains $Name
 }
+
+
+
+function Test-PodeOAComponentExample {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    return  $PodeContext.Server.OpenAPI.components.examples.keys -ccontains $Name
+}
+
 
 function Test-PodeOAComponentResponse {
     param(
@@ -177,7 +190,7 @@ function Test-PodeOAComponentResponse {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.components.responses.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.responses.keys -ccontains $Name
+    return  $PodeContext.Server.OpenAPI.components.responses.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentRequestBody {
@@ -187,7 +200,7 @@ function Test-PodeOAComponentRequestBody {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.components.requestBodies.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.requestBodies.keys -ccontains $Name
+    return  $PodeContext.Server.OpenAPI.components.requestBodies.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentParameter {
@@ -196,7 +209,7 @@ function Test-PodeOAComponentParameter {
         [string]
         $Name
     )
-    return $PodeContext.Server.OpenAPI.components.parameters.ContainsKey($Name) -and $PodeContext.Server.OpenAPI.components.parameters.keys -ccontains $Name
+    return  $PodeContext.Server.OpenAPI.components.parameters.keys -ccontains $Name
 }
 
 
@@ -668,6 +681,7 @@ function Get-PodeOABaseObject {
             responses     = @{}
             requestBodies = @{}
             parameters    = @{}
+            examples      = @{}
         }
         Security         = @()
         tags             = [ordered]@{}
@@ -679,6 +693,7 @@ function Get-PodeOABaseObject {
             externalDocs     = @{}
             schemaJson       = @{}
             viewer           = @{}
+
         }
     }
 }
@@ -853,6 +868,10 @@ function New-PodeOAPropertyInternal {
         $param.required = $Params.Required.ToBool()
     }
 
+    if ($Default) {
+        $param.default = $Default
+    }
+
     if ($Params.Deprecated.IsPresent ) {
         $param.deprecated = $Params.Deprecated.ToBool()
     }
@@ -860,7 +879,6 @@ function New-PodeOAPropertyInternal {
     if ($Params.Nullable.IsPresent ) {
         $param.meta['nullable'] = $Params.Nullable.ToBool()
     }
-
 
     if ($Params.WriteOnly.IsPresent ) {
         $param.meta['writeOnly'] = $Params.WriteOnly.ToBool()

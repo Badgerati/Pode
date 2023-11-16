@@ -283,14 +283,6 @@ Some useful links:
     }
     Merge-PodeAuth -Name 'test' -Authentication 'Login-OAuth2', 'api_key'
 
-    <# $ex = [ordered] @{
-        (New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example @{    summary = 'User Example'; 'externalValue' = 'http://foo.bar/examples/user-example.json' }),
-
-        (New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Example @{ summary = 'User Example in XML'; 'externalValue' = 'http://foo.bar/examples/user-example.xml'
-        }),
-          (New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Example @{ "summary"= "User Example in Plain text";"externalValue"= "http://foo.bar/examples/user-example.txt"  }),
-          ( New-PodeOAExample -MediaType '*/*' -Name 'user' -Example @{ "summary"= "User example in other forma";"externalValue"= "http://foo.bar/examples/user-example.whatever"  })
-    }#>
     $ex =
     New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example  @{ summary = 'User Example'; externalValue = 'http://foo.bar/examples/user-example.json' } |
         New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Example  @{ summary = 'User Example in XML'; externalValue = 'http://foo.bar/examples/user-example.xml' } |
@@ -335,6 +327,87 @@ Some useful links:
         Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -ContentSchemas (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
         Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -ContentSchemas  (@{  'application/json' = '' ; 'application/xml' = '' })
 
+
+    Add-PodeRoute -PassThru -Method Put -Path '/paet2/:petId' -ScriptBlock {
+        $JsonPet = ConvertTo-Json $WebEvent.data
+        if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
+            Write-PodeJsonResponse -Value @{} -StatusCode 200
+        } else {
+            Write-PodeJsonResponse -Value @{} -StatusCode 405
+        }
+    } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet2' -PassThru |
+        Set-PodeOARequest  -Parameters @(
+              (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
+        ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -ContentSchemas @{ 'text/plain' = New-PodeOAStringProperty   -array } ) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -ContentSchemas (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+        Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -ContentSchemas  (@{  'application/json' = '' ; 'application/xml' = '' })
+
+
+
+    $ex =
+    New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example  @{ summary = 'User Example'; externalValue = 'http://foo.bar/examples/user-example.json' } |
+        New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Example  @{ summary = 'User Example in XML'; externalValue = 'http://foo.bar/examples/user-example.xml' } |
+        New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Example  @{ summary = 'User Example in Plain text'; externalValue = 'http://foo.bar/examples/user-example.txt' } |
+        New-PodeOAExample -MediaType '*/*' -Name 'user' -Example @{ summary = 'User example in other forma'; externalValue = 'http://foo.bar/examples/user-example.whatever' }
+
+    Add-PodeOAComponentExample -name 'frog-example' -Example  @{ summary = "An example of a frog with a cat's name"; 'value' = @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' } }
+
+    Add-PodeRoute -PassThru -Method Put -Path '/paet3/:petId' -ScriptBlock {
+        $JsonPet = ConvertTo-Json $WebEvent.data
+        if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
+            Write-PodeJsonResponse -Value @{} -StatusCode 200
+        } else {
+            Write-PodeJsonResponse -Value @{} -StatusCode 405
+        }
+    } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet3' -PassThru |
+        Set-PodeOARequest  -Parameters @(
+                  (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
+        ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -ContentSchemas @{ 'application/json' = 'Pet' } -Examples (
+                New-PodeOAExample -MediaType 'application/json' -Name 'cat' -Example   @{ summary = 'An example of a cat' ; value  = @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } } |
+                    New-PodeOAExample -MediaType 'application/json' -Name 'dog' -Example  @{ summary = "An example of a dog with a cat's name"; value  = @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } } |
+                    New-PodeOAExample -MediaType 'application/json' -Reference 'frog-example'
+                )
+
+            ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -ContentSchemas (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+            Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -ContentSchemas  (@{  'application/json' = '' ; 'application/xml' = '' })
+
+
+    <#
+        {
+            "application/json": {
+              "schema": {
+                   "$ref": "#/components/schemas/Pet"
+              },
+              "examples": {
+                "cat" : {
+                  "summary": "An example of a cat",
+                  "value":
+                    {
+                      "name": "Fluffy",
+                      "petType": "Cat",
+                      "color": "White",
+                      "gender": "male",
+                      "breed": "Persian"
+                    }
+                },
+                "dog": {
+                  "summary": "An example of a dog with a cat's name",
+                  "value" :  {
+                    "name": "Puma",
+                    "petType": "Dog",
+                    "color": "Black",
+                    "gender": "Female",
+                    "breed": "Mixed"
+                  },
+                "frog": {
+                    "$ref": "#/components/examples/frog-example"
+                  }
+                }
+              }
+            }
+          }
+#>
     Add-PodeAuthMiddleware -Name test -Authentication 'test' -Route '/api/*'
     Add-PodeRouteGroup -Path '/api/v3'   -Routes {
         #PUT

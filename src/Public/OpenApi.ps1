@@ -1355,10 +1355,6 @@ function New-PodeOAIntProperty {
     begin {
         $param = New-PodeOAPropertyInternal -type 'integer' -Params $PSBoundParameters
 
-        if ($Default) {
-            $param.default = $Default
-        }
-
         if ($Format) {
             $param.format = $Format.ToLowerInvariant()
         }
@@ -1494,7 +1490,7 @@ function New-PodeOANumberProperty {
 
         [Parameter()]
         [double]
-        $Default = 0,
+        $Default,
 
         [Parameter()]
         [double]
@@ -1564,10 +1560,6 @@ function New-PodeOANumberProperty {
     )
     begin {
         $param = New-PodeOAPropertyInternal -type 'number' -Params $PSBoundParameters
-
-        if ($Default) {
-            $param.default = $Default
-        }
 
         if ($Format) {
             $param.format = $Format.ToLowerInvariant()
@@ -1716,7 +1708,7 @@ function New-PodeOAStringProperty {
 
         [Parameter()]
         [string]
-        $Default = $null,
+        $Default,
 
         [Parameter()]
         [string]
@@ -1792,10 +1784,6 @@ function New-PodeOAStringProperty {
             $_format = $Format
         }
         $param = New-PodeOAPropertyInternal -type 'string' -Params $PSBoundParameters
-
-        if ($Default) {
-            $param.default = $Default
-        }
 
         if ($Format -or $CustomFormat) {
             $param.format = $_format.ToLowerInvariant()
@@ -1915,7 +1903,7 @@ function New-PodeOABoolProperty {
 
         [Parameter()]
         [string]
-        $Default = 'false',
+        $Default,
 
         [Parameter()]
         [string]
@@ -2157,10 +2145,6 @@ function New-PodeOAObjectProperty {
         } else {
             $param.properties = @()
             $PropertiesFromPipeline = $true
-        }
-
-        if ($Default) {
-            $param.default = $Default
         }
 
         if ($MinProperties) {
@@ -3427,14 +3411,21 @@ The Name of the Example.
 .PARAMETER Example
 An example
 
-
 .EXAMPLE
-Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
+ New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Example  @{ summary = 'User Example in Plain text'; externalValue = 'http://foo.bar/examples/user-example.txt' }
+.EXAMPLE
+ $example =
+    New-PodeOAExample -MediaType 'application/json' -Name 'user' -Example  @{ summary = 'User Example'; externalValue = 'http://foo.bar/examples/user-example.json' } |
+        New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Example  @{ summary = 'User Example in XML'; externalValue = 'http://foo.bar/examples/user-example.xml' }
+
 #>
 function New-PodeOAExample {
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     [OutputType([System.Management.Automation.OrderedHashtable ])]
+
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true, ParameterSetName = 'Inbuilt')]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true, ParameterSetName = 'Reference')]
         [System.Management.Automation.OrderedHashtable ]
         $ParamsList,
 
@@ -3442,32 +3433,82 @@ function New-PodeOAExample {
         [string]
         $MediaType,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Inbuilt')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Inbuilt')]
         [System.Management.Automation.OrderedHashtable]
-        $Example
+        $Example,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Reference
     )
     begin {
+        if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
+            if ( !(Test-PodeOAComponentExample -Name $Reference)) {
+                throw "The OpenApi component example doesn't exist: $Reference"
+            }
+            $Name = $Reference
+            $Example = @{'$ref' = "#/components/examples/$Reference" }
+        }
         $param = [ordered]@{
             $MediaType = @{
                 $Name = $Example
             }
         }
     }
-    process {
+    process { 
     }
     end {
         if ($ParamsList) {
-            $param.GetEnumerator() | ForEach-Object { $ParamsList[$_.Key] = $_.Value }
+            if ($ParamsList.keys -contains $param.Keys[0]) {
+                $param.Values[0].GetEnumerator() | ForEach-Object { $ParamsList[$param.Keys[0]].$($_.Key) = $_.Value }
+            } else {
+                $param.GetEnumerator() | ForEach-Object { $ParamsList[$_.Key] = $_.Value }
+            }
             return $ParamsList
         } else {
             return [System.Management.Automation.OrderedHashtable] $param
         }
     }
+}
+
+
+
+<#
+.SYNOPSIS
+Adds a reusable example component.
+
+.DESCRIPTION
+Adds a reusable example component.
+
+.PARAMETER Name
+The Name of the Example.
+
+.PARAMETER Example
+An example
+
+
+.EXAMPLE
+Add-PodeOAComponentExample -name 'frog-example' -Example  @{ summary = "An example of a frog with a cat's name"; 'value' = @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' }}
+#>
+function Add-PodeOAComponentExample {
+    param(
+
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [System.Management.Automation.OrderedHashtable]
+        $Example
+    )
+    $PodeContext.Server.OpenAPI.components.examples[$Name] = $Example
 }
 
 

@@ -298,6 +298,7 @@
         'Merge-PodeOAProperty',
         'Add-PodeOAServerEndpoint',
         'New-PodeOAExample',
+        'Add-PodeOAComponentExample',
 
         # Metrics
         'Get-PodeServerUptime',
