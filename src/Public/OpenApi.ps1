@@ -814,14 +814,16 @@ https://swagger.io/docs/specification/describing-request-body/
 .PARAMETER Reference
 A reference name from an existing component request body.
 
-.PARAMETER ContentSchemas
-The content-types and schema the request body accepts (the schema is created using the Property functions).
+.PARAMETER Content
+The content of the request body. The key is a media type or media type range and the value describes it.
+For requests that match multiple keys, only the most specific key is applicable. e.g. text/plain overrides text/*
+Alias:'ContentSchemas' for legacy
 
 .PARAMETER Description
-A Description of the request body.
+A brief description of the request body. This could contain examples of use. CommonMark syntax MAY be used for rich text representation.
 
 .PARAMETER Required
-If supplied, the request body will be flagged as required.
+Determines if the request body is required in the request. Defaults to false.
 
 .PARAMETER Examples
 Supplied an Example of the media type.  The example object SHOULD be in the correct format as specified by the media type.
@@ -829,24 +831,26 @@ The `example` field is mutually exclusive of the `examples` field.
 Furthermore, if referencing a `schema` which contains an example, the `example` value SHALL _override_ the example provided by the schema.
 
 .EXAMPLE
-New-PodeOARequestBody -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+New-PodeOARequestBody -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
 .EXAMPLE
-New-PodeOARequestBody -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
+New-PodeOARequestBody -Content @{ 'application/json' = 'UserIdSchema' }
 
 .EXAMPLE
-New-PodeOARequestBody -Reference 'UserIdBody'
+New-PodeOARequestBody -Schema 'UserIdBody'
 #>
 function New-PodeOARequestBody {
     [CmdletBinding(DefaultParameterSetName = 'Schema')]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [Alias('Reference')]
         [string]
-        $Reference,
+        $Schema,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
+        [Alias('ContentSchemas')]
         [hashtable]
-        $ContentSchemas,
+        $Content,
 
         [Parameter(ParameterSetName = 'Schema')]
         [string]
@@ -866,7 +870,7 @@ function New-PodeOARequestBody {
     }
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'schema' {
-            $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas }
+            $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $Content }
 
             if ($Required.IsPresent) {
                 $param['required'] = $Required.ToBool()
@@ -891,12 +895,12 @@ function New-PodeOARequestBody {
         }
 
         'reference' {
-            if (!(Test-PodeOAComponentRequestBody -Name $Reference)) {
-                throw "The OpenApi component request body doesn't exist: $($Reference)"
+            if (!(Test-PodeOAComponentRequestBody -Name $Schema)) {
+                throw "The OpenApi component request body doesn't exist: $($Schema)"
             }
 
             return @{
-                '$ref' = "#/components/requestBodies/$($Reference)"
+                '$ref' = "#/components/requestBodies/$($Schema)"
             }
         }
     }
