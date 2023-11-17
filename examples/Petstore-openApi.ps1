@@ -375,7 +375,30 @@ Some useful links:
             ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -ContentSchemas (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -ContentSchemas  (@{  'application/json' = '' ; 'application/xml' = '' })
- 
+
+
+            Add-PodeRoute -PassThru -Method Put -Path '/paet4/:petId' -ScriptBlock {
+                $JsonPet = ConvertTo-Json $WebEvent.data
+                if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
+                    Write-PodeJsonResponse -Value @{} -StatusCode 200
+                } else {
+                    Write-PodeJsonResponse -Value @{} -StatusCode 405
+                }
+            } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet4' -PassThru |
+                Set-PodeOARequest  -Parameters @(
+                          (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required -ContentType "application/json")
+                ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
+                        New-PodeOAExample -MediaType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
+                            New-PodeOAExample -MediaType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
+                            New-PodeOAExample -MediaType 'application/json' -Reference 'frog-example'
+                        )
+
+                    ) -PassThru |
+                    Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -ContentSchemas (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+                    Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -ContentSchemas  (@{  'application/json' = '' ; 'application/xml' = '' })
+
+
+
     Add-PodeAuthMiddleware -Name test -Authentication 'test' -Route '/api/*'
     Add-PodeRouteGroup -Path '/api/v3'   -Routes {
         #PUT

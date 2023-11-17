@@ -753,7 +753,7 @@ The Request Body definition the request uses (from New-PodeOARequestBody).
 If supplied, the route passed in will be returned for further chaining.
 
 .EXAMPLE
-Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'UserIdBody')
+Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Schema 'UserIdBody')
 #>
 function Set-PodeOARequest {
     [CmdletBinding()]
@@ -2610,13 +2610,16 @@ ConvertTo-PodeOAParameter  -In Header -ContentSchemas @{ 'application/json' = 'U
 function ConvertTo-PodeOAParameter {
     [CmdletBinding(DefaultParameterSetName = 'Reference')]
     param(
+        [Parameter( Mandatory = $true, ParameterSetName = 'Schema')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Properties')]
         [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchema')]
+        [Parameter( Mandatory = $true, ParameterSetName = 'ContentProperties')]
         [ValidateSet('Cookie', 'Header', 'Path', 'Query')]
         [string]
         $In,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Properties')]
+        [Parameter( Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'ContentProperties')]
         [ValidateNotNull()]
         [hashtable]
         $Property,
@@ -2626,84 +2629,166 @@ function ConvertTo-PodeOAParameter {
         [string]
         $ComponentParameter,
 
+        [Parameter( ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'Properties')]
+        [Parameter(ParameterSetName = 'ContentSchema')]
+        [Parameter(  ParameterSetName = 'ContentProperties')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
         [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchema')]
         [String]
         $Schema,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchema')]
+        [Parameter( Mandatory = $true, ParameterSetName = 'ContentSchema')]
+        [Parameter( Mandatory = $true, ParameterSetName = 'ContentProperties')]
+        [String]
         $ContentType,
 
+        [Parameter( ParameterSetName = 'Schema')]
         [Parameter( ParameterSetName = 'ContentSchema')]
+        [Parameter( ParameterSetName = 'Properties')]
+        [Parameter( ParameterSetName = 'ContentProperties')]
         [String]
         $Description,
 
+        [Parameter( ParameterSetName = 'Schema')]
         [Parameter( ParameterSetName = 'Properties')]
         [Switch]
         $Explode,
 
+        [Parameter( ParameterSetName = 'Schema')]
         [Parameter( ParameterSetName = 'ContentSchema')]
         [Parameter( ParameterSetName = 'Properties')]
+        [Parameter( ParameterSetName = 'ContentProperties')]
         [Switch]
         $Required,
 
-        [Parameter( ParameterSetName = 'ContentSchema')]
+        [Parameter( ParameterSetName = 'Schema')]
         [Parameter( ParameterSetName = 'Properties')]
         [Switch]
         $AllowEmptyValue,
 
-        [Parameter( ParameterSetName = 'ContentSchema')]
+        [Parameter( ParameterSetName = 'Schema')]
         [Parameter( ParameterSetName = 'Properties')]
         [Switch]
         $AllowReserved,
 
+        [Parameter( ParameterSetName = 'Schema')]
         [Parameter( ParameterSetName = 'ContentSchema')]
         [Parameter( ParameterSetName = 'Properties')]
-        [String]
+        [Parameter( ParameterSetName = 'ContentProperties')]
+        [object]
         $Example,
 
+        [Parameter( ParameterSetName = 'Schema')]
         [Parameter( ParameterSetName = 'ContentSchema')]
         [Parameter( ParameterSetName = 'Properties')]
+        [Parameter( ParameterSetName = 'ContentProperties')]
         [System.Management.Automation.OrderedHashtable]
         $Examples,
 
-        [Parameter( ParameterSetName = 'ContentSchema')]
+        [Parameter( ParameterSetName = 'Schema')]
         [Parameter( ParameterSetName = 'Properties')]
         [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
         [string]
         $Style
     )
 
-    if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema') {
+    if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema' -or $PSCmdlet.ParameterSetName -ieq 'Schema') {
         if (Test-PodeIsEmpty $Schema) {
             return $null
-        }
-        # ensure all content types are valid
-        if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
-            throw "Invalid content-type found for schema: $($type)"
         }
         if (!(Test-PodeOAComponentSchema -Name $Schema )) {
             throw "The OpenApi component request parameter doesn't exist: $($Schema )"
         }
         $Property = $PodeContext.Server.OpenAPI.components.schemas[$Schema ]
+        if (!$Name ) {
+            $Name = $Schema
+        }
         $prop = @{
-            in      = $In.ToLowerInvariant()
-            name    = $Schema
-            content = @{
+            in   = $In.ToLowerInvariant()
+            name = $Name
+        }
+        if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Schema  -Append
+        }
+        if ($AllowEmptyValue.IsPresent ) {
+            $prop['allowEmptyValue'] = $AllowEmptyValue.ToBool()
+        }
+        if ($Required.IsPresent ) {
+            $prop['required'] = $Required.ToBool()
+        }
+        if ($Description ) {
+            $prop.description = $Description
+        }
+        if ($Deprecated.IsPresent ) {
+            $prop.deprecated = $Deprecated.ToBool()
+        }
+        if ($ContentType ) {
+            # ensure all content types are valid
+            if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
+                throw "Invalid content-type found for schema: $($type)"
+            }
+            $prop.content = @{
                 $ContentType = @{
                     schema = @{
                         '$ref' = "#/components/schemas/$($Schema )"
                     }
                 }
             }
-        }
-        if ($Description ) {
-            $prop.description = $Description
-        }
-        if ($Required.IsPresent ) {
-            $prop['required'] = $Required.ToBool()
-        }
-        if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Schema  -Append
+            if ($Example ) {
+                $prop.content.$ContentType.example = $Example
+            } elseif ($Examples) {
+                $prop.content.$ContentType.examples = $Examples
+            }
+        } else {
+            $prop.schema = @{
+                '$ref' = "#/components/schemas/$($Schema )"
+            }
+            if ($Style) {
+                switch ($in.ToLower()) {
+                    'path' {
+                        if (@('Simple', 'Label', 'Matrix' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'query' {
+                        if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'header' {
+                        if (@('Simple' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'cookie' {
+                        if (@('Form' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                }
+                $prop['style'] = $Style.Substring(0, 1).ToLower() + $Style.Substring(1)
+            }
+
+            if ($Explode.IsPresent ) {
+                $prop['explode'] = $Explode.ToBool()
+            }
+
+            if ($AllowEmptyValue.IsPresent ) {
+                $prop['allowEmptyValue'] = $AllowEmptyValue.ToBool()
+            }
+
+            if ($AllowReserved.IsPresent) {
+                $prop['allowReserved'] = $AllowReserved.ToBool()
+            }
+
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
@@ -2719,133 +2804,158 @@ function ConvertTo-PodeOAParameter {
         }
     } else {
         # non-object/array only
-        if (@('array', 'object') -icontains $Property.type) {
-            throw 'OpenApi request parameter cannot be an array of object'
+        #    if (@('array', 'object') -icontains $Property.type) {
+        #   throw 'OpenApi request parameter cannot be an array of object'
+        #  }
+
+        if (!$Name ) {
+            if ($Property.name) {
+                $Name = $Property.name
+            } else {
+                throw 'Parameter requires a Name'
+            }
         }
-        if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders -and $Property.name) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Property.name -Append
+        if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders -and $Name ) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value  $Name  -Append
         }
+
         # build the base parameter
         $prop = @{
             in   = $In.ToLowerInvariant()
-            name = $Property.name
+            name = $Name
         }
-        if ($Property.description ) {
-            $prop.description = $Property.description
-        }
-
-        if ($Required.IsPresent ) {
-            $prop['required'] = $Required.ToBool()
-        }
-
+        $sch = @{}
         if ($Property.Array) {
-            $prop.schema = @{
-                type  = 'array'
-                items = @{
-                    type = $Property.type
-                }
-            }
-            if ($Property.format) {
-                $prop.schema.items.format = $Property.format
-            }
-        } else {
-            $prop.schema = @{
+            $sch.type = 'array'
+            $sch.items = @{
                 type = $Property.type
             }
             if ($Property.format) {
-                $prop.schema.format = $Property.format
+                $sch.items.format = $Property.format
+            }
+        } else {
+            $sch.type = $Property.type
+            if ($Property.format) {
+                $sch.format = $Property.format
             }
         }
+        if ($ContentType) {
+            if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
+                throw "Invalid content-type found for schema: $($type)"
+            }
+            $prop.content = @{
+                $ContentType = @{
+                    schema = $sch
+                }
+            }
+        } else {
+            $prop.schema = $sch
+        }
+
         if ($null -ne $Property.meta) {
             foreach ($key in $Property.meta.Keys) {
                 if ($Property.Array) {
-                    $prop.schema.items[$key] = $Property.meta[$key]
+                    $Schema.items[$key] = $Property.meta[$key]
                 } else {
-                    $prop.schema[$key] = $Property.meta[$key]
+                    $Schema[$key] = $Property.meta[$key]
                 }
             }
         }
-    }
-    if ($Property) {
         if ($Example -and $Examples) {
             throw '-Example and -Examples are mutually exclusive'
         }
-        if ($Style) {
-            switch ($in.ToLower()) {
-                'path' {
-                    if (@('Simple', 'Label', 'Matrix' ) -inotcontains $Style) {
-                        throw "OpenApi request Style cannot be $Style for a $in parameter"
-                    }
-                    break
-                }
-                'query' {
-                    if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -inotcontains $Style) {
-                        throw "OpenApi request Style cannot be $Style for a $in parameter"
-                    }
-                    break
-                }
-                'header' {
-                    if (@('Simple' ) -inotcontains $Style) {
-                        throw "OpenApi request Style cannot be $Style for a $in parameter"
-                    }
-                    break
-                }
-                'cookie' {
-                    if (@('Form' ) -inotcontains $Style) {
-                        throw "OpenApi request Style cannot be $Style for a $in parameter"
-                    }
-                    break
-                }
-            }
-            $prop['style'] = $Style.Substring(0, 1).ToLower() + $Style.Substring(1)
-        }
-
-        if ($Explode.IsPresent ) {
-            $prop['explode'] = $Explode.ToBool()
-        }
-
         if ($AllowEmptyValue.IsPresent ) {
             $prop['allowEmptyValue'] = $AllowEmptyValue.ToBool()
         }
 
-        if ($AllowReserved.IsPresent) {
-            $prop['allowReserved'] = $AllowReserved.ToBool()
+
+        if ($Description ) {
+            $prop.description = $Description
+        } elseif ($Property.description) {
+            $prop.description = $Property.description
         }
 
-        if ($Example ) {
-            $prop['example'] = $Example
-        } elseif ($Examples) {
-            $prop['examples'] = $Examples
+        if ($Required.IsPresent ) {
+            $prop.required = $Required.ToBool()
+        } elseif ($Property.required) {
+            $prop.required = $Property.required
+        }
+        if ($Deprecated.IsPresent ) {
+            $prop.deprecated = $Deprecated.ToBool()
+        } elseif ($Property.deprecated) {
+            $prop.deprecated = $Property.deprecated
         }
 
-        if ($Property.deprecated) {
-            $prop['deprecated'] = $Property.deprecated
-        }
 
-        if ($Property.default) {
-            $prop.schema['default'] = $Property.default
-        }
-
-        if ($Property.enum) {
-            if ($Property.Array) {
-                $prop.schema.items['enum'] = $Property.enum
-            } else {
-                $prop.schema['enum'] = $Property.enum
+        if (!$ContentType) {
+            if ($Style) {
+                switch ($in.ToLower()) {
+                    'path' {
+                        if (@('Simple', 'Label', 'Matrix' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'query' {
+                        if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'header' {
+                        if (@('Simple' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'cookie' {
+                        if (@('Form' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                }
+                $prop['style'] = $Style.Substring(0, 1).ToLower() + $Style.Substring(1)
             }
-        }
 
-        if ($In -ieq 'Path') {
-            $prop['required'] = $true
-        } elseif (!$Required.IsPresent -and $Property.required ) {
-            $prop['required'] = $Property.required
-        }
-        # remove default for required parameter
-        if (!$Property.required -and $PSCmdlet.ParameterSetName -ine 'ContentSchema') {
-            if ( $prop.ContainsKey('schema') -and $Property.default) {
+            if ($Explode.IsPresent ) {
+                $prop['explode'] = $Explode.ToBool()
+            }
+
+            if ($AllowReserved.IsPresent) {
+                $prop['allowReserved'] = $AllowReserved.ToBool()
+            }
+
+            if ($Example ) {
+                $prop['example'] = $Example
+            } elseif ($Examples) {
+                $prop['examples'] = $Examples
+            }
+
+            if ($Property.default -and !$prop.required ) {
                 $prop.schema['default'] = $Property.default
+            }
+
+            if ($Property.enum) {
+                if ($Property.Array) {
+                    $prop.schema.items['enum'] = $Property.enum
+                } else {
+                    $prop.schema['enum'] = $Property.enum
+                }
+            }
+        } else {
+            if ($Example ) {
+                $prop.content.$ContentType.example = $Example
+            } elseif ($Examples) {
+                $prop.content.$ContentType.examples = $Examples
             }
         }
     }
+
+    if ($In -ieq 'Path' -and !$prop.required ) {
+        Throw "If the parameter location is 'Path', the parameter -Required and its value MUST be true"
+    }
+
     return $prop
 }
 
@@ -3544,11 +3654,11 @@ function New-PodeOAExample {
             }
         }
         $param = [ordered]@{}
-        if ($MediaType){
-            $param.MediaType = @{
+        if ($MediaType) {
+            $param.$MediaType = @{
                 $Name = $Example
             }
-        }else{
+        } else {
             $param.$Name = $Example
         }
     }
