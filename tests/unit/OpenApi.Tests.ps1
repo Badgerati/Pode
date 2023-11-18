@@ -2296,83 +2296,80 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 1
                 $result['$ref'] | Should -Be '#/components/parameters/PetIdParam'
             }
+            Describe 'ContentSchema' {
 
-            It 'Path - ContentSchema - No switches' {
-                Add-PodeOAComponentSchema -Name 'Cat' -Schema (
-                    New-PodeOAObjectProperty  -Properties  @(
-                    (New-PodeOABoolProperty -Name 'friendly'),
-                        (New-PodeOAStringProperty -Name 'name')
-                    ))
-                $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat'
-                $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [hashtable]
-                $result.Count | Should -Be 5
-                $result.name | Should -Be 'Cat'
-                $result.in | Should -Be 'path'
-                $result.description | Should -Be 'Feline description'
-                $result.required | Should -BeTrue
-                $result.allowEmptyValue | Should -BeFalse
-                $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [hashtable]
-                $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [hashtable]
-                $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [hashtable]
-                $result.content.'application/json'.schema.Count | Should -Be 1
-                $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            }
+                BeforeEach {
+                    Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+                        New-PodeOAObjectProperty  -Properties  @(
+                        (New-PodeOABoolProperty -Name 'friendly'),
+                            (New-PodeOAStringProperty -Name 'name')
+                        ))
+                }
+                It 'Path - ContentSchema - No switches' {
+                    $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
+                    $result | Should -Not -BeNullOrEmpty
+                    $result | Should -BeOfType [hashtable]
+                    $result.Count | Should -Be 5
+                    $result.name | Should -Be 'Cat'
+                    $result.in | Should -Be 'path'
+                    $result.description | Should -Be 'Feline description'
+                    $result.required | Should -BeTrue
+                    $result.allowEmptyValue | Should -BeFalse
+                    $result.content | Should -Not -BeNullOrEmpty
+                    $result.content | Should -BeOfType [hashtable]
+                    $result.content.Count | Should -Be 1
+                    $result.content.'application/json' | Should -BeOfType [hashtable]
+                    $result.content.'application/json'.Count | Should -Be 1
+                    $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+                    $result.content.'application/json'.schema.Count | Should -Be 1
+                    $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+                }
 
-            It 'Path - ContentSchema - Required' {
-                Add-PodeOAComponentSchema -Name 'Cat' -Schema (
-                    New-PodeOAObjectProperty  -Properties  @(
-                    (New-PodeOABoolProperty -Name 'friendly'),
-                        (New-PodeOAStringProperty -Name 'name')
-                    ))
-                $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
-                $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [hashtable]
-                $result.Count | Should -Be 5
-                $result.name | Should -Be 'Cat'
-                $result.in | Should -Be 'path'
-                $result.description | Should -Be 'Feline description'
-                $result.required | Should -BeTrue
-                $result.allowEmptyValue | Should -BeFalse
-                $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [hashtable]
-                $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [hashtable]
-                $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [hashtable]
-                $result.content.'application/json'.schema.Count | Should -Be 1
-                $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            }
+                It 'Path - ContentSchema - Required' {
+                    $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
+                    $result | Should -Not -BeNullOrEmpty
+                    $result | Should -BeOfType [hashtable]
+                    $result.Count | Should -Be 5
+                    $result.name | Should -Be 'Cat'
+                    $result.in | Should -Be 'path'
+                    $result.description | Should -Be 'Feline description'
+                    $result.required | Should -BeTrue
+                    $result.allowEmptyValue | Should -BeFalse
+                    $result.content | Should -Not -BeNullOrEmpty
+                    $result.content | Should -BeOfType [hashtable]
+                    $result.content.Count | Should -Be 1
+                    $result.content.'application/json' | Should -BeOfType [hashtable]
+                    $result.content.'application/json'.Count | Should -Be 1
+                    $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+                    $result.content.'application/json'.schema.Count | Should -Be 1
+                    $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+                }
 
-            It 'Path - ContentSchema - AllowEmptyValue' {
-                Add-PodeOAComponentSchema -Name 'Cat' -Schema (
-                    New-PodeOAObjectProperty  -Properties  @(
-                    (New-PodeOABoolProperty -Name 'friendly'),
-                        (New-PodeOAStringProperty -Name 'name')
-                    ))
-                $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -AllowEmptyValue
-                $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [hashtable]
-                $result.Count | Should -Be 6
-                $result.name | Should -Be 'Cat'
-                $result.in | Should -Be 'path'
-                $result.description | Should -Be 'Feline description'
-                $result.required | Should -BeTrue
-                $result.allowEmptyValue | Should -BeTrue
-                $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [hashtable]
-                $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [hashtable]
-                $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [hashtable]
-                $result.content.'application/json'.schema.Count | Should -Be 1
-                $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+                It 'Path - ContentSchema - AllowEmptyValue' {
+                    $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema 'Cat' -AllowEmptyValue -Required
+                    $result | Should -Not -BeNullOrEmpty
+                    $result | Should -BeOfType [hashtable]
+                    $result.Count | Should -Be 6
+                    $result.name | Should -Be 'Cat'
+                    $result.in | Should -Be 'path'
+                    $result.description | Should -Be 'Feline description'
+                    $result.required | Should -BeTrue
+                    $result.allowEmptyValue | Should -BeTrue
+                    $result.content | Should -Not -BeNullOrEmpty
+                    $result.content | Should -BeOfType [hashtable]
+                    $result.content.Count | Should -Be 1
+                    $result.content.'application/json' | Should -BeOfType [hashtable]
+                    $result.content.'application/json'.Count | Should -Be 1
+                    $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+                    $result.content.'application/json'.schema.Count | Should -Be 1
+                    $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
+                }
+
+                It 'Path - ContentSchema - Exception -Required' {
+                    { ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema 'Cat' } | Should -Throw  -ExpectedMessage '*the parameter -Required*'
+                }
             }
         }
-
 
         Describe 'ConvertTo-PodeOAParameter - Header' {
 
@@ -2982,15 +2979,7 @@ Describe 'OpenApi' {
 
             $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].summary | Should -Be 'An example summary'
             $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].value | Should -Be 'Some example value'
-        }
-
-        It 'Should throw an error if Name is not provided' {
-            { Add-PodeOAComponentExample -Summary  'An example' -Value  'Value' } | Should -Throw
-        }
-
-        It 'Should throw an error if Example is not provided' {
-            { Add-PodeOAComponentExample -Name 'exampleName' } | Should -Throw
-        }
+        } 
     }
 
 

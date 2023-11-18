@@ -2584,7 +2584,10 @@ If supplied, the object will be treated as Required where supported.(Applicable 
 If supplied, allow the parameter to be empty
 
 .PARAMETER Style
-If supplied,  defines how multiple values are delimited. Possible styles depend on the parameter location: path, query, header or cookie.
+If supplied, defines how multiple values are delimited. Possible styles depend on the parameter location: path, query, header or cookie.
+
+.PARAMETER Deprecated
+If supplied, specifies that a parameter is deprecated and SHOULD be transitioned out of usage. Default value is false.
 
 .PARAMETER Example
 Example of the parameter's potential value. The example SHOULD match the specified schema and encoding properties if present.
@@ -2665,6 +2668,7 @@ function ConvertTo-PodeOAParameter {
         [Switch]
         $Required,
 
+        [Parameter( ParameterSetName = 'ContentSchema')]
         [Parameter( ParameterSetName = 'Schema')]
         [Parameter( ParameterSetName = 'Properties')]
         [Switch]
@@ -2693,7 +2697,14 @@ function ConvertTo-PodeOAParameter {
         [Parameter( ParameterSetName = 'Properties')]
         [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
         [string]
-        $Style
+        $Style,
+
+        [Parameter( ParameterSetName = 'Schema')]
+        [Parameter( ParameterSetName = 'ContentSchema')]
+        [Parameter( ParameterSetName = 'Properties')]
+        [Parameter( ParameterSetName = 'ContentProperties')]
+        [Switch]
+        $Deprecated
     )
 
     if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema' -or $PSCmdlet.ParameterSetName -ieq 'Schema') {
@@ -2855,9 +2866,9 @@ function ConvertTo-PodeOAParameter {
         if ($null -ne $Property.meta) {
             foreach ($key in $Property.meta.Keys) {
                 if ($Property.Array) {
-                    $Schema.items[$key] = $Property.meta[$key]
+                    $sch.items[$key] = $Property.meta[$key]
                 } else {
-                    $Schema[$key] = $Property.meta[$key]
+                    $sch[$key] = $Property.meta[$key]
                 }
             }
         }
@@ -3690,12 +3701,24 @@ Adds a reusable example component.
 .PARAMETER Name
 The Name of the Example.
 
-.PARAMETER Example
-An example
 
+.PARAMETER Summary
+Short description for the example
+
+.PARAMETER Description
+Long description for the example.
+
+.PARAMETER Value
+Embedded literal example. The  value Parameter and ExternalValue parameter are mutually exclusive.
+To represent examples of media types that cannot naturally represented in JSON or YAML, use a string value to contain the example, escaping where necessary.
+
+.PARAMETER ExternalValue
+A URL that points to the literal example. This provides the capability to reference examples that cannot easily be included in JSON or YAML documents.
+The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
 
 .EXAMPLE
-Add-PodeOAComponentExample -name 'frog-example' -Example  @{ summary = "An example of a frog with a cat's name"; 'value' = @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' }}
+Add-PodeOAComponentExample -name 'frog-example' -Summary "An example of a frog with a cat's name" -Value @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' }
+
 #>
 function Add-PodeOAComponentExample {
     [CmdletBinding(DefaultParameterSetName = 'Value')]

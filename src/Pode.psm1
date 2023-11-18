@@ -13,9 +13,13 @@ if ($PSVersionTable.PSVersion -lt [version]'7.2.0') {
 elseif ($PSVersionTable.PSVersion -lt [version]'7.3.0') {
     Add-Type -LiteralPath "$($root)/Libs/net6.0/Pode.dll" -ErrorAction Stop
 }
-# net7 for >7.2
-else {
+# net7 for =7.3
+elseif ($PSVersionTable.PSVersion -lt [version]'7.4.0') {
     Add-Type -LiteralPath "$($root)/Libs/net7.0/Pode.dll" -ErrorAction Stop
+}
+# net8 for =7.4
+else {
+    Add-Type -LiteralPath "$($root)/Libs/net8.0/Pode.dll" -ErrorAction Stop
 }
 
 # load private functions
