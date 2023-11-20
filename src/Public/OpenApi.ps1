@@ -825,6 +825,9 @@ A brief description of the request body. This could contain examples of use. Com
 .PARAMETER Required
 Determines if the request body is required in the request. Defaults to false.
 
+.PARAMETER Properties
+Use to force the use of the properties keyword under a schema. Commonly used to specify a multipart/form-data multi file
+
 .PARAMETER Examples
 Supplied an Example of the media type.  The example object SHOULD be in the correct format as specified by the media type.
 The `example` field is mutually exclusive of the `examples` field.
@@ -860,6 +863,10 @@ function New-PodeOARequestBody {
         [switch]
         $Required,
 
+        [Parameter(ParameterSetName = 'Schema')]
+        [switch]
+        $Properties,
+
         [Parameter()]
         [System.Management.Automation.OrderedHashtable]
         $Examples
@@ -870,7 +877,7 @@ function New-PodeOARequestBody {
     }
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'schema' {
-            $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $Content }
+            $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $Content -Properties:$Properties }
 
             if ($Required.IsPresent) {
                 $param['required'] = $Required.ToBool()
@@ -1701,7 +1708,7 @@ function New-PodeOAStringProperty {
 
         [Parameter( ParameterSetName = 'Array')]
         [Parameter(ParameterSetName = 'Inbuilt')]
-        [ValidateSet('', 'Binary', 'Byte', 'Date', 'Date-Time', 'Password', 'Email', 'Uuid', 'Uri', 'Hostname', 'Ipv4', 'Ipv6')]
+        [ValidateSet('', 'Binary', 'Base64', 'Byte', 'Date', 'Date-Time', 'Password', 'Email', 'Uuid', 'Uri', 'Hostname', 'Ipv4', 'Ipv6')]
         [string]
         $Format,
 
@@ -2044,6 +2051,9 @@ If supplied, the object will be included in a response but not in a request
 .PARAMETER WriteOnly
 If supplied, the object will be included in a request but not in a response
 
+.PARAMETER NoProperties
+If supplied, no properties are allowed in the object. If no properties are assigned to the object and the NoProperties parameter is not set the object accept any property
+
 .PARAMETER MinProperties
 If supplied, will restrict the minimun number of properties allowed in an object.
 
@@ -2116,6 +2126,9 @@ function New-PodeOAObjectProperty {
         [switch]
         $WriteOnly,
 
+        [switch]
+        $NoProperties,
+
         [int]
         $MinProperties,
 
@@ -2143,7 +2156,13 @@ function New-PodeOAObjectProperty {
     )
     begin {
         $param = New-PodeOAPropertyInternal -type 'object' -Params $PSBoundParameters
-        if ($Properties) {
+        if ($NoProperties) {
+            if ($Properties -or $MinProperties -or $MaxProperties){
+                throw "-NoProperties is not compatible with -Properties, -MinProperties and -MaxProperties"
+            }
+            $param.properties = @($null)
+            $PropertiesFromPipeline = $false
+        } elseif ($Properties) {
             $param.properties = $Properties
             $PropertiesFromPipeline = $false
         } else {

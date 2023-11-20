@@ -3,9 +3,14 @@ function ConvertTo-PodeOAContentTypeSchema {
         [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $Schemas,
-        [Parameter(ValueFromPipeline = $false)]
+
+        [Parameter()]
         [switch]
-        $Array
+        $Array,
+
+        [Parameter()]
+        [switch]
+        $Properties
     )
 
     if (Test-PodeIsEmpty $Schemas) {
@@ -20,7 +25,7 @@ function ConvertTo-PodeOAContentTypeSchema {
     }
 
     # convert each schema to openapi format
-    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas -Array:$Array)
+    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas -Array:$Array -Properties:$Properties)
 }
 
 function ConvertTo-PodeOAHeaderSchema {
@@ -67,9 +72,15 @@ function ConvertTo-PodeOAObjectSchema {
         [Parameter(ValueFromPipeline = $true)]
         [hashtable]
         $Schemas,
+
         [Parameter(ValueFromPipeline = $false)]
         [switch]
-        $Array
+        $Array,
+
+        [Parameter(ValueFromPipeline = $false)]
+        [switch]
+        $Properties
+
     )
     # manage generic schema json conversion issue
     if ( $Schemas.ContainsKey('*/*')) {
@@ -82,6 +93,7 @@ function ConvertTo-PodeOAObjectSchema {
         $obj[$type] = @{
             schema = $null
         }
+
         if ($Array) {
             $obj[$type].schema = @{
                 'type'  = 'array'
@@ -123,7 +135,20 @@ function ConvertTo-PodeOAObjectSchema {
         }
         # add a set schema object
         else {
-            $obj[$type].schema = ($Schemas[$type] | ConvertTo-PodeOASchemaProperty)
+            $result = ($Schemas[$type] | ConvertTo-PodeOASchemaProperty)
+            if ($Properties) {
+                if ($Schemas[$type].Name) {
+                    $obj[$type].schema = @{
+                        'properties' = @{
+                            $Schemas[$type].Name = $result
+                        }
+                    }
+                } else {
+                    Throw 'The Properties parameters cannot be used if the Property has no name'
+                }
+            } else {
+                $obj[$type].schema = $result
+            }
         }
     }
 
@@ -354,10 +379,17 @@ function ConvertTo-PodeOASchemaProperty {
 
                 }
             }
-            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
-            $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
-            if ( $RequiredList.Count -gt 0) {
-                $schema['required'] = @($RequiredList.Name)
+            if ($Property.properties) {
+                $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
+                $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
+                if ( $RequiredList.Count -gt 0) {
+                    $schema['required'] = @($RequiredList.Name)
+                }
+            } else {
+                #if noproperties parameter create an empty properties
+                if ( $Property.properties.Count -eq 1 -and $null -eq $Property.properties[0]) {
+                    $schema['properties'] = @{}
+                }
             }
 
             if ($Property.xml ) {
