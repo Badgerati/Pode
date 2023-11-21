@@ -242,6 +242,10 @@ function Restart-PodeInternalServer {
         # clear up shared state
         $PodeContext.Server.State.Clear()
 
+        # clear cache
+        $PodeContext.Server.Cache.Items.Clear()
+        $PodeContext.Server.Cache.Storage.Clear()
+
         # clear up secret vaults/cache
         Unregister-PodeSecretVaults -ThrowError
         $PodeContext.Server.Secrets.Vaults.Clear()

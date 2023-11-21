@@ -254,6 +254,14 @@ function New-PodeContext {
     # shared state between runspaces
     $ctx.Server.State = @{}
 
+    # setup caching
+    $ctx.Server.Cache = @{
+        Items          = @{}
+        Storage        = @{}
+        DefaultStorage = $null
+        DefaultTtl     = 3600 # 1hr
+    }
+
     # output details, like variables, to be set once the server stops
     $ctx.Server.Output = @{
         Variables = @{}
