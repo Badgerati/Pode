@@ -418,10 +418,10 @@ The route to add the response definition, usually from -PassThru on Add-PodeRout
 .PARAMETER StatusCode
 The HTTP StatusCode for the response.
 
-.PARAMETER ContentSchemas
+.PARAMETER Content
 The content-types and schema the response returns (the schema is created using the Property functions).
 
-.PARAMETER HeaderSchemas
+.PARAMETER Headers
 The header name and schema the response returns (the schema is created using Add-PodeOAComponentHeaderSchema cmd-let).
 
 .PARAMETER Description
@@ -443,10 +443,10 @@ If supplied, the Header Schema will be considered an array
 If supplied, the route passed in will be returned for further chaining.
 
 .EXAMPLE
-Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
 .EXAMPLE
-Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
+Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
 
 .EXAMPLE
 Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -Reference 'OKResponse'
@@ -466,14 +466,16 @@ function Add-PodeOAResponse {
 
         [Parameter(ParameterSetName = 'Schema')]
         [Parameter(ParameterSetName = 'SchemaDefault')]
+        [Alias('ContentSchemas')]
         [hashtable]
-        $ContentSchemas,
+        $Content,
 
         [Parameter()]
+        [Alias('HeaderSchemas')]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] })]
-        $HeaderSchemas,
+        $Headers,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
         [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
@@ -503,7 +505,9 @@ function Add-PodeOAResponse {
         [switch]
         $PassThru
     )
-
+    if (!$Route) {
+        throw 'Route cannot be Null'
+    }
     # set a general description for the status code
     if (!$Default -and [string]::IsNullOrWhiteSpace($Description)) {
         $Description = Get-PodeStatusDescription -StatusCode $StatusCode
@@ -520,19 +524,19 @@ function Add-PodeOAResponse {
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         { $_ -in 'schema', 'schemadefault' } {
             # build any content-type schemas
-            $content = $null
-            if ($null -ne $ContentSchemas) {
-                $content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray
+            $_content = $null
+            if ($null -ne $Content) {
+                $_content = ConvertTo-PodeOAContentTypeSchema -Schemas $Content -Array:$ContentArray
             }
 
             # build any header schemas
-            $headers = $null
-            if ($HeaderSchemas -is [System.Object[]] -or $HeaderSchemas -is [string] -or $HeaderSchemas -is [string[]]) {
-                if ($null -ne $HeaderSchemas) {
-                    $headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray
+            $_headers = $null
+            if ($Headers -is [System.Object[]] -or $Headers -is [string] -or $Headers -is [string[]]) {
+                if ($null -ne $Headers) {
+                    $_headers = ConvertTo-PodeOAHeaderSchema -Schemas $Headers -Array:$HeaderArray
                 }
-            } elseif ($HeaderSchemas -is [hashtable]) {
-                $headers = ConvertTo-PodeOAObjectSchema -Schemas  $HeaderSchemas
+            } elseif ($Headers -is [hashtable]) {
+                $_headers = ConvertTo-PodeOAObjectSchema -Schemas  $Headers
             }
         }
 
@@ -551,11 +555,11 @@ function Add-PodeOAResponse {
                 if ($description) {
                     $response.description = $description
                 }
-                if ($headers) {
-                    $response.headers = $headers
+                if ($_headers) {
+                    $response.headers = $_headers
                 }
-                if ($content) {
-                    $response.content = $content
+                if ($_content) {
+                    $response.content = $_content
                 }
                 $r.OpenApi.Responses[$code] = $response
             }

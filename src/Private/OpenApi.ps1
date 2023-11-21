@@ -147,7 +147,11 @@ function ConvertTo-PodeOAObjectSchema {
                     Throw 'The Properties parameters cannot be used if the Property has no name'
                 }
             } else {
-                $obj[$type].schema = $result
+                if ($Array) {
+                    $obj[$type].schema.items = $result
+                } else {
+                    $obj[$type].schema = $result
+                }
             }
         }
     }
