@@ -299,6 +299,7 @@
         'Add-PodeOAServerEndpoint',
         'New-PodeOAExample',
         'Add-PodeOAComponentExample',
+        'New-PodeOAEncodingObject',
 
         # Metrics
         'Get-PodeServerUptime',

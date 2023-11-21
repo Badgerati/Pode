@@ -528,7 +528,27 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
 
-
+        Add-PodeRoute -PassThru -Method post -Path '/pet4/:petId' -Authentication 'Login-OAuth2' -Scope 'write' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store' -Description 'Updates a pet in the store with form data' -Tags 'pet' -OperationId 'updatePet4WithForm' -PassThru |
+            Set-PodeOARequest -PassThru -Parameters @(( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ),
+                                            (  New-PodeOAStringProperty -Name 'name' -Description 'Name of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query ) ,
+                                            (  New-PodeOAStringProperty -Name 'status' -Description 'Status of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query )
+            )  -RequestBody (New-PodeOARequestBody -ContentSchemas @{'multipart/form-data' =
+                    New-PodeOAStringProperty -name 'id' -format 'uuid' |
+                        New-PodeOAObjectProperty -name 'address' -NoProperties |
+                        New-PodeOAObjectProperty -name 'historyMetadata' -Description 'metadata in XML format' -NoProperties |
+                        New-PodeOAStringProperty -name 'profileImage' -Format Binary |
+                        New-PodeOAObjectProperty
+                    } -Encoding (
+                        New-PodeOAEncodingObject -Name 'historyMetadata' -ContentType 'application/xml; charset=utf-8' |
+                            New-PodeOAEncodingObject -Name 'profileImage' -ContentType 'image/png, image/jpeg' -Headers (
+                                New-PodeOAIntProperty -name 'X-Rate-Limit-Limit' -Description 'The number of allowed requests in the current period' -Default 3 -Enum @(1,2,3) -Maximum 3
+                            )
+                        )
+                    ) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru |
+                    Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
+                    Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
 
 

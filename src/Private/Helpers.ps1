@@ -3311,6 +3311,12 @@ function ConvertTo-PodeYamlInternal {
                 #        "`n$padding- $(ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine)" })"
                 break
             }
+            'int32' {
+                $InputObject
+            }
+            'double' {
+                $InputObject
+            }
             default {
                 "'$InputObject'"
             }

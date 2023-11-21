@@ -833,6 +833,11 @@ Supplied an Example of the media type.  The example object SHOULD be in the corr
 The `example` field is mutually exclusive of the `examples` field.
 Furthermore, if referencing a `schema` which contains an example, the `example` value SHALL _override_ the example provided by the schema.
 
+.PARAMETER Encoding
+This parameter give you control over the serialization of parts of multipart request bodies.
+This attribute is only applicable to multipart and application/x-www-form-urlencoded request bodies.
+Use New-PodeOAEncodingObject to define the encode
+
 .EXAMPLE
 New-PodeOARequestBody -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
@@ -841,6 +846,20 @@ New-PodeOARequestBody -Content @{ 'application/json' = 'UserIdSchema' }
 
 .EXAMPLE
 New-PodeOARequestBody -Schema 'UserIdBody'
+
+.EXAMPLE
+New-PodeOARequestBody -ContentSchemas @{'multipart/form-data' =
+                    New-PodeOAStringProperty -name 'id' -format 'uuid' |
+                        New-PodeOAObjectProperty -name 'address' -NoProperties |
+                        New-PodeOAObjectProperty -name 'historyMetadata' -Description 'metadata in XML format' -NoProperties |
+                        New-PodeOAStringProperty -name 'profileImage' -Format Binary |
+                        New-PodeOAObjectProperty
+                    } -Encoding (
+                        New-PodeOAEncodingObject -Name 'historyMetadata' -ContentType 'application/xml; charset=utf-8' |
+                            New-PodeOAEncodingObject -Name 'profileImage' -ContentType 'image/png, image/jpeg' -Headers (
+                                New-PodeOAIntProperty -name 'X-Rate-Limit-Limit' -Description 'The number of allowed requests in the current period' -Default 3 -Enum @(1,2,3)
+                            )
+                        )
 #>
 function New-PodeOARequestBody {
     [CmdletBinding(DefaultParameterSetName = 'Schema')]
@@ -869,7 +888,11 @@ function New-PodeOARequestBody {
 
         [Parameter()]
         [System.Management.Automation.OrderedHashtable]
-        $Examples
+        $Examples,
+
+        [Parameter()]
+        [hashtable[]]
+        $Encoding
 
     )
     if ($Example -and $Examples) {
@@ -898,7 +921,6 @@ function New-PodeOARequestBody {
                     $param.content.$k.examples = $Examples.$k
                 }
             }
-            return $param
         }
 
         'reference' {
@@ -906,11 +928,68 @@ function New-PodeOARequestBody {
                 throw "The OpenApi component request body doesn't exist: $($Schema)"
             }
 
-            return @{
+            $param = @{
                 '$ref' = "#/components/requestBodies/$($Schema)"
             }
         }
     }
+    if ($Encoding) {
+        if (([string]$Content.keys[0]) -match '(?i)^(multipart.*|application\/x-www-form-urlencoded)$' ) {
+
+            $r = @{}
+
+            foreach ( $e in $Encoding) {
+                $key = [string]$e.Keys
+                $elems = @{}
+                foreach ($v in $e[$key].Keys) {
+                    if ($v -ieq 'headers') {
+                        if ($($e[$key].$v.name)) {
+                            $elems.headers = @{
+                                $($e[$key].$v.name) = @{
+                                    schema = @{}
+                                }
+                            }
+                            if ($e[$key].$v.description) {
+                                $elems.headers.$($e[$key].$v.name).description = $e[$key].$v.description
+                            }
+                            foreach ($k in $e[$key].$v.keys) {
+                                if (@('name', 'description' ) -notcontains $k) {
+                                    if ($e[$key].$v.$k) {
+                                        if ( $k -eq 'meta') {
+                                            foreach ($mk in $e[$key].$v.meta.Keys) {
+                                                if ($e[$key].$v.meta.$mk) {
+                                                    $elems.headers.$($e[$key].$v.name).schema.$mk = $e[$key].$v.meta[$mk]
+                                                }
+                                            }
+                                        } else {
+                                            $elems.headers.$($e[$key].$v.name).schema.$k = $e[$key].$v.$k
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            throw 'Header requires a name when used in an encoding context'
+                        }
+                    } else {
+                        $elems.$v = $e[$key].$v
+                    }
+                    #'style' { $elems.style = $e[$key].$v }
+                    #    'explode' { $elems.explode = $e[$key].$v }
+                    #   'allowreserved' { $elems.allowReserved = $e[$key].$v }
+                }
+
+                $r.$key = $elems
+            }
+
+
+            $param.Content.$($Content.keys[0]).encoding = $r
+        } else {
+            Write-PodeHost -ForegroundColor Yellow 'The encoding attribute is only applicable to multipart and application/x-www-form-urlencoded request bodies.'
+        }
+    }
+
+
+    return $param
 }
 
 
@@ -2157,8 +2236,8 @@ function New-PodeOAObjectProperty {
     begin {
         $param = New-PodeOAPropertyInternal -type 'object' -Params $PSBoundParameters
         if ($NoProperties) {
-            if ($Properties -or $MinProperties -or $MaxProperties){
-                throw "-NoProperties is not compatible with -Properties, -MinProperties and -MaxProperties"
+            if ($Properties -or $MinProperties -or $MaxProperties) {
+                throw '-NoProperties is not compatible with -Properties, -MinProperties and -MaxProperties'
             }
             $param.properties = @($null)
             $PropertiesFromPipeline = $false
@@ -3776,6 +3855,123 @@ function Add-PodeOAComponentExample {
         $Example.externalValue = $ExternalValue
     }
     $PodeContext.Server.OpenAPI.components.examples[$Name] = $Example
+}
+
+
+
+
+<#
+.SYNOPSIS
+Adds a single encoding definition applied to a single schema property.
+
+.DESCRIPTION
+A single encoding definition applied to a single schema property.
+
+.PARAMETER  encodingList
+Used by pipe
+
+.PARAMETER Name
+The Name of the associated encoded property .
+
+.PARAMETER ContentType
+Content-Type for encoding a specific property. Default value depends on the property type: for `string` with `format` being `binary` – `application/octet-stream`;
+for other primitive types – `text/plain`; for `object` - `application/json`; for `array` – the default is defined based on the inner type.
+The value can be a specific media type (e.g. `application/json`), a wildcard media type (e.g. `image/*`), or a comma-separated list of the two types.
+
+.PARAMETER Headers
+A map allowing additional information to be provided as headers, for example `Content-Disposition`.
+`Content-Type` is described separately and SHALL be ignored in this section.
+This property SHALL be ignored if the request body media type is not a `multipart`.
+
+.PARAMETER Style
+Describes how a specific property value will be serialized depending on its type.  See [Parameter Object](#parameterObject) for details on the [`style`](#parameterStyle) property.
+The behavior follows the same values as `query` parameters, including default values.
+This property SHALL be ignored if the request body media type is not `application/x-www-form-urlencoded`.
+
+.PARAMETER Explode
+When enabled, property values of type `array` or `object` generate separate parameters for each value of the array, or key-value-pair of the map.  For other types of properties this property has no effect.
+When [`style`](#encodingStyle) is `form`, the `Explode` is set to `true`.
+This property SHALL be ignored if the request body media type is not `application/x-www-form-urlencoded`.
+
+.PARAMETER AllowReserved
+Determines whether the parameter value SHOULD allow reserved characters, as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-2.2) `:/?#[]@!$&'()*+,;=` to be included without percent-encoding.
+This property SHALL be ignored if the request body media type is not `application/x-www-form-urlencoded`.
+
+.EXAMPLE
+
+New-PodeOAEncodingObject -Name 'profileImage' -ContentType 'image/png, image/jpeg' -Headers (
+                                New-PodeOAIntProperty -name 'X-Rate-Limit-Limit' -Description 'The number of allowed requests in the current period' -Default 3 -Enum @(1,2,3) -Maximum 3
+                            )
+#>
+function New-PodeOAEncodingObject {
+    param (
+        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [hashtable[]]
+        $EncodingList,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        [hashtable]
+        $Headers,
+
+        [Parameter()]
+        [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
+        [string]
+        $Style,
+
+        [Parameter()]
+        [switch]
+        $Explode,
+
+        [Parameter()]
+        [switch]
+        $AllowReserved
+    )
+    begin {
+
+        $encoding = [ordered]@{
+            $Name = @{}
+        }
+        if ($ContentType) {
+            $encoding.$Name.contentType = $ContentType
+        }
+        if ($Style) {
+            $encoding.$Name.style = $Style
+        }
+
+        if ($Headers) {
+            $encoding.$Name.headers = $Headers
+        }
+
+        if ($Explode.IsPresent ) {
+            $encoding.$Name.explode = $Explode.IsPresent
+        }
+        if ($AllowReserved.IsPresent ) {
+            $encoding.$Name.allowReserved = $AllowReserved.IsPresent
+        }
+
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
+    }
+    process {
+        if ($EncodingList) {
+            $collectedInput.AddRange($EncodingList)
+        }
+    }
+
+    end {
+        if ($collectedInput) {
+            return $collectedInput + $encoding
+        } else {
+            return $encoding
+        }
+    }
 }
 
 
