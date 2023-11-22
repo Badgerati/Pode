@@ -214,6 +214,9 @@ Task Build BuildDeps, {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
 
+    Write-Host "Build enviroment"
+    $PSVersionTable
+    Write-Host
     Push-Location ./src/Listener
 
     try {
