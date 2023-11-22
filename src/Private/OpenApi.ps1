@@ -912,8 +912,8 @@ function New-PodeOAPropertyInternal {
         $param.required = $Params.Required.IsPresent
     }
 
-    if ($Params.Default.IsPresent) {
-        $param.default = $Params.Default.IsPresent
+    if ($Params.Default ) {
+        $param.default = $Params.Default
     }
 
     if ($Params.Deprecated.IsPresent ) {

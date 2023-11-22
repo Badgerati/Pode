@@ -54,11 +54,6 @@ Define the default  depth used by any JSON,YAML OpenAPI conversion (default 20)
 
 .PARAMETER DisableMinimalDefinitions
 If suplied the OpenApi decument will include only the route validated by Set-PodeOARouteInfo. Any other not OpenApi route will be excluded.
-It's the default when no deprecated parameters are used
-
-.PARAMETER EnableMinimalDefinitions
-If suplied the OpenApi decument will include any defined route. It's the default when a deprecated parameter is used
-
 
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
@@ -122,30 +117,17 @@ function Enable-PodeOpenApi {
         $Depth = 20,
 
         [switch ]
-        $DisableMinimalDefinitions,
-
-        [switch ]
-        $EnableMinimalDefinitions
+        $DisableMinimalDefinitions
 
     )
-    if ( $EnableMinimalDefinitions.IsPresent -and $DisableMinimalDefinitions.IsPresent) {
-        throw 'Properties EnableMinimalDefinitions and DisableMinimalDefinitions are mutually exclusive'
-    }
 
     if ($PSCmdlet.ParameterSetName -eq 'Deprecated') {
         Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
-        $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions = $false
-    } else {
-        $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions = $true
     }
 
-    if ($DisableMinimalDefinitions.IsPresent) {
-        $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions = $false
-    }
+    $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
 
-    if ($EnableMinimalDefinitions.IsPresent) {
-        $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions = $true
-    }
+
     # initialise openapi info
     $PodeContext.Server.OpenAPI.Version = $OpenApiVersion
     $PodeContext.Server.OpenAPI.Path = $Path
