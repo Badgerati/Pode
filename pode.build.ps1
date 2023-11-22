@@ -107,7 +107,11 @@ function Invoke-PodeBuildDotnetBuild($target) {
         Write-Host "SDK for target framework $target is not compatible with the installed SDKs. Skipping build."
         return
     }
-    $AssemblyVersion = ($Version)? "-p:Version=$Version" : ''
+    if ($Version) {
+        $AssemblyVersion = "-p:Version=$Version"
+    } else {
+        $AssemblyVersion = ' '
+    }
     dotnet build --configuration Release --self-contained --framework $target $AssemblyVersion
     if (!$?) {
         throw "dotnet build failed for $($target)"
@@ -126,7 +130,7 @@ function Invoke-PodeBuildDotnetBuild($target) {
 #>
 
 # Synopsis: Stamps the version onto the Module
-Task StampVersion {
+Get-Task StampVersion {
     (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
@@ -134,7 +138,7 @@ Task StampVersion {
 }
 
 # Synopsis: Generating a Checksum of the Zip
-Task PrintChecksum {
+Get-Task PrintChecksum {
     if (Test-PodeBuildIsWindows) {
         $Script:Checksum = (checksum -t sha256 $Version-Binaries.zip)
     } else {
@@ -150,7 +154,7 @@ Task PrintChecksum {
 #>
 
 # Synopsis: Installs Chocolatey
-Task ChocoDeps -If (Test-PodeBuildIsWindows) {
+Get-Task ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
         Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
@@ -158,7 +162,7 @@ Task ChocoDeps -If (Test-PodeBuildIsWindows) {
 }
 
 # Synopsis: Install dependencies for packaging
-Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
+Get-Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
     if (!(Test-PodeBuildCommand 'checksum')) {
         Invoke-PodeBuildInstall 'checksum' $Versions.Checksum
     }
@@ -169,7 +173,7 @@ Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
 }
 
 # Synopsis: Install dependencies for compiling/building
-Task BuildDeps {
+Get-Task BuildDeps {
     # install dotnet
     if (!(Test-PodeBuildCommand 'dotnet')) {
         Invoke-PodeBuildInstall 'dotnet' $Versions.DotNet
@@ -177,7 +181,7 @@ Task BuildDeps {
 }
 
 # Synopsis: Install dependencies for running tests
-Task TestDeps {
+Get-Task TestDeps {
     # install pester
     Install-PodeBuildModule Pester
 
@@ -188,7 +192,7 @@ Task TestDeps {
 }
 
 # Synopsis: Install dependencies for documentation
-Task DocsDeps ChocoDeps, {
+Get-Task DocsDeps ChocoDeps, {
     # install mkdocs
     if (!(Test-PodeBuildCommand 'mkdocs')) {
         Invoke-PodeBuildInstall 'mkdocs' $Versions.MkDocs
@@ -209,12 +213,12 @@ Task DocsDeps ChocoDeps, {
 #>
 
 # Synopsis: Build the .NET Listener
-Task Build BuildDeps, {
+Get-Task Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
 
-    Write-Host "Build enviroment"
+    Write-Host 'Build enviroment'
     $PSVersionTable
     Write-Host
     Push-Location ./src/Listener
@@ -235,17 +239,17 @@ Task Build BuildDeps, {
 #>
 
 # Synopsis: Creates a Zip of the Module
-Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
+Get-Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
-Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
+Get-Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { choco pack ./packers/choco/pode.nuspec }
 }
 
 # Synopsis: Create docker tags
-Task DockerPack -If ((Test-PodeBuildIsWindows) -or $IsLinux) {
+Get-Task DockerPack -If ((Test-PodeBuildIsWindows) -or $IsLinux) {
     docker build -t badgerati/pode:$Version -f ./Dockerfile .
     docker build -t badgerati/pode:latest -f ./Dockerfile .
     docker build -t badgerati/pode:$Version-alpine -f ./alpine.dockerfile .
@@ -262,7 +266,7 @@ Task DockerPack -If ((Test-PodeBuildIsWindows) -or $IsLinux) {
 }
 
 # Synopsis: Package up the Module
-Task Pack -If (Test-PodeBuildIsWindows) Build, {
+Get-Task Pack -If (Test-PodeBuildIsWindows) Build, {
     $path = './pkg'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -294,7 +298,7 @@ Task Pack -If (Test-PodeBuildIsWindows) Build, {
 #>
 
 # Synopsis: Run the tests
-Task Test Build, TestDeps, {
+Get-Task Test Build, TestDeps, {
     $p = (Get-Command Invoke-Pester)
     if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
         Remove-Module Pester -Force -ErrorAction Ignore
@@ -322,14 +326,14 @@ Task Test Build, TestDeps, {
 }, PushCodeCoverage, CheckFailedTests
 
 # Synopsis: Check if any of the tests failed
-Task CheckFailedTests {
+Get-Task CheckFailedTests {
     if ($TestStatus.FailedCount -gt 0) {
         throw "$($TestStatus.FailedCount) tests failed"
     }
 }
 
 # Synopsis: If AppyVeyor or GitHub, push code coverage stats
-Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
+Get-Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
     try {
         $service = Get-PodeBuildService
         $branch = Get-PodeBuildBranch
@@ -348,12 +352,12 @@ Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
 #>
 
 # Synopsis: Run the documentation locally
-Task Docs DocsDeps, DocsHelpBuild, {
+Get-Task Docs DocsDeps, DocsHelpBuild, {
     mkdocs serve
 }
 
 # Synopsis: Build the function help documentation
-Task DocsHelpBuild DocsDeps, {
+Get-Task DocsHelpBuild DocsDeps, {
     # import the local module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
     Import-Module ./src/Pode.psm1 -Force | Out-Null
@@ -397,6 +401,6 @@ Task DocsHelpBuild DocsDeps, {
 }
 
 # Synopsis: Build the documentation
-Task DocsBuild DocsDeps, DocsHelpBuild, {
+Get-Task DocsBuild DocsDeps, DocsHelpBuild, {
     mkdocs build
 }

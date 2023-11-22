@@ -1,4 +1,4 @@
-name: Pode CI
+name: Pode CI - pwsh
 
 on:
   push:
