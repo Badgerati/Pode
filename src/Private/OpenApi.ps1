@@ -444,6 +444,7 @@ function Get-PodeOpenApiDefinitionInternal {
     if (!$PodeContext.Server.OpenAPI.Version) {
         throw 'OpenApi openapi field is required'
     }
+    $localEndpoint = $null
     # set the openapi version
     $def = [ordered]@{
         openapi = $PodeContext.Server.OpenAPI.Version
@@ -472,6 +473,9 @@ function Get-PodeOpenApiDefinitionInternal {
 
     if ($PodeContext.Server.OpenAPI.servers) {
         $def['servers'] = $PodeContext.Server.OpenAPI.servers
+        if ($PodeContext.Server.OpenAPI.servers.Count -eq 1 -and $PodeContext.Server.OpenAPI.servers[0].url.StartsWith('/')) {
+            $localEndpoint = $PodeContext.Server.OpenAPI.servers[0].url
+        }
     } elseif (!$MetaInfo.RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1)) {
         #  $def['servers'] = $null
         $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints.Values) {
@@ -599,9 +603,13 @@ function Get-PodeOpenApiDefinitionInternal {
             # check if the route has to be published
             if ($_route.OpenApi.Swagger -or $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions) {
                 #remove the ServerUrl part
-                if ($MetaInfo -and $MetaInfo.ServerUrl) {
-                    $_route.OpenApi.Path = $_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')
+                if ( $localEndpoint) {
+                    $_route.OpenApi.Path = $_route.OpenApi.Path.replace($localEndpoint, '')
                 }
+                #    $def.servers.url.StartsWith('/')
+                #    if ($MetaInfo -and $MetaInfo.ServerUrl) {
+                #        $_route.OpenApi.Path = $_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')
+                #    }
                 # do nothing if it has no responses set
                 if ($_route.OpenApi.Responses.Count -eq 0) {
                     continue
@@ -893,35 +901,35 @@ function New-PodeOAPropertyInternal {
     }
 
     if ($Params.Array.IsPresent ) {
-        $param.array = $Params.Array.ToBool()
+        $param.array = $Params.Array.IsPresent
     }
 
     if ($Params.Object.IsPresent ) {
-        $param.object = $Params.Object.ToBool()
+        $param.object = $Params.Object.IsPresent
     }
 
     if ($Params.Required.IsPresent ) {
-        $param.required = $Params.Required.ToBool()
+        $param.required = $Params.Required.IsPresent
     }
 
-    if ($Default) {
-        $param.default = $Default
+    if ($Params.Default.IsPresent) {
+        $param.default = $Params.Default.IsPresent
     }
 
     if ($Params.Deprecated.IsPresent ) {
-        $param.deprecated = $Params.Deprecated.ToBool()
+        $param.deprecated = $Params.Deprecated.IsPresent
     }
 
     if ($Params.Nullable.IsPresent ) {
-        $param.meta['nullable'] = $Params.Nullable.ToBool()
+        $param.meta['nullable'] = $Params.Nullable.IsPresent
     }
 
     if ($Params.WriteOnly.IsPresent ) {
-        $param.meta['writeOnly'] = $Params.WriteOnly.ToBool()
+        $param.meta['writeOnly'] = $Params.WriteOnly.IsPresent
     }
 
     if ($Params.ReadOnly.IsPresent ) {
-        $param.meta['readOnly'] = $Params.ReadOnly.ToBool()
+        $param.meta['readOnly'] = $Params.ReadOnly.IsPresent
     }
 
     if ($Params.Example ) {
@@ -929,7 +937,7 @@ function New-PodeOAPropertyInternal {
     }
 
     if ($Params.UniqueItems.IsPresent ) {
-        $param.uniqueItems = $Params.UniqueItems.ToBool()
+        $param.uniqueItems = $Params.UniqueItems.IsPresent
     }
 
     if ($Params.MaxItems) {
@@ -948,13 +956,66 @@ function New-PodeOAPropertyInternal {
         $param.enum = $Params.Enum
     }
 
+    if ($Params.Minimum ) {
+        $param.meta['minimum'] = $Params.Minimum
+    }
+
+    if ($Params.Maximum  ) {
+        $param.meta['maximum'] = $Params.Maximum
+    }
+
+    if ($Params.ExclusiveMaximum  ) {
+        $param.meta['exclusiveMaximum'] = $Params.ExclusiveMaximum
+    }
+
+    if ($Params.ExclusiveMinimum  ) {
+        $param.meta['ExclusiveMinimum'] = $Params.ExclusiveMinimum
+    }
+
+    if ($Params.MultiplesOf  ) {
+        $param.meta['multipleOf'] = $Params.MultiplesOf
+    }
+
     if ($Params.ExternalDocs) {
-        if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
-            throw "The ExternalDoc doesn't exist: $ExternalDoc"
+        if ( !(Test-PodeOAExternalDoc -Name $Params.ExternalDocs)) {
+            throw "The ExternalDoc doesn't exist: $($Params.ExternalDocs)"
         }
-        $param.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
+        $param.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Params.ExternalDocs]
     }
 
     return $param
 }
 
+
+function ConvertTo-PodeOAHeaderProperties {
+    param (
+        [hashtable[]]
+        $Headers
+    )
+    $elems = @{}
+    foreach ( $e in $Headers) {
+        if ($e.name) {
+            $elems.$($e.name) = @{}
+            if ($e.description ) {
+                $elems.$($e.name).description = $e.description
+            }
+            $elems.$($e.name).schema = @{
+                type = $($e.type)
+            }
+            foreach ($k in $e.keys) {
+                if (@('name', 'description' ) -notcontains $k) {
+                    if ( $k -eq 'meta') {
+                        foreach ($mk in $e.meta.Keys) {
+                            $elems.$($e.name).schema.$mk = $e.meta.$mk
+                        }
+                    } else {
+                        $elems.$($e.name).schema.$k = $e.$k
+                    }
+                }
+            }
+        } else {
+            throw 'Header requires a name when used in an encoding context'
+        }
+    }
+    return $elems
+}
