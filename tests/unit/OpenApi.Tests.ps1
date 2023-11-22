@@ -2919,7 +2919,7 @@ Describe 'OpenApi' {
         # Test return type
         It 'Returns an OrderedHashtable' {
             $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
-            $example | Should -BeOfType [System.Management.Automation.OrderedHashtable]
+            $example | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
         }
 
         # Test output for a single MediaType
@@ -2979,7 +2979,7 @@ Describe 'OpenApi' {
 
             $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].summary | Should -Be 'An example summary'
             $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].value | Should -Be 'Some example value'
-        } 
+        }
     }
 
 

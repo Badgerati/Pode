@@ -905,7 +905,7 @@ function New-PodeOARequestBody {
         $Properties,
 
         [Parameter()]
-        [System.Management.Automation.OrderedHashtable]
+        [System.Collections.Specialized.OrderedDictionary]
         $Examples,
 
         [Parameter()]
@@ -2793,7 +2793,7 @@ function ConvertTo-PodeOAParameter {
         [Parameter( ParameterSetName = 'ContentSchema')]
         [Parameter( ParameterSetName = 'Properties')]
         [Parameter( ParameterSetName = 'ContentProperties')]
-        [System.Management.Automation.OrderedHashtable]
+        [System.Collections.Specialized.OrderedDictionary]
         $Examples,
 
         [Parameter( ParameterSetName = 'Schema')]
@@ -3703,12 +3703,12 @@ The -Value parameter and -ExternalValue parameter are mutually exclusive.       
 #>
 function New-PodeOAExample {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
-    [OutputType([System.Management.Automation.OrderedHashtable ])]
+    [OutputType([System.Collections.Specialized.OrderedDictionary ])]
 
     param(
         [Parameter(ValueFromPipeline = $true, DontShow = $true, ParameterSetName = 'Inbuilt')]
         [Parameter(ValueFromPipeline = $true, DontShow = $true, ParameterSetName = 'Reference')]
-        [System.Management.Automation.OrderedHashtable ]
+        [System.Collections.Specialized.OrderedDictionary ]
         $ParamsList,
 
         [Parameter( )]
@@ -3787,7 +3787,7 @@ function New-PodeOAExample {
             }
             return $ParamsList
         } else {
-            return [System.Management.Automation.OrderedHashtable] $param
+            return [System.Collections.Specialized.OrderedDictionary] $param
         }
     }
 }
