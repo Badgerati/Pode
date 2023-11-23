@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ windows-latest, macOS-latest]
 
     steps:
     - uses: actions/checkout@v3
@@ -38,26 +38,50 @@ jobs:
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Install-Module -Name InvokeBuild -RequiredVersion '5.10.4' -Force
 
-    # Download and extract PowerShell 7.4
-    - name: Download PowerShell 7.4
-      run: Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.4.0/PowerShell-7.4.0-win-x64.zip" -OutFile "PowerShell-7.4.0-win-x64.zip"
+    # For Windows
+    - name: Download and extract PowerShell 7.4 (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.4.0/PowerShell-7.4.0-win-x64.zip" -OutFile "PowerShell-7.4.0-win-x64.zip"
+        Expand-Archive -LiteralPath "PowerShell-7.4.0-win-x64.zip" -DestinationPath "C:\PowerShell-7.4.0"
 
-    - name: Extract PowerShell 7.4
-      run: Expand-Archive -LiteralPath "PowerShell-7.4.0-win-x64.zip" -DestinationPath "C:\PowerShell-7.4.0"
+    # For macOS
+    - name: Download and extract PowerShell 7.4 (macOS)
+      if: matrix.os == 'macOS-latest'
+      run: |
+        curl -L "https://github.com/PowerShell/PowerShell/releases/download/v7.4.0/powershell-7.4.0-osx-x64.tar.gz" -o "powershell-7.4.0-osx-x64.tar.gz"
+        mkdir -p /usr/local/microsoft/powershell/7.4.0
+        tar -xzf powershell-7.4.0-osx-x64.tar.gz -C /usr/local/microsoft/powershell/7.4.0
 
-    # Run multiple commands using the extracted PowerShell 7.4
-    - name: Run Pester Tests
+
+    - name: Run Pester Tests (Windows)
+      if: matrix.os == 'windows-latest'
       run: |
         C:\PowerShell-7.4.0\pwsh.exe -Command {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Invoke-Build Test
         }
 
+    - name: Run Pester Tests (macOS)
+      if: matrix.os == 'macOS-latest'
+      run: |
+        /usr/local/microsoft/powershell/7.4.0/pwsh -Command {
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          Invoke-Build Test
+        }
 
-    - name: Test docker builds
-      shell: pwsh
+    - name: Test docker builds (Windows)
+      if: matrix.os == 'windows-latest'
       run: |
         C:\PowerShell-7.4.0\pwsh.exe -Command {
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          Invoke-Build DockerPack -Version '0.0.0'
+        }
+
+    - name: Test docker builds (macOS)
+      if: matrix.os == 'macOS-latest'
+      run: |
+        /usr/local/microsoft/powershell/7.4.0/pwsh -Command {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Invoke-Build DockerPack -Version '0.0.0'
         }
