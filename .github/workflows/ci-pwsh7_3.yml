@@ -1,4 +1,4 @@
-name: Pode CI - pwsh 7.4 on windows-latest
+name: Pode CI - pwsh 7.3 on windows-latest
 
 on:
   push:
@@ -32,11 +32,11 @@ jobs:
         Install-Module -Name InvokeBuild -RequiredVersion '5.10.4' -Force
 
     # For Windows
-    - name: Download and extract PowerShell 7.4
+    - name: Download and extract PowerShell 7.3
       if: matrix.os == 'windows-latest'
       run: |
-        Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.4.0/PowerShell-7.4.0-win-x64.zip" -OutFile "PowerShell-7.4.x-win-x64.zip"
-        Expand-Archive -LiteralPath "PowerShell-7.4.x-win-x64.zip" -DestinationPath "C:\PowerShell-7.4"
+        Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.3.0/PowerShell-7.3.10-win-x64.zip" -OutFile "PowerShell-7.3.x-win-x64.zip"
+        Expand-Archive -LiteralPath "PowerShell-7.3.x-win-x64.zip" -DestinationPath "C:\PowerShell-7.3"
 
     - name: Check PowerShell version
       run: |
@@ -44,14 +44,14 @@ jobs:
 
     - name: Run Pester Tests
       run: |
-        C:\PowerShell-7.4\pwsh.exe -Command {
+        C:\PowerShell-7.3\pwsh.exe -Command {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Invoke-Build Test
         }
 
     - name: Test docker builds
       run: |
-        C:\PowerShell-7.4\pwsh.exe -Command {
+        C:\PowerShell-7.3\pwsh.exe -Command {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Invoke-Build DockerPack -Version '0.0.0'
         }
