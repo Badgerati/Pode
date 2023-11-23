@@ -52,6 +52,7 @@ jobs:
         curl -L "https://github.com/PowerShell/PowerShell/releases/download/v7.4.0/powershell-7.4.0-osx-x64.tar.gz" -o "powershell-7.4.0-osx-x64.tar.gz"
         sudo mkdir -p /usr/local/microsoft/powershell/7.4.0
         sudo tar -xzf powershell-7.4.0-osx-x64.tar.gz -C /usr/local/microsoft/powershell/7.4.0
+        sudo chmod +x /usr/local/microsoft/powershell/7.4.0/pwsh
 
 
     - name: Run Pester Tests (Windows)
