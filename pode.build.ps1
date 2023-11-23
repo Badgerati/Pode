@@ -110,7 +110,7 @@ function Invoke-PodeBuildDotnetBuild($target) {
     if ($Version) {
         $AssemblyVersion = "-p:Version=$Version"
     } else {
-        $AssemblyVersion = ' '
+        $AssemblyVersion = ''
     }
     dotnet build --configuration Release --self-contained --framework $target $AssemblyVersion
     if (!$?) {
