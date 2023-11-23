@@ -27,6 +27,14 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+    # PowerShell 7.4 Installation
+    - name: Download PowerShell 7.4
+      run: Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.4.0/PowerShell-7.4.0-win-x64.msi" -OutFile "PowerShell-7.4.0-win-x64.msi"
+
+    - name: Install PowerShell 7.4
+      run: Start-Process msiexec.exe -ArgumentList '/i PowerShell-7.4.0-win-x64.msi /quiet /norestart' -Wait
+
+
     - name: Install Invoke-Build
       shell: pwsh
       run: |
