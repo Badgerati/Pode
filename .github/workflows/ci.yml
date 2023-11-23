@@ -1,4 +1,4 @@
-name: Pode CI
+name: Pode CI - pwsh
 
 on:
   push:
@@ -22,11 +22,16 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Check PowerShell version
+      shell: pwsh
+      run: |
+        $PSVersionTable.PSVersion
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v1.9.0
       with:
         dotnet-version: 8.0.x
-
+        
     - name: Install Invoke-Build
       shell: pwsh
       run: |

@@ -17,6 +17,11 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
+    - name: Check PowerShell version
+      shell: powershell
+      run: |
+        $PSVersionTable.PSVersion
+
     - name: Install Invoke-Build
       shell: pwsh
       run: |
