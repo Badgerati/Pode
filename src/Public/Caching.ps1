@@ -1,7 +1,3 @@
-#TODO: do we need a housekeeping timer?
-#TODO: test support for custom storage in get/set
-
-
 function Get-PodeCache {
     [CmdletBinding()]
     param(
@@ -73,7 +69,7 @@ function Set-PodeCache {
 
     # used custom storage
     elseif (Test-PodeCacheStorage -Name $Storage) {
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Name, $Value, $Ttl) -Splat
+        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Name, $InputObject, $Ttl) -Splat
     }
 
     # storage not found!
@@ -259,7 +255,7 @@ function Test-PodeCacheStorage {
         $Name
     )
 
-    return $PodeContext.Server.Cache.ContainsKey($Name)
+    return $PodeContext.Server.Cache.Storage.ContainsKey($Name)
 }
 
 function Set-PodeCacheDefaultStorage {

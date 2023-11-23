@@ -41,6 +41,9 @@ function Start-PodeInternalServer {
         # start timer for task housekeeping
         Start-PodeTaskHousekeeper
 
+        # start the cache housekeeper
+        Start-PodeCacheHousekeeper
+
         # create timer/schedules for auto-restarting
         New-PodeAutoRestartServer
 

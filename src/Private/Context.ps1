@@ -404,6 +404,7 @@ function New-PodeContext {
     # threading locks, etc.
     $ctx.Threading.Lockables = @{
         Global = [hashtable]::Synchronized(@{})
+        Cache  = [hashtable]::Synchronized(@{})
         Custom = @{}
     }
 

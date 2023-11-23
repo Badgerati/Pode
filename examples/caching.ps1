@@ -15,6 +15,34 @@ Start-PodeServer -Threads 3 {
 
     Set-PodeCacheDefaultTtl -Value 60
 
+    $params = @{
+        Set    = {
+            param($name, $value, $ttl)
+            $null = redis-cli -h localhost -p 6379 SET $name "$($value)" EX $ttl
+        }
+        Get    = {
+            param($name, $metadata)
+            $result = redis-cli -h localhost -p 6379 GET $name
+            $result = [System.Management.Automation.Internal.StringDecorated]::new($result).ToString('PlainText')
+            if ([string]::IsNullOrEmpty($result) -or ($result -ieq '(nil)')) {
+                return $null
+            }
+            return $result
+        }
+        Test   = {
+            param($name)
+            $result = redis-cli -h localhost -p 6379 EXISTS $name
+            return [System.Management.Automation.Internal.StringDecorated]::new($result).ToString('PlainText')
+        }
+        Remove = {
+            param($name)
+            $null = redis-cli -h localhost -p 6379 EXPIRE $name -1
+        }
+        Clear  = {}
+    }
+    Add-PodeCacheStorage -Name 'Redis' @params
+
+
     # get cpu, and cache it
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         if ($null -ne $cache:cpu) {
@@ -23,8 +51,12 @@ Start-PodeServer -Threads 3 {
             return
         }
 
-        $cache:cpu = (Get-Counter '\Processor(_Total)\% Processor Time').CounterSamples.CookedValue
+        # $cache:cpu = (Get-Counter '\Processor(_Total)\% Processor Time').CounterSamples.CookedValue
+        Start-Sleep -Milliseconds 500
+        $cache:cpu = (Get-Random -Minimum 1 -Maximum 1000)
         Write-PodeJsonResponse -Value @{ CPU = $cache:cpu }
+        # $cpu = (Get-Random -Minimum 1 -Maximum 1000)
+        # Write-PodeJsonResponse -Value @{ CPU = $cpu }
         # Write-PodeHost 'here - raw'
     }
 

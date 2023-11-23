@@ -15,7 +15,7 @@ function Get-PodeCacheInternal {
 
     # check ttl/expiry
     if ($meta.Expiry -lt [datetime]::UtcNow) {
-        Remove-PodeCache -Name $Name
+        Remove-PodeCacheInternal -Name $Name
         return $null
     }
 
@@ -68,9 +68,41 @@ function Remove-PodeCacheInternal {
         $Name
     )
 
-    $null = $PodeContext.Server.Cache.Items.Remove($Name)
+    Lock-PodeObject -Object $PodeContext.Threading.Lockables.Cache -ScriptBlock {
+        $null = $PodeContext.Server.Cache.Items.Remove($Name)
+    }
 }
 
 function Clear-PodeCacheInternal {
-    $null = $PodeContext.Server.Cache.Items.Clear()
+    Lock-PodeObject -Object $PodeContext.Threading.Lockables.Cache -ScriptBlock {
+        $null = $PodeContext.Server.Cache.Items.Clear()
+    }
+}
+
+function Start-PodeCacheHousekeeper {
+    if (![string]::IsNullOrEmpty((Get-PodeCacheDefaultStorage))) {
+        return
+    }
+
+    Add-PodeTimer -Name '__pode_cache_housekeeper__' -Interval 10 -ScriptBlock {
+        $keys = Lock-PodeObject -Object $PodeContext.Threading.Lockables.Cache -Return -ScriptBlock {
+            if ($PodeContext.Server.Cache.Items.Count -eq 0) {
+                return
+            }
+
+            return $PodeContext.Server.Cache.Items.Keys.Clone()
+        }
+
+        if (Test-PodeIsEmpty $keys) {
+            return
+        }
+
+        $now = [datetime]::UtcNow
+
+        foreach ($key in $keys) {
+            if ($PodeContext.Server.Cache.Items[$key].Expiry -lt $now) {
+                Remove-PodeCacheInternal -Name $key
+            }
+        }
+    }
 }
