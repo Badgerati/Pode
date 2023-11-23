@@ -50,8 +50,8 @@ jobs:
       if: matrix.os == 'macOS-latest'
       run: |
         curl -L "https://github.com/PowerShell/PowerShell/releases/download/v7.4.0/powershell-7.4.0-osx-x64.tar.gz" -o "powershell-7.4.0-osx-x64.tar.gz"
-        mkdir -p /usr/local/microsoft/powershell/7.4.0
-        tar -xzf powershell-7.4.0-osx-x64.tar.gz -C /usr/local/microsoft/powershell/7.4.0
+        sudo mkdir -p ~/powershell/7.4.0
+        sudo tar -xzf powershell-7.4.0-osx-x64.tar.gz -C ~/powershell/7.4.0
 
 
     - name: Run Pester Tests (Windows)
@@ -65,7 +65,7 @@ jobs:
     - name: Run Pester Tests (macOS)
       if: matrix.os == 'macOS-latest'
       run: |
-        /usr/local/microsoft/powershell/7.4.0/pwsh -Command {
+        ~/powershell/7.4.0/pwsh -Command {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Invoke-Build Test
         }
@@ -81,7 +81,7 @@ jobs:
     - name: Test docker builds (macOS)
       if: matrix.os == 'macOS-latest'
       run: |
-        /usr/local/microsoft/powershell/7.4.0/pwsh -Command {
+        ~/powershell/7.4.0/pwsh -Command {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Invoke-Build DockerPack -Version '0.0.0'
         }
