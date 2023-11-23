@@ -1,0 +1,63 @@
+name: Pode CI - pwsh
+
+on:
+  push:
+    branches:
+    - '*'
+    - '!gh-pages'
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check PowerShell version
+      shell: pwsh
+      run: |
+        $PSVersionTable.PSVersion
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Install Invoke-Build
+      shell: pwsh
+      run: |
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Install-Module -Name InvokeBuild -RequiredVersion '5.10.4' -Force
+
+    # Download and extract PowerShell 7.4
+    - name: Download PowerShell 7.4
+      run: Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.4.0/PowerShell-7.4.0-win-x64.zip" -OutFile "PowerShell-7.4.0-win-x64.zip"
+
+    - name: Extract PowerShell 7.4
+      run: Expand-Archive -LiteralPath "PowerShell-7.4.0-win-x64.zip" -DestinationPath "C:\PowerShell-7.4.0"
+
+    # Run multiple commands using the extracted PowerShell 7.4
+    - name: Run Pester Tests
+      run: |
+        C:\PowerShell-7.4.0\pwsh.exe -Command {
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          Invoke-Build Test
+        }
+
+
+    - name: Test docker builds
+      shell: pwsh
+      run: |
+        C:\PowerShell-7.4.0\pwsh.exe -Command {
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          Invoke-Build DockerPack -Version '0.0.0'
+        } 
