@@ -217,10 +217,8 @@ Task Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
-
-    Write-Host 'Build enviroment'
-    $PSVersionTable
-    Write-Host
+    Write-Host "Powershell Version:"
+    $PSVersionTable.PSVersion
     Push-Location ./src/Listener
 
     try {
