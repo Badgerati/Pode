@@ -1001,6 +1001,9 @@ The reference Name of the schema.
 .PARAMETER Schema
 The Schema definition (the schema is created using the Property functions).
 
+.PARAMETER Description
+A description of the schema
+
 .EXAMPLE
 Add-PodeOAComponentSchema -Name 'UserIdSchema' -Schema (New-PodeOAIntProperty -Name 'userId' -Object)
 #>
@@ -1014,11 +1017,11 @@ function Add-PodeOAComponentSchema {
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
-        $Schema
+        $Schema,
+
+        [string]
+        $Description
     )
-    #  if (!$schema.name) {
-    #    $schema.name = $name
-    # }
     $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
     if ($PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
         $modifiedSchema = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
@@ -1027,6 +1030,9 @@ function Add-PodeOAComponentSchema {
             'schema' = $modifiedSchema
             'json'   = $modifiedSchema | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
         }
+    }
+    if ($Description) {
+        $PodeContext.Server.OpenAPI.components.schemas[$Name].description = $Description
     }
 }
 
@@ -1287,12 +1293,14 @@ The minimum value of the integer. (Default: Int.Min)
 The maximum value of the integer. (Default: Int.Max)
 
 .PARAMETER ExclusiveMaximum:
-If supplied, enforces that the numeric value provided is strictly less than the specified maximum limit.
-If not included, the value can be equal to the maximum.
+Specifies an exclusive upper limit for a numeric property in the OpenAPI schema.
+When this parameter is used, it sets the exclusiveMaximum attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified maximum value.
+This parameter is typically paired with a -Maximum parameter to define the upper bound.
 
 .PARAMETER ExclusiveMinimum:
-If supplied,  requires the numeric value to be strictly greater than the specified minimum limit.
-Without this switch, the value can be equal to the minimum.
+Specifies an exclusive lower limit for a numeric property in the OpenAPI schema.
+When this parameter is used, it sets the exclusiveMinimun attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified minimun value.
+This parameter is typically paired with a -Minimum parameter to define the lower bound.
 
 .PARAMETER MultiplesOf
 The integer must be in multiples of the supplied value.
@@ -1330,6 +1338,17 @@ If supplied, the integer will be included in a response but not in a request
 
 .PARAMETER WriteOnly
 If supplied, the integer will be included in a request but not in a response
+
+.PARAMETER NoAdditionalProperties
+If supplied, will configure the OpenAPI property additionalProperties to false.
+This means that the defined object will not allow any properties beyond those explicitly declared in its schema.
+If any additional properties are provided, they will be considered invalid.
+Use this switch to enforce a strict schema definition, ensuring that objects contain only the specified set of properties and no others.
+
+.PARAMETER AdditionalProperties
+Define a set of additional properties for the OpenAPI schema. This parameter accepts a HashTable where each key-value pair represents a property name and its corresponding schema.
+The schema for each property can include type, format, description, and other OpenAPI specification attributes.
+When specified, these additional properties are included in the OpenAPI definition, allowing for more flexible and dynamic object structures.
 
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
@@ -1425,6 +1444,12 @@ function New-PodeOAIntProperty {
         [switch]
         $WriteOnly,
 
+        [switch]
+        $NoAdditionalProperties,
+
+        [hashtable]
+        $AdditionalProperties,
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
         $Array,
@@ -1443,10 +1468,6 @@ function New-PodeOAIntProperty {
     )
     begin {
         $param = New-PodeOAPropertyInternal -type 'integer' -Params $PSBoundParameters
-
-        if ($Format) {
-            $param.format = $Format.ToLowerInvariant()
-        }
 
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
@@ -1497,12 +1518,14 @@ The minimum value of the number. (Default: Double.Min)
 The maximum value of the number. (Default: Double.Max)
 
 .PARAMETER ExclusiveMaximum:
-If supplied, enforces that the numeric value provided is strictly less than the specified maximum limit.
-If not included, the value can be equal to the maximum.
+Specifies an exclusive upper limit for a numeric property in the OpenAPI schema.
+When this parameter is used, it sets the exclusiveMaximum attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified maximum value.
+This parameter is typically paired with a -Maximum parameter to define the upper bound.
 
 .PARAMETER ExclusiveMinimum:
-If supplied,  requires the numeric value to be strictly greater than the specified minimum limit.
-Without this switch, the value can be equal to the minimum.
+Specifies an exclusive lower limit for a numeric property in the OpenAPI schema.
+When this parameter is used, it sets the exclusiveMinimun attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified minimun value.
+This parameter is typically paired with a -Minimum parameter to define the lower bound.
 
 .PARAMETER MultiplesOf
 The number must be in multiples of the supplied value.
@@ -1540,6 +1563,17 @@ If supplied, the number will be included in a response but not in a request
 
 .PARAMETER WriteOnly
 If supplied, the number will be included in a request but not in a response
+
+.PARAMETER NoAdditionalProperties
+If supplied, will configure the OpenAPI property additionalProperties to false.
+This means that the defined object will not allow any properties beyond those explicitly declared in its schema.
+If any additional properties are provided, they will be considered invalid.
+Use this switch to enforce a strict schema definition, ensuring that objects contain only the specified set of properties and no others.
+
+.PARAMETER AdditionalProperties
+Define a set of additional properties for the OpenAPI schema. This parameter accepts a HashTable where each key-value pair represents a property name and its corresponding schema.
+The schema for each property can include type, format, description, and other OpenAPI specification attributes.
+When specified, these additional properties are included in the OpenAPI definition, allowing for more flexible and dynamic object structures.
 
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
@@ -1635,6 +1669,12 @@ function New-PodeOANumberProperty {
         [switch]
         $WriteOnly,
 
+        [switch]
+        $NoAdditionalProperties,
+
+        [hashtable]
+        $AdditionalProperties,
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
         $Array,
@@ -1653,22 +1693,6 @@ function New-PodeOANumberProperty {
     )
     begin {
         $param = New-PodeOAPropertyInternal -type 'number' -Params $PSBoundParameters
-
-        if ($Format) {
-            $param.format = $Format.ToLowerInvariant()
-        }
-
-        if ($Minimum -ne [double]::MinValue) {
-            $param.meta['minimum'] = $Minimum
-        }
-
-        if ($Maximum -ne [double]::MaxValue) {
-            $param.meta['maximum'] = $Maximum
-        }
-
-        if ($MultiplesOf -ne 0) {
-            $param.meta['multipleOf'] = $MultiplesOf
-        }
 
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
@@ -1758,6 +1782,17 @@ If supplied, the string will be restricted to minimal length of characters.
 .PARAMETER  MaxLength
 If supplied, the string will be restricted to maximal length of characters.
 
+.PARAMETER NoAdditionalProperties
+If supplied, will configure the OpenAPI property additionalProperties to false.
+This means that the defined object will not allow any properties beyond those explicitly declared in its schema.
+If any additional properties are provided, they will be considered invalid.
+Use this switch to enforce a strict schema definition, ensuring that objects contain only the specified set of properties and no others.
+
+.PARAMETER AdditionalProperties
+Define a set of additional properties for the OpenAPI schema. This parameter accepts a HashTable where each key-value pair represents a property name and its corresponding schema.
+The schema for each property can include type, format, description, and other OpenAPI specification attributes.
+When specified, these additional properties are included in the OpenAPI definition, allowing for more flexible and dynamic object structures.
+
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
 
@@ -1805,7 +1840,7 @@ function New-PodeOAStringProperty {
 
         [Parameter()]
         [string]
-        $Pattern = $null,
+        $Pattern,
 
         [Parameter()]
         [string]
@@ -1853,6 +1888,12 @@ function New-PodeOAStringProperty {
         [int]
         $MaxLength,
 
+        [switch]
+        $NoAdditionalProperties,
+
+        [hashtable]
+        $AdditionalProperties,
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
         $Array,
@@ -1882,17 +1923,7 @@ function New-PodeOAStringProperty {
             $param.format = $_format.ToLowerInvariant()
         }
 
-        if ($Pattern) {
-            $param.meta['pattern'] = $Pattern
-        }
 
-        if ($MinLength) {
-            $param.meta['minLength'] = $MinLength
-        }
-
-        if ($MaxLength) {
-            $param.meta['maxLength'] = $MaxLength
-        }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
@@ -1966,6 +1997,17 @@ If supplied, the boolean will be included in a response but not in a request
 .PARAMETER WriteOnly
 If supplied, the boolean will be included in a request but not in a response
 
+.PARAMETER NoAdditionalProperties
+If supplied, will configure the OpenAPI property additionalProperties to false.
+This means that the defined object will not allow any properties beyond those explicitly declared in its schema.
+If any additional properties are provided, they will be considered invalid.
+Use this switch to enforce a strict schema definition, ensuring that objects contain only the specified set of properties and no others.
+
+.PARAMETER AdditionalProperties
+Define a set of additional properties for the OpenAPI schema. This parameter accepts a HashTable where each key-value pair represents a property name and its corresponding schema.
+The schema for each property can include type, format, description, and other OpenAPI specification attributes.
+When specified, these additional properties are included in the OpenAPI definition, allowing for more flexible and dynamic object structures.
+
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
 
@@ -2035,6 +2077,12 @@ function New-PodeOABoolProperty {
 
         [switch]
         $WriteOnly,
+
+        [switch]
+        $NoAdditionalProperties,
+
+        [hashtable]
+        $AdditionalProperties,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
@@ -2142,6 +2190,17 @@ If supplied, will restrict the minimun number of properties allowed in an object
 .PARAMETER MaxProperties
 If supplied, will restrict the maximum number of properties allowed in an object.
 
+.PARAMETER NoAdditionalProperties
+If supplied, will configure the OpenAPI property additionalProperties to false.
+This means that the defined object will not allow any properties beyond those explicitly declared in its schema.
+If any additional properties are provided, they will be considered invalid.
+Use this switch to enforce a strict schema definition, ensuring that objects contain only the specified set of properties and no others.
+
+.PARAMETER AdditionalProperties
+Define a set of additional properties for the OpenAPI schema. This parameter accepts a HashTable where each key-value pair represents a property name and its corresponding schema.
+The schema for each property can include type, format, description, and other OpenAPI specification attributes.
+When specified, these additional properties are included in the OpenAPI definition, allowing for more flexible and dynamic object structures.
+
 .PARAMETER Array
 If supplied, the object will be treated as an array of objects.
 
@@ -2157,8 +2216,25 @@ If supplied, specify maximum length of an array
 .PARAMETER Xml
 If supplied, controls the XML serialization behavior
 
+.PARAMETER DiscriminatorProperty
+If supplied, specifies the name of the property used to distinguish between different subtypes in a polymorphic schema in OpenAPI.
+This string value represents the property in the payload that indicates which specific subtype schema should be applied.
+It's essential in scenarios where an API endpoint handles data that conforms to one of several derived schemas from a common base schema.
+
+.PARAMETER DiscriminatorMapping
+If supplied, define a mapping between the values of the discriminator property and the corresponding subtype schemas.
+This parameter accepts a HashTable where each key-value pair maps a discriminator value to a specific subtype schema name.
+It's used in conjunction with the -DiscriminatorProperty to provide complete discrimination logic in polymorphic scenarios.
+
 .EXAMPLE
 New-PodeOAObjectProperty -Name 'user' -Properties @('<ARRAY_OF_PROPERTIES>')
+
+.EXAMPLE
+New-PodeOABoolProperty -Name 'enabled' -Required|
+    New-PodeOAObjectProperty  -Name 'extraProperties'  -AdditionalProperties [ordered]@{
+        "property1" = @{ "type" = "string"; "description" = "Description for property1" };
+        "property2" = @{ "type" = "integer"; "format" = "int32" }
+}
 #>
 function New-PodeOAObjectProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
@@ -2217,6 +2293,12 @@ function New-PodeOAObjectProperty {
         [int]
         $MaxProperties,
 
+        [switch]
+        $NoAdditionalProperties,
+
+        [hashtable]
+        $AdditionalProperties,
+
         [Parameter(  Mandatory, ParameterSetName = 'Array')]
         [switch]
         $Array,
@@ -2233,8 +2315,14 @@ function New-PodeOAObjectProperty {
         [int]
         $MaxItems,
 
-        [hashtable[]]
-        $Xml
+        [hashtable]
+        $Xml,
+
+        [string]
+        $DiscriminatorProperty,
+
+        [hashtable]
+        $DiscriminatorMapping
     )
     begin {
         $param = New-PodeOAPropertyInternal -type 'object' -Params $PSBoundParameters
@@ -2251,19 +2339,16 @@ function New-PodeOAObjectProperty {
             $param.properties = @()
             $PropertiesFromPipeline = $true
         }
-
-        if ($MinProperties) {
-            $param.minProperties = $MinProperties
+        if ($DiscriminatorProperty) {
+            $param.discriminator = @{
+                'propertyName' = $DiscriminatorProperty
+            }
+            if ($DiscriminatorMapping) {
+                $param.discriminator.mapping = $DiscriminatorMapping
+            }
+        } elseif ($DiscriminatorMapping) {
+            throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
         }
-
-        if ($MaxProperties) {
-            $param.maxProperties = $MaxProperties
-        }
-
-        if ($Xml) {
-            $param.xml = $Xml
-        }
-
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
@@ -2314,17 +2399,23 @@ anyOf – validates the value against any (one or more) of the subschemas
 .PARAMETER ObjectDefinitions
 An array of object definitions that are used for independent validation but together compose a single object.
 
-.PARAMETER Discriminator
-When request bodies or response payloads may be one of a number of different schemas, a discriminator object can be used to aid in serialization, deserialization, and validation.
-The discriminator is a specific object in a schema which is used to inform the consumer of the specification of an alternative schema based on the value associated with it.
+.PARAMETER DiscriminatorProperty
+If supplied, specifies the name of the property used to distinguish between different subtypes in a polymorphic schema in OpenAPI.
+This string value represents the property in the payload that indicates which specific subtype schema should be applied.
+It's essential in scenarios where an API endpoint handles data that conforms to one of several derived schemas from a common base schema.
+
+.PARAMETER DiscriminatorMapping
+If supplied, define a mapping between the values of the discriminator property and the corresponding subtype schemas.
+This parameter accepts a HashTable where each key-value pair maps a discriminator value to a specific subtype schema name.
+It's used in conjunction with the -DiscriminatorProperty to provide complete discrimination logic in polymorphic scenarios.
 
 .EXAMPLE
-Add-PodeOAComponentSchema -Name 'Pets' -Schema (  Merge-PodeOAProperty  -Type OneOf -Schema @( 'Cat','Dog') -Discriminator "petType")
+Add-PodeOAComponentSchema -Name 'Pets' -Schema (  Merge-PodeOAProperty  -Type OneOf -ObjectDefinitions @( 'Cat','Dog') -Discriminator "petType")
 
 
 .EXAMPLE
 Add-PodeOAComponentSchema -Name 'Cat' -Schema (
-        Merge-PodeOAProperty  -Type AllOf -Schema @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
+        Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
                 (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive'))
                 ))
         ))
@@ -2346,9 +2437,11 @@ function Merge-PodeOAProperty {
         [System.Object[]]
         $ObjectDefinitions,
 
-        [Parameter()]
         [string]
-        $Discriminator
+        $DiscriminatorProperty,
+
+        [hashtable]
+        $DiscriminatorMapping
     )
     begin {
 
@@ -2375,12 +2468,18 @@ function Merge-PodeOAProperty {
                 $param.schemas += $schema
             }
         }
-
-        if ($Discriminator ) {
+        if ($DiscriminatorProperty) {
             if ($type.ToLower() -eq 'allof' ) {
                 throw 'Discriminator parameter is not compatible with allOf'
             }
-            $param.discriminator = $Discriminator
+            $param.discriminator = @{
+                'propertyName' = $DiscriminatorProperty
+            }
+            if ($DiscriminatorMapping) {
+                $param.discriminator.mapping = $DiscriminatorMapping
+            }
+        } elseif ($DiscriminatorMapping) {
+            throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
         }
 
     }
@@ -2418,7 +2517,7 @@ Used to pipeline multiple properties
 .PARAMETER Name
 The Name of the property.
 
-.PARAMETER ComponentSchema
+.PARAMETER Component
 An component schema name.
 Alias: Reference
 
@@ -2469,7 +2568,7 @@ If supplied, controls the XML serialization behavior
 
 
 .EXAMPLE
-New-PodeOASchemaProperty -Name 'Config' -ComponentSchema "MyConfigSchema"
+New-PodeOASchemaProperty -Name 'Config' -Component "MyConfigSchema"
 #>
 function New-PodeOASchemaProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
@@ -2487,7 +2586,7 @@ function New-PodeOASchemaProperty {
         [Parameter(Mandatory = $true)]
         [Alias('Reference')]
         [string]
-        $ComponentSchema,
+        $Component,
 
         [string]
         $Description,
@@ -2540,22 +2639,21 @@ function New-PodeOASchemaProperty {
         [int]
         $MaxItems,
 
-        [hashtable[]]
+        [hashtable]
         $Xml
     )
     begin {
 
-        if ( !(Test-PodeOAComponentSchema -Name $ComponentSchema)) {
-            throw "The OpenApi component schema doesn't exist: $ComponentSchema"
+        if ( !(Test-PodeOAComponentSchema -Name $Component)) {
+            throw "The OpenApi component schema doesn't exist: $Component"
         }
         if (! $Name) {
-            $Name = $ComponentSchema
+            $Name = $Component
         }
         $param = @{
             name   = $Name
             type   = 'schema'
-            schema = $ComponentSchema
-            meta   = @{}
+            schema = $Component
         }
 
         if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -ieq 'array') {
@@ -2576,19 +2674,19 @@ function New-PodeOASchemaProperty {
             }
 
             if ($Nullable.IsPresent ) {
-                $param.meta['nullable'] = $Nullable.IsPresent
+                $param['nullable'] = $Nullable.IsPresent
             }
 
             if ($WriteOnly.IsPresent ) {
-                $param.meta['writeOnly'] = $WriteOnly.IsPresent
+                $param['writeOnly'] = $WriteOnly.IsPresent
             }
 
             if ($ReadOnly.IsPresent ) {
-                $param.meta['readOnly'] = $ReadOnly.IsPresent
+                $param['readOnly'] = $ReadOnly.IsPresent
             }
 
             if ($Example ) {
-                $param.meta['example'] = $Example
+                $param['example'] = $Example
             }
 
             if ($UniqueItems.IsPresent ) {
@@ -2619,7 +2717,7 @@ function New-PodeOASchemaProperty {
                 $param.xml = $Xml
             }
         } elseif ($Description) {
-            $ex = [System.Exception]::new("New-PodeOASchemaProperty $ComponentSchema - Description can only be applied to an array")
+            $ex = [System.Exception]::new("New-PodeOASchemaProperty $Component - Description can only be applied to an array")
             $ex | Write-PodeErrorLog -Level Warning
         }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
@@ -2966,7 +3064,7 @@ function ConvertTo-PodeOAParameter {
             $prop.schema = $sch
         }
 
-        if ($null -ne $Property.meta) {
+        <#   if ($null -ne $Property.meta) {
             foreach ($key in $Property.meta.Keys) {
                 if ($Property.Array) {
                     $sch.items[$key] = $Property.meta[$key]
@@ -2974,7 +3072,7 @@ function ConvertTo-PodeOAParameter {
                     $sch[$key] = $Property.meta[$key]
                 }
             }
-        }
+        }#>
         if ($Example -and $Examples) {
             throw '-Example and -Examples are mutually exclusive'
         }

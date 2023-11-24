@@ -298,8 +298,57 @@ function ConvertTo-PodeOASchemaProperty {
         if ($Property.deprecated) {
             $schema['deprecated'] = $Property.deprecated
         }
-        if ($param.xmlName ) {
-            $schema['xml'] = @{ 'name' = $param.xmlName }
+
+        if ($Property.nullable) {
+            $schema['nullable'] = $Property.nullable
+        }
+
+        if ($Property.writeOnly) {
+            $schema['writeOnly'] = $Property.writeOnly
+        }
+
+        if ($Property.readOnly) {
+            $schema['readOnly'] = $Property.readOnly
+        }
+
+        if ($Property.example) {
+            $schema['example'] = $Property.example
+        }
+
+        if ($Property.minimum) {
+            $schema['minimum'] = $Property.minimum
+        }
+
+        if ($Property.maximum) {
+            $schema['maximum'] = $Property.maximum
+        }
+
+        if ($Property.exclusiveMaximum) {
+            $schema['exclusiveMaximum'] = $Property.exclusiveMaximum
+        }
+
+        if ($Property.exclusiveMinimum) {
+            $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
+        }
+
+        if ($Property.multipleOf) {
+            $schema['multipleOf'] = $Property.multipleOf
+        }
+
+        if ($Property.pattern) {
+            $schema['pattern'] = $Property.pattern
+        }
+
+        if ($Property.minLength) {
+            $schema['minLength'] = $Property.minLength
+        }
+
+        if ($Property.maxLength) {
+            $schema['maxLength'] = $Property.maxLength
+        }
+
+        if ($Property.xml ) {
+            $schema['xml'] = $Property.xml
         }
 
         if ($null -ne $Property.meta) {
@@ -396,11 +445,21 @@ function ConvertTo-PodeOASchemaProperty {
                 }
             }
 
-            if ($Property.xml ) {
-                $schema['xml'] = @{}
-                foreach ($key in $Property.xml.Keys) {
-                    $schema['xml'].$key = $Property.xml.$key
-                }
+
+            if ($Property.MinProperties) {
+                $schema['minProperties'] = $Property.MinProperties
+            }
+
+            if ($Property.MaxProperties) {
+                $schema['maxProperties'] = $Property.MaxProperties
+            }
+
+            if ($Property.additionalProperties) {
+                $schema['additionalProperties'] = $Property.additionalProperties
+            }
+
+            if($Property.discriminator){
+                $schema['discriminator'] = $Property.discriminator
             }
         }
     }
@@ -891,9 +950,11 @@ function New-PodeOAPropertyInternal {
         [hashtable]$Params
     )
     $param = @{
-        name = $Params.Name
         type = $Type
-        meta = @{}
+    }
+
+    if ($Params.Name) {
+        $param.name = $Params.Name
     }
 
     if ($Params.Description ) {
@@ -916,24 +977,28 @@ function New-PodeOAPropertyInternal {
         $param.default = $Params.Default
     }
 
+    if ($Params.Format) {
+        $param.format = $Params.Format.ToLowerInvariant()
+    }
+
     if ($Params.Deprecated.IsPresent ) {
         $param.deprecated = $Params.Deprecated.IsPresent
     }
 
     if ($Params.Nullable.IsPresent ) {
-        $param.meta['nullable'] = $Params.Nullable.IsPresent
+        $param.nullable = $Params.Nullable.IsPresent
     }
 
     if ($Params.WriteOnly.IsPresent ) {
-        $param.meta['writeOnly'] = $Params.WriteOnly.IsPresent
+        $param.writeOnly = $Params.WriteOnly.IsPresent
     }
 
     if ($Params.ReadOnly.IsPresent ) {
-        $param.meta['readOnly'] = $Params.ReadOnly.IsPresent
+        $param.readOnly = $Params.ReadOnly.IsPresent
     }
 
     if ($Params.Example ) {
-        $param.meta['example'] = $Params.Example
+        $param.example = $Params.Example
     }
 
     if ($Params.UniqueItems.IsPresent ) {
@@ -948,33 +1013,62 @@ function New-PodeOAPropertyInternal {
         $param.minItems = $Params.MinItems
     }
 
-    if ($Params.XmlName) {
-        $param.xmlName = $Params.XmlName
-    }
 
     if ($Params.Enum) {
         $param.enum = $Params.Enum
     }
 
     if ($Params.Minimum ) {
-        $param.meta['minimum'] = $Params.Minimum
+        $param.minimum = $Params.Minimum
     }
 
     if ($Params.Maximum  ) {
-        $param.meta['maximum'] = $Params.Maximum
+        $param.maximum = $Params.Maximum
     }
 
-    if ($Params.ExclusiveMaximum  ) {
-        $param.meta['exclusiveMaximum'] = $Params.ExclusiveMaximum
+    if ($Params.ExclusiveMaximum.IsPresent  ) {
+        $param.exclusiveMaximum = $Params.ExclusiveMaximum.IsPresent
     }
 
     if ($Params.ExclusiveMinimum  ) {
-        $param.meta['ExclusiveMinimum'] = $Params.ExclusiveMinimum
+        $param.exclusiveMinimum = $Params.ExclusiveMinimum.IsPresent
     }
 
     if ($Params.MultiplesOf  ) {
-        $param.meta['multipleOf'] = $Params.MultiplesOf
+        $param.multipleOf = $Params.MultiplesOf
     }
+
+    if ($Params.Pattern) {
+        $param.pattern = $Params.Pattern
+    }
+
+    if ($Params.MinLength) {
+        $param.minLength = $Params.MinLength
+    }
+
+    if ($Params.MaxLength) {
+        $param.maxLength = $Params.MaxLength
+    }
+
+    if ($Params.MinProperties) {
+        $param.minProperties = $Params.MinProperties
+    }
+
+    if ($Params.MaxProperties) {
+        $param.maxProperties = $Params.MaxProperties
+    }
+    if ($Params.Xml -and $Params.XmlName) {
+        throw 'Params -Xml and -XmlName are mutually exclusive'
+    } else {
+        if ($Params.Xml) {
+            $param.xml = $Params.Xml
+        }
+
+        if ($Params.XmlName) {
+            $param.xml = @{'name' = $Params.XmlName }
+        }
+    }
+
 
     if ($Params.ExternalDocs) {
         if ( !(Test-PodeOAExternalDoc -Name $Params.ExternalDocs)) {
@@ -983,6 +1077,17 @@ function New-PodeOAPropertyInternal {
         $param.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Params.ExternalDocs]
     }
 
+    if ($Params.NoAdditionalProperties.IsPresent -and $Params.AdditionalProperties) {
+        throw 'Params -NoAdditionalProperties and AdditionalProperties are mutually exclusive'
+    } else {
+        if ($Params.NoAdditionalProperties.IsPresent) {
+            $param.AdditionalProperties = $false
+        }
+
+        if ($Params.AdditionalProperties) {
+            $param.AdditionalProperties = $Params.AdditionalProperties
+        }
+    }
     return $param
 }
 
@@ -1004,13 +1109,13 @@ function ConvertTo-PodeOAHeaderProperties {
             }
             foreach ($k in $e.keys) {
                 if (@('name', 'description' ) -notcontains $k) {
-                    if ( $k -eq 'meta') {
+                    <#     if ( $k -eq 'meta') {
                         foreach ($mk in $e.meta.Keys) {
                             $elems.$($e.name).schema.$mk = $e.meta.$mk
                         }
-                    } else {
-                        $elems.$($e.name).schema.$k = $e.$k
-                    }
+                    } else {#>
+                    $elems.$($e.name).schema.$k = $e.$k
+                    #    }
                 }
             }
         } else {

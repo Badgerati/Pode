@@ -54,126 +54,125 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt'
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
+            $result.xml.name | Should -Be  'xTestInt'
         }
         It 'Object' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -Object
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
+            $result.xml.name | Should -Be  'xTestInt'
             $result.object | Should -Be $true
         }
         It 'Deprecated' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -Deprecated
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
+            $result.xml.name | Should -Be  'xTestInt'
             $result.deprecated | Should -Be $true
         }
         It 'Nullable' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -Nullable
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestInt'
+            $result['nullable'] | Should -Be $true
         }
         It 'WriteOnly' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -WriteOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestInt'
+            $result['writeOnly'] | Should -Be $true
         }
         It 'ReadOnly' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -ReadOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestInt'
+            $result['readOnly'] | Should -Be $true
         }
 
         It 'ArrayNoSwitchesUniqueItems' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
+            $result.xml.name | Should -Be  'xTestInt'
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -184,18 +183,18 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -Deprecated  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
+            $result.xml.name | Should -Be  'xTestInt'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -206,19 +205,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -Nullable  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestInt'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -228,19 +227,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -WriteOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestInt'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -250,19 +249,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -ReadOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestInt'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -273,18 +272,18 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
+            $result.xml.name | Should -Be  'xTestInt'
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -294,18 +293,18 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -Deprecated  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
+            $result.xml.name | Should -Be  'xTestInt'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -315,19 +314,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -Nullable  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestInt'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -336,19 +335,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -WriteOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestInt'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -357,19 +356,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAIntProperty -Name 'testInt' -Description 'Test for New-PodeOAIntProperty' -Format Int32 -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOAIntProperty' -Enum 2, 4, 8, 16 -XmlName 'xTestInt' -ReadOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'integer'
             $result.name | Should -Be 'testInt'
             $result.description | Should -Be 'Test for New-PodeOAIntProperty'
             $result.format | Should -Be 'Int32'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAIntProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOAIntProperty'
             $result.enum | Should -Be @(2, 4, 8, 16)
-            $result.xmlName | Should -Be  'xTestInt'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestInt'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -390,126 +389,126 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber'
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
+            $result.xml.name | Should -Be  'xTestNumber'
         }
         It 'Object' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -Object
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
+            $result.xml.name | Should -Be  'xTestNumber'
             $result.object | Should -Be $true
         }
         It 'Deprecated' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -Deprecated
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
+            $result.xml.name | Should -Be  'xTestNumber'
             $result.deprecated | Should -Be $true
         }
         It 'Nullable' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -Nullable
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestNumber'
+            $result['nullable'] | Should -Be $true
         }
         It 'WriteOnly' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -WriteOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestNumber'
+            $result['writeOnly'] | Should -Be $true
         }
         It 'ReadOnly' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -ReadOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestNumber'
+            $result['readOnly'] | Should -Be $true
         }
 
         It 'ArrayNoSwitchesUniqueItems' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
+            $result.xml.name | Should -Be  'xTestNumber'
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -520,18 +519,18 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -Deprecated  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
+            $result.xml.name | Should -Be  'xTestNumber'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -542,19 +541,19 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -Nullable  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestNumber'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -564,19 +563,19 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -WriteOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestNumber'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -586,19 +585,19 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -ReadOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestNumber'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -609,18 +608,18 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
+            $result.xml.name | Should -Be  'xTestNumber'
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -630,18 +629,18 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -Deprecated  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
+            $result.xml.name | Should -Be  'xTestNumber'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -651,19 +650,19 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -Nullable  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestNumber'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -672,19 +671,19 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -WriteOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestNumber'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -693,19 +692,19 @@ Describe 'OpenApi' {
             $result = New-PodeOANumberProperty -Name 'testNumber' -Description 'Test for New-PodeOANumberProperty' -Format Double -Default 8 -Minimum 2 -Maximum 20 -MultiplesOf 2 `
                 -Example 'Example for New-PodeOANumberProperty' -Enum 2.1, 4.2, 8.3, 16.4 -XmlName 'xTestNumber' -ReadOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'number'
             $result.name | Should -Be 'testNumber'
             $result.description | Should -Be 'Test for New-PodeOANumberProperty'
             $result.format | Should -Be 'Double'
             $result.default | Should -Be 8
-            $result.meta['minimum'] | Should -Be 2
-            $result.meta['maximum'] | Should -Be 20
-            $result.meta['multipleOf'] | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOANumberProperty'
+            $result['minimum'] | Should -Be 2
+            $result['maximum'] | Should -Be 20
+            $result['multipleOf'] | Should -Be 2
+            $result['example'] | Should -Be 'Example for New-PodeOANumberProperty'
             $result.enum | Should -Be @(2.1, 4.2, 8.3, 16.4)
-            $result.xmlName | Should -Be  'xTestNumber'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestNumber'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -723,98 +722,98 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool'
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
+            $result.xml.name | Should -Be  'xTestBool'
         }
         It 'Object' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -Object
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
+            $result.xml.name | Should -Be  'xTestBool'
             $result.object | Should -Be $true
         }
         It 'Deprecated' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -Deprecated
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
+            $result.xml.name | Should -Be  'xTestBool'
             $result.deprecated | Should -Be $true
         }
         It 'Nullable' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -Nullable
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestBool'
+            $result['nullable'] | Should -Be $true
         }
         It 'WriteOnly' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -WriteOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestBool'
+            $result['writeOnly'] | Should -Be $true
         }
         It 'ReadOnly' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -ReadOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestBool'
+            $result['readOnly'] | Should -Be $true
         }
 
         It 'ArrayNoSwitchesUniqueItems' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
+            $result.xml.name | Should -Be  'xTestBool'
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -825,14 +824,14 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -Deprecated  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
+            $result.xml.name | Should -Be  'xTestBool'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -843,15 +842,15 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -Nullable  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestBool'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -861,15 +860,15 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -WriteOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestBool'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -879,15 +878,15 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -ReadOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestBool'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -898,14 +897,14 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
+            $result.xml.name | Should -Be  'xTestBool'
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -915,14 +914,14 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -Deprecated  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
+            $result.xml.name | Should -Be  'xTestBool'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -932,15 +931,15 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -Nullable  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestBool'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -949,15 +948,15 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -WriteOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestBool'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -966,15 +965,15 @@ Describe 'OpenApi' {
             $result = New-PodeOABoolProperty -Name 'testBool' -Description 'Test for New-PodeOABoolProperty' -Default 'yes' `
                 -Example 'Example for New-PodeOABoolProperty' -Enum $true, $false , 'yes', 'no' -XmlName 'xTestBool' -ReadOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'boolean'
             $result.name | Should -Be 'testBool'
             $result.description | Should -Be 'Test for New-PodeOABoolProperty'
             $result.default | Should -Be 'yes'
-            $result.meta['example'] | Should -Be 'Example for New-PodeOABoolProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOABoolProperty'
             $result.enum | Should -Be @('true', 'false' , 'yes', 'no')
-            $result.xmlName | Should -Be  'xTestBool'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestBool'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -993,126 +992,126 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString'
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
+            $result.xml.name | Should -Be  'xTestString'
         }
         It 'Object' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -Object
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
+            $result.xml.name | Should -Be  'xTestString'
             $result.object | Should -Be $true
         }
         It 'Deprecated' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -Deprecated
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
+            $result.xml.name | Should -Be  'xTestString'
             $result.deprecated | Should -Be $true
         }
         It 'Nullable' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -Nullable
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestString'
+            $result['nullable'] | Should -Be $true
         }
         It 'WriteOnly' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -WriteOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestString'
+            $result['writeOnly'] | Should -Be $true
         }
         It 'ReadOnly' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -ReadOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestString'
+            $result['readOnly'] | Should -Be $true
         }
 
         It 'ArrayNoSwitchesUniqueItems' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
+            $result.xml.name | Should -Be  'xTestString'
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1123,18 +1122,18 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -Deprecated  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
+            $result.xml.name | Should -Be  'xTestString'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -1145,19 +1144,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -Nullable  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestString'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1167,19 +1166,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -WriteOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestString'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1189,19 +1188,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -ReadOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestString'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1212,18 +1211,18 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
+            $result.xml.name | Should -Be  'xTestString'
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -1233,18 +1232,18 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -Deprecated  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 4
+            #$result.Count | Should -Be 4
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
+            $result.xml.name | Should -Be  'xTestString'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1254,19 +1253,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -Nullable  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
-            $result.meta['nullable'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestString'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -1275,19 +1274,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -WriteOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestString'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -1296,19 +1295,19 @@ Describe 'OpenApi' {
             $result = New-PodeOAStringProperty -Name 'testString' -Description 'Test for New-PodeOAStringProperty' -Format Date -Pattern '^\d{4}-\d{2}-\d{2}$' -Default '2000-01-01' -MinLength 2 -MaxLength 20 `
                 -Example 'Example for New-PodeOAStringProperty' -Enum '2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01' -XmlName 'xTestString' -ReadOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 5
+            #$result.Count | Should -Be 5
             $result.type | Should -Be 'string'
             $result.name | Should -Be 'testString'
             $result.description | Should -Be 'Test for New-PodeOAStringProperty'
             $result.format | Should -Be 'Date'
-            $result.meta['pattern'] = '^\d{4}-\d{2}-\d{2}$'
+            $result['pattern'] = '^\d{4}-\d{2}-\d{2}$'
             $result.default | Should -Be '2000-01-01'
-            $result.meta['minLength'] | Should -Be 2
-            $result.meta['maxLength'] | Should -Be 20
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAStringProperty'
+            $result['minLength'] | Should -Be 2
+            $result['maxLength'] | Should -Be 20
+            $result['example'] | Should -Be 'Example for New-PodeOAStringProperty'
             $result.enum | Should -Be @('2005-05-05', '2004-04-04', '2003-03-03', '2002-02-02', '2000-01-01')
-            $result.xmlName | Should -Be  'xTestString'
-            $result.meta['readOnly'] | Should -Be $true
+            $result.xml.name | Should -Be  'xTestString'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -1326,7 +1325,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject'
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1338,14 +1337,14 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
         }
         It 'Deprecated' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -Deprecated
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1358,15 +1357,15 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
             $result.deprecated | Should -Be $true
         }
         It 'Nullable' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -Nullable
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1379,15 +1378,15 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
-            $result.meta['nullable'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
+            $result['nullable'] | Should -Be $true
         }
         It 'WriteOnly' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -WriteOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1400,15 +1399,15 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
+            $result['writeOnly'] | Should -Be $true
         }
         It 'ReadOnly' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -ReadOnly
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1421,16 +1420,16 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
-            $result.meta['readOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
+            $result['readOnly'] | Should -Be $true
         }
 
         It 'ArrayNoSwitchesUniqueItems' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1443,8 +1442,8 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1455,7 +1454,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -Deprecated  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1468,8 +1467,8 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -1480,7 +1479,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -Nullable  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1493,9 +1492,9 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
-            $result.meta['nullable'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1505,7 +1504,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -WriteOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1518,9 +1517,9 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1530,7 +1529,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -ReadOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1543,9 +1542,9 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
-            $result.meta['readOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1556,7 +1555,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1569,8 +1568,8 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -1580,7 +1579,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -Deprecated  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1593,8 +1592,8 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1604,7 +1603,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -Nullable  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1617,9 +1616,9 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
-            $result.meta['nullable'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -1628,7 +1627,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -WriteOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1641,9 +1640,9 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -1652,7 +1651,7 @@ Describe 'OpenApi' {
             $result = New-PodeOAObjectProperty -Name 'testObject' -Description 'Test for New-PodeOAObjectProperty'  -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOAObjectProperty' -Properties @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')) -XmlName 'xTestObject' -ReadOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'object'
             $result.name | Should -Be 'testObject'
             $result.description | Should -Be 'Test for New-PodeOAObjectProperty'
@@ -1665,9 +1664,9 @@ Describe 'OpenApi' {
             $result.properties[1].name | Should -Be 'name'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
-            $result.xmlName | Should -Be  'xTestObject'
-            $result.meta['readOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOAObjectProperty'
+            $result.xml.name | Should -Be  'xTestObject'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -1754,26 +1753,26 @@ Describe 'OpenApi' {
         }
 
         It 'Standard' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -ComponentSchema 'Cat'
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Component 'Cat'
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 0
+            #$result.Count | Should -Be 0
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
         }
 
         It 'ArrayNoSwitchesUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1781,17 +1780,17 @@ Describe 'OpenApi' {
 
         }
         It 'ArrayDeprecatedUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Deprecated  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
@@ -1799,54 +1798,54 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayNullableUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Nullable  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
-            $result.meta['nullable'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayWriteOnlyUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -WriteOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayReadOnlyUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -ReadOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
-            $result.meta['readOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.uniqueItems | Should -BeTrue
             $result.minItems | Should -BeTrue
@@ -1854,86 +1853,86 @@ Describe 'OpenApi' {
         }
 
         It 'ArrayNoSwitches' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
 
         }
         It 'ArrayDeprecated' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Deprecated  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 1
+            #$result.Count | Should -Be 1
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
             $result.deprecated | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayNullable' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Nullable  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
-            $result.meta['nullable'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['nullable'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayWriteOnly' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -WriteOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
-            $result.meta['writeOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['writeOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayReadOnly' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -ComponentSchema 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty' -ReadOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
-            $result.meta.Count | Should -Be 2
+            #$result.Count | Should -Be 2
             $result.type | Should -Be 'schema'
             $result.name | Should -Be 'testSchema'
             $result.schema | Should -Be 'Cat'
             $result.description | Should -Be 'Test for New-PodeOASchemaProperty'
             $result.minProperties | Should -Be 1
             $result.maxProperties | Should -Be 2
-            $result.meta['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
-            $result.meta['readOnly'] | Should -Be $true
+            $result['example'] | Should -Be 'Example for New-PodeOASchemaProperty'
+            $result['readOnly'] | Should -Be $true
             $result.array | Should -BeTrue
             $result.minItems | Should -BeTrue
             $result.maxItems | Should -BeTrue
@@ -1959,12 +1958,12 @@ Describe 'OpenApi' {
         }
 
         It 'OneOf' {
-            $result = Merge-PodeOAProperty   -Type OneOf -Discriminator 'name'   -ObjectDefinitions @('Pet',
+            $result = Merge-PodeOAProperty   -Type OneOf -DiscriminatorProperty 'name'   -ObjectDefinitions @('Pet',
               (New-PodeOAObjectProperty  -Properties  @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name'))))
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [PSObject]
             $result.type | Should -Be 'OneOf'
-            $result.discriminator | Should -Be 'name'
+            $result.discriminator.propertyName| Should -Be 'name'
             #   $result.schemas | Should -BeOfType 'Array'
             $result.schemas.Count | Should -Be 2
             $result.schemas[0] | Should -Be  'Pet'
@@ -1983,12 +1982,12 @@ Describe 'OpenApi' {
         }
 
         It 'AnyOf' {
-            $result = Merge-PodeOAProperty   -Type AnyOf -Discriminator 'name'  -ObjectDefinitions @('Pet',
+            $result = Merge-PodeOAProperty   -Type AnyOf -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
               (New-PodeOAObjectProperty  -Properties  @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name'))))
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [PSObject]
             $result.type | Should -Be 'AnyOf'
-            $result.discriminator | Should -Be 'name'
+            $result.discriminator.propertyName | Should -Be 'name'
             $result.schemas.Count | Should -Be 2
             $result.schemas[0] | Should -Be  'Pet'
             $result.schemas[1].meta | Should -BeNullOrEmpty
@@ -2026,7 +2025,7 @@ Describe 'OpenApi' {
         Describe 'Testing Exception Handling' {
             It 'AllOf and Discriminator' {
                 {
-                    Merge-PodeOAProperty   -Type AllOf  -Discriminator 'name'  -ObjectDefinitions @('Pet',
+                    Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                 (New-PodeOAObjectProperty  -Properties  @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')))
                     ) } | Should -Throw -ExpectedMessage 'Discriminator parameter is not compatible with allOf'
             }
@@ -2034,7 +2033,7 @@ Describe 'OpenApi' {
 
 
             It 'AllOf and ObjectDefinitions not an object' {
-                { Merge-PodeOAProperty   -Type AllOf  -Discriminator 'name'  -ObjectDefinitions @('Pet',
+                { Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                     ((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name'))
                     ) } | Should  -Throw  -ExpectedMessage   'Only properties of type Object can be associated with allof'
             }
@@ -2208,9 +2207,8 @@ Describe 'OpenApi' {
             $result = $PodeContext.Server.OpenAPI.components.parameters['PetIdParam']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [hashtable]
-            $result.Count | Should -Be 6
-            $result.meta | Should -BeOfType [hashtable]
-            $result.meta.Count | Should -Be 0
+            $result.Count | Should -Be 5
+            #$result.Count | Should -Be 0
             $result.name | Should -Be 'petId'
             $result.description | Should -Be 'ID of the pet'
             $result.type | Should -Be 'integer'
@@ -2222,9 +2220,7 @@ Describe 'OpenApi' {
             $result = $PodeContext.Server.OpenAPI.components.parameters['PetIdParam']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [hashtable]
-            $result.Count | Should -Be 6
-            $result.meta | Should -BeOfType [hashtable]
-            $result.meta.Count | Should -Be 0
+            $result.Count | Should -Be 5
             $result.name | Should -Be 'petId'
             $result.description | Should -Be 'ID of the pet'
             $result.type | Should -Be 'integer'
@@ -3003,59 +2999,47 @@ Describe 'OpenApi' {
             $Pet = New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' } -Properties  (
             (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly ),
                 (New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required) ,
-                (New-PodeOASchemaProperty -Name 'category' -ComponentSchema 'Category' ),
+                (New-PodeOASchemaProperty -Name 'category' -Component 'Category' ),
                 (New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required) ,
                 (New-PodeOAStringProperty -Name 'photoUrls' -Array) ,
-                (New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag') ,
+                (New-PodeOASchemaProperty -Name 'tags' -Component 'Tag') ,
                 (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
             )
             $Pet.type | Should -be 'object'
             $Pet.xml | Should -BeOfType [hashtable]
             $Pet.xml.Count | Should -Be 1
-            $Pet.xml[0].name | Should -Be 'pet'
+            $Pet.xml.name | Should -Be 'pet'
             $Pet.name | Should -Be 'Pet'
-            $Pet.meta | Should -BeOfType [hashtable]
-            $Pet.meta.Count | Should -Be 0
             $Pet.properties | Should -BeOfType [hashtable]
             $Pet.properties.Count | Should -Be 7
 
             $Pet.properties[0].type | Should -be 'integer'
             $Pet.properties[0].name | Should -Be 'id'
             $Pet.properties[0].format | Should -Be 'int64'
-            $Pet.properties[0].meta | Should -BeOfType [hashtable]
-            $Pet.properties[0].meta.Count | Should -Be 2
-            $Pet.properties[0].meta.example | Should -Be 10
-            $Pet.properties[0].meta.readOnly | Should -Be $true
+            $Pet.properties[0].example | Should -Be 10
+            $Pet.properties[0].readOnly | Should -Be $true
 
             $Pet.properties[1].type | Should -be 'string'
             $Pet.properties[1].name | Should -Be 'name'
             $Pet.properties[1].required | Should -BeTrue
-            $Pet.properties[1].meta | Should -BeOfType [hashtable]
-            $Pet.properties[1].meta.Count | Should -Be 1
-            $Pet.properties[1].meta.example | Should -Be 'doggie'
+            $Pet.properties[1].example | Should -Be 'doggie'
 
             $Pet.properties[2].type | Should -Be 'schema'
             $Pet.properties[2].name | Should -Be 'category'
             $Pet.properties[2].schema | Should -Be 'Category'
-            $Pet.properties[2].meta | Should -BeOfType [hashtable]
-            $Pet.properties[2].meta.Count | Should -Be 0
 
             $Pet.properties[3].type | Should -be 'string'
             $Pet.properties[3].name | Should -Be 'petType'
             $Pet.properties[3].required | Should -BeTrue
-            $Pet.properties[3].meta | Should -BeOfType [hashtable]
-            $Pet.properties[3].meta.Count | Should -Be 1
-            $Pet.properties[3].meta.example | Should -Be 'dog'
+            $Pet.properties[3].example | Should -Be 'dog'
             $Pet.properties[4].type | Should -be 'string'
             $Pet.properties[4].name | Should -Be 'photoUrls'
             $Pet.properties[4].array | Should -BeTrue
-            $Pet.properties[4].meta | Should -BeOfType [hashtable]
-            $Pet.properties[4].meta.Count | Should -Be 0
+            $Pet.properties[4].Count | Should -Be 3
             $Pet.properties[5].type | Should -be 'schema'
             $Pet.properties[5].name | Should -Be 'tags'
             $Pet.properties[5].schema | Should -Be 'Tag'
-            $Pet.properties[5].meta | Should -BeOfType [hashtable]
-            $Pet.properties[5].meta.Count | Should -Be 0
+            $Pet.properties[5].Count | Should -Be 3
             $Pet.properties[6].type | Should -be 'string'
             $Pet.properties[6].name | Should -Be 'status'
             $Pet.properties[6].description | Should -Be 'pet status in the store'
@@ -3064,62 +3048,48 @@ Describe 'OpenApi' {
             $Pet.properties[6].enum[0] | Should -Be 'available'
             $Pet.properties[6].enum[1] | Should -Be 'pending'
             $Pet.properties[6].enum[2] | Should -Be 'sold'
-            $Pet.properties[6].meta | Should -BeOfType [hashtable]
-            $Pet.properties[6].meta.Count | Should -Be 0
+            $Pet.properties[6].Count | Should -Be 4
 
         }
         It 'By Pipeline' {
             $Pet = New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly |
                 New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
-                New-PodeOASchemaProperty -Name 'category' -ComponentSchema 'Category' |
+                New-PodeOASchemaProperty -Name 'category' -Component 'Category' |
                 New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
                 New-PodeOAStringProperty -Name 'photoUrls' -Array |
-                New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag' |
+                New-PodeOASchemaProperty -Name 'tags' -Component 'Tag' |
                 New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold') |
-                New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' }
+                New-PodeOAObjectProperty -Name 'Pet' -XmlName 'pet'
             $Pet.type | Should -be 'object'
             $Pet.xml | Should -BeOfType [hashtable]
             $Pet.xml.Count | Should -Be 1
-            $Pet.xml[0].name | Should -Be 'pet'
+            $Pet.xml.name | Should -Be 'pet'
             $Pet.name | Should -Be 'Pet'
-            $Pet.meta | Should -BeOfType [hashtable]
-            $Pet.meta.Count | Should -Be 0
             $Pet.properties | Should -BeOfType [hashtable]
             $Pet.properties.Count | Should -Be 7
             $Pet.properties[0].type | Should -be 'integer'
             $Pet.properties[0].name | Should -Be 'id'
             $Pet.properties[0].format | Should -Be 'int64'
-            $Pet.properties[0].meta | Should -BeOfType [hashtable]
-            $Pet.properties[0].meta.Count | Should -Be 2
-            $Pet.properties[0].meta.example | Should -Be 10
-            $Pet.properties[0].meta.readOnly | Should -Be $true
+            $Pet.properties[0].example | Should -Be 10
+            $Pet.properties[0].readOnly | Should -Be $true
+            $Pet.properties[0].Count | Should -Be 5
             $Pet.properties[1].type | Should -be 'string'
             $Pet.properties[1].name | Should -Be 'name'
             $Pet.properties[1].required | Should -BeTrue
-            $Pet.properties[1].meta | Should -BeOfType [hashtable]
-            $Pet.properties[1].meta.Count | Should -Be 1
-            $Pet.properties[1].meta.example | Should -Be 'doggie'
+            $Pet.properties[1].example | Should -Be 'doggie'
             $Pet.properties[2].type | Should -Be 'schema'
             $Pet.properties[2].name | Should -Be 'category'
             $Pet.properties[2].schema | Should -Be 'Category'
-            $Pet.properties[2].meta | Should -BeOfType [hashtable]
-            $Pet.properties[2].meta.Count | Should -Be 0
             $Pet.properties[3].type | Should -be 'string'
             $Pet.properties[3].name | Should -Be 'petType'
             $Pet.properties[3].required | Should -BeTrue
-            $Pet.properties[3].meta | Should -BeOfType [hashtable]
-            $Pet.properties[3].meta.Count | Should -Be 1
-            $Pet.properties[3].meta.example | Should -Be 'dog'
+            $Pet.properties[3].example | Should -Be 'dog'
             $Pet.properties[4].type | Should -be 'string'
             $Pet.properties[4].name | Should -Be 'photoUrls'
             $Pet.properties[4].array | Should -BeTrue
-            $Pet.properties[4].meta | Should -BeOfType [hashtable]
-            $Pet.properties[4].meta.Count | Should -Be 0
             $Pet.properties[5].type | Should -be 'schema'
             $Pet.properties[5].name | Should -Be 'tags'
             $Pet.properties[5].schema | Should -Be 'Tag'
-            $Pet.properties[5].meta | Should -BeOfType [hashtable]
-            $Pet.properties[5].meta.Count | Should -Be 0
             $Pet.properties[6].type | Should -be 'string'
             $Pet.properties[6].name | Should -Be 'status'
             $Pet.properties[6].description | Should -Be 'pet status in the store'
@@ -3128,8 +3098,6 @@ Describe 'OpenApi' {
             $Pet.properties[6].enum[0] | Should -Be 'available'
             $Pet.properties[6].enum[1] | Should -Be 'pending'
             $Pet.properties[6].enum[2] | Should -Be 'sold'
-            $Pet.properties[6].meta | Should -BeOfType [hashtable]
-            $Pet.properties[6].meta.Count | Should -Be 0
 
         }
     }

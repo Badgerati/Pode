@@ -42,6 +42,7 @@ Some useful links:
     Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
     Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc 'SwaggerDocs'
 
+
     <#   Add-PodeOAComponentSchema -Name 'Address' -Schema (
         New-PodeOAObjectProperty -Name 'Address' -Xml @{'name' = 'address' } -Description 'Shipping Address' -Properties (
             New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
@@ -79,8 +80,8 @@ Some useful links:
         New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
         New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
         New-PodeOABoolProperty -Name 'complete' |
-        New-PodeOASchemaProperty -Name 'Address' -ComponentSchema 'Address' |
-        New-PodeOAObjectProperty -Name 'Order' -Xml @{'name' = 'order' } |
+        New-PodeOASchemaProperty -Name 'Address' -Component 'Address' |
+        New-PodeOAObjectProperty -Name 'Order' -Xml @{'name' = 'order' } -AdditionalProperties (New-PodeOAStringProperty ) |
         Add-PodeOAComponentSchema -Name 'Order'
 
 
@@ -116,13 +117,28 @@ Some useful links:
         New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' } -Properties  (
             New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly |
                 New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
-                New-PodeOASchemaProperty -Name 'category' -ComponentSchema 'Category' |
+                New-PodeOASchemaProperty -Name 'category' -Component 'Category' |
                 New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
                 New-PodeOAStringProperty -Name 'photoUrls' -Array |
-                New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag' |
+                New-PodeOASchemaProperty -Name 'tags' -Component 'Tag' |
                 New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold')
         ))
 
+
+    #Define Pet schema
+    New-PodeOAStringProperty -Name 'name' | New-PodeOAStringProperty -Name 'petType' |
+        New-PodeOAObjectProperty -DiscriminatorProperty 'petType' | Add-PodeOAComponentSchema -Name 'Pet2'
+
+    #Define Cat schema
+    Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet2',
+(New-PodeOAStringProperty -Name 'huntingSkill'  -Description 'The measured skill for hunting' -Default 'lazy' -Enum 'clueless', 'lazy', 'adventurous', 'aggressive' -Required -Object ) |
+        Add-PodeOAComponentSchema -Name 'Cat2' -Description "A representation of a cat. Note that `Cat` will be used as the discriminator value."
+
+
+    #Define Dog schema
+    Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet2',
+(New-PodeOAIntProperty -Name 'packSize'  -Description 'the size of the pack the dog is from' -Default 0 -Minimum 0 -Format Int32 -Required -Object ) |
+        Add-PodeOAComponentSchema -Name 'Dog2' -Description "A representation of a dog. Note that `Dog` will be used as the discriminator value."
 
 
     <#   Alternative :
@@ -130,10 +146,10 @@ Some useful links:
         New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' } -Properties @(
                     (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly),
                         (New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required),
-                        (New-PodeOASchemaProperty -Name 'category' -ComponentSchema 'Category'),
+                        (New-PodeOASchemaProperty -Name 'category' -Component 'Category'),
                         (New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required),
                         (New-PodeOAStringProperty -Name 'photoUrls' -Array),
-                        (New-PodeOASchemaProperty -Name 'tags' -ComponentSchema 'Tag')
+                        (New-PodeOASchemaProperty -Name 'tags' -Component 'Tag')
                         (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
         ))  #>
 
@@ -144,7 +160,8 @@ Some useful links:
                 )
         )
     )#>
-
+    Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet', (New-PodeOAStringProperty -Name 'rootCause' -required -object) |
+        Add-PodeOAComponentSchema -Name 'ExtendedErrorModel'
 
     New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object |
         Merge-PodeOAProperty  -Type AllOf  -ObjectDefinitions 'Pet' |
@@ -186,7 +203,7 @@ Some useful links:
         Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
         Set-PodeOARequest -PassThru -Parameters @(
         (  New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
-        Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{  '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{  '*/*' = New-PodeOASchemaProperty   -Component 'Pet' -array }) -PassThru |
         Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{  'text/html' = 'ApiResponse' }) -PassThru
 
 
@@ -524,7 +541,7 @@ Some useful links:
                     New-PodeOAStringProperty -name 'id' -format 'uuid' |
                         New-PodeOAObjectProperty -name 'address' -NoProperties |
                         New-PodeOAStringProperty -name 'children' -array |
-                        New-PodeOASchemaProperty -Name 'addresses' -ComponentSchema 'Address' -Array |
+                        New-PodeOASchemaProperty -Name 'addresses' -Component 'Address' -Array |
                         New-PodeOAObjectProperty
                     }) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
@@ -575,7 +592,7 @@ Some useful links:
             Set-PodeOARequest -PassThru -Parameters @( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ) |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
-            Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'  
+            Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'
 
         Add-PodeRoute -PassThru -Method post -Path '/pet/:petId/uploadImage' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
