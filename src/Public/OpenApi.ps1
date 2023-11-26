@@ -518,9 +518,6 @@ function Add-PodeOAResponse {
         [switch]
         $PassThru
     )
-    if (!$Route) {
-        throw 'Route cannot be Null'
-    }
     # set a general description for the status code
     if (!$Default -and [string]::IsNullOrWhiteSpace($Description)) {
         $Description = Get-PodeStatusDescription -StatusCode $StatusCode
@@ -4117,16 +4114,16 @@ function New-PodeOAEncodingObject {
     Defines the schema of the request body. Can be set using New-PodeOARequestBody.
 
 .PARAMETER Response
-    Defines the possible responses for the callback. Can be set using Add-PodeOACallBacksResponse.
+    Defines the possible responses for the callback. Can be set using New-PodeOACallBacksResponse.
 
 .EXAMPLE
     Add-PodeOACallBacks -Title 'test' -Path '{$request.body#/id}' -Method Post `
         -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
         -Response (
-            Add-PodeOACallBacksResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{'application/json' = 'Pet'; 'application/xml' = 'Pet'}) |
-            Add-PodeOACallBacksResponse -StatusCode 400 -Description 'Invalid ID supplied' |
-            Add-PodeOACallBacksResponse -StatusCode 404 -Description 'Pet not found' |
-            Add-PodeOACallBacksResponse -Default -Description 'Something is wrong'
+            New-PodeOACallBacksResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{'application/json' = 'Pet'; 'application/xml' = 'Pet'}) |
+            New-PodeOACallBacksResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+            New-PodeOACallBacksResponse -StatusCode 404 -Description 'Pet not found' |
+            New-PodeOACallBacksResponse -Default -Description 'Something is wrong'
         )
     This example demonstrates adding a POST callback to handle a request body and define various responses based on different status codes.
 
@@ -4235,27 +4232,27 @@ If supplied, the Content Schema will be considered an array
 If supplied, the Header Schema will be considered an array
 
 .EXAMPLE
-Add-PodeOACallBacksResponse -StatusCode 200 -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+New-PodeOACallBacksResponse -StatusCode 200 -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
 .EXAMPLE
-Add-PodeOACallBacksResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
+New-PodeOACallBacksResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
 
 .EXAMPLE
-Add-PodeOACallBacksResponse -StatusCode 200 -Reference 'OKResponse'
+New-PodeOACallBacksResponse -StatusCode 200 -Reference 'OKResponse'
 
 .EXAMPLE
 Add-PodeOACallBacks -Title 'test' -Path '$request.body#/id' -Method Post  -RequestBody (
         New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id') }
     ) `
     -Response (
-        Add-PodeOACallBacksResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) |
-            Add-PodeOACallBacksResponse -StatusCode 400 -Description 'Invalid ID supplied' |
-                Add-PodeOACallBacksResponse -StatusCode 404 -Description 'Pet not found' |
-            Add-PodeOACallBacksResponse -Default   -Description 'Something is wrong'
+        New-PodeOACallBacksResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) |
+            New-PodeOACallBacksResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+                New-PodeOACallBacksResponse -StatusCode 404 -Description 'Pet not found' |
+            New-PodeOACallBacksResponse -Default   -Description 'Something is wrong'
             )
 #>
 
-function Add-PodeOACallBacksResponse {
+function New-PodeOACallBacksResponse {
     [CmdletBinding(DefaultParameterSetName = 'Schema')]
     param(
         [Parameter(ValueFromPipeline = $true , DontShow = $true )]
@@ -4393,7 +4390,7 @@ function Add-PodeOACallBacksResponse {
     Adds a response link to an existing list of OpenAPI response links.
 
 .DESCRIPTION
-    The Add-PodeOAResponseLink function is designed to add a new response link to an existing OrderedDictionary of OpenAPI response links.
+    The New-PodeOAResponseLink function is designed to add a new response link to an existing OrderedDictionary of OpenAPI response links.
     It can be used to define complex response structures with links to other operations or references, and it supports adding multiple links through pipeline input.
 
 .PARAMETER LinkList
@@ -4427,7 +4424,7 @@ function Add-PodeOACallBacksResponse {
     A string representing the request body to use as a request body when calling the target.
 
 .EXAMPLE
-    $links = Add-PodeOAResponseLink -LinkList $links -Name 'address' -OperationId 'getUserByName' -Parameters @{'username' = '$request.path.username'}
+    $links = New-PodeOAResponseLink -LinkList $links -Name 'address' -OperationId 'getUserByName' -Parameters @{'username' = '$request.path.username'}
     Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User'} -Links $links
     This example demonstrates creating and adding a link named 'address' associated with the operation 'getUserByName' to an OrderedDictionary of links. The updated dictionary is then used in the 'Add-PodeOAResponse' function to define a response with a status code of 200.
 
@@ -4437,7 +4434,7 @@ function Add-PodeOACallBacksResponse {
 #>
 
 
-function Add-PodeOAResponseLink {
+function New-PodeOAResponseLink {
     [CmdletBinding(DefaultParameterSetName = 'OperationId')]
     param(
         [Parameter(ValueFromPipeline = $true , DontShow = $true )]

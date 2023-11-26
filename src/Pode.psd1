@@ -300,9 +300,9 @@
         'New-PodeOAExample',
         'Add-PodeOAComponentExample',
         'New-PodeOAEncodingObject',
-        'Add-PodeOACallBacksResponse',
+        'New-PodeOACallBacksResponse',
         'Add-PodeOACallBacks',
-        'Add-PodeOAResponseLink',
+        'New-PodeOAResponseLink',
 
 
         # Metrics
