@@ -485,10 +485,10 @@ function Add-PodeOAResponse {
         [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] })]
         $Headers,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Schema')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'SchemaDefault')]
         [string]
-        $Description  ,
+        $Description,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [Parameter(ParameterSetName = 'ReferenceDefault')]
@@ -509,6 +509,11 @@ function Add-PodeOAResponse {
         [Parameter(ParameterSetName = 'SchemaDefault')]
         [switch]
         $HeaderArray,
+
+        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
+        [System.Collections.Specialized.OrderedDictionary ]
+        $Links,
 
         [switch]
         $PassThru
@@ -574,6 +579,9 @@ function Add-PodeOAResponse {
                 if ($_content) {
                     $response.content = $_content
                 }
+                if ($Links) {
+                    $response.links = $Links
+                }
                 $r.OpenApi.Responses[$code] = $response
             }
 
@@ -589,6 +597,10 @@ function Add-PodeOAResponse {
         return $Route
     }
 }
+
+
+
+
 
 <#
 .SYNOPSIS
@@ -3926,6 +3938,7 @@ function Add-PodeOAComponentExample {
     param(
 
         [Parameter(Mandatory = $true)]
+        [Alias('Title')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
@@ -4013,6 +4026,8 @@ function New-PodeOAEncodingObject {
         $EncodingList,
 
         [Parameter(Mandatory = $true)]
+        [Alias('Title')]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
@@ -4075,6 +4090,421 @@ function New-PodeOAEncodingObject {
             return $encoding
         }
     }
+}
+<#
+.SYNOPSIS
+    Adds OpenAPI callback configurations to routes in a Pode web application.
+
+.DESCRIPTION
+    The Add-PodeOACallBacks function is used for defining OpenAPI callback configurations for routes in a Pode server.
+    It enables setting up API specifications including detailed parameters, request body schemas, and response structures for various HTTP methods.
+
+.PARAMETER Path
+    Specifies the callback path, usually a relative URL.
+    The key that identifies the Path Item Object is a runtime expression evaluated in the context of a runtime HTTP request/response to identify the URL for the callback request.
+    A simple example is `$request.body#/url`.
+    The runtime expression allows complete access to the HTTP message, including any part of a body that a JSON Pointer (RFC6901) can reference.
+    More information on JSON Pointer can be found at [RFC6901](https://datatracker.ietf.org/doc/html/rfc6901).
+
+.PARAMETER Title
+    Alias for 'Name'. A unique identifier for the callback.
+    It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+
+.PARAMETER Method
+    Defines the HTTP method for the callback (e.g., GET, POST, PUT). Supports standard HTTP methods and a wildcard (*) for all methods.
+
+.PARAMETER RequestBody
+    Defines the schema of the request body. Can be set using New-PodeOARequestBody.
+
+.PARAMETER Response
+    Defines the possible responses for the callback. Can be set using Add-PodeOACallBacksResponse.
+
+.EXAMPLE
+    Add-PodeOACallBacks -Title 'test' -Path '{$request.body#/id}' -Method Post `
+        -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
+        -Response (
+            Add-PodeOACallBacksResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{'application/json' = 'Pet'; 'application/xml' = 'Pet'}) |
+            Add-PodeOACallBacksResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+            Add-PodeOACallBacksResponse -StatusCode 404 -Description 'Pet not found' |
+            Add-PodeOACallBacksResponse -Default -Description 'Something is wrong'
+        )
+    This example demonstrates adding a POST callback to handle a request body and define various responses based on different status codes.
+
+.NOTES
+    Ensure that the provided parameters match the expected schema and formats of Pode and OpenAPI specifications.
+    The function is useful for dynamically configuring and documenting API callbacks in a Pode server environment.
+#>
+
+function Add-PodeOACallBacks {
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter(Mandatory = $true)]
+        [Alias('Title')]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
+        [string]
+        $Method,
+
+        [Parameter()]
+        [hashtable[]]
+        $Parameters,
+
+        [Parameter()]
+        [hashtable]
+        $RequestBody,
+
+        [Parameter()]
+        [System.Collections.Specialized.OrderedDictionary]
+        $Responses,
+
+        [switch]
+        $PassThru
+    )
+    $_method = $Method.ToLower()
+    foreach ($r in @($Route)) {
+        $r.OpenApi.CallBacks = [ordered]@{
+            $Name = [ordered]@{
+                "'$Path'" = [ordered]@{
+                    $_method = [ordered]@{}
+                }
+            }
+        }
+        if ($RequestBody) {
+            $r.OpenApi.CallBacks.$Name."'$Path'".$_method.requestBody = $RequestBody
+        }
+        if ($Responses) {
+            $r.OpenApi.CallBacks.$Name."'$Path'".$_method.responses = $Responses
+        }
+    }
+
+    if ($PassThru) {
+        return $Route
+    }
+}
+
+
+
+<#
+.SYNOPSIS
+Adds a response definition to the Callback.
+
+.DESCRIPTION
+Adds a response definition to the Callback.
+
+.PARAMETER ResponseList
+Hidden parameter used to pipe multiple CallBacksResponses
+
+.PARAMETER StatusCode
+The HTTP StatusCode for the response.To define a range of response codes, this field MAY contain the uppercase wildcard character `X`.
+For example, `2XX` represents all response codes between `[200-299]`. Only the following range definitions are allowed: `1XX`, `2XX`, `3XX`, `4XX`, and `5XX`.
+If a response is defined using an explicit code, the explicit code definition takes precedence over the range definition for that code.
+
+.PARAMETER Content
+The content-types and schema the response returns (the schema is created using the Property functions).
+Alias: ContentSchemas
+
+.PARAMETER Headers
+The header name and schema the response returns (the schema is created using Add-PodeOAComponentHeaderSchema cmd-let).
+Alias: HeaderSchemas
+
+.PARAMETER Description
+A Description of the response. (Default: the HTTP StatusCode description)
+
+.PARAMETER Reference
+A Reference Name of an existing component response to use.
+
+.PARAMETER Default
+If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
+
+.PARAMETER ContentArray
+If supplied, the Content Schema will be considered an array
+
+.PARAMETER HeaderArray
+If supplied, the Header Schema will be considered an array
+
+.EXAMPLE
+Add-PodeOACallBacksResponse -StatusCode 200 -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+
+.EXAMPLE
+Add-PodeOACallBacksResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
+
+.EXAMPLE
+Add-PodeOACallBacksResponse -StatusCode 200 -Reference 'OKResponse'
+
+.EXAMPLE
+Add-PodeOACallBacks -Title 'test' -Path '$request.body#/id' -Method Post  -RequestBody (
+        New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id') }
+    ) `
+    -Response (
+        Add-PodeOACallBacksResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) |
+            Add-PodeOACallBacksResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+                Add-PodeOACallBacksResponse -StatusCode 404 -Description 'Pet not found' |
+            Add-PodeOACallBacksResponse -Default   -Description 'Something is wrong'
+            )
+#>
+
+function Add-PodeOACallBacksResponse {
+    [CmdletBinding(DefaultParameterSetName = 'Schema')]
+    param(
+        [Parameter(ValueFromPipeline = $true , DontShow = $true )]
+        [System.Collections.Specialized.OrderedDictionary ]
+        $ResponseList,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [ValidatePattern('^([1-5][0-9][0-9]|[1-5]XX)$')]
+        [string]
+        $StatusCode,
+
+        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
+        [Alias('ContentSchemas')]
+        [hashtable]
+        $Content,
+
+        [Parameter()]
+        [Alias('HeaderSchemas')]
+        [AllowEmptyString()]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] })]
+        $Headers,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
+        [string]
+        $Description  ,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [Parameter(ParameterSetName = 'ReferenceDefault')]
+        [string]
+        $Reference,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'ReferenceDefault')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
+        [switch]
+        $Default,
+
+        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
+        [switch]
+        $ContentArray,
+
+        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
+        [switch]
+        $HeaderArray
+    )
+    begin {
+        # set a general description for the status code
+        if (!$Default -and [string]::IsNullOrWhiteSpace($Description)) {
+            $Description = Get-PodeStatusDescription -StatusCode $StatusCode
+        }
+
+        # override status code with default
+        if ($Default) {
+            $code = 'default'
+        } else {
+            $code = "$($StatusCode)"
+        }
+
+        # schemas or component reference?
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            { $_ -in 'schema', 'schemadefault' } {
+                # build any content-type schemas
+                $_content = $null
+                if ($null -ne $Content) {
+                    $_content = ConvertTo-PodeOAContentTypeSchema -Schemas $Content -Array:$ContentArray
+                }
+
+                # build any header schemas
+                $_headers = $null
+                if ($Headers -is [System.Object[]] -or $Headers -is [string] -or $Headers -is [string[]]) {
+                    if ($null -ne $Headers) {
+
+                        if ($Headers -is [System.Object[]] -and $Headers.Count -gt 0 -and $Headers[0] -is [hashtable]) {
+                            $_headers = ConvertTo-PodeOAHeaderProperties -Headers   $Headers
+                        } else {
+                            $_headers = ConvertTo-PodeOAHeaderSchema -Schemas $Headers -Array:$HeaderArray
+                        }
+                    }
+                } elseif ($Headers -is [hashtable]) {
+                    $_headers = ConvertTo-PodeOAObjectSchema -Schemas  $Headers
+                }
+            }
+
+            { $_ -in 'reference', 'referencedefault' } {
+                if (!(Test-PodeOAComponentResponse -Name $Reference)) {
+                    throw "The OpenApi component response doesn't exist: $($Reference)"
+                }
+            }
+        }
+
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            { $_ -in 'schema', 'schemadefault' } {
+                $response = [ordered]@{$code = [ordered]@{} }
+                if ($description) {
+                    $response.$code.description = $description
+                }
+                if ($_headers) {
+                    $response.$code.headers = $_headers
+                }
+                if ($_content) {
+                    $response.$code.content = $_content
+                }
+            }
+
+            { $_ -in 'reference', 'referencedefault' } {
+                $response = [ordered]@{$code = @{
+                        '$ref' = "#/components/responses/$($Reference)"
+                    }
+                }
+            }
+        }
+    }
+    process {
+    }
+    end {
+        if ($ResponseList) {
+            $response.GetEnumerator() | ForEach-Object { $ResponseList[$_.Key] = $_.Value }
+            return $ResponseList
+        } else {
+            return [System.Collections.Specialized.OrderedDictionary] $response
+        }
+    }
+
+}
+
+
+
+<#
+.SYNOPSIS
+    Adds a response link to an existing list of OpenAPI response links.
+
+.DESCRIPTION
+    The Add-PodeOAResponseLink function is designed to add a new response link to an existing OrderedDictionary of OpenAPI response links.
+    It can be used to define complex response structures with links to other operations or references, and it supports adding multiple links through pipeline input.
+
+.PARAMETER LinkList
+    An OrderedDictionary of existing response links.
+    This parameter is intended for use with pipeline input, allowing the function to add multiple links to the collection.
+    It is hidden from standard help displays to emphasize its use primarily in pipeline scenarios.
+
+.PARAMETER Name
+    Mandatory. A unique name for the response link.
+    Must be a valid string composed of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+
+.PARAMETER Description
+    A brief description of the response link. CommonMark syntax may be used for rich text representation.
+    For more information on CommonMark syntax, see [CommonMark Specification](https://spec.commonmark.org/).
+
+.PARAMETER OperationId
+    The name of an existing, resolvable OpenAPI Specification (OAS) operation, as defined with a unique `operationId`.
+    This parameter is mandatory when using the 'OperationId' parameter set and is mutually exclusive of the `OperationRef` field. It is used to specify the unique identifier of the operation the link is associated with.
+
+.PARAMETER OperationRef
+    A relative or absolute URI reference to an OAS operation.
+    This parameter is mandatory when using the 'OperationRef' parameter set and is mutually exclusive of the `OperationId` field.
+    It MUST point to an Operation Object. Relative `operationRef` values MAY be used to locate an existing Operation Object in the OpenAPI specification.
+
+.PARAMETER Parameters
+    A map representing parameters to pass to an operation as specified with `operationId` or identified via `operationRef`.
+    The key is the parameter name to be used, whereas the value can be a constant or an expression to be evaluated and passed to the linked operation.
+    Parameter names can be qualified using the parameter location syntax `[{in}.]{name}` for operations that use the same parameter name in different locations (e.g., path.id).
+
+.PARAMETER RequestBody
+    A string representing the request body to use as a request body when calling the target.
+
+.EXAMPLE
+    $links = Add-PodeOAResponseLink -LinkList $links -Name 'address' -OperationId 'getUserByName' -Parameters @{'username' = '$request.path.username'}
+    Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User'} -Links $links
+    This example demonstrates creating and adding a link named 'address' associated with the operation 'getUserByName' to an OrderedDictionary of links. The updated dictionary is then used in the 'Add-PodeOAResponse' function to define a response with a status code of 200.
+
+.NOTES
+    The function supports adding links either by specifying an 'OperationId' or an 'OperationRef', making it versatile for different OpenAPI specification needs.
+    It's important to match the parameters and response structures as per the OpenAPI specification to ensure the correct functionality of the API documentation.
+#>
+
+
+function Add-PodeOAResponseLink {
+    [CmdletBinding(DefaultParameterSetName = 'OperationId')]
+    param(
+        [Parameter(ValueFromPipeline = $true , DontShow = $true )]
+        [System.Collections.Specialized.OrderedDictionary ]
+        $LinkList,
+
+        [Parameter(Mandatory = $true)]
+        [Alias('Title')]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'OperationId')]
+        [string]
+        $OperationId,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'OperationRef')]
+        [string]
+        $OperationRef,
+
+        [Parameter()]
+        [hashtable]
+        $Parameters,
+
+        [Parameter()]
+        [string]
+        $RequestBody
+
+    )
+    begin {
+
+        $link = [ordered]@{$Name = [ordered]@{} }
+        if ($Description) {
+            $link.$Name.description = $Description
+        }
+        if ($OperationId) {
+            $link.$Name.operationId = $OperationId
+        }
+        if ($OperationRef) {
+            $link.$Name.operationRef = $OperationRef
+        }
+        if ($OperationRef) {
+            $link.$Name.operationRef = $OperationRef
+        }
+        if ($Parameters) {
+            $link.$Name.parameters = $Parameters
+        }
+        if ($RequestBody) {
+            $link.$Name.requestBody = $RequestBody
+        }
+
+    }
+    process {
+    }
+    end {
+        if ($LinkList) {
+            $link.GetEnumerator() | ForEach-Object { $LinkList[$_.Key] = $_.Value }
+            return $LinkList
+        } else {
+            return [System.Collections.Specialized.OrderedDictionary] $link
+        }
+    }
+
 }
 
 

@@ -266,7 +266,7 @@ function ConvertTo-PodeOAOfProperty {
         }
     }
     if ($Property.discriminator) {
-        $schema['discriminator'] = @{'propertyName' = $Property.discriminator }
+        $schema['discriminator'] = $Property.discriminator
     }
     return  $schema
 }
@@ -458,7 +458,7 @@ function ConvertTo-PodeOASchemaProperty {
                 $schema['additionalProperties'] = $Property.additionalProperties
             }
 
-            if($Property.discriminator){
+            if ($Property.discriminator) {
                 $schema['discriminator'] = $Property.discriminator
             }
         }
@@ -700,6 +700,9 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
                 if ($_route.OpenApi.RequestBody) {
                     $pm.requestBody = $_route.OpenApi.RequestBody
+                }
+                if ($_route.OpenApi.CallBacks) {
+                    $pm.callbacks = $_route.OpenApi.CallBacks
                 }
                 if ($_route.OpenApi.Authentication.Count -gt 0) {
                     $pm.security = @()

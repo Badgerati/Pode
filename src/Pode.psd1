@@ -300,6 +300,10 @@
         'New-PodeOAExample',
         'Add-PodeOAComponentExample',
         'New-PodeOAEncodingObject',
+        'Add-PodeOACallBacksResponse',
+        'Add-PodeOACallBacks',
+        'Add-PodeOAResponseLink',
+
 
         # Metrics
         'Get-PodeServerUptime',
