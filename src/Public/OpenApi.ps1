@@ -538,9 +538,6 @@ function Add-PodeOAResponse {
 }
 
 
-
-
-
 <#
 .SYNOPSIS
 Remove a response definition from the supplied route.
@@ -3031,7 +3028,7 @@ function ConvertTo-PodeOAParameter {
         } elseif ($Property.required) {
             $prop.required = $Property.required
         }
-        
+
         if ($Deprecated.IsPresent ) {
             $prop.deprecated = $Deprecated.IsPresent
         } elseif ($Property.deprecated) {
@@ -4134,9 +4131,6 @@ Adds a response definition to the Callback.
 .PARAMETER ResponseList
 Hidden parameter used to pipe multiple CallBacksResponses
 
-.PARAMETER Route
-The route to add the response definition. This is an alternative method to Add-PodeOAResponse without piping
-
 .PARAMETER StatusCode
 The HTTP StatusCode for the response.To define a range of response codes, this field MAY contain the uppercase wildcard character `X`.
 For example, `2XX` represents all response codes between `[200-299]`. Only the following range definitions are allowed: `1XX`, `2XX`, `3XX`, `4XX`, and `5XX`.
@@ -4192,10 +4186,6 @@ function New-PodeOAResponse {
         [Parameter(ValueFromPipeline = $true , DontShow = $true )]
         [System.Collections.Specialized.OrderedDictionary ]
         $ResponseList,
-
-        [ValidateNotNullOrEmpty()]
-        [hashtable[]]
-        $Route,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
@@ -4262,17 +4252,12 @@ function New-PodeOAResponse {
     process {
     }
     end {
-        if ($Route){
-            foreach ($r in @($Route)) {
-                $r.OpenApi.Responses[$code] = $response
-            }
-        }else{
         if ($ResponseList) {
             $response.GetEnumerator() | ForEach-Object { $ResponseList[$_.Key] = $_.Value }
             return $ResponseList
         } else {
             return [System.Collections.Specialized.OrderedDictionary] $response
-        }}
+        }
     }
 
 }

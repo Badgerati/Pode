@@ -728,7 +728,18 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
 
+        $Responses = New-PodeOAResponse -StatusCode 200 -Reference 'UserOpSuccess' |
+            New-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' |
+            New-PodeOAResponse -StatusCode 404 -Description 'User not found' |
+            New-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
+
+        Add-PodeRoute -PassThru -Method Put -Path '/user_1/:username' -OAResponses $Responses -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'updateUser_1' -PassThru |
+            Set-PodeOARequest -Parameters @(
+                (  New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path )
+            ) -RequestBody (New-PodeOARequestBody -Required -Content (@{ 'application/json' = 'User'; 'application/xml' = 'User'; 'application/x-www-form-urlencoded' = 'User' } ))
 
 
         Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -ScriptBlock {

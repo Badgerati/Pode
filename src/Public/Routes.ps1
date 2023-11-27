@@ -68,6 +68,8 @@ One or more optional Scopes that will be authorised to access this Route, when u
 .PARAMETER User
 One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
+.PARAMETER OAResponses
+An alternative way to associate OpenApi responses unsing New-PodeOAResponse instead of piping multiple Add-PodeOAResponse
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
@@ -88,6 +90,15 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ } -ArgumentList '
 
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -Role 'Developer', 'QA' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+$Responses = New-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' |
+            New-PodeOAResponse -StatusCode 404 -Description 'User not found' |
+            New-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
+
+Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -OAResponses $Responses -ScriptBlock {
+            #code is going here
+        }
 #>
 function Add-PodeRoute {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -172,6 +183,9 @@ function Add-PodeRoute {
 
         [switch]
         $Logout,
+
+        [System.Collections.Specialized.OrderedDictionary]
+        $OAResponses,
 
         [switch]
         $PassThru
@@ -411,6 +425,12 @@ function Add-PodeRoute {
         $PodeContext.Server.Routes[$_method][$Path] += @($methodRoutes)
         if ($PassThru) {
             $newRoutes += $methodRoutes
+        }
+    }
+
+    if ($OAResponses) {
+        foreach ($r in @($newRoutes)) {
+            $r.OpenApi.Responses = $OAResponses
         }
     }
 
@@ -1705,8 +1725,7 @@ function Clear-PodeRoutes {
 
     if (![string]::IsNullOrWhiteSpace($Method)) {
         $PodeContext.Server.Routes[$Method].Clear()
-    }
-    else {
+    } else {
         $PodeContext.Server.Routes.Keys.Clone() | ForEach-Object {
             $PodeContext.Server.Routes[$_].Clear()
         }
@@ -1878,8 +1897,7 @@ function ConvertTo-PodeRoute {
         if (Test-PodeIsEmpty $Commands) {
             Write-Verbose "Using all commands in $($Module) for converting to routes"
             $Commands = $ModuleCommands
-        }
-        else {
+        } else {
             Write-Verbose "Validating supplied commands against module's exported commands"
             foreach ($cmd in $Commands) {
                 if ($ModuleCommands -inotcontains $cmd) {
@@ -1906,8 +1924,7 @@ function ConvertTo-PodeRoute {
         if ($split.Length -ge 2) {
             $verb = $split[0]
             $noun = $split[1..($split.Length - 1)] -join ([string]::Empty)
-        }
-        else {
+        } else {
             $verb = [string]::Empty
             $noun = $split[0]
         }
@@ -1949,8 +1966,7 @@ function ConvertTo-PodeRoute {
             # either get params from the QueryString or Payload
             if ($WebEvent.Method -ieq 'get') {
                 $parameters = $WebEvent.Query
-            }
-            else {
+            } else {
                 $parameters = $WebEvent.Data
             }
 
@@ -2146,8 +2162,7 @@ function Add-PodePage {
                 # invoke the function (optional splat data)
                 if (Test-PodeIsEmpty $data) {
                     $result = (. $script)
-                }
-                else {
+                } else {
                     $result = (. $script @data)
                 }
 
