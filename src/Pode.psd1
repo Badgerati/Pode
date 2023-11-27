@@ -300,7 +300,7 @@
         'New-PodeOAExample',
         'Add-PodeOAComponentExample',
         'New-PodeOAEncodingObject',
-        'New-PodeOACallBacksResponse',
+        'New-PodeOAResponse',
         'Add-PodeOACallBacks',
         'New-PodeOAResponseLink',
 

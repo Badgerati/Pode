@@ -518,10 +518,6 @@ function Add-PodeOAResponse {
         [switch]
         $PassThru
     )
-    # set a general description for the status code
-    if (!$Default -and [string]::IsNullOrWhiteSpace($Description)) {
-        $Description = Get-PodeStatusDescription -StatusCode $StatusCode
-    }
 
     # override status code with default
     if ($Default) {
@@ -530,64 +526,10 @@ function Add-PodeOAResponse {
         $code = "$($StatusCode)"
     }
 
-    # schemas or component reference?
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        { $_ -in 'schema', 'schemadefault' } {
-            # build any content-type schemas
-            $_content = $null
-            if ($null -ne $Content) {
-                $_content = ConvertTo-PodeOAContentTypeSchema -Schemas $Content -Array:$ContentArray
-            }
-
-            # build any header schemas
-            $_headers = $null
-            if ($Headers -is [System.Object[]] -or $Headers -is [string] -or $Headers -is [string[]]) {
-                if ($null -ne $Headers) {
-
-                    if ($Headers -is [System.Object[]] -and $Headers.Count -gt 0 -and $Headers[0] -is [hashtable]) {
-                        $_headers = ConvertTo-PodeOAHeaderProperties -Headers   $Headers
-                    } else {
-                        $_headers = ConvertTo-PodeOAHeaderSchema -Schemas $Headers -Array:$HeaderArray
-                    }
-                }
-            } elseif ($Headers -is [hashtable]) {
-                $_headers = ConvertTo-PodeOAObjectSchema -Schemas  $Headers
-            }
-        }
-
-        { $_ -in 'reference', 'referencedefault' } {
-            if (!(Test-PodeOAComponentResponse -Name $Reference)) {
-                throw "The OpenApi component response doesn't exist: $($Reference)"
-            }
-        }
-    }
-
+    $response = New-PodeOResponseInternal -Params $PSBoundParameters
     # add the respones to the routes
     foreach ($r in @($Route)) {
-        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-            { $_ -in 'schema', 'schemadefault' } {
-                $response = @{}
-                if ($description) {
-                    $response.description = $description
-                }
-                if ($_headers) {
-                    $response.headers = $_headers
-                }
-                if ($_content) {
-                    $response.content = $_content
-                }
-                if ($Links) {
-                    $response.links = $Links
-                }
-                $r.OpenApi.Responses[$code] = $response
-            }
-
-            { $_ -in 'reference', 'referencedefault' } {
-                $r.OpenApi.Responses[$code] = @{
-                    '$ref' = "#/components/responses/$($Reference)"
-                }
-            }
-        }
+        $r.OpenApi.Responses[$code] = $response
     }
 
     if ($PassThru) {
@@ -696,56 +638,54 @@ If supplied, the Content Schema will be considered an array
 If supplied, the Header Schema will be considered an array
 
 .EXAMPLE
-Add-PodeOAComponentResponse -Name 'OKResponse' -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+Add-PodeOAComponentResponse -Name 'OKResponse' -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
 .EXAMPLE
-Add-PodeOAComponentResponse -Name 'ErrorResponse' -ContentSchemas @{ 'application/json' = 'ErrorSchema' }
+Add-PodeOAComponentResponse -Name 'ErrorResponse' -Content  @{ 'application/json' = 'ErrorSchema' }
 #>
 function Add-PodeOAComponentResponse {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Schema')]
     param(
         [Parameter(Mandatory = $true)]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'Schema')]
+        [Alias('ContentSchemas')]
         [hashtable]
-        $ContentSchemas,
+        $Content,
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'Schema')]
+        [Alias('HeaderSchemas')]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] })]
-        $HeaderSchemas,
+        $Headers,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(ParameterSetName = 'Schema')]
         [string]
         $Description,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [string]
+        $Reference,
+
+        [Parameter(ParameterSetName = 'Schema')]
         [switch]
         $ContentArray,
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'Schema')]
         [switch]
-        $HeaderArray
+        $HeaderArray,
+
+        [Parameter(ParameterSetName = 'Schema')]
+        [System.Collections.Specialized.OrderedDictionary ]
+        $Links
     )
 
-    $r = @{ description = $Description }
-    if ($null -ne $ContentSchemas) {
-        $r.content = ConvertTo-PodeOAContentTypeSchema -Schemas $ContentSchemas -Array:$ContentArray
-    }
-    #if HeaderSchemas is string or string[]
-    if ($HeaderSchemas -is [System.Object[]] -or $HeaderSchemas -is [string] -or $HeaderSchemas -is [string[]]) {
-        if ($null -ne $HeaderSchemas) {
-            $r.headers = ConvertTo-PodeOAHeaderSchema -Schemas $HeaderSchemas -Array:$HeaderArray
-        }
-    } elseif ($HeaderSchemas -is [hashtable]) {
-        $r.headers = ConvertTo-PodeOAObjectSchema -Schemas  $HeaderSchemas
-    }
+    $PodeContext.Server.OpenAPI.components.responses[$Name] = New-PodeOResponseInternal -Params $PSBoundParameters
 
-    $PodeContext.Server.OpenAPI.components.responses[$Name] = $r
 
 }
 
@@ -3073,22 +3013,12 @@ function ConvertTo-PodeOAParameter {
             $prop.schema = $sch
         }
 
-        <#   if ($null -ne $Property.meta) {
-            foreach ($key in $Property.meta.Keys) {
-                if ($Property.Array) {
-                    $sch.items[$key] = $Property.meta[$key]
-                } else {
-                    $sch[$key] = $Property.meta[$key]
-                }
-            }
-        }#>
         if ($Example -and $Examples) {
             throw '-Example and -Examples are mutually exclusive'
         }
         if ($AllowEmptyValue.IsPresent ) {
             $prop['allowEmptyValue'] = $AllowEmptyValue.IsPresent
         }
-
 
         if ($Description ) {
             $prop.description = $Description
@@ -3101,6 +3031,7 @@ function ConvertTo-PodeOAParameter {
         } elseif ($Property.required) {
             $prop.required = $Property.required
         }
+        
         if ($Deprecated.IsPresent ) {
             $prop.deprecated = $Deprecated.IsPresent
         } elseif ($Property.deprecated) {
@@ -4114,16 +4045,16 @@ function New-PodeOAEncodingObject {
     Defines the schema of the request body. Can be set using New-PodeOARequestBody.
 
 .PARAMETER Response
-    Defines the possible responses for the callback. Can be set using New-PodeOACallBacksResponse.
+    Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
 
 .EXAMPLE
     Add-PodeOACallBacks -Title 'test' -Path '{$request.body#/id}' -Method Post `
         -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
         -Response (
-            New-PodeOACallBacksResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{'application/json' = 'Pet'; 'application/xml' = 'Pet'}) |
-            New-PodeOACallBacksResponse -StatusCode 400 -Description 'Invalid ID supplied' |
-            New-PodeOACallBacksResponse -StatusCode 404 -Description 'Pet not found' |
-            New-PodeOACallBacksResponse -Default -Description 'Something is wrong'
+            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{'application/json' = 'Pet'; 'application/xml' = 'Pet'}) |
+            New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+            New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
+            New-PodeOAResponse -Default -Description 'Something is wrong'
         )
     This example demonstrates adding a POST callback to handle a request body and define various responses based on different status codes.
 
@@ -4203,6 +4134,9 @@ Adds a response definition to the Callback.
 .PARAMETER ResponseList
 Hidden parameter used to pipe multiple CallBacksResponses
 
+.PARAMETER Route
+The route to add the response definition. This is an alternative method to Add-PodeOAResponse without piping
+
 .PARAMETER StatusCode
 The HTTP StatusCode for the response.To define a range of response codes, this field MAY contain the uppercase wildcard character `X`.
 For example, `2XX` represents all response codes between `[200-299]`. Only the following range definitions are allowed: `1XX`, `2XX`, `3XX`, `4XX`, and `5XX`.
@@ -4232,32 +4166,36 @@ If supplied, the Content Schema will be considered an array
 If supplied, the Header Schema will be considered an array
 
 .EXAMPLE
-New-PodeOACallBacksResponse -StatusCode 200 -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+New-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
 .EXAMPLE
-New-PodeOACallBacksResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
+New-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
 
 .EXAMPLE
-New-PodeOACallBacksResponse -StatusCode 200 -Reference 'OKResponse'
+New-PodeOAResponse -StatusCode 200 -Reference 'OKResponse'
 
 .EXAMPLE
 Add-PodeOACallBacks -Title 'test' -Path '$request.body#/id' -Method Post  -RequestBody (
         New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id') }
     ) `
     -Response (
-        New-PodeOACallBacksResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) |
-            New-PodeOACallBacksResponse -StatusCode 400 -Description 'Invalid ID supplied' |
-                New-PodeOACallBacksResponse -StatusCode 404 -Description 'Pet not found' |
-            New-PodeOACallBacksResponse -Default   -Description 'Something is wrong'
+        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) |
+            New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+                New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
+            New-PodeOAResponse -Default   -Description 'Something is wrong'
             )
 #>
 
-function New-PodeOACallBacksResponse {
+function New-PodeOAResponse {
     [CmdletBinding(DefaultParameterSetName = 'Schema')]
     param(
         [Parameter(ValueFromPipeline = $true , DontShow = $true )]
         [System.Collections.Specialized.OrderedDictionary ]
         $ResponseList,
+
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
@@ -4301,14 +4239,14 @@ function New-PodeOACallBacksResponse {
         [Parameter(ParameterSetName = 'Schema')]
         [Parameter(ParameterSetName = 'SchemaDefault')]
         [switch]
-        $HeaderArray
+        $HeaderArray,
+
+        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'SchemaDefault')]
+        [System.Collections.Specialized.OrderedDictionary ]
+        $Links
     )
     begin {
-        # set a general description for the status code
-        if (!$Default -and [string]::IsNullOrWhiteSpace($Description)) {
-            $Description = Get-PodeStatusDescription -StatusCode $StatusCode
-        }
-
         # override status code with default
         if ($Default) {
             $code = 'default'
@@ -4316,72 +4254,29 @@ function New-PodeOACallBacksResponse {
             $code = "$($StatusCode)"
         }
 
-        # schemas or component reference?
-        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-            { $_ -in 'schema', 'schemadefault' } {
-                # build any content-type schemas
-                $_content = $null
-                if ($null -ne $Content) {
-                    $_content = ConvertTo-PodeOAContentTypeSchema -Schemas $Content -Array:$ContentArray
-                }
-
-                # build any header schemas
-                $_headers = $null
-                if ($Headers -is [System.Object[]] -or $Headers -is [string] -or $Headers -is [string[]]) {
-                    if ($null -ne $Headers) {
-
-                        if ($Headers -is [System.Object[]] -and $Headers.Count -gt 0 -and $Headers[0] -is [hashtable]) {
-                            $_headers = ConvertTo-PodeOAHeaderProperties -Headers   $Headers
-                        } else {
-                            $_headers = ConvertTo-PodeOAHeaderSchema -Schemas $Headers -Array:$HeaderArray
-                        }
-                    }
-                } elseif ($Headers -is [hashtable]) {
-                    $_headers = ConvertTo-PodeOAObjectSchema -Schemas  $Headers
-                }
-            }
-
-            { $_ -in 'reference', 'referencedefault' } {
-                if (!(Test-PodeOAComponentResponse -Name $Reference)) {
-                    throw "The OpenApi component response doesn't exist: $($Reference)"
-                }
-            }
+        $response = [ordered]@{
+            $code = New-PodeOResponseInternal -Params $PSBoundParameters
         }
 
-        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-            { $_ -in 'schema', 'schemadefault' } {
-                $response = [ordered]@{$code = [ordered]@{} }
-                if ($description) {
-                    $response.$code.description = $description
-                }
-                if ($_headers) {
-                    $response.$code.headers = $_headers
-                }
-                if ($_content) {
-                    $response.$code.content = $_content
-                }
-            }
-
-            { $_ -in 'reference', 'referencedefault' } {
-                $response = [ordered]@{$code = @{
-                        '$ref' = "#/components/responses/$($Reference)"
-                    }
-                }
-            }
-        }
     }
     process {
     }
     end {
+        if ($Route){
+            foreach ($r in @($Route)) {
+                $r.OpenApi.Responses[$code] = $response
+            }
+        }else{
         if ($ResponseList) {
             $response.GetEnumerator() | ForEach-Object { $ResponseList[$_.Key] = $_.Value }
             return $ResponseList
         } else {
             return [System.Collections.Specialized.OrderedDictionary] $response
-        }
+        }}
     }
 
 }
+
 
 
 

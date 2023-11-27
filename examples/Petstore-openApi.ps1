@@ -487,10 +487,10 @@ Some useful links:
             } -PassThru |
             Add-PodeOACallBacks -Title 'test' -Path '{$request.body#/id}' -Method Post  -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id') } ) `
                 -Response (
-                Add-PodeOACallBacksResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) |
-                    Add-PodeOACallBacksResponse -StatusCode 400 -Description 'Invalid ID supplied' |
-                    Add-PodeOACallBacksResponse -StatusCode 404 -Description 'Pet not found' |
-                    Add-PodeOACallBacksResponse -Default   -Description 'Something is wrong'
+                New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) |
+                    New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+                    New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
+                    New-PodeOAResponse -Default   -Description 'Something is wrong'
                 )
 
 
@@ -751,7 +751,7 @@ Some useful links:
                 (  New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path )
             ) -RequestBody (New-PodeOARequestBody -Required -Content (@{ 'application/json' = 'User'; 'application/xml' = 'User'; 'application/x-www-form-urlencoded' = 'User' } )) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User' }  -PassThru `
-                -Links (Add-PodeOAResponseLink -Name address -OperationId 'getUserByName' -Parameters  @{'username' = '$request.path.username' } ) |
+                -Links (New-PodeOAResponseLink -Name address -OperationId 'getUserByName' -Parameters  @{'username' = '$request.path.username' } ) |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found' -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'

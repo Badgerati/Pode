@@ -948,9 +948,12 @@ function Resolve-PodeOAReferences {
 
 function New-PodeOAPropertyInternal {
     param (
+        [Parameter(Mandatory = $true)]
         [String]
         $Type,
-        [hashtable]$Params
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $Params
     )
     $param = @{
         type = $Type
@@ -1126,4 +1129,71 @@ function ConvertTo-PodeOAHeaderProperties {
         }
     }
     return $elems
+}
+
+
+
+
+function New-PodeOResponseInternal { 
+    param(
+        [hashtable]$Params
+    )
+
+    # set a general description for the status code
+    if ([string]::IsNullOrWhiteSpace($Description)) {
+        if ($Params.Default) {
+            $Description = 'Default Response.'
+        } elseif ($Params.StatusCode) {
+            $Description = Get-PodeStatusDescription -StatusCode $Params.StatusCode
+        } else {
+            throw 'A Description is required'
+        }
+    } else {
+        $Description = $Params.Description
+    }
+
+    if ($Params.Reference ) {
+        if (!(Test-PodeOAComponentResponse -Name $Params.Reference)) {
+            throw "The OpenApi component response doesn't exist: $($Params.Reference)"
+        }
+        $response = @{
+            '$ref' = "#/components/responses/$($Params.Reference)"
+        }
+    } else {
+        # build any content-type schemas
+        $_content = $null
+        if ($null -ne $Params.Content) {
+            $_content = ConvertTo-PodeOAContentTypeSchema -Schemas $Params.Content -Array:$Params.ContentArray
+        }
+
+        # build any header schemas
+        $_headers = $null
+        if ($Params.Headers -is [System.Object[]] -or $Params.Headers -is [string] -or $Params.Headers -is [string[]]) {
+            if ($null -ne $Params.Headers) {
+
+                if ($Params.Headers -is [System.Object[]] -and $Params.Headers.Count -gt 0 -and $Params.Headers[0] -is [hashtable]) {
+                    $_headers = ConvertTo-PodeOAHeaderProperties -Headers   $Params.Headers
+                } else {
+                    $_headers = ConvertTo-PodeOAHeaderSchema -Schemas $Params.Headers -Array:$Params.HeaderArray
+                }
+            }
+        } elseif ($Params.Headers -is [hashtable]) {
+            $_headers = ConvertTo-PodeOAObjectSchema -Schemas  $Params.Headers
+        }
+
+
+        $response = [ordered]@{
+            description = $Description
+        }
+        if ($_headers) {
+            $response.headers = $_headers
+        }
+        if ($_content) {
+            $response.content = $_content
+        }
+        if ($Params.Links) {
+            $response.links = $Params.Links
+        }
+    }
+    return $response
 }
