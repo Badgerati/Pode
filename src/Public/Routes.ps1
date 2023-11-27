@@ -184,7 +184,7 @@ function Add-PodeRoute {
         [switch]
         $Logout,
 
-        [System.Collections.Specialized.OrderedDictionary]
+        [hashtable]
         $OAResponses,
 
         [switch]

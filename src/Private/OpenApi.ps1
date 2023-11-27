@@ -4,9 +4,9 @@ function ConvertTo-PodeOAContentTypeSchema {
         [hashtable]
         $Schemas,
 
-        [Parameter()]
-        [switch]
-        $Array,
+     #   [Parameter()]
+    #    [switch]
+       # $Array,
 
         [Parameter()]
         [switch]
@@ -25,7 +25,7 @@ function ConvertTo-PodeOAContentTypeSchema {
     }
 
     # convert each schema to openapi format
-    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas -Array:$Array -Properties:$Properties)
+    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas -Properties:$Properties)
 }
 
 function ConvertTo-PodeOAHeaderSchema {
@@ -73,9 +73,9 @@ function ConvertTo-PodeOAObjectSchema {
         [hashtable]
         $Schemas,
 
-        [Parameter(ValueFromPipeline = $false)]
-        [switch]
-        $Array,
+   #     [Parameter(ValueFromPipeline = $false)]
+     #   [switch]
+     #   $Array,
 
         [Parameter(ValueFromPipeline = $false)]
         [switch]
@@ -90,41 +90,61 @@ function ConvertTo-PodeOAObjectSchema {
     # convert each schema to openapi format
     $obj = @{}
     foreach ($type in $Schemas.Keys) {
-        $obj[$type] = @{
-            schema = $null
-        }
-
-        if ($Array) {
-            $obj[$type].schema = @{
+        $obj[$type] = @{ }
+        if ($Schemas[$type].__array) {
+            $Array = $true
+            $item = $Schemas[$type].__content
+            $obj[$type].schema = [ordered]@{
                 'type'  = 'array'
                 'items' = $null
             }
+            if ( $Schemas[$type].__title) {
+                $obj[$type].schema.title = $Schemas[$type].__title
+            }
+            if ( $Schemas[$type].__uniqueItems) {
+                $obj[$type].schema.uniqueItems = $Schemas[$type].__uniqueItems
+            }
+            if ( $Schemas[$type].__maxItems) {
+                $obj[$type].schema.__maxItems = $Schemas[$type].__maxItems
+            }
+            if ( $Schemas[$type].minItems) {
+                $obj[$type].schema.minItems = $Schemas[$type].__minItems
+            }
+        } else {
+            $item = $Schemas[$type]
+
+            if ($Array) {
+                $obj[$type].schema = @{
+                    'type'  = 'array'
+                    'items' = $null
+                }
+            }
         }
         # add a shared component schema reference
-        if ($Schemas[$type] -is [string]) {
-            if (![string]::IsNullOrEmpty($Schemas[$type])) {
+        if ($item -is [string]) {
+            if (![string]::IsNullOrEmpty($item )) {
                 #Check for empty reference
-                if (@('string', 'integer' , 'number', 'boolean' ) -icontains $Schemas[$type]) {
+                if (@('string', 'integer' , 'number', 'boolean' ) -icontains $item) {
                     if ($Array) {
                         $obj[$type].schema.items = @{
-                            'type' = $Schemas[$type].ToLower()
+                            'type' = $item.ToLower()
                         }
                     } else {
                         $obj[$type].schema = @{
-                            'type' = $Schemas[$type].ToLower()
+                            'type' = $item.ToLower()
                         }
                     }
                 } else {
-                    if ( !(Test-PodeOAComponentSchema -Name $Schemas[$type])) {
-                        throw "The OpenApi component schema doesn't exist: $($Schemas[$type])"
+                    if ( !(Test-PodeOAComponentSchema -Name $item)) {
+                        throw "The OpenApi component schema doesn't exist: $($item)"
                     }
                     if ($Array) {
                         $obj[$type].schema.items = @{
-                            '$ref' = "#/components/schemas/$($Schemas[$type])"
+                            '$ref' = "#/components/schemas/$($item)"
                         }
                     } else {
                         $obj[$type].schema = @{
-                            '$ref' = "#/components/schemas/$($Schemas[$type])"
+                            '$ref' = "#/components/schemas/$($item)"
                         }
                     }
                 }
@@ -135,12 +155,12 @@ function ConvertTo-PodeOAObjectSchema {
         }
         # add a set schema object
         else {
-            $result = ($Schemas[$type] | ConvertTo-PodeOASchemaProperty)
+            $result = ($item | ConvertTo-PodeOASchemaProperty)
             if ($Properties) {
-                if ($Schemas[$type].Name) {
+                if ($item.Name) {
                     $obj[$type].schema = @{
                         'properties' = @{
-                            $Schemas[$type].Name = $result
+                            $item.Name = $result
                         }
                     }
                 } else {
@@ -1134,7 +1154,7 @@ function ConvertTo-PodeOAHeaderProperties {
 
 
 
-function New-PodeOResponseInternal { 
+function New-PodeOResponseInternal {
     param(
         [hashtable]$Params
     )
@@ -1163,7 +1183,7 @@ function New-PodeOResponseInternal {
         # build any content-type schemas
         $_content = $null
         if ($null -ne $Params.Content) {
-            $_content = ConvertTo-PodeOAContentTypeSchema -Schemas $Params.Content -Array:$Params.ContentArray
+            $_content = ConvertTo-PodeOAContentTypeSchema -Schemas $Params.Content #-Array:$Params.ContentArray
         }
 
         # build any header schemas

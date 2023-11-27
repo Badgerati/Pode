@@ -501,11 +501,18 @@ Some useful links:
                 (  New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query )
             ) |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |
-            # schema:
-            #  type: array
-            #  items:
-            #     $ref: '#/components/schemas/Pet'
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
+
+
+
+            Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -ScriptBlock {
+                Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            } | Set-PodeOARouteInfo -Summary 'Finds Pets by status' -Description 'Multiple status values can be provided with comma separated strings' -Tags 'pet' -OperationId 'findPetsByStatus' -PassThru |
+                Set-PodeOARequest -PassThru -Parameters @(
+                    (  New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query )
+                ) |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content ( New-PodeOAMediaContentType -MediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems ) -PassThru |
+                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
 
 
 

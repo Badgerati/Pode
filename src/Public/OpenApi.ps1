@@ -826,27 +826,27 @@ New-PodeOARequestBody -Content @{'multipart/form-data' =
                         )
 #>
 function New-PodeOARequestBody {
-    [CmdletBinding(DefaultParameterSetName = 'Schema')]
+    [CmdletBinding(DefaultParameterSetName = 'BuiltIn')]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [Alias('Reference')]
         [string]
         $Schema,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'BuiltIn')]
         [Alias('ContentSchemas')]
         [hashtable]
         $Content,
 
-        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'BuiltIn')]
         [string]
         $Description,
 
-        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'BuiltIn')]
         [switch]
         $Required,
 
-        [Parameter(ParameterSetName = 'Schema')]
+        [Parameter(ParameterSetName = 'BuiltIn')]
         [switch]
         $Properties,
 
@@ -863,7 +863,7 @@ function New-PodeOARequestBody {
         throw 'Parameter -Examples and -Example are mutually exclusive'
     }
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'schema' {
+        'BuiltIn' {
             $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $Content -Properties:$Properties }
 
             if ($Required.IsPresent) {
@@ -4262,7 +4262,133 @@ function New-PodeOAResponse {
 
 }
 
+<#
+.SYNOPSIS
+    Creates media content type definitions for OpenAPI specifications.
 
+.DESCRIPTION
+    The New-PodeOAMediaContentType function generates media content type definitions suitable for use in OpenAPI specifications. It supports various media types and allows for the specification of content as either a single object or an array of objects.
+
+.PARAMETER MediaType
+    An array of strings specifying the media types to be defined. Media types should conform to standard MIME types (e.g., 'application/json', 'image/png'). The function validates these media types against a regular expression to ensure they are properly formatted.
+
+.PARAMETER Content
+    The content definition for the media type. This could be an object representing the structure of the content expected for the specified media types.
+
+.PARAMETER Array
+    A switch parameter, used in the 'Array' parameter set, to indicate that the content should be treated as an array.
+
+.PARAMETER UniqueItems
+    A switch parameter, used in the 'Array' parameter set, to specify that items in the array should be unique.
+
+.PARAMETER MinItems
+    Used in the 'Array' parameter set to specify the minimum number of items that should be present in the array.
+
+.PARAMETER MaxItems
+    Used in the 'Array' parameter set to specify the maximum number of items that should be present in the array.
+
+.PARAMETER Title
+    Used in the 'Array' parameter set to provide a title for the array content.
+
+.EXAMPLE
+    Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -ScriptBlock {
+        Write-PodeJsonResponse -Value 'done' -StatusCode 200
+    } | Set-PodeOARouteInfo -Summary 'Finds Pets by status' -Description 'Multiple status values can be provided with comma separated strings' -Tags 'pet' -OperationId 'findPetsByStatus' -PassThru |
+        Set-PodeOARequest -PassThru -Parameters @(
+            (New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query)
+        ) |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAMediaContentType -MediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
+        Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
+    This example demonstrates the use of New-PodeOAMediaContentType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
+
+.EXAMPLE
+    $content = @{ type = 'string' }
+    $mediaType = 'application/json'
+    New-PodeOAMediaContentType -MediaType $mediaType -Content $content
+    This example creates a media content type definition for 'application/json' with a simple string content type.
+
+.EXAMPLE
+    $content = @{ type = 'object'; properties = @{ name = @{ type = 'string' } } }
+    $mediaTypes = 'application/json', 'application/xml'
+    New-PodeOAMediaContentType -MediaType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
+    This example demonstrates defining an array of objects for both 'application/json' and 'application/xml' media types, with a specified range for the number of items and a title.
+
+.EXAMPLE
+    Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -ScriptBlock {
+        Write-PodeJsonResponse -Value 'done' -StatusCode 200
+    } | Set-PodeOARouteInfo -Summary 'Finds Pets by status' -Description 'Multiple status values can be provided with comma separated strings' -Tags 'pet' -OperationId 'findPetsByStatus' -PassThru |
+        Set-PodeOARequest -PassThru -Parameters @(
+            (New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query)
+        ) |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAMediaContentType -MediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
+        Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
+    This example demonstrates the use of New-PodeOAMediaContentType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
+
+.NOTES
+    This function is useful for dynamically creating media type specifications in OpenAPI documentation, providing flexibility in defining the expected content structure for different media types.
+#>
+
+function New-PodeOAMediaContentType {
+    [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
+    param (
+        [string[]]
+        $MediaType,
+
+        [object]
+        $Content,
+
+        [Parameter(  Mandatory, ParameterSetName = 'Array')]
+        [switch]
+        $Array,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch]
+        $UniqueItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MinItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MaxItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [string]
+        $Title
+
+    )
+
+    $props = [ordered]@{}
+    foreach ($media in $MediaType) {
+        if ($media -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
+            throw "Invalid content-type found for schema: $($media)"
+        }
+
+        if ($Array.IsPresent) {
+            $props[$media] = @{
+                __array   = $true
+                __content = $Content
+            }
+            if ($MinItems) {
+                $props[$media].__minItems = $MinItems
+            }
+            if ($MaxItems) {
+                $props[$media].__maxItems = $MaxItems
+            }
+            if ($Title) {
+                $props[$media].__title = $Title
+            }
+            if ($UniqueItems.IsPresent) {
+                $props[$media].__uniqueItems = $UniqueItems.IsPresent
+            }
+
+        } else {
+            $props[$media] = $Content
+        }
+    }
+    return $props
+}
 
 
 <#
