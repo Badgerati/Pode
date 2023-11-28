@@ -209,8 +209,8 @@ Some useful links:
 
 
 
-    Add-PodeOAComponentHeaderSchema -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
-    Add-PodeOAComponentHeaderSchema -Name 'X-Expires-After' -Schema (New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires'  )
+    Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
+    Add-PodeOAComponentHeader -Name 'X-Expires-After' -Schema (New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires'  )
 
     #define '#/components/responses/'
     Add-PodeOAComponentResponse -Name 'UserOpSuccess' -Description 'Successful operation' -ContentSchemas (@{'application/json' = 'User' ; 'application/xml' = 'User' })
@@ -421,7 +421,7 @@ Some useful links:
         #PUT
         Add-PodeRoute -PassThru -Method Put -Path '/pet' -ScriptBlock {
             $JsonPet = ConvertTo-Json $WebEvent.data
-            $Validate = Test-PodeOARequestSchema -Json $JsonPet -SchemaReference 'Pet'
+            $Validate = Test-PodeOAComponentSchema -Json $JsonPet -SchemaReference 'Pet'
             if ($Validate.result) {
                 $Pet = $WebEvent.data
                 $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
@@ -444,7 +444,7 @@ Some useful links:
         Add-PodeRoute -PassThru -Method Post -Path '/pet'  -Authentication 'Login-OAuth2' -Scope 'write'  -ScriptBlock {
 
             $JsonPet = ConvertTo-Json $WebEvent.data
-            $Validate = Test-PodeOARequestSchema -Json $JsonPet -SchemaReference 'Pet'
+            $Validate = Test-PodeOAComponentSchema -Json $JsonPet -SchemaReference 'Pet'
             if ($Validate.result) {
                 $Pet = $WebEvent.data
                 $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
@@ -466,7 +466,7 @@ Some useful links:
         Add-PodeRoute -PassThru -Method Post -Path '/petcallback'  -Authentication 'Login-OAuth2' -Scope 'write'  -ScriptBlock {
 
             $JsonPet = ConvertTo-Json $WebEvent.data
-            $Validate = Test-PodeOARequestSchema -Json $JsonPet -SchemaReference 'Pet'
+            $Validate = Test-PodeOAComponentSchema -Json $JsonPet -SchemaReference 'Pet'
             if ($Validate.result) {
                 $Pet = $WebEvent.data
                 $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
@@ -674,7 +674,7 @@ Some useful links:
 
         Add-PodeRoute -PassThru -Method post -Path '/user' -ScriptBlock {
             $JsonUser = ConvertTo-Json $WebEvent.data
-            $Validate = Test-PodeOARequestSchema -Json $JsonUser -SchemaReference 'User'
+            $Validate = Test-PodeOAComponentSchema -Json $JsonUser -SchemaReference 'User'
             if ($Validate.result) {
                 $User = $WebEvent.data
                 $User.id = Get-Random -Minimum 1 -Maximum 9999999

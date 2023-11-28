@@ -47,7 +47,7 @@ If supplied, generate the OpenApi Json version in human readible form.
 Define the default markup language for the OpenApi spec ('Json', 'Json-Compress', 'Yaml')
 
 .PARAMETER EnableSchemaValidation
-If suplied enable Test-PodeOARequestSchema cmdlet that provide support for opeapi parameter schema validation
+If suplied enable Test-PodeOAComponentSchema cmdlet that provide support for opeapi parameter schema validation
 
 .PARAMETER Depth
 Define the default  depth used by any JSON,YAML OpenAPI conversion (default 20)
@@ -428,7 +428,7 @@ The content-types and schema the response returns (the schema is created using t
 Alias: ContentSchemas
 
 .PARAMETER Headers
-The header name and schema the response returns (the schema is created using Add-PodeOAComponentHeaderSchema cmd-let).
+The header name and schema the response returns (the schema is created using Add-PodeOAComponentHeader cmd-let).
 Alias: HeaderSchemas
 
 .PARAMETER Description
@@ -607,7 +607,7 @@ The reference Name of the response.
 The content-types and schema the response returns (the schema is created using the Property functions).
 
 .PARAMETER HeaderSchemas
-The header name and schema the response returns (the schema is created using the Add-PodeOAComponentHeaderSchema cmdlet).
+The header name and schema the response returns (the schema is created using the Add-PodeOAComponentHeader cmdlet).
 
 .PARAMETER Description
 The Description of the response.
@@ -858,7 +858,7 @@ function New-PodeOARequestBody {
         }
 
         'reference' {
-            if (!(Test-PodeOAComponentRequestBody -Name $Schema)) {
+            if (!(Test-PodeOAComponentSchemaBody -Name $Schema)) {
                 throw "The OpenApi component request body doesn't exist: $($Schema)"
             }
 
@@ -980,9 +980,9 @@ The reference Name of the schema.
 The Schema definition (the schema is created using the Property functions).
 
 .EXAMPLE
-Add-PodeOAComponentHeaderSchema -Name 'UserIdSchema' -Schema (New-PodeOAIntProperty -Name 'userId' -Object)
+Add-PodeOAComponentHeader -Name 'UserIdSchema' -Schema (New-PodeOAIntProperty -Name 'userId' -Object)
 #>
-function Add-PodeOAComponentHeaderSchema {
+function Add-PodeOAComponentHeader {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -1028,11 +1028,11 @@ result: true if the object is validate positively
 message: any validation issue
 
 .EXAMPLE
-$UserInfo = Test-PodeOARequestSchema -Parameter 'UserInfo' -SchemaReference 'UserIdSchema'}
+$UserInfo = Test-PodeOAComponentSchema -Parameter 'UserInfo' -SchemaReference 'UserIdSchema'}
 
 #>
 
-function Test-PodeOARequestSchema {
+function Test-PodeOAComponentSchema {
     param (
         [Parameter(Mandatory = $true)]
         [String]
@@ -1043,7 +1043,7 @@ function Test-PodeOARequestSchema {
     )
 
     if (!$PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
-        throw 'Test-PodeOARequestSchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
+        throw 'Test-PodeOAComponentSchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
     }
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
         throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
@@ -4117,7 +4117,7 @@ The content-types and schema the response returns (the schema is created using t
 Alias: ContentSchemas
 
 .PARAMETER Headers
-The header name and schema the response returns (the schema is created using Add-PodeOAComponentHeaderSchema cmd-let).
+The header name and schema the response returns (the schema is created using Add-PodeOAComponentHeader cmd-let).
 Alias: HeaderSchemas
 
 .PARAMETER Description
