@@ -1,33 +1,3 @@
-function ConvertTo-PodeOAContentTypeSchema {
-    param(
-        [Parameter(ValueFromPipeline = $true)]
-        [hashtable]
-        $Schemas,
-
-     #   [Parameter()]
-    #    [switch]
-       # $Array,
-
-        [Parameter()]
-        [switch]
-        $Properties
-    )
-
-    if (Test-PodeIsEmpty $Schemas) {
-        return $null
-    }
-
-    # ensure all content types are valid
-    foreach ($type in $Schemas.Keys) {
-        if ($type -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
-            throw "Invalid content-type found for schema: $($type)"
-        }
-    }
-
-    # convert each schema to openapi format
-    return (ConvertTo-PodeOAObjectSchema -Schemas $Schemas -Properties:$Properties)
-}
-
 function ConvertTo-PodeOAHeaderSchema {
     param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
@@ -71,61 +41,58 @@ function ConvertTo-PodeOAObjectSchema {
     param(
         [Parameter(ValueFromPipeline = $true)]
         [hashtable]
-        $Schemas,
-
-   #     [Parameter(ValueFromPipeline = $false)]
-     #   [switch]
-     #   $Array,
+        $Content,
 
         [Parameter(ValueFromPipeline = $false)]
         [switch]
         $Properties
 
     )
+
+    # ensure all content types are valid
+    foreach ($type in $Content.Keys) {
+        if ($type -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
+            throw "Invalid content-type found for schema: $($type)"
+        }
+    }
     # manage generic schema json conversion issue
-    if ( $Schemas.ContainsKey('*/*')) {
-        $Schemas['"*/*"'] = $Schemas['*/*']
-        $Schemas.Remove('*/*')
+    if ( $Content.ContainsKey('*/*')) {
+        $Content['"*/*"'] = $Content['*/*']
+        $Content.Remove('*/*')
     }
     # convert each schema to openapi format
     $obj = @{}
-    foreach ($type in $Schemas.Keys) {
+    foreach ($type in $Content.Keys) {
         $obj[$type] = @{ }
-        if ($Schemas[$type].__array) {
-            $Array = $true
-            $item = $Schemas[$type].__content
+        if ($Content[$type].__array) {
+            $isArray = $true
+            $item = $Content[$type].__content
             $obj[$type].schema = [ordered]@{
                 'type'  = 'array'
                 'items' = $null
             }
-            if ( $Schemas[$type].__title) {
-                $obj[$type].schema.title = $Schemas[$type].__title
+            if ( $Content[$type].__title) {
+                $obj[$type].schema.title = $Content[$type].__title
             }
-            if ( $Schemas[$type].__uniqueItems) {
-                $obj[$type].schema.uniqueItems = $Schemas[$type].__uniqueItems
+            if ( $Content[$type].__uniqueItems) {
+                $obj[$type].schema.uniqueItems = $Content[$type].__uniqueItems
             }
-            if ( $Schemas[$type].__maxItems) {
-                $obj[$type].schema.__maxItems = $Schemas[$type].__maxItems
+            if ( $Content[$type].__maxItems) {
+                $obj[$type].schema.__maxItems = $Content[$type].__maxItems
             }
-            if ( $Schemas[$type].minItems) {
-                $obj[$type].schema.minItems = $Schemas[$type].__minItems
+            if ( $Content[$type].minItems) {
+                $obj[$type].schema.minItems = $Content[$type].__minItems
             }
         } else {
-            $item = $Schemas[$type]
-
-            if ($Array) {
-                $obj[$type].schema = @{
-                    'type'  = 'array'
-                    'items' = $null
-                }
-            }
+            $item = $Content[$type]
+            $isArray = $false
         }
         # add a shared component schema reference
         if ($item -is [string]) {
             if (![string]::IsNullOrEmpty($item )) {
                 #Check for empty reference
                 if (@('string', 'integer' , 'number', 'boolean' ) -icontains $item) {
-                    if ($Array) {
+                    if ($isArray) {
                         $obj[$type].schema.items = @{
                             'type' = $item.ToLower()
                         }
@@ -138,7 +105,7 @@ function ConvertTo-PodeOAObjectSchema {
                     if ( !(Test-PodeOAComponentSchema -Name $item)) {
                         throw "The OpenApi component schema doesn't exist: $($item)"
                     }
-                    if ($Array) {
+                    if ($isArray) {
                         $obj[$type].schema.items = @{
                             '$ref' = "#/components/schemas/$($item)"
                         }
@@ -167,7 +134,7 @@ function ConvertTo-PodeOAObjectSchema {
                     Throw 'The Properties parameters cannot be used if the Property has no name'
                 }
             } else {
-                if ($Array) {
+                if ($isArray) {
                     $obj[$type].schema.items = $result
                 } else {
                     $obj[$type].schema = $result
@@ -186,7 +153,7 @@ function Test-PodeOAExternalDoc {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs.ContainsKey($Name)
+    return $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentHeaderSchema {
@@ -196,7 +163,7 @@ function Test-PodeOAComponentHeaderSchema {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas.ContainsKey($Name)
+    return $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentSchemaJson {
@@ -206,7 +173,7 @@ function Test-PodeOAComponentSchemaJson {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson.ContainsKey($Name)
+    return $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentSchema {
@@ -371,14 +338,6 @@ function ConvertTo-PodeOASchemaProperty {
             $schema['xml'] = $Property.xml
         }
 
-        if ($null -ne $Property.meta) {
-            foreach ($key in $Property.meta.Keys) {
-                if ($Property.meta.$key) {
-                    $schema[$key] = $Property.meta[$key]
-                }
-            }
-        }
-
         # are we using an array?
         if ($Property.array) {
             if ($Property.maxItems ) {
@@ -456,7 +415,7 @@ function ConvertTo-PodeOASchemaProperty {
                 $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
                 $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
                 if ( $RequiredList.Count -gt 0) {
-                    $schema['required'] = @($RequiredList.Name)
+                    $schema['required'] = @($RequiredList.name)
                 }
             } else {
                 #if noproperties parameter create an empty properties
@@ -466,12 +425,12 @@ function ConvertTo-PodeOASchemaProperty {
             }
 
 
-            if ($Property.MinProperties) {
-                $schema['minProperties'] = $Property.MinProperties
+            if ($Property.minProperties) {
+                $schema['minProperties'] = $Property.minProperties
             }
 
-            if ($Property.MaxProperties) {
-                $schema['maxProperties'] = $Property.MaxProperties
+            if ($Property.maxProperties) {
+                $schema['maxProperties'] = $Property.maxProperties
             }
 
             if ($Property.additionalProperties) {
@@ -967,6 +926,7 @@ function Resolve-PodeOAReferences {
 
 
 function New-PodeOAPropertyInternal {
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param (
         [Parameter(Mandatory = $true)]
         [String]
@@ -975,7 +935,7 @@ function New-PodeOAPropertyInternal {
         [hashtable]
         $Params
     )
-    $param = @{
+    $param = [ordered]@{
         type = $Type
     }
 
@@ -1135,13 +1095,7 @@ function ConvertTo-PodeOAHeaderProperties {
             }
             foreach ($k in $e.keys) {
                 if (@('name', 'description' ) -notcontains $k) {
-                    <#     if ( $k -eq 'meta') {
-                        foreach ($mk in $e.meta.Keys) {
-                            $elems.$($e.name).schema.$mk = $e.meta.$mk
-                        }
-                    } else {#>
                     $elems.$($e.name).schema.$k = $e.$k
-                    #    }
                 }
             }
         } else {
@@ -1183,7 +1137,7 @@ function New-PodeOResponseInternal {
         # build any content-type schemas
         $_content = $null
         if ($null -ne $Params.Content) {
-            $_content = ConvertTo-PodeOAContentTypeSchema -Schemas $Params.Content #-Array:$Params.ContentArray
+            $_content = ConvertTo-PodeOAObjectSchema -Content $Params.Content
         }
 
         # build any header schemas
@@ -1198,7 +1152,7 @@ function New-PodeOResponseInternal {
                 }
             }
         } elseif ($Params.Headers -is [hashtable]) {
-            $_headers = ConvertTo-PodeOAObjectSchema -Schemas  $Params.Headers
+            $_headers = ConvertTo-PodeOAObjectSchema -Content  $Params.Headers
         }
 
 

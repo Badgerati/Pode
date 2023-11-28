@@ -440,12 +440,6 @@ A Reference Name of an existing component response to use.
 .PARAMETER Default
 If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
 
-.PARAMETER ContentArray
-If supplied, the Content Schema will be considered an array
-
-.PARAMETER HeaderArray
-If supplied, the Header Schema will be considered an array
-
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
@@ -482,7 +476,7 @@ function Add-PodeOAResponse {
         [Alias('HeaderSchemas')]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
-        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] })]
+        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] -or $_ -is [ordered] })]
         $Headers,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Schema')]
@@ -499,16 +493,6 @@ function Add-PodeOAResponse {
         [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
         [switch]
         $Default,
-
-        [Parameter(ParameterSetName = 'Schema')]
-        [Parameter(ParameterSetName = 'SchemaDefault')]
-        [switch]
-        $ContentArray,
-
-        [Parameter(ParameterSetName = 'Schema')]
-        [Parameter(ParameterSetName = 'SchemaDefault')]
-        [switch]
-        $HeaderArray,
 
         [Parameter(ParameterSetName = 'Schema')]
         [Parameter(ParameterSetName = 'SchemaDefault')]
@@ -628,12 +612,6 @@ The header name and schema the response returns (the schema is created using the
 .PARAMETER Description
 The Description of the response.
 
-.PARAMETER ContentArray
-If supplied, the Content Schema will be considered an array
-
-.PARAMETER HeaderArray
-If supplied, the Header Schema will be considered an array
-
 .EXAMPLE
 Add-PodeOAComponentResponse -Name 'OKResponse' -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
@@ -667,14 +645,6 @@ function Add-PodeOAComponentResponse {
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [string]
         $Reference,
-
-        [Parameter(ParameterSetName = 'Schema')]
-        [switch]
-        $ContentArray,
-
-        [Parameter(ParameterSetName = 'Schema')]
-        [switch]
-        $HeaderArray,
 
         [Parameter(ParameterSetName = 'Schema')]
         [System.Collections.Specialized.OrderedDictionary ]
@@ -864,7 +834,7 @@ function New-PodeOARequestBody {
     }
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'BuiltIn' {
-            $param = @{content = ConvertTo-PodeOAContentTypeSchema -Schemas $Content -Properties:$Properties }
+            $param = @{content = ConvertTo-PodeOAObjectSchema -Content $Content -Properties:$Properties }
 
             if ($Required.IsPresent) {
                 $param['required'] = $Required.IsPresent
@@ -944,14 +914,14 @@ https://swagger.io/docs/specification/data-models/
 .PARAMETER Name
 The reference Name of the schema.
 
-.PARAMETER Schema
-The Schema definition (the schema is created using the Property functions).
+.PARAMETER Component
+The Component definition (the schema is created using the Property functions).
 
 .PARAMETER Description
 A description of the schema
 
 .EXAMPLE
-Add-PodeOAComponentSchema -Name 'UserIdSchema' -Schema (New-PodeOAIntProperty -Name 'userId' -Object)
+Add-PodeOAComponentSchema -Name 'UserIdSchema' -Component (New-PodeOAIntProperty -Name 'userId' -Object)
 #>
 function Add-PodeOAComponentSchema {
     [CmdletBinding()]
@@ -962,19 +932,20 @@ function Add-PodeOAComponentSchema {
         $Name,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias('Schema')]
         [hashtable]
-        $Schema,
+        $Component,
 
         [string]
         $Description
     )
-    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
+    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty)
     if ($PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
-        $modifiedSchema = ($Schema | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
+        $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
         #Resolve-PodeOAReferences -ComponentSchema  $modifiedSchema
         $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = @{
-            'schema' = $modifiedSchema
-            'json'   = $modifiedSchema | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
+            'schema' = $modifiedComponent
+            'json'   = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
         }
     }
     if ($Description) {
@@ -1125,6 +1096,7 @@ Add-PodeOAComponentRequestBody -Name 'UserIdBody' -ContentSchemas @{ 'applicatio
 #>
 function Add-PodeOAComponentRequestBody {
     [CmdletBinding()]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
@@ -1132,8 +1104,9 @@ function Add-PodeOAComponentRequestBody {
         $Name,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias('ContentSchemas')]
         [hashtable]
-        $ContentSchemas,
+        $Content,
 
         [Parameter()]
         [string]
@@ -1144,7 +1117,7 @@ function Add-PodeOAComponentRequestBody {
         $Required
     )
 
-    $param = @{ content = ($ContentSchemas | ConvertTo-PodeOAContentTypeSchema) }
+    $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema) }
 
     if ($Required.IsPresent) {
         $param['required'] = $Required.IsPresent
@@ -1313,6 +1286,7 @@ New-PodeOANumberProperty -Name 'age' -Required
 #>
 function New-PodeOAIntProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
         [Parameter(ValueFromPipeline = $true, DontShow = $true)]
         [hashtable[]]
@@ -1320,6 +1294,7 @@ function New-PodeOAIntProperty {
 
         [Parameter()]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [Alias('Title')]
         [string]
         $Name,
 
@@ -1545,6 +1520,7 @@ function New-PodeOANumberProperty {
 
         [Parameter()]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [Alias('Title')]
         [string]
         $Name,
 
@@ -1766,6 +1742,7 @@ function New-PodeOAStringProperty {
 
         [Parameter()]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [Alias('Title')]
         [string]
         $Name,
 
@@ -1857,7 +1834,6 @@ function New-PodeOAStringProperty {
         $MaxItems
     )
     begin {
-
         if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
             $_format = $CustomFormat
         } elseif ($Format) {
@@ -1868,7 +1844,6 @@ function New-PodeOAStringProperty {
         if ($Format -or $CustomFormat) {
             $param.format = $_format.ToLowerInvariant()
         }
-
 
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
@@ -1979,6 +1954,7 @@ function New-PodeOABoolProperty {
 
         [Parameter()]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [Alias('Title')]
         [string]
         $Name,
 
@@ -2192,6 +2168,7 @@ function New-PodeOAObjectProperty {
 
         [Parameter()]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [Alias('Title')]
         [string]
         $Name,
 
@@ -2356,11 +2333,11 @@ This parameter accepts a HashTable where each key-value pair maps a discriminato
 It's used in conjunction with the -DiscriminatorProperty to provide complete discrimination logic in polymorphic scenarios.
 
 .EXAMPLE
-Add-PodeOAComponentSchema -Name 'Pets' -Schema (  Merge-PodeOAProperty  -Type OneOf -ObjectDefinitions @( 'Cat','Dog') -Discriminator "petType")
+Add-PodeOAComponentSchema -Name 'Pets' -Component (  Merge-PodeOAProperty  -Type OneOf -ObjectDefinitions @( 'Cat','Dog') -Discriminator "petType")
 
 
 .EXAMPLE
-Add-PodeOAComponentSchema -Name 'Cat' -Schema (
+Add-PodeOAComponentSchema -Name 'Cat' -Component (
         Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
                 (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive'))
                 ))
@@ -2368,6 +2345,7 @@ Add-PodeOAComponentSchema -Name 'Cat' -Schema (
 #>
 function Merge-PodeOAProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
 
         [Parameter(ValueFromPipeline = $true, DontShow = $true )]
@@ -2391,7 +2369,7 @@ function Merge-PodeOAProperty {
     )
     begin {
 
-        $param = @{}
+        $param = [ordered]@{}
         switch ($type.ToLower()) {
             'oneof' {
                 $param.type = 'oneOf'
@@ -2865,7 +2843,7 @@ function ConvertTo-PodeOAParameter {
         if (!$Name ) {
             $Name = $Schema
         }
-        $prop = @{
+        $prop =  [ordered]@{
             in   = $In.ToLowerInvariant()
             name = $Name
         }
@@ -2889,9 +2867,9 @@ function ConvertTo-PodeOAParameter {
             if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
                 throw "Invalid content-type found for schema: $($type)"
             }
-            $prop.content = @{
-                $ContentType = @{
-                    schema = @{
+            $prop.content =  [ordered]@{
+                $ContentType =  [ordered]@{
+                    schema = [ordered]@{
                         '$ref' = "#/components/schemas/$($Schema )"
                     }
                 }
@@ -2902,7 +2880,7 @@ function ConvertTo-PodeOAParameter {
                 $prop.content.$ContentType.examples = $Examples
             }
         } else {
-            $prop.schema = @{
+            $prop.schema = [ordered]@{
                 '$ref' = "#/components/schemas/$($Schema )"
             }
             if ($Style) {
@@ -2954,17 +2932,13 @@ function ConvertTo-PodeOAParameter {
             throw "The OpenApi component request parameter doesn't exist: $($ComponentParameter)"
         }
 
-        $prop = @{
+        $prop = [ordered]@{
             '$ref' = "#/components/parameters/$($ComponentParameter)"
         }
         if ($PodeContext.Server.OpenAPI.components.parameters.$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Append
         }
     } else {
-        # non-object/array only
-        #    if (@('array', 'object') -icontains $Property.type) {
-        #   throw 'OpenApi request parameter cannot be an array of object'
-        #  }
 
         if (!$Name ) {
             if ($Property.name) {
@@ -2978,14 +2952,14 @@ function ConvertTo-PodeOAParameter {
         }
 
         # build the base parameter
-        $prop = @{
+        $prop = [ordered]@{
             in   = $In.ToLowerInvariant()
             name = $Name
         }
-        $sch = @{}
-        if ($Property.Array) {
+        $sch = [ordered]@{}
+        if ($Property.array) {
             $sch.type = 'array'
-            $sch.items = @{
+            $sch.items = [ordered]@{
                 type = $Property.type
             }
             if ($Property.format) {
@@ -3001,8 +2975,8 @@ function ConvertTo-PodeOAParameter {
             if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
                 throw "Invalid content-type found for schema: $($type)"
             }
-            $prop.content = @{
-                $ContentType = @{
+            $prop.content =  [ordered]@{
+                $ContentType =[ordered] @{
                     schema = $sch
                 }
             }
@@ -3086,7 +3060,7 @@ function ConvertTo-PodeOAParameter {
             }
 
             if ($Property.enum) {
-                if ($Property.Array) {
+                if ($Property.array) {
                     $prop.schema.items['enum'] = $Property.enum
                 } else {
                     $prop.schema['enum'] = $Property.enum
@@ -3407,7 +3381,7 @@ function New-PodeOAExternalDoc {
         $Description
     )
 
-    $param = @{}
+    $param = [ordered]@{}
 
     if ($Description) {
         $param.description = $Description
@@ -3466,7 +3440,7 @@ function Add-PodeOAExternalDoc {
         $Description
     )
     if ($PSCmdlet.ParameterSetName -ieq 'NewRef') {
-        $param = @{url = $Url }
+        $param = [ordered]@{url = $Url }
         if ($Description) {
             $param.description = $Description
         }
@@ -3522,7 +3496,7 @@ function Add-PodeOATag {
         $ExternalDoc
     )
 
-    $param = @{
+    $param = [ordered]@{
         'name' = $Name
     }
 
@@ -3544,10 +3518,10 @@ function Add-PodeOATag {
 
 <#
 .SYNOPSIS
-Creates an OpenAPI non-essential metadata.
+Creates an OpenAPI metadata.
 
 .DESCRIPTION
-Creates an OpenAPI non-essential metadata like TermOfService, license and so on.
+Creates an OpenAPI metadata like TermOfService, license and so on.
 The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.
 
 .LINK
@@ -3635,10 +3609,10 @@ function Add-PodeOAInfo {
         $ContactUrl
     )
 
-    $Info = @{}
+    $Info = [ordered]@{}
 
     if ($LicenseName) {
-        $Info.license = @{
+        $Info.license = [ordered]@{
             'name' = $LicenseName
         }
     }
@@ -3678,7 +3652,7 @@ function Add-PodeOAInfo {
     }
 
     if ($ContactName -or $ContactEmail -or $ContactUrl ) {
-        $Info['contact'] = @{}
+        $Info['contact'] = [ordered]@{}
 
         if ($ContactName) {
             $Info['contact'].name = $ContactName
@@ -3782,7 +3756,7 @@ function New-PodeOAExample {
                 throw "The OpenApi component example doesn't exist: $Reference"
             }
             $Name = $Reference
-            $Example = @{'$ref' = "#/components/examples/$Reference" }
+            $Example = [ordered]@{'$ref' = "#/components/examples/$Reference" }
         } else {
             if ( $ExternalValue -and $Value) {
                 throw '-Value or -ExternalValue are mutually exclusive'
@@ -3804,7 +3778,7 @@ function New-PodeOAExample {
         }
         $param = [ordered]@{}
         if ($MediaType) {
-            $param.$MediaType = @{
+            $param.$MediaType = [ordered]@{
                 $Name = $Example
             }
         } else {
@@ -3951,10 +3925,10 @@ function New-PodeOAEncodingObject {
         $EncodingList,
 
         [Parameter(Mandatory = $true)]
-        [Alias('Title')]
+        [Alias('Name')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
-        $Name,
+        $Title,
 
         [Parameter()]
         [string]
@@ -3980,24 +3954,24 @@ function New-PodeOAEncodingObject {
     begin {
 
         $encoding = [ordered]@{
-            $Name = @{}
+            $Title = [ordered]@{}
         }
         if ($ContentType) {
-            $encoding.$Name.contentType = $ContentType
+            $encoding.$Title.contentType = $ContentType
         }
         if ($Style) {
-            $encoding.$Name.style = $Style
+            $encoding.$Title.style = $Style
         }
 
         if ($Headers) {
-            $encoding.$Name.headers = $Headers
+            $encoding.$Title.headers = $Headers
         }
 
         if ($Explode.IsPresent ) {
-            $encoding.$Name.explode = $Explode.IsPresent
+            $encoding.$Title.explode = $Explode.IsPresent
         }
         if ($AllowReserved.IsPresent ) {
-            $encoding.$Name.allowReserved = $AllowReserved.IsPresent
+            $encoding.$Title.allowReserved = $AllowReserved.IsPresent
         }
 
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
@@ -4016,6 +3990,8 @@ function New-PodeOAEncodingObject {
         }
     }
 }
+
+
 <#
 .SYNOPSIS
     Adds OpenAPI callback configurations to routes in a Pode web application.
@@ -4048,7 +4024,7 @@ function New-PodeOAEncodingObject {
     Add-PodeOACallBacks -Title 'test' -Path '{$request.body#/id}' -Method Post `
         -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
         -Response (
-            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{'application/json' = 'Pet'; 'application/xml' = 'Pet'}) |
+            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAMediaContentType -MediaType 'application/json','application/xml' -Content 'Pet'  -Array)
             New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
             New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
             New-PodeOAResponse -Default -Description 'Something is wrong'
@@ -4068,10 +4044,10 @@ function Add-PodeOACallBacks {
         $Route,
 
         [Parameter(Mandatory = $true)]
-        [Alias('Title')]
+        [Alias('Name')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
-        $Name,
+        $Title,
 
         [Parameter(Mandatory = $true)]
         [string]
@@ -4100,17 +4076,17 @@ function Add-PodeOACallBacks {
     $_method = $Method.ToLower()
     foreach ($r in @($Route)) {
         $r.OpenApi.CallBacks = [ordered]@{
-            $Name = [ordered]@{
+            $Title = [ordered]@{
                 "'$Path'" = [ordered]@{
                     $_method = [ordered]@{}
                 }
             }
         }
         if ($RequestBody) {
-            $r.OpenApi.CallBacks.$Name."'$Path'".$_method.requestBody = $RequestBody
+            $r.OpenApi.CallBacks.$Title."'$Path'".$_method.requestBody = $RequestBody
         }
         if ($Responses) {
-            $r.OpenApi.CallBacks.$Name."'$Path'".$_method.responses = $Responses
+            $r.OpenApi.CallBacks.$Title."'$Path'".$_method.responses = $Responses
         }
     }
 
@@ -4153,14 +4129,8 @@ A Reference Name of an existing component response to use.
 .PARAMETER Default
 If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
 
-.PARAMETER ContentArray
-If supplied, the Content Schema will be considered an array
-
-.PARAMETER HeaderArray
-If supplied, the Header Schema will be considered an array
-
 .EXAMPLE
-New-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
+New-PodeOAResponse -StatusCode 200 -Content (  New-PodeOAMediaContentType -MediaType 'application/json' -Content(New-PodeOAIntProperty -Name 'userId' -Object) )
 
 .EXAMPLE
 New-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
@@ -4170,10 +4140,10 @@ New-PodeOAResponse -StatusCode 200 -Reference 'OKResponse'
 
 .EXAMPLE
 Add-PodeOACallBacks -Title 'test' -Path '$request.body#/id' -Method Post  -RequestBody (
-        New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id') }
+        New-PodeOARequestBody -Content (New-PodeOAMediaContentType -MediaType '*/*' -Content (New-PodeOAStringProperty -Name 'id'))
     ) `
     -Response (
-        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -ContentArray -Content (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) |
+        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAMediaContentType -MediaType 'application/json','application/xml' -Content 'Pet'  -Array) |
             New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
                 New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
             New-PodeOAResponse -Default   -Description 'Something is wrong'
@@ -4220,16 +4190,6 @@ function New-PodeOAResponse {
         [Parameter(Mandatory = $true, ParameterSetName = 'SchemaDefault')]
         [switch]
         $Default,
-
-        [Parameter(ParameterSetName = 'Schema')]
-        [Parameter(ParameterSetName = 'SchemaDefault')]
-        [switch]
-        $ContentArray,
-
-        [Parameter(ParameterSetName = 'Schema')]
-        [Parameter(ParameterSetName = 'SchemaDefault')]
-        [switch]
-        $HeaderArray,
 
         [Parameter(ParameterSetName = 'Schema')]
         [Parameter(ParameterSetName = 'SchemaDefault')]
@@ -4332,12 +4292,13 @@ function New-PodeOAMediaContentType {
     [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     param (
         [string[]]
-        $MediaType,
+        $MediaType = '*/*',
 
+        [Parameter()]
         [object]
         $Content,
 
-        [Parameter(  Mandatory, ParameterSetName = 'Array')]
+        [Parameter(  Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
         $Array,
 
@@ -4448,10 +4409,10 @@ function New-PodeOAResponseLink {
         $LinkList,
 
         [Parameter(Mandatory = $true)]
-        [Alias('Title')]
+        [Alias('Name')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
-        $Name,
+        $Title,
 
         [Parameter()]
         [string]
@@ -4476,24 +4437,24 @@ function New-PodeOAResponseLink {
     )
     begin {
 
-        $link = [ordered]@{$Name = [ordered]@{} }
+        $link = [ordered]@{$Title = [ordered]@{} }
         if ($Description) {
-            $link.$Name.description = $Description
+            $link.$Title.description = $Description
         }
         if ($OperationId) {
-            $link.$Name.operationId = $OperationId
+            $link.$Title.operationId = $OperationId
         }
         if ($OperationRef) {
-            $link.$Name.operationRef = $OperationRef
+            $link.$Title.operationRef = $OperationRef
         }
         if ($OperationRef) {
-            $link.$Name.operationRef = $OperationRef
+            $link.$Title.operationRef = $OperationRef
         }
         if ($Parameters) {
-            $link.$Name.parameters = $Parameters
+            $link.$Title.parameters = $Parameters
         }
         if ($RequestBody) {
-            $link.$Name.requestBody = $RequestBody
+            $link.$Title.requestBody = $RequestBody
         }
 
     }

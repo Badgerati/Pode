@@ -303,7 +303,7 @@
         'New-PodeOAResponse',
         'Add-PodeOACallBacks',
         'New-PodeOAResponseLink',
-
+        'New-PodeOAMediaContentType',
 
         # Metrics
         'Get-PodeServerUptime',
