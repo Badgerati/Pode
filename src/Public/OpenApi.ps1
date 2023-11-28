@@ -55,6 +55,11 @@ Define the default  depth used by any JSON,YAML OpenAPI conversion (default 20)
 .PARAMETER DisableMinimalDefinitions
 If suplied the OpenApi decument will include only the route validated by Set-PodeOARouteInfo. Any other not OpenApi route will be excluded.
 
+
+.PARAMETER DefaultResponses
+If suplied is going to replace the default OpenAPI response with the new provided.(Default: @{'200' = @{ description = 'OK' };'default' = @{ description = 'Internal server error' }} )
+Note: Use @{} to disable the Default Responses.
+
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
 
@@ -117,7 +122,10 @@ function Enable-PodeOpenApi {
         $Depth = 20,
 
         [switch ]
-        $DisableMinimalDefinitions
+        $DisableMinimalDefinitions,
+
+        [hashtable]
+        $DefaultResponses
 
     )
 
@@ -222,7 +230,10 @@ function Enable-PodeOpenApi {
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
     Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
     Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
-
+    #set new DefaultResponses
+    if ($DefaultResponses) {
+        $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses = $DefaultResponses
+    }
     $PodeContext.Server.OpenAPI.hiddenComponents.enabled = $true
 }
 
@@ -2843,7 +2854,7 @@ function ConvertTo-PodeOAParameter {
         if (!$Name ) {
             $Name = $Schema
         }
-        $prop =  [ordered]@{
+        $prop = [ordered]@{
             in   = $In.ToLowerInvariant()
             name = $Name
         }
@@ -2867,8 +2878,8 @@ function ConvertTo-PodeOAParameter {
             if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
                 throw "Invalid content-type found for schema: $($type)"
             }
-            $prop.content =  [ordered]@{
-                $ContentType =  [ordered]@{
+            $prop.content = [ordered]@{
+                $ContentType = [ordered]@{
                     schema = [ordered]@{
                         '$ref' = "#/components/schemas/$($Schema )"
                     }
@@ -2975,8 +2986,8 @@ function ConvertTo-PodeOAParameter {
             if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
                 throw "Invalid content-type found for schema: $($type)"
             }
-            $prop.content =  [ordered]@{
-                $ContentType =[ordered] @{
+            $prop.content = [ordered]@{
+                $ContentType = [ordered] @{
                     schema = $sch
                 }
             }

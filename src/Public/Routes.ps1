@@ -369,8 +369,7 @@ function Add-PodeRoute {
         #add security header method if autoMethods is enabled
         if (  $PodeContext.Server.Security.autoMethods ) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method -Append
-        }
-
+        } 
         # add the route(s)
         Write-Verbose "Adding Route: [$($_method)] $($Path)"
         $methodRoutes = @(foreach ($_endpoint in $endpoints) {
@@ -400,10 +399,7 @@ function Add-PodeRoute {
                     Path             = $Path
                     OpenApi          = @{
                         Path           = $OpenApiPath
-                        Responses      = @{
-                            '200'     = @{ description = 'OK' }
-                            'default' = @{ description = 'Internal server error' }
-                        }
+                        Responses      = $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses
                         Parameters     = $null
                         RequestBody    = $null
                         Authentication = @()
