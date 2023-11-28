@@ -15,16 +15,16 @@ Describe 'OpenApi' {
                         autoheaders = $false
                     }
                     OpenAPI  = @{
-                        info             = [ordered]@{}
+                        info             = [System.Collections.Specialized.OrderedDictionary]@{}
                         Path             = $null
-                        components       = [ordered]@{
+                        components       = [System.Collections.Specialized.OrderedDictionary]@{
                             schemas       = @{}
                             responses     = @{}
                             requestBodies = @{}
                             parameters    = @{}
                         }
                         Security         = @()
-                        tags             = [ordered]@{}
+                        tags             = [System.Collections.Specialized.OrderedDictionary]@{}
                         hiddenComponents = @{
                             enabled          = $false
                             schemaValidation = $false
@@ -2123,7 +2123,7 @@ Describe 'OpenApi' {
             $PodeContext.Server.OpenAPI.tags['user'] | Should -Not -BeNullOrEmpty
             $PodeContext.Server.OpenAPI.tags['user'].name | Should -Be 'user'
             $PodeContext.Server.OpenAPI.tags['user'].description | Should -Be  'Operations about user'
-            $PodeContext.Server.OpenAPI.tags['user'].externalDocs | Should -BeOfType [ordered]
+            $PodeContext.Server.OpenAPI.tags['user'].externalDocs | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $PodeContext.Server.OpenAPI.tags['user'].externalDocs.Count | Should -Be 2
             $PodeContext.Server.OpenAPI.tags['user'].externalDocs.url | Should -Be 'http://swagger.io'
             $PodeContext.Server.OpenAPI.tags['user'].externalDocs.description | Should -Be 'Find out more about Swagger'
@@ -2245,7 +2245,7 @@ Describe 'OpenApi' {
             It 'Path - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Path
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'path'
@@ -2254,10 +2254,10 @@ Describe 'OpenApi' {
                 $result.deprecated | Should -BeFalse
                 $result.style | Should -BeNullOrEmpty
                 $result.required | Should -BeTrue
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2266,7 +2266,7 @@ Describe 'OpenApi' {
             It 'Path - Properties - Explode' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Path -Explode
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'path'
@@ -2275,10 +2275,10 @@ Describe 'OpenApi' {
                 $result.allowEmptyValue | Should -BeFalse
                 $result.deprecated | Should -BeFalse
                 $result.style | Should -BeNullOrEmpty
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2288,7 +2288,7 @@ Describe 'OpenApi' {
                 Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Path )
                 $result = ConvertTo-PodeOAParameter -ComponentParameter 'PetIdParam'
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 1
                 $result['$ref'] | Should -Be '#/components/parameters/PetIdParam'
             }
@@ -2304,7 +2304,7 @@ Describe 'OpenApi' {
                 It 'Path - ContentSchema - No switches' {
                     $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
                     $result | Should -Not -BeNullOrEmpty
-                    $result | Should -BeOfType [ordered]
+                    $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.Count | Should -Be 5
                     $result.name | Should -Be 'Cat'
                     $result.in | Should -Be 'path'
@@ -2312,11 +2312,11 @@ Describe 'OpenApi' {
                     $result.required | Should -BeTrue
                     $result.allowEmptyValue | Should -BeFalse
                     $result.content | Should -Not -BeNullOrEmpty
-                    $result.content | Should -BeOfType [ordered]
+                    $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.content.Count | Should -Be 1
-                    $result.content.'application/json' | Should -BeOfType [ordered]
+                    $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.content.'application/json'.Count | Should -Be 1
-                    $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                    $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.content.'application/json'.schema.Count | Should -Be 1
                     $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
                 }
@@ -2324,7 +2324,7 @@ Describe 'OpenApi' {
                 It 'Path - ContentSchema - Required' {
                     $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
                     $result | Should -Not -BeNullOrEmpty
-                    $result | Should -BeOfType [ordered]
+                    $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.Count | Should -Be 5
                     $result.name | Should -Be 'Cat'
                     $result.in | Should -Be 'path'
@@ -2332,11 +2332,11 @@ Describe 'OpenApi' {
                     $result.required | Should -BeTrue
                     $result.allowEmptyValue | Should -BeFalse
                     $result.content | Should -Not -BeNullOrEmpty
-                    $result.content | Should -BeOfType [ordered]
+                    $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.content.Count | Should -Be 1
-                    $result.content.'application/json' | Should -BeOfType [ordered]
+                    $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.content.'application/json'.Count | Should -Be 1
-                    $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                    $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.content.'application/json'.schema.Count | Should -Be 1
                     $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
                 }
@@ -2344,7 +2344,7 @@ Describe 'OpenApi' {
                 It 'Path - ContentSchema - AllowEmptyValue' {
                     $result = ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema 'Cat' -AllowEmptyValue -Required
                     $result | Should -Not -BeNullOrEmpty
-                    $result | Should -BeOfType [ordered]
+                    $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.Count | Should -Be 6
                     $result.name | Should -Be 'Cat'
                     $result.in | Should -Be 'path'
@@ -2352,11 +2352,11 @@ Describe 'OpenApi' {
                     $result.required | Should -BeTrue
                     $result.allowEmptyValue | Should -BeTrue
                     $result.content | Should -Not -BeNullOrEmpty
-                    $result.content | Should -BeOfType [ordered]
+                    $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.content.Count | Should -Be 1
-                    $result.content.'application/json' | Should -BeOfType [ordered]
+                    $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.content.'application/json'.Count | Should -Be 1
-                    $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                    $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                     $result.content.'application/json'.schema.Count | Should -Be 1
                     $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
                 }
@@ -2372,7 +2372,7 @@ Describe 'OpenApi' {
             It 'Header - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Header
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'header'
@@ -2381,10 +2381,10 @@ Describe 'OpenApi' {
                 $result.deprecated | Should -BeFalse
                 $result.style | Should -BeNullOrEmpty
                 $result.required | Should -BeTrue
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2393,7 +2393,7 @@ Describe 'OpenApi' {
             It 'Header - Properties - Explode' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Header -Explode
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'header'
@@ -2402,10 +2402,10 @@ Describe 'OpenApi' {
                 $result.allowEmptyValue | Should -BeFalse
                 $result.deprecated | Should -BeFalse
                 $result.style | Should -BeNullOrEmpty
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2414,15 +2414,15 @@ Describe 'OpenApi' {
             It 'Header - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Header
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'header'
                 $result.required | Should -BeTrue
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2432,7 +2432,7 @@ Describe 'OpenApi' {
                 Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Header )
                 $result = ConvertTo-PodeOAParameter -ComponentParameter 'PetIdParam'
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 1
                 $result['$ref'] | Should -Be '#/components/parameters/PetIdParam'
             }
@@ -2445,7 +2445,7 @@ Describe 'OpenApi' {
                     ))
                 $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat'
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 4
                 $result.name | Should -Be 'Cat'
                 $result.in | Should -Be 'header'
@@ -2453,11 +2453,11 @@ Describe 'OpenApi' {
                 $result.required | Should -BeFalse
                 $result.allowEmptyValue | Should -BeFalse
                 $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [ordered]
+                $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [ordered]
+                $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.schema.Count | Should -Be 1
                 $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             }
@@ -2470,7 +2470,7 @@ Describe 'OpenApi' {
                     ))
                 $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 5
                 $result.name | Should -Be 'Cat'
                 $result.in | Should -Be 'header'
@@ -2478,11 +2478,11 @@ Describe 'OpenApi' {
                 $result.required | Should -BeTrue
                 $result.allowEmptyValue | Should -BeFalse
                 $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [ordered]
+                $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [ordered]
+                $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.schema.Count | Should -Be 1
                 $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             }
@@ -2495,7 +2495,7 @@ Describe 'OpenApi' {
                     ))
                 $result = ConvertTo-PodeOAParameter -In Header -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -AllowEmptyValue
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 5
                 $result.name | Should -Be 'Cat'
                 $result.in | Should -Be 'header'
@@ -2503,11 +2503,11 @@ Describe 'OpenApi' {
                 $result.required | Should -BeFalse
                 $result.allowEmptyValue | Should -BeTrue
                 $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [ordered]
+                $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [ordered]
+                $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.schema.Count | Should -Be 1
                 $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             }
@@ -2519,7 +2519,7 @@ Describe 'OpenApi' {
             It 'Cookie - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Cookie
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'cookie'
@@ -2528,10 +2528,10 @@ Describe 'OpenApi' {
                 $result.deprecated | Should -BeFalse
                 $result.style | Should -BeNullOrEmpty
                 $result.required | Should -BeTrue
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2540,7 +2540,7 @@ Describe 'OpenApi' {
             It 'Cookie - Properties - Explode' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Cookie -Explode
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'cookie'
@@ -2549,10 +2549,10 @@ Describe 'OpenApi' {
                 $result.allowEmptyValue | Should -BeFalse
                 $result.deprecated | Should -BeFalse
                 $result.style | Should -BeNullOrEmpty
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2560,15 +2560,15 @@ Describe 'OpenApi' {
             It 'Cookie - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Cookie
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'cookie'
                 $result.required | Should -BeTrue
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2578,7 +2578,7 @@ Describe 'OpenApi' {
                 Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Cookie )
                 $result = ConvertTo-PodeOAParameter -ComponentParameter 'PetIdParam'
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 1
                 $result['$ref'] | Should -Be '#/components/parameters/PetIdParam'
             }
@@ -2591,7 +2591,7 @@ Describe 'OpenApi' {
                     ))
                 $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat'
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 4
                 $result.name | Should -Be 'Cat'
                 $result.in | Should -Be 'cookie'
@@ -2599,11 +2599,11 @@ Describe 'OpenApi' {
                 $result.required | Should -BeFalse
                 $result.allowEmptyValue | Should -BeFalse
                 $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [ordered]
+                $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [ordered]
+                $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.schema.Count | Should -Be 1
                 $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             }
@@ -2616,7 +2616,7 @@ Describe 'OpenApi' {
                     ))
                 $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 5
                 $result.name | Should -Be 'Cat'
                 $result.in | Should -Be 'cookie'
@@ -2624,11 +2624,11 @@ Describe 'OpenApi' {
                 $result.required | Should -BeTrue
                 $result.allowEmptyValue | Should -BeFalse
                 $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [ordered]
+                $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [ordered]
+                $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.schema.Count | Should -Be 1
                 $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             }
@@ -2641,7 +2641,7 @@ Describe 'OpenApi' {
                     ))
                 $result = ConvertTo-PodeOAParameter -In Cookie -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -AllowEmptyValue
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 5
                 $result.name | Should -Be 'Cat'
                 $result.in | Should -Be 'cookie'
@@ -2649,11 +2649,11 @@ Describe 'OpenApi' {
                 $result.required | Should -BeFalse
                 $result.allowEmptyValue | Should -BeTrue
                 $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [ordered]
+                $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [ordered]
+                $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.schema.Count | Should -Be 1
                 $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             }
@@ -2665,7 +2665,7 @@ Describe 'OpenApi' {
             It 'Query - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Query
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'query'
@@ -2674,10 +2674,10 @@ Describe 'OpenApi' {
                 $result.deprecated | Should -BeFalse
                 $result.style | Should -BeNullOrEmpty
                 $result.required | Should -BeTrue
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2686,7 +2686,7 @@ Describe 'OpenApi' {
             It 'Query - Properties - Explode' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Query -Explode
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'query'
@@ -2695,10 +2695,10 @@ Describe 'OpenApi' {
                 $result.allowEmptyValue | Should -BeFalse
                 $result.deprecated | Should -BeFalse
                 $result.style | Should -BeNullOrEmpty
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2707,15 +2707,15 @@ Describe 'OpenApi' {
             It 'Query - Properties - No switches' {
                 $result = New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required -Array | ConvertTo-PodeOAParameter -In Query
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.name | Should -Be 'petId'
                 $result.description | Should -Be 'ID of the pet'
                 $result.in | Should -Be 'query'
                 $result.required | Should -BeTrue
-                $result.schema | Should -BeOfType [ordered]
+                $result.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.Count | Should -Be 2
                 $result.schema.type | Should -Be 'array'
-                $result.schema.items | Should -BeOfType [ordered]
+                $result.schema.items | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.schema.items.Count | Should -Be 2
                 $result.schema.items.type | Should -Be 'integer'
                 $result.schema.items.format | Should -Be 'int64'
@@ -2725,7 +2725,7 @@ Describe 'OpenApi' {
                 Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Query )
                 $result = ConvertTo-PodeOAParameter -ComponentParameter 'PetIdParam'
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 1
                 $result['$ref'] | Should -Be '#/components/parameters/PetIdParam'
             }
@@ -2738,7 +2738,7 @@ Describe 'OpenApi' {
                     ))
                 $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat'
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 4
                 $result.name | Should -Be 'Cat'
                 $result.in | Should -Be 'query'
@@ -2746,11 +2746,11 @@ Describe 'OpenApi' {
                 $result.required | Should -BeFalse
                 $result.allowEmptyValue | Should -BeFalse
                 $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [ordered]
+                $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [ordered]
+                $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.schema.Count | Should -Be 1
                 $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             }
@@ -2763,7 +2763,7 @@ Describe 'OpenApi' {
                     ))
                 $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -Required
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 5
                 $result.name | Should -Be 'Cat'
                 $result.in | Should -Be 'query'
@@ -2771,11 +2771,11 @@ Describe 'OpenApi' {
                 $result.required | Should -BeTrue
                 $result.allowEmptyValue | Should -BeFalse
                 $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [ordered]
+                $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [ordered]
+                $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.schema.Count | Should -Be 1
                 $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             }
@@ -2788,7 +2788,7 @@ Describe 'OpenApi' {
                     ))
                 $result = ConvertTo-PodeOAParameter -In Query -Description 'Feline description' -ContentType 'application/json' -Schema  'Cat' -AllowEmptyValue
                 $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType [ordered]
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.Count | Should -Be 5
                 $result.name | Should -Be 'Cat'
                 $result.in | Should -Be 'query'
@@ -2796,11 +2796,11 @@ Describe 'OpenApi' {
                 $result.required | Should -BeFalse
                 $result.allowEmptyValue | Should -BeTrue
                 $result.content | Should -Not -BeNullOrEmpty
-                $result.content | Should -BeOfType [ordered]
+                $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.Count | Should -Be 1
-                $result.content.'application/json' | Should -BeOfType [ordered]
+                $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.Count | Should -Be 1
-                $result.content.'application/json'.schema | Should -BeOfType [ordered]
+                $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.content.'application/json'.schema.Count | Should -Be 1
                 $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             }
@@ -2823,7 +2823,7 @@ Describe 'OpenApi' {
             Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAMediaContentType -MediaType 'application/json' ,'application/xml','application/x-www-form-urlencoded' -Content 'Cat'  )
             $result = $PodeContext.Server.OpenAPI.components.requestBodies['PetBodySchema']
             $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [ordered]
+            $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'Pet in the store'
             $result.content | Should -BeOfType [hashtable]
@@ -2850,7 +2850,7 @@ Describe 'OpenApi' {
             $ContentSchema | Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store'
             $result = $PodeContext.Server.OpenAPI.components.requestBodies['PetBodySchema']
             $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [ordered]
+            $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'Pet in the store'
             $result.content | Should -BeOfType [hashtable]
