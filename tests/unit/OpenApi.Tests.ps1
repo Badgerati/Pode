@@ -15,16 +15,16 @@ Describe 'OpenApi' {
                         autoheaders = $false
                     }
                     OpenAPI  = @{
-                        info             = [System.Collections.Specialized.OrderedDictionary]@{}
+                        info             = [ordered]@{}
                         Path             = $null
-                        components       = [System.Collections.Specialized.OrderedDictionary]@{
+                        components       = [ordered]@{
                             schemas       = @{}
                             responses     = @{}
                             requestBodies = @{}
                             parameters    = @{}
                         }
                         Security         = @()
-                        tags             = [System.Collections.Specialized.OrderedDictionary]@{}
+                        tags             = [ordered]@{}
                         hiddenComponents = @{
                             enabled          = $false
                             schemaValidation = $false
