@@ -26,6 +26,7 @@ Describe 'OpenApi' {
                         Security         = @()
                         tags             = [ordered]@{}
                         hiddenComponents = @{
+                            v3_0             = $true
                             enabled          = $false
                             schemaValidation = $false
                             depth            = 20

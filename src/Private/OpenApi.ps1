@@ -122,7 +122,11 @@ function ConvertTo-PodeOAObjectSchema {
         }
         # add a set schema object
         else {
-            $result = ($item | ConvertTo-PodeOASchemaProperty)
+            if ($item.Count -eq 0) {
+                $result = @{}
+            } else {
+                $result = ($item | ConvertTo-PodeOASchemaProperty)
+            }
             if ($Properties) {
                 if ($item.Name) {
                     $obj[$type].schema = @{
@@ -274,6 +278,7 @@ function ConvertTo-PodeOASchemaProperty {
             type = $Property.type.ToLower()
         }
 
+
         if (!$NoDescription -and $Property.description) {
             $schema['description'] = $Property.description
         }
@@ -287,7 +292,11 @@ function ConvertTo-PodeOASchemaProperty {
         }
 
         if ($Property.nullable) {
-            $schema['nullable'] = $Property.nullable
+            if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+                $schema['nullable'] = $Property.nullable
+            } else {
+                $schema.type = @($Property.type.ToLower(), 'null')
+            }
         }
 
         if ($Property.writeOnly) {
@@ -299,25 +308,48 @@ function ConvertTo-PodeOASchemaProperty {
         }
 
         if ($Property.example) {
-            $schema['example'] = $Property.example
+            if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+                $schema['example'] = $Property.example
+            } else {
+                if ($Property.example -is [Array]) {
+                    $schema['examples'] = $Property.example
+                } else {
+                    $schema['examples'] = @( $Property.example)
+                }
+            }
         }
+        if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+            if ($Property.minimum) {
+                $schema['minimum'] = $Property.minimum
+            }
 
-        if ($Property.minimum) {
-            $schema['minimum'] = $Property.minimum
+            if ($Property.maximum) {
+                $schema['maximum'] = $Property.maximum
+            }
+
+            if ($Property.exclusiveMaximum) {
+                $schema['exclusiveMaximum'] = $Property.exclusiveMaximum
+            }
+
+            if ($Property.exclusiveMinimum) {
+                $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
+            }
+        } else {
+            if ($Property.maximum) {
+                if ($Property.exclusiveMaximum  ) {
+                    $schema['exclusiveMaximum'] = $Property.maximum
+                } else {
+                    $schema['maximum'] = $Property.maximum
+                }
+            }
+            if ($Property.minimum) {
+                if ($Property.exclusiveMinimum  ) {
+                    $schema['exclusiveMinimum'] = $Property.minimum
+                } else {
+                    $schema['minimum'] = $Property.minimum
+                }
+            }
         }
-
-        if ($Property.maximum) {
-            $schema['maximum'] = $Property.maximum
-        }
-
-        if ($Property.exclusiveMaximum) {
-            $schema['exclusiveMaximum'] = $Property.exclusiveMaximum
-        }
-
-        if ($Property.exclusiveMinimum) {
-            $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
-        }
-
         if ($Property.multipleOf) {
             $schema['multipleOf'] = $Property.multipleOf
         }
@@ -337,6 +369,15 @@ function ConvertTo-PodeOASchemaProperty {
         if ($Property.xml ) {
             $schema['xml'] = $Property.xml
         }
+        if (! $PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+            if ($Property.ContentMediaType) {
+                $schema['contentMediaType'] = $Property.ContentMediaType
+            }
+            if ($Property.ContentEncoding) {
+                $schema['contentEncoding'] = $Property.ContentEncoding
+            }
+        }
+
 
         # are we using an array?
         if ($Property.array) {
@@ -644,10 +685,6 @@ function Get-PodeOpenApiDefinitionInternal {
                 if ( $localEndpoint) {
                     $_route.OpenApi.Path = $_route.OpenApi.Path.replace($localEndpoint, '')
                 }
-                #    $def.servers.url.StartsWith('/')
-                #    if ($MetaInfo -and $MetaInfo.ServerUrl) {
-                #        $_route.OpenApi.Path = $_route.OpenApi.Path.replace($MetaInfo.ServerUrl, '')
-                #    }
                 # do nothing if it has no responses set
                 if ($_route.OpenApi.Responses.Count -eq 0) {
                     continue
@@ -778,10 +815,10 @@ function Get-PodeOABaseObject {
             externalDocs     = @{}
             schemaJson       = @{}
             viewer           = @{}
-            defaultResponses=@{
+            defaultResponses = @{
                 '200'     = @{ description = 'OK' }
                 'default' = @{ description = 'Internal server error' }
-            } 
+            }
         }
     }
 }

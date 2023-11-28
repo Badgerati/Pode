@@ -90,7 +90,7 @@ function Enable-PodeOpenApi {
         [string]
         $Description,
 
-        [ValidateSet('3.0.3', '3.0.2', '3.0.1')]
+        [ValidateSet('3.1.0', '3.0.3', '3.0.2', '3.0.1')]
         [string]
         $OpenApiVersion = '3.0.3',
 
@@ -139,6 +139,9 @@ function Enable-PodeOpenApi {
     # initialise openapi info
     $PodeContext.Server.OpenAPI.Version = $OpenApiVersion
     $PodeContext.Server.OpenAPI.Path = $Path
+
+    $PodeContext.Server.OpenAPI.hiddenComponents.v3_0 = $OpenApiVersion.StartsWith('3.0')
+
 
     $meta = @{
         RouteFilter    = $RouteFilter
@@ -1347,7 +1350,7 @@ function New-PodeOAIntProperty {
         $ExternalDoc,
 
         [Parameter()]
-        [String]
+        [object]
         $Example,
 
         [Parameter()]
@@ -1573,7 +1576,7 @@ function New-PodeOANumberProperty {
         $ExternalDoc,
 
         [Parameter()]
-        [String]
+        [object]
         $Example,
 
         [Parameter()]
@@ -1785,7 +1788,7 @@ function New-PodeOAStringProperty {
         $ExternalDoc,
 
         [Parameter()]
-        [String]
+        [object]
         $Example,
 
         [Parameter()]
@@ -1982,7 +1985,7 @@ function New-PodeOABoolProperty {
         $ExternalDoc,
 
         [Parameter()]
-        [string]
+        [object]
         $Example,
 
         [Parameter()]
@@ -2196,7 +2199,7 @@ function New-PodeOAObjectProperty {
         $ExternalDoc,
 
         [Parameter()]
-        [String]
+        [object]
         $Example,
 
         [Parameter()]
@@ -2527,7 +2530,7 @@ function New-PodeOASchemaProperty {
         $Description,
 
         [Parameter(ParameterSetName = 'Array')]
-        [String]
+        [object]
         $Example,
 
         [Parameter(ParameterSetName = 'Array')]
@@ -4261,6 +4264,15 @@ function New-PodeOAResponse {
 .PARAMETER Title
     Used in the 'Array' parameter set to provide a title for the array content.
 
+.PARAMETER Upload
+    If provided configure the media for an upload changing the result based on the OpenApi version
+
+.PARAMETER ContentEncoding
+    Define the content encoding for upload (Default Binary)
+
+.PARAMETER ContentMediaType
+Define the content encoding for multipart upload
+
 .EXAMPLE
     Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -ScriptBlock {
         Write-PodeJsonResponse -Value 'done' -StatusCode 200
@@ -4327,7 +4339,20 @@ function New-PodeOAMediaContentType {
 
         [Parameter(ParameterSetName = 'Array')]
         [string]
-        $Title
+        $Title,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Upload')]
+        [switch]
+        $Upload,
+
+        [Parameter(  ParameterSetName = 'Upload')]
+        [ValidateSet('Binary', 'Base64')]
+        [string]
+        $ContentEncoding = 'Binary',
+
+        [Parameter(  ParameterSetName = 'Upload')]
+        [string]
+        $ContentMediaType
 
     )
 
@@ -4337,6 +4362,37 @@ function New-PodeOAMediaContentType {
             throw "Invalid content-type found for schema: $($media)"
         }
 
+        if ( $Upload.IsPresent) {
+            if ( $media -ieq 'multipart/form-data' -and $Content) {
+                if (!$PodeContext.Server.OpenAPI.hiddenComponents.v3_0 -and $ContentMediaType) {
+                    foreach ($key in $Content.Properties ) {
+                        if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
+                            $key.ContentMediaType = $ContentMediaType
+                            $key.remove('format')
+                            break
+                        }
+                    }
+                }
+            } else {
+                if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+                    $Content = [ordered]@{
+                        'type'   = 'string'
+                        'format' = $ContentEncoding
+                    }
+                } else {
+                    if ($ContentEncoding -ieq 'Base64') {
+                        $Content = [ordered]@{
+                            'type'            = 'string'
+                            'contentEncoding' = $ContentEncoding
+                        }
+                    }
+                }
+            }
+        } else {
+            if ($null -eq $Content ) {
+                $Content = @{}
+            }
+        }
         if ($Array.IsPresent) {
             $props[$media] = @{
                 __array   = $true

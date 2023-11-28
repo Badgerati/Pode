@@ -21,7 +21,7 @@ Some useful links:
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -DefaultResponses @{}
+    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -DefaultResponses @{}
     New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
@@ -113,7 +113,7 @@ Some useful links:
 
     Add-PodeOAComponentSchema -Name 'Pet' -Component (
         New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' } -Properties  (
-            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly |
+            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example @(10,2,4) -ReadOnly |
                 New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
                 New-PodeOASchemaProperty -Name 'category' -Component 'Category' |
                 New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
@@ -627,16 +627,33 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'
 
-        Add-PodeRoute -PassThru -Method post -Path '/pet/:petId/uploadImage' -ScriptBlock {
+         Add-PodeRoute -PassThru -Method post -Path '/pet/:petId/uploadmultiImage' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
-        } | Set-PodeOARouteInfo -Summary 'Uploads an image' -Description 'Updates a pet in the store with a new image' -Tags 'pet' -OperationId 'uploadFile' -PassThru |
+        } | Set-PodeOARouteInfo -Summary 'Uploads an image' -Description 'Updates a pet in the store with a new image' -Tags 'pet' -OperationId 'uploadFilemulti' -PassThru |
             Set-PodeOARequest -Parameters @(
                                 (  New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of pet that needs to be updated' -Required | ConvertTo-PodeOAParameter -In Path ),
                                 (  New-PodeOAStringProperty -Name 'additionalMetadata' -Description 'Additional Metadata' | ConvertTo-PodeOAParameter -In Query )
-            ) -RequestBody (New-PodeOARequestBody -Required -Content @{   'multipart/form-data' = New-PodeOAObjectProperty -Properties @( (New-PodeOAStringProperty -Name 'image' -Format Binary  )) } ) -PassThru |
+            ) -RequestBody (
+                New-PodeOARequestBody -Required -Content  ( New-PodeOAMediaContentType -MediaType 'multipart/form-data' -Upload -ContentMediaType 'application/octect-stream' -Content (
+                    New-PodeOAIntProperty  -name 'orderId' |   New-PodeOAStringProperty -Name 'image' -Format Binary |   New-PodeOAObjectProperty  ))
+            ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = 'ApiResponse' } -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
+
+
+            Add-PodeRoute -PassThru -Method post -Path '/pet/:petId/uploadImageOctet' -ScriptBlock {
+                Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            } | Set-PodeOARouteInfo -Summary 'Uploads an image' -Description 'Updates a pet in the store with a new image' -Tags 'pet' -OperationId 'uploadFileOctet' -PassThru |
+                Set-PodeOARequest -Parameters @(
+                                    (  New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of pet that needs to be updated' -Required | ConvertTo-PodeOAParameter -In Path ),
+                                    (  New-PodeOAStringProperty -Name 'additionalMetadata' -Description 'Additional Metadata' | ConvertTo-PodeOAParameter -In Query )
+                ) -RequestBody (
+                    New-PodeOARequestBody -Required -Content  ( New-PodeOAMediaContentType -MediaType 'application/octet-stream' -Upload )
+                ) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = 'ApiResponse' } -PassThru |
+                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
+                Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
         Add-PodeRoute -PassThru -Method Get -Path '/store/inventory' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
