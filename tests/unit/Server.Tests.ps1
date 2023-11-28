@@ -26,6 +26,7 @@ Describe 'Start-PodeInternalServer' {
     Mock Import-PodeModulesIntoRunspaceState { }
     Mock Import-PodeSnapinsIntoRunspaceState { }
     Mock Import-PodeFunctionsIntoRunspaceState { }
+    Mock Start-PodeCacheHousekeeper { }
     Mock Invoke-PodeEvent { }
     Mock Write-Verbose { }
 

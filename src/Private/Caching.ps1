@@ -2,20 +2,20 @@ function Get-PodeCacheInternal {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name,
+        $Key,
 
         [switch]
         $Metadata
     )
 
-    $meta = $PodeContext.Server.Cache.Items[$Name]
+    $meta = $PodeContext.Server.Cache.Items[$Key]
     if ($null -eq $meta) {
         return $null
     }
 
     # check ttl/expiry
     if ($meta.Expiry -lt [datetime]::UtcNow) {
-        Remove-PodeCacheInternal -Name $Name
+        Remove-PodeCacheInternal -Key $Key
         return $null
     }
 
@@ -32,7 +32,7 @@ function Set-PodeCacheInternal {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name,
+        $Key,
 
         [Parameter(Mandatory = $true)]
         [object]
@@ -44,7 +44,7 @@ function Set-PodeCacheInternal {
     )
 
     # crete (or update) value value
-    $PodeContext.Server.Cache.Items[$Name] = @{
+    $PodeContext.Server.Cache.Items[$Key] = @{
         Value  = $InputObject
         Ttl    = $Ttl
         Expiry = [datetime]::UtcNow.AddSeconds($Ttl)
@@ -55,21 +55,36 @@ function Test-PodeCacheInternal {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Key
     )
 
-    return $PodeContext.Server.Cache.Items.ContainsKey($Name)
+    # if it's not in the cache at all, return false
+    if (!$PodeContext.Server.Cache.Items.ContainsKey($Key)) {
+        return $false
+    }
+
+    # fetch the items metadata, and check expiry. If it's expired return false.
+    $meta = $PodeContext.Server.Cache.Items[$Key]
+
+    # check ttl/expiry
+    if ($meta.Expiry -lt [datetime]::UtcNow) {
+        Remove-PodeCacheInternal -Key $Key
+        return $false
+    }
+
+    # it exists, and isn't expired
+    return $true
 }
 
 function Remove-PodeCacheInternal {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Key
     )
 
     Lock-PodeObject -Object $PodeContext.Threading.Lockables.Cache -ScriptBlock {
-        $null = $PodeContext.Server.Cache.Items.Remove($Name)
+        $null = $PodeContext.Server.Cache.Items.Remove($Key)
     }
 }
 
@@ -101,7 +116,7 @@ function Start-PodeCacheHousekeeper {
 
         foreach ($key in $keys) {
             if ($PodeContext.Server.Cache.Items[$key].Expiry -lt $now) {
-                Remove-PodeCacheInternal -Name $key
+                Remove-PodeCacheInternal -Key $key
             }
         }
     }

@@ -2564,12 +2564,12 @@ function Invoke-PodeCacheScriptConversion {
 
     while ($scriptStr -imatch '(?<full>\$cache\:(?<name>[a-z0-9_\?]+)\s*=)') {
         $found = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "Set-PodeCache -Name '$($Matches['name'])' -InputObject ")
+        $scriptStr = $scriptStr.Replace($Matches['full'], "Set-PodeCache -Key '$($Matches['name'])' -InputObject ")
     }
 
     while ($scriptStr -imatch '(?<full>\$cache\:(?<name>[a-z0-9_\?]+))') {
         $found = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "(Get-PodeCache -Name '$($Matches['name'])')")
+        $scriptStr = $scriptStr.Replace($Matches['full'], "(Get-PodeCache -Key '$($Matches['name'])')")
     }
 
     if ($found) {

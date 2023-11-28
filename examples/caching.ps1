@@ -17,12 +17,12 @@ Start-PodeServer -Threads 3 {
 
     $params = @{
         Set    = {
-            param($name, $value, $ttl)
-            $null = redis-cli -h localhost -p 6379 SET $name "$($value)" EX $ttl
+            param($key, $value, $ttl)
+            $null = redis-cli -h localhost -p 6379 SET $key "$($value)" EX $ttl
         }
         Get    = {
-            param($name, $metadata)
-            $result = redis-cli -h localhost -p 6379 GET $name
+            param($key, $metadata)
+            $result = redis-cli -h localhost -p 6379 GET $key
             $result = [System.Management.Automation.Internal.StringDecorated]::new($result).ToString('PlainText')
             if ([string]::IsNullOrEmpty($result) -or ($result -ieq '(nil)')) {
                 return $null
@@ -30,13 +30,13 @@ Start-PodeServer -Threads 3 {
             return $result
         }
         Test   = {
-            param($name)
-            $result = redis-cli -h localhost -p 6379 EXISTS $name
+            param($key)
+            $result = redis-cli -h localhost -p 6379 EXISTS $key
             return [System.Management.Automation.Internal.StringDecorated]::new($result).ToString('PlainText')
         }
         Remove = {
-            param($name)
-            $null = redis-cli -h localhost -p 6379 EXPIRE $name -1
+            param($key)
+            $null = redis-cli -h localhost -p 6379 EXPIRE $key -1
         }
         Clear  = {}
     }
@@ -45,7 +45,7 @@ Start-PodeServer -Threads 3 {
 
     # get cpu, and cache it
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        if ($null -ne $cache:cpu) {
+        if ((Test-PodeCache -Key 'cpu') -and ($null -ne $cache:cpu)) {
             Write-PodeJsonResponse -Value @{ CPU = $cache:cpu }
             # Write-PodeHost 'here - cached'
             return
