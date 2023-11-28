@@ -2874,14 +2874,14 @@ Describe 'OpenApi' {
         }
     }
 
-    Describe 'Add-PodeOAComponentHeaderSchema' {
+    Describe 'Add-PodeOAComponentHeader' {
 
         # Check if the function exists
-        It 'Add-PodeOAComponentHeaderSchema function exists' {
-            Get-Command Add-PodeOAComponentHeaderSchema | Should -Not -Be $null
+        It 'Add-PodeOAComponentHeader function exists' {
+            Get-Command Add-PodeOAComponentHeader | Should -Not -Be $null
         }
         it 'default' {
-            Add-PodeOAComponentHeaderSchema -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
+            Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
             $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
             $result = $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit']
             $result | Should -Not -BeNullOrEmpty
@@ -2892,7 +2892,7 @@ Describe 'OpenApi' {
             $result.format | Should -Be 'int32'
         }
         it 'From Pipeline' {
-            New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' | Add-PodeOAComponentHeaderSchema -Name 'X-Rate-Limit'
+            New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' | Add-PodeOAComponentHeader -Name 'X-Rate-Limit'
             $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
             $result = $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit']
             $result | Should -Not -BeNullOrEmpty
