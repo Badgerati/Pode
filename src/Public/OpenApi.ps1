@@ -858,7 +858,7 @@ function New-PodeOARequestBody {
         }
 
         'reference' {
-            if (!(Test-PodeOAComponentSchemaBody -Name $Schema)) {
+            if (!(Test-PodeOAComponentRequestBody -Name $Schema)) {
                 throw "The OpenApi component request body doesn't exist: $($Schema)"
             }
 
@@ -1028,11 +1028,11 @@ result: true if the object is validate positively
 message: any validation issue
 
 .EXAMPLE
-$UserInfo = Test-PodeOAComponentSchema -Parameter 'UserInfo' -SchemaReference 'UserIdSchema'}
+$UserInfo = Test-PodeOAJsonSchemaCompliance -Json $UserInfo -SchemaReference 'UserIdSchema'}
 
 #>
 
-function Test-PodeOAComponentSchema {
+function Test-PodeOAJsonSchemaCompliance {
     param (
         [Parameter(Mandatory = $true)]
         [String]

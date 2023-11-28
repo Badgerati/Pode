@@ -289,7 +289,7 @@
         'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
         'Enable-PodeOAViewer',
-        'Test-PodeOAComponentSchema',
+        'Test-PodeOAJsonSchemaCompliance',
         'Add-PodeOAInfo',
         'Add-PodeOAExternalDoc',
         'New-PodeOAExternalDoc',
