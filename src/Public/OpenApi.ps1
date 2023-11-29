@@ -90,7 +90,7 @@ function Enable-PodeOpenApi {
         [string]
         $Description,
 
-        [ValidateSet('3.1.0', '3.0.3', '3.0.2', '3.0.1')]
+        [ValidateSet('3.1.0', '3.0.3', '3.0.2', '3.0.1', '3.0.0')]
         [string]
         $OpenApiVersion = '3.0.3',
 
@@ -666,7 +666,6 @@ function Add-PodeOAComponentResponse {
     )
 
     $PodeContext.Server.OpenAPI.components.responses[$Name] = New-PodeOResponseInternal -Params $PSBoundParameters
-
 
 }
 
@@ -3717,11 +3716,11 @@ The -Value parameter and -ExternalValue parameter are mutually exclusive.       
 
 
 .EXAMPLE
- New-PodeOAExample -MediaType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
+ New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
 .EXAMPLE
  $example =
-    New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary = 'User Example' -ExternalValue = 'http://foo.bar/examples/user-example.json'  |
-        New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Summary = 'User Example in XML' -ExternalValue = 'http://foo.bar/examples/user-example.xml'
+    New-PodeOAExample -ContentMediaType 'application/json' -Name 'user' -Summary = 'User Example' -ExternalValue = 'http://foo.bar/examples/user-example.json'  |
+        New-PodeOAExample -ContentMediaType 'application/xml' -Name 'user' -Summary = 'User Example in XML' -ExternalValue = 'http://foo.bar/examples/user-example.xml'
 
 #>
 function New-PodeOAExample {
@@ -3736,7 +3735,7 @@ function New-PodeOAExample {
 
         [Parameter( )]
         [string]
-        $MediaType,
+        $ContentMediaType,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Inbuilt')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
@@ -3791,8 +3790,8 @@ function New-PodeOAExample {
             }
         }
         $param = [ordered]@{}
-        if ($MediaType) {
-            $param.$MediaType = [ordered]@{
+        if ($ContentMediaType) {
+            $param.$ContentMediaType = [ordered]@{
                 $Name = $Example
             }
         } else {
@@ -4011,7 +4010,7 @@ function New-PodeOAEncodingObject {
     Adds OpenAPI callback configurations to routes in a Pode web application.
 
 .DESCRIPTION
-    The Add-PodeOACallBacks function is used for defining OpenAPI callback configurations for routes in a Pode server.
+    The Add-PodeOACallBack function is used for defining OpenAPI callback configurations for routes in a Pode server.
     It enables setting up API specifications including detailed parameters, request body schemas, and response structures for various HTTP methods.
 
 .PARAMETER Path
@@ -4021,7 +4020,7 @@ function New-PodeOAEncodingObject {
     The runtime expression allows complete access to the HTTP message, including any part of a body that a JSON Pointer (RFC6901) can reference.
     More information on JSON Pointer can be found at [RFC6901](https://datatracker.ietf.org/doc/html/rfc6901).
 
-.PARAMETER Title
+.PARAMETER Name
     Alias for 'Name'. A unique identifier for the callback.
     It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
 
@@ -4035,10 +4034,10 @@ function New-PodeOAEncodingObject {
     Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
 
 .EXAMPLE
-    Add-PodeOACallBacks -Title 'test' -Path '{$request.body#/id}' -Method Post `
+    Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
         -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
         -Response (
-            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAMediaContentType -MediaType 'application/json','application/xml' -Content 'Pet'  -Array)
+            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array)
             New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
             New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
             New-PodeOAResponse -Default -Description 'Something is wrong'
@@ -4050,18 +4049,73 @@ function New-PodeOAEncodingObject {
     The function is useful for dynamically configuring and documenting API callbacks in a Pode server environment.
 #>
 
-function Add-PodeOACallBacks {
+function Add-PodeOACallBack {
+    [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [hashtable[]]
         $Route,
 
-        [Parameter(Mandatory = $true)]
-        [Alias('Name')]
+        [Parameter(Mandatory = $true , ParameterSetName = 'inbuilt')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
-        $Title,
+        $Name,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [string]
+        $Reference,
+
+        [Parameter(Mandatory = $true , ParameterSetName = 'inbuilt')]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'inbuilt')]
+        [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
+        [string]
+        $Method,
+
+        [Parameter(ParameterSetName = 'inbuilt')]
+        [hashtable[]]
+        $Parameters,
+
+        [Parameter(ParameterSetName = 'inbuilt')]
+        [hashtable]
+        $RequestBody,
+
+        [Parameter(ParameterSetName = 'inbuilt')]
+        [System.Collections.Specialized.OrderedDictionary]
+        $Responses,
+
+        [switch]
+        $PassThru
+    )
+    foreach ($r in @($Route)) {
+        if ($Reference) {
+            if (!(Test-PodeOAComponentCallBack -Name $Reference )) {
+                throw "The OpenApi component CallBack  doesn't exist: $($Reference )"
+            }
+            $r.OpenApi.callBacks = $PodeContext.Server.OpenAPI.components.callBacks[$Reference]
+        } else {
+            $r.OpenApi.callBacks = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
+        }
+    }
+
+    if ($PassThru) {
+        return $Route
+    }
+}
+
+
+
+
+function Add-PodeOAComponentCallBack {
+    param (
+
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Name,
 
         [Parameter(Mandatory = $true)]
         [string]
@@ -4082,33 +4136,13 @@ function Add-PodeOACallBacks {
 
         [Parameter()]
         [System.Collections.Specialized.OrderedDictionary]
-        $Responses,
-
-        [switch]
-        $PassThru
+        $Responses
     )
-    $_method = $Method.ToLower()
-    foreach ($r in @($Route)) {
-        $r.OpenApi.CallBacks = [ordered]@{
-            $Title = [ordered]@{
-                "'$Path'" = [ordered]@{
-                    $_method = [ordered]@{}
-                }
-            }
-        }
-        if ($RequestBody) {
-            $r.OpenApi.CallBacks.$Title."'$Path'".$_method.requestBody = $RequestBody
-        }
-        if ($Responses) {
-            $r.OpenApi.CallBacks.$Title."'$Path'".$_method.responses = $Responses
-        }
-    }
 
-    if ($PassThru) {
-        return $Route
-    }
+    $PodeContext.Server.OpenAPI.components.callBacks[$Name] = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
+
+
 }
-
 
 
 <#
@@ -4144,7 +4178,7 @@ A Reference Name of an existing component response to use.
 If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
 
 .EXAMPLE
-New-PodeOAResponse -StatusCode 200 -Content (  New-PodeOAMediaContentType -MediaType 'application/json' -Content(New-PodeOAIntProperty -Name 'userId' -Object) )
+New-PodeOAResponse -StatusCode 200 -Content (  New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content(New-PodeOAIntProperty -Name 'userId' -Object) )
 
 .EXAMPLE
 New-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
@@ -4153,11 +4187,11 @@ New-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchem
 New-PodeOAResponse -StatusCode 200 -Reference 'OKResponse'
 
 .EXAMPLE
-Add-PodeOACallBacks -Title 'test' -Path '$request.body#/id' -Method Post  -RequestBody (
-        New-PodeOARequestBody -Content (New-PodeOAMediaContentType -MediaType '*/*' -Content (New-PodeOAStringProperty -Name 'id'))
+Add-PodeOACallBack -Title 'test' -Path '$request.body#/id' -Method Post  -RequestBody (
+        New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentMediaType '*/*' -Content (New-PodeOAStringProperty -Name 'id'))
     ) `
     -Response (
-        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAMediaContentType -MediaType 'application/json','application/xml' -Content 'Pet'  -Array) |
+        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array) |
             New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
                 New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
             New-PodeOAResponse -Default   -Description 'Something is wrong'
@@ -4241,7 +4275,7 @@ function New-PodeOAResponse {
     Creates media content type definitions for OpenAPI specifications.
 
 .DESCRIPTION
-    The New-PodeOAMediaContentType function generates media content type definitions suitable for use in OpenAPI specifications. It supports various media types and allows for the specification of content as either a single object or an array of objects.
+    The New-PodeOAContentMediaType function generates media content type definitions suitable for use in OpenAPI specifications. It supports various media types and allows for the specification of content as either a single object or an array of objects.
 
 .PARAMETER MediaType
     An array of strings specifying the media types to be defined. Media types should conform to standard MIME types (e.g., 'application/json', 'image/png'). The function validates these media types against a regular expression to ensure they are properly formatted.
@@ -4270,7 +4304,7 @@ function New-PodeOAResponse {
 .PARAMETER ContentEncoding
     Define the content encoding for upload (Default Binary)
 
-.PARAMETER ContentMediaType
+.PARAMETER PartContentMediaType
 Define the content encoding for multipart upload
 
 .EXAMPLE
@@ -4280,20 +4314,20 @@ Define the content encoding for multipart upload
         Set-PodeOARequest -PassThru -Parameters @(
             (New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query)
         ) |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAMediaContentType -MediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
         Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
-    This example demonstrates the use of New-PodeOAMediaContentType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
+    This example demonstrates the use of New-PodeOAContentMediaType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
 
 .EXAMPLE
     $content = @{ type = 'string' }
     $mediaType = 'application/json'
-    New-PodeOAMediaContentType -MediaType $mediaType -Content $content
+    New-PodeOAContentMediaType -ContentMediaType $mediaType -Content $content
     This example creates a media content type definition for 'application/json' with a simple string content type.
 
 .EXAMPLE
     $content = @{ type = 'object'; properties = @{ name = @{ type = 'string' } } }
     $mediaTypes = 'application/json', 'application/xml'
-    New-PodeOAMediaContentType -MediaType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
+    New-PodeOAContentMediaType -ContentMediaType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
     This example demonstrates defining an array of objects for both 'application/json' and 'application/xml' media types, with a specified range for the number of items and a title.
 
 .EXAMPLE
@@ -4303,19 +4337,19 @@ Define the content encoding for multipart upload
         Set-PodeOARequest -PassThru -Parameters @(
             (New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query)
         ) |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAMediaContentType -MediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
         Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
-    This example demonstrates the use of New-PodeOAMediaContentType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
+    This example demonstrates the use of New-PodeOAContentMediaType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
 
 .NOTES
     This function is useful for dynamically creating media type specifications in OpenAPI documentation, providing flexibility in defining the expected content structure for different media types.
 #>
 
-function New-PodeOAMediaContentType {
+function New-PodeOAContentMediaType {
     [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     param (
         [string[]]
-        $MediaType = '*/*',
+        $ContentMediaType = '*/*',
 
         [Parameter()]
         [object]
@@ -4352,22 +4386,22 @@ function New-PodeOAMediaContentType {
 
         [Parameter(  ParameterSetName = 'Upload')]
         [string]
-        $ContentMediaType
+        $PartContentMediaType
 
     )
 
     $props = [ordered]@{}
-    foreach ($media in $MediaType) {
+    foreach ($media in $ContentMediaType) {
         if ($media -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
             throw "Invalid content-type found for schema: $($media)"
         }
 
         if ( $Upload.IsPresent) {
             if ( $media -ieq 'multipart/form-data' -and $Content) {
-                if (!$PodeContext.Server.OpenAPI.hiddenComponents.v3_0 -and $ContentMediaType) {
+                if (!$PodeContext.Server.OpenAPI.hiddenComponents.v3_0 -and $PartContentMediaType) {
                     foreach ($key in $Content.Properties ) {
                         if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
-                            $key.ContentMediaType = $ContentMediaType
+                            $key.ContentMediaType = $PartContentMediaType
                             $key.remove('format')
                             break
                         }
@@ -4481,6 +4515,129 @@ function New-PodeOAResponseLink {
         [string]
         $Title,
 
+        [Parameter(  ParameterSetName = 'OperationRef')]
+        [Parameter(  ParameterSetName = 'OperationId')]
+        [string]
+        $Description,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'OperationId')]
+        [string]
+        $OperationId,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'OperationRef')]
+        [string]
+        $OperationRef,
+
+        [Parameter(  ParameterSetName = 'OperationRef')]
+        [Parameter(  ParameterSetName = 'OperationId')]
+        [hashtable]
+        $Parameters,
+
+        [Parameter(  ParameterSetName = 'OperationRef')]
+        [Parameter(  ParameterSetName = 'OperationId')]
+        [string]
+        $RequestBody,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
+        [string]
+        $Reference
+
+    )
+    begin {
+
+        if ($Reference) {
+            if (!(Test-PodeOAComponentLink -Name $Reference )) {
+                throw "The OpenApi component Link  doesn't exist: $Reference"
+            }
+            $link = $PodeContext.Server.OpenAPI.components.links[$Reference]
+        } else {
+            $link = [ordered]@{$Title = [ordered]@{} }
+            if ($Description) {
+                $link.$Title.description = $Description
+            }
+            if ($OperationId) {
+                $link.$Title.operationId = $OperationId
+            }
+            if ($OperationRef) {
+                $link.$Title.operationRef = $OperationRef
+            }
+            if ($OperationRef) {
+                $link.$Title.operationRef = $OperationRef
+            }
+            if ($Parameters) {
+                $link.$Title.parameters = $Parameters
+            }
+            if ($RequestBody) {
+                $link.$Title.requestBody = $RequestBody
+            }
+        }
+    }
+    process {
+    }
+    end {
+        if ($LinkList) {
+            $link.GetEnumerator() | ForEach-Object { $LinkList[$_.Key] = $_.Value }
+            return $LinkList
+        } else {
+            return [System.Collections.Specialized.OrderedDictionary] $link
+        }
+    }
+
+}
+
+
+<#
+.SYNOPSIS
+    Adds a reusable response link.
+
+.DESCRIPTION
+    The Add-PodeOAComponentResponseLink function is designed to add a new reusable response link
+
+.PARAMETER Name
+    Mandatory. A unique name for the response link.
+    Must be a valid string composed of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+
+.PARAMETER Description
+    A brief description of the response link. CommonMark syntax may be used for rich text representation.
+    For more information on CommonMark syntax, see [CommonMark Specification](https://spec.commonmark.org/).
+
+.PARAMETER OperationId
+    The name of an existing, resolvable OpenAPI Specification (OAS) operation, as defined with a unique `operationId`.
+    This parameter is mandatory when using the 'OperationId' parameter set and is mutually exclusive of the `OperationRef` field. It is used to specify the unique identifier of the operation the link is associated with.
+
+.PARAMETER OperationRef
+    A relative or absolute URI reference to an OAS operation.
+    This parameter is mandatory when using the 'OperationRef' parameter set and is mutually exclusive of the `OperationId` field.
+    It MUST point to an Operation Object. Relative `operationRef` values MAY be used to locate an existing Operation Object in the OpenAPI specification.
+
+.PARAMETER Parameters
+    A map representing parameters to pass to an operation as specified with `operationId` or identified via `operationRef`.
+    The key is the parameter name to be used, whereas the value can be a constant or an expression to be evaluated and passed to the linked operation.
+    Parameter names can be qualified using the parameter location syntax `[{in}.]{name}` for operations that use the same parameter name in different locations (e.g., path.id).
+
+.PARAMETER RequestBody
+    A string representing the request body to use as a request body when calling the target.
+
+.EXAMPLE
+    Add-PodeOAComponentResponseLink   -Name 'address' -OperationId 'getUserByName' -Parameters @{'username' = '$request.path.username'}
+    Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User'} -Links 'address'
+    This example demonstrates creating and adding a link named 'address' associated with the operation 'getUserByName' to an OrderedDictionary of links. The updated dictionary is then used in the 'Add-PodeOAResponse' function to define a response with a status code of 200.
+
+.NOTES
+    The function supports adding links either by specifying an 'OperationId' or an 'OperationRef', making it versatile for different OpenAPI specification needs.
+    It's important to match the parameters and response structures as per the OpenAPI specification to ensure the correct functionality of the API documentation.
+#>
+
+function Add-PodeOAComponentResponseLink {
+    [CmdletBinding(DefaultParameterSetName = 'OperationId')]
+    param(
+
+        [Parameter(Mandatory = $true)]
+        [Alias('Name')]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Title,
+
         [Parameter()]
         [string]
         $Description,
@@ -4502,43 +4659,8 @@ function New-PodeOAResponseLink {
         $RequestBody
 
     )
-    begin {
-
-        $link = [ordered]@{$Title = [ordered]@{} }
-        if ($Description) {
-            $link.$Title.description = $Description
-        }
-        if ($OperationId) {
-            $link.$Title.operationId = $OperationId
-        }
-        if ($OperationRef) {
-            $link.$Title.operationRef = $OperationRef
-        }
-        if ($OperationRef) {
-            $link.$Title.operationRef = $OperationRef
-        }
-        if ($Parameters) {
-            $link.$Title.parameters = $Parameters
-        }
-        if ($RequestBody) {
-            $link.$Title.requestBody = $RequestBody
-        }
-
-    }
-    process {
-    }
-    end {
-        if ($LinkList) {
-            $link.GetEnumerator() | ForEach-Object { $LinkList[$_.Key] = $_.Value }
-            return $LinkList
-        } else {
-            return [System.Collections.Specialized.OrderedDictionary] $link
-        }
-    }
-
+    $PodeContext.Server.OpenAPI.components.links[$Name] = New-PodeOAResponseLink -Params $PSBoundParameters
 }
-
-
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
     New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer

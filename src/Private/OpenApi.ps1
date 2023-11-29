@@ -180,6 +180,26 @@ function Test-PodeOAComponentSchemaJson {
     return $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson.keys -ccontains $Name
 }
 
+function Test-PodeOAComponentCallBack {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.OpenAPI.hiddenComponents.callBacks.keys -ccontains $Name
+}
+
+function Test-PodeOAComponentLink {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    return  $PodeContext.Server.OpenAPI.components.links.keys -ccontains $Name
+}
+
 function Test-PodeOAComponentSchema {
     param(
         [Parameter(Mandatory = $true)]
@@ -1143,6 +1163,33 @@ function ConvertTo-PodeOAHeaderProperties {
         }
     }
     return $elems
+}
+
+
+
+function New-PodeOAComponentCallBackInternal {
+    param(
+        [hashtable]$Params
+    )
+
+    $_method = $Params.Method.ToLower()
+    $_name=$Params.Name
+    $callBack = [ordered]@{
+        $_name = [ordered]@{
+            "'$($Params.Path)'" = [ordered]@{
+                $_method = [ordered]@{}
+            }
+        }
+    }
+    if ($Params.RequestBody) {
+        $callBack.$_name."'$($Params.Path)'".$_method.requestBody = $Params.RequestBody
+    }
+    if ($Params.Responses) {
+        $callBack.$_name."'$($Params.Path)'".$_method.responses = $Params.Responses
+    }
+
+    return $callBack
+
 }
 
 
