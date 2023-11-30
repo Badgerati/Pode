@@ -373,7 +373,10 @@ function Add-PodeRoute {
         if ( $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses) {
             $DefaultResponse = $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses.Clone()
         } else {
-            $DefaultResponse = @{}
+            $DefaultResponse = @{
+                '200'     = @{ description = 'OK' }
+                'default' = @{ description = 'Internal server error' }
+            }
         }
         # add the route(s)
         Write-Verbose "Adding Route: [$($_method)] $($Path)"

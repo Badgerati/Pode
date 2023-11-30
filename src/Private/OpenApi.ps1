@@ -883,10 +883,7 @@ function Get-PodeOABaseObject {
             externalDocs     = @{}
             schemaJson       = @{}
             viewer           = @{}
-            defaultResponses = @{
-                '200'     = @{ description = 'OK' }
-                'default' = @{ description = 'Internal server error' }
-            }
+            defaultResponses = $null
         }
     }
 }
