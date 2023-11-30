@@ -187,7 +187,7 @@ function Test-PodeOAComponentCallBack {
         $Name
     )
 
-    return $PodeContext.Server.OpenAPI.hiddenComponents.callBacks.keys -ccontains $Name
+    return $PodeContext.Server.OpenAPI.components.callbacks.keys -ccontains $Name
 }
 
 function Test-PodeOAComponentLink {
@@ -250,6 +250,16 @@ function Test-PodeOAComponentParameter {
         $Name
     )
     return  $PodeContext.Server.OpenAPI.components.parameters.keys -ccontains $Name
+}
+
+function Get-PodeOAComponentPath {
+    param (
+        [Parameter(Mandatory)]
+        [ValidateSet('parameters', 'requestBodies', 'responses', 'schemas', 'headers', 'securitySchemes', 'links', 'callbacks', 'pathItems', 'examples')]
+        [string]
+        $FixesField
+    )
+    return $PodeContext.Server.OpenAPI.components.$FixesField
 }
 
 
@@ -594,9 +604,9 @@ function Get-PodeOpenApiDefinitionInternal {
     $def['components'] = $PodeContext.Server.OpenAPI.components
     # auth/security components
     if ($PodeContext.Server.Authentications.Methods.Count -gt 0) {
-        if ($null -eq $def.components.securitySchemes) {
-            $def.components.securitySchemes = @{}
-        }
+        #  if ($null -eq $def.components.securitySchemes) {
+        #     $def.components.securitySchemes = @{}
+        # }
         $authNames = (Expand-PodeAuthMerge -Names $PodeContext.Server.Authentications.Methods.Keys)
 
         foreach ($authName in $authNames) {
@@ -680,6 +690,37 @@ function Get-PodeOpenApiDefinitionInternal {
         $filter = ''
     }
 
+    if ($PodeContext.Server.OpenAPI.components.schemas.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('schemas')
+    }
+    if ($PodeContext.Server.OpenAPI.components.responses.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('responses')
+    }
+    if ($PodeContext.Server.OpenAPI.components.parameters.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('parameters')
+    }
+    if ($PodeContext.Server.OpenAPI.components.examples.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('examples')
+    }
+    if ($PodeContext.Server.OpenAPI.components.requestBodies.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('requestBodies')
+    }
+    if ($PodeContext.Server.OpenAPI.components.headers.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('headers')
+    }
+    if ($PodeContext.Server.OpenAPI.components.securitySchemes.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('securitySchemes')
+    }
+    if ($PodeContext.Server.OpenAPI.components.links.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('links')
+    }
+    if ($PodeContext.Server.OpenAPI.components.callbacks.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('callbacks')
+    }
+    if ($PodeContext.Server.OpenAPI.components.pathItems.count -eq 0) {
+        $PodeContext.Server.OpenAPI.components.Remove('pathItems')
+    }
+
     foreach ($method in $PodeContext.Server.Routes.Keys) {
         foreach ($path in ($PodeContext.Server.Routes[$method].Keys | Sort-Object)) {
             # does it match the route?
@@ -737,7 +778,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 if ($_route.OpenApi.RequestBody) {
                     $pm.requestBody = $_route.OpenApi.RequestBody
                 }
-                if ($_route.OpenApi.CallBacks) {
+                if ($_route.OpenApi.CallBacks.Count -gt 0) {
                     $pm.callbacks = $_route.OpenApi.CallBacks
                 }
                 if ($_route.OpenApi.Authentication.Count -gt 0) {
@@ -750,7 +791,9 @@ function Get-PodeOpenApiDefinitionInternal {
                         }
                     }
                 }
-                $pm.responses = $_route.OpenApi.Responses
+                if ($_route.OpenApi.Responses.Count -gt 0) {
+                    $pm.responses = $_route.OpenApi.Responses
+                }
                 # add path's http method to defintition
                 $def.paths[$_route.OpenApi.Path][$method] = $pm
 
@@ -819,11 +862,16 @@ function Get-PodeOABaseObject {
         info             = [ordered]@{}
         Path             = $null
         components       = [ordered]@{
-            schemas       = @{}
-            responses     = @{}
-            requestBodies = @{}
-            parameters    = @{}
-            examples      = @{}
+            schemas         = [ordered]@{}
+            responses       = [ordered]@{}
+            parameters      = [ordered]@{}
+            examples        = [ordered]@{}
+            requestBodies   = [ordered]@{}
+            headers         = [ordered]@{}
+            securitySchemes = [ordered]@{}
+            links           = [ordered]@{}
+            callbacks       = [ordered]@{}
+            pathItems       = [ordered]@{}
         }
         Security         = @()
         tags             = [ordered]@{}
@@ -1173,19 +1221,21 @@ function New-PodeOAComponentCallBackInternal {
     )
 
     $_method = $Params.Method.ToLower()
-    $_name=$Params.Name
+    #  $_name = $Params.Name
     $callBack = [ordered]@{
-        $_name = [ordered]@{
-            "'$($Params.Path)'" = [ordered]@{
-                $_method = [ordered]@{}
-            }
+        #  $_name = [ordered]@{
+        "'$($Params.Path)'" = [ordered]@{
+            $_method = [ordered]@{}
         }
+        # }
     }
     if ($Params.RequestBody) {
-        $callBack.$_name."'$($Params.Path)'".$_method.requestBody = $Params.RequestBody
+        # $callBack."'$($Params.Path)'".$_method.requestBody = $Params.RequestBody
+        $callBack."'$($Params.Path)'".$_method.requestBody = $Params.RequestBody
     }
     if ($Params.Responses) {
-        $callBack.$_name."'$($Params.Path)'".$_method.responses = $Params.Responses
+        #  $callBack."'$($Params.Path)'".$_method.responses = $Params.Responses
+        $callBack."'$($Params.Path)'".$_method.responses = $Params.Responses
     }
 
     return $callBack
@@ -1257,4 +1307,35 @@ function New-PodeOResponseInternal {
         }
     }
     return $response
+}
+
+
+
+function New-PodeOAResponseLinkInternal {
+    param(
+        [hashtable]$Params
+    )
+
+    $link = [ordered]@{  }
+
+    if ($Description) {
+        $link.description = $Params.Description
+    }
+    if ($OperationId) {
+        $link.operationId = $Params.OperationId
+    }
+    if ($OperationRef) {
+        $link.operationRef = $Params.OperationRef
+    }
+    if ($OperationRef) {
+        $link.operationRef = $Params.OperationRef
+    }
+    if ($Parameters) {
+        $link.parameters = $Params.Parameters
+    }
+    if ($RequestBody) {
+        $link.requestBody = $Params.RequestBody
+    }
+
+    return $link
 }

@@ -872,11 +872,11 @@ function New-PodeOARequestBody {
 
         'reference' {
             if (!(Test-PodeOAComponentRequestBody -Name $Schema)) {
-                throw "The OpenApi component request body doesn't exist: $($Schema)"
+                throw "The OpenApi component request body doesn't exist: $Schema"
             }
 
             $param = @{
-                '$ref' = "#/components/requestBodies/$($Schema)"
+                '$ref' = "#/components/requestBodies/$Schema"
             }
         }
     }
@@ -952,7 +952,8 @@ function Add-PodeOAComponentSchema {
         [string]
         $Description
     )
-    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty)
+    (Get-PodeOAComponentPath -FixesField schemas).$Name = ($Component | ConvertTo-PodeOASchemaProperty)
+    #   $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty)
     if ($PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
         $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
         #Resolve-PodeOAReferences -ComponentSchema  $modifiedSchema
@@ -962,7 +963,8 @@ function Add-PodeOAComponentSchema {
         }
     }
     if ($Description) {
-        $PodeContext.Server.OpenAPI.components.schemas[$Name].description = $Description
+        (Get-PodeOAComponentPath -FixesField schemas ).$Name.description = $Description
+        #$PodeContext.Server.OpenAPI.components.schemas[$Name].description = $Description
     }
 }
 
@@ -1139,8 +1141,8 @@ function Add-PodeOAComponentRequestBody {
     if ( $Description) {
         $param['description'] = $Description
     }
-
-    $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = $param
+    (Get-PodeOAComponentPath -FixesField requestBodies ).$Name = $param
+    #$PodeContext.Server.OpenAPI.components.requestBodies[$Name] = $param
 }
 
 <#
@@ -1188,7 +1190,8 @@ function Add-PodeOAComponentParameter {
             throw 'The Parameter has no name. Please provide a name to this component using -Name property'
         }
     }
-    $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter
+    (Get-PodeOAComponentPath -FixesField parameters ).$Name = $Parameter
+    #$PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter
 }
 
 
@@ -2852,7 +2855,7 @@ function ConvertTo-PodeOAParameter {
         if (!(Test-PodeOAComponentSchema -Name $Schema )) {
             throw "The OpenApi component request parameter doesn't exist: $($Schema )"
         }
-        $Property = $PodeContext.Server.OpenAPI.components.schemas[$Schema ]
+        # $Property = $PodeContext.Server.OpenAPI.components.schemas[$Schema ]
         if (!$Name ) {
             $Name = $Schema
         }
@@ -2942,13 +2945,14 @@ function ConvertTo-PodeOAParameter {
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
         if (!(Test-PodeOAComponentParameter -Name $ComponentParameter)) {
-            throw "The OpenApi component request parameter doesn't exist: $($ComponentParameter)"
+            throw "The OpenApi component request parameter doesn't exist: $ComponentParameter"
         }
 
         $prop = [ordered]@{
-            '$ref' = "#/components/parameters/$($ComponentParameter)"
+            '$ref' = "#/components/parameters/$ComponentParameter"
         }
-        if ($PodeContext.Server.OpenAPI.components.parameters.$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+        #if ($PodeContext.Server.OpenAPI.components.parameters.$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+        if ((Get-PodeOAComponentPath -FixesField parameters ).$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Append
         }
     } else {
@@ -3882,7 +3886,8 @@ function Add-PodeOAComponentExample {
     } elseif ($ExternalValue) {
         $Example.externalValue = $ExternalValue
     }
-    $PodeContext.Server.OpenAPI.components.examples[$Name] = $Example
+    (Get-PodeOAComponentPath -FixesField examples ).$Name = $Example
+    #$PodeContext.Server.OpenAPI.components.examples[$Name] = $Example
 }
 
 
@@ -4058,6 +4063,7 @@ function Add-PodeOACallBack {
         $Route,
 
         [Parameter(Mandatory = $true , ParameterSetName = 'inbuilt')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Reference')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
         $Name,
@@ -4095,9 +4101,14 @@ function Add-PodeOACallBack {
             if (!(Test-PodeOAComponentCallBack -Name $Reference )) {
                 throw "The OpenApi component CallBack  doesn't exist: $($Reference )"
             }
-            $r.OpenApi.callBacks = $PodeContext.Server.OpenAPI.components.callBacks[$Reference]
+            if (!$Name) {
+                $Name = $Reference
+            }
+            $r.OpenApi.callbacks.$Name = @{
+                '$ref' = "#/components/callbacks/$Reference"
+            }
         } else {
-            $r.OpenApi.callBacks = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
+            $r.OpenApi.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
         }
     }
 
@@ -4138,8 +4149,8 @@ function Add-PodeOAComponentCallBack {
         [System.Collections.Specialized.OrderedDictionary]
         $Responses
     )
-
-    $PodeContext.Server.OpenAPI.components.callBacks[$Name] = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
+    (Get-PodeOAComponentPath -FixesField callbacks).$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
+    # $PodeContext.Server.OpenAPI.components.callbacks[$Name] = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
 
 
 }
@@ -4509,14 +4520,15 @@ function New-PodeOAResponseLink {
         [System.Collections.Specialized.OrderedDictionary ]
         $LinkList,
 
-        [Parameter(Mandatory = $true)]
-        [Alias('Name')]
+        [Parameter( Mandatory = $false, ParameterSetName = 'Reference')]
+        [Parameter( Mandatory = $true, ParameterSetName = 'OperationRef')]
+        [Parameter( Mandatory = $true, ParameterSetName = 'OperationId')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
-        $Title,
+        $Name,
 
-        [Parameter(  ParameterSetName = 'OperationRef')]
-        [Parameter(  ParameterSetName = 'OperationId')]
+        [Parameter( ParameterSetName = 'OperationRef')]
+        [Parameter( ParameterSetName = 'OperationId')]
         [string]
         $Description,
 
@@ -4528,13 +4540,13 @@ function New-PodeOAResponseLink {
         [string]
         $OperationRef,
 
-        [Parameter(  ParameterSetName = 'OperationRef')]
-        [Parameter(  ParameterSetName = 'OperationId')]
+        [Parameter( ParameterSetName = 'OperationRef')]
+        [Parameter( ParameterSetName = 'OperationId')]
         [hashtable]
         $Parameters,
 
-        [Parameter(  ParameterSetName = 'OperationRef')]
-        [Parameter(  ParameterSetName = 'OperationId')]
+        [Parameter( ParameterSetName = 'OperationRef')]
+        [Parameter( ParameterSetName = 'OperationId')]
         [string]
         $RequestBody,
 
@@ -4549,27 +4561,18 @@ function New-PodeOAResponseLink {
             if (!(Test-PodeOAComponentLink -Name $Reference )) {
                 throw "The OpenApi component Link  doesn't exist: $Reference"
             }
-            $link = $PodeContext.Server.OpenAPI.components.links[$Reference]
+            if (!$Name) {
+                $Name = $Reference
+            }
+            $link = [ordered]@{
+                $Name = @{
+                    '$ref' = "#/components/links/$Reference"
+                }
+            }
         } else {
-            $link = [ordered]@{$Title = [ordered]@{} }
-            if ($Description) {
-                $link.$Title.description = $Description
-            }
-            if ($OperationId) {
-                $link.$Title.operationId = $OperationId
-            }
-            if ($OperationRef) {
-                $link.$Title.operationRef = $OperationRef
-            }
-            if ($OperationRef) {
-                $link.$Title.operationRef = $OperationRef
-            }
-            if ($Parameters) {
-                $link.$Title.parameters = $Parameters
-            }
-            if ($RequestBody) {
-                $link.$Title.requestBody = $RequestBody
-            }
+            $link =  [ordered]@{
+                $Name = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
+            } 
         }
     }
     process {
@@ -4633,10 +4636,9 @@ function Add-PodeOAComponentResponseLink {
     param(
 
         [Parameter(Mandatory = $true)]
-        [Alias('Name')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
-        $Title,
+        $Name,
 
         [Parameter()]
         [string]
@@ -4659,7 +4661,7 @@ function Add-PodeOAComponentResponseLink {
         $RequestBody
 
     )
-    $PodeContext.Server.OpenAPI.components.links[$Name] = New-PodeOAResponseLink -Params $PSBoundParameters
+    $PodeContext.Server.OpenAPI.components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
 }
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
@@ -4673,3 +4675,4 @@ if (!(Test-Path Alias:Enable-PodeOA)) {
 if (!(Test-Path Alias:Get-PodeOpenApiDefinition)) {
     New-Alias Get-PodeOpenApiDefinition -Value Get-PodeOADefinition
 }
+
