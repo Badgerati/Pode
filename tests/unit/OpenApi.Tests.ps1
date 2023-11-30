@@ -18,10 +18,16 @@ Describe 'OpenApi' {
                         info             = [ordered]@{}
                         Path             = $null
                         components       = [ordered]@{
-                            schemas       = @{}
-                            responses     = @{}
-                            requestBodies = @{}
-                            parameters    = @{}
+                            schemas         = [ordered]@{}
+                            responses       = [ordered]@{}
+                            parameters      = [ordered]@{}
+                            examples        = [ordered]@{}
+                            requestBodies   = [ordered]@{}
+                            headers         = [ordered]@{}
+                            securitySchemes = [ordered]@{}
+                            links           = [ordered]@{}
+                            callbacks       = [ordered]@{}
+                            pathItems       = [ordered]@{}
                         }
                         Security         = @()
                         tags             = [ordered]@{}
@@ -34,6 +40,10 @@ Describe 'OpenApi' {
                             externalDocs     = @{}
                             schemaJson       = @{}
                             viewer           = @{}
+                            defaultResponses = @{
+                                '200'     = @{ description = 'OK' }
+                                'default' = @{ description = 'Internal server error' }
+                            }
                         }
                     }
                 }
