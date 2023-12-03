@@ -2108,13 +2108,17 @@ function Expand-PodeAuthMerge {
     )
     $authNames = @{}
     foreach ($authName in  $Names) {
-        $_auth = $PodeContext.Server.Authentications.Methods[ $authName]
-        if ( $_auth.merged) {
-            foreach ($key in( Expand-PodeAuthMerge -Names $_auth.Authentications)){
-                $authNames[$key]=''
-            }
+        if ($authName -eq '%_allowanon_%') {
+            $authNames[$authName] = ''
         } else {
-            $authNames[$_auth.Name] = ''
+            $_auth = $PodeContext.Server.Authentications.Methods[ $authName]
+            if ( $_auth.merged) {
+                foreach ($key in( Expand-PodeAuthMerge -Names $_auth.Authentications)) {
+                    $authNames[$key] = ''
+                }
+            } else {
+                $authNames[$_auth.Name] = ''
+            }
         }
     }
     return $authNames.Keys

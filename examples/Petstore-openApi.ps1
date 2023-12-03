@@ -254,6 +254,11 @@ Some useful links:
         # check if the user is valid
         return @{ User = $user }
     }
+    New-PodeAuthScheme -ApiKey | Add-PodeAuth -Name 'LoginApiKey' -Sessionless -ScriptBlock {
+        param($username, $password)
+        # check if the user is valid
+        return @{ User = $user }
+    }
     # jwt with no signature:
     New-PodeAuthScheme -Bearer -AsJWT | Add-PodeAuth -Name 'Jwt' -Sessionless -ScriptBlock {
         param($payload)
@@ -524,7 +529,7 @@ Some useful links:
             Add-PodeOACallBack -Name 'test1'   -Reference 'test'
 
 
-        Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -ScriptBlock {
+        Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -AllowAnon -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Finds Pets by status' -Description 'Multiple status values can be provided with comma separated strings' -Tags 'pet' -OperationId 'findPetsByStatus' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(

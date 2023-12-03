@@ -424,7 +424,7 @@ function Add-PodeRoute {
             })
 
         if (![string]::IsNullOrWhiteSpace($Authentication)) {
-            Set-PodeOAAuth -Route $methodRoutes -Name $Authentication
+            Set-PodeOAAuth -Route $methodRoutes -Name $Authentication -AllowAnon:$AllowAnon
         }
 
         $PodeContext.Server.Routes[$_method][$Path] += @($methodRoutes)

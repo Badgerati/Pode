@@ -780,12 +780,14 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
                 if ($_route.OpenApi.CallBacks.Count -gt 0) {
                     $pm.callbacks = $_route.OpenApi.CallBacks
-                }
+                } 
                 if ($_route.OpenApi.Authentication.Count -gt 0) {
                     $pm.security = @()
                     foreach ($sct in (Expand-PodeAuthMerge -Names $_route.OpenApi.Authentication.Keys)) {
                         if ($PodeContext.Server.Authentications.Methods.$sct.Scheme.Scheme -ieq 'oauth2') {
                             $pm.security += @{ $sct = $_route.AccessMeta.Scope }
+                        } elseif ($sct -eq '%_allowanon_%') { #allow anonymous access
+                            $pm.security += @{  }
                         } else {
                             $pm.security += @{$sct = @() }
                         }
@@ -897,7 +899,11 @@ function Set-PodeOAAuth {
 
         [Parameter()]
         [string[]]
-        $Name
+        $Name,
+
+        [Parameter()]
+        [switch]
+        $AllowAnon
     )
 
     foreach ($n in @($Name)) {
@@ -912,6 +918,9 @@ function Set-PodeOAAuth {
                     "$($n -replace '\s+', '')" = @()
                 }
             })
+        if ($AllowAnon) {
+            $r.OpenApi.Authentication += @{'%_allowanon_%' = '' }
+        }
     }
 }
 
