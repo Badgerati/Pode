@@ -1687,7 +1687,7 @@ Describe 'OpenApi' {
     Context 'Add-PodeOAComponentSchema' {
         It 'Standard' {
             Add-PodeOAComponentSchema -Name 'Category' -Schema (
-                New-PodeOAObjectProperty -Name 'Category' -Xml @{'name' = 'category' } -Properties  (
+                New-PodeOAObjectProperty -Name 'Category' XmlName 'category'  -Properties  (
                     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
                         New-PodeOAStringProperty -Name 'name' -Example 'Dogs'
                 ))
@@ -1719,7 +1719,7 @@ Describe 'OpenApi' {
         It 'Pipeline' {
             New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
                 New-PodeOAStringProperty -Name 'name' -Example 'Dogs' |
-                New-PodeOAObjectProperty -Name 'Category' -Xml @{'name' = 'category' } |
+                New-PodeOAObjectProperty -Name 'Category' -XmlName  'category' |
                 Add-PodeOAComponentSchema -Name 'Category'
             $PodeContext.Server.OpenAPI.components.schemas['Category'] | Should -Not -BeNullOrEmpty
             $result = $PodeContext.Server.OpenAPI.components.schemas['Category']
@@ -1974,7 +1974,7 @@ Describe 'OpenApi' {
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [PSObject]
             $result.type | Should -Be 'OneOf'
-            $result.discriminator.propertyName| Should -Be 'name'
+            $result.discriminator.propertyName | Should -Be 'name'
             #   $result.schemas | Should -BeOfType 'Array'
             $result.schemas.Count | Should -Be 2
             $result.schemas[0] | Should -Be  'Pet'
@@ -2831,7 +2831,7 @@ Describe 'OpenApi' {
         }
 
         it 'default' {
-            Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAContentMediaType -ContentMediaType 'application/json' ,'application/xml','application/x-www-form-urlencoded' -Content 'Cat'  )
+            Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAContentMediaType -ContentMediaType 'application/json' , 'application/xml', 'application/x-www-form-urlencoded' -Content 'Cat'  )
             $result = $PodeContext.Server.OpenAPI.components.requestBodies['PetBodySchema']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -2994,12 +2994,12 @@ Describe 'OpenApi' {
     Context 'Pet Object example' {
         BeforeEach {
             Add-PodeOAComponentSchema -Name 'Category' -Schema (
-                New-PodeOAObjectProperty -Name 'Category' -Xml @{'name' = 'category' } -Properties  (
+                New-PodeOAObjectProperty -Name 'Category' -XmlName  'category'  -Properties  (
                     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
                         New-PodeOAStringProperty -Name 'name' -Example 'Dogs'
                 ))
             Add-PodeOAComponentSchema -Name 'Tag' -Schema (
-                New-PodeOAObjectProperty -Name 'Tag' -Xml @{'name' = 'tag' } -Properties  (
+                New-PodeOAObjectProperty -Name 'Tag' -XmlName  'tag' -Properties  (
                     New-PodeOAIntProperty -Name 'id'-Format Int64 |
                         New-PodeOAStringProperty -Name 'name'
                 ))
@@ -3007,7 +3007,7 @@ Describe 'OpenApi' {
 
 
         It 'By properties' {
-            $Pet = New-PodeOAObjectProperty -Name 'Pet' -Xml @{'name' = 'pet' } -Properties  (
+            $Pet = New-PodeOAObjectProperty -Name 'Pet' -XmlName  'pet'   -Properties  (
             (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly ),
                 (New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required) ,
                 (New-PodeOASchemaProperty -Name 'category' -Component 'Category' ),
