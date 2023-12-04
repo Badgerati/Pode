@@ -1253,9 +1253,6 @@ An example of a parameter value
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
-.PARAMETER XmlName
-By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
-
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
 
@@ -1297,8 +1294,43 @@ If supplied, specify minimum length of an array
 .PARAMETER MaxItems
 If supplied, specify maximum length of an array
 
+.PARAMETER XmlName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
+reflecting the 'xml.name' attribute in the OpenAPI specification.
+
+.PARAMETER XmlNamespace
+Defines a specific XML namespace for the property, corresponding to the 'xml.namespace' attribute in OpenAPI.
+
+.PARAMETER XmlPrefix
+Sets a prefix for the XML element name, aligning with the 'xml.prefix' attribute in OpenAPI.
+
+.PARAMETER XmlAttribute
+Indicates whether the property should be serialized as an XML attribute, equivalent to the 'xml.attribute' attribute in OpenAPI.
+
+.PARAMETER XmlItemName
+Specifically for properties treated as arrays, it defines the XML name for each item in the array. This parameter aligns with the 'xml.name' attribute under 'items' in OpenAPI.
+
+.PARAMETER XmlWrapped
+Indicates whether array items should be wrapped in an XML element, similar to the 'xml.wrapped' attribute in OpenAPI.
+
+
 .EXAMPLE
-New-PodeOANumberProperty -Name 'age' -Required
+New-PodeOAIntProperty -Name 'age' -Required
+Creates a required integer property named 'age'.
+
+.EXAMPLE
+New-PodeOAIntProperty -Name 'count' -Minimum 0 -Maximum 10 -Default 5 -Description 'Item count'
+Creates an integer property 'count' with a minimum value of 0, maximum of 10, default value of 5, and a description.
+
+.EXAMPLE
+New-PodeOAIntProperty -Name 'quantity' -XmlName 'Quantity' -XmlNamespace 'http://example.com/quantity' -XmlPrefix 'q'
+Creates an integer property 'quantity' with a custom XML element name 'Quantity', using a specified namespace and prefix.
+
+.EXAMPLE
+New-PodeOAIntProperty -Array -XmlItemName 'unit' -XmlName 'units' | Add-PodeOAComponentSchema -Name 'Units'
+Generates a schema where the integer property is treated as an array, with each array item named 'unit' in XML, and the array itself represented with the XML name 'units'.
+
+
 #>
 function New-PodeOAIntProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
@@ -1359,10 +1391,6 @@ function New-PodeOAIntProperty {
         [int[]]
         $Enum,
 
-        [Parameter()]
-        [string]
-        $XmlName,
-
         [switch]
         $Required,
 
@@ -1386,6 +1414,26 @@ function New-PodeOAIntProperty {
 
         [hashtable]
         $AdditionalProperties,
+
+        [string]
+        $XmlName,
+
+        [string]
+        $XmlNamespace,
+
+        [string]
+        $XmlPrefix,
+
+        [switch]
+        $XmlAttribute,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [string]
+        $XmlItemName,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [switch]
+        $XmlWrapped,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
@@ -1480,9 +1528,6 @@ An example of a parameter value
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
-.PARAMETER XmlName
-By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
-
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
 
@@ -1523,6 +1568,25 @@ If supplied, specify minimum length of an array
 
 .PARAMETER MaxItems
 If supplied, specify maximum length of an array
+
+.PARAMETER XmlName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
+reflecting the 'xml.name' attribute in the OpenAPI specification.
+
+.PARAMETER XmlNamespace
+Defines a specific XML namespace for the property, corresponding to the 'xml.namespace' attribute in OpenAPI.
+
+.PARAMETER XmlPrefix
+Sets a prefix for the XML element name, aligning with the 'xml.prefix' attribute in OpenAPI.
+
+.PARAMETER XmlAttribute
+Indicates whether the property should be serialized as an XML attribute, equivalent to the 'xml.attribute' attribute in OpenAPI.
+
+.PARAMETER XmlItemName
+Specifically for properties treated as arrays, it defines the XML name for each item in the array. This parameter aligns with the 'xml.name' attribute under 'items' in OpenAPI.
+
+.PARAMETER XmlWrapped
+Indicates whether array items should be wrapped in an XML element, similar to the 'xml.wrapped' attribute in OpenAPI.
 
 .EXAMPLE
 New-PodeOANumberProperty -Name 'gravity' -Default 9.8
@@ -1585,10 +1649,6 @@ function New-PodeOANumberProperty {
         [double[]]
         $Enum,
 
-        [Parameter()]
-        [string]
-        $XmlName,
-
         [switch]
         $Required,
 
@@ -1612,6 +1672,26 @@ function New-PodeOANumberProperty {
 
         [hashtable]
         $AdditionalProperties,
+
+        [string]
+        $XmlName,
+
+        [string]
+        $XmlNamespace,
+
+        [string]
+        $XmlPrefix,
+
+        [switch]
+        $XmlAttribute,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [string]
+        $XmlItemName,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [switch]
+        $XmlWrapped,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
@@ -1693,9 +1773,6 @@ An example of a parameter value
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
-.PARAMETER XmlName
-By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
-
 .PARAMETER Required
 If supplied, the string will be treated as Required where supported.
 
@@ -1742,6 +1819,25 @@ If supplied, specify minimum length of an array
 
 .PARAMETER MaxItems
 If supplied, specify maximum length of an array
+
+.PARAMETER XmlName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
+reflecting the 'xml.name' attribute in the OpenAPI specification.
+
+.PARAMETER XmlNamespace
+Defines a specific XML namespace for the property, corresponding to the 'xml.namespace' attribute in OpenAPI.
+
+.PARAMETER XmlPrefix
+Sets a prefix for the XML element name, aligning with the 'xml.prefix' attribute in OpenAPI.
+
+.PARAMETER XmlAttribute
+Indicates whether the property should be serialized as an XML attribute, equivalent to the 'xml.attribute' attribute in OpenAPI.
+
+.PARAMETER XmlItemName
+Specifically for properties treated as arrays, it defines the XML name for each item in the array. This parameter aligns with the 'xml.name' attribute under 'items' in OpenAPI.
+
+.PARAMETER XmlWrapped
+Indicates whether array items should be wrapped in an XML element, similar to the 'xml.wrapped' attribute in OpenAPI.
 
 .EXAMPLE
 New-PodeOAStringProperty -Name 'userType' -Default 'admin'
@@ -1797,10 +1893,6 @@ function New-PodeOAStringProperty {
         [string[]]
         $Enum,
 
-        [Parameter()]
-        [string]
-        $XmlName,
-
         [switch]
         $Required,
 
@@ -1832,6 +1924,26 @@ function New-PodeOAStringProperty {
 
         [hashtable]
         $AdditionalProperties,
+
+        [string]
+        $XmlName,
+
+        [string]
+        $XmlNamespace,
+
+        [string]
+        $XmlPrefix,
+
+        [switch]
+        $XmlAttribute,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [string]
+        $XmlItemName,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [switch]
+        $XmlWrapped,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
@@ -1913,9 +2025,6 @@ An example of a parameter value
 .PARAMETER Enum
 An optional array of values that this property can only be set to.
 
-.PARAMETER XmlName
-By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
-
 .PARAMETER Required
 If supplied, the object will be treated as Required where supported.
 
@@ -1957,6 +2066,25 @@ If supplied, specify minimum length of an array
 .PARAMETER MaxItems
 If supplied, specify maximum length of an array
 
+.PARAMETER XmlName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
+reflecting the 'xml.name' attribute in the OpenAPI specification.
+
+.PARAMETER XmlNamespace
+Defines a specific XML namespace for the property, corresponding to the 'xml.namespace' attribute in OpenAPI.
+
+.PARAMETER XmlPrefix
+Sets a prefix for the XML element name, aligning with the 'xml.prefix' attribute in OpenAPI.
+
+.PARAMETER XmlAttribute
+Indicates whether the property should be serialized as an XML attribute, equivalent to the 'xml.attribute' attribute in OpenAPI.
+
+.PARAMETER XmlItemName
+Specifically for properties treated as arrays, it defines the XML name for each item in the array. This parameter aligns with the 'xml.name' attribute under 'items' in OpenAPI.
+
+.PARAMETER XmlWrapped
+Indicates whether array items should be wrapped in an XML element, similar to the 'xml.wrapped' attribute in OpenAPI.
+
 .EXAMPLE
 New-PodeOABoolProperty -Name 'enabled' -Required
 #>
@@ -1994,10 +2122,6 @@ function New-PodeOABoolProperty {
         [string[]]
         $Enum,
 
-        [Parameter()]
-        [string]
-        $XmlName,
-
         [switch]
         $Required,
 
@@ -2021,6 +2145,26 @@ function New-PodeOABoolProperty {
 
         [hashtable]
         $AdditionalProperties,
+
+        [string]
+        $XmlName,
+
+        [string]
+        $XmlNamespace,
+
+        [string]
+        $XmlPrefix,
+
+        [switch]
+        $XmlAttribute,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [string]
+        $XmlItemName,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [switch]
+        $XmlWrapped,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
@@ -2098,9 +2242,6 @@ The parameter is created by Add-PodeOAExternalDoc
 .PARAMETER Example
 An example of a parameter value
 
-.PARAMETER XmlName
-By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
-
 .PARAMETER Deprecated
 If supplied, the object will be treated as Deprecated where supported.
 
@@ -2151,9 +2292,6 @@ If supplied, specify minimum length of an array
 .PARAMETER MaxItems
 If supplied, specify maximum length of an array
 
-.PARAMETER Xml
-If supplied, controls the XML serialization behavior
-
 .PARAMETER DiscriminatorProperty
 If supplied, specifies the name of the property used to distinguish between different subtypes in a polymorphic schema in OpenAPI.
 This string value represents the property in the payload that indicates which specific subtype schema should be applied.
@@ -2163,6 +2301,25 @@ It's essential in scenarios where an API endpoint handles data that conforms to 
 If supplied, define a mapping between the values of the discriminator property and the corresponding subtype schemas.
 This parameter accepts a HashTable where each key-value pair maps a discriminator value to a specific subtype schema name.
 It's used in conjunction with the -DiscriminatorProperty to provide complete discrimination logic in polymorphic scenarios.
+
+.PARAMETER XmlName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
+reflecting the 'xml.name' attribute in the OpenAPI specification.
+
+.PARAMETER XmlNamespace
+Defines a specific XML namespace for the property, corresponding to the 'xml.namespace' attribute in OpenAPI.
+
+.PARAMETER XmlPrefix
+Sets a prefix for the XML element name, aligning with the 'xml.prefix' attribute in OpenAPI.
+
+.PARAMETER XmlAttribute
+Indicates whether the property should be serialized as an XML attribute, equivalent to the 'xml.attribute' attribute in OpenAPI.
+
+.PARAMETER XmlItemName
+Specifically for properties treated as arrays, it defines the XML name for each item in the array. This parameter aligns with the 'xml.name' attribute under 'items' in OpenAPI.
+
+.PARAMETER XmlWrapped
+Indicates whether array items should be wrapped in an XML element, similar to the 'xml.wrapped' attribute in OpenAPI.
 
 .EXAMPLE
 New-PodeOAObjectProperty -Name 'user' -Properties @('<ARRAY_OF_PROPERTIES>')
@@ -2204,10 +2361,6 @@ function New-PodeOAObjectProperty {
         [object]
         $Example,
 
-        [Parameter()]
-        [string]
-        $XmlName,
-
         [switch]
         $Deprecated,
 
@@ -2238,6 +2391,26 @@ function New-PodeOAObjectProperty {
         [hashtable]
         $AdditionalProperties,
 
+        [string]
+        $XmlName,
+
+        [string]
+        $XmlNamespace,
+
+        [string]
+        $XmlPrefix,
+
+        [switch]
+        $XmlAttribute,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [string]
+        $XmlItemName,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [switch]
+        $XmlWrapped,
+
         [Parameter(  Mandatory, ParameterSetName = 'Array')]
         [switch]
         $Array,
@@ -2253,9 +2426,6 @@ function New-PodeOAObjectProperty {
         [Parameter(ParameterSetName = 'Array')]
         [int]
         $MaxItems,
-
-        [hashtable]
-        $Xml,
 
         [string]
         $DiscriminatorProperty,
@@ -2503,9 +2673,24 @@ If supplied, specify minimum length of an array
 .PARAMETER MaxItems
 If supplied, specify maximum length of an array
 
-.PARAMETER Xml
-If supplied, controls the XML serialization behavior
+.PARAMETER XmlName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
+reflecting the 'xml.name' attribute in the OpenAPI specification.
 
+.PARAMETER XmlNamespace
+Defines a specific XML namespace for the property, corresponding to the 'xml.namespace' attribute in OpenAPI.
+
+.PARAMETER XmlPrefix
+Sets a prefix for the XML element name, aligning with the 'xml.prefix' attribute in OpenAPI.
+
+.PARAMETER XmlAttribute
+Indicates whether the property should be serialized as an XML attribute, equivalent to the 'xml.attribute' attribute in OpenAPI.
+
+.PARAMETER XmlItemName
+Specifically for properties treated as arrays, it defines the XML name for each item in the array. This parameter aligns with the 'xml.name' attribute under 'items' in OpenAPI.
+
+.PARAMETER XmlWrapped
+Indicates whether array items should be wrapped in an XML element, similar to the 'xml.wrapped' attribute in OpenAPI.
 
 .EXAMPLE
 New-PodeOASchemaProperty -Name 'Config' -Component "MyConfigSchema"
@@ -2530,6 +2715,26 @@ function New-PodeOASchemaProperty {
 
         [string]
         $Description,
+
+        [string]
+        $XmlName,
+
+        [string]
+        $XmlNamespace,
+
+        [string]
+        $XmlPrefix,
+
+        [switch]
+        $XmlAttribute,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [string]
+        $XmlItemName,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [switch]
+        $XmlWrapped,
 
         [Parameter(ParameterSetName = 'Array')]
         [object]
@@ -4570,9 +4775,9 @@ function New-PodeOAResponseLink {
                 }
             }
         } else {
-            $link =  [ordered]@{
+            $link = [ordered]@{
                 $Name = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
-            } 
+            }
         }
     }
     process {

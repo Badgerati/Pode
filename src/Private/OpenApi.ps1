@@ -431,8 +431,19 @@ function ConvertTo-PodeOASchemaProperty {
                 $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
             } else {
                 $Property.array = $false
+                if ($Property.xml) {
+                    $xmlFromProperties = $Property.xml
+                    $Property.Remove('xml')
+                }
                 $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty)
                 $Property.array = $true
+                if ($xmlFromProperties) {
+                    $Property.xml = $xmlFromProperties 
+                }
+
+                if ($Property.xmlItemName) {
+                    $schema.items.xml = @{'name' = $Property.xmlItemName }
+                }
             }
             return $schema
         } else {
@@ -780,13 +791,20 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
                 if ($_route.OpenApi.CallBacks.Count -gt 0) {
                     $pm.callbacks = $_route.OpenApi.CallBacks
-                } 
+                }
                 if ($_route.OpenApi.Authentication.Count -gt 0) {
                     $pm.security = @()
                     foreach ($sct in (Expand-PodeAuthMerge -Names $_route.OpenApi.Authentication.Keys)) {
                         if ($PodeContext.Server.Authentications.Methods.$sct.Scheme.Scheme -ieq 'oauth2') {
-                            $pm.security += @{ $sct = $_route.AccessMeta.Scope }
-                        } elseif ($sct -eq '%_allowanon_%') { #allow anonymous access
+                            if ($_route.AccessMeta.Scope ) {
+                                $sctValue = $_route.AccessMeta.Scope
+                            } else {
+                                #if scope is empty means 'any role' => assign an empty array
+                                $sctValue = @()
+                            }
+                            $pm.security += @{ $sct = $sctValue }
+                        } elseif ($sct -eq '%_allowanon_%') {
+                            #allow anonymous access
                             $pm.security += @{  }
                         } else {
                             $pm.security += @{$sct = @() }
@@ -1157,18 +1175,34 @@ function New-PodeOAPropertyInternal {
     if ($Params.MaxProperties) {
         $param.maxProperties = $Params.MaxProperties
     }
-    if ($Params.Xml -and $Params.XmlName) {
-        throw 'Params -Xml and -XmlName are mutually exclusive'
-    } else {
-        if ($Params.Xml) {
-            $param.xml = $Params.Xml
+
+
+    if ($Params.XmlName -or $Params.XmlNamespace -or $Params.XmlPrefix -or $Params.XmlAttribute.IsPresent -or $Params.XmlWrapped.IsPresent) {
+        $param.xml = @{}
+        if ($Params.XmlName) {
+            $param.xml.name = $Params.XmlName
+        }
+        if ($Params.XmlNamespace) {
+            $param.xml.namespace = $Params.XmlNamespace
         }
 
-        if ($Params.XmlName) {
-            $param.xml = @{'name' = $Params.XmlName }
+        if ($Params.XmlPrefix) {
+            $param.xml.prefix = $Params.XmlPrefix
+        }
+
+        if ($Params.XmlAttribute.IsPresent) {
+            $param.xml.attribute = $Params.XmlAttribute.IsPresent
+        }
+
+        if ($Params.XmlWrapped.IsPresent) {
+            $param.xml.wrapped = $Params.XmlWrapped.IsPresent
         }
     }
 
+
+    if ($Params.XmlItemName) {
+        $param.xmlItemName = $Params.XmlItemName
+    }
 
     if ($Params.ExternalDocs) {
         if ( !(Test-PodeOAExternalDoc -Name $Params.ExternalDocs)) {
