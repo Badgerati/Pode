@@ -1687,7 +1687,7 @@ Describe 'OpenApi' {
     Context 'Add-PodeOAComponentSchema' {
         It 'Standard' {
             Add-PodeOAComponentSchema -Name 'Category' -Schema (
-                New-PodeOAObjectProperty -Name 'Category' XmlName 'category'  -Properties  (
+                New-PodeOAObjectProperty -Name 'Category' -XmlName 'category'  -Properties  (
                     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
                         New-PodeOAStringProperty -Name 'name' -Example 'Dogs'
                 ))
@@ -1719,7 +1719,7 @@ Describe 'OpenApi' {
         It 'Pipeline' {
             New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
                 New-PodeOAStringProperty -Name 'name' -Example 'Dogs' |
-                New-PodeOAObjectProperty -Name 'Category' -XmlName  'category' |
+                New-PodeOAObjectProperty -Name 'Category' -XmlName 'category' |
                 Add-PodeOAComponentSchema -Name 'Category'
             $PodeContext.Server.OpenAPI.components.schemas['Category'] | Should -Not -BeNullOrEmpty
             $result = $PodeContext.Server.OpenAPI.components.schemas['Category']
@@ -2994,12 +2994,12 @@ Describe 'OpenApi' {
     Context 'Pet Object example' {
         BeforeEach {
             Add-PodeOAComponentSchema -Name 'Category' -Schema (
-                New-PodeOAObjectProperty -Name 'Category' -XmlName  'category'  -Properties  (
+                New-PodeOAObjectProperty -Name 'Category' -XmlName 'category'  -Properties  (
                     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
                         New-PodeOAStringProperty -Name 'name' -Example 'Dogs'
                 ))
             Add-PodeOAComponentSchema -Name 'Tag' -Schema (
-                New-PodeOAObjectProperty -Name 'Tag' -XmlName  'tag' -Properties  (
+                New-PodeOAObjectProperty -Name 'Tag' -XmlName 'tag' -Properties  (
                     New-PodeOAIntProperty -Name 'id'-Format Int64 |
                         New-PodeOAStringProperty -Name 'name'
                 ))
@@ -3007,7 +3007,7 @@ Describe 'OpenApi' {
 
 
         It 'By properties' {
-            $Pet = New-PodeOAObjectProperty -Name 'Pet' -XmlName  'pet'   -Properties  (
+            $Pet = New-PodeOAObjectProperty -Name 'Pet' -XmlName 'pet'   -Properties  (
             (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly ),
                 (New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required) ,
                 (New-PodeOASchemaProperty -Name 'category' -Component 'Category' ),
