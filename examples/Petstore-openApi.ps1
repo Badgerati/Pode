@@ -301,7 +301,7 @@ Some useful links:
         Add-PodeRoute -PassThru -Method Get -Path '/store/inventory' -Authentication 'api_key' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Returns pet inventories by status' -Description 'Returns a map of status codes to quantities' -Tags 'store' -OperationId 'getInventory' -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{  'application/json' = New-PodeOAObjectProperty -AdditionalProperties (New-PodeOAIntProperty -Format Int32  ) } 
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{  'application/json' = New-PodeOAObjectProperty -AdditionalProperties (New-PodeOAIntProperty -Format Int32  ) }
 
 
         <#
@@ -315,7 +315,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
         <#
-            GET '/store/order/:orderId'
+            GET '/store/order/{orderId}'
         #>
         Add-PodeRoute -PassThru -Method Get -Path '/store/order/:orderId' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
@@ -328,7 +328,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'
 
         <#
-            DELETE '/store/order/:orderId'
+            DELETE '/store/order/{orderId}'
         #>
         Add-PodeRoute -PassThru -Method Delete -Path '/store/order/:orderId' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
@@ -338,6 +338,92 @@ Some useful links:
             ) |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'
+
+
+
+        <#
+            POST '/user'
+        #>
+
+        Add-PodeRoute -PassThru -Method Post -Path '/user' -ScriptBlock {
+            $JsonUser = ConvertTo-Json $WebEvent.data
+            $Validate = Test-PodeOAJsonSchemaCompliance -Json $JsonUser -SchemaReference 'User'
+            if ($Validate.result) {
+                $User = $WebEvent.data
+                $User.id = Get-Random -Minimum 1 -Maximum 9999999
+                Write-PodeJsonResponse -Value ($User | ConvertTo-Json -Depth 20 ) -StatusCode 200
+            } else {
+                Write-PodeJsonResponse -StatusCode 405 -Value @{
+                    result  = $Validate.result
+                    message = $Validate.message -join ', '
+                }
+            }
+        } | Set-PodeOARouteInfo -Summary 'Create user.' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'createUser' -PassThru |
+            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )) -PassThru |
+            Add-PodeOAResponse -Default -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml'  -Content 'User' )
+
+        <#
+            POST '/user/createWithList'
+        #>
+        Add-PodeRoute -PassThru -Method post -Path '/user/createWithList' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Creates list of users with given input array.' -Description 'Creates list of users with given input array.' -Tags 'user' -OperationId 'createUsersWithListInput' -PassThru |
+            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content 'User'  -Array)) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml'  -Content 'User'  ) -PassThru |
+            Add-PodeOAResponse -Default -Description 'successful operation'
+        <#
+            GET '/user/login'
+        #>
+        Add-PodeRoute -PassThru -Method Get -Path '/user/login' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Logs user into the system.'  -Tags 'user' -OperationId 'loginUser' -PassThru |
+            Set-PodeOARequest  -Parameters  (  New-PodeOAStringProperty -Name 'username' -Description 'The user name for login' | ConvertTo-PodeOAParameter -In Query ),
+                                (  New-PodeOAStringProperty -Name 'password' -Description 'The password for login in clear text' -Format Password | ConvertTo-PodeOAParameter -In Query ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'string' ) `
+                -Headers (New-PodeOAIntProperty  -Name 'X-Rate-Limit' -Description 'calls per hour allowed by the user' -Format Int32),
+                (New-PodeOAStringProperty -Name 'X-Expires-After' -Description 'date in UTC when token expires' -Format Date-Time) -PassThru |
+            # ) |
+            Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'
+
+        <#
+            GET '/user/logout'
+        #>
+        Add-PodeRoute -PassThru -Method Get -Path '/user/logout' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Logs out current logged in user session.'  -Tags 'user' -OperationId 'logoutUser' -PassThru |
+            Add-PodeOAResponse -Default -Description 'Successful operation'
+        <#
+            GET '/user/{username}'
+        #>
+        Add-PodeRoute -PassThru -Method Get -Path '/user/:username' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Get user by user name'   -Tags 'user' -OperationId 'getUserByName' -PassThru |
+            Set-PodeOARequest -Parameters (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be fetched. Use user1 for testing.' -Required | ConvertTo-PodeOAParameter -In Path ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'User' ) -PassThru |
+            Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
+            Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
+
+        <#
+            PUT '/user/{username}'
+        #>
+        Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'updateUser' -PassThru |
+            Set-PodeOARequest -Parameters (  New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path ) `
+                -RequestBody ( New-PodeOARequestBody -Required -Description 'Update an existent user in the store' -Content (
+                    New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User'
+                )) -PassThru |
+            Add-PodeOAResponse -Default -Description 'successful operation'
+
+        <#
+            DELETE '/user/{username}'
+        #>
+        Add-PodeRoute -PassThru -Method Delete -Path '/user/:username' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Delete user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'deleteUser' -PassThru |
+            Set-PodeOARequest -Parameters   (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be deleted.' -Required | ConvertTo-PodeOAParameter -In Path )  -PassThru |
+            Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
+            Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
     }
     $yaml = PodeOADefinition -Format Yaml
     # $json=  PodeOADefinition -Format Json

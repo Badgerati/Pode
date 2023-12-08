@@ -1319,17 +1319,16 @@ function New-PodeOResponseInternal {
 
         # build any header schemas
         $_headers = $null
-        if ($Params.Headers -is [System.Object[]] -or $Params.Headers -is [string] -or $Params.Headers -is [string[]]) {
-            if ($null -ne $Params.Headers) {
-
-                if ($Params.Headers -is [System.Object[]] -and $Params.Headers.Count -gt 0 -and $Params.Headers[0] -is [hashtable]) {
+        if ($null -ne $Params.Headers) {
+            if ($Params.Headers -is [System.Object[]] -or $Params.Headers -is [string] -or $Params.Headers -is [string[]]) {
+                if ($Params.Headers -is [System.Object[]] -and $Params.Headers.Count -gt 0 -and ($Params.Headers[0] -is [hashtable] -or $Params.Headers[0] -is [ordered] )) {
                     $_headers = ConvertTo-PodeOAHeaderProperties -Headers   $Params.Headers
                 } else {
                     $_headers = ConvertTo-PodeOAHeaderSchema -Schemas $Params.Headers -Array:$Params.HeaderArray
                 }
+            } elseif ($Params.Headers -is [hashtable]) {
+                $_headers = ConvertTo-PodeOAObjectSchema -Content  $Params.Headers
             }
-        } elseif ($Params.Headers -is [hashtable]) {
-            $_headers = ConvertTo-PodeOAObjectSchema -Content  $Params.Headers
         }
 
 
