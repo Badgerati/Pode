@@ -438,7 +438,7 @@ function ConvertTo-PodeOASchemaProperty {
                 $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty)
                 $Property.array = $true
                 if ($xmlFromProperties) {
-                    $Property.xml = $xmlFromProperties 
+                    $Property.xml = $xmlFromProperties
                 }
 
                 if ($Property.xmlItemName) {
@@ -1215,11 +1215,11 @@ function New-PodeOAPropertyInternal {
         throw 'Params -NoAdditionalProperties and AdditionalProperties are mutually exclusive'
     } else {
         if ($Params.NoAdditionalProperties.IsPresent) {
-            $param.AdditionalProperties = $false
+            $param.additionalProperties = $false
         }
 
         if ($Params.AdditionalProperties) {
-            $param.AdditionalProperties = $Params.AdditionalProperties
+            $param.additionalProperties = $Params.AdditionalProperties
         }
     }
     return $param

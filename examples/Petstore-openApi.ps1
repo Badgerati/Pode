@@ -226,6 +226,18 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' -Array) -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
 
+        <#
+            GET '/pet/findByTags'
+        #>
+        Add-PodeRoute -PassThru -Method get -Path '/pet/findByTags' -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Finds Pets by tags' -Description 'Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.' -Tags 'pet' -OperationId 'findPetsByTags' -PassThru |
+            Set-PodeOARequest -PassThru -Parameters (
+                New-PodeOAStringProperty -Name 'tags' -Description 'Tags to filter by' -Array |
+                    ConvertTo-PodeOAParameter -In Query -Explode ) |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' -Array) -PassThru |
+                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid tag value'
+
 
 
         <#
@@ -237,7 +249,7 @@ Some useful links:
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAIntProperty -Name 'petId' -Description 'ID of pet to return'  -Format Int64 |
                     ConvertTo-PodeOAParameter -In Path -Required ) |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet') -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'
 
@@ -266,6 +278,66 @@ Some useful links:
                 ConvertTo-PodeOAParameter -In Path -Required ) |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid pet value'
 
+
+        <#
+            POST '/pet/{petId}/uploadImage'
+        #>
+        Add-PodeRoute -PassThru -Method post -Path '/pet/:petId/uploadImage' -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Uploads an image' -Tags 'pet' -OperationId 'uploadFile' -PassThru |
+            Set-PodeOARequest -Parameters @(
+                                            (  New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of pet to update' -Required | ConvertTo-PodeOAParameter -In Path ),
+                                            (  New-PodeOAStringProperty -Name 'additionalMetadata' -Description 'Additional Metadata' | ConvertTo-PodeOAParameter -In Query )
+            ) -RequestBody (
+                New-PodeOARequestBody  -Content  ( New-PodeOAContentMediaType -ContentMediaType 'application/octet-stream' -Upload )
+            ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = 'ApiResponse' }
+
+
+
+        <#
+            GET '/store/inventory'
+        #>
+        Add-PodeRoute -PassThru -Method Get -Path '/store/inventory' -Authentication 'api_key' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Returns pet inventories by status' -Description 'Returns a map of status codes to quantities' -Tags 'store' -OperationId 'getInventory' -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{  'application/json' = New-PodeOAObjectProperty -AdditionalProperties (New-PodeOAIntProperty -Format Int32  ) } 
+
+
+        <#
+            POST '/store/order'
+        #>
+        Add-PodeRoute -PassThru -Method post -Path '/store/order' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Place an order for a pet' -Description 'Place a new order in the store' -Tags 'store' -OperationId 'placeOrder' -PassThru |
+            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'Order'  )) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (@{ 'application/json' = 'Order' }) -PassThru |
+            Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
+
+        <#
+            GET '/store/order/:orderId'
+        #>
+        Add-PodeRoute -PassThru -Method Get -Path '/store/order/:orderId' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Find purchase order by ID' -Description 'For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.' -Tags 'store' -OperationId 'getOrderById' -PassThru |
+            Set-PodeOARequest -PassThru -Parameters @(
+                                (  New-PodeOAIntProperty -Name 'orderId' -Format Int64 -Description 'ID of order that needs to be fetched' -Required | ConvertTo-PodeOAParameter -In Path )
+            ) |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml'  -Content 'Order'  ) -PassThru |
+            Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
+            Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'
+
+        <#
+            DELETE '/store/order/:orderId'
+        #>
+        Add-PodeRoute -PassThru -Method Delete -Path '/store/order/:orderId' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Set-PodeOARouteInfo -Summary 'Delete purchase order by ID' -Description 'For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors.' -Tags 'store' -OperationId 'deleteOrder' -PassThru |
+            Set-PodeOARequest -PassThru -Parameters @(
+                                    (  New-PodeOAIntProperty -Name 'orderId' -Format Int64 -Description ' ID of the order that needs to be deleted' -Required | ConvertTo-PodeOAParameter -In Path )
+            ) |
+            Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
+            Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'
     }
     $yaml = PodeOADefinition -Format Yaml
     # $json=  PodeOADefinition -Format Json
