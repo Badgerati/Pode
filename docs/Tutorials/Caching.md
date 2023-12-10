@@ -1,12 +1,12 @@
 # Caching
 
-Pode has an inbuilt in-memory caching feature, allowing you to cache values for a duration of time to speed up slower queries. You can also setup custom caching storage solutions - such as Redis, and others.
+Pode has an inbuilt in-memory caching feature, allowing you to cache values for a duration of time to speed up slower queries. You can also set up custom caching storage solutions - such as Redis, and others.
 
 The default TTL for cached items is 3,600 seconds (1 hour), and this value can be customised either globally or per item. There is also a `$cache:` scoped variable available for use.
 
 ## Caching Items
 
-To add an item into the cache use [`Set-PodeCache`](../../Functions/Caching/Set-PodeCache), and then to retrieve the value from the cache use [`Get-PodeCache`](../../Functions/Caching/Get-PodeCache). If the item has expired when `Get-PodeCache` is called then `$null` will be returned.
+To add an item to the cache use [`Set-PodeCache`](../../Functions/Caching/Set-PodeCache), and then to retrieve the value from the cache use [`Get-PodeCache`](../../Functions/Caching/Get-PodeCache). If the item has expired when `Get-PodeCache` is called then `$null` will be returned.
 
 For example, the following would retrieve the current CPU on Windows machines and cache it for 60 seconds:
 
@@ -44,7 +44,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 }
 ```
 
-You can test if an item exists in the cache, and isn't expired, using [`Test-PodeCache`](../../Functions/Caching/Test-PodeCache) - this is useful to call if the cached value for a key happens to genuinely be `$null`, you can see if the key actually does exist.
+You can test if an item exists in the cache, and isn't expired, using [`Test-PodeCache`](../../Functions/Caching/Test-PodeCache) - this is useful to call if the cached value for a key happens to genuinely be `$null`, so you can see if the key does exist.
 
 If you need to invalidate a cached value you can use [`Remove-PodeCache`](../../Functions/Caching/Remove-PodeCache), or if you need to invalidate the whole cache you can use [`Clear-PodeCache`](../../Functions/Caching/Clear-PodeCache).
 
@@ -58,13 +58,13 @@ Start-PodeServer {
 }
 ```
 
-All new cached items will use this TTL by default, unless the one is explicitly specified on [`Set-PodeCache`](../../Functions/Caching/Set-PodeCache) using the `-Ttl` parameter.
+All new cached items will use this TTL by default unless the one is explicitly specified on [`Set-PodeCache`](../../Functions/Caching/Set-PodeCache) using the `-Ttl` parameter.
 
 ## Custom Storage
 
 The inbuilt storage used by Pode is a simple in-memory synchronized hashtable, if you're running multiple instances of your Pode server then you'll have multiple caches as well - potentially with different values for the keys.
 
-You can setup custom storage devices for your cached values using [`Add-PodeCacheStorage`](../../Functions/Caching/Add-PodeCacheStorage) - you can also setup multiple different storages, and specify where certain items should be cached using the `-Storage` parameter on `Get-PodeCache` and `Set-PodeCache`.
+You can set up custom storage devices for your cached values using [`Add-PodeCacheStorage`](../../Functions/Caching/Add-PodeCacheStorage) - you can also set up multiple different storages, and specify where certain items should be cached using the `-Storage` parameter on `Get-PodeCache` and `Set-PodeCache`.
 
 When setting up a new cache storage, you are required to specific a series of scriptblocks for:
 
@@ -77,9 +77,9 @@ When setting up a new cache storage, you are required to specific a series of sc
 !!! note
     Not all providers will support all options, such as clearing the whole cache. When this is the case simply pass an empty scriptblock to the parameter.
 
-The `-Test` and `-Remove` scriptblocks will each be supplied the key for cached item; the `-Test` scriptblock should return a boolea value. The `-Set` scriptblock will be supplied the key, value and TTL for the cached item. The `-Get` scriptblock will be supplied the key of the item to retrieve, but also a boolean "metadata" flag - if this metadata is flag is false, just return the item's value, but if it's true return a hashtable of the value and other metadata properties for expiry and ttl.
+The `-Test` and `-Remove` scriptblocks will each be supplied the key for the cached item; the `-Test` scriptblock should return a boolean value. The `-Set` scriptblock will be supplied with the key, value, and TTL for the cached item. The `-Get` scriptblock will be supplied with the key of the item to retrieve, but also a boolean "metadata" flag - if this metadata flag is false, just return the item's value, but if it's true return a hashtable of the value and other metadata properties for expiry and ttl.
 
-For example, say you want to use Redis to store your cached items, then you would have a similar setup to the below:
+For example, say you want to use Redis to store your cached items, then you would have a similar setup to the one below.
 
 ```powershell
 $params = @{
@@ -123,7 +123,7 @@ $params = @{
 Add-PodeCacheStorage -Name 'Redis' @params
 ```
 
-And then to use the storage, pass the name to the `-Storage` parameter:
+Then to use the storage, pass the name to the `-Storage` parameter:
 
 ```powershell
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
@@ -144,7 +144,7 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 
 ### Default Storage
 
-Similar to the TTL, you can change the default cache storage from Pode's in-memory one to a custom added one. This default storage will be used for all cached items when `-Storage` is supplied, and when using `$cache:` as well.
+Similar to the TTL, you can change the default cache storage from Pode's in-memory one to a custom-added one. This default storage will be used for all cached items when `-Storage` is supplied, and when using `$cache:` as well.
 
 ```powershell
 Start-PodeServer {
