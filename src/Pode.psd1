@@ -118,6 +118,7 @@
         'Test-PodeIsHosted',
         'New-PodeCron',
         'Test-PodeInRunspace',
+        'ConvertFrom-PodeXML',
 
         # routes
         'Add-PodeRoute',

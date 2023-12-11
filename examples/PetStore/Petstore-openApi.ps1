@@ -1,13 +1,49 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
-    Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+$petStorePath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
+$podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $petStorePath)
+if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+    Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
 } else {
     Import-Module -Name 'Pode'
 }
+function Write-ObjectContent {
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        $Object
+    )
 
+    process {
+        $objectString = $Object | Out-String
+        Write-PodeHost -ForegroundColor Blue -Object $objectString
+    }
+}
+function Convert-Xml {
+    param ([System.Xml.XmlNode]$node)
+    $output = New-Object -TypeName PSCustomObject
+    foreach ($childNode in $node.ChildNodes) {
+        $output | Add-Member -MemberType NoteProperty -Name $childNode.Name -Value $childNode.InnerText
+    }
+    return $output
+}
+
+# Example usage:
+# $myObject | Write-ObjectContentDeep
+# or
+# Write-ObjectContentDeep -Object $myObject
+
+
+
+
+Import-Module -Name "$petStorePath/PetData.psm1"
 Start-PodeServer -Threads 2 -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+
+    Set-PodeSecurityAccessControl -Origin '*'  -Duration 7200   -WithOptions   -AuthorizationHeader -autoMethods   -AutoHeader    -Credentials -CrossDomainXhrRequests  #-Header 'content-type' # -Header   'Accept','Content-Type' ,'Connection' #-Headers '*' 'x-requested-with' ,'crossdomain'#
+    New-PodeLoggingMethod -File -Name 'restful' -MaxSize 10MB | Enable-PodeRequestLogging
+
+
+
+
     $InfoDescription = @'
 This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about Swagger at [http://swagger.io](http://swagger.io).
 In the third iteration of the pet store, we've switched to the design first approach!
@@ -37,9 +73,26 @@ Some useful links:
 
     Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
 
+    [String]$global:PetDataJson = Join-Path -Path $PetStorePath -ChildPath 'data' -AdditionalChildPath   'PetData.json'
+    New-PodeLockable -Name 'PetLock'
+    New-PodeLockable -Name 'PetCategory'
+
+    #Set-PodeState -Scope 'Pets' -Name 'Pets' -Value @{pets = @{}; categories = @{} } | Out-Null
+    if (Test-Path -Path $global:PetDataJson -PathType Leaf) {
+        # attempt to re-initialise the state (will do nothing if the file doesn't exist)
+        Restore-PodeState -Path $global:PetDataJson
+    } else {
+        Initialize-Categories
+        Initialize-Pet
+        Save-PodeState -Path $global:PetDataJson
+    }
 
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
+
+
+
+
 
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'read:pets' -Description 'read your pets'
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'write:pets' -Description 'modify pets in your account'
@@ -83,7 +136,29 @@ Some useful links:
         }
     }
 
-    Merge-PodeAuth -Name 'merged_auth' -Authentication 'petstore_auth', 'api_key'
+    New-PodeAuthScheme -Basic -Realm 'PetStore' | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
+        param($username, $password)
+        write-host $username
+        write-host $password
+
+        # here you'd check a real user storage, this is just for example
+        if ($username -eq 'morty' -and $password -eq 'pickle') {
+            return @{
+                User = @{
+                    ID       = 'M0R7Y302'
+                    Name     = 'Morty'
+                    Type     = 'Human'
+                    Username = 'm.orty'
+                    Scopes   = @( 'read:pets' , 'write:pets' )
+                }
+            }
+        }
+        return @{ Message = 'Invalid details supplied' }
+    }
+
+    Merge-PodeAuth -Name 'merged_auth' -Authentication   'Basic', 'api_key'  -Valid One
+    Merge-PodeAuth -Name 'merged_auth_All' -Authentication   'Basic', 'api_key'  -Valid All -ScriptBlock {}
+    Merge-PodeAuth -Name 'merged_auth_nokey' -Authentication   'Basic'  -Valid One
 
     Add-PodeOATag -Name 'user' -Description 'Operations about user'
     Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
@@ -137,7 +212,7 @@ Some useful links:
         New-PodeOAObjectProperty -XmlName 'tag' |
         Add-PodeOAComponentSchema -Name 'Tag'
 
-    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example  10 |
+    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example  10 -Required |
         New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
         New-PodeOASchemaProperty -Name 'category' -Component 'Category' |
         New-PodeOAStringProperty -Name 'photoUrls' -Array  -XmlWrapped -XmlItemName 'photoUrl' -Required |
@@ -164,20 +239,37 @@ Some useful links:
 
     Add-PodeRouteGroup -Path '/api/v3'   -Routes {
         <#
-           PUT '/pet'
-         #>
-        Add-PodeRoute -PassThru -Method Put -Path '/pet' -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock {
-            $JsonPet = ConvertTo-Json $WebEvent.data
-            $Validate = Test-PodeOAJsonSchemaCompliance -Json $JsonPet -SchemaReference 'Pet'
-            if ($Validate.result) {
-                $Pet = $WebEvent.data
-                $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
-                Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-            } else {
-                Write-PodeJsonResponse -StatusCode 405 -Value @{
-                    result  = $Validate.result
-                    message = $Validate.message -join ', '
+            PUT '/pet'
+        #>
+        Add-PodeRoute -PassThru -Method Put -Path '/pet' -Authentication 'merged_auth_nokey' -Scope 'write:pets', 'read:pets' -ScriptBlock {
+            $contentType = Get-PodeHeader -Name 'Content-Type'
+            switch ($contentType) {
+                'application/xml' {
+                    $pet = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
                 }
+                'application/json' { $pet = ConvertTo-Json $WebEvent.data }
+                default {
+                    Write-PodeHtmlResponse -StatusCode 415
+                    return
+                }
+            }
+            if ($pet -and $WebEvent.data.id) {
+                if ($contentType -eq 'application/json') {
+                    $Validate = Test-PodeOAJsonSchemaCompliance -Json $pet -SchemaReference 'Pet'
+                } else {
+                    $Validate = @{'result' = $true }
+                }
+                if ($Validate.result) {
+                    if (Update-Pet -Pet (convertfrom-json -InputObject $pet -AsHashtable)) {
+                        Save-PodeState -Path $using:PetDataJson
+                    } else {
+                        Write-PodeHtmlResponse -StatusCode 404 -Value  'Pet not found'
+                    }
+                } else {
+                    Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
+                }
+            } else {
+                Write-PodeHtmlResponse -StatusCode 400 -Value 'Invalid ID supplied'
             }
         } | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru |
             Set-PodeOARequest -RequestBody (
@@ -191,20 +283,30 @@ Some useful links:
 
 
         <#
-           POST '/pet'
-         #>
-        Add-PodeRoute -PassThru -Method Post -Path '/pet'  -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets'  -ScriptBlock {
-            $JsonPet = ConvertTo-Json $WebEvent.data
-            $Validate = Test-PodeOAJsonSchemaCompliance -Json $JsonPet -SchemaReference 'Pet'
-            if ($Validate.result) {
-                $Pet = $WebEvent.data
-                $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
-                Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-            } else {
-                Write-PodeJsonResponse -StatusCode 405 -Value @{
-                    result  = $Validate.result
-                    message = $Validate.message -join ', '
+            POST '/pet'
+        #>
+        Add-PodeRoute -PassThru -Method Post -Path '/pet'  -Authentication 'merged_auth_nokey' -Scope 'write:pets', 'read:pets'  -ScriptBlock {
+            $contentType = Get-PodeHeader -Name 'Content-Type'
+            switch ($contentType) {
+                'application/xml' {
+                    $pet = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
                 }
+                'application/json' { $pet = ConvertTo-Json $WebEvent.data }
+                default {
+                    Write-PodeHtmlResponse -StatusCode 415
+                    return
+                }
+            }
+            if ($contentType -eq 'application/json') {
+                $Validate = Test-PodeOAJsonSchemaCompliance -Json $pet -SchemaReference 'Pet'
+            } else {
+                $Validate = @{'result' = $true }
+            }
+            if ($Validate.result) {
+                Add-Pet -Pet (convertfrom-json -InputObject $pet -AsHashtable)
+                Save-PodeState -Path $using:PetDataJson
+            } else {
+                Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
             }
         } | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' -Tags 'pet' -OperationId 'addPet' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Description 'Create a new pet in the store' -Required  -Content (
@@ -217,26 +319,57 @@ Some useful links:
         <#
             GET '/pet/findByStatus'
         #>
-        Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'merged_auth_nokey' -Scope 'write:pets', 'read:pets' -ScriptBlock {
+            $status = $WebEvent.Query['status']
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
+            if ($status) {
+                $pets = Find-PetByStatus -Status $status
+                if ($null -eq $pets) {
+                    $pets = @()
+                }
+                switch ($responseMediaType) {
+                    'application/xml' { Write-PodeXmlResponse -Value $pets -StatusCode 200 }
+                    'application/json' { Write-PodeJsonResponse -Value $pets -StatusCode 200 }
+                    default { Write-PodeHtmlResponse -StatusCode 415 }
+                }
+            } else {
+                Write-PodeHtmlResponse -Value 'Invalid status value' -StatusCode 400
+            }
+
         } | Set-PodeOARouteInfo -Summary 'Finds Pets by status' -Description 'Multiple status values can be provided with comma separated strings' -Tags 'pet' -OperationId 'findPetsByStatus' -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') |
                     ConvertTo-PodeOAParameter -In Query -Explode ) |
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' -Array) -PassThru |
-                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
+                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value' -PassThru |
+                Add-PodeOAResponse -StatusCode 415
 
         <#
             GET '/pet/findByTags'
         #>
-        Add-PodeRoute -PassThru -Method get -Path '/pet/findByTags' -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        Add-PodeRoute -PassThru -Method get -Path '/pet/findByTags' -Authentication 'merged_auth_nokey' -Scope 'write:pets', 'read:pets' -ScriptBlock {
+            $tags = $WebEvent.Query['tags']
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
+            if ($tags) {
+                $pets = Find-PetByTags -Tags $tags
+                if ($null -eq $pets) {
+                    $pets = @()
+                }
+                switch ($responseMediaType) {
+                    'application/xml' { Write-PodeXmlResponse -Value $pets -StatusCode 200 }
+                    'application/json' { Write-PodeJsonResponse -Value $pets -StatusCode 200 }
+                    default { Write-PodeHtmlResponse -StatusCode 415 }
+                }
+            } else {
+                Write-PodeHtmlResponse -Value 'Invalid tag value' -StatusCode 400
+            }
         } | Set-PodeOARouteInfo -Summary 'Finds Pets by tags' -Description 'Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.' -Tags 'pet' -OperationId 'findPetsByTags' -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name 'tags' -Description 'Tags to filter by' -Array |
                     ConvertTo-PodeOAParameter -In Query -Explode ) |
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' -Array) -PassThru |
-                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid tag value'
+                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid tag value' -PassThru |
+                Add-PodeOAResponse -StatusCode 415
 
 
 
@@ -244,14 +377,31 @@ Some useful links:
             GET '/pet/{petId}'
         #>
         Add-PodeRoute -PassThru -Method Get -Path '/pet/:petId' -Authentication 'merged_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $petId = $WebEvent.Parameters['petId']
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
+            if ($petId) {
+                $pet = Get-Pet -Id $petId
+                if ($pet) {
+                    switch ($responseMediaType) {
+                        'application/xml' { Write-PodeXmlResponse -Value $pet -StatusCode 200 }
+                        'application/json' { Write-PodeJsonResponse -Value $pet -StatusCode 200 }
+                        default { Write-PodeHtmlResponse -StatusCode 415 }
+                    }
+                } else {
+                    Write-PodeHtmlResponse -Value 'Pet not found' -StatusCode 404
+                }
+            } else {
+                Write-PodeJsonResponse -Value 'Invalid ID supplied' -StatusCode 400
+            }
+
         } | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetById' -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAIntProperty -Name 'petId' -Description 'ID of pet to return'  -Format Int64 |
                     ConvertTo-PodeOAParameter -In Path -Required ) |
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet') -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
-                Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'
+                Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
+                Add-PodeOAResponse -StatusCode 415
 
 
         <#
@@ -259,7 +409,19 @@ Some useful links:
         #>
 
         Add-PodeRoute -PassThru -Method post -Path '/pet/:petId' -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $petId = $WebEvent.Parameters['petId']
+            $name = $WebEvent.Query['name']
+            $status = $WebEvent.Query['status']
+
+            if ($petId -and (Test-Pet -Id $petId)) {
+                if (Update-Pet -Id $petId -Name $name -Status $status) {
+                    Save-PodeState -Path $using:PetDataJson
+                } else {
+                    Write-PodeHtmlResponse -StatusCode 405 -Value 'Invalid Input'
+                }
+            } else {
+                Write-PodeHtmlResponse -StatusCode 405 -Value 'Invalid Input'
+            }
         } | Set-PodeOARouteInfo -Summary 'Updates pet with ID' -Description 'Updates a pet in the store with form data' -Tags 'pet' -OperationId 'updatePetWithForm' -PassThru |
             Set-PodeOARequest -PassThru -Parameters  ( New-PodeOAIntProperty -Name 'petId' -Description 'ID of pet that needs to be updated'  -Format Int64 |
                     ConvertTo-PodeOAParameter -In Path -Required ),
@@ -270,15 +432,22 @@ Some useful links:
         <#
             DELETE '/pet/{petId}'
         #>
-        Add-PodeRoute -PassThru -Method Delete -Path '/pet/:petId' -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        Add-PodeRoute -PassThru -Method Delete -Path '/pet/:petId' -Authentication 'merged_auth_All' -Scope 'write:pets', 'read:pets' -ScriptBlock {
+            $petId = $WebEvent.Parameters['petId']
+            if ($petId -and (Test-Pet -Id $petId)) {
+                Remove-Pet -Id $petId
+            } else {
+                Write-PodeJsonResponse -Value 'Invalid pet value' -StatusCode 400
+            }
         } | Set-PodeOARouteInfo -Summary 'Deletes pet by ID' -Description 'Deletes a pet.' -Tags 'pet' -OperationId 'deletePet' -PassThru |
-            Set-PodeOARequest -PassThru -Parameters  (  New-PodeOAStringProperty -Name 'api_key' | ConvertTo-PodeOAParameter -In Header),
-            ( New-PodeOAIntProperty -Name 'petId' -Description 'ID of pet that needs to be updated'  -Format Int64 |
-                ConvertTo-PodeOAParameter -In Path -Required ) |
+            Set-PodeOARequest -PassThru -Parameters (
+                New-PodeOAIntProperty -Name 'petId' -Description 'ID of pet that needs to be updated'  -Format Int64 |
+                    ConvertTo-PodeOAParameter -In Path -Required ) |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid pet value'
 
 
+
+#TO DO
         <#
             POST '/pet/{petId}/uploadImage'
         #>
@@ -318,7 +487,25 @@ Some useful links:
             GET '/store/order/{orderId}'
         #>
         Add-PodeRoute -PassThru -Method Get -Path '/store/order/:orderId' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $orderId = $WebEvent.Parameters['orderId']
+            $accept = Get-PodeHeader -Name 'Accept'
+            if ($accept -and $accept.Length -gt 0) {
+                $responseMediaType = $accept[0]
+            }
+            if ($orderId) {
+                $order = Get-OrderById -OrderId $orderId
+                if ($order) {
+                    switch ($responseMediaType) {
+                        'application/json' { $result = ConvertTo-Json -InputObject $order }
+                        'application/xml' { $result = ConvertTo-Xml -InputObject $order }
+                    }
+                    Write-PodeJsonResponse -Value $result -StatusCode 200
+                } else {
+                    Write-PodeJsonResponse -Value 'Order not found' -StatusCode 404
+                }
+            } else {
+                Write-PodeJsonResponse -Value 'No orderId provided. Try again?' -StatusCode 400
+            }
         } | Set-PodeOARouteInfo -Summary 'Find purchase order by ID' -Description 'For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.' -Tags 'store' -OperationId 'getOrderById' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                                 (  New-PodeOAIntProperty -Name 'orderId' -Format Int64 -Description 'ID of order that needs to be fetched' -Required | ConvertTo-PodeOAParameter -In Path )
@@ -425,6 +612,15 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
     }
-    $yaml = PodeOADefinition -Format Yaml
+  #  $yaml = PodeOADefinition -Format Yaml
+
+
+
+
+    #$r= ConvertFrom-PodeXML -node $xmlDoc
+
+    #$pet=$r |convertto-json
+
+    #$Validate = Test-PodeOAJsonSchemaCompliance -Json $pet -SchemaReference 'Pet'
     # $json=  PodeOADefinition -Format Json
 }

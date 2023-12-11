@@ -672,6 +672,7 @@ function Write-PodeJsonResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
     param (
         [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
+        [AllowNull()]
         $Value,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
@@ -679,7 +680,7 @@ function Write-PodeJsonResponse {
         $Path,
 
         [Parameter(ParameterSetName = 'Value')]
-        [ValidateRange(0,100)]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
@@ -697,6 +698,9 @@ function Write-PodeJsonResponse {
         'file' {
             if (Test-PodePath $Path) {
                 $Value = Get-PodeFileContent -Path $Path
+            }
+            if ([string]::IsNullOrWhiteSpace($Value)) {
+                $Value = '{}'
             }
         }
 
@@ -747,6 +751,7 @@ function Write-PodeXmlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
     param (
         [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
+        [AllowNull()]
         $Value,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
@@ -820,7 +825,8 @@ Write-PodeYamlResponse -Path 'E:/Files/Names.json'
 function Write-PodeYamlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
     param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'Value')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
+        [AllowNull()]
         $Value,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
@@ -835,7 +841,7 @@ function Write-PodeYamlResponse {
 
 
         [Parameter(ParameterSetName = 'Value')]
-        [ValidateRange(0,100)]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
