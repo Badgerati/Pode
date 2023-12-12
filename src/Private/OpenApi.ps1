@@ -569,6 +569,9 @@ function Get-PodeOpenApiDefinitionInternal {
     $def = [ordered]@{
         openapi = $PodeContext.Server.OpenAPI.Version
     }
+    if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_1) {
+        $def['jsonSchemaDialect'] = 'https://json-schema.org/draft/2020-12/schema'
+    }
 
     if ($PodeContext.Server.OpenAPI.info) {
         $def['info'] = $PodeContext.Server.OpenAPI.info

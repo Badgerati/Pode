@@ -301,14 +301,13 @@
         'New-PodeOAContentMediaType',
         #Components
         'Add-PodeOAComponentResponse',
-        'Add-PodeOAComponentHeader',
-        'Add-PodeOAComponentExample',
         'Add-PodeOAComponentSchema',
         'Add-PodeOAComponentRequestBody',
+        'Add-PodeOAComponentHeader',
+        'Add-PodeOAComponentExample',
         'Add-PodeOAComponentParameter',
         'Add-PodeOAComponentResponseLink',
-        'Add-PodeOAComponentCallBack',
-        'Add-PodeOAResponseLink',
+        'Add-PodeOAComponentCallBack', 
 
         # Metrics
         'Get-PodeServerUptime',

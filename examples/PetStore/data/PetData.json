@@ -1,0 +1,207 @@
+{
+  "categories": {
+    "Scope": [
+      "Categories"
+    ],
+    "Value": {
+      "Dogs": 1,
+      "Rabbits": 3,
+      "Cats": 2,
+      "Lions": 4
+    }
+  },
+  "pets": {
+    "Scope": [
+      "Pets"
+    ],
+    "Value": {
+      "6": {
+        "tags": [
+          "tag3",
+          "tag4"
+        ],
+        "name": "Dog 2",
+        "id": 6,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Dogs",
+          "id": 1
+        },
+        "status": "pending"
+      },
+      "10": {
+        "tags": [
+          "tag2",
+          "tag3"
+        ],
+        "name": "Rabbit 1",
+        "id": 10,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Rabbits",
+          "id": 3
+        },
+        "status": "available"
+      },
+      "5": {
+        "tags": [
+          "tag2",
+          "tag3"
+        ],
+        "name": "Dog 2",
+        "id": 5,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Dogs",
+          "id": 1
+        },
+        "status": "sold"
+      },
+      "11": {
+        "tags": [
+          "tag3",
+          "tag4"
+        ],
+        "name": "Rabbit 2",
+        "id": 11,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Rabbits",
+          "id": 3
+        },
+        "status": "pending"
+      },
+      "4": {
+        "tags": [
+          "tag1",
+          "tag2"
+        ],
+        "name": "Dog 1",
+        "id": 4,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Dogs",
+          "id": 1
+        },
+        "status": "available"
+      },
+      "9": {
+        "tags": [
+          "tag3",
+          "tag4"
+        ],
+        "name": "Lion 2",
+        "id": 9,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Lions",
+          "id": 4
+        },
+        "status": "available"
+      },
+      "7": {
+        "tags": [
+          "tag1",
+          "tag2"
+        ],
+        "name": "Lion 1",
+        "id": 7,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Lions",
+          "id": 4
+        },
+        "status": "available"
+      },
+      "8": {
+        "tags": [
+          "tag2",
+          "tag3"
+        ],
+        "name": "Lion 2",
+        "id": 8,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Lions",
+          "id": 4
+        },
+        "status": "available"
+      },
+      "1": {
+        "tags": [
+          "tag1",
+          "tag2"
+        ],
+        "name": "Cat 1",
+        "id": 1,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Cats",
+          "id": 2
+        },
+        "status": "available"
+      },
+      "3": {
+        "tags": [
+          "tag3",
+          "tag4"
+        ],
+        "name": "Cat 2",
+        "id": 3,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Cats",
+          "id": 2
+        },
+        "status": "pending"
+      },
+      "2": {
+        "tags": [
+          "tag2",
+          "tag3"
+        ],
+        "name": "Cat 2",
+        "id": 2,
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "name": "Cats",
+          "id": 2
+        },
+        "status": "available"
+      }
+    }
+  }
+}

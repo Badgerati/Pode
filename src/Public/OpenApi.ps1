@@ -141,7 +141,7 @@ function Enable-PodeOpenApi {
     $PodeContext.Server.OpenAPI.Path = $Path
 
     $PodeContext.Server.OpenAPI.hiddenComponents.v3_0 = $OpenApiVersion.StartsWith('3.0')
-
+    $PodeContext.Server.OpenAPI.hiddenComponents.v3_1 = $OpenApiVersion.StartsWith('3.1')
 
     $meta = @{
         RouteFilter    = $RouteFilter
@@ -4614,7 +4614,7 @@ function New-PodeOAContentMediaType {
 
         if ( $Upload.IsPresent) {
             if ( $media -ieq 'multipart/form-data' -and $Content) {
-                if (!$PodeContext.Server.OpenAPI.hiddenComponents.v3_0 -and $PartContentMediaType) {
+                if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_1 -and $PartContentMediaType) {
                     foreach ($key in $Content.Properties ) {
                         if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
                             $key.ContentMediaType = $PartContentMediaType
