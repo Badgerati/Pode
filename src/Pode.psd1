@@ -299,6 +299,7 @@
         'Add-PodeOACallBack',
         'New-PodeOAResponseLink',
         'New-PodeOAContentMediaType',
+        'New-PodeOAMultiTypeProperty',
         #Components
         'Add-PodeOAComponentResponse',
         'Add-PodeOAComponentSchema',
@@ -307,7 +308,7 @@
         'Add-PodeOAComponentExample',
         'Add-PodeOAComponentParameter',
         'Add-PodeOAComponentResponseLink',
-        'Add-PodeOAComponentCallBack', 
+        'Add-PodeOAComponentCallBack',
 
         # Metrics
         'Get-PodeServerUptime',

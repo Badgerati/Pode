@@ -1195,7 +1195,402 @@ function Add-PodeOAComponentParameter {
 }
 
 
+<#
+.SYNOPSIS
+Creates a new OpenAPI New-PodeOAMultiTypeProperty property.
 
+.DESCRIPTION
+Creates a new OpenAPI multi type property, for Schemas or Parameters.
+OpenAPI version 3.1 is required to use this cmdlet.
+
+.LINK
+https://swagger.io/docs/specification/basic-structure/
+
+.LINK
+https://swagger.io/docs/specification/data-models/
+
+.PARAMETER ParamsList
+Used to pipeline multiple properties
+
+.PARAMETER Name
+The Name of the property.
+
+.PARAMETER Type
+The parameter types
+
+.PARAMETER Format
+The inbuilt OpenAPI Format  . (Default: Any)
+
+.PARAMETER CustomFormat
+The name of a custom OpenAPI Format  . (Default: None)
+(String type only)
+
+.PARAMETER Default
+The default value of the property. (Default: $null)
+
+.PARAMETER Pattern
+A Regex pattern that the string must match.
+(String type only)
+
+.PARAMETER Description
+A Description of the property.
+
+.PARAMETER Minimum
+The minimum value of the number.
+(Integer,Number types only)
+
+.PARAMETER Maximum
+The maximum value of the number.
+(Integer,Number types only)
+
+.PARAMETER ExclusiveMaximum:
+Specifies an exclusive upper limit for a numeric property in the OpenAPI schema.
+When this parameter is used, it sets the exclusiveMaximum attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified maximum value.
+This parameter is typically paired with a -Maximum parameter to define the upper bound.
+(Integer,Number types only)
+
+.PARAMETER ExclusiveMinimum:
+Specifies an exclusive lower limit for a numeric property in the OpenAPI schema.
+When this parameter is used, it sets the exclusiveMinimun attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified minimun value.
+This parameter is typically paired with a -Minimum parameter to define the lower bound.
+(Integer,Number types only)
+
+.PARAMETER MultiplesOf
+The number must be in multiples of the supplied value.
+(Integer,Number types only)
+
+.PARAMETER Properties
+An array of other int/string/etc properties wrap up as an object.
+(Object type only)
+
+.PARAMETER ExternalDoc
+If supplied, add an additional external documentation for this operation.
+The parameter is created by Add-PodeOAExternalDoc
+
+.PARAMETER Example
+An example of a parameter value
+
+.PARAMETER Enum
+An optional array of values that this property can only be set to.
+
+.PARAMETER Required
+If supplied, the string will be treated as Required where supported.
+
+.PARAMETER Deprecated
+If supplied, the string will be treated as Deprecated where supported.
+
+.PARAMETER Object
+If supplied, the string will be automatically wrapped in an object.
+
+.PARAMETER Nullable
+If supplied, the string will be treated as Nullable.
+
+.PARAMETER ReadOnly
+If supplied, the string will be included in a response but not in a request
+
+.PARAMETER WriteOnly
+If supplied, the string will be included in a request but not in a response
+
+.PARAMETER MinLength
+If supplied, the string will be restricted to minimal length of characters.
+
+.PARAMETER  MaxLength
+If supplied, the string will be restricted to maximal length of characters.
+
+.PARAMETER NoProperties
+If supplied, no properties are allowed in the object.
+If no properties are assigned to the object and the NoProperties parameter is not set the object accept any property.(Object type only)
+
+.PARAMETER MinProperties
+If supplied, will restrict the minimun number of properties allowed in an object.
+(Object type only)
+
+.PARAMETER MaxProperties
+If supplied, will restrict the maximum number of properties allowed in an object.
+(Object type only)
+
+.PARAMETER NoAdditionalProperties
+If supplied, will configure the OpenAPI property additionalProperties to false.
+This means that the defined object will not allow any properties beyond those explicitly declared in its schema.
+If any additional properties are provided, they will be considered invalid.
+Use this switch to enforce a strict schema definition, ensuring that objects contain only the specified set of properties and no others.
+
+.PARAMETER AdditionalProperties
+Define a set of additional properties for the OpenAPI schema. This parameter accepts a HashTable where each key-value pair represents a property name and its corresponding schema.
+The schema for each property can include type, format, description, and other OpenAPI specification attributes.
+When specified, these additional properties are included in the OpenAPI definition, allowing for more flexible and dynamic object structures.
+
+.PARAMETER Array
+If supplied, the object will be treated as an array of objects.
+
+.PARAMETER UniqueItems
+If supplied, specify that all items in the array must be unique
+
+.PARAMETER MinItems
+If supplied, specify minimum length of an array
+
+.PARAMETER MaxItems
+If supplied, specify maximum length of an array
+
+.PARAMETER DiscriminatorProperty
+If supplied, specifies the name of the property used to distinguish between different subtypes in a polymorphic schema in OpenAPI.
+This string value represents the property in the payload that indicates which specific subtype schema should be applied.
+It's essential in scenarios where an API endpoint handles data that conforms to one of several derived schemas from a common base schema.
+
+.PARAMETER DiscriminatorMapping
+If supplied, define a mapping between the values of the discriminator property and the corresponding subtype schemas.
+This parameter accepts a HashTable where each key-value pair maps a discriminator value to a specific subtype schema name.
+It's used in conjunction with the -DiscriminatorProperty to provide complete discrimination logic in polymorphic scenarios.
+
+.PARAMETER XmlName
+By default, XML elements get the same names that fields in the API declaration have. This property change the XML name of the property
+reflecting the 'xml.name' attribute in the OpenAPI specification.
+
+.PARAMETER XmlNamespace
+Defines a specific XML namespace for the property, corresponding to the 'xml.namespace' attribute in OpenAPI.
+
+.PARAMETER XmlPrefix
+Sets a prefix for the XML element name, aligning with the 'xml.prefix' attribute in OpenAPI.
+
+.PARAMETER XmlAttribute
+Indicates whether the property should be serialized as an XML attribute, equivalent to the 'xml.attribute' attribute in OpenAPI.
+
+.PARAMETER XmlItemName
+Specifically for properties treated as arrays, it defines the XML name for each item in the array. This parameter aligns with the 'xml.name' attribute under 'items' in OpenAPI.
+
+.PARAMETER XmlWrapped
+Indicates whether array items should be wrapped in an XML element, similar to the 'xml.wrapped' attribute in OpenAPI.
+
+.EXAMPLE
+New-PodeOAMultiTypeProperty -Name 'userType' -type integer,boolean
+
+.EXAMPLE
+New-PodeOAMultiTypeProperty -Name 'password' -type string,object -Format Password -Properties (New-PodeOAStringProperty -Name 'password' -Format Password)
+#>
+function New-PodeOAMultiTypeProperty {
+    [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
+    param(
+        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [hashtable[]]
+        $ParamsList,
+
+        [Parameter(Mandatory)]
+        [ValidateSet( 'integer', 'number', 'string', 'object', 'boolean' )]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [Alias('Title')]
+        [string]
+        $Name,
+
+        [Parameter( ParameterSetName = 'Array')]
+        [Parameter(ParameterSetName = 'Inbuilt')]
+        [ValidateSet('', 'Int32', 'Int64', 'Double', 'Float', 'Binary', 'Base64', 'Byte', 'Date', 'Date-Time', 'Password', 'Email', 'Uuid', 'Uri', 'Hostname', 'Ipv4', 'Ipv6')]
+        [string]
+        $Format,
+
+        [Parameter( ParameterSetName = 'Array')]
+        [Parameter(ParameterSetName = 'Custom')]
+        [string]
+        $CustomFormat,
+
+        [Parameter()]
+        $Default,
+
+        [Parameter()]
+        [string]
+        $Pattern,
+
+        [Parameter()]
+        [hashtable[]]
+        $Properties,
+
+        [Parameter()]
+        [string]
+        $Description,
+
+        [Parameter()]
+        [double]
+        $Minimum,
+
+        [Parameter()]
+        [double]
+        $Maximum,
+
+        [Parameter()]
+        [switch]
+        $ExclusiveMaximum,
+
+        [Parameter()]
+        [switch]
+        $ExclusiveMinimum,
+
+        [Parameter()]
+        [double]
+        $MultiplesOf,
+
+        [Parameter()]
+        [string]
+        $ExternalDoc,
+
+        [Parameter()]
+        [object]
+        $Example,
+
+        [Parameter()]
+        [object[]]
+        $Enum,
+
+        [switch]
+        $Required,
+
+        [switch]
+        $Deprecated,
+
+        [switch]
+        $Object,
+
+        [switch]
+        $Nullable,
+
+        [switch]
+        $ReadOnly,
+
+        [switch]
+        $WriteOnly,
+
+        [Parameter()]
+        [int]
+        $MinLength,
+
+        [Parameter()]
+        [int]
+        $MaxLength,
+
+        [switch]
+        $NoProperties,
+
+        [int]
+        $MinProperties,
+
+        [int]
+        $MaxProperties,
+
+        [switch]
+        $NoAdditionalProperties,
+
+        [hashtable]
+        $AdditionalProperties,
+
+        [string]
+        $XmlName,
+
+        [string]
+        $XmlNamespace,
+
+        [string]
+        $XmlPrefix,
+
+        [switch]
+        $XmlAttribute,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [string]
+        $XmlItemName,
+
+        [Parameter(  ParameterSetName = 'Array')]
+        [switch]
+        $XmlWrapped,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
+        [switch]
+        $Array,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [switch]
+        $UniqueItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MinItems,
+
+        [Parameter(ParameterSetName = 'Array')]
+        [int]
+        $MaxItems,
+
+        [string]
+        $DiscriminatorProperty,
+
+        [hashtable]
+        $DiscriminatorMapping
+    )
+    begin {
+        $param = New-PodeOAPropertyInternal   -Params $PSBoundParameters
+
+        if ($type -contains 'string') {
+            if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
+                $_format = $CustomFormat
+            } elseif ($Format) {
+                $_format = $Format
+            }
+
+
+            if ($Format -or $CustomFormat) {
+                $param.format = $_format.ToLowerInvariant()
+            }
+        }
+        if ($type -contains 'object') {
+            if ($NoProperties) {
+                if ($Properties -or $MinProperties -or $MaxProperties) {
+                    throw '-NoProperties is not compatible with -Properties, -MinProperties and -MaxProperties'
+                }
+                $param.properties = @($null)
+                $PropertiesFromPipeline = $false
+            } elseif ($Properties) {
+                $param.properties = $Properties
+                $PropertiesFromPipeline = $false
+            } else {
+                $param.properties = @()
+                $PropertiesFromPipeline = $true
+            }
+            if ($DiscriminatorProperty) {
+                $param.discriminator = @{
+                    'propertyName' = $DiscriminatorProperty
+                }
+                if ($DiscriminatorMapping) {
+                    $param.discriminator.mapping = $DiscriminatorMapping
+                }
+            } elseif ($DiscriminatorMapping) {
+                throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
+            }
+        }
+        if ($type -contains 'boolean') {
+            if ($Default) {
+                if ([bool]::TryParse($Default, [ref]$null) -or $Enum -icontains $Default) {
+                    $param.default = $Default
+                } else {
+                    throw "The default value is not a boolean and it's not part of the enum"
+                }
+            }
+        }
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
+    }
+    process {
+        if ($ParamsList) {
+            $collectedInput.AddRange($ParamsList)
+        }
+    }
+
+    end {
+        if ($collectedInput) {
+            return $collectedInput + $param
+        } else {
+            return $param
+        }
+    }
+}
 <#
 .SYNOPSIS
 Creates a new OpenAPI integer property.

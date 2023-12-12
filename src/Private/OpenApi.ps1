@@ -304,226 +304,226 @@ function ConvertTo-PodeOASchemaProperty {
         $schema = ConvertTo-PodeOAofProperty -Property $Property
     } else {
         # base schema type
-        $schema = [ordered]@{
-            type = $Property.type.ToLower()
-        }
-
-
-        if (!$NoDescription -and $Property.description) {
-            $schema['description'] = $Property.description
-        }
-
-        if ($Property.default) {
-            $schema['default'] = $Property.default
-        }
-
-        if ($Property.deprecated) {
-            $schema['deprecated'] = $Property.deprecated
-        }
-
-        if ($Property.nullable) {
-            if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
-                $schema['nullable'] = $Property.nullable
-            } else {
-                $schema.type = @($Property.type.ToLower(), 'null')
-            }
-        }
-
-        if ($Property.writeOnly) {
-            $schema['writeOnly'] = $Property.writeOnly
-        }
-
-        if ($Property.readOnly) {
-            $schema['readOnly'] = $Property.readOnly
-        }
-
-        if ($Property.example) {
-            if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
-                $schema['example'] = $Property.example
-            } else {
-                if ($Property.example -is [Array]) {
-                    $schema['examples'] = $Property.example
-                } else {
-                    $schema['examples'] = @( $Property.example)
-                }
-            }
-        }
+        $schema = [ordered]@{ }
         if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
-            if ($Property.minimum) {
-                $schema['minimum'] = $Property.minimum
-            }
-
-            if ($Property.maximum) {
-                $schema['maximum'] = $Property.maximum
-            }
-
-            if ($Property.exclusiveMaximum) {
-                $schema['exclusiveMaximum'] = $Property.exclusiveMaximum
-            }
-
-            if ($Property.exclusiveMinimum) {
-                $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
-            }
+            $schema['type'] = $Property.type.ToLower()
         } else {
-            if ($Property.maximum) {
-                if ($Property.exclusiveMaximum  ) {
-                    $schema['exclusiveMaximum'] = $Property.maximum
-                } else {
-                    $schema['maximum'] = $Property.maximum
-                }
-            }
-            if ($Property.minimum) {
-                if ($Property.exclusiveMinimum  ) {
-                    $schema['exclusiveMinimum'] = $Property.minimum
-                } else {
-                    $schema['minimum'] = $Property.minimum
-                }
-            }
-        }
-        if ($Property.multipleOf) {
-            $schema['multipleOf'] = $Property.multipleOf
-        }
-
-        if ($Property.pattern) {
-            $schema['pattern'] = $Property.pattern
-        }
-
-        if ($Property.minLength) {
-            $schema['minLength'] = $Property.minLength
-        }
-
-        if ($Property.maxLength) {
-            $schema['maxLength'] = $Property.maxLength
-        }
-
-        if ($Property.xml ) {
-            $schema['xml'] = $Property.xml
-        }
-        if (! $PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
-            if ($Property.ContentMediaType) {
-                $schema['contentMediaType'] = $Property.ContentMediaType
-            }
-            if ($Property.ContentEncoding) {
-                $schema['contentEncoding'] = $Property.ContentEncoding
-            }
-        }
-
-
-        # are we using an array?
-        if ($Property.array) {
-            if ($Property.maxItems ) {
-                $schema['maxItems'] = $Property.maxItems
-            }
-
-            if ($Property.minItems ) {
-                $schema['minItems'] = $Property.minItems
-            }
-
-            if ($Property.uniqueItems ) {
-                $schema['uniqueItems'] = $Property.uniqueItems
-            }
-
-            $schema['type'] = 'array'
-            if ($Property.type -ieq 'schema') {
-                if ( !(Test-PodeOAComponentSchema -Name $Property['schema'])) {
-                    throw "The OpenApi component schema doesn't exist: $($Property['schema'])"
-                }
-                $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
-            } else {
-                $Property.array = $false
-                if ($Property.xml) {
-                    $xmlFromProperties = $Property.xml
-                    $Property.Remove('xml')
-                }
-                $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty)
-                $Property.array = $true
-                if ($xmlFromProperties) {
-                    $Property.xml = $xmlFromProperties
-                }
-
-                if ($Property.xmlItemName) {
-                    $schema.items.xml = @{'name' = $Property.xmlItemName }
-                }
-            }
-            return $schema
-        } else {
-            #format is not applicable to array
-            if ($Property.format) {
-                $schema['format'] = $Property.format
-            }
-
-            # schema refs
-            if ($Property.type -ieq 'schema') {
-                if ( !(Test-PodeOAComponentSchema -Name $Property['schema'])) {
-                    throw "The OpenApi component schema doesn't exist: $($Property['schema'])"
-                }
-                $schema = @{
-                    '$ref' = "#/components/schemas/$($Property['schema'])"
-                }
-            }
-            #only if it's not an array
-            if ($Property.enum ) {
-                $schema['enum'] = $Property.enum
-            }
-        }
-
-        if ($Property.object) {
-            # are we using an object?
-            $Property.object = $false
-
-            $schema = @{
-                type       = 'object'
-                properties = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property)
-            }
-            $Property.object = $true
-            if ($Property.required) {
-                $schema['required'] = @($Property.name)
-            }
-        }
-
-        if ($Property.type -ieq 'object') {
-            foreach ($prop in $Property.properties) {
-                if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type  ) {
-                    switch ($prop.type.ToLower()) {
-                        'allof' { $prop.type = 'allOf' }
-                        'oneof' { $prop.type = 'oneOf' }
-                        'anyof' { $prop.type = 'anyOf' }
-                    }
-                    $schema += ConvertTo-PodeOAofProperty -Property $prop
-
-                }
-            }
-            if ($Property.properties) {
-                $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
-                $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
-                if ( $RequiredList.Count -gt 0) {
-                    $schema['required'] = @($RequiredList.name)
-                }
-            } else {
-                #if noproperties parameter create an empty properties
-                if ( $Property.properties.Count -eq 1 -and $null -eq $Property.properties[0]) {
-                    $schema['properties'] = @{}
-                }
-            }
-
-
-            if ($Property.minProperties) {
-                $schema['minProperties'] = $Property.minProperties
-            }
-
-            if ($Property.maxProperties) {
-                $schema['maxProperties'] = $Property.maxProperties
-            }
-
-            if ($Property.additionalProperties) {
-                $schema['additionalProperties'] = $Property.additionalProperties
-            }
-
-            if ($Property.discriminator) {
-                $schema['discriminator'] = $Property.discriminator
+            $schema.type = @($Property.type.ToLower())
+            if ($Property.nullable) {
+                $schema.type += 'null'
             }
         }
     }
+    if (!$NoDescription -and $Property.description) {
+        $schema['description'] = $Property.description
+    }
+
+    if ($Property.default) {
+        $schema['default'] = $Property.default
+    }
+
+    if ($Property.deprecated) {
+        $schema['deprecated'] = $Property.deprecated
+    }
+
+    if ($Property.nullable -and $PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+        $schema['nullable'] = $Property.nullable
+    }
+
+    if ($Property.writeOnly) {
+        $schema['writeOnly'] = $Property.writeOnly
+    }
+
+    if ($Property.readOnly) {
+        $schema['readOnly'] = $Property.readOnly
+    }
+
+    if ($Property.example) {
+        if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+            $schema['example'] = $Property.example
+        } else {
+            if ($Property.example -is [Array]) {
+                $schema['examples'] = $Property.example
+            } else {
+                $schema['examples'] = @( $Property.example)
+            }
+        }
+    }
+    if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+        if ($Property.minimum) {
+            $schema['minimum'] = $Property.minimum
+        }
+
+        if ($Property.maximum) {
+            $schema['maximum'] = $Property.maximum
+        }
+
+        if ($Property.exclusiveMaximum) {
+            $schema['exclusiveMaximum'] = $Property.exclusiveMaximum
+        }
+
+        if ($Property.exclusiveMinimum) {
+            $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
+        }
+    } else {
+        if ($Property.maximum) {
+            if ($Property.exclusiveMaximum  ) {
+                $schema['exclusiveMaximum'] = $Property.maximum
+            } else {
+                $schema['maximum'] = $Property.maximum
+            }
+        }
+        if ($Property.minimum) {
+            if ($Property.exclusiveMinimum  ) {
+                $schema['exclusiveMinimum'] = $Property.minimum
+            } else {
+                $schema['minimum'] = $Property.minimum
+            }
+        }
+    }
+    if ($Property.multipleOf) {
+        $schema['multipleOf'] = $Property.multipleOf
+    }
+
+    if ($Property.pattern) {
+        $schema['pattern'] = $Property.pattern
+    }
+
+    if ($Property.minLength) {
+        $schema['minLength'] = $Property.minLength
+    }
+
+    if ($Property.maxLength) {
+        $schema['maxLength'] = $Property.maxLength
+    }
+
+    if ($Property.xml ) {
+        $schema['xml'] = $Property.xml
+    }
+    if (! $PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+        if ($Property.ContentMediaType) {
+            $schema['contentMediaType'] = $Property.ContentMediaType
+        }
+        if ($Property.ContentEncoding) {
+            $schema['contentEncoding'] = $Property.ContentEncoding
+        }
+    }
+
+
+    # are we using an array?
+    if ($Property.array) {
+        if ($Property.maxItems ) {
+            $schema['maxItems'] = $Property.maxItems
+        }
+
+        if ($Property.minItems ) {
+            $schema['minItems'] = $Property.minItems
+        }
+
+        if ($Property.uniqueItems ) {
+            $schema['uniqueItems'] = $Property.uniqueItems
+        }
+
+        $schema['type'] = 'array'
+        if ($Property.type -ieq 'schema') {
+            if ( !(Test-PodeOAComponentSchema -Name $Property['schema'])) {
+                throw "The OpenApi component schema doesn't exist: $($Property['schema'])"
+            }
+            $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
+        } else {
+            $Property.array = $false
+            if ($Property.xml) {
+                $xmlFromProperties = $Property.xml
+                $Property.Remove('xml')
+            }
+            $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty)
+            $Property.array = $true
+            if ($xmlFromProperties) {
+                $Property.xml = $xmlFromProperties
+            }
+
+            if ($Property.xmlItemName) {
+                $schema.items.xml = @{'name' = $Property.xmlItemName }
+            }
+        }
+        return $schema
+    } else {
+        #format is not applicable to array
+        if ($Property.format) {
+            $schema['format'] = $Property.format
+        }
+
+        # schema refs
+        if ($Property.type -ieq 'schema') {
+            if ( !(Test-PodeOAComponentSchema -Name $Property['schema'])) {
+                throw "The OpenApi component schema doesn't exist: $($Property['schema'])"
+            }
+            $schema = @{
+                '$ref' = "#/components/schemas/$($Property['schema'])"
+            }
+        }
+        #only if it's not an array
+        if ($Property.enum ) {
+            $schema['enum'] = $Property.enum
+        }
+    }
+
+    if ($Property.object) {
+        # are we using an object?
+        $Property.object = $false
+
+        $schema = @{
+            type       = 'object'
+            properties = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property)
+        }
+        $Property.object = $true
+        if ($Property.required) {
+            $schema['required'] = @($Property.name)
+        }
+    }
+
+    if ($Property.type -ieq 'object') {
+        foreach ($prop in $Property.properties) {
+            if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type  ) {
+                switch ($prop.type.ToLower()) {
+                    'allof' { $prop.type = 'allOf' }
+                    'oneof' { $prop.type = 'oneOf' }
+                    'anyof' { $prop.type = 'anyOf' }
+                }
+                $schema += ConvertTo-PodeOAofProperty -Property $prop
+
+            }
+        }
+        if ($Property.properties) {
+            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -Properties $Property.properties)
+            $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
+            if ( $RequiredList.Count -gt 0) {
+                $schema['required'] = @($RequiredList.name)
+            }
+        } else {
+            #if noproperties parameter create an empty properties
+            if ( $Property.properties.Count -eq 1 -and $null -eq $Property.properties[0]) {
+                $schema['properties'] = @{}
+            }
+        }
+
+
+        if ($Property.minProperties) {
+            $schema['minProperties'] = $Property.minProperties
+        }
+
+        if ($Property.maxProperties) {
+            $schema['maxProperties'] = $Property.maxProperties
+        }
+
+        if ($Property.additionalProperties) {
+            $schema['additionalProperties'] = $Property.additionalProperties
+        }
+
+        if ($Property.discriminator) {
+            $schema['discriminator'] = $Property.discriminator
+        }
+    } 
     return $schema
 }
 
@@ -569,6 +569,7 @@ function Get-PodeOpenApiDefinitionInternal {
     $def = [ordered]@{
         openapi = $PodeContext.Server.OpenAPI.Version
     }
+
     if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_1) {
         $def['jsonSchemaDialect'] = 'https://json-schema.org/draft/2020-12/schema'
     }
@@ -1063,7 +1064,7 @@ function Resolve-PodeOAReferences {
 function New-PodeOAPropertyInternal {
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [String]
         $Type,
         [Parameter(Mandatory = $true)]
@@ -1071,9 +1072,15 @@ function New-PodeOAPropertyInternal {
         $Params
     )
     $param = [ordered]@{
-        type = $Type
     }
 
+    if ($type) {
+        $param.type = $type
+    } elseif ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+        throw 'Multi type properties requeired OpenApi Version 3.1 or above'
+    } else {
+        $param.type = $Params.type
+    }
     if ($Params.Name) {
         $param.name = $Params.Name
     }
