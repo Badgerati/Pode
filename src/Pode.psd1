@@ -400,7 +400,22 @@
         'Use-PodeSemaphore',
         'Enter-PodeSemaphore',
         'Exit-PodeSemaphore',
-        'Clear-PodeSemaphores'
+        'Clear-PodeSemaphores',
+
+        # caching
+        'Get-PodeCache',
+        'Set-PodeCache',
+        'Test-PodeCache',
+        'Remove-PodeCache',
+        'Clear-PodeCache',
+        'Add-PodeCacheStorage',
+        'Remove-PodeCacheStorage',
+        'Get-PodeCacheStorage',
+        'Test-PodeCacheStorage',
+        'Set-PodeCacheDefaultStorage',
+        'Get-PodeCacheDefaultStorage',
+        'Set-PodeCacheDefaultTtl',
+        'Get-PodeCacheDefaultTtl'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

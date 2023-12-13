@@ -72,6 +72,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Generate/bind self-signed certificates
 * Secret management support to load secrets from vaults
 * Support for File Watchers
+* In-memory caching, with optional support for external providers (such as Redis)
 * (Windows) Open the hosted server as a desktop application
 
 ## 📦 Install
