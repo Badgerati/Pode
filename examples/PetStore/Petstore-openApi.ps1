@@ -1,3 +1,7 @@
+param (
+    [switch]
+    $Reset
+)
 $petStorePath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $petStorePath)
 if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
@@ -17,32 +21,68 @@ function Write-ObjectContent {
         Write-PodeHost -ForegroundColor Blue -Object $objectString
     }
 }
-function Convert-Xml {
-    param ([System.Xml.XmlNode]$node)
-    $output = New-Object -TypeName PSCustomObject
-    foreach ($childNode in $node.ChildNodes) {
-        $output | Add-Member -MemberType NoteProperty -Name $childNode.Name -Value $childNode.InnerText
-    }
-    return $output
-}
-
-# Example usage:
-# $myObject | Write-ObjectContentDeep
-# or
-# Write-ObjectContentDeep -Object $myObject
-
-
-
 
 Import-Module -Name "$petStorePath/PetData.psm1"
 Import-Module -Name "$petStorePath/Order.psm1"
-Start-PodeServer -Threads 2 -ScriptBlock {
-    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
+Import-Module -Name "$petStorePath/UserData.psm1"
+
+Start-PodeServer -Threads 1 -ScriptBlock {
+
+    $global:PetDataPath = Join-Path -Path $PetStorePath -ChildPath 'data'
+    If (!(Test-Path -PathType container -Path $global:PetDataPath)) {
+        New-Item -ItemType Directory -Path $global:PetDataPath -Force | Out-Null
+    }
+
+    $global:PetImagesPath = Join-Path -Path $PetStorePath -ChildPath 'images'
+    If (!(Test-Path -PathType container -Path $global:PetImagesPath)) {
+        New-Item -ItemType Directory -Path $global:PetImagesPath -Force | Out-Null
+    }
+
+    $global:CertsPath = Join-Path -Path $PetStorePath -ChildPath 'certs'
+    If (!(Test-Path -PathType container -Path $global:CertsPath)) {
+        New-Item -ItemType Directory -Path $global:CertsPath -Force | Out-Null
+    }
+
+
+    #Load data
+    $global:PetDataJson = Join-Path -Path $PetDataPath   -ChildPath 'PetData.json'
+    if ($Reset.IsPresent -or !(Test-Path -Path $global:PetDataJson -PathType Leaf )) {
+        Initialize-Categories -Reset
+        Initialize-Pet -Reset
+        Initialize-Order -Reset
+        Initialize-Users -Reset
+        Save-PodeState -Path $global:PetDataJson
+    } else {
+        Initialize-Categories
+        Initialize-Pet
+        Initialize-Order
+        Initialize-Users
+        # attempt to re-initialise the state (will do nothing if the file doesn't exist)
+        Restore-PodeState -Path $global:PetDataJson
+    }
+
+
+    if ((Get-PodeConfig).Protocol -eq 'Https') {
+        $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
+        $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
+        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default
+    } else {
+        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default
+    }
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    Set-PodeSecurityAccessControl -Origin '*'  -Duration 7200   -WithOptions   -AuthorizationHeader -autoMethods   -AutoHeader    -Credentials -CrossDomainXhrRequests  #-Header 'content-type' # -Header   'Accept','Content-Type' ,'Connection' #-Headers '*' 'x-requested-with' ,'crossdomain'#
-    New-PodeLoggingMethod -File -Name 'restful' -MaxSize 10MB | Enable-PodeRequestLogging
+    #Configure CORS
+    Set-PodeSecurityAccessControl -Origin '*'  -Duration 7200   -WithOptions   -AuthorizationHeader -autoMethods -AutoHeader -Credentials -CrossDomainXhrRequests  #-Header 'content-type' # -Header   'Accept','Content-Type' ,'Connection' #-Headers '*' 'x-requested-with' ,'crossdomain'#
 
+
+    #image folder
+    Add-PodeStaticRoute -Path '/images' -Source $global:PetImagesPath
+
+
+
+    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.2' -EnableSchemaValidation -DisableMinimalDefinitions -DefaultResponses @{}
+    New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+    Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
 
 
 
@@ -58,10 +98,6 @@ Some useful links:
 '@
 
 
-
-    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.2' -EnableSchemaValidation -DisableMinimalDefinitions -DefaultResponses @{}
-    New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-    Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io'
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
@@ -75,28 +111,9 @@ Some useful links:
 
     Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
 
-    [String]$global:PetDataJson = Join-Path -Path $PetStorePath -ChildPath 'data' -AdditionalChildPath   'PetData.json'
-    New-PodeLockable -Name 'PetLock'
-    New-PodeLockable -Name 'PetCategory'
-    New-PodeLockable -Name 'PetOrderLock'
-
-    #Set-PodeState -Scope 'Pets' -Name 'Pets' -Value @{pets = @{}; categories = @{} } | Out-Null
-    if (Test-Path -Path $global:PetDataJson -PathType Leaf) {
-        # attempt to re-initialise the state (will do nothing if the file doesn't exist)
-        Restore-PodeState -Path $global:PetDataJson
-    } else {
-        Initialize-Categories
-        Initialize-Pet
-        Initialize-Order
-        Save-PodeState -Path $global:PetDataJson
-    }
 
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
-
-
-
-
 
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'read:pets' -Description 'read your pets'
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'write:pets' -Description 'modify pets in your account'
@@ -239,6 +256,8 @@ Some useful links:
 
     Add-PodeOAComponentRequestBody -Name 'UserArray' -Description 'List of user object' -Content (
         New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content 'User' -Array)
+
+
 
 
     Add-PodeRouteGroup -Path '/api/v3'   -Routes {
@@ -457,7 +476,19 @@ Some useful links:
             POST '/pet/{petId}/uploadImage'
         #>
         Add-PodeRoute -PassThru -Method post -Path '/pet/:petId/uploadImage' -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $petId = $WebEvent.Parameters['petId']
+            $additionalMetadata = $WebEvent.Query['additionalMetadata']
+            if ($petId -and (Test-Pet -Id $petId)) {
+                $pet = Get-Pet -Id $petId
+                $image = "$petId-$(New-Guid).$additionalMetadata"
+                $outputFilePath = Join-Path -Path $using:PetImagesPath  -AdditionalChildPath $image
+                [System.IO.File]::WriteAllBytes($outputFilePath, $WebEvent.data)
+                $url = "$((Get-PodeConfig).Protocol)://$((Get-PodeConfig).Address):$((Get-PodeConfig).RestFulPort)/images/$image"
+                $pet.photoUrls.add($url)
+                Save-PodeState -Path $using:PetDataJson
+            } else {
+                Write-PodeHtmlResponse -Value 'Invalid pet value' -StatusCode 400
+            }
         } | Set-PodeOARouteInfo -Summary 'Uploads an image' -Tags 'pet' -OperationId 'uploadFile' -PassThru |
             Set-PodeOARequest -Parameters @(
                                             (  New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of pet to update' -Required | ConvertTo-PodeOAParameter -In Path ),
@@ -570,57 +601,147 @@ Some useful links:
         #>
 
         Add-PodeRoute -PassThru -Method Post -Path '/user' -ScriptBlock {
-            $JsonUser = ConvertTo-Json $WebEvent.data
-            $Validate = Test-PodeOAJsonSchemaCompliance -Json $JsonUser -SchemaReference 'User'
-            if ($Validate.result) {
-                $User = $WebEvent.data
-                $User.id = Get-Random -Minimum 1 -Maximum 9999999
-                Write-PodeJsonResponse -Value ($User | ConvertTo-Json -Depth 20 ) -StatusCode 200
-            } else {
-                Write-PodeJsonResponse -StatusCode 405 -Value @{
-                    result  = $Validate.result
-                    message = $Validate.message -join ', '
+            $contentType = Get-PodeHeader -Name 'Content-Type'
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
+            switch ($contentType) {
+                'application/xml' {
+                    $user = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
                 }
+                'application/json' { $user = ConvertTo-Json $WebEvent.data }
+                'application/x-www-form-urlencoded' { $user = ConvertTo-Json $WebEvent.data }
+                default {
+                    Write-PodeHtmlResponse -StatusCode 415
+                    return
+                }
+            }
+            if ($contentType -eq 'application/json') {
+                $Validate = Test-PodeOAJsonSchemaCompliance -Json $user -SchemaReference 'User'
+            } else {
+                #no test schema support for XML
+                $Validate = @{'result' = $true }
+            }
+            if ($Validate.result) {
+                $newUser = Add-user -User (convertfrom-json -InputObject $user -AsHashtable)
+                Save-PodeState -Path $using:PetDataJson
+                switch ($responseMediaType) {
+                    'application/xml' { Write-PodeXmlResponse -Value $newUser -StatusCode 200 }
+                    'application/json' { Write-PodeJsonResponse -Value $newUser -StatusCode 200 }
+                    default { Write-PodeHtmlResponse -StatusCode 415 }
+                }
+            } else {
+                Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
             }
         } | Set-PodeOARouteInfo -Summary 'Create user.' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'createUser' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )) -PassThru |
+            Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input' -PassThru |
             Add-PodeOAResponse -Default -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml'  -Content 'User' )
+
 
         <#
             POST '/user/createWithList'
         #>
         Add-PodeRoute -PassThru -Method post -Path '/user/createWithList' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $contentType = Get-PodeHeader -Name 'Content-Type'
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
+            $newUsers = @()
+            foreach ($user in $WebEvent.data) {
+                switch ($contentType) {
+                    'application/json' { $userJson = ConvertTo-Json $user }
+                    default {
+                        Write-PodeHtmlResponse -StatusCode 415
+                        return
+                    }
+                }
+                if ($contentType -eq 'application/json') {
+                    $Validate = Test-PodeOAJsonSchemaCompliance -Json $userJson -SchemaReference 'User'
+                } else {
+                    #no test schema support for XML
+                    $Validate = @{'result' = $true }
+                }
+                if ($Validate.result) {
+                    $newUsers += $user
+                } else {
+                    Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
+                    return
+                }
+            }
+            $createdUsers = @()
+            foreach ($u in $newUsers) {
+                $createdUsers += Add-User -User $u
+            }
+            Save-PodeState -Path $using:PetDataJson
+            switch ($responseMediaType) {
+                'application/xml' { Write-PodeXmlResponse -Value $createdUsers -StatusCode 200 }
+                'application/json' { Write-PodeJsonResponse -Value $createdUsers -StatusCode 200 }
+                default { Write-PodeHtmlResponse -StatusCode 415 }
+            }
         } | Set-PodeOARouteInfo -Summary 'Creates list of users with given input array.' -Description 'Creates list of users with given input array.' -Tags 'user' -OperationId 'createUsersWithListInput' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content 'User'  -Array)) -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml'  -Content 'User'  ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml'  -Content 'User' -Array  ) -PassThru |
             Add-PodeOAResponse -Default -Description 'successful operation'
+
+
         <#
             GET '/user/login'
         #>
         Add-PodeRoute -PassThru -Method Get -Path '/user/login' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $username = $WebEvent.Query['username']
+            $password = $WebEvent.Query['password']
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
+            if ($username) {
+                $user = Get-User -Username $username
+                if ($user -and $user['password'] -eq $password) {
+                    Set-PodeHeader -Name 'X-Expires-After' -Value ((Get-Date).AddHours(1).ToString('yyyy-MM-ddTHH:mm:ssK'))
+                    Set-PodeHeader -Name 'X-Rate-Limit' -Value '5000'
+                    $result = @{'api_key' = 'test-key' }
+                    switch ($responseMediaType) {
+                        'application/xml' { Write-PodeXmlResponse -Value $result -StatusCode 200 }
+                        'application/json' { Write-PodeJsonResponse -Value $result -StatusCode 200 }
+                        default { Write-PodeHtmlResponse -StatusCode 415 }
+                    }
+                } else {
+                    Write-PodeHtmlResponse -Value 'Invalid username/password supplied' -StatusCode 400
+                }
+            } else {
+                Write-PodeHtmlResponse -Value 'Invalid username/password supplied' -StatusCode 400
+            }
         } | Set-PodeOARouteInfo -Summary 'Logs user into the system.'  -Tags 'user' -OperationId 'loginUser' -PassThru |
             Set-PodeOARequest  -Parameters  (  New-PodeOAStringProperty -Name 'username' -Description 'The user name for login' | ConvertTo-PodeOAParameter -In Query ),
                                 (  New-PodeOAStringProperty -Name 'password' -Description 'The password for login in clear text' -Format Password | ConvertTo-PodeOAParameter -In Query ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'string' ) `
                 -Headers (New-PodeOAIntProperty  -Name 'X-Rate-Limit' -Description 'calls per hour allowed by the user' -Format Int32),
                 (New-PodeOAStringProperty -Name 'X-Expires-After' -Description 'date in UTC when token expires' -Format Date-Time) -PassThru |
-            # ) |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'
 
         <#
             GET '/user/logout'
         #>
         Add-PodeRoute -PassThru -Method Get -Path '/user/logout' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            Write-PodeJsonResponse -Value 'Successful operation' -StatusCode 200
         } | Set-PodeOARouteInfo -Summary 'Logs out current logged in user session.'  -Tags 'user' -OperationId 'logoutUser' -PassThru |
             Add-PodeOAResponse -Default -Description 'Successful operation'
+
+
         <#
             GET '/user/{username}'
         #>
         Add-PodeRoute -PassThru -Method Get -Path '/user/:username' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $username = $WebEvent.Parameters['username']
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
+            if ($username) {
+                $user = Get-User -Username $username
+                if ($user) {
+                    switch ($responseMediaType) {
+                        'application/xml' { Write-PodeXmlResponse -Value $user -StatusCode 200 }
+                        'application/json' { Write-PodeJsonResponse -Value $user -StatusCode 200 }
+                        default { Write-PodeHtmlResponse -StatusCode 415 }
+                    }
+                } else {
+                    Write-PodeHtmlResponse -Value 'User not found' -StatusCode 404
+                }
+            } else {
+                Write-PodeHtmlResponse -Value 'Invalid username supplied' -StatusCode 400
+            }
         } | Set-PodeOARouteInfo -Summary 'Get user by user name'   -Tags 'user' -OperationId 'getUserByName' -PassThru |
             Set-PodeOARequest -Parameters (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be fetched. Use user1 for testing.' -Required | ConvertTo-PodeOAParameter -In Path ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'User' ) -PassThru |
@@ -631,19 +752,65 @@ Some useful links:
             PUT '/user/{username}'
         #>
         Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $contentType = Get-PodeHeader -Name 'Content-Type'
+            $username = $WebEvent.Parameters['username']
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
+            if (Test-User -Username $username) {
+                switch ($contentType) {
+                    'application/xml' {
+                        $user = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
+                    }
+                    'application/json' { $user = ConvertTo-Json $WebEvent.data }
+                    'application/x-www-form-urlencoded' { $user = ConvertTo-Json $WebEvent.data }
+                    default {
+                        Write-PodeHtmlResponse -StatusCode 415
+                        return
+                    }
+                }
+                if ($contentType -eq 'application/json') {
+                    $Validate = Test-PodeOAJsonSchemaCompliance -Json $user -SchemaReference 'User'
+                } else {
+                    #no test schema support for XML
+                    $Validate = @{'result' = $true }
+                }
+                if ($Validate.result) {
+                    $newUser = Add-user -User (convertfrom-json -InputObject $user -AsHashtable)
+                    Save-PodeState -Path $using:PetDataJson
+                    switch ($responseMediaType) {
+                        'application/xml' { Write-PodeXmlResponse -Value $newUser -StatusCode 200 }
+                        'application/json' { Write-PodeJsonResponse -Value $newUser -StatusCode 200 }
+                        default { Write-PodeHtmlResponse -StatusCode 415 }
+                    }
+                } else {
+                    Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
+                }
+            } else {
+                Write-PodeHtmlResponse -StatusCode 404 -Value   'User not found'
+            }
         } | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'updateUser' -PassThru |
             Set-PodeOARequest -Parameters (  New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path ) `
                 -RequestBody ( New-PodeOARequestBody -Required -Description 'Update an existent user in the store' -Content (
                     New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User'
                 )) -PassThru |
+            Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input' -PassThru |
+            Add-PodeOAResponse -StatusCode 404 -Description 'User not found' -PassThru |
             Add-PodeOAResponse -Default -Description 'successful operation'
 
         <#
             DELETE '/user/{username}'
         #>
         Add-PodeRoute -PassThru -Method Delete -Path '/user/:username' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $username = $WebEvent.Parameters['username']
+            if ($username ) {
+                if ( Test-User -Id $username) {
+                    Remove-User -Id $orderId
+                    Save-PodeState -Path $using:PetDataJson
+                } else {
+                    Write-PodeHtmlResponse -Value 'User not found' -StatusCode 404
+                }
+            } else {
+                Write-PodeJsonReWrite-PodeHtmlResponsesponse -Value 'Invalid username supplied' -StatusCode 400
+            }
         } | Set-PodeOARouteInfo -Summary 'Delete user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'deleteUser' -PassThru |
             Set-PodeOARequest -Parameters   (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be deleted.' -Required | ConvertTo-PodeOAParameter -In Path )  -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |

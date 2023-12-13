@@ -1,14 +1,20 @@
 $orders = @{}
 function Initialize-Order {
-    $now = (Get-Date)
-    Lock-PodeObject -Name 'PetOrderLock' -ScriptBlock {
-        Set-PodeState -Scope 'Orders'  -Name 'orders' -Value  @{} | Out-Null
-        Add-Order -Id 1 -PetId 1 -Quantity 100 -ShipDate $now -Status 'placed' -Complete
-        Add-Order -Id 2 -PetId 1 -Quantity 50 -ShipDate $now -Status 'approved' -Complete
-        Add-Order -Id 3 -PetId 1 -Quantity 50 -ShipDate $now -Status 'delivered' -Complete
-        Add-Order -Id 4 -PetId 1 -Quantity 20 -ShipDate $now -Status 'placed'
+    param (
+        [switch]
+        $Reset
+    )
+    New-PodeLockable -Name 'PetOrderLock'
+    if ($Reset.IsPresent) {
+        $now = (Get-Date)
+        Lock-PodeObject -Name 'PetOrderLock' -ScriptBlock {
+            Set-PodeState -Scope 'Orders'  -Name 'orders' -Value  @{} | Out-Null
+            Add-Order -Id 1 -PetId 1 -Quantity 100 -ShipDate $now -Status 'placed' -Complete
+            Add-Order -Id 2 -PetId 1 -Quantity 50 -ShipDate $now -Status 'approved' -Complete
+            Add-Order -Id 3 -PetId 1 -Quantity 50 -ShipDate $now -Status 'delivered' -Complete
+            Add-Order -Id 4 -PetId 1 -Quantity 20 -ShipDate $now -Status 'placed'
+        }
     }
-
 }
 
 function Add-Order {

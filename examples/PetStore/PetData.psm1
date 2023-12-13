@@ -2,36 +2,47 @@
 
 
 function Initialize-Categories {
-    Lock-PodeObject -Name 'PetCategory' -ScriptBlock {
-        Set-PodeState -Scope 'Categories'  -Name 'categories' -Value  @{} | Out-Null
-
-        Add-Category -Id 1 -Name 'Dogs'
-        Add-Category -Id 2 -Name 'Cats'
-        Add-Category -Id 3 -Name 'Rabbits'
-        Add-Category -Id 4 -Name 'Lions'
+    param (
+        [switch]
+        $Reset
+    )
+    New-PodeLockable -Name 'PetCategoryLock'
+    if ($Reset.IsPresent) {
+        Lock-PodeObject -Name 'PetCategoryLock' -ScriptBlock {
+            Set-PodeState -Scope 'Categories'  -Name 'categories' -Value  @{} | Out-Null
+            Add-Category -Id 1 -Name 'Dogs'
+            Add-Category -Id 2 -Name 'Cats'
+            Add-Category -Id 3 -Name 'Rabbits'
+            Add-Category -Id 4 -Name 'Lions'
+        }
     }
 }
 function Initialize-Pet {
-    Lock-PodeObject -Name 'PetLock' -ScriptBlock {
-        Set-PodeState -Scope 'Pets' -Name 'pets' -Value @{} | Out-Null
-        Add-Pet -Id 1 -Cat 'Cats' -Name 'Cat 1' -Urls  'url1', 'url2' -Tags  'tag1', 'tag2'  -Status available
-        Add-Pet -Id 2 -Cat 'Cats' -Name 'Cat 2' -Urls  'url1', 'url2' -Tags  'tag2', 'tag3'  -Status available
-        Add-Pet -Id 3 -Cat 'Cats' -Name 'Cat 2' -Urls  'url1', 'url2' -Tags  'tag3', 'tag4'  -Status pending
+    param (
+        [switch]
+        $Reset
+    )
+    New-PodeLockable -Name 'PetLock'
+    if ($Reset.IsPresent) {
+        Lock-PodeObject -Name 'PetLock' -ScriptBlock {
+            Set-PodeState -Scope 'Pets' -Name 'pets' -Value @{} | Out-Null
+            Add-Pet -Id 1 -Cat 'Cats' -Name 'Cat 1' -Urls  'url1', 'url2' -Tags  'tag1', 'tag2'  -Status available
+            Add-Pet -Id 2 -Cat 'Cats' -Name 'Cat 2' -Urls  'url1', 'url2' -Tags  'tag2', 'tag3'  -Status available
+            Add-Pet -Id 3 -Cat 'Cats' -Name 'Cat 2' -Urls  'url1', 'url2' -Tags  'tag3', 'tag4'  -Status pending
 
-        Add-Pet -Id 4 -Cat 'Dogs' -Name 'Dog 1' -Urls  'url1', 'url2' -Tags  'tag1', 'tag2'  -Status available
-        Add-Pet -Id 5 -Cat 'Dogs' -Name 'Dog 2' -Urls  'url1', 'url2' -Tags  'tag2', 'tag3'  -Status sold
-        Add-Pet -Id 6 -Cat 'Dogs' -Name 'Dog 2' -Urls  'url1', 'url2' -Tags  'tag3', 'tag4'  -Status pending
+            Add-Pet -Id 4 -Cat 'Dogs' -Name 'Dog 1' -Urls  'url1', 'url2' -Tags  'tag1', 'tag2'  -Status available
+            Add-Pet -Id 5 -Cat 'Dogs' -Name 'Dog 2' -Urls  'url1', 'url2' -Tags  'tag2', 'tag3'  -Status sold
+            Add-Pet -Id 6 -Cat 'Dogs' -Name 'Dog 2' -Urls  'url1', 'url2' -Tags  'tag3', 'tag4'  -Status pending
 
-        Add-Pet -Id 7 -Cat 'Lions' -Name 'Lion 1' -Urls  'url1', 'url2' -Tags  'tag1', 'tag2'  -Status available
-        Add-Pet -Id 8 -Cat 'Lions' -Name 'Lion 2' -Urls  'url1', 'url2' -Tags  'tag2', 'tag3'  -Status available
-        Add-Pet -Id 9 -Cat 'Lions' -Name 'Lion 2' -Urls  'url1', 'url2' -Tags  'tag3', 'tag4'  -Status available
+            Add-Pet -Id 7 -Cat 'Lions' -Name 'Lion 1' -Urls  'url1', 'url2' -Tags  'tag1', 'tag2'  -Status available
+            Add-Pet -Id 8 -Cat 'Lions' -Name 'Lion 2' -Urls  'url1', 'url2' -Tags  'tag2', 'tag3'  -Status available
+            Add-Pet -Id 9 -Cat 'Lions' -Name 'Lion 2' -Urls  'url1', 'url2' -Tags  'tag3', 'tag4'  -Status available
 
-        Add-Pet -Id 10 -Cat 'Rabbits' -Name 'Rabbit 1' -Urls  'url1', 'url2' -Tags  'tag2', 'tag3'  -Status available
-        Add-Pet -Id 11 -Cat 'Rabbits' -Name 'Rabbit 2' -Urls  'url1', 'url2' -Tags  'tag3', 'tag4'  -Status pending
+            Add-Pet -Id 10 -Cat 'Rabbits' -Name 'Rabbit 1' -Urls  'url1', 'url2' -Tags  'tag2', 'tag3'  -Status available
+            Add-Pet -Id 11 -Cat 'Rabbits' -Name 'Rabbit 2' -Urls  'url1', 'url2' -Tags  'tag3', 'tag4'  -Status pending
+        }
     }
 }
-
-
 
 
 function Add-Pet {
@@ -245,7 +256,7 @@ function Add-Category {
         [string]
         $Name
     )
-    Lock-PodeObject -Name 'PetCategory' -ScriptBlock {
+    Lock-PodeObject -Name 'PetCategoryLock' -ScriptBlock {
         $categories = (Get-PodeState -Name 'categories')
         $categories[$Name] = $Id
     }
@@ -262,7 +273,7 @@ function  Get-Category {
         [long]
         $Id
     )
-    return Lock-PodeObject -Name 'PetCategory' -Return -ScriptBlock {
+    return Lock-PodeObject -Name 'PetCategoryLock' -Return -ScriptBlock {
         $categories = (Get-PodeState -Name 'categories')
         switch ($PSCmdlet.ParameterSetName) {
             'Name' {
