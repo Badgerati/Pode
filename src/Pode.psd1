@@ -421,7 +421,22 @@
         'Use-PodeSemaphore',
         'Enter-PodeSemaphore',
         'Exit-PodeSemaphore',
-        'Clear-PodeSemaphores'
+        'Clear-PodeSemaphores',
+
+        # caching
+        'Get-PodeCache',
+        'Set-PodeCache',
+        'Test-PodeCache',
+        'Remove-PodeCache',
+        'Clear-PodeCache',
+        'Add-PodeCacheStorage',
+        'Remove-PodeCacheStorage',
+        'Get-PodeCacheStorage',
+        'Test-PodeCacheStorage',
+        'Set-PodeCacheDefaultStorage',
+        'Get-PodeCacheDefaultStorage',
+        'Set-PodeCacheDefaultTtl',
+        'Get-PodeCacheDefaultTtl'
     )
 
 

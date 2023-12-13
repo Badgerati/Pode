@@ -2428,7 +2428,7 @@ function Convert-PodeScopedVariables {
         $PSSession,
 
         [Parameter()]
-        [ValidateSet('State', 'Session', 'Secret', 'Using')]
+        [ValidateSet('State', 'Session', 'Secret', 'Using', 'Cache')]
         $Skip
     )
 
@@ -2457,6 +2457,10 @@ function Convert-PodeScopedVariables {
 
     if (($null -eq $Skip) -or ($Skip -inotcontains 'Secret')) {
         $ScriptBlock = Invoke-PodeSecretScriptConversion -ScriptBlock $ScriptBlock
+    }
+
+    if (($null -eq $Skip) -or ($Skip -inotcontains 'Cache')) {
+        $ScriptBlock = Invoke-PodeCacheScriptConversion -ScriptBlock $ScriptBlock
     }
 
     # return
@@ -2524,6 +2528,39 @@ function Invoke-PodeSecretScriptConversion {
     while ($scriptStr -imatch '(?<full>\$secret\:(?<name>[a-z0-9_\?]+))') {
         $found = $true
         $scriptStr = $scriptStr.Replace($Matches['full'], "(Get-PodeSecret -Name '$($Matches['name'])')")
+    }
+
+    if ($found) {
+        $ScriptBlock = [scriptblock]::Create($scriptStr)
+    }
+
+    return $ScriptBlock
+}
+
+function Invoke-PodeCacheScriptConversion {
+    param(
+        [Parameter()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    # do nothing if no script
+    if ($null -eq $ScriptBlock) {
+        return $ScriptBlock
+    }
+
+    # rename any $secret:<name> vars
+    $scriptStr = "$($ScriptBlock)"
+    $found = $false
+
+    while ($scriptStr -imatch '(?<full>\$cache\:(?<name>[a-z0-9_\?]+)\s*=)') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "Set-PodeCache -Key '$($Matches['name'])' -InputObject ")
+    }
+
+    while ($scriptStr -imatch '(?<full>\$cache\:(?<name>[a-z0-9_\?]+))') {
+        $found = $true
+        $scriptStr = $scriptStr.Replace($Matches['full'], "(Get-PodeCache -Key '$($Matches['name'])')")
     }
 
     if ($found) {

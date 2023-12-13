@@ -4,11 +4,11 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 
-    $PodeContext = @{
-        Server        = $null
-        Metrics       = @{ Server = @{ StartTime = [datetime]::UtcNow } }
-        RunspacePools = @{}
-    } }
+$PodeContext = @{
+    Server = $null
+    Metrics = @{ Server = @{ StartTime = [datetime]::UtcNow } }
+    RunspacePools = @{}
+}}
 
 Describe 'Start-PodeInternalServer' {
     BeforeAll {
@@ -29,8 +29,10 @@ Describe 'Start-PodeInternalServer' {
         Mock Import-PodeModulesIntoRunspaceState { }
         Mock Import-PodeSnapinsIntoRunspaceState { }
         Mock Import-PodeFunctionsIntoRunspaceState { }
+        Mock Start-PodeCacheHousekeeper { }
         Mock Invoke-PodeEvent { }
-        Mock Write-Verbose { } }
+        Mock Write-Verbose { }
+    }
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {} }
@@ -181,6 +183,10 @@ Describe 'Restart-PodeInternalServer' {
                 Secrets         = @{
                     Vaults = @{}
                     Keys   = @{}
+                }
+                Cache           = @{
+                    Items   = @{}
+                    Storage = @{}
                 }
             }
             Metrics   = @{

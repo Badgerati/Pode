@@ -41,6 +41,9 @@ function Start-PodeInternalServer {
         # start timer for task housekeeping
         Start-PodeTaskHousekeeper
 
+        # start the cache housekeeper
+        Start-PodeCacheHousekeeper
+
         # create timer/schedules for auto-restarting
         New-PodeAutoRestartServer
 
@@ -241,6 +244,10 @@ function Restart-PodeInternalServer {
 
         # clear up shared state
         $PodeContext.Server.State.Clear()
+
+        # clear cache
+        $PodeContext.Server.Cache.Items.Clear()
+        $PodeContext.Server.Cache.Storage.Clear()
 
         # clear up secret vaults/cache
         Unregister-PodeSecretVaults -ThrowError
