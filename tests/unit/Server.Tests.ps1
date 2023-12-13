@@ -4,11 +4,11 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
 
-$PodeContext = @{
-    Server = $null
-    Metrics = @{ Server = @{ StartTime = [datetime]::UtcNow } }
-    RunspacePools = @{}
-}}
+    $PodeContext = @{
+        Server        = $null
+        Metrics       = @{ Server = @{ StartTime = [datetime]::UtcNow } }
+        RunspacePools = @{}
+    } }
 
 Describe 'Start-PodeInternalServer' {
     BeforeAll {
