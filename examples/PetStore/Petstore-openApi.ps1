@@ -12,6 +12,7 @@ function Write-ObjectContent {
     )
 
     process {
+        Write-PodeHost -ForegroundColor Blue "Type:$($Object.gettype())"
         $objectString = $Object | Out-String
         Write-PodeHost -ForegroundColor Blue -Object $objectString
     }
@@ -34,6 +35,7 @@ function Convert-Xml {
 
 
 Import-Module -Name "$petStorePath/PetData.psm1"
+Import-Module -Name "$petStorePath/Order.psm1"
 Start-PodeServer -Threads 2 -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -76,6 +78,7 @@ Some useful links:
     [String]$global:PetDataJson = Join-Path -Path $PetStorePath -ChildPath 'data' -AdditionalChildPath   'PetData.json'
     New-PodeLockable -Name 'PetLock'
     New-PodeLockable -Name 'PetCategory'
+    New-PodeLockable -Name 'PetOrderLock'
 
     #Set-PodeState -Scope 'Pets' -Name 'Pets' -Value @{pets = @{}; categories = @{} } | Out-Null
     if (Test-Path -Path $global:PetDataJson -PathType Leaf) {
@@ -84,6 +87,7 @@ Some useful links:
     } else {
         Initialize-Categories
         Initialize-Pet
+        Initialize-Order
         Save-PodeState -Path $global:PetDataJson
     }
 
@@ -165,11 +169,11 @@ Some useful links:
     Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc 'SwaggerDocs'
 
 
-    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 |
-        New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 |
-        New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 |
+    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -Required |
+        New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 -Required |
+        New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 -Required |
         New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
-        New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
+        New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Required -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
         New-PodeOABoolProperty -Name 'complete' |
         New-PodeOAObjectProperty -XmlName 'order' |
         Add-PodeOAComponentSchema -Name 'Order'
@@ -436,8 +440,9 @@ Some useful links:
             $petId = $WebEvent.Parameters['petId']
             if ($petId -and (Test-Pet -Id $petId)) {
                 Remove-Pet -Id $petId
+                Save-PodeState -Path $using:PetDataJson
             } else {
-                Write-PodeJsonResponse -Value 'Invalid pet value' -StatusCode 400
+                Write-PodeHtmlResponse -Value 'Invalid pet value' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Deletes pet by ID' -Description 'Deletes a pet.' -Tags 'pet' -OperationId 'deletePet' -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
@@ -447,7 +452,7 @@ Some useful links:
 
 
 
-#TO DO
+        #TO DO
         <#
             POST '/pet/{petId}/uploadImage'
         #>
@@ -468,7 +473,9 @@ Some useful links:
             GET '/store/inventory'
         #>
         Add-PodeRoute -PassThru -Method Get -Path '/store/inventory' -Authentication 'api_key' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $result = Get-CountByStatus
+            Write-PodeJsonResponse -Value $result -StatusCode 200
+
         } | Set-PodeOARouteInfo -Summary 'Returns pet inventories by status' -Description 'Returns a map of status codes to quantities' -Tags 'store' -OperationId 'getInventory' -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{  'application/json' = New-PodeOAObjectProperty -AdditionalProperties (New-PodeOAIntProperty -Format Int32  ) }
 
@@ -477,7 +484,30 @@ Some useful links:
             POST '/store/order'
         #>
         Add-PodeRoute -PassThru -Method post -Path '/store/order' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $contentType = Get-PodeHeader -Name 'Content-Type'
+            switch ($contentType) {
+                'application/xml' {
+                    $order = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
+                }
+                'application/json' { $order = ConvertTo-Json $WebEvent.data }
+                'application/x-www-form-urlencoded' { $order = ConvertTo-Json $WebEvent.data }
+                default {
+                    Write-PodeHtmlResponse -StatusCode 415
+                    return
+                }
+            }
+            if ($contentType -eq 'application/json') {
+                $Validate = Test-PodeOAJsonSchemaCompliance -Json $order -SchemaReference 'Order'
+            } else {
+                #no test schema support for XML
+                $Validate = @{'result' = $true }
+            }
+            if ($Validate.result) {
+                Add-Order -Order (convertfrom-json -InputObject $order -AsHashtable)
+                Save-PodeState -Path $using:PetDataJson
+            } else {
+                Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
+            }
         } | Set-PodeOARouteInfo -Summary 'Place an order for a pet' -Description 'Place a new order in the store' -Tags 'store' -OperationId 'placeOrder' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'Order'  )) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (@{ 'application/json' = 'Order' }) -PassThru |
@@ -488,23 +518,20 @@ Some useful links:
         #>
         Add-PodeRoute -PassThru -Method Get -Path '/store/order/:orderId' -ScriptBlock {
             $orderId = $WebEvent.Parameters['orderId']
-            $accept = Get-PodeHeader -Name 'Accept'
-            if ($accept -and $accept.Length -gt 0) {
-                $responseMediaType = $accept[0]
-            }
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
             if ($orderId) {
-                $order = Get-OrderById -OrderId $orderId
+                $order = Get-Order -Id $orderId
                 if ($order) {
                     switch ($responseMediaType) {
-                        'application/json' { $result = ConvertTo-Json -InputObject $order }
-                        'application/xml' { $result = ConvertTo-Xml -InputObject $order }
+                        'application/xml' { Write-PodeXmlResponse -Value $order -StatusCode 200 }
+                        'application/json' { Write-PodeJsonResponse -Value $order -StatusCode 200 }
+                        default { Write-PodeHtmlResponse -StatusCode 415 }
                     }
-                    Write-PodeJsonResponse -Value $result -StatusCode 200
                 } else {
-                    Write-PodeJsonResponse -Value 'Order not found' -StatusCode 404
+                    Write-PodeHtmlResponse -Value 'Order not found' -StatusCode 404
                 }
             } else {
-                Write-PodeJsonResponse -Value 'No orderId provided. Try again?' -StatusCode 400
+                Write-PodeHtmlResponse -Value 'No orderId provided. Try again?' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Find purchase order by ID' -Description 'For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.' -Tags 'store' -OperationId 'getOrderById' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
@@ -518,7 +545,17 @@ Some useful links:
             DELETE '/store/order/{orderId}'
         #>
         Add-PodeRoute -PassThru -Method Delete -Path '/store/order/:orderId' -ScriptBlock {
-            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+            $orderId = $WebEvent.Parameters['orderId']
+            if ($orderId ) {
+                if ( Test-Order -Id $orderId) {
+                    Remove-Order -Id $orderId
+                    Save-PodeState -Path $using:PetDataJson
+                } else {
+                    Write-PodeHtmlResponse -Value 'Order not found' -StatusCode 404
+                }
+            } else {
+                Write-PodeJsonReWrite-PodeHtmlResponsesponse -Value 'Invalid ID supplied' -StatusCode 400
+            }
         } | Set-PodeOARouteInfo -Summary 'Delete purchase order by ID' -Description 'For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors.' -Tags 'store' -OperationId 'deleteOrder' -PassThru |
             Set-PodeOARequest -PassThru -Parameters @(
                                     (  New-PodeOAIntProperty -Name 'orderId' -Format Int64 -Description ' ID of the order that needs to be deleted' -Required | ConvertTo-PodeOAParameter -In Path )
@@ -612,7 +649,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
     }
-  #  $yaml = PodeOADefinition -Format Yaml
+    #  $yaml = PodeOADefinition -Format Yaml
 
 
 

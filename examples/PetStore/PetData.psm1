@@ -66,7 +66,6 @@ function Add-Pet {
         $pets = Get-PodeState -Name 'pets'
         switch ($PSCmdlet.ParameterSetName) {
             'Items' {
-                Get-PodeState -Name 'pets'
                 $pets["$Id"] = @{
                     id           = $Id
                     categoryName = Get-Category -Name $Category
@@ -118,7 +117,7 @@ function Update-Pet {
         $pets = Get-PodeState -Name 'pets'
         switch ($PSCmdlet.ParameterSetName) {
             'Items' {
-                if ($pets.ContainsKey("$Id")) { 
+                if ($pets.ContainsKey("$Id")) {
                     if ($Category) {
                         $pets["$Id"].categoryName = Get-Category -Name $Category
                     }
@@ -232,7 +231,7 @@ function Remove-Pet {
     )
     Lock-PodeObject -Name 'PetLock' -ScriptBlock {
         $pets = (Get-PodeState -Name 'pets')
-        $pets.Remove( $Id)
+        $pets.Remove( "$Id")
     }
 }
 

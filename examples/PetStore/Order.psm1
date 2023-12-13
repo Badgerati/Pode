@@ -1,10 +1,14 @@
 $orders = @{}
 function Initialize-Order {
     $now = (Get-Date)
-    New-Order -Id 1 -PetId 1 -Quantity 100 -ShipDate $now -Status 'placed' -Complete
-    New-Order -Id 2 -PetId 1 -Quantity 50 -ShipDate $now -Status 'approved' -Complete
-    New-Order -Id 3 -PetId 1 -Quantity 50 -ShipDate $now -Status 'delivered' -Complete
-    New-Order -Id 4 -PetId 1 -Quantity 20 -ShipDate $now -Status 'placed'
+    Lock-PodeObject -Name 'PetOrderLock' -ScriptBlock {
+        Set-PodeState -Scope 'Orders'  -Name 'orders' -Value  @{} | Out-Null
+        Add-Order -Id 1 -PetId 1 -Quantity 100 -ShipDate $now -Status 'placed' -Complete
+        Add-Order -Id 2 -PetId 1 -Quantity 50 -ShipDate $now -Status 'approved' -Complete
+        Add-Order -Id 3 -PetId 1 -Quantity 50 -ShipDate $now -Status 'delivered' -Complete
+        Add-Order -Id 4 -PetId 1 -Quantity 20 -ShipDate $now -Status 'placed'
+    }
+
 }
 
 function Add-Order {
@@ -29,7 +33,8 @@ function Add-Order {
         [Parameter(Mandatory, ParameterSetName = 'Items')]
         [string]
         $Status,
-        [Parameter(Mandatory, ParameterSetName = 'Items')]
+
+        [Parameter(  ParameterSetName = 'Items')]
         [switch]
         $Complete,
 
@@ -37,60 +42,83 @@ function Add-Order {
         [hashtable]
         $Order
     )
-    switch ($PSCmdlet.ParameterSetName) {
-        'Items' {
-            $orders[$Id] = @{
-                id       = $Id
-                petId    = $PetId
-                quantity = $Quantity
-                shipdate = $ShipDate
-                status   = $Status
-                complete = $Complete.IsPresent
+    Lock-PodeObject -Name 'PetOrderLock' -ScriptBlock {
+        $orders = Get-PodeState   -Name 'orders'
+        switch ($PSCmdlet.ParameterSetName) {
+            'Items' {
+                $orders["$Id"] = @{
+                    id       = $Id
+                    petId    = $PetId
+                    quantity = $Quantity
+                    shipdate = $ShipDate
+                    status   = $Status
+                    complete = $Complete.IsPresent
+                }
+            }
+            'Object' {
+                $orders["$($Order.id)"] = $Order
             }
         }
-        'Object' {
-            $orders[$Order.id] = $Order
-        }
     }
-
 }
 
 
-function Get-OrderById {
+function Get-Order {
     param (
         [Parameter(Mandatory)]
         [long]
-        $OrderId
+        $Id
     )
-
-    return  $orders[$Id]
+    return Lock-PodeObject -Name 'PetOrderLock' -Return -ScriptBlock {
+        $orders = Get-PodeState   -Name 'orders'
+        return  $orders["$Id"]
+    }
 }
+
+function Test-Order {
+    param (
+        [Parameter(Mandatory)]
+        [long]
+        $Id
+    )
+    return Lock-PodeObject -Name 'PetOrderLock' -Return -ScriptBlock {
+        $orders = Get-PodeState   -Name 'orders'
+        return  $orders.ContainsKey("$Id")
+    }
+}
+
 
 function Get-CountByStatus {
-    $countByStatus = @{}
-    foreach ($order in $orders.Values) {
-        $status = $order.status
-        if ($countByStatus.containsKey($status)) {
-            $countByStatus[$status] += $order.quantity
-        } else {
-            $countByStatus[$status] = $order.quantity
+    return Lock-PodeObject -Name 'PetOrderLock' -Return -ScriptBlock {
+        $result = @{}
+        foreach ($order in (Get-PodeState -Name 'orders').Values) {
+            $status = $order.status
+            if ($result.containsKey($status)) {
+                $result[$status] += $order.quantity
+            } else {
+                $result[$status] = $order.quantity
+            }
         }
+        return $result
     }
-    return $countByStatus
 }
 
-function Remove-OrderById {
+function Remove-Order {
     param (
         [Parameter(Mandatory)]
         [long]
-        $OrderId
+        $Id
     )
-    $orders.Remove( $OrderId)
+    Lock-PodeObject -Name 'PetOrderLock' -ScriptBlock {
+        $order = (Get-PodeState -Name 'orders')
+        $order.Remove( "$Id")
+    }
 }
 
 
 Export-ModuleMember -Function Initialize-Order
-Export-ModuleMember -Function Get-OrderById
+Export-ModuleMember -Function Get-Order
 Export-ModuleMember -Function Get-CountByStatus
 Export-ModuleMember -Function Add-Order
-Export-ModuleMember -Function Remove-OrderById
+Export-ModuleMember -Function Test-Order
+Export-ModuleMember -Function Remove-Order
