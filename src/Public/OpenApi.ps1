@@ -55,10 +55,12 @@ Define the default  depth used by any JSON,YAML OpenAPI conversion (default 20)
 .PARAMETER DisableMinimalDefinitions
 If suplied the OpenApi decument will include only the route validated by Set-PodeOARouteInfo. Any other not OpenApi route will be excluded.
 
+.PARAMETER NoDefaultResponses
+If suplied is going to disable the default OpenAPI response with the new provided.
 
 .PARAMETER DefaultResponses
 If suplied is going to replace the default OpenAPI response with the new provided.(Default: @{'200' = @{ description = 'OK' };'default' = @{ description = 'Internal server error' }} )
-Note: Use @{} to disable the Default Responses.
+
 
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
@@ -103,29 +105,40 @@ function Enable-PodeOpenApi {
         [object[]]
         $Middleware,
 
+        [Parameter()]
         [switch]
         $RestrictRoutes,
 
+        [Parameter()]
         [ValidateSet('View', 'Download')]
         [String]
         $Mode = 'view',
 
+        [Parameter()]
         [ValidateSet('Json', 'Json-Compress', 'Yaml')]
         [String]
         $MarkupLanguage = 'Json',
 
+        [Parameter()]
         [switch]
         $EnableSchemaValidation,
 
+        [Parameter()]
         [ValidateRange(1, 100)]
         [int]
         $Depth = 20,
 
-        [switch ]
+        [Parameter()]
+        [switch]
         $DisableMinimalDefinitions,
 
+        [Parameter(Mandatory, ParameterSetName = 'DefaultResponses')]
         [hashtable]
-        $DefaultResponses
+        $DefaultResponses,
+
+        [Parameter(Mandatory, ParameterSetName = 'NoDefaultResponses')]
+        [switch]
+        $NoDefaultResponses
 
     )
 
@@ -234,7 +247,12 @@ function Enable-PodeOpenApi {
     Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
     Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
     #set new DefaultResponses
-    if ($DefaultResponses) {
+    if ($NoDefaultResponses.IsPresent -and $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses) {
+        throw "$NoDefaultResponses"
+    }
+    if ($NoDefaultResponses.IsPresent) {
+        $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses = @{}
+    } elseif ($DefaultResponses) {
         $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses = $DefaultResponses
     }
     $PodeContext.Server.OpenAPI.hiddenComponents.enabled = $true
@@ -757,7 +775,7 @@ https://swagger.io/docs/specification/serialization/
 .LINK
 https://swagger.io/docs/specification/describing-request-body/
 
-.PARAMETER Schema
+.PARAMETER Reference
 A reference name from an existing component request body.
 Alias: Reference
 
@@ -792,7 +810,7 @@ New-PodeOARequestBody -Content @{ 'application/json' = (New-PodeOAIntProperty -N
 New-PodeOARequestBody -Content @{ 'application/json' = 'UserIdSchema' }
 
 .EXAMPLE
-New-PodeOARequestBody -Schema 'UserIdBody'
+New-PodeOARequestBody -Reference 'UserIdBody'
 
 .EXAMPLE
 New-PodeOARequestBody -Content @{'multipart/form-data' =
@@ -812,9 +830,8 @@ function New-PodeOARequestBody {
     [CmdletBinding(DefaultParameterSetName = 'BuiltIn')]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
-        [Alias('Reference')]
         [string]
-        $Schema,
+        $Reference,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'BuiltIn')]
         [Alias('ContentSchemas')]
@@ -871,12 +888,12 @@ function New-PodeOARequestBody {
         }
 
         'reference' {
-            if (!(Test-PodeOAComponentRequestBody -Name $Schema)) {
-                throw "The OpenApi component request body doesn't exist: $Schema"
+            if (!(Test-PodeOAComponentRequestBody -Name $Reference)) {
+                throw "The OpenApi component request body doesn't exist: $Reference"
             }
 
             $param = @{
-                '$ref' = "#/components/requestBodies/$Schema"
+                '$ref' = "#/components/requestBodies/$Reference"
             }
         }
     }

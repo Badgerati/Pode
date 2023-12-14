@@ -33,6 +33,26 @@ When you enable OpenAPI, and don't set any other OpenAPI data, the following is 
 * If you have multiple endpoints, then the servers section will be included
 * Any authentication will be included
 
+This can be changed with Enable-PodeOpenApi
+
+For example to change the default response 404 and 500
+```powershell
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My Awesome API' -Version 9.0.0.1   -DefaultResponses (New-PodeOAResponse -StatusCode 404 -Description 'User not found' | Add-PodeOAResponse -StatusCode 500  )
+```
+
+For disabling the Default Response use:
+```powershell
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My Awesome API' -Version 9.0.0.1 -NoDefaultResponses
+```
+
+For disabling the Minimal Definitions feature use:
+```powershell
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My Awesome API' -Version 9.0.0.1 -DisableMinimalDefinitions
+```
+
+
+
+
 ### Get Definition
 
 Instead of defining a route to return the definition, you can write the definition to the response whenever you want, and in any route, using the [`Get-PodeOADefinition`](../../Functions/OpenApi/Get-PodeOADefinition) function. This could be useful in certain scenarios like in Azure Functions, where you can enable OpenAPI, and then write the definition to the response of a GET request if some query parameter is set; eg: `?openapi=1`.
@@ -48,15 +68,15 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 ```
 
 ## OpenAPI configuration Best Practice
-Pode is rich of functions to create and configure an OpenApi spec. Here is a typical code you should use to initiate an OpenApi spec
+Pode is rich of functions to create and configure an complete OpenApi spec. Here is a typical code you should use to initiate an OpenApi spec
 
 ```powershell
 #Initialize OpenApi
-Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification. ...'    -DisableMinimalDefinitions
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification. ...' -OpenApiVersion 3.1 -DisableMinimalDefinitions -NoDefaultResponses
 # Additional OpenApi Info
 Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
 # Endpoint for the API
-Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
+Add-PodeOAServerEndpoint -url '/api/v3.1' -Description 'default endpoint'
 # OpenApi external documentation links
 New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
@@ -111,11 +131,9 @@ Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
         UserId = $WebEvent.Parameters['userId']
     }
 } -PassThru |
-    Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -ContentSchemas @{
-        'application/json' = (New-PodeOAObjectProperty -Properties @(
-            (New-PodeOAStringProperty -Name 'Name'),
-            (New-PodeOAIntProperty -Name 'UserId')
-        ))
+    Add-PodeOAResponse -StatusCode 200 -Description 'A user object' --Content @{
+        'application/json' = (New-PodeOAStringProperty -Name 'Name'|
+            New-PodeOAIntProperty -Name 'UserId'| New-PodeOAObjectProperty)
     }
 ```
 
@@ -126,6 +144,27 @@ the JSON response payload defined is as follows:
     "Name": [string],
     "UserId": [integer]
 }
+```
+
+In case the response JSON payload is an array
+```powershell
+Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
+    Write-PodeJsonResponse -Value @{
+        Name = 'Rick'
+        UserId = $WebEvent.Parameters['userId']
+    }
+} -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -Content (
+    New-PodeOAContentMediaType -ContentMediaType 'application/json' -Array -Content ( New-PodeOAStringProperty -Name 'Name'| New-PodeOAIntProperty -Name 'UserId'| New-PodeOAObjectProperty )
+    )
+```
+```json
+[
+    {
+        "Name": [string],
+        "UserId": [integer]
+    }
+]
 ```
 
 Internally, each route is created with an empty default 200 and 500 response. You can remove these, or other added responses, by using [`Remove-PodeOAResponse`](../../Functions/OpenApi/Add-PodeOAResponse):
@@ -171,17 +210,6 @@ Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
         (New-PodeOAStringProperty -Name 'city' -Required | ConvertTo-PodeOAParameter -In Query)
     )
 ```
-or if you prefer to use the pipeline
-```powershell
-Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
-    Write-PodeJsonResponse -Value @{
-        Name = 'Rick'
-        UserId = $WebEvent.Query['name']
-    }
-} -PassThru | New-PodeOAStringProperty -Name 'name' -Required | ConvertTo-PodeOAParameter -In Query |
-                New-PodeOAStringProperty -Name 'city' -Required | ConvertTo-PodeOAParameter -In Query |
-                Set-PodeOARequest
-```
 
 #### Payload
 
@@ -197,12 +225,9 @@ Add-PodeRoute -Method Patch -Path '/api/users' -ScriptBlock {
     }
 } -PassThru |
     Set-PodeOARequest -RequestBody (
-        New-PodeOARequestBody -Required -ContentSchemas @{
-            'application/json' = (New-PodeOAObjectProperty -Properties @(
-                (New-PodeOAStringProperty -Name 'name'),
-                (New-PodeOAIntProperty -Name 'userId')
-            ))
-        }
+        New-PodeOARequestBody -Required -Content (
+        New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content (  New-PodeOAStringProperty -Name 'Name'| New-PodeOAIntProperty -Name 'UserId'| New-PodeOAObjectProperty ) )
+
     )
 ```
 
@@ -213,6 +238,13 @@ The expected payload would look as follows:
     "name": [string],
     "userId": [integer]
 }
+```
+```xml
+<Object>
+    <name type="string"></name>
+    <userId type="integer"></userId>
+</Object>
+
 ```
 
 ## Components
@@ -227,13 +259,12 @@ The following is an example of defining a schema which is a object of Name, User
 
 ```powershell
 # define a reusable schema user object
-Add-PodeOAComponentSchema -Name 'UserSchema' -Schema (
-    New-PodeOAObjectProperty -Properties @(
-        (New-PodeOAStringProperty -Name 'Name'),
-        (New-PodeOAIntProperty -Name 'UserId'),
-        (New-PodeOAIntProperty -Name 'Age')
-    )
-)
+New-PodeOAStringProperty -Name 'Name' |
+  New-PodeOAIntProperty -Name 'UserId' |
+  New-PodeOAIntProperty -Name 'Age'|
+  New-PodeOAObjectProperty |
+  Add-PodeOAComponentSchema -Name 'UserSchema'
+
 
 # reuse the above schema in a response
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
@@ -243,7 +274,7 @@ Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
         Age = 42
     }
 } -PassThru |
-    Add-PodeOAResponse -StatusCode 200 -Description 'A list of users' -ContentSchemas @{
+    Add-PodeOAResponse -StatusCode 200 -Description 'A list of users' -Content @{
         'application/json' = 'UserSchema'
     }
 ```
@@ -256,13 +287,14 @@ The following is an example of defining a JSON object that a Name, UserId, and a
 
 ```powershell
 # define a reusable request body
-Add-PodeOAComponentRequestBody -Name 'UserBody' -Required -ContentSchemas @{
-    'application/json' = (New-PodeOAObjectProperty -Properties @(
-        (New-PodeOAStringProperty -Name 'Name'),
-        (New-PodeOAIntProperty -Name 'UserId'),
-        (New-PodeOABoolProperty -Name 'Enabled')
-    ))
-}
+
+New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/x-www-form-urlencoded' -Content   (
+    New-PodeOAStringProperty -Name 'Name' |
+    New-PodeOAIntProperty -Name 'UserId' |
+    New-PodeOABoolProperty -Name 'Enabled' |
+    New-PodeOAObjectProperty |
+    Add-PodeOAComponentRequestBody -Name 'UserBody' -Required
+)
 
 # use the request body in a route
 Add-PodeRoute -Method Patch -Path '/api/users' -ScriptBlock {
@@ -309,11 +341,12 @@ The following is an example of defining a 200 response, that has a JSON payload 
 
 ```powershell
 # defines a response with a json payload
-Add-PodeOAComponentResponse -Name 'OK' -Description 'A user object' -ContentSchemas @{
-    'application/json' = (New-PodeOAObjectProperty -Array -Properties @(
-        (New-PodeOAStringProperty -Name 'Name'),
-        (New-PodeOAIntProperty -Name 'UserId')
-    ))
+Add-PodeOAComponentResponse -Name 'OK' -Description 'A user object' -Content  @{
+    'application/json' = (
+         New-PodeOAStringProperty -Name 'Name' |
+         New-PodeOAIntProperty -Name 'UserId' |
+        New-PodeOAObjectProperty -Array
+    )
 }
 
 # reuses the above response on a route using its "OK" name
@@ -325,6 +358,7 @@ Add-PodeRoute -Method Get -Path "/api/users" -ScriptBlock {
 } -PassThru |
     Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 ```
+
 
 the JSON response payload defined is as follows:
 
@@ -350,6 +384,7 @@ There are 5 simple property types: Integers, Numbers, Strings, Booleans, and Sch
 * [`New-PodeOAStringProperty`](../../Functions/OpenApi/New-PodeOAStringProperty)
 * [`New-PodeOABoolProperty`](../../Functions/OpenApi/New-PodeOABoolProperty)
 * [`New-PodeOASchemaProperty`](../../Functions/OpenApi/New-PodeOASchemaProperty)
+* [`New-PodeOAMultiTypeProperty`](../../Functions/OpenApi/New-PodeOASchemaProperty)
 
 These properties can be created with a Name, and other flags such as Required and/or a Description:
 
@@ -368,6 +403,9 @@ New-PodeOABoolProperty -Name 'enabled' -Required
 
 # a schema property that references another component schema
 New-PodeOASchemaProperty -Name 'Config' -Reference 'ConfigSchema'
+
+# a string or an integer or a null value (only available with OpenAPI 3.1)
+New-PodeOAMultiTypeProperty -Name 'multi' -Type integer,string -Nullable
 ```
 
 On their own, like above, the simple properties don't really do much. However, you can combine that together to make complex objects/arrays as defined below.

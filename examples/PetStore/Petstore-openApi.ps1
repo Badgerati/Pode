@@ -80,7 +80,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.2' -EnableSchemaValidation -DisableMinimalDefinitions -DefaultResponses @{}
+    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses
     New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
 
