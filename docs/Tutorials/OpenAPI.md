@@ -379,10 +379,56 @@ the JSON response payload defined is as follows:
 ]
 ```
 
-Add-PodeOAComponentHeader
 
-Add-PodeOAComponentCallBack
-Add-PodeOAComponentResponseLink
+### Examples
+
+To define a reusable example definition you can use the [`Add-PodeOAComponentExample`](../../Functions/OpenApi/Add-PodeOAComponentExample) function. You'll need to supply a Name, a Summary and a list of value representing the object.
+
+The following is an example that define three Pet examples and it's used update pet operation
+
+```powershell
+# defines the frog example
+Add-PodeOAComponentExample -name 'frog-example' -Summary "An example of a frog with a cat's name" -Value @{    name = 'Jaguar', petType = 'Panthera', color = 'Lion', gender = 'Male', breed = 'Mantella Baroni' }
+# defines the cat example
+Add-PodeOAComponentExample   -Name 'cat-example' -Summary 'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' }
+# defines the dog example
+Add-PodeOAComponentExample -Name 'dog-example' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' }
+
+# reuses the examples
+Add-PodeRoute -PassThru -Method Put -Path '/pet/:petId' -ScriptBlock {
+    #code
+} | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepet' -PassThru |
+    Set-PodeOARequest  -Parameters @(
+                (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
+    ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
+            New-PodeOAExample -ContentMediaType 'application/json','application/xml' -Reference 'cat-example' |
+                New-PodeOAExample -ContentMediaType 'application/json','application/xml'   -Reference 'dog-example' |
+                New-PodeOAExample -ContentMediaType 'application/json','application/xml' -Reference 'frog-example'
+            )
+        ) -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.'
+
+```
+
+### Headers
+
+To define a reusable header definition you can use the [`Add-PodeOAComponentHeader`](../../Functions/OpenApi/Add-PodeOAComponentHeader) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
+
+
+
+
+### CallBacks
+
+To define a reusable callback definition you can use the [`Add-PodeOAComponentCallBack`](../../Functions/OpenApi/Add-PodeOAComponentCallBack) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
+
+
+
+
+### ResponseLink
+
+To define a reusable response link definition you can use the [`Add-PodeOAComponentResponseLink`](../../Functions/OpenApi/Add-PodeOAComponentResponseLink) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
+
+
+
 ## Properties
 
 Properties are used to create all Parameters and Schemas in OpenAPI. You can use the simple types on their own, or you can combine multiple of them together to form complex objects.
@@ -396,7 +442,8 @@ There are 5 simple property types: Integers, Numbers, Strings, Booleans, and Sch
 * [`New-PodeOAStringProperty`](../../Functions/OpenApi/New-PodeOAStringProperty)
 * [`New-PodeOABoolProperty`](../../Functions/OpenApi/New-PodeOABoolProperty)
 * [`New-PodeOASchemaProperty`](../../Functions/OpenApi/New-PodeOASchemaProperty)
-* [`New-PodeOAMultiTypeProperty`](../../Functions/OpenApi/New-PodeOASchemaProperty)
+
+* [`New-PodeOAMultiTypeProperty`](../../Functions/OpenApi/New-PodeOASchemaProperty) Note: OpenAPI 3.1 only
 
 These properties can be created with a Name, and other flags such as Required and/or a Description:
 
@@ -493,11 +540,8 @@ Unlike the `-Object` switch that simply converts a single property into an objec
 For example, the following will create an object using an Integer, String, and a Boolean:
 
 ```powershell
-New-PodeOAObjectProperty -Properties @(
-    (New-PodeOAIntProperty -Name 'userId'),
-    (New-PodeOAStringProperty -Name 'name'),
-    (New-PodeOABoolProperty -Name 'enabled')
-)
+New-PodeOAIntProperty -Name 'userId'| New-PodeOAStringProperty -Name 'name'|
+   New-PodeOABoolProperty -Name 'enabled' |New-PodeOAObjectProperty
 ```
 
 As JSON, this could look as follows:
@@ -513,11 +557,8 @@ As JSON, this could look as follows:
 You can also supply the `-Array` switch to the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function. This will result in an array of objects. For example, if we took the above:
 
 ```powershell
-New-PodeOAObjectProperty -Array -Properties @(
-    (New-PodeOAIntProperty -Name 'userId'),
-    (New-PodeOAStringProperty -Name 'name'),
-    (New-PodeOABoolProperty -Name 'enabled')
-)
+New-PodeOAIntProperty -Name 'userId'| New-PodeOAStringProperty -Name 'name'|
+   New-PodeOABoolProperty -Name 'enabled' |New-PodeOAObjectProperty -Array
 ```
 
 As JSON, this could look as follows:
@@ -540,11 +581,8 @@ As JSON, this could look as follows:
 You can also combine objects into other objects:
 
 ```powershell
-$usersArray = New-PodeOAObjectProperty -Name 'users' -Array -Properties @(
-    (New-PodeOAIntProperty -Name 'userId'),
-    (New-PodeOAStringProperty -Name 'name'),
-    (New-PodeOABoolProperty -Name 'enabled')
-)
+$usersArray = New-PodeOAIntProperty -Name 'userId'| New-PodeOAStringProperty -Name 'name'|
+   New-PodeOABoolProperty -Name 'enabled' |New-PodeOAObjectProperty -Array
 
 New-PodeOAObjectProperty -Properties @(
     (New-PodeOAIntProperty -Name 'found'),
@@ -638,25 +676,24 @@ As JSON, this could look as follows:
 You can also suply Component Schema created using Add-PodeOAComponentSchema [`Add-PodeOAComponentSchema`](../../Functions/OpenApi/Add-PodeOAComponentSchema) For example, if we took the above:
 
 ```powershell
-    Add-PodeOAComponentSchema -Name 'User' -Schema (
-        New-PodeOAObjectProperty -Name 'User' -Xml @{'name' = 'user' } -Properties  (
-            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 -ReadOnly |
-                New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
-                New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
-                New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
-                New-PodeOAStringProperty -Name 'email' -Format email -Example 'john@email.com' |
-                New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
-                New-PodeOAStringProperty -Name 'password' -Format Password -Example '12345' -Required |
-                New-PodeOAStringProperty -Name 'phone' -Example '12345' |
-                New-PodeOAIntProperty -Name 'userStatus'-Format int32 -Description 'User Status' -Example 1
-        ))
+    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 -ReadOnly |
+        New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
+        New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
+        New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+        New-PodeOAStringProperty -Name 'email' -Format email -Example 'john@email.com' |
+        New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+        New-PodeOAStringProperty -Name 'password' -Format Password -Example '12345' -Required |
+        New-PodeOAStringProperty -Name 'phone' -Example '12345' |
+        New-PodeOAIntProperty -Name 'userStatus'-Format int32 -Description 'User Status' -Example 1|
+        New-PodeOAObjectProperty  -Name 'User' -XmlName 'user'  |
+        Add-PodeOAComponentSchema
 
     New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
         New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
         New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
         New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required |
-        New-PodeOAObjectProperty -Name 'Address' -Xml @{'name' = 'address' } -Description 'Shipping Address' |
-        Add-PodeOAComponentSchema -Name 'Address'
+        New-PodeOAObjectProperty -Name 'Address' -XmlName 'address' -Description 'Shipping Address' |
+        Add-PodeOAComponentSchema
 
     Merge-PodeOAProperty -Type AllOf -ObjectDefinitions 'Address','User'
 

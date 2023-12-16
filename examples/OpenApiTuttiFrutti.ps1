@@ -409,8 +409,7 @@ Some useful links:
                 New-PodeOAExample -ContentMediaType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
                     New-PodeOAExample -ContentMediaType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
                     New-PodeOAExample -ContentMediaType 'application/json' -Reference 'frog-example'
-                )
-
+                ) 
             ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
             Add-PodeOAResponse -StatusCode 4XX -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })

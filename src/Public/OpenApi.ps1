@@ -4767,9 +4767,6 @@ function Add-PodeOAComponentCallBack {
         $Responses
     )
     (Get-PodeOAComponentPath -FixesField callbacks).$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
-    # $PodeContext.Server.OpenAPI.components.callbacks[$Name] = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
-
-
 }
 
 
@@ -4895,7 +4892,6 @@ function New-PodeOAResponse {
             return [System.Collections.Specialized.OrderedDictionary] $response
         }
     }
-
 }
 
 <#
