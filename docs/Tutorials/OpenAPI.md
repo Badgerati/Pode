@@ -37,17 +37,17 @@ This can be changed with Enable-PodeOpenApi
 
 For example to change the default response 404 and 500
 ```powershell
-Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My Awesome API' -Version 9.0.0.1   -DefaultResponses (New-PodeOAResponse -StatusCode 404 -Description 'User not found' | Add-PodeOAResponse -StatusCode 500  )
+Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DefaultResponses (New-PodeOAResponse -StatusCode 404 -Description 'User not found' | Add-PodeOAResponse -StatusCode 500  )
 ```
 
 For disabling the Default Response use:
 ```powershell
-Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My Awesome API' -Version 9.0.0.1 -NoDefaultResponses
+Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -NoDefaultResponses
 ```
 
 For disabling the Minimal Definitions feature use:
 ```powershell
-Enable-PodeOpenApi -Path '/docs/openapi' -Title 'My Awesome API' -Version 9.0.0.1 -DisableMinimalDefinitions
+Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions
 ```
 
 
@@ -66,15 +66,23 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
     }
 }
 ```
+## OpenAPI Info object
+In previous releases some of the Info object properties like Version and Title were defined by `Enable-PodeOpenApi`.
+Starting from version 2.10 a new `Add-PodeOAInfo` function has been added to create a full OpenAPI Info spec.
 
+```powershell
+Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
+-LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io'
+```
 ## OpenAPI configuration Best Practice
 Pode is rich of functions to create and configure an complete OpenApi spec. Here is a typical code you should use to initiate an OpenApi spec
 
 ```powershell
 #Initialize OpenApi
-Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification. ...' -OpenApiVersion 3.1 -DisableMinimalDefinitions -NoDefaultResponses
-# Additional OpenApi Info
-Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0'  -OpenApiVersion 3.1 -DisableMinimalDefinitions -NoDefaultResponses
+# OpenApi Info
+Add-PodeOAInfo  -Version 1.0.17 -Description 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification. ...' -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
+
 # Endpoint for the API
 Add-PodeOAServerEndpoint -url '/api/v3.1' -Description 'default endpoint'
 # OpenApi external documentation links
@@ -371,6 +379,10 @@ the JSON response payload defined is as follows:
 ]
 ```
 
+Add-PodeOAComponentHeader
+
+Add-PodeOAComponentCallBack
+Add-PodeOAComponentResponseLink
 ## Properties
 
 Properties are used to create all Parameters and Schemas in OpenAPI. You can use the simple types on their own, or you can combine multiple of them together to form complex objects.
