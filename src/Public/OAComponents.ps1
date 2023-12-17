@@ -66,7 +66,7 @@ function Add-PodeOAComponentResponse {
         $Links
     )
 
-    $PodeContext.Server.OpenAPI.components.responses[$Name] = New-PodeOResponseInternal -Params $PSBoundParameters
+    $PodeContext.Server.OpenAPI.default.components.responses[$Name] = New-PodeOResponseInternal -Params $PSBoundParameters
 }
 
 
@@ -117,17 +117,17 @@ function Add-PodeOAComponentSchema {
         [string]
         $Description
     )
-    $PodeContext.Server.OpenAPI.components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty)
-    if ($PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
+    $PodeContext.Server.OpenAPI.default.components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty)
+    if ($PodeContext.Server.OpenAPI.default.hiddenComponents.schemaValidation) {
         $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
         #Resolve-PodeOAReferences -ComponentSchema  $modifiedSchema
-        $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$Name] = @{
+        $PodeContext.Server.OpenAPI.default.hiddenComponents.schemaJson[$Name] = @{
             'schema' = $modifiedComponent
-            'json'   = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
+            'json'   = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.default.hiddenComponents.depth
         }
     }
     if ($Description) {
-        $PodeContext.Server.OpenAPI.components.schemas[$Name].description = $Description
+        $PodeContext.Server.OpenAPI.default.components.schemas[$Name].description = $Description
     }
 }
 
@@ -174,7 +174,7 @@ function Add-PodeOAComponentHeader {
 
     )
 
-    $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
+    $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
 
 }
 
@@ -247,7 +247,7 @@ function Add-PodeOAComponentRequestBody {
     if ( $Description) {
         $param['description'] = $Description
     }
-    $PodeContext.Server.OpenAPI.components.requestBodies[$Name] = $param
+    $PodeContext.Server.OpenAPI.default.components.requestBodies[$Name] = $param
 }
 
 <#
@@ -295,7 +295,7 @@ function Add-PodeOAComponentParameter {
             throw 'The Parameter has no name. Please provide a name to this component using -Name property'
         }
     }
-    $PodeContext.Server.OpenAPI.components.parameters[$Name] = $Parameter
+    $PodeContext.Server.OpenAPI.default.components.parameters[$Name] = $Parameter
 }
 
 <#
@@ -363,9 +363,9 @@ function Add-PodeOAComponentExample {
         $Example.value = $Value
     } elseif ($ExternalValue) {
         $Example.externalValue = $ExternalValue
-    } 
+    }
 
-    $PodeContext.Server.OpenAPI.components.examples[$Name] = $Example
+    $PodeContext.Server.OpenAPI.default.components.examples[$Name] = $Example
 }
 
 
@@ -443,7 +443,7 @@ function Add-PodeOAComponentResponseLink {
         $RequestBody
 
     )
-    $PodeContext.Server.OpenAPI.components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
+    $PodeContext.Server.OpenAPI.default.components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
 }
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {

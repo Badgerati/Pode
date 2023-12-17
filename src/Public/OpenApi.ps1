@@ -30,6 +30,9 @@ An optional route filter for routes that should be included in the definition. (
 .PARAMETER Middleware
 Like normal Routes, an array of Middleware that will be applied to the route.
 
+.PARAMETER EndpointName
+The EndpointName of an Endpoint(s) to bind the static Route against.
+
 .PARAMETER RestrictRoutes
 If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
 
@@ -60,7 +63,6 @@ If suplied is going to disable the default OpenAPI response with the new provide
 
 .PARAMETER DefaultResponses
 If suplied is going to replace the default OpenAPI response with the new provided.(Default: @{'200' = @{ description = 'OK' };'default' = @{ description = 'Internal server error' }} )
-
 
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
@@ -100,6 +102,10 @@ function Enable-PodeOpenApi {
         [ValidateNotNullOrEmpty()]
         [string]
         $RouteFilter = '/*',
+
+        [Parameter()]
+        [string[]]
+        $EndpointName,
 
         [Parameter()]
         [object[]]
@@ -146,15 +152,15 @@ function Enable-PodeOpenApi {
         Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
 
-    $PodeContext.Server.OpenAPI.hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
+    $PodeContext.Server.OpenAPI.default.hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
 
 
     # initialise openapi info
-    $PodeContext.Server.OpenAPI.Version = $OpenApiVersion
-    $PodeContext.Server.OpenAPI.Path = $Path
+    $PodeContext.Server.OpenAPI.default.Version = $OpenApiVersion
+    $PodeContext.Server.OpenAPI.default.Path = $Path
 
-    $PodeContext.Server.OpenAPI.hiddenComponents.v3_0 = $OpenApiVersion.StartsWith('3.0')
-    $PodeContext.Server.OpenAPI.hiddenComponents.v3_1 = $OpenApiVersion.StartsWith('3.1')
+    $PodeContext.Server.OpenAPI.default.hiddenComponents.v3_0 = $OpenApiVersion.StartsWith('3.0')
+    $PodeContext.Server.OpenAPI.default.hiddenComponents.v3_1 = $OpenApiVersion.StartsWith('3.1')
 
     $meta = @{
         RouteFilter    = $RouteFilter
@@ -164,27 +170,27 @@ function Enable-PodeOpenApi {
         MarkupLanguage = $MarkupLanguage
     }
     if ( $Title) {
-        $PodeContext.Server.OpenAPI.info.title = $Title
+        $PodeContext.Server.OpenAPI.default.info.title = $Title
     }
     if ($Version) {
-        $PodeContext.Server.OpenAPI.info.version = $Version
+        $PodeContext.Server.OpenAPI.default.info.version = $Version
     }
 
     if ($Description ) {
-        $PodeContext.Server.OpenAPI.info.description = $Description
+        $PodeContext.Server.OpenAPI.default.info.description = $Description
     }
 
     if ( $EnableSchemaValidation.IsPresent) {
         #Test-Json has been introduced with version 6.1.0
         if ($PSVersionTable.PSVersion -ge [version]'6.1.0') {
-            $PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation = $EnableSchemaValidation.IsPresent
+            $PodeContext.Server.OpenAPI.default.hiddenComponents.schemaValidation = $EnableSchemaValidation.IsPresent
         } else {
             throw 'Schema validation required Powershell version 6.1.0 or greater'
         }
     }
 
     if ( $Depth) {
-        $PodeContext.Server.OpenAPI.hiddenComponents.depth = $Depth
+        $PodeContext.Server.OpenAPI.default.hiddenComponents.depth = $Depth
     }
 
 
@@ -233,29 +239,26 @@ function Enable-PodeOpenApi {
         # write the openapi definition
         if ($format -ieq 'yaml') {
             if ($mode -ieq 'view') {
-                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
+                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.default.hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
             } else {
-                Write-PodeYamlResponse -Value $def -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
+                Write-PodeYamlResponse -Value $def -depth $PodeContext.Server.OpenAPI.default.hiddenComponents.depth
             }
         } else {
-            Write-PodeJsonResponse -Value $def -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth -NoCompress:$meta.NoCompress
+            Write-PodeJsonResponse -Value $def -depth $PodeContext.Server.OpenAPI.default.hiddenComponents.depth -NoCompress:$meta.NoCompress
         }
     }
 
     # add the OpenAPI route
-    Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
-    Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
-    Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock
-    #set new DefaultResponses
-    if ($NoDefaultResponses.IsPresent -and $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses) {
-        throw "$NoDefaultResponses"
-    }
+    Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
+    Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
+    Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
+    #set new DefaultResponses 
     if ($NoDefaultResponses.IsPresent) {
-        $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses = @{}
+        $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses = @{}
     } elseif ($DefaultResponses) {
-        $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses = $DefaultResponses
+        $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses = $DefaultResponses
     }
-    $PodeContext.Server.OpenAPI.hiddenComponents.enabled = $true
+    $PodeContext.Server.OpenAPI.default.hiddenComponents.enabled = $true
 }
 
 
@@ -319,8 +322,8 @@ function Add-PodeOAServerEndpoint {
         $Variables
     )
 
-    if (! $PodeContext.Server.OpenAPI.servers) {
-        $PodeContext.Server.OpenAPI.servers = @()
+    if (! $PodeContext.Server.OpenAPI.default.servers) {
+        $PodeContext.Server.OpenAPI.default.servers = @()
     }
     $lUrl = [ordered]@{url = $Url }
     if ($Description) {
@@ -330,7 +333,7 @@ function Add-PodeOAServerEndpoint {
     if ($Variables) {
         $lUrl.variables = $Variables
     }
-    $PodeContext.Server.OpenAPI.servers += $lUrl
+    $PodeContext.Server.OpenAPI.default.servers += $lUrl
 }
 
 
@@ -426,13 +429,13 @@ function Get-PodeOADefinition {
 
     switch ($Format.ToLower()) {
         'json' {
-            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
+            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.default.hiddenComponents.depth
         }
         'json-compress' {
-            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth -Compress
+            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.default.hiddenComponents.depth -Compress
         }
         'yaml' {
-            return ConvertTo-PodeYaml -InputObject $oApi -depth $PodeContext.Server.OpenAPI.hiddenComponents.depth
+            return ConvertTo-PodeYaml -InputObject $oApi -depth $PodeContext.Server.OpenAPI.default.hiddenComponents.depth
         }
         Default {
             return $oApi
@@ -891,7 +894,7 @@ function Test-PodeOAJsonSchemaCompliance {
         $SchemaReference
     )
 
-    if (!$PodeContext.Server.OpenAPI.hiddenComponents.schemaValidation) {
+    if (!$PodeContext.Server.OpenAPI.default.hiddenComponents.schemaValidation) {
         throw 'Test-PodeOAComponentSchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
     }
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
@@ -899,7 +902,7 @@ function Test-PodeOAJsonSchemaCompliance {
     }
 
     [string[]] $message = @()
-    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.hiddenComponents.schemaJson[$SchemaReference].json -ErrorVariable jsonValidationErrors -ErrorAction SilentlyContinue
+    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.default.hiddenComponents.schemaJson[$SchemaReference].json -ErrorVariable jsonValidationErrors -ErrorAction SilentlyContinue
     if ($jsonValidationErrors) {
         foreach ($item in $jsonValidationErrors) {
             $message += $item
@@ -1180,7 +1183,7 @@ function ConvertTo-PodeOAParameter {
         $prop = [ordered]@{
             '$ref' = "#/components/parameters/$ComponentParameter"
         }
-        if ($PodeContext.Server.OpenAPI.components.parameters.$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+        if ($PodeContext.Server.OpenAPI.default.components.parameters.$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Append
         }
     } else {
@@ -1418,7 +1421,7 @@ function Set-PodeOARouteInfo {
             if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
                 throw "The ExternalDoc doesn't exist: $ExternalDoc"
             }
-            $r.OpenApi.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
+            $r.OpenApi.externalDocs = $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs[$ExternalDoc]
         }
 
         $r.OpenApi.Swagger = $true
@@ -1515,13 +1518,13 @@ function Enable-PodeOAViewer {
     )
 
     # error if there's no OpenAPI URL
-    $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI.Path
+    $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI.default.Path
     if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
         throw "No OpenAPI URL supplied for $($Type)"
     }
 
     # fail if no title
-    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.info.Title
+    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.default.info.Title
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No title supplied for $($Type) page"
     }
@@ -1546,9 +1549,9 @@ function Enable-PodeOAViewer {
                 Title   = $meta.Title
                 OpenApi = $meta.OpenApi
             }
-            foreach ($type in $PodeContext.Server.OpenAPI.hiddenComponents.viewer.Keys) {
+            foreach ($type in $PodeContext.Server.OpenAPI.default.hiddenComponents.viewer.Keys) {
                 $Data[$type] = $true
-                $Data["$($type)_path"] = $PodeContext.Server.OpenAPI.hiddenComponents.viewer[$type]
+                $Data["$($type)_path"] = $PodeContext.Server.OpenAPI.default.hiddenComponents.viewer[$type]
             }
 
             $podeRoot = Get-PodeModuleMiscPath
@@ -1562,7 +1565,7 @@ function Enable-PodeOAViewer {
             OpenApi  = $OpenApiUrl
             DarkMode = $DarkMode
         }
-        $PodeContext.Server.OpenAPI.hiddenComponents.viewer[$($meta.Type)] = $Path
+        $PodeContext.Server.OpenAPI.default.hiddenComponents.viewer[$($meta.Type)] = $Path
         # add the viewer route
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
@@ -1632,7 +1635,7 @@ function New-PodeOAExternalDoc {
         $param.description = $Description
     }
     $param['url'] = $Url
-    $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Name] = $param
+    $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs[$Name] = $param
 }
 
 
@@ -1689,12 +1692,12 @@ function Add-PodeOAExternalDoc {
         if ($Description) {
             $param.description = $Description
         }
-        $PodeContext.Server.OpenAPI.externalDocs = $param
+        $PodeContext.Server.OpenAPI.default.externalDocs = $param
     } else {
         if ( !(Test-PodeOAExternalDoc -Name $Reference)) {
             throw "The ExternalDoc doesn't exist: $Reference"
         }
-        $PodeContext.Server.OpenAPI.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$Reference]
+        $PodeContext.Server.OpenAPI.default.externalDocs = $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs[$Reference]
     }
 }
 
@@ -1753,10 +1756,10 @@ function Add-PodeOATag {
         if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
             throw "The ExternalDoc doesn't exist: $ExternalDoc"
         }
-        $param.externalDocs = $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs[$ExternalDoc]
+        $param.externalDocs = $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs[$ExternalDoc]
     }
 
-    $PodeContext.Server.OpenAPI.tags[$Name] = $param
+    $PodeContext.Server.OpenAPI.default.tags[$Name] = $param
 
 }
 
@@ -1872,24 +1875,24 @@ function Add-PodeOAInfo {
 
     if ($Title) {
         $Info.title = $Title
-    } elseif (  $PodeContext.Server.OpenAPI.info.title) {
-        $Info.title = $PodeContext.Server.OpenAPI.info.title
+    } elseif (  $PodeContext.Server.OpenAPI.default.info.title) {
+        $Info.title = $PodeContext.Server.OpenAPI.default.info.title
     } else {
         throw 'The OpenAPI property info.title is required. Use -Title'
     }
 
     if ($Version) {
         $Info.version = $Version
-    } elseif ( $PodeContext.Server.OpenAPI.info.version) {
-        $Info.version = $PodeContext.Server.OpenAPI.info.version
+    } elseif ( $PodeContext.Server.OpenAPI.default.info.version) {
+        $Info.version = $PodeContext.Server.OpenAPI.default.info.version
     } else {
         $Info.version = '1.0.0'
     }
 
     if ($Description ) {
         $Info.description = $Description
-    } elseif ( $PodeContext.Server.OpenAPI.info.description) {
-        $Info.description = $PodeContext.Server.OpenAPI.info.description
+    } elseif ( $PodeContext.Server.OpenAPI.default.info.description) {
+        $Info.description = $PodeContext.Server.OpenAPI.default.info.description
     }
 
     if ($TermsOfService) {
@@ -1911,7 +1914,7 @@ function Add-PodeOAInfo {
             $Info['contact'].url = $ContactUrl
         }
     }
-    $PodeContext.Server.OpenAPI.info = $Info
+    $PodeContext.Server.OpenAPI.default.info = $Info
 
 }
 
@@ -1948,9 +1951,9 @@ The -Value parameter and -ExternalValue parameter are mutually exclusive.       
 
 
 .EXAMPLE
- New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
+New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
 .EXAMPLE
- $example =
+$example =
     New-PodeOAExample -ContentMediaType 'application/json' -Name 'user' -Summary = 'User Example' -ExternalValue = 'http://foo.bar/examples/user-example.json'  |
         New-PodeOAExample -ContentMediaType 'application/xml' -Name 'user' -Summary = 'User Example in XML' -ExternalValue = 'http://foo.bar/examples/user-example.xml'
 
@@ -2303,7 +2306,7 @@ function Add-PodeOAComponentCallBack {
         $Responses
     )
     (Get-PodeOAComponentPath -FixesField callbacks).$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
-    $PodeContext.Server.OpenAPI.components.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
+    $PodeContext.Server.OpenAPI.default.components.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
 }
 
 
@@ -2559,7 +2562,7 @@ function New-PodeOAContentMediaType {
 
         if ( $Upload.IsPresent) {
             if ( $media -ieq 'multipart/form-data' -and $Content) {
-                if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_1 -and $PartContentMediaType) {
+                if ($PodeContext.Server.OpenAPI.default.hiddenComponents.v3_1 -and $PartContentMediaType) {
                     foreach ($key in $Content.Properties ) {
                         if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
                             $key.ContentMediaType = $PartContentMediaType
@@ -2569,7 +2572,7 @@ function New-PodeOAContentMediaType {
                     }
                 }
             } else {
-                if ($PodeContext.Server.OpenAPI.hiddenComponents.v3_0) {
+                if ($PodeContext.Server.OpenAPI.default.hiddenComponents.v3_0) {
                     $Content = [ordered]@{
                         'type'   = 'string'
                         'format' = $ContentEncoding

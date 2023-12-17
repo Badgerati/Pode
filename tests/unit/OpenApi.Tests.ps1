@@ -15,34 +15,37 @@ Describe 'OpenApi' {
                         autoheaders = $false
                     }
                     OpenAPI  = @{
-                        info             = [ordered]@{}
-                        Path             = $null
-                        components       = [ordered]@{
-                            schemas         = [ordered]@{}
-                            responses       = [ordered]@{}
-                            parameters      = [ordered]@{}
-                            examples        = [ordered]@{}
-                            requestBodies   = [ordered]@{}
-                            headers         = [ordered]@{}
-                            securitySchemes = [ordered]@{}
-                            links           = [ordered]@{}
-                            callbacks       = [ordered]@{}
-                            pathItems       = [ordered]@{}
-                        }
-                        Security         = @()
-                        tags             = [ordered]@{}
-                        hiddenComponents = @{
-                            v3_0             = $true
-                            enabled          = $false
-                            schemaValidation = $false
-                            depth            = 20
-                            headerSchemas    = @{}
-                            externalDocs     = @{}
-                            schemaJson       = @{}
-                            viewer           = @{}
-                            defaultResponses = @{
-                                '200'     = @{ description = 'OK' }
-                                'default' = @{ description = 'Internal server error' }
+                        default = @{
+                            info             = [ordered]@{}
+                            Path             = $null
+                            components       = [ordered]@{
+                                schemas         = [ordered]@{}
+                                responses       = [ordered]@{}
+                                parameters      = [ordered]@{}
+                                examples        = [ordered]@{}
+                                requestBodies   = [ordered]@{}
+                                headers         = [ordered]@{}
+                                securitySchemes = [ordered]@{}
+                                links           = [ordered]@{}
+                                callbacks       = [ordered]@{}
+                                pathItems       = [ordered]@{}
+                            }
+                            Security         = @()
+                            tags             = [ordered]@{}
+                            hiddenComponents = @{
+                                v3_0             = $true
+                                v3_1             = $false
+                                enabled          = $false
+                                schemaValidation = $false
+                                depth            = 20
+                                headerSchemas    = @{}
+                                externalDocs     = @{}
+                                schemaJson       = @{}
+                                viewer           = @{}
+                                defaultResponses = @{
+                                    '200'     = @{ description = 'OK' }
+                                    'default' = @{ description = 'Internal server error' }
+                                }
                             }
                         }
                     }
@@ -1692,8 +1695,8 @@ Describe 'OpenApi' {
                         New-PodeOAStringProperty -Name 'name' -Example 'Dogs'
                 ))
 
-            $PodeContext.Server.OpenAPI.components.schemas['Category'] | Should -Not -BeNullOrEmpty
-            $result = $PodeContext.Server.OpenAPI.components.schemas['Category']
+            $PodeContext.Server.OpenAPI.default.components.schemas['Category'] | Should -Not -BeNullOrEmpty
+            $result = $PodeContext.Server.OpenAPI.default.components.schemas['Category']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
@@ -1721,8 +1724,8 @@ Describe 'OpenApi' {
                 New-PodeOAStringProperty -Name 'name' -Example 'Dogs' |
                 New-PodeOAObjectProperty -Name 'Category' -XmlName 'category' |
                 Add-PodeOAComponentSchema -Name 'Category'
-            $PodeContext.Server.OpenAPI.components.schemas['Category'] | Should -Not -BeNullOrEmpty
-            $result = $PodeContext.Server.OpenAPI.components.schemas['Category']
+            $PodeContext.Server.OpenAPI.default.components.schemas['Category'] | Should -Not -BeNullOrEmpty
+            $result = $PodeContext.Server.OpenAPI.default.components.schemas['Category']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
@@ -2062,17 +2065,17 @@ Describe 'OpenApi' {
             Add-PodeOAInfo  -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description 'A description' `
                 -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' `
                 -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
-            $PodeContext.Server.OpenAPI.info | Should -Not -BeNullOrEmpty
-            $PodeContext.Server.OpenAPI.info.title | Should -Be 'Swagger Petstore - OpenAPI 3.0'
-            $PodeContext.Server.OpenAPI.info.version | Should -Be '1.0.17'
-            $PodeContext.Server.OpenAPI.info.description | Should -Be 'A description'
-            $PodeContext.Server.OpenAPI.info.license | Should -Not -BeNullOrEmpty
-            $PodeContext.Server.OpenAPI.info.license.name | Should -Be 'Apache 2.0'
-            $PodeContext.Server.OpenAPI.info.license.url | Should -Be 'http://www.apache.org/licenses/LICENSE-2.0.html'
-            $PodeContext.Server.OpenAPI.info.contact | Should -Not -BeNullOrEmpty
-            $PodeContext.Server.OpenAPI.info.contact.name | Should -Be 'API Support'
-            $PodeContext.Server.OpenAPI.info.contact.email | Should -Be 'apiteam@swagger.io'
-            $PodeContext.Server.OpenAPI.info.contact.url | Should -Be 'http://example.com/support'
+            $PodeContext.Server.OpenAPI.default.info | Should -Not -BeNullOrEmpty
+            $PodeContext.Server.OpenAPI.default.info.title | Should -Be 'Swagger Petstore - OpenAPI 3.0'
+            $PodeContext.Server.OpenAPI.default.info.version | Should -Be '1.0.17'
+            $PodeContext.Server.OpenAPI.default.info.description | Should -Be 'A description'
+            $PodeContext.Server.OpenAPI.default.info.license | Should -Not -BeNullOrEmpty
+            $PodeContext.Server.OpenAPI.default.info.license.name | Should -Be 'Apache 2.0'
+            $PodeContext.Server.OpenAPI.default.info.license.url | Should -Be 'http://www.apache.org/licenses/LICENSE-2.0.html'
+            $PodeContext.Server.OpenAPI.default.info.contact | Should -Not -BeNullOrEmpty
+            $PodeContext.Server.OpenAPI.default.info.contact.name | Should -Be 'API Support'
+            $PodeContext.Server.OpenAPI.default.info.contact.email | Should -Be 'apiteam@swagger.io'
+            $PodeContext.Server.OpenAPI.default.info.contact.url | Should -Be 'http://example.com/support'
         }
     }
 
@@ -2085,9 +2088,9 @@ Describe 'OpenApi' {
 
         It 'Valid values' {
             New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-            $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs['SwaggerDocs'] | Should -Not -BeNullOrEmpty
-            $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs['SwaggerDocs'].description | Should -Be  'Find out more about Swagger'
-            $PodeContext.Server.OpenAPI.hiddenComponents.externalDocs['SwaggerDocs'].url | Should -Be 'http://swagger.io'
+            $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs['SwaggerDocs'] | Should -Not -BeNullOrEmpty
+            $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs['SwaggerDocs'].description | Should -Be  'Find out more about Swagger'
+            $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs['SwaggerDocs'].url | Should -Be 'http://swagger.io'
         }
     }
 
@@ -2101,17 +2104,17 @@ Describe 'OpenApi' {
 
         It 'values' {
             Add-PodeOAExternalDoc -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-            $PodeContext.Server.OpenAPI.externalDocs | Should -Not -BeNullOrEmpty
-            $PodeContext.Server.OpenAPI.externalDocs.description | Should -Be  'Find out more about Swagger'
-            $PodeContext.Server.OpenAPI.externalDocs.url | Should -Be 'http://swagger.io'
+            $PodeContext.Server.OpenAPI.default.externalDocs | Should -Not -BeNullOrEmpty
+            $PodeContext.Server.OpenAPI.default.externalDocs.description | Should -Be  'Find out more about Swagger'
+            $PodeContext.Server.OpenAPI.default.externalDocs.url | Should -Be 'http://swagger.io'
         }
 
         It 'Reference' {
             New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
             Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
-            $PodeContext.Server.OpenAPI.externalDocs | Should -Not -BeNullOrEmpty
-            $PodeContext.Server.OpenAPI.externalDocs.description | Should -Be  'Find out more about Swagger'
-            $PodeContext.Server.OpenAPI.externalDocs.url | Should -Be 'http://swagger.io'
+            $PodeContext.Server.OpenAPI.default.externalDocs | Should -Not -BeNullOrEmpty
+            $PodeContext.Server.OpenAPI.default.externalDocs.description | Should -Be  'Find out more about Swagger'
+            $PodeContext.Server.OpenAPI.default.externalDocs.url | Should -Be 'http://swagger.io'
         }
         Describe 'Testing Exception Handling' {
             It 'ExternaDoc Reference undefined' {
@@ -2131,13 +2134,13 @@ Describe 'OpenApi' {
         It 'Valid values' {
             New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
             Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc 'SwaggerDocs'
-            $PodeContext.Server.OpenAPI.tags['user'] | Should -Not -BeNullOrEmpty
-            $PodeContext.Server.OpenAPI.tags['user'].name | Should -Be 'user'
-            $PodeContext.Server.OpenAPI.tags['user'].description | Should -Be  'Operations about user'
-            $PodeContext.Server.OpenAPI.tags['user'].externalDocs | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
-            $PodeContext.Server.OpenAPI.tags['user'].externalDocs.Count | Should -Be 2
-            $PodeContext.Server.OpenAPI.tags['user'].externalDocs.url | Should -Be 'http://swagger.io'
-            $PodeContext.Server.OpenAPI.tags['user'].externalDocs.description | Should -Be 'Find out more about Swagger'
+            $PodeContext.Server.OpenAPI.default.tags['user'] | Should -Not -BeNullOrEmpty
+            $PodeContext.Server.OpenAPI.default.tags['user'].name | Should -Be 'user'
+            $PodeContext.Server.OpenAPI.default.tags['user'].description | Should -Be  'Operations about user'
+            $PodeContext.Server.OpenAPI.default.tags['user'].externalDocs | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+            $PodeContext.Server.OpenAPI.default.tags['user'].externalDocs.Count | Should -Be 2
+            $PodeContext.Server.OpenAPI.default.tags['user'].externalDocs.url | Should -Be 'http://swagger.io'
+            $PodeContext.Server.OpenAPI.default.tags['user'].externalDocs.description | Should -Be 'Find out more about Swagger'
         }
         Describe 'Testing Exception Handling' {
             It 'ExternaDoc undefined' {
@@ -2215,7 +2218,7 @@ Describe 'OpenApi' {
 
         it 'default' {
             Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required)
-            $result = $PodeContext.Server.OpenAPI.components.parameters['PetIdParam']
+            $result = $PodeContext.Server.OpenAPI.default.components.parameters['PetIdParam']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [hashtable]
             $result.Count | Should -Be 5
@@ -2228,7 +2231,7 @@ Describe 'OpenApi' {
         }
         it 'From Pipeline' {
             New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | Add-PodeOAComponentParameter -Name 'PetIdParam'
-            $result = $PodeContext.Server.OpenAPI.components.parameters['PetIdParam']
+            $result = $PodeContext.Server.OpenAPI.default.components.parameters['PetIdParam']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [hashtable]
             $result.Count | Should -Be 5
@@ -2832,7 +2835,7 @@ Describe 'OpenApi' {
 
         it 'default' {
             Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAContentMediaType -ContentMediaType 'application/json' , 'application/xml', 'application/x-www-form-urlencoded' -Content 'Cat'  )
-            $result = $PodeContext.Server.OpenAPI.components.requestBodies['PetBodySchema']
+            $result = $PodeContext.Server.OpenAPI.default.components.requestBodies['PetBodySchema']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
@@ -2859,7 +2862,7 @@ Describe 'OpenApi' {
         it 'From Pipeline' {
             $ContentSchema = @{ 'application/json' = 'Cat'; 'application/xml' = 'Cat'; 'application/x-www-form-urlencoded' = 'Cat' }
             $ContentSchema | Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store'
-            $result = $PodeContext.Server.OpenAPI.components.requestBodies['PetBodySchema']
+            $result = $PodeContext.Server.OpenAPI.default.components.requestBodies['PetBodySchema']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
@@ -2893,8 +2896,8 @@ Describe 'OpenApi' {
         }
         it 'default' {
             Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
-            $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
-            $result = $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit']
+            $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
+            $result = $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas['X-Rate-Limit']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
@@ -2904,8 +2907,8 @@ Describe 'OpenApi' {
         }
         it 'From Pipeline' {
             New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' | Add-PodeOAComponentHeader -Name 'X-Rate-Limit'
-            $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
-            $result = $PodeContext.Server.OpenAPI.hiddenComponents.headerSchemas['X-Rate-Limit']
+            $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
+            $result = $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas['X-Rate-Limit']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
@@ -2973,8 +2976,10 @@ Describe 'OpenApi' {
             $Global:PodeContext = @{
                 Server = @{
                     OpenAPI = @{
-                        components = @{
-                            examples = @{}
+                        default= @{
+                            components = @{
+                                examples = @{}
+                            }
                         }
                     }
                 }
@@ -2984,8 +2989,8 @@ Describe 'OpenApi' {
         It 'Adds an example to the OpenAPI components' {
             Add-PodeOAComponentExample -Name 'exampleName' -Summary 'An example summary'  -Value   'Some example value'
 
-            $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].summary | Should -Be 'An example summary'
-            $Global:PodeContext.Server.OpenAPI.components.examples['exampleName'].value | Should -Be 'Some example value'
+            $Global:PodeContext.Server.OpenAPI.default.components.examples['exampleName'].summary | Should -Be 'An example summary'
+            $Global:PodeContext.Server.OpenAPI.default.components.examples['exampleName'].value | Should -Be 'Some example value'
         }
     }
 

@@ -70,6 +70,7 @@ One or more optional Users that will be authorised to access this Route, when us
 
 .PARAMETER OAResponses
 An alternative way to associate OpenApi responses unsing New-PodeOAResponse instead of piping multiple Add-PodeOAResponse
+
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
@@ -370,14 +371,9 @@ function Add-PodeRoute {
         if (  $PodeContext.Server.Security.autoMethods ) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method -Append
         }
-        if ( $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses) {
-            $DefaultResponse = $PodeContext.Server.OpenAPI.hiddenComponents.defaultResponses.Clone()
-        } else {
-            $DefaultResponse = @{
-                '200'     = @{ description = 'OK' }
-                'default' = @{ description = 'Internal server error' }
-            }
-        }
+        
+        $DefaultResponse = $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses.Clone()
+
         # add the route(s)
         Write-Verbose "Adding Route: [$($_method)] $($Path)"
         $methodRoutes = @(foreach ($_endpoint in $endpoints) {
