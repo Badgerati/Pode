@@ -76,7 +76,6 @@ Enable-PodeOpenApi -Path '/docs/openapi'   -NoCompress -Mode 'Donwload' -Disable
 function Enable-PodeOpenApi {
     [CmdletBinding()]
     param(
-        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path = '/openapi',
@@ -98,43 +97,34 @@ function Enable-PodeOpenApi {
         [string]
         $OpenApiVersion = '3.0.3',
 
-        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $RouteFilter = '/*',
 
-        [Parameter()]
         [string[]]
         $EndpointName,
 
-        [Parameter()]
         [object[]]
         $Middleware,
 
-        [Parameter()]
         [switch]
         $RestrictRoutes,
 
-        [Parameter()]
         [ValidateSet('View', 'Download')]
         [String]
         $Mode = 'view',
 
-        [Parameter()]
         [ValidateSet('Json', 'Json-Compress', 'Yaml')]
         [String]
         $MarkupLanguage = 'Json',
 
-        [Parameter()]
         [switch]
         $EnableSchemaValidation,
 
-        [Parameter()]
         [ValidateRange(1, 100)]
         [int]
         $Depth = 20,
 
-        [Parameter()]
         [switch]
         $DisableMinimalDefinitions,
 
@@ -252,7 +242,7 @@ function Enable-PodeOpenApi {
     Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
     Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
     Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
-    #set new DefaultResponses 
+    #set new DefaultResponses
     if ($NoDefaultResponses.IsPresent) {
         $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses = @{}
     } elseif ($DefaultResponses) {
@@ -376,29 +366,23 @@ $defInJson = Get-PodeOADefinition -Json
 function Get-PodeOADefinition {
     [CmdletBinding()]
     param(
-        [Parameter()]
         [ValidateSet('Json', 'Json-Compress', 'Yaml', 'HashTable')]
         [string]
         $Format = 'HashTable',
 
-        [Parameter()]
         [string]
         $Title,
 
-        [Parameter()]
         [string]
         $Version,
 
-        [Parameter()]
         [string]
         $Description,
 
-        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $RouteFilter = '/*',
 
-        [Parameter()]
         [switch]
         $RestrictRoutes
     )
@@ -507,7 +491,6 @@ function Add-PodeOAResponse {
         [hashtable]
         $Content,
 
-        [Parameter()]
         [Alias('HeaderSchemas')]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
@@ -659,11 +642,9 @@ function Set-PodeOARequest {
         [hashtable[]]
         $Route,
 
-        [Parameter()]
         [hashtable[]]
         $Parameters,
 
-        [Parameter()]
         [hashtable]
         $RequestBody,
 
@@ -782,11 +763,9 @@ function New-PodeOARequestBody {
         [switch]
         $Properties,
 
-        [Parameter()]
         [System.Collections.Specialized.OrderedDictionary]
         $Examples,
 
-        [Parameter()]
         [hashtable[]]
         $Encoding
 
@@ -1376,23 +1355,18 @@ function Set-PodeOARouteInfo {
         [hashtable[]]
         $Route,
 
-        [Parameter()]
         [string]
         $Summary,
 
-        [Parameter()]
         [string]
         $Description,
 
-        [Parameter()]
         [string]
         $ExternalDoc,
 
-        [Parameter()]
         [string]
         $OperationId,
 
-        [Parameter()]
         [string[]]
         $Tags,
 
@@ -1497,19 +1471,15 @@ function Enable-PodeOAViewer {
         [string]
         $Type,
 
-        [Parameter()]
         [string]
         $Path,
 
-        [Parameter()]
         [string]
         $OpenApiUrl,
 
-        [Parameter()]
         [object[]]
         $Middleware,
 
-        [Parameter()]
         [string]
         $Title,
 
@@ -1624,7 +1594,6 @@ function New-PodeOAExternalDoc {
         [ValidateScript({ $_ -imatch '^https?://.+' })]
         $Url,
 
-        [Parameter()]
         [string]
         $Description
     )
@@ -1735,11 +1704,9 @@ function Add-PodeOATag {
         [string]
         $Name,
 
-        [Parameter()]
         [string]
         $Description,
 
-        [Parameter()]
         [string]
         $ExternalDoc
     )
@@ -1815,43 +1782,34 @@ Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' 
 
 function Add-PodeOAInfo {
     param(
-        [Parameter()]
         [string]
         $Title,
 
-        [Parameter()]
         [ValidatePattern('^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$')]
         [string]
         $Version ,
 
-        [Parameter()]
         [string]
         $Description,
 
-        [Parameter()]
         [ValidateScript({ $_ -imatch '^https?://.+' })]
         [string]
         $TermsOfService,
 
-        [Parameter( )]
         [string]
         $LicenseName,
 
-        [Parameter( )]
         [ValidateScript({ $_ -imatch '^https?://.+' })]
         [string]
         $LicenseUrl,
 
-        [Parameter()]
         [string]
         $ContactName,
 
-        [Parameter()]
         [ValidateScript({ $_ -imatch '^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$' })]
         [string]
         $ContactEmail,
 
-        [Parameter()]
         [ValidateScript({ $_ -imatch '^https?://.+' })]
         [string]
         $ContactUrl
@@ -1967,8 +1925,7 @@ function New-PodeOAExample {
         [Parameter(ValueFromPipeline = $true, DontShow = $true, ParameterSetName = 'Reference')]
         [System.Collections.Specialized.OrderedDictionary ]
         $ParamsList,
-
-        [Parameter( )]
+        
         [string]
         $ContentMediaType,
 
@@ -2104,24 +2061,19 @@ function New-PodeOAEncodingObject {
         [string]
         $Title,
 
-        [Parameter()]
         [string]
         $ContentType,
 
-        [Parameter()]
         [hashtable[]]
         $Headers,
 
-        [Parameter()]
         [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
         [string]
         $Style,
 
-        [Parameter()]
         [switch]
         $Explode,
 
-        [Parameter()]
         [switch]
         $AllowReserved
     )
@@ -2293,15 +2245,12 @@ function Add-PodeOAComponentCallBack {
         [string]
         $Method,
 
-        [Parameter()]
         [hashtable[]]
         $Parameters,
 
-        [Parameter()]
         [hashtable]
         $RequestBody,
 
-        [Parameter()]
         [System.Collections.Specialized.OrderedDictionary]
         $Responses
     )
@@ -2382,7 +2331,6 @@ function New-PodeOAResponse {
         [hashtable]
         $Content,
 
-        [Parameter()]
         [Alias('HeaderSchemas')]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
@@ -2515,7 +2463,6 @@ function New-PodeOAContentMediaType {
         [string[]]
         $ContentMediaType = '*/*',
 
-        [Parameter()]
         [object]
         $Content,
 

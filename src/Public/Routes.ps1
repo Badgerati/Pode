@@ -121,7 +121,8 @@ function Add-PodeRoute {
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter()]
+        [Parameter( )]
+        [AllowNull()]
         [string[]]
         $EndpointName,
 
@@ -371,8 +372,11 @@ function Add-PodeRoute {
         if (  $PodeContext.Server.Security.autoMethods ) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method -Append
         }
-        
-        $DefaultResponse = $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses.Clone()
+
+        #add the default OpenApi responses
+        if ( $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses) {
+            $DefaultResponse = $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses.Clone()
+        }
 
         # add the route(s)
         Write-Verbose "Adding Route: [$($_method)] $($Path)"
