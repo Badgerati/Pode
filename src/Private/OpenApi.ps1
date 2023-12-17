@@ -252,15 +252,6 @@ function Test-PodeOAComponentParameter {
     return  $PodeContext.Server.OpenAPI.components.parameters.keys -ccontains $Name
 }
 
-function Get-PodeOAComponentPath {
-    param (
-        [Parameter(Mandatory)]
-        [ValidateSet('parameters', 'requestBodies', 'responses', 'schemas', 'headers', 'securitySchemes', 'links', 'callbacks', 'pathItems', 'examples')]
-        [string]
-        $FixesField
-    )
-    return $PodeContext.Server.OpenAPI.components.$FixesField
-}
 
 
 function ConvertTo-PodeOAOfProperty {
@@ -523,7 +514,7 @@ function ConvertTo-PodeOASchemaProperty {
         if ($Property.discriminator) {
             $schema['discriminator'] = $Property.discriminator
         }
-    } 
+    }
     return $schema
 }
 
