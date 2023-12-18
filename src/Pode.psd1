@@ -300,6 +300,8 @@
         'New-PodeOAResponseLink',
         'New-PodeOAContentMediaType',
         'New-PodeOAMultiTypeProperty',
+        'Add-PodeOAExternalRoute',
+        'New-PodeOAServerEndpoint',
         #Components
         'Add-PodeOAComponentResponse',
         'Add-PodeOAComponentSchema',

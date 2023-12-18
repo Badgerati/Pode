@@ -302,7 +302,7 @@ Add-PodeOAServerEndpoint -Url "https://{username}.gigantic-server.com:{port}/{ba
 #>
 function Add-PodeOAServerEndpoint {
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidatePattern('^(https?://|/).+')]
         [string]
         $Url,
@@ -774,7 +774,7 @@ function New-PodeOARequestBody {
         throw 'Parameter -Examples and -Example are mutually exclusive'
     }
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'BuiltIn' {
+        'builtin' {
             $param = @{content = ConvertTo-PodeOAObjectSchema -Content $Content -Properties:$Properties }
 
             if ($Required.IsPresent) {
@@ -1409,6 +1409,8 @@ function Set-PodeOARouteInfo {
     }
 }
 
+
+
 <#
 .SYNOPSIS
 Adds a route that enables a viewer to display OpenAPI docs, such as Swagger, ReDoc, RapiDoc, StopLight, Explorer, RapiPdf or Bookmarks.
@@ -1925,7 +1927,7 @@ function New-PodeOAExample {
         [Parameter(ValueFromPipeline = $true, DontShow = $true, ParameterSetName = 'Reference')]
         [System.Collections.Specialized.OrderedDictionary ]
         $ParamsList,
-        
+
         [string]
         $ContentMediaType,
 
@@ -2254,7 +2256,6 @@ function Add-PodeOAComponentCallBack {
         [System.Collections.Specialized.OrderedDictionary]
         $Responses
     )
-    (Get-PodeOAComponentPath -FixesField callbacks).$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
     $PodeContext.Server.OpenAPI.default.components.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
 }
 
@@ -2687,3 +2688,191 @@ function New-PodeOAResponseLink {
     }
 
 }
+
+
+
+
+
+<#
+.SYNOPSIS
+Sets metadate for the supplied route.
+
+.DESCRIPTION
+Sets metadate for the supplied route, such as Summary and Tags.
+
+.LINK
+https://swagger.io/docs/specification/paths-and-operations/
+
+.PARAMETER Route
+The route to update info, usually from -PassThru on Add-PodeRoute.
+
+.PARAMETER Path
+The URI path for the Route.
+
+.PARAMETER Method
+The HTTP Method of this Route, multiple can be supplied.
+
+.PARAMETER Servers
+A list of external endpoint. created with New-PodeOAServerEndpoint
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
+
+.EXAMPLE
+Add-PodeOAExternalRoute -PassThru -Method Get -Path '/peta/:id' -Servers (
+    New-PodeOAServerEndpoint -Url 'http://ext.server.com/api/v12' -Description 'ext test server' |
+    New-PodeOAServerEndpoint -Url 'http://ext13.server.com/api/v12' -Description 'ext test server 13'
+    ) |
+        Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
+        Set-PodeOARequest -PassThru -Parameters @(
+        (New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
+        Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+        Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{'text/html' = 'ErrorModel' }) -PassThru
+.EXAMPLE
+    Add-PodeRoute -PassThru -Method Get -Path '/peta/:id'  -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Add-PodeOAExternalRoute -PassThru   -Servers (
+        New-PodeOAServerEndpoint -Url 'http://ext.server.com/api/v12' -Description 'ext test server' |
+        New-PodeOAServerEndpoint -Url 'http://ext13.server.com/api/v12' -Description 'ext test server 13'
+        ) |
+        Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
+        Set-PodeOARequest -PassThru -Parameters @(
+        (New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
+        Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+        Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{'text/html' = 'ErrorModel' }) -PassThru
+#>
+function Add-PodeOAExternalRoute {
+    [CmdletBinding(DefaultParameterSetName = 'Pipeline')]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter(Mandatory = $true , ParameterSetName = 'BuiltIn')]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateScript({ $_.Count -gt 0 })]
+        [hashtable[]]
+        $Servers,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'BuiltIn')]
+        [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
+        [string]
+        $Method,
+
+        [switch]
+        $PassThru
+    )
+
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'builtin' {
+
+            #add the default OpenApi responses
+            if ( $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses) {
+                $DefaultResponse = $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses.Clone()
+            }
+            # ensure the route has appropriate slashes
+            $Path = Update-PodeRouteSlashes -Path $Path
+            $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+            $Path = Resolve-PodePlaceholders -Path $Path
+            $extRoute = @{
+                Method  = $Method.ToLower()
+                Path    = $Path
+                Local   = $false
+                OpenApi = @{
+                    Path           = $OpenApiPath
+                    Responses      = $DefaultResponse
+                    Parameters     = $null
+                    RequestBody    = $null
+                    callbacks      = [ordered]@{}
+                    Authentication = @()
+                    Servers        = $Servers
+                }
+            }
+            if (! (Test-PodeOAComponentExternalPath -Name $Path)) {
+                $PodeContext.Server.OpenAPI.default.hiddenComponents.externalPath[$Path] = @{}
+            }
+
+            $PodeContext.Server.OpenAPI.default.hiddenComponents.externalPath.$Path[$Method] = $extRoute
+            if ($PassThru) {
+                return $extRoute
+            }
+        }
+        'pipeline' {
+            foreach ($r in @($Route)) {
+                $r.OpenApi.Servers = $Servers
+            }
+            if ($PassThru) {
+                return $Route
+            }
+        }
+    }
+
+
+
+}
+
+
+
+<#
+.SYNOPSIS
+Creates an OpenAPI Server Object.
+
+.DESCRIPTION
+Creates an OpenAPI Server Object to use with Add-PodeOAExternalRoute
+
+
+.PARAMETER Url
+A URL to the target host.  This URL supports Server Variables and MAY be relative, to indicate that the host location is relative to the location where the OpenAPI document is being served.
+Variable substitutions will be made when a variable is named in `{`brackets`}`.
+
+.PARAMETER Description
+An optional string describing the host designated by the URL. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation.
+
+
+.EXAMPLE
+New-PodeOAServerEndpoint -Url 'https://myserver.io/api' -Description 'My test server'
+
+.EXAMPLE
+New-PodeOAServerEndpoint -Url '/api' -Description 'My local server'
+
+
+}
+#>
+function New-PodeOAServerEndpoint {
+    param (
+        [Parameter(ValueFromPipeline = $true , DontShow = $true )]
+        [hashtable[]]
+        $ServerEndpointList,
+
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^(https?://|/).+')]
+        [string]
+        $Url,
+        [string]
+        $Description
+    )
+    begin {
+        $lUrl = [ordered]@{url = $Url }
+        if ($Description) {
+            $lUrl.description = $Description
+        }
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
+    }
+    process {
+        if ($ServerEndpointList) {
+            $collectedInput.AddRange($ServerEndpointList)
+        }
+    }
+    end {
+        if ($ServerEndpointList) {
+            return $collectedInput + $lUrl
+        } else {
+            return $lUrl
+        }
+    }
+}
+

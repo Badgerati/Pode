@@ -412,6 +412,7 @@ function Add-PodeRoute {
                         RequestBody    = $null
                         callbacks      = [ordered]@{}
                         Authentication = @()
+                        Servers        = @()
                     }
                     IsStatic         = $false
                     Metrics          = @{

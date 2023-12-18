@@ -237,6 +237,33 @@ function Test-PodeOAComponentSchemaJson {
     }
 }
 
+
+
+
+function Test-PodeOAComponentExternalPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [string[]]
+        $OATag
+    )
+
+    if ($OATag) {
+        foreach ($tag in $OATag) {
+            if (!($PodeContext.Server.OpenAPI[$tag].hiddenComponents.externalPath.keys -ccontains $Name)) {
+                # If $Name is not found in the current $tag, return $false
+                return $false
+            }
+        }
+        return $true
+    } else {
+        return $PodeContext.Server.OpenAPI.default.hiddenComponents.externalPath.keys -ccontains $Name
+    }
+}
+
 function Test-PodeOAComponentCallBack {
     param(
         [Parameter(Mandatory = $true)]
@@ -380,7 +407,7 @@ function Test-PodeOAComponentRequestBody {
         }
         return $true
     } else {
-        return $PodeContext.Server.OpenAPI.default.requestBodies.links.keys -ccontains $Name
+        return $PodeContext.Server.OpenAPI.default.components.requestBodies.keys -ccontains $Name
     }
 }
 
@@ -910,6 +937,8 @@ function Get-PodeOpenApiDefinitionInternal {
         $PodeContext.Server.OpenAPI[$OATag].components.Remove('pathItems')
     }
 
+
+
     foreach ($method in $PodeContext.Server.Routes.Keys) {
         foreach ($path in ($PodeContext.Server.Routes[$method].Keys | Sort-Object)) {
             # does it match the route?
@@ -917,7 +946,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 continue
             }
             # the current route
-            $_routes = @($PodeContext.Server.Routes[$method][$OATag])
+            $_routes = @($PodeContext.Server.Routes[$method][$path])
             if ( $MetaInfo -and $MetaInfo.RestrictRoutes) {
                 $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -EndpointName $EndpointName)
             }
@@ -997,7 +1026,17 @@ function Get-PodeOpenApiDefinitionInternal {
 
                 # add any custom server endpoints for route
                 foreach ($_route in $_routes) {
-                    if ([string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -or ($_route.Endpoint.Address -ieq '*:*')) {
+
+                    if ($_route.OpenApi.Servers.count -gt 0) {
+                        if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers) {
+                            $def.paths[$_route.OpenApi.Path][$method].servers = @()
+                        }
+                        if ($localEndpoint){
+                            $def.paths[$_route.OpenApi.Path][$method].servers+=$PodeContext.Server.OpenAPI[$OATag].servers[0]
+                        }
+                        $def.paths[$_route.OpenApi.Path][$method].servers += $_route.OpenApi.Servers
+                    }
+                    if ([string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -or ($_route.Endpoint.Address -ieq '*:*')  ) {
                         continue
                     }
 
@@ -1019,12 +1058,72 @@ function Get-PodeOpenApiDefinitionInternal {
                     if ($null -ne $serverDef) {
                         $def.paths[$_route.OpenApi.Path][$method].servers += $serverDef
                     }
-
                 }
             }
         }
     }
 
+    if ( $PodeContext.Server.OpenAPI[$OATag].hiddenComponents.externalPath) {
+        foreach ($extPath in $PodeContext.Server.OpenAPI[$OATag].hiddenComponents.externalPath.values) {
+            foreach ($method in $extPath.keys) {
+                $_route = $extPath[$method]
+                $pm = [ordered]@{}
+                if ($_route.OpenApi.Deprecated) {
+                    $pm.deprecated = $_route.OpenApi.Deprecated
+                }
+                if ($_route.OpenApi.Tags  ) {
+                    $pm.tags = $_route.OpenApi.Tags
+                }
+                if ($_route.OpenApi.Summary) {
+                    $pm.summary = $_route.OpenApi.Summary
+                }
+                if ($_route.OpenApi.Description) {
+                    $pm.description = $_route.OpenApi.Description
+                }
+                if ($_route.OpenApi.OperationId  ) {
+                    $pm.operationId = $_route.OpenApi.OperationId
+                }
+                if ($_route.OpenApi.Parameters) {
+                    $pm.parameters = $_route.OpenApi.Parameters
+                }
+                if ($_route.OpenApi.RequestBody) {
+                    $pm.requestBody = $_route.OpenApi.RequestBody
+                }
+                if ($_route.OpenApi.CallBacks.Count -gt 0) {
+                    $pm.callbacks = $_route.OpenApi.CallBacks
+                }
+                $pm.servers = $_route.OpenApi.Servers
+
+                if ($_route.OpenApi.Authentication.Count -gt 0) {
+                    $pm.security = @()
+                    foreach ($sct in (Expand-PodeAuthMerge -Names $_route.OpenApi.Authentication.Keys)) {
+                        if ($PodeContext.Server.Authentications.Methods.$sct.Scheme.Scheme -ieq 'oauth2') {
+                            if ($_route.AccessMeta.Scope ) {
+                                $sctValue = $_route.AccessMeta.Scope
+                            } else {
+                                #if scope is empty means 'any role' => assign an empty array
+                                $sctValue = @()
+                            }
+                            $pm.security += @{ $sct = $sctValue }
+                        } elseif ($sct -eq '%_allowanon_%') {
+                            #allow anonymous access
+                            $pm.security += @{  }
+                        } else {
+                            $pm.security += @{$sct = @() }
+                        }
+                    }
+                }
+                if ($_route.OpenApi.Responses.Count -gt 0) {
+                    $pm.responses = $_route.OpenApi.Responses
+                }
+                if (! ( $def.paths.keys -ccontains $_route.Path)) {
+                    $def.paths[$_route.OpenAPI.Path] = @{}
+                }
+                # add path's http method to defintition
+                $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pm
+            }
+        }
+    }
     return $def
 }
 
@@ -1086,6 +1185,7 @@ function Get-PodeOABaseObject {
                 externalDocs     = @{}
                 schemaJson       = @{}
                 viewer           = @{}
+                externalPath     = [ordered]@{}
                 defaultResponses = @{
                     '200'     = @{ description = 'OK' }
                     'default' = @{ description = 'Internal server error' }

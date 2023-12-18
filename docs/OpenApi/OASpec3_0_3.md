@@ -1,4 +1,4 @@
-# OpenAPI Specification with Pode
+# OpenAPI Specification and Pode
 
 #### OpenAPI Version 3.0.3 and Pode 2.10.0
 
@@ -499,10 +499,10 @@ All objects defined within the components object will have no effect on the API 
 | Field Name                                               | Type                                                                                                   | Pode                                                                                                                    | Description                                                                  |
 | -------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | <a name="componentsSchemas"></a> schemas                 | Map[`string`, [Schema Object](#schemaObject) \| [Reference Object](#referenceObject)]                  | [`Add-PodeOAComponentSchema`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentSchema)             | An object to hold reusable [Schema Objects](#schemaObject).                  |
-| <a name="componentsResponses"></a> responses             | Map[`string`, [Response Object](#responseObject) \| [Reference Object](#referenceObject)]              | [`Add-PodeOAComponentResponse`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentResponse)           | An object to hold reusable [Response Objects](#responseObject).              |
-| <a name="componentsParameters"></a> parameters           | Map[`string`, [Parameter Object](#parameterObject) \| [Reference Object](#referenceObject)]            | [`Add-PodeOAComponentParameter`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentParameter)       | An object to hold reusable [Parameter Objects](#parameterObject).            |PodeOAComponentExample
-| <a name="componentsExamples"></a> examples               | Map[`string`, [Example Object](#exampleObject) \| [Reference Object](#referenceObject)]                | [`Add-PodeOAComponentExample`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentExample )   | An object to hold reusable [Example Objects](#exampleObject).                |
-| <a name="componentsRequestBodies"></a> requestBodies     | Map[`string`, [Request Body Object](#requestBodyObject) \| [Reference Object](#referenceObject)]       | [`Add-PodeOAComponentRequestBody`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentRequestBody)              | An object to hold reusable [Request Body Objects](#requestBodyObject).       |
+| <a name="componentsResponses"></a> responses             | Map[`string`, [Response Object](#responseObject) \| [Reference Object](#referenceObject)]              | [`Add-PodeOAComponentResponse`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentResponse)         | An object to hold reusable [Response Objects](#responseObject).              |
+| <a name="componentsParameters"></a> parameters           | Map[`string`, [Parameter Object](#parameterObject) \| [Reference Object](#referenceObject)]            | [`Add-PodeOAComponentParameter`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentParameter)       | An object to hold reusable [Parameter Objects](#parameterObject).            | PodeOAComponentExample |
+| <a name="componentsExamples"></a> examples               | Map[`string`, [Example Object](#exampleObject) \| [Reference Object](#referenceObject)]                | [`Add-PodeOAComponentExample`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentExample )          | An object to hold reusable [Example Objects](#exampleObject).                |
+| <a name="componentsRequestBodies"></a> requestBodies     | Map[`string`, [Request Body Object](#requestBodyObject) \| [Reference Object](#referenceObject)]       | [`Add-PodeOAComponentRequestBody`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentRequestBody)   | An object to hold reusable [Request Body Objects](#requestBodyObject).       |
 | <a name="componentsHeaders"></a> headers                 | Map[`string`, [Header Object](#headerObject) \| [Reference Object](#referenceObject)]                  | [`Add-PodeOAComponentHeader`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentHeader)             | An object to hold reusable [Header Objects](#headerObject).                  |
 | <a name="componentsSecuritySchemes"></a> securitySchemes | Map[`string`, [Security Scheme Object](#securitySchemeObject) \| [Reference Object](#referenceObject)] | [`New-PodeAuthScheme`](https://badgerati.github.io/Pode/Functions/OpenApi/New-PodeAuthScheme)                           | An object to hold reusable [Security Scheme Objects](#securitySchemeObject). |
 | <a name="componentsLinks"></a> links                     | Map[`string`, [Link Object](#linkObject) \| [Reference Object](#referenceObject)]                      | [`Add-PodeOAComponentResponseLink`](https://badgerati.github.io/Pode/Functions/OpenApi/Add-PodeOAComponentResponseLink) | An object to hold reusable [Link Objects](#linkObject).                      |
@@ -851,7 +851,7 @@ The path itself is still exposed to the documentation viewer but they will not k
 | <a name="pathItemHead"></a>head               |                      [Operation Object](#operationObject)                      | A definition of a HEAD operation on this path.                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | <a name="pathItemPatch"></a>patch             |                      [Operation Object](#operationObject)                      | A definition of a PATCH operation on this path.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | <a name="pathItemTrace"></a>trace             |                      [Operation Object](#operationObject)                      | A definition of a TRACE operation on this path.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| <a name="pathItemServers"></a>servers         |                        [[Server Object](#serverObject)]                        | (Unsupported by Pode) An alternative `server` array to service all operations in this path.                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| <a name="pathItemServers"></a>servers         |                        [[Server Object](#serverObject)]                        | An alternative `server` array to service all operations in this path.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | <a name="pathItemParameters"></a>parameters   | [[Parameter Object](#parameterObject) \| [Reference Object](#referenceObject)] | A list of parameters that are applicable for all the operations described under this path. These parameters can be overridden at the operation level, but cannot be removed there. The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a [name](#parameterName) and [location](#parameterIn). The list can use the [Reference Object](#referenceObject) to link to parameters that are defined at the [OpenAPI Object's components/parameters](#componentsParameters). |
 
 
@@ -949,6 +949,119 @@ parameters:
       type: string
   style: simple
 ```
+
+
+
+##### Path Item Object Example with External Servers
+```powershell
+Add-PodeOAExternalRoute -PassThru -Method Get -Path '/peta/:id' -Servers (
+  New-PodeOAServerEndpoint -Url 'http://ext.server.com/api/v12' -Description 'ext test server' |
+  New-PodeOAServerEndpoint -Url 'http://ext13.server.com/api/v12' -Description 'ext test server 13'
+  ) |
+      Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
+      Set-PodeOARequest -PassThru -Parameters @(
+      (New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
+      Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+      Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{'text/html' = 'ErrorModel' }) -PassThru
+```
+```json
+{
+  "get": {
+    "description": "Returns pets based on ID",
+    "summary": "Find pets by ID",
+    "operationId": "getPetsById",
+    "responses": {
+      "200": {
+        "description": "pet response",
+        "content": {
+          "*/*": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Pet"
+              }
+            }
+          }
+        }
+      },
+      "default": {
+        "description": "error payload",
+        "content": {
+          "text/html": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorModel"
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "ext test server",
+      "url": "http://ext.server.com/api/v12"
+    },
+    {
+      "description": "ext test server 13",
+      "url": "http://ext13.server.com/api/v12"
+    }
+  ],
+  "parameters": [
+    {
+      "name": "id",
+      "in": "path",
+      "description": "ID of pet to use",
+      "required": true,
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "style": "simple"
+    }
+  ]
+}
+```
+
+```yaml
+get:
+  description: Returns pets based on ID
+  summary: Find pets by ID
+  operationId: getPetsById
+  responses:
+    '200':
+      description: pet response
+      content:
+        '*/*' :
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Pet'
+    default:
+      description: error payload
+      content:
+        'text/html':
+          schema:
+            $ref: '#/components/schemas/ErrorModel'
+    servers:
+        - description : ext test server
+          url : http://ext.server.com/api/v12
+        - description : ext test server 13
+          url : http://ext13.server.com/api/v12
+parameters:
+- name: id
+  in: path
+  description: ID of pet to use
+  required: true
+  schema:
+    type: array
+    items:
+      type: string
+  style: simple
+```
+
+
 
 #### <a name="operationObject"></a>Operation Object
 

@@ -409,7 +409,7 @@ Some useful links:
                 New-PodeOAExample -ContentMediaType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
                     New-PodeOAExample -ContentMediaType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
                     New-PodeOAExample -ContentMediaType 'application/json' -Reference 'frog-example'
-                ) 
+                )
             ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
             Add-PodeOAResponse -StatusCode 4XX -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
@@ -723,13 +723,19 @@ Some useful links:
 
         Add-PodeRoute -PassThru -Method Get -Path '/store/order/:orderId' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
-        } | Set-PodeOARouteInfo -Summary 'Find purchase order by ID' -Description 'For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.' -Tags 'store' -OperationId 'getOrderById' -PassThru |
-            Set-PodeOARequest -PassThru -Parameters @(
+        } |
+            Add-PodeOAExternalRoute -Servers (
+                New-PodeOAServerEndpoint -Url 'http://ext.server.com/api/v12' -Description 'ext test server' |
+                    New-PodeOAServerEndpoint -Url 'http://ext13.server.com/api/v12' -Description 'ext test server 13' |
+                    New-PodeOAServerEndpoint -Url 'http://ext14.server.com/api/v12' -Description 'ext test server 14'
+                ) -PassThru |
+                Set-PodeOARouteInfo -Summary 'Find purchase order by ID' -Description 'For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.' -Tags 'store' -OperationId 'getOrderById' -PassThru |
+                Set-PodeOARequest -PassThru -Parameters @(
                             (  New-PodeOAIntProperty -Name 'orderId' -Format Int64 -Description 'ID of order that needs to be fetched' -Required | ConvertTo-PodeOAParameter -In Path )
-            ) |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'Order'  ) -PassThru |
-            Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
-            Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'
+                ) |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'Order'  ) -PassThru |
+                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
+                Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'
 
         Add-PodeRoute -PassThru -Method Delete -Path '/store/order/:orderId' -ScriptBlock {
             Write-PodeJsonResponse -Value 'done' -StatusCode 200
@@ -862,6 +868,18 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
+
+        Add-PodeOAExternalRoute -Method Get -Path '/stores/order/:orderId' -Servers (
+            New-PodeOAServerEndpoint -Url 'http://ext.server.com/api/v12' -Description 'ext test server' |
+                New-PodeOAServerEndpoint -Url 'http://ext13.server.com/api/v12' -Description 'ext test server 13' |
+                New-PodeOAServerEndpoint -Url 'http://ext14.server.com/api/v12' -Description 'ext test server 14'
+            ) -PassThru | Set-PodeOARouteInfo -Summary 'Find purchase order by ID' -Description 'For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.' -Tags 'store' -OperationId 'getOrderExternalById' -PassThru |
+                Set-PodeOARequest -PassThru -Parameters @(
+                                (  New-PodeOAIntProperty -Name 'orderId' -Format Int64 -Description 'ID of order that needs to be fetched' -Required | ConvertTo-PodeOAParameter -In Path )
+                ) |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'Order'  ) -PassThru |
+                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
+                Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'
 
     }
 
