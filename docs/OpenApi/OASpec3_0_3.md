@@ -1899,13 +1899,17 @@ When passing in `multipart` types, boundaries MAY be used to separate sections o
 
 Examples:
 ```powershell
- Set-PodeOARequest -RequestBody  (New-PodeOARequestBody -Content @{'multipart/form-data' =
-                    New-PodeOAStringProperty -name 'id' -format 'uuid' |
-                        New-PodeOAObjectProperty -name 'address' -NoProperties |
-                        New-PodeOAStringProperty -name 'children' -array |
-                        New-PodeOASchemaProperty -Name 'addresses' -ComponentSchema 'Address' -Array |
-                        New-PodeOAObjectProperty
-                    })
+ Set-PodeOARequest -RequestBody  (
+  New-PodeOARequestBody -Content (
+    New-PodeOAContentMediaType -MediaType 'multipart/form-data' -Content (
+      New-PodeOAStringProperty -name 'id' -format 'uuid' |
+          New-PodeOAObjectProperty -name 'address' -NoProperties |
+          New-PodeOAStringProperty -name 'children' -array |
+          New-PodeOASchemaProperty -Name 'addresses' -ComponentSchema 'Address' -Array |
+          New-PodeOAObjectProperty
+      )
+    )
+ )
 ```
 ```yaml
 requestBody:
@@ -1957,7 +1961,7 @@ This object MAY be extended with [Specification Extensions](#specificationExtens
 ##### Encoding Object Example
 
 ```powershell
-New-PodeOARequestBody -Content (New-PodeOAMediaContentType -MediaType 'multipart/form-data' -Content (
+New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType 'multipart/form-data' -Content (
                     New-PodeOAStringProperty -name 'id' -format 'uuid' |
                         New-PodeOAObjectProperty -name 'address' -NoProperties |
                         New-PodeOAObjectProperty -name 'historyMetadata' -Description 'metadata in XML format' -NoProperties |

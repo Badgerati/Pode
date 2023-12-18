@@ -277,12 +277,16 @@
         'Remove-PodeOAResponse',
         'Set-PodeOARequest',
         'New-PodeOARequestBody',
+        # properties
         'New-PodeOAIntProperty',
         'New-PodeOANumberProperty',
         'New-PodeOAStringProperty',
         'New-PodeOABoolProperty',
         'New-PodeOAObjectProperty',
         'New-PodeOASchemaProperty',
+        'New-PodeOAMultiTypeProperty',
+        'Merge-PodeOAProperty',
+
         'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
         'Enable-PodeOAViewer',
@@ -291,7 +295,6 @@
         'Add-PodeOAExternalDoc',
         'New-PodeOAExternalDoc',
         'Add-PodeOATag',
-        'Merge-PodeOAProperty',
         'Add-PodeOAServerEndpoint',
         'New-PodeOAExample',
         'New-PodeOAEncodingObject',
@@ -299,7 +302,6 @@
         'Add-PodeOACallBack',
         'New-PodeOAResponseLink',
         'New-PodeOAContentMediaType',
-        'New-PodeOAMultiTypeProperty',
         'Add-PodeOAExternalRoute',
         'New-PodeOAServerEndpoint',
         #Components
