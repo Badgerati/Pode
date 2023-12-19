@@ -2418,7 +2418,7 @@ function New-PodeOAResponse {
     Define the content encoding for upload (Default Binary)
 
 .PARAMETER PartContentMediaType
-Define the content encoding for multipart upload
+    Define the content encoding for multipart upload
 
 .EXAMPLE
     Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -ScriptBlock {

@@ -1809,6 +1809,11 @@ In addition, specific media types MAY be specified:
   'image/png' = (New-PodeOAStringProperty -Format binary)
   })
 ```
+or
+
+```powershell
+New-PodeOAContentMediaType -MediaType 'image/jpeg','image/png' -Content (New-PodeOAStringProperty -Format binary)
+```
 ```yaml
 # multiple, specific media types may be specified:
 requestBody:
@@ -1961,7 +1966,7 @@ This object MAY be extended with [Specification Extensions](#specificationExtens
 ##### Encoding Object Example
 
 ```powershell
-New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType 'multipart/form-data' -Content (
+New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType 'multipart/mixed' -Content (
                     New-PodeOAStringProperty -name 'id' -format 'uuid' |
                         New-PodeOAObjectProperty -name 'address' -NoProperties |
                         New-PodeOAObjectProperty -name 'historyMetadata' -Description 'metadata in XML format' -NoProperties |
