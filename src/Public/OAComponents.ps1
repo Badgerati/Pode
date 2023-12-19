@@ -1,4 +1,3 @@
-
 <#
 .SYNOPSIS
 Adds a reusable component for responses.
@@ -26,6 +25,11 @@ The header name and schema the response returns (the schema is created using the
 
 .PARAMETER Description
 The Description of the response.
+
+.PARAMETER specTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAComponentResponse -Name 'OKResponse' -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
@@ -63,10 +67,13 @@ function Add-PodeOAComponentResponse {
 
         [Parameter(ParameterSetName = 'Schema')]
         [System.Collections.Specialized.OrderedDictionary ]
-        $Links
+        $Links,
+
+        [string]
+        $SpecTag = 'default'
     )
 
-    $PodeContext.Server.OpenAPI.default.components.responses[$Name] = New-PodeOResponseInternal -Params $PSBoundParameters
+    $PodeContext.Server.OpenAPI[$SpecTag].components.responses[$Name] = New-PodeOResponseInternal -Params $PSBoundParameters
 }
 
 
@@ -98,6 +105,11 @@ The Component definition (the schema is created using the Property functions).
 .PARAMETER Description
 A description of the schema
 
+.PARAMETER specTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeOAComponentSchema -Name 'UserIdSchema' -Component (New-PodeOAIntProperty -Name 'userId' -Object)
 #>
@@ -115,19 +127,22 @@ function Add-PodeOAComponentSchema {
         $Component,
 
         [string]
-        $Description
+        $Description,
+
+        [string]
+        $SpecTag = 'default'
     )
-    $PodeContext.Server.OpenAPI.default.components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty)
-    if ($PodeContext.Server.OpenAPI.default.hiddenComponents.schemaValidation) {
+    $PodeContext.Server.OpenAPI[$SpecTag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty)
+    if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.schemaValidation) {
         $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
         #Resolve-PodeOAReferences -ComponentSchema  $modifiedSchema
-        $PodeContext.Server.OpenAPI.default.hiddenComponents.schemaJson[$Name] = @{
+        $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.schemaJson[$Name] = @{
             'schema' = $modifiedComponent
-            'json'   = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.default.hiddenComponents.depth
+            'json'   = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.depth
         }
     }
     if ($Description) {
-        $PodeContext.Server.OpenAPI.default.components.schemas[$Name].description = $Description
+        $PodeContext.Server.OpenAPI[$SpecTag].components.schemas[$Name].description = $Description
     }
 }
 
@@ -157,6 +172,11 @@ The reference Name of the schema.
 .PARAMETER Schema
 The Schema definition (the schema is created using the Property functions).
 
+.PARAMETER specTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeOAComponentHeader -Name 'UserIdSchema' -Schema (New-PodeOAIntProperty -Name 'userId' -Object)
 #>
@@ -170,11 +190,14 @@ function Add-PodeOAComponentHeader {
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
-        $Schema
+        $Schema,
+
+        [string]
+        $SpecTag = 'default'
 
     )
 
-    $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
+    $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
 
 }
 
@@ -209,6 +232,11 @@ A Description of the request body.
 .PARAMETER Required
 If supplied, the request body will be flagged as required.
 
+.PARAMETER specTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeOAComponentRequestBody -Name 'UserIdBody' -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
@@ -235,7 +263,10 @@ function Add-PodeOAComponentRequestBody {
 
         [Parameter()]
         [switch]
-        $Required
+        $Required,
+
+        [string]
+        $SpecTag = 'default'
     )
 
     $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema) }
@@ -247,7 +278,7 @@ function Add-PodeOAComponentRequestBody {
     if ( $Description) {
         $param['description'] = $Description
     }
-    $PodeContext.Server.OpenAPI.default.components.requestBodies[$Name] = $param
+    $PodeContext.Server.OpenAPI[$SpecTag].components.requestBodies[$Name] = $param
 }
 
 <#
@@ -272,6 +303,11 @@ The reference Name of the parameter.
 .PARAMETER Parameter
 The Parameter to use for the component (from ConvertTo-PodeOAParameter)
 
+.PARAMETER specTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query | Add-PodeOAComponentParameter -Name 'UserIdParam'
 #>
@@ -285,7 +321,10 @@ function Add-PodeOAComponentParameter {
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
-        $Parameter
+        $Parameter,
+
+        [string]
+        $SpecTag = 'default'
     )
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
@@ -295,7 +334,7 @@ function Add-PodeOAComponentParameter {
             throw 'The Parameter has no name. Please provide a name to this component using -Name property'
         }
     }
-    $PodeContext.Server.OpenAPI.default.components.parameters[$Name] = $Parameter
+    $PodeContext.Server.OpenAPI[$SpecTag].components.parameters[$Name] = $Parameter
 }
 
 <#
@@ -321,7 +360,12 @@ To represent examples of media types that cannot naturally represented in JSON o
 
 .PARAMETER ExternalValue
 A URL that points to the literal example. This provides the capability to reference examples that cannot easily be included in JSON or YAML documents.
-The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
+The -Value parameter and -ExternalValue parameter are mutually exclusive.
+
+.PARAMETER specTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.                           |
 
 .EXAMPLE
 Add-PodeOAComponentExample -name 'frog-example' -Summary "An example of a frog with a cat's name" -Value @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' }
@@ -350,7 +394,10 @@ function Add-PodeOAComponentExample {
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ExternalValue')]
         [string]
-        $ExternalValue
+        $ExternalValue,
+
+        [string]
+        $SpecTag = 'default'
     )
     $Example = [ordered]@{ }
     if ($Summary) {
@@ -365,7 +412,7 @@ function Add-PodeOAComponentExample {
         $Example.externalValue = $ExternalValue
     }
 
-    $PodeContext.Server.OpenAPI.default.components.examples[$Name] = $Example
+    $PodeContext.Server.OpenAPI[$SpecTag].components.examples[$Name] = $Example
 }
 
 
@@ -402,6 +449,11 @@ function Add-PodeOAComponentExample {
 
 .PARAMETER RequestBody
     A string representing the request body to use as a request body when calling the target.
+
+.PARAMETER specTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
     Add-PodeOAComponentResponseLink   -Name 'address' -OperationId 'getUserByName' -Parameters @{'username' = '$request.path.username'}
@@ -440,11 +492,104 @@ function Add-PodeOAComponentResponseLink {
 
         [Parameter()]
         [string]
-        $RequestBody
+        $RequestBody,
+
+        [string]
+        $SpecTag = 'default'
 
     )
-    $PodeContext.Server.OpenAPI.default.components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
+    $PodeContext.Server.OpenAPI[$SpecTag].components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
 }
+
+
+
+
+<#
+.SYNOPSIS
+    Adds OpenAPI reusable callback configurations.
+
+.DESCRIPTION
+    The Add-PodeOACallBack function is used for defining OpenAPI callback configurations for routes in a Pode server.
+    It enables setting up API specifications including detailed parameters, request body schemas, and response structures for various HTTP methods.
+
+.PARAMETER Name
+    Mandatory. A unique name for the callback.
+    Must be a valid string composed of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+
+
+.PARAMETER Path
+    Specifies the callback path, usually a relative URL.
+    The key that identifies the Path Item Object is a runtime expression evaluated in the context of a runtime HTTP request/response to identify the URL for the callback request.
+    A simple example is `$request.body#/url`.
+    The runtime expression allows complete access to the HTTP message, including any part of a body that a JSON Pointer (RFC6901) can reference.
+    More information on JSON Pointer can be found at [RFC6901](https://datatracker.ietf.org/doc/html/rfc6901).
+
+.PARAMETER Name
+    Alias for 'Name'. A unique identifier for the callback.
+    It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+
+.PARAMETER Method
+    Defines the HTTP method for the callback (e.g., GET, POST, PUT). Supports standard HTTP methods and a wildcard (*) for all methods.
+
+.PARAMETER RequestBody
+    Defines the schema of the request body. Can be set using New-PodeOARequestBody.
+
+.PARAMETER Response
+    Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
+
+.PARAMETER specTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.EXAMPLE
+    Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
+        -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
+        -Response (
+            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array)
+            New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+            New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
+            New-PodeOAResponse -Default -Description 'Something is wrong'
+        )
+    This example demonstrates adding a POST callback to handle a request body and define various responses based on different status codes.
+
+.NOTES
+    Ensure that the provided parameters match the expected schema and formats of Pode and OpenAPI specifications.
+    The function is useful for dynamically configuring and documenting API callbacks in a Pode server environment.
+#>
+
+function Add-PodeOAComponentCallBack {
+    param (
+
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Path,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
+        [string]
+        $Method,
+
+        [hashtable[]]
+        $Parameters,
+
+        [hashtable]
+        $RequestBody,
+
+        [System.Collections.Specialized.OrderedDictionary]
+        $Responses,
+
+        [string]
+        $SpecTag = 'default'
+    )
+    $PodeContext.Server.OpenAPI[$SpecTag].components.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
+}
+
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
     New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer
