@@ -150,9 +150,6 @@ function Start-PodeServer {
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
-        # check for scoped vars
-        $ScriptBlock = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -Skip Session, Using
-
         # create main context object
         $PodeContext = New-PodeContext `
             -ScriptBlock $ScriptBlock `

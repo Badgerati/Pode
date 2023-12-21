@@ -183,6 +183,7 @@ Describe 'Restart-PodeInternalServer' {
                     Items   = @{}
                     Storage = @{}
                 }
+                ScopedVariables = @{}
             }
             Metrics   = @{
                 Server = @{

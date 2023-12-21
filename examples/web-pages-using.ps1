@@ -7,8 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 $outerfoo = 'outer-bar'
 $outer_ken = 'Hello, there'
 
-function Write-MyOuterResponse
-{
+function Write-MyOuterResponse {
     Write-PodeJsonResponse -Value @{ Message = 'From an outer function' }
 }
 
@@ -30,8 +29,7 @@ Start-PodeServer -Threads 2 {
     $innerfoo = 'inner-bar'
     $inner_ken = 'General Kenobi'
 
-    function Write-MyInnerResponse
-    {
+    function Write-MyInnerResponse {
         Write-PodeJsonResponse -Value @{ Message = 'From an inner function' }
     }
 
@@ -40,7 +38,7 @@ Start-PodeServer -Threads 2 {
     New-PodeMiddleware -ScriptBlock {
         "M1: $($using:outer_ken) ... $($using:inner_ken)" | Out-Default
         return $true
-    } |  Add-PodeMiddleware -Name 'TestUsingMiddleware1'
+    } | Add-PodeMiddleware -Name 'TestUsingMiddleware1'
 
     Add-PodeMiddleware -Name 'TestUsingMiddleware2' -ScriptBlock {
         "M2: $($using:outer_ken) ... $($using:inner_ken)" | Out-Default

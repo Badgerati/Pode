@@ -11,6 +11,9 @@ function Start-PodeInternalServer {
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
 
+        # setup inbuilt scoped vars
+        Add-PodeScopedVariablesInbuilt
+
         # create the shared runspace state
         New-PodeRunspaceState
 
@@ -26,7 +29,8 @@ function Start-PodeInternalServer {
             $_script = Convert-PodeFileToScriptBlock -FilePath $PodeContext.Server.LogicPath
         }
 
-        Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
+        $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
+        Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
 
         # load any modules/snapins
         Import-PodeSnapinsIntoRunspaceState
@@ -244,6 +248,9 @@ function Restart-PodeInternalServer {
 
         # clear up shared state
         $PodeContext.Server.State.Clear()
+
+        # clear scoped variables
+        $PodeContext.Server.ScopedVariables.Clear()
 
         # clear cache
         $PodeContext.Server.Cache.Items.Clear()
