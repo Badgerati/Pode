@@ -1502,7 +1502,7 @@ The Name of the Authentication method to use.
 .PARAMETER Route
 A Route path for which Routes this Middleware should only be invoked against.
 
-.PARAMETER SpecTag
+.PARAMETER DefinitionTag
 An array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
@@ -1530,7 +1530,7 @@ function Add-PodeAuthMiddleware {
         $Route,
 
         [string[]]
-        $SpecTag = @('default')
+        $DefinitionTag = @('default')
     )
 
     if (!(Test-PodeAuthExists -Name $Authentication)) {
@@ -1541,7 +1541,7 @@ function Add-PodeAuthMiddleware {
         New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
         Add-PodeMiddleware -Name $Name -Route $Route
 
-    Set-PodeOAGlobalAuth -SpecTag $SpecTag -Name $Authentication -Route $Route
+    Set-PodeOAGlobalAuth -DefinitionTag $DefinitionTag -Name $Authentication -Route $Route
 }
 
 <#

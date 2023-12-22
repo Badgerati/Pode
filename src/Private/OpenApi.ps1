@@ -9,7 +9,7 @@ function ConvertTo-PodeOAHeaderSchema {
 
         [Parameter(Mandatory = $true)]
         [string]
-        $SpecTag
+        $DefinitionTag
     )
     begin {
         $obj = @{}
@@ -17,21 +17,21 @@ function ConvertTo-PodeOAHeaderSchema {
     process {
         # convert each schema to openapi format
         foreach ($schema in $Schemas) {
-            if ( !(Test-PodeOAComponentHeaderSchema -SpecTag $SpecTag -Name $schema)) {
+            if ( !(Test-PodeOAComponentHeaderSchema -DefinitionTag $DefinitionTag -Name $schema)) {
                 throw "The OpenApi component schema doesn't exist: $schema"
             }
             if ($Array) {
                 $obj[$schema] = @{
-                    'description' = $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.headerSchemas[$schema].description
+                    'description' = $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.headerSchemas[$schema].description
                     'schema'      = @{
                         'type'  = 'array'
-                        'items' = ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.headerSchemas[$schema] | ConvertTo-PodeOASchemaProperty -NoDescription -SpecTag $SpecTag)
+                        'items' = ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.headerSchemas[$schema] | ConvertTo-PodeOASchemaProperty -NoDescription -DefinitionTag $DefinitionTag)
                     }
                 }
             } else {
                 $obj[$schema] = @{
-                    'description' = $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.headerSchemas[$schema].description
-                    'schema'      = ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.headerSchemas[$schema] | ConvertTo-PodeOASchemaProperty -NoDescription -SpecTag $SpecTag)
+                    'description' = $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.headerSchemas[$schema].description
+                    'schema'      = ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.headerSchemas[$schema] | ConvertTo-PodeOASchemaProperty -NoDescription -DefinitionTag $DefinitionTag)
                 }
             }
         }
@@ -53,7 +53,7 @@ function ConvertTo-PodeOAObjectSchema {
 
         [Parameter(Mandatory = $true)]
         [string ]
-        $SpecTag
+        $DefinitionTag
 
     )
 
@@ -82,7 +82,7 @@ function ConvertTo-PodeOAObjectSchema {
             }
 
             if ($type -ieq 'multipart/form-data' -and $upload.content ) {
-                if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_1 -and $upload.partContentMediaType) {
+                if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_1 -and $upload.partContentMediaType) {
                     foreach ($key in $upload.content.Properties ) {
                         if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
                             $key.ContentMediaType = $PartContentMediaType
@@ -93,7 +93,7 @@ function ConvertTo-PodeOAObjectSchema {
                 }
                 $newContent = $upload.content
             } else {
-                if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_0) {
+                if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0) {
                     $newContent = [ordered]@{
                         'type'   = 'string'
                         'format' = $upload.contentEncoding
@@ -152,7 +152,7 @@ function ConvertTo-PodeOAObjectSchema {
                         }
                     }
                 } else {
-                    if ( !(Test-PodeOAComponentSchema -SpecTag $SpecTag -Name $item)) {
+                    if ( !(Test-PodeOAComponentSchema -DefinitionTag $DefinitionTag -Name $item)) {
                         throw "The OpenApi component schema doesn't exist: $($item)"
                     }
                     if ($isArray) {
@@ -175,7 +175,7 @@ function ConvertTo-PodeOAObjectSchema {
             if ($item.Count -eq 0) {
                 $result = @{}
             } else {
-                $result = ($item | ConvertTo-PodeOASchemaProperty -SpecTag $SpecTag)
+                $result = ($item | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
             }
             if ($Properties) {
                 if ($item.Name) {
@@ -221,10 +221,10 @@ function Test-PodeOAComponentHeaderSchema {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].hiddenComponents.headerSchemas.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -242,10 +242,10 @@ function Test-PodeOAComponentSchemaJson {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].hiddenComponents.schemaJson.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -266,10 +266,10 @@ function Test-PodeOAComponentExternalPath {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].hiddenComponents.externalPath.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -287,10 +287,10 @@ function Test-PodeOAComponentCallBack {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components.callbacks.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -308,10 +308,10 @@ function Test-PodeOAComponentLink {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components.links.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -329,10 +329,10 @@ function Test-PodeOAComponentSchema {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components.schemas.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -352,10 +352,10 @@ function Test-PodeOAComponentExample {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components.examples.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -374,10 +374,10 @@ function Test-PodeOAComponentResponse {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components.responses.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -395,10 +395,10 @@ function Test-PodeOAComponentRequestBody {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components.requestBodies.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -416,10 +416,10 @@ function Test-PodeOAComponentParameter {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components.parameters.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -436,10 +436,10 @@ function Test-PodeOAComponentPathItems {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components.pathItems.keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false
             return $false
@@ -456,7 +456,7 @@ function ConvertTo-PodeOAOfProperty {
 
         [Parameter(Mandatory = $true)]
         [string ]
-        $SpecTag
+        $DefinitionTag
     )
     if ( @('allOf', 'oneOf', 'anyOf') -inotcontains $Property.type  ) {
         return  @{}
@@ -467,12 +467,12 @@ function ConvertTo-PodeOAOfProperty {
     if ($Property.schemas ) {
         foreach ($prop in $Property.schemas ) {
             if ($prop -is [string]) {
-                if ( !(Test-PodeOAComponentSchema -SpecTag $SpecTag -Name $prop)) {
+                if ( !(Test-PodeOAComponentSchema -DefinitionTag $DefinitionTag -Name $prop)) {
                     throw "The OpenApi component schema doesn't exist: $prop"
                 }
                 $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
             } else {
-                $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty -SpecTag $SpecTag
+                $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
             }
         }
     }
@@ -493,15 +493,15 @@ function ConvertTo-PodeOASchemaProperty {
 
         [Parameter(Mandatory = $true)]
         [string]
-        $SpecTag
+        $DefinitionTag
     )
 
     if ( @('allof', 'oneof', 'anyof') -icontains $Property.type  ) {
-        $schema = ConvertTo-PodeOAofProperty -SpecTag $SpecTag -Property $Property
+        $schema = ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $Property
     } else {
         # base schema type
         $schema = [ordered]@{ }
-        if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_0) {
+        if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0) {
             if ($Property.type -is [string[]]) {
                 throw 'Multi type properties requeired OpenApi Version 3.1 or above'
             }
@@ -530,7 +530,7 @@ function ConvertTo-PodeOASchemaProperty {
         $schema['deprecated'] = $Property.deprecated
     }
 
-    if ($Property.nullable -and $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_0) {
+    if ($Property.nullable -and $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0) {
         $schema['nullable'] = $Property.nullable
     }
 
@@ -543,7 +543,7 @@ function ConvertTo-PodeOASchemaProperty {
     }
 
     if ($Property.example) {
-        if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_0) {
+        if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0) {
             $schema['example'] = $Property.example
         } else {
             if ($Property.example -is [Array]) {
@@ -553,7 +553,7 @@ function ConvertTo-PodeOASchemaProperty {
             }
         }
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_0) {
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0) {
         if ($Property.minimum) {
             $schema['minimum'] = $Property.minimum
         }
@@ -605,7 +605,7 @@ function ConvertTo-PodeOASchemaProperty {
         $schema['xml'] = $Property.xml
     }
 
-    if (! $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_0) {
+    if (! $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0) {
         if ($Property.ContentMediaType) {
             $schema['contentMediaType'] = $Property.ContentMediaType
         }
@@ -631,7 +631,7 @@ function ConvertTo-PodeOASchemaProperty {
 
         $schema['type'] = 'array'
         if ($Property.type -ieq 'schema') {
-            if ( !(Test-PodeOAComponentSchema -SpecTag $SpecTag -Name $Property['schema'])) {
+            if ( !(Test-PodeOAComponentSchema -DefinitionTag $DefinitionTag -Name $Property['schema'])) {
                 throw "The OpenApi component schema doesn't exist: $($Property['schema'])"
             }
             $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
@@ -641,7 +641,7 @@ function ConvertTo-PodeOASchemaProperty {
                 $xmlFromProperties = $Property.xml
                 $Property.Remove('xml')
             }
-            $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty -SpecTag $SpecTag)
+            $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
             $Property.array = $true
             if ($xmlFromProperties) {
                 $Property.xml = $xmlFromProperties
@@ -660,7 +660,7 @@ function ConvertTo-PodeOASchemaProperty {
 
         # schema refs
         if ($Property.type -ieq 'schema') {
-            if ( !(Test-PodeOAComponentSchema  -SpecTag $SpecTag -Name $Property['schema'] )) {
+            if ( !(Test-PodeOAComponentSchema  -DefinitionTag $DefinitionTag -Name $Property['schema'] )) {
                 throw "The OpenApi component schema doesn't exist: $($Property['schema'])"
             }
             $schema = @{
@@ -679,7 +679,7 @@ function ConvertTo-PodeOASchemaProperty {
 
         $schema = @{
             type       = 'object'
-            properties = (ConvertTo-PodeOASchemaObjectProperty  -SpecTag $SpecTag -Properties $Property)
+            properties = (ConvertTo-PodeOASchemaObjectProperty  -DefinitionTag $DefinitionTag -Properties $Property)
         }
         $Property.object = $true
         if ($Property.required) {
@@ -695,12 +695,12 @@ function ConvertTo-PodeOASchemaProperty {
                     'oneof' { $prop.type = 'oneOf' }
                     'anyof' { $prop.type = 'anyOf' }
                 }
-                $schema += ConvertTo-PodeOAofProperty -SpecTag $SpecTag -Property $prop
+                $schema += ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $prop
 
             }
         }
         if ($Property.properties) {
-            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty  -SpecTag $SpecTag -Properties $Property.properties)
+            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty  -DefinitionTag $DefinitionTag -Properties $Property.properties)
             $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
             if ( $RequiredList.Count -gt 0) {
                 $schema['required'] = @($RequiredList.name)
@@ -740,12 +740,12 @@ function ConvertTo-PodeOASchemaObjectProperty {
 
         [Parameter(Mandatory = $true)]
         [string]
-        $SpecTag
+        $DefinitionTag
     )
     $schema = @{}
     foreach ($prop in $Properties) {
         if ( @('allOf', 'oneOf', 'anyOf') -inotcontains $prop.type  ) {
-            $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty -SpecTag $SpecTag  )
+            $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag  )
         }
     }
     return $schema
@@ -768,14 +768,14 @@ function Get-PodeOpenApiDefinitionInternal {
 
         [Parameter(Mandatory = $true)]
         [string]
-        $SpecTag
+        $DefinitionTag
     )
     function Set-OpenApiRouteValues {
         param(
             [hashtable]
             $_route,
             [string]
-            $SpecTag
+            $DefinitionTag
         )
         $pm = [ordered]@{}
         if ($_route.OpenApi.Deprecated) {
@@ -796,11 +796,11 @@ function Get-PodeOpenApiDefinitionInternal {
         if ($_route.OpenApi.Parameters) {
             $pm.parameters = $_route.OpenApi.Parameters
         }
-        if ($_route.OpenApi.RequestBody.$SpecTag) {
-            $pm.requestBody = $_route.OpenApi.RequestBody.$SpecTag
+        if ($_route.OpenApi.RequestBody.$DefinitionTag) {
+            $pm.requestBody = $_route.OpenApi.RequestBody.$DefinitionTag
         }
-        if ($_route.OpenApi.CallBacks.$SpecTag) {
-            $pm.callbacks = $_route.OpenApi.CallBacks.$SpecTag
+        if ($_route.OpenApi.CallBacks.$DefinitionTag) {
+            $pm.callbacks = $_route.OpenApi.CallBacks.$DefinitionTag
         }
         if ($_route.OpenApi.Authentication.Count -gt 0) {
             $pm.security = @()
@@ -821,8 +821,8 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
             }
         }
-        if ($_route.OpenApi.Responses.$SpecTag ) {
-            $pm.responses = $_route.OpenApi.Responses.$SpecTag
+        if ($_route.OpenApi.Responses.$DefinitionTag ) {
+            $pm.responses = $_route.OpenApi.Responses.$DefinitionTag
         } else {
             $pm.responses = @{'204' = @{'description' = (Get-PodeStatusDescription -StatusCode 204) } }
         }
@@ -831,21 +831,21 @@ function Get-PodeOpenApiDefinitionInternal {
 
 
 
-    if (!$PodeContext.Server.OpenAPI[$SpecTag].Version) {
+    if (!$PodeContext.Server.OpenAPI[$DefinitionTag].Version) {
         throw 'OpenApi openapi field is required'
     }
     $localEndpoint = $null
     # set the openapi version
     $def = [ordered]@{
-        openapi = $PodeContext.Server.OpenAPI[$SpecTag].Version
+        openapi = $PodeContext.Server.OpenAPI[$DefinitionTag].Version
     }
 
-    if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_1) {
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_1) {
         $def['jsonSchemaDialect'] = 'https://spec.openapis.org/oas/3.1/dialect/base'
     }
 
-    if ($PodeContext.Server.OpenAPI[$SpecTag].info) {
-        $def['info'] = $PodeContext.Server.OpenAPI[$SpecTag].info
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].info) {
+        $def['info'] = $PodeContext.Server.OpenAPI[$DefinitionTag].info
     }
 
     #overwite default values
@@ -861,14 +861,14 @@ function Get-PodeOpenApiDefinitionInternal {
         $def.info.description = $MetaInfo.Description
     }
 
-    if ($PodeContext.Server.OpenAPI[$SpecTag].externalDocs) {
-        $def['externalDocs'] = $PodeContext.Server.OpenAPI[$SpecTag].externalDocs
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].externalDocs) {
+        $def['externalDocs'] = $PodeContext.Server.OpenAPI[$DefinitionTag].externalDocs
     }
 
-    if ($PodeContext.Server.OpenAPI[$SpecTag].servers) {
-        $def['servers'] = $PodeContext.Server.OpenAPI[$SpecTag].servers
-        if ($PodeContext.Server.OpenAPI[$SpecTag].servers.Count -eq 1 -and $PodeContext.Server.OpenAPI[$SpecTag].servers[0].url.StartsWith('/')) {
-            $localEndpoint = $PodeContext.Server.OpenAPI[$SpecTag].servers[0].url
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].servers) {
+        $def['servers'] = $PodeContext.Server.OpenAPI[$DefinitionTag].servers
+        if ($PodeContext.Server.OpenAPI[$DefinitionTag].servers.Count -eq 1 -and $PodeContext.Server.OpenAPI[$DefinitionTag].servers[0].url.StartsWith('/')) {
+            $localEndpoint = $PodeContext.Server.OpenAPI[$DefinitionTag].servers[0].url
         }
     } elseif (!$MetaInfo.RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1)) {
         #  $def['servers'] = $null
@@ -879,14 +879,14 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
             })
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].tags.Count -gt 0) {
-        $def['tags'] = @($PodeContext.Server.OpenAPI[$SpecTag].tags.Values)
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].tags.Count -gt 0) {
+        $def['tags'] = @($PodeContext.Server.OpenAPI[$DefinitionTag].tags.Values)
     }
 
     # paths
     $def['paths'] = [ordered]@{}
     # components
-    $def['components'] = $PodeContext.Server.OpenAPI[$SpecTag].components
+    $def['components'] = $PodeContext.Server.OpenAPI[$DefinitionTag].components
     # auth/security components
     if ($PodeContext.Server.Authentications.Methods.Count -gt 0) {
         #  if ($null -eq $def.components.securitySchemes) {
@@ -964,8 +964,8 @@ function Get-PodeOpenApiDefinitionInternal {
             $def.components.securitySchemes[$_authName] = $_authObj
         }
 
-        if ($PodeContext.Server.OpenAPI[$SpecTag].Security.Definition -and $PodeContext.Server.OpenAPI[$SpecTag].Security.Definition.Length -gt 0) {
-            $def['security'] = @($PodeContext.Server.OpenAPI[$SpecTag].Security.Definition)
+        if ($PodeContext.Server.OpenAPI[$DefinitionTag].Security.Definition -and $PodeContext.Server.OpenAPI[$DefinitionTag].Security.Definition.Length -gt 0) {
+            $def['security'] = @($PodeContext.Server.OpenAPI[$DefinitionTag].Security.Definition)
         }
     }
 
@@ -975,35 +975,35 @@ function Get-PodeOpenApiDefinitionInternal {
         $filter = ''
     }
 
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.schemas.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('schemas')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.schemas.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('schemas')
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.responses.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('responses')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.responses.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('responses')
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.parameters.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('parameters')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.parameters.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('parameters')
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.examples.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('examples')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.examples.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('examples')
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.requestBodies.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('requestBodies')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.requestBodies.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('requestBodies')
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.headers.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('headers')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.headers.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('headers')
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.securitySchemes.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('securitySchemes')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.securitySchemes.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('securitySchemes')
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.links.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('links')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.links.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('links')
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.callbacks.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('callbacks')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.callbacks.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('callbacks')
     }
-    if ($PodeContext.Server.OpenAPI[$SpecTag].components.pathItems.count -eq 0) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.Remove('pathItems')
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].components.pathItems.count -eq 0) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].components.Remove('pathItems')
     }
 
 
@@ -1028,7 +1028,7 @@ function Get-PodeOpenApiDefinitionInternal {
             # get the first route for base definition
             $_route = $_routes[0]
             # check if the route has to be published
-            if (($_route.OpenApi.Swagger -and $_route.OpenApi.SpecTag -contains $SpecTag ) -or $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.enableMinimalDefinitions) {
+            if (($_route.OpenApi.Swagger -and $_route.OpenApi.DefinitionTag -contains $DefinitionTag ) -or $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.enableMinimalDefinitions) {
 
                 #remove the ServerUrl part
                 if ( $localEndpoint) {
@@ -1045,7 +1045,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
                 # add path's http method to defintition
 
-                $pm = Set-OpenApiRouteValues -_route $_route -SpecTag $SpecTag
+                $pm = Set-OpenApiRouteValues -_route $_route -DefinitionTag $DefinitionTag
                 $def.paths[$_route.OpenApi.Path][$method] = $pm
 
                 # add any custom server endpoints for route
@@ -1056,7 +1056,7 @@ function Get-PodeOpenApiDefinitionInternal {
                             $def.paths[$_route.OpenApi.Path][$method].servers = @()
                         }
                         if ($localEndpoint) {
-                            $def.paths[$_route.OpenApi.Path][$method].servers += $PodeContext.Server.OpenAPI[$SpecTag].servers[0]
+                            $def.paths[$_route.OpenApi.Path][$method].servers += $PodeContext.Server.OpenAPI[$DefinitionTag].servers[0]
                         }
                         $def.paths[$_route.OpenApi.Path][$method].servers += $_route.OpenApi.Servers
                     }
@@ -1087,14 +1087,14 @@ function Get-PodeOpenApiDefinitionInternal {
         }
     }
 
-    if ( $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.externalPath) {
-        foreach ($extPath in $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.externalPath.values) {
+    if ( $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.externalPath) {
+        foreach ($extPath in $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.externalPath.values) {
             foreach ($method in $extPath.keys) {
                 $_route = $extPath[$method]
                 if (! ( $def.paths.keys -ccontains $_route.Path)) {
                     $def.paths[$_route.OpenAPI.Path] = @{}
                 }
-                $pm = Set-OpenApiRouteValues -_route $_route -SpecTag $SpecTag
+                $pm = Set-OpenApiRouteValues -_route $_route -DefinitionTag $DefinitionTag
                 # add path's http method to defintition
                 $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pm
             }
@@ -1205,13 +1205,13 @@ function Set-PodeOAGlobalAuth {
 
         [Parameter(Mandatory = $true)]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
     if (!(Test-PodeAuthExists -Name $Name)) {
         throw "Authentication method does not exist: $($Name)"
     }
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (Test-PodeIsEmpty $PodeContext.Server.OpenAPI[$tag].Security) {
             $PodeContext.Server.OpenAPI[$tag].Security = @()
         }
@@ -1242,10 +1242,10 @@ function Resolve-PodeOAReferences {
 
         [Parameter(Mandatory = $true)]
         [string]
-        $SpecTag
+        $DefinitionTag
     )
 
-    $Schemas = $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.schemaJson
+    $Schemas = $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaJson
     $Keys = @()
 
     if ($ComponentSchema.properties) {
@@ -1273,7 +1273,7 @@ function Resolve-PodeOAReferences {
                         }
                     } elseif ( $comp.properties) {
                         if ($comp.type -eq 'object') {
-                            $tmpProp += Resolve-PodeOAReferences -SpecTag $SpecTag -ComponentSchema  $comp
+                            $tmpProp += Resolve-PodeOAReferences -DefinitionTag $DefinitionTag -ComponentSchema  $comp
                         } else {
                             throw 'Unsupported object'
                         }
@@ -1333,7 +1333,7 @@ function New-PodeOAPropertyInternal {
 
     if ($type) {
         $param.type = $type
-        # } elseif ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_0) {
+        # } elseif ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0) {
         #       throw 'Multi type properties requeired OpenApi Version 3.1 or above'
     } else {
         $param.type = $Params.type
@@ -1527,7 +1527,7 @@ function New-PodeOAComponentCallBackInternal {
 
         [Parameter(Mandatory = $true)]
         [string ]
-        $SpecTag
+        $DefinitionTag
     )
 
     $_method = $Params.Method.ToLower()
@@ -1539,13 +1539,13 @@ function New-PodeOAComponentCallBackInternal {
         }
         # }
     }
-    if ($Params.RequestBody.ContainsKey( $SpecTag)) {
+    if ($Params.RequestBody.ContainsKey( $DefinitionTag)) {
         # $callBack."'$($Params.Path)'".$_method.requestBody = $Params.RequestBody
-        $callBack."'$($Params.Path)'".$_method.requestBody = $Params.RequestBody[$SpecTag]
+        $callBack."'$($Params.Path)'".$_method.requestBody = $Params.RequestBody[$DefinitionTag]
     }
-    if ($Params.Responses.ContainsKey( $SpecTag)) {
+    if ($Params.Responses.ContainsKey( $DefinitionTag)) {
         #  $callBack."'$($Params.Path)'".$_method.responses = $Params.Responses
-        $callBack."'$($Params.Path)'".$_method.responses = $Params.Responses[$SpecTag]
+        $callBack."'$($Params.Path)'".$_method.responses = $Params.Responses[$DefinitionTag]
     }
 
     return $callBack
@@ -1561,7 +1561,7 @@ function New-PodeOResponseInternal {
 
         [Parameter(Mandatory = $true)]
         [string ]
-        $SpecTag
+        $DefinitionTag
     )
     # set a general description for the status code
     if ([string]::IsNullOrWhiteSpace($Description)) {
@@ -1577,7 +1577,7 @@ function New-PodeOResponseInternal {
     }
 
     if ($Params.Reference ) {
-        if (!(Test-PodeOAComponentResponse -SpecTag $SpecTag -Name $Params.Reference)) {
+        if (!(Test-PodeOAComponentResponse -DefinitionTag $DefinitionTag -Name $Params.Reference)) {
             throw "The OpenApi component response doesn't exist: $($Params.Reference)"
         }
         $response = @{
@@ -1587,7 +1587,7 @@ function New-PodeOResponseInternal {
         # build any content-type schemas
         $_content = $null
         if ($null -ne $Params.Content) {
-            $_content = ConvertTo-PodeOAObjectSchema -SpecTag $SpecTag -Content $Params.Content
+            $_content = ConvertTo-PodeOAObjectSchema -DefinitionTag $DefinitionTag -Content $Params.Content
         }
 
         # build any header schemas
@@ -1597,10 +1597,10 @@ function New-PodeOResponseInternal {
                 if ($Params.Headers -is [System.Object[]] -and $Params.Headers.Count -gt 0 -and ($Params.Headers[0] -is [hashtable] -or $Params.Headers[0] -is [ordered] )) {
                     $_headers = ConvertTo-PodeOAHeaderProperties -Headers $Params.Headers
                 } else {
-                    $_headers = ConvertTo-PodeOAHeaderSchema -SpecTag $SpecTag -Schemas $Params.Headers -Array:$Params.HeaderArray
+                    $_headers = ConvertTo-PodeOAHeaderSchema -DefinitionTag $DefinitionTag -Schemas $Params.Headers -Array:$Params.HeaderArray
                 }
             } elseif ($Params.Headers -is [hashtable]) {
-                $_headers = ConvertTo-PodeOAObjectSchema -SpecTag $SpecTag -Content  $Params.Headers
+                $_headers = ConvertTo-PodeOAObjectSchema -DefinitionTag $DefinitionTag -Content  $Params.Headers
             }
         }
 

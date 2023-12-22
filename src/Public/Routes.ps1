@@ -193,7 +193,7 @@ function Add-PodeRoute {
         $PassThru,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
     # check if we have any route group info defined
@@ -377,14 +377,14 @@ function Add-PodeRoute {
         }
 
 
-        if (Test-PodeIsEmpty -Value $SpecTag) {
-            $SpecTag = $PodeContext.Server.OpenApiSpecTag
+        if (Test-PodeIsEmpty -Value $DefinitionTag) {
+            $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
         }
 
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses) {
             $DefaultResponse=@{}
-            foreach ($tag in $SpecTag) { 
+            foreach ($tag in $DefinitionTag) { 
                 $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses.Clone()
             }
         }
@@ -424,7 +424,7 @@ function Add-PodeRoute {
                         CallBacks      = @{}
                         Authentication = @()
                         Servers        = @()
-                        SpecTag        = @('default')
+                        DefinitionTag        = @('default')
                     }
                     IsStatic         = $false
                     Metrics          = @{
@@ -1118,7 +1118,7 @@ function Add-PodeRouteGroup {
         $AllowAnon,
 
         [string[]]
-        $SpecTag = @('default')
+        $DefinitionTag = @('default')
     )
 
     if (Test-PodeIsEmpty $Routes) {
@@ -1214,11 +1214,11 @@ function Add-PodeRouteGroup {
             Custom = $CustomAccess
         }
     }
-    $PodeContext.Server.OpenApiSpecTag = $SpecTag
+    $PodeContext.Server.OpenApiDefinitionTag = $DefinitionTag
     # add routes
     $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
     $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
-    $PodeContext.Server.OpenApiSpecTag = @('default')
+    $PodeContext.Server.OpenApiDefinitionTag = @('default')
 }
 
 <#

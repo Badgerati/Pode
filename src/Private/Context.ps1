@@ -344,7 +344,7 @@ function New-PodeContext {
     # swagger and openapi
     $ctx.Server.OpenAPI = @{ 'default' = Get-PodeOABaseObject }
 
-    $ctx.Server.OpenApiSpecTag = 'default'
+    $ctx.Server.OpenApiDefinitionTag = 'default'
 
     # server metrics
     $ctx.Metrics = @{

@@ -14,7 +14,7 @@ Describe 'OpenApi' {
                     Security = @{
                         autoheaders = $false
                     }
-                    OpenApiSpecTag='default'
+                    OpenApiDefinitionTag='default'
                     OpenAPI  = @{
                         default = @{
                             info             = [ordered]@{}
@@ -2964,7 +2964,7 @@ Describe 'OpenApi' {
             # Mock the Pode context object
             $Global:PodeContext = @{
                 Server = @{
-                    OpenApiSpecTag='default'
+                    OpenApiDefinitionTag='default'
                     OpenAPI = @{
                         default= @{
                             components = @{

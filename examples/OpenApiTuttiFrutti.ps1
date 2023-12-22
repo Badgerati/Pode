@@ -25,46 +25,46 @@ Some useful links:
     #  New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     #  Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
 
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -SpecTag 'v3'
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -SpecTag 'v3.1'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1'
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
-    $swaggerDocs | Add-PodeOAExternalDoc  -SpecTag 'v3', 'v3.1'
+    $swaggerDocs | Add-PodeOAExternalDoc  -DefinitionTag 'v3', 'v3.1'
 
 
     #  Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
 
 
-    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'  -SpecTag 'v3', 'v3.1'
+    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'  -DefinitionTag 'v3', 'v3.1'
 
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
-        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -SpecTag 'v3'
+        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3'
 
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.1' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
-        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -SpecTag 'v3.1'
+        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3.1'
 
-    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint' -SpecTag 'v3', 'v3.1'
+    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint' -DefinitionTag 'v3', 'v3.1'
 
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -SpecTag 'v3'
-    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -SpecTag 'v3'
-    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -SpecTag 'v3'
-    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -SpecTag 'v3'
-    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -SpecTag 'v3'
-    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -SpecTag 'v3'
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -DefinitionTag 'v3'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3'
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -DefinitionTag 'v3'
 
-    Enable-PodeOAViewer -Type Bookmarks -Path '/docs' -SpecTag 'v3'
+    Enable-PodeOAViewer -Type Bookmarks -Path '/docs' -DefinitionTag 'v3'
 
 
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/v3.1/swagger' -SpecTag 'v3.1'
-    Enable-PodeOAViewer -Type ReDoc -Path '/docs/v3.1/redoc' -DarkMode -SpecTag 'v3.1'
-    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/v3.1/rapidoc' -DarkMode -SpecTag 'v3.1'
-    Enable-PodeOAViewer -Type StopLight -Path '/docs/v3.1/stoplight' -DarkMode -SpecTag 'v3.1'
-    Enable-PodeOAViewer -Type Explorer -Path '/docs/v3.1/explorer' -DarkMode -SpecTag 'v3.1'
-    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/v3.1/rapipdf' -DarkMode -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/v3.1/swagger' -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/v3.1/redoc' -DarkMode -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/v3.1/rapidoc' -DarkMode -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/v3.1/stoplight' -DarkMode -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/v3.1/explorer' -DarkMode -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/v3.1/rapipdf' -DarkMode -DefinitionTag 'v3.1'
 
-    Enable-PodeOAViewer -Type Bookmarks -Path '/docs/v3.1' -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type Bookmarks -Path '/docs/v3.1' -DefinitionTag 'v3.1'
 
-    Add-PodeComponentGroup -SpecTag 'v3', 'v3.1'  -Components {
+    Add-PodeComponentGroup -DefinitionTag 'v3', 'v3.1'  -Components {
 
         Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc $swaggerDocs
         Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs
@@ -357,7 +357,7 @@ Some useful links:
         New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary   'User Example in Plain text' -ExternalValue 'http://foo.bar/examples/user-example.txt' |
         New-PodeOAExample -ContentMediaType '*/*' -Name 'user' -Summary   'User example in other forma' -ExternalValue  'http://foo.bar/examples/user-example.whatever'
 
-    Add-PodeRouteGroup -Path '/api/v4'  -SpecTag  'v3.1'  -Routes {
+    Add-PodeRouteGroup -Path '/api/v4'  -DefinitionTag  'v3.1'  -Routes {
 
         Add-PodeRoute -PassThru -Method Put -Path '/pat/:petId' -ScriptBlock {
             $JsonPet = ConvertTo-Json $WebEvent.data
@@ -468,7 +468,7 @@ Some useful links:
     }
 
     Add-PodeAuthMiddleware -Name test -Authentication 'test' -Route '/api/*'
-    Add-PodeRouteGroup -Path '/api/v3'  -SpecTag 'v3', 'v3.1'  -Routes {
+    Add-PodeRouteGroup -Path '/api/v3'  -DefinitionTag 'v3', 'v3.1'  -Routes {
         #PUT
         Add-PodeRoute -PassThru -Method Put -Path '/pet' -ScriptBlock {
             $JsonPet = ConvertTo-Json $WebEvent.data
@@ -912,6 +912,6 @@ Some useful links:
     }
 
 
-    $yaml = PodeOADefinition -Format Yaml -SpecTag 'v3.1'
+    $yaml = PodeOADefinition -Format Yaml -DefinitionTag 'v3.1'
     # $json=  PodeOADefinition -Format Json
 }

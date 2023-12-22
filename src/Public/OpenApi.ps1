@@ -64,7 +64,7 @@ If suplied is going to disable the default OpenAPI response with the new provide
 .PARAMETER DefaultResponses
 If suplied is going to replace the default OpenAPI response with the new provided.(Default: @{'200' = @{ description = 'OK' };'default' = @{ description = 'Internal server error' }} )
 
-.PARAMETER SpecTag
+.PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
@@ -142,25 +142,25 @@ function Enable-PodeOpenApi {
         $NoDefaultResponses,
 
         [string]
-        $SpecTag = 'default'
+        $DefinitionTag = 'default'
 
     )
 
     if ($Description -or $Version -or $Title) {
         Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
-    if ( $SpecTag -ine 'default') {
-        $PodeContext.Server.OpenAPI[$specTag] = Get-PodeOABaseObject
+    if ( $DefinitionTag -ine 'default') {
+        $PodeContext.Server.OpenAPI[$DefinitionTag] = Get-PodeOABaseObject
     }
-    $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
+    $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
 
 
     # initialise openapi info
-    $PodeContext.Server.OpenAPI[$SpecTag].Version = $OpenApiVersion
-    $PodeContext.Server.OpenAPI[$SpecTag].Path = $Path
+    $PodeContext.Server.OpenAPI[$DefinitionTag].Version = $OpenApiVersion
+    $PodeContext.Server.OpenAPI[$DefinitionTag].Path = $Path
 
-    $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_0 = $OpenApiVersion.StartsWith('3.0')
-    $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_1 = $OpenApiVersion.StartsWith('3.1')
+    $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0 = $OpenApiVersion.StartsWith('3.0')
+    $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_1 = $OpenApiVersion.StartsWith('3.1')
 
     $meta = @{
         RouteFilter    = $RouteFilter
@@ -168,30 +168,30 @@ function Enable-PodeOpenApi {
         NoCompress     = ($MarkupLanguage -ine 'Json-Compress')
         Mode           = $Mode
         MarkupLanguage = $MarkupLanguage
-        SpecTag        = $SpecTag
+        DefinitionTag        = $DefinitionTag
     }
     if ( $Title) {
-        $PodeContext.Server.OpenAPI[$SpecTag].info.title = $Title
+        $PodeContext.Server.OpenAPI[$DefinitionTag].info.title = $Title
     }
     if ($Version) {
-        $PodeContext.Server.OpenAPI[$SpecTag].info.version = $Version
+        $PodeContext.Server.OpenAPI[$DefinitionTag].info.version = $Version
     }
 
     if ($Description ) {
-        $PodeContext.Server.OpenAPI[$SpecTag].info.description = $Description
+        $PodeContext.Server.OpenAPI[$DefinitionTag].info.description = $Description
     }
 
     if ( $EnableSchemaValidation.IsPresent) {
         #Test-Json has been introduced with version 6.1.0
         if ($PSVersionTable.PSVersion -ge [version]'6.1.0') {
-            $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.schemaValidation = $EnableSchemaValidation.IsPresent
+            $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaValidation = $EnableSchemaValidation.IsPresent
         } else {
             throw 'Schema validation required Powershell version 6.1.0 or greater'
         }
     }
 
     if ( $Depth) {
-        $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.depth = $Depth
+        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth = $Depth
     }
 
 
@@ -199,7 +199,7 @@ function Enable-PodeOpenApi {
         param($meta)
         $format = $WebEvent.Query['format']
         $mode = $WebEvent.Query['mode']
-        $specTag = $meta.SpecTag
+        $DefinitionTag = $meta.DefinitionTag
 
         if (!$mode) {
             $mode = $meta.Mode
@@ -236,18 +236,18 @@ function Enable-PodeOpenApi {
             -Protocol $WebEvent.Endpoint.Protocol `
             -Address $WebEvent.Endpoint.Address `
             -EndpointName $WebEvent.Endpoint.Name `
-            -SpecTag $specTag `
+            -DefinitionTag $DefinitionTag `
             -MetaInfo $meta
 
         # write the openapi definition
         if ($format -ieq 'yaml') {
             if ($mode -ieq 'view') {
-                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI[$specTag].hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
+                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
             } else {
-                Write-PodeYamlResponse -Value $def -depth $PodeContext.Server.OpenAPI[$specTag].hiddenComponents.depth
+                Write-PodeYamlResponse -Value $def -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth
             }
         } else {
-            Write-PodeJsonResponse -Value $def -depth $PodeContext.Server.OpenAPI[$specTag].hiddenComponents.depth -NoCompress:$meta.NoCompress
+            Write-PodeJsonResponse -Value $def -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth -NoCompress:$meta.NoCompress
         }
     }
 
@@ -257,11 +257,11 @@ function Enable-PodeOpenApi {
     Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
     #set new DefaultResponses
     if ($NoDefaultResponses.IsPresent) {
-        $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.defaultResponses = @{}
+        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.defaultResponses = @{}
     } elseif ($DefaultResponses) {
-        $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.defaultResponses = $DefaultResponses
+        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.defaultResponses = $DefaultResponses
     }
-    $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.enabled = $true
+    $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.enabled = $true
 }
 
 
@@ -287,8 +287,8 @@ An optional string describing the host designated by the URL. [CommonMark syntax
 .PARAMETER Variables
 A map between a variable name and its value.  The value is used for substitution in the server's URL template.
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -329,9 +329,9 @@ function Add-PodeOAServerEndpoint {
         $Variables,
 
         [string[]]
-        $SpecTag = @('default')
+        $DefinitionTag = @('default')
     )
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if (! $PodeContext.Server.OpenAPI[$tag].servers) {
             $PodeContext.Server.OpenAPI[$tag].servers = @()
         }
@@ -381,7 +381,7 @@ An optional route filter for routes that should be included in the definition. (
 .PARAMETER RestrictRoutes
 If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
 
-.PARAMETER SpecTag
+.PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
@@ -413,7 +413,7 @@ function Get-PodeOADefinition {
         $RestrictRoutes,
 
         [string]
-        $SpecTag = 'default'
+        $DefinitionTag = 'default'
     )
 
     $meta = @{
@@ -438,17 +438,17 @@ function Get-PodeOADefinition {
         $meta.Description = $Description
     }
 
-    $oApi = Get-PodeOpenApiDefinitionInternal  -MetaInfo $meta -EndpointName $WebEvent.Endpoint.Name -SpecTag $SpecTag
+    $oApi = Get-PodeOpenApiDefinitionInternal  -MetaInfo $meta -EndpointName $WebEvent.Endpoint.Name -DefinitionTag $DefinitionTag
 
     switch ($Format.ToLower()) {
         'json' {
-            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.depth
+            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth
         }
         'json-compress' {
-            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.depth -Compress
+            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth -Compress
         }
         'yaml' {
-            return ConvertTo-PodeYaml -InputObject $oApi -depth $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.depth
+            return ConvertTo-PodeYaml -InputObject $oApi -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth
         }
         Default {
             return $oApi
@@ -491,8 +491,8 @@ If supplied, the response will be used as a default response - this overrides th
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -556,11 +556,11 @@ function Add-PodeOAResponse {
         $PassThru,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $SpecTag) {
-        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
     # override status code with default
     if ($Default) {
@@ -571,11 +571,11 @@ function Add-PodeOAResponse {
 
     # add the respones to the routes
     foreach ($r in @($Route)) {
-        foreach ($tag in $SpecTag) {
+        foreach ($tag in $DefinitionTag) {
             if (! $r.OpenApi.Responses.$tag) {
                 $r.OpenApi.Responses.$tag = @{}
             }
-            $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -SpecTag $tag -Params $PSBoundParameters
+            $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
         }
     }
 
@@ -761,8 +761,8 @@ This parameter give you control over the serialization of parts of multipart req
 This attribute is only applicable to multipart and application/x-www-form-urlencoded request bodies.
 Use New-PodeOAEncodingObject to define the encode
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -820,22 +820,22 @@ function New-PodeOARequestBody {
         $Encoding,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
 
     )
 
-    if (Test-PodeIsEmpty -Value $SpecTag) {
-        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
 
     if ($Example -and $Examples) {
         throw 'Parameter -Examples and -Example are mutually exclusive'
     }
     $result = @{}
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'builtin' {
-                $param = @{content = ConvertTo-PodeOAObjectSchema -SpecTag $tag -Content $Content -Properties:$Properties }
+                $param = @{content = ConvertTo-PodeOAObjectSchema -DefinitionTag $tag -Content $Content -Properties:$Properties }
 
                 if ($Required.IsPresent) {
                     $param['required'] = $Required.IsPresent
@@ -859,7 +859,7 @@ function New-PodeOARequestBody {
             }
 
             'reference' {
-                if (!(Test-PodeOAComponentRequestBody -SpecTag $tag -Name $Reference)) {
+                if (!(Test-PodeOAComponentRequestBody -DefinitionTag $tag -Name $Reference)) {
                     throw "The OpenApi component request body doesn't exist: $Reference"
                 }
 
@@ -916,7 +916,7 @@ The schema name to use to validate the property.
 .PARAMETER Depth
 Specifies how many levels of the parameter objects are included in the JSON representation.
 
-.PARAMETER SpecTag
+.PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
@@ -941,10 +941,10 @@ function Test-PodeOAJsonSchemaCompliance {
         $SchemaReference,
 
         [string]
-        $SpecTag = 'default'
+        $DefinitionTag = 'default'
     )
 
-    if (!$PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.schemaValidation) {
+    if (!$PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaValidation) {
         throw 'Test-PodeOAComponentSchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
     }
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
@@ -952,7 +952,7 @@ function Test-PodeOAJsonSchemaCompliance {
     }
 
     [string[]] $message = @()
-    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.schemaJson[$SchemaReference].json -ErrorVariable jsonValidationErrors -ErrorAction SilentlyContinue
+    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaJson[$SchemaReference].json -ErrorVariable jsonValidationErrors -ErrorAction SilentlyContinue
     if ($jsonValidationErrors) {
         foreach ($item in $jsonValidationErrors) {
             $message += $item
@@ -1024,8 +1024,8 @@ Examples of the parameter's potential value. Each example SHOULD contain a value
 The Examples parameter is mutually exclusive of the Example parameter.
 Furthermore, if referencing a Schema that contains an example, the Examples value SHALL _override_ the example provided by the schema.
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -1136,17 +1136,17 @@ function ConvertTo-PodeOAParameter {
         $Deprecated,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $SpecTag) {
-        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
 
     if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema' -or $PSCmdlet.ParameterSetName -ieq 'Schema') {
         if (Test-PodeIsEmpty $Schema) {
             return $null
         }
-        if (!(Test-PodeOAComponentSchema -SpecTag $SpecTag -Name $Schema )) {
+        if (!(Test-PodeOAComponentSchema -DefinitionTag $DefinitionTag -Name $Schema )) {
             throw "The OpenApi component request parameter doesn't exist: $($Schema )"
         }
         if (!$Name ) {
@@ -1237,14 +1237,14 @@ function ConvertTo-PodeOAParameter {
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
-        if (!(Test-PodeOAComponentParameter  -SpecTag $SpecTag  -Name $ComponentParameter)) {
+        if (!(Test-PodeOAComponentParameter  -DefinitionTag $DefinitionTag  -Name $ComponentParameter)) {
             throw "The OpenApi component request parameter doesn't exist: $ComponentParameter"
         }
 
         $prop = [ordered]@{
             '$ref' = "#/components/parameters/$ComponentParameter"
         }
-        foreach ($tag in $SpecTag) {
+        foreach ($tag in $DefinitionTag) {
             if ($PodeContext.Server.OpenAPI[$tag].components.parameters.$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
                 Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Append
             }
@@ -1428,8 +1428,8 @@ If supplied, the route will be flagged as deprecated.
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -1466,15 +1466,15 @@ function Set-PodeOARouteInfo {
         $PassThru,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $SpecTag) {
-        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
     foreach ($r in @($Route)) {
 
-        $r.OpenApi.SpecTag = $SpecTag
+        $r.OpenApi.DefinitionTag = $DefinitionTag
 
         if ($Summary) {
             $r.OpenApi.Summary = $Summary
@@ -1549,7 +1549,7 @@ The title of the web page. (Default is the OpenAPI title from Enable-PodeOpenApi
 .PARAMETER DarkMode
 If supplied, the page will be rendered using a dark theme (this is not supported for all viewers).
 
-.PARAMETER SpecTag
+.PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
@@ -1589,17 +1589,17 @@ function Enable-PodeOAViewer {
         $DarkMode,
 
         [string]
-        $SpecTag = 'default'
+        $DefinitionTag = 'default'
     )
 
     # error if there's no OpenAPI URL
-    $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI[$SpecTag].Path
+    $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI[$DefinitionTag].Path
     if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
         throw "No OpenAPI URL supplied for $($Type)"
     }
 
     # fail if no title
-    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI[$SpecTag].info.Title
+    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI[$DefinitionTag].info.Title
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No title supplied for $($Type) page"
     }
@@ -1617,7 +1617,7 @@ function Enable-PodeOAViewer {
             Title    = $Title
             OpenApi  = $OpenApiUrl
             DarkMode = $DarkMode
-            SpecTag  = $SpecTag
+            DefinitionTag  = $DefinitionTag
         }
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
@@ -1625,10 +1625,10 @@ function Enable-PodeOAViewer {
                 Title   = $meta.Title
                 OpenApi = $meta.OpenApi
             }
-            $specTag = $meta.SpecTag
-            foreach ($type in $PodeContext.Server.OpenAPI[$specTag].hiddenComponents.viewer.Keys) {
+            $DefinitionTag = $meta.DefinitionTag
+            foreach ($type in $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer.Keys) {
                 $Data[$type] = $true
-                $Data["$($type)_path"] = $PodeContext.Server.OpenAPI[$specTag].hiddenComponents.viewer[$type]
+                $Data["$($type)_path"] = $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer[$type]
             }
 
             $podeRoot = Get-PodeModuleMiscPath
@@ -1642,7 +1642,7 @@ function Enable-PodeOAViewer {
             OpenApi  = $OpenApiUrl
             DarkMode = $DarkMode
         }
-        $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.viewer[$($meta.Type)] = $Path
+        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer[$($meta.Type)] = $Path
         # add the viewer route
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
@@ -1673,19 +1673,12 @@ https://swagger.io/docs/specification/grouping-operations-with-tags/
 .LINK
 https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externalDocumentationObject
 
-.PARAMETER Name
-The Name of the reference.
 
 .PARAMETER url
 The link to the external documentation
 
 .PARAMETER Description
 A Description of the external documentation.
-
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 $swaggerDoc = New-PodeOAExternalDoc  -Description 'Find out more about Swagger' -Url 'http://swagger.io'
@@ -1742,8 +1735,8 @@ The link to the external documentation
 .PARAMETER Description
 A Description of the external documentation.
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -1769,12 +1762,12 @@ function Add-PodeOAExternalDoc {
         $Description,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $SpecTag) {
-        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         if ($PSCmdlet.ParameterSetName -ieq 'NewRef') {
             $param = [ordered]@{url = $Url }
             if ($Description) {
@@ -1811,8 +1804,8 @@ A Description of the tag.
 If supplied, the tag reference to an existing external documentation reference.
 The parameter is created by Add-PodeOAExternalDoc
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -1833,14 +1826,14 @@ function Add-PodeOATag {
         $ExternalDoc,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $SpecTag) {
-        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
 
-    foreach ($tag in $SpecTag) {
+    foreach ($tag in $DefinitionTag) {
         $param = [ordered]@{
             'name' = $Name
         }
@@ -1903,7 +1896,7 @@ The email address of the contact person/organization. MUST be in the format of a
 .PARAMETER ContactUrl
 The URL pointing to the contact information. MUST be in the format of a URL.
 
-.PARAMETER SpecTag
+.PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
@@ -1947,7 +1940,7 @@ function Add-PodeOAInfo {
         $ContactUrl,
 
         [string]
-        $SpecTag = 'default'
+        $DefinitionTag = 'default'
     )
 
     $Info = [ordered]@{}
@@ -1968,24 +1961,24 @@ function Add-PodeOAInfo {
 
     if ($Title) {
         $Info.title = $Title
-    } elseif (  $PodeContext.Server.OpenAPI[$SpecTag].info.title) {
-        $Info.title = $PodeContext.Server.OpenAPI[$SpecTag].info.title
+    } elseif (  $PodeContext.Server.OpenAPI[$DefinitionTag].info.title) {
+        $Info.title = $PodeContext.Server.OpenAPI[$DefinitionTag].info.title
     } else {
         throw 'The OpenAPI property info.title is required. Use -Title'
     }
 
     if ($Version) {
         $Info.version = $Version
-    } elseif ( $PodeContext.Server.OpenAPI[$SpecTag].info.version) {
-        $Info.version = $PodeContext.Server.OpenAPI[$SpecTag].info.version
+    } elseif ( $PodeContext.Server.OpenAPI[$DefinitionTag].info.version) {
+        $Info.version = $PodeContext.Server.OpenAPI[$DefinitionTag].info.version
     } else {
         $Info.version = '1.0.0'
     }
 
     if ($Description ) {
         $Info.description = $Description
-    } elseif ( $PodeContext.Server.OpenAPI[$SpecTag].info.description) {
-        $Info.description = $PodeContext.Server.OpenAPI[$SpecTag].info.description
+    } elseif ( $PodeContext.Server.OpenAPI[$DefinitionTag].info.description) {
+        $Info.description = $PodeContext.Server.OpenAPI[$DefinitionTag].info.description
     }
 
     if ($TermsOfService) {
@@ -2007,7 +2000,7 @@ function Add-PodeOAInfo {
             $Info['contact'].url = $ContactUrl
         }
     }
-    $PodeContext.Server.OpenAPI[$SpecTag].info = $Info
+    $PodeContext.Server.OpenAPI[$DefinitionTag].info = $Info
 
 }
 
@@ -2042,8 +2035,8 @@ To represent examples of media types that cannot naturally represented in JSON o
 A URL that points to the literal example. This provides the capability to reference examples that cannot easily be included in JSON or YAML documents.
 The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -2095,16 +2088,16 @@ function New-PodeOAExample {
         $Reference,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
     begin {
 
-        if (Test-PodeIsEmpty -Value $SpecTag) {
-            $SpecTag = $PodeContext.Server.OpenApiSpecTag
+        if (Test-PodeIsEmpty -Value $DefinitionTag) {
+            $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
         }
 
         if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
-            if ( !(Test-PodeOAComponentExample -SpecTag $SpecTag -Name $Reference)) {
+            if ( !(Test-PodeOAComponentExample -DefinitionTag $DefinitionTag -Name $Reference)) {
                 throw "The OpenApi component example doesn't exist: $Reference"
             }
             $Name = $Reference
@@ -2293,7 +2286,7 @@ Defines the schema of the request body. Can be set using New-PodeOARequestBody.
 .PARAMETER Response
 Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
 
-.PARAMETER SpecTag
+.PARAMETER DefinitionTag
 A array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
@@ -2357,17 +2350,17 @@ function Add-PodeOACallBack {
         $PassThru,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $SpecTag) {
-        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
 
     foreach ($r in @($Route)) {
-        foreach ($tag in $SpecTag) {
+        foreach ($tag in $DefinitionTag) {
             if ($Reference) {
-                if (!(Test-PodeOAComponentCallBack -SpecTag $tag -Name $Reference )) {
+                if (!(Test-PodeOAComponentCallBack -DefinitionTag $tag -Name $Reference )) {
                     throw "The OpenApi component CallBack  doesn't exist: $($Reference )"
                 }
                 if (!$Name) {
@@ -2383,7 +2376,7 @@ function Add-PodeOACallBack {
                 if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
                     $r.OpenApi.CallBacks[$tag] = [ordered]@{}
                 }
-                $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -SpecTag $tag
+                $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
             }
         }
     }
@@ -2425,8 +2418,8 @@ A Reference Name of an existing component response to use.
 .PARAMETER Default
 If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -2497,12 +2490,12 @@ function New-PodeOAResponse {
         $Links,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
     begin {
 
-        if (Test-PodeIsEmpty -Value $SpecTag) {
-            $SpecTag = $PodeContext.Server.OpenApiSpecTag
+        if (Test-PodeIsEmpty -Value $DefinitionTag) {
+            $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
         }
 
         # override status code with default
@@ -2514,16 +2507,16 @@ function New-PodeOAResponse {
         $response = @{}
     }
     process {
-        foreach ($tag in $SpecTag) {
+        foreach ($tag in $DefinitionTag) {
             if (! $response.$tag) {
                 $response.$tag = [ordered] @{}
             }
-            $response[$tag][$code] = New-PodeOResponseInternal -SpecTag $tag -Params $PSBoundParameters
+            $response[$tag][$code] = New-PodeOResponseInternal -DefinitionTag $tag -Params $PSBoundParameters
         }
     }
     end {
         if ($ResponseList) {
-            foreach ($tag in $SpecTag) {
+            foreach ($tag in $DefinitionTag) {
                 if (! $ResponseList.ContainsKey( $tag) ) {
                     $ResponseList[$tag] = [ordered] @{}
                 }
@@ -2655,8 +2648,8 @@ function New-PodeOAContentMediaType {
 
     )
 
-    if (Test-PodeIsEmpty -Value $SpecTag) {
-        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
     $props = [ordered]@{}
     foreach ($media in $ContentMediaType) {
@@ -2747,8 +2740,8 @@ function New-PodeOAContentMediaType {
 .PARAMETER RequestBody
     A string representing the request body to use as a request body when calling the target.
 
-.PARAMETER SpecTag
-    A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+    An Array of string representing the unique tag for the API specification.
     This tag helps in distinguishing between different versions or types of API specifications within the application.
     Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -2806,16 +2799,16 @@ function New-PodeOAResponseLink {
         $Reference,
 
         [string[]]
-        $SpecTag
+        $DefinitionTag
 
     )
     begin {
 
-        if (Test-PodeIsEmpty -Value $SpecTag) {
-            $SpecTag = $PodeContext.Server.OpenApiSpecTag
+        if (Test-PodeIsEmpty -Value $DefinitionTag) {
+            $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
         }
         if ($Reference) {
-            if (!(Test-PodeOAComponentLink -SpecTag $SpecTag -Name $Reference )) {
+            if (!(Test-PodeOAComponentLink -DefinitionTag $DefinitionTag -Name $Reference )) {
                 throw "The OpenApi component Link  doesn't exist: $Reference"
             }
             if (!$Name) {
@@ -2874,8 +2867,8 @@ A list of external endpoint. created with New-PodeOAServerEndpoint
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
@@ -2929,11 +2922,11 @@ function Add-PodeOAExternalRoute {
 
         [Parameter( ParameterSetName = 'BuiltIn')]
         [string[]]
-        $SpecTag
+        $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $SpecTag) {
-        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -2955,15 +2948,15 @@ function Add-PodeOAExternalRoute {
                     callbacks      = [ordered]@{}
                     Authentication = @()
                     Servers        = $Servers
-                    SpecTag        = $SpecTag
+                    DefinitionTag        = $DefinitionTag
                 }
             }
-            foreach ($tag in $SpecTag) {
+            foreach ($tag in $DefinitionTag) {
                 #add the default OpenApi responses
                 if ( $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses) {
                     $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses.Clone()
                 }
-                if (! (Test-PodeOAComponentExternalPath -SpecTag $tag -Name $Path)) {
+                if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
                     $PodeContext.Server.OpenAPI[$tag].hiddenComponents.externalPath[$Path] = @{}
                 }
 
@@ -3055,17 +3048,17 @@ function New-PodeOAServerEndpoint {
 
 <#
     [string[]]
-        $SpecTag
+        $DefinitionTag
 
     )
 
-    if (($null -eq $PodeContext.Server.OpenApiSpecTag -or $PodeContext.Server.OpenApiSpecTag.Count -eq 0) -and
-    ($null -eq $SpecTag -or $SpecTag.Count -eq 0)
+    if (($null -eq $PodeContext.Server.OpenApiDefinitionTag -or $PodeContext.Server.OpenApiDefinitionTag.Count -eq 0) -and
+    ($null -eq $DefinitionTag -or $DefinitionTag.Count -eq 0)
     ) {
         throw 'New-PodeOARequestBody undefined Spec Tag'
     } else {
-        if ($null -eq $SpecTag -or $SpecTag.Count -eq 0) {
-            $specTag = $PodeContext.Server.OpenApiSpecTag
+        if ($null -eq $DefinitionTag -or $DefinitionTag.Count -eq 0) {
+            $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
         }
     }
 #>
