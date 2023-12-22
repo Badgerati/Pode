@@ -217,7 +217,7 @@ function Restart-PodeInternalServer {
         }
 
         # clear openapi
-        $PodeContext.Server.OpenAPI = Get-PodeOABaseObject
+        $PodeContext.Server.OpenAPI = @{ 'default' = Get-PodeOABaseObject }
 
         # clear the sockets
         $PodeContext.Server.Signals.Enabled = $false

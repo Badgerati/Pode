@@ -146,10 +146,12 @@ function Enable-PodeOpenApi {
 
     )
 
-    if ($PSCmdlet.ParameterSetName -eq 'Deprecated') {
+    if ($Description -or $Version -or $Title) {
         Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
-
+    if ( $SpecTag -ine 'default') {
+        $PodeContext.Server.OpenAPI[$specTag] = Get-PodeOABaseObject
+    }
     $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
 
 
@@ -326,22 +328,23 @@ function Add-PodeOAServerEndpoint {
         [System.Collections.Specialized.OrderedDictionary]
         $Variables,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag = @('default')
     )
+    foreach ($tag in $SpecTag) {
+        if (! $PodeContext.Server.OpenAPI[$tag].servers) {
+            $PodeContext.Server.OpenAPI[$tag].servers = @()
+        }
+        $lUrl = [ordered]@{url = $Url }
+        if ($Description) {
+            $lUrl.description = $Description
+        }
 
-    if (! $PodeContext.Server.OpenAPI[$SpecTag].servers) {
-        $PodeContext.Server.OpenAPI[$SpecTag].servers = @()
+        if ($Variables) {
+            $lUrl.variables = $Variables
+        }
+        $PodeContext.Server.OpenAPI[$tag].servers += $lUrl
     }
-    $lUrl = [ordered]@{url = $Url }
-    if ($Description) {
-        $lUrl.description = $Description
-    }
-
-    if ($Variables) {
-        $lUrl.variables = $Variables
-    }
-    $PodeContext.Server.OpenAPI[$SpecTag].servers += $lUrl
 }
 
 
@@ -488,6 +491,12 @@ If supplied, the response will be used as a default response - this overrides th
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
+.PARAMETER SpecTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+
 .EXAMPLE
 Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
@@ -544,9 +553,15 @@ function Add-PodeOAResponse {
         $Links,
 
         [switch]
-        $PassThru
+        $PassThru,
+
+        [string[]]
+        $SpecTag
     )
 
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
     # override status code with default
     if ($Default) {
         $code = 'default'
@@ -554,10 +569,14 @@ function Add-PodeOAResponse {
         $code = "$($StatusCode)"
     }
 
-    $response = New-PodeOResponseInternal -Params $PSBoundParameters
     # add the respones to the routes
     foreach ($r in @($Route)) {
-        $r.OpenApi.Responses[$code] = $response
+        foreach ($tag in $SpecTag) {
+            if (! $r.OpenApi.Responses.$tag) {
+                $r.OpenApi.Responses.$tag = @{}
+            }
+            $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -SpecTag $tag -Params $PSBoundParameters
+        }
     }
 
     if ($PassThru) {
@@ -742,6 +761,11 @@ This parameter give you control over the serialization of parts of multipart req
 This attribute is only applicable to multipart and application/x-www-form-urlencoded request bodies.
 Use New-PodeOAEncodingObject to define the encode
 
+.PARAMETER SpecTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 New-PodeOARequestBody -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
@@ -793,68 +817,81 @@ function New-PodeOARequestBody {
         $Examples,
 
         [hashtable[]]
-        $Encoding
+        $Encoding,
+
+        [string[]]
+        $SpecTag
 
     )
+
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
+
     if ($Example -and $Examples) {
         throw 'Parameter -Examples and -Example are mutually exclusive'
     }
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'builtin' {
-            $param = @{content = ConvertTo-PodeOAObjectSchema -Content $Content -Properties:$Properties }
+    $result = @{}
+    foreach ($tag in $SpecTag) {
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'builtin' {
+                $param = @{content = ConvertTo-PodeOAObjectSchema -SpecTag $tag -Content $Content -Properties:$Properties }
 
-            if ($Required.IsPresent) {
-                $param['required'] = $Required.IsPresent
-            }
-
-            if ( $Description) {
-                $param['description'] = $Description
-            }
-            if ($Examples) {
-                if ( $Examples.'*/*') {
-                    $Examples['"*/*"'] = $Examples['*/*']
-                    $Examples.Remove('*/*')
+                if ($Required.IsPresent) {
+                    $param['required'] = $Required.IsPresent
                 }
-                foreach ($k in  $Examples.Keys ) {
-                    if (!$param.content.ContainsKey($k)) {
-                        $param.content[$k] = @{}
+
+                if ( $Description) {
+                    $param['description'] = $Description
+                }
+                if ($Examples) {
+                    if ( $Examples.'*/*') {
+                        $Examples['"*/*"'] = $Examples['*/*']
+                        $Examples.Remove('*/*')
                     }
-                    $param.content.$k.examples = $Examples.$k
-                }
-            }
-        }
-
-        'reference' {
-            if (!(Test-PodeOAComponentRequestBody -Name $Reference)) {
-                throw "The OpenApi component request body doesn't exist: $Reference"
-            }
-
-            $param = @{
-                '$ref' = "#/components/requestBodies/$Reference"
-            }
-        }
-    }
-    if ($Encoding) {
-        if (([string]$Content.keys[0]) -match '(?i)^(multipart.*|application\/x-www-form-urlencoded)$' ) {
-            $r = @{}
-            foreach ( $e in $Encoding) {
-                $key = [string]$e.Keys
-                $elems = @{}
-                foreach ($v in $e[$key].Keys) {
-                    if ($v -ieq 'headers') {
-                        $elems.headers = ConvertTo-PodeOAHeaderProperties -Headers $e[$key].headers
-                    } else {
-                        $elems.$v = $e[$key].$v
+                    foreach ($k in  $Examples.Keys ) {
+                        if (!$param.content.ContainsKey($k)) {
+                            $param.content[$k] = @{}
+                        }
+                        $param.content.$k.examples = $Examples.$k
                     }
                 }
-                $r.$key = $elems
             }
-            $param.Content.$($Content.keys[0]).encoding = $r
-        } else {
-            throw 'The encoding attribute is only applicable to multipart and application/x-www-form-urlencoded request bodies.'
+
+            'reference' {
+                if (!(Test-PodeOAComponentRequestBody -SpecTag $tag -Name $Reference)) {
+                    throw "The OpenApi component request body doesn't exist: $Reference"
+                }
+
+                $param = @{
+                    '$ref' = "#/components/requestBodies/$Reference"
+                }
+            }
         }
+        if ($Encoding) {
+            if (([string]$Content.keys[0]) -match '(?i)^(multipart.*|application\/x-www-form-urlencoded)$' ) {
+                $r = @{}
+                foreach ( $e in $Encoding) {
+                    $key = [string]$e.Keys
+                    $elems = @{}
+                    foreach ($v in $e[$key].Keys) {
+                        if ($v -ieq 'headers') {
+                            $elems.headers = ConvertTo-PodeOAHeaderProperties -Headers $e[$key].headers
+                        } else {
+                            $elems.$v = $e[$key].$v
+                        }
+                    }
+                    $r.$key = $elems
+                }
+                $param.Content.$($Content.keys[0]).encoding = $r
+            } else {
+                throw 'The encoding attribute is only applicable to multipart and application/x-www-form-urlencoded request bodies.'
+            }
+        }
+        $result[$tag] = $param
     }
-    return $param
+
+    return $result
 }
 
 <#
@@ -1098,15 +1135,18 @@ function ConvertTo-PodeOAParameter {
         [Switch]
         $Deprecated,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
 
     if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema' -or $PSCmdlet.ParameterSetName -ieq 'Schema') {
         if (Test-PodeIsEmpty $Schema) {
             return $null
         }
-        if (!(Test-PodeOAComponentSchema -Name $Schema )) {
+        if (!(Test-PodeOAComponentSchema -SpecTag $SpecTag -Name $Schema )) {
             throw "The OpenApi component request parameter doesn't exist: $($Schema )"
         }
         if (!$Name ) {
@@ -1197,15 +1237,17 @@ function ConvertTo-PodeOAParameter {
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
-        if (!(Test-PodeOAComponentParameter -Name $ComponentParameter)) {
+        if (!(Test-PodeOAComponentParameter  -SpecTag $SpecTag  -Name $ComponentParameter)) {
             throw "The OpenApi component request parameter doesn't exist: $ComponentParameter"
         }
 
         $prop = [ordered]@{
             '$ref' = "#/components/parameters/$ComponentParameter"
         }
-        if ($PodeContext.Server.OpenAPI[$SpecTag].components.parameters.$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Append
+        foreach ($tag in $SpecTag) {
+            if ($PodeContext.Server.OpenAPI[$tag].components.parameters.$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Append
+            }
         }
     } else {
 
@@ -1408,7 +1450,7 @@ function Set-PodeOARouteInfo {
         [string]
         $Description,
 
-        [string]
+        [System.Collections.Specialized.OrderedDictionary]
         $ExternalDoc,
 
         [string]
@@ -1423,11 +1465,17 @@ function Set-PodeOARouteInfo {
         [switch]
         $PassThru,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
 
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
     foreach ($r in @($Route)) {
+
+        $r.OpenApi.SpecTag = $SpecTag
+
         if ($Summary) {
             $r.OpenApi.Summary = $Summary
         }
@@ -1442,10 +1490,7 @@ function Set-PodeOARouteInfo {
         }
 
         if ($ExternalDocs) {
-            if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
-                throw "The ExternalDoc doesn't exist: $ExternalDoc"
-            }
-            $r.OpenApi.externalDocs = $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.externalDocs[$ExternalDoc]
+            $r.OpenApi.ExternalDocs = $ExternalDoc
         }
 
         $r.OpenApi.Swagger = $true
@@ -1643,38 +1688,31 @@ This tag helps in distinguishing between different versions or types of API spec
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-Add-PodeOAExternalDoc -Name 'SwaggerDocs'
+$swaggerDoc = New-PodeOAExternalDoc  -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+
+Add-PodeRoute -PassThru | Set-PodeOARouteInfo -Summary 'A quick summary' -Tags 'Admin' -ExternalDoc $swaggerDoc
 
 .EXAMPLE
-New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc 'SwaggerDocs'
+$swaggerDoc = New-PodeOAExternalDoc    -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc $swaggerDoc
 #>
 function New-PodeOAExternalDoc {
     param(
-        [Parameter(Mandatory = $true)]
-        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
-        [string]
-        $Name,
 
         [Parameter(Mandatory = $true)]
         [ValidateScript({ $_ -imatch '^https?://.+' })]
         $Url,
 
         [string]
-        $Description,
-
-        [string]
-        $SpecTag = 'default'
+        $Description
     )
-
     $param = [ordered]@{}
 
     if ($Description) {
         $param.description = $Description
     }
     $param['url'] = $Url
-    $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.externalDocs[$Name] = $param
+    return $param
 }
 
 
@@ -1713,15 +1751,14 @@ Use this tag to reference the specific API documentation, schema, or version tha
 Add-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
 .EXAMPLE
-New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-Add-PodeOAExternalDoc -Name 'SwaggerDocs'
+New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'|Add-PodeOAExternalDoc
 #>
 function Add-PodeOAExternalDoc {
-    [CmdletBinding(DefaultParameterSetName = 'Reference')]
+    [CmdletBinding(DefaultParameterSetName = 'Pipe')]
     param(
-        [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
-        [string]
-        $Reference,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Pipe')]
+        [System.Collections.Specialized.OrderedDictionary]
+        $ExternalDoc,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'NewRef')]
         [ValidateScript({ $_ -imatch '^https?://.+' })]
@@ -1731,20 +1768,22 @@ function Add-PodeOAExternalDoc {
         [string]
         $Description,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
-    if ($PSCmdlet.ParameterSetName -ieq 'NewRef') {
-        $param = [ordered]@{url = $Url }
-        if ($Description) {
-            $param.description = $Description
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
+    foreach ($tag in $SpecTag) {
+        if ($PSCmdlet.ParameterSetName -ieq 'NewRef') {
+            $param = [ordered]@{url = $Url }
+            if ($Description) {
+                $param.description = $Description
+            }
+            $PodeContext.Server.OpenAPI[$tag].externalDocs = $param
+        } else {
+            $PodeContext.Server.OpenAPI[$tag].externalDocs = $ExternalDoc
         }
-        $PodeContext.Server.OpenAPI[$SpecTag].externalDocs = $param
-    } else {
-        if ( !(Test-PodeOAExternalDoc -Name $Reference)) {
-            throw "The ExternalDoc doesn't exist: $Reference"
-        }
-        $PodeContext.Server.OpenAPI[$SpecTag].externalDocs = $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.externalDocs[$Reference]
     }
 }
 
@@ -1790,30 +1829,32 @@ function Add-PodeOATag {
         [string]
         $Description,
 
-        [string]
+        [System.Collections.Specialized.OrderedDictionary]
         $ExternalDoc,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
 
-    $param = [ordered]@{
-        'name' = $Name
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
     }
 
-    if ($Description) {
-        $param.description = $Description
-    }
-
-    if ($ExternalDoc) {
-        if ( !(Test-PodeOAExternalDoc -Name $ExternalDoc)) {
-            throw "The ExternalDoc doesn't exist: $ExternalDoc"
+    foreach ($tag in $SpecTag) {
+        $param = [ordered]@{
+            'name' = $Name
         }
-        $param.externalDocs = $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.externalDocs[$ExternalDoc]
+
+        if ($Description) {
+            $param.description = $Description
+        }
+
+        if ($ExternalDoc) {
+            $param.externalDocs = $ExternalDoc
+        }
+
+        $PodeContext.Server.OpenAPI[$tag].tags[$Name] = $param
     }
-
-    $PodeContext.Server.OpenAPI[$SpecTag].tags[$Name] = $param
-
 }
 
 
@@ -1861,11 +1902,6 @@ The email address of the contact person/organization. MUST be in the format of a
 
 .PARAMETER ContactUrl
 The URL pointing to the contact information. MUST be in the format of a URL.
-
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .PARAMETER SpecTag
 A string representing the unique tag for the API specification.
@@ -2006,6 +2042,10 @@ To represent examples of media types that cannot naturally represented in JSON o
 A URL that points to the literal example. This provides the capability to reference examples that cannot easily be included in JSON or YAML documents.
 The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
 
+.PARAMETER SpecTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
@@ -2052,11 +2092,19 @@ function New-PodeOAExample {
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
         [string]
-        $Reference
+        $Reference,
+
+        [string[]]
+        $SpecTag
     )
     begin {
+
+        if (Test-PodeIsEmpty -Value $SpecTag) {
+            $SpecTag = $PodeContext.Server.OpenApiSpecTag
+        }
+
         if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
-            if ( !(Test-PodeOAComponentExample -Name $Reference)) {
+            if ( !(Test-PodeOAComponentExample -SpecTag $SpecTag -Name $Reference)) {
                 throw "The OpenApi component example doesn't exist: $Reference"
             }
             $Name = $Reference
@@ -2219,31 +2267,36 @@ function New-PodeOAEncodingObject {
 
 <#
 .SYNOPSIS
-    Adds OpenAPI callback configurations to routes in a Pode web application.
+Adds OpenAPI callback configurations to routes in a Pode web application.
 
 .DESCRIPTION
-    The Add-PodeOACallBack function is used for defining OpenAPI callback configurations for routes in a Pode server.
-    It enables setting up API specifications including detailed parameters, request body schemas, and response structures for various HTTP methods.
+The Add-PodeOACallBack function is used for defining OpenAPI callback configurations for routes in a Pode server.
+It enables setting up API specifications including detailed parameters, request body schemas, and response structures for various HTTP methods.
 
 .PARAMETER Path
-    Specifies the callback path, usually a relative URL.
-    The key that identifies the Path Item Object is a runtime expression evaluated in the context of a runtime HTTP request/response to identify the URL for the callback request.
-    A simple example is `$request.body#/url`.
-    The runtime expression allows complete access to the HTTP message, including any part of a body that a JSON Pointer (RFC6901) can reference.
-    More information on JSON Pointer can be found at [RFC6901](https://datatracker.ietf.org/doc/html/rfc6901).
+Specifies the callback path, usually a relative URL.
+The key that identifies the Path Item Object is a runtime expression evaluated in the context of a runtime HTTP request/response to identify the URL for the callback request.
+A simple example is `$request.body#/url`.
+The runtime expression allows complete access to the HTTP message, including any part of a body that a JSON Pointer (RFC6901) can reference.
+More information on JSON Pointer can be found at [RFC6901](https://datatracker.ietf.org/doc/html/rfc6901).
 
 .PARAMETER Name
-    Alias for 'Name'. A unique identifier for the callback.
-    It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+Alias for 'Name'. A unique identifier for the callback.
+It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
 
 .PARAMETER Method
-    Defines the HTTP method for the callback (e.g., GET, POST, PUT). Supports standard HTTP methods and a wildcard (*) for all methods.
+Defines the HTTP method for the callback (e.g., GET, POST, PUT). Supports standard HTTP methods and a wildcard (*) for all methods.
 
 .PARAMETER RequestBody
-    Defines the schema of the request body. Can be set using New-PodeOARequestBody.
+Defines the schema of the request body. Can be set using New-PodeOARequestBody.
 
 .PARAMETER Response
-    Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
+Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
+
+.PARAMETER SpecTag
+A array of string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
     Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
@@ -2297,25 +2350,41 @@ function Add-PodeOACallBack {
         $RequestBody,
 
         [Parameter(ParameterSetName = 'inbuilt')]
-        [System.Collections.Specialized.OrderedDictionary]
+        [hashtable]
         $Responses,
 
         [switch]
-        $PassThru
+        $PassThru,
+
+        [string[]]
+        $SpecTag
     )
+
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
+
     foreach ($r in @($Route)) {
-        if ($Reference) {
-            if (!(Test-PodeOAComponentCallBack -Name $Reference )) {
-                throw "The OpenApi component CallBack  doesn't exist: $($Reference )"
+        foreach ($tag in $SpecTag) {
+            if ($Reference) {
+                if (!(Test-PodeOAComponentCallBack -SpecTag $tag -Name $Reference )) {
+                    throw "The OpenApi component CallBack  doesn't exist: $($Reference )"
+                }
+                if (!$Name) {
+                    $Name = $Reference
+                }
+                if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                    $r.OpenApi.CallBacks[$tag] = [ordered]@{}
+                }
+                $r.OpenApi.CallBacks[$tag].$Name = @{
+                    '$ref' = "#/components/callbacks/$Reference"
+                }
+            } else {
+                if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                    $r.OpenApi.CallBacks[$tag] = [ordered]@{}
+                }
+                $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -SpecTag $tag
             }
-            if (!$Name) {
-                $Name = $Reference
-            }
-            $r.OpenApi.callbacks.$Name = @{
-                '$ref' = "#/components/callbacks/$Reference"
-            }
-        } else {
-            $r.OpenApi.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
         }
     }
 
@@ -2356,6 +2425,11 @@ A Reference Name of an existing component response to use.
 .PARAMETER Default
 If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
 
+.PARAMETER SpecTag
+A string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 New-PodeOAResponse -StatusCode 200 -Content (  New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content(New-PodeOAIntProperty -Name 'userId' -Object) )
 
@@ -2381,7 +2455,7 @@ function New-PodeOAResponse {
     [CmdletBinding(DefaultParameterSetName = 'Schema')]
     param(
         [Parameter(ValueFromPipeline = $true , DontShow = $true )]
-        [System.Collections.Specialized.OrderedDictionary ]
+        [hashtable]
         $ResponseList,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
@@ -2420,29 +2494,44 @@ function New-PodeOAResponse {
         [Parameter(ParameterSetName = 'Schema')]
         [Parameter(ParameterSetName = 'SchemaDefault')]
         [System.Collections.Specialized.OrderedDictionary ]
-        $Links
+        $Links,
+
+        [string[]]
+        $SpecTag
     )
     begin {
+
+        if (Test-PodeIsEmpty -Value $SpecTag) {
+            $SpecTag = $PodeContext.Server.OpenApiSpecTag
+        }
+
         # override status code with default
         if ($Default) {
             $code = 'default'
         } else {
             $code = "$($StatusCode)"
         }
-
-        $response = [ordered]@{
-            $code = New-PodeOResponseInternal -Params $PSBoundParameters
-        }
-
+        $response = @{}
     }
     process {
+        foreach ($tag in $SpecTag) {
+            if (! $response.$tag) {
+                $response.$tag = [ordered] @{}
+            }
+            $response[$tag][$code] = New-PodeOResponseInternal -SpecTag $tag -Params $PSBoundParameters
+        }
     }
     end {
         if ($ResponseList) {
-            $response.GetEnumerator() | ForEach-Object { $ResponseList[$_.Key] = $_.Value }
+            foreach ($tag in $SpecTag) {
+                if (! $ResponseList.ContainsKey( $tag) ) {
+                    $ResponseList[$tag] = [ordered] @{}
+                }
+                $response[$tag].GetEnumerator() | ForEach-Object { $ResponseList[$tag][$_.Key] = $_.Value }
+            }
             return $ResponseList
         } else {
-            return [System.Collections.Specialized.OrderedDictionary] $response
+            return  $response
         }
     }
 }
@@ -2483,11 +2572,6 @@ function New-PodeOAResponse {
 
 .PARAMETER PartContentMediaType
     Define the content encoding for multipart upload
-
-.PARAMETER SpecTag
-A string representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
     Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -ScriptBlock {
@@ -2567,44 +2651,31 @@ function New-PodeOAContentMediaType {
 
         [Parameter(  ParameterSetName = 'Upload')]
         [string]
-        $PartContentMediaType,
-
-        [string]
-        $SpecTag = 'default'
+        $PartContentMediaType
 
     )
 
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
     $props = [ordered]@{}
     foreach ($media in $ContentMediaType) {
         if ($media -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
             throw "Invalid content-type found for schema: $($media)"
         }
-
-        if ( $Upload.IsPresent) {
+        if ($Upload.IsPresent) {
             if ( $media -ieq 'multipart/form-data' -and $Content) {
-                if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_1 -and $PartContentMediaType) {
-                    foreach ($key in $Content.Properties ) {
-                        if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
-                            $key.ContentMediaType = $PartContentMediaType
-                            $key.remove('format')
-                            break
-                        }
+                $Content = @{'__upload' = @{
+                        'content'              = $Content
+                        'partContentMediaType' = $PartContentMediaType
                     }
                 }
             } else {
-                if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.v3_0) {
-                    $Content = [ordered]@{
-                        'type'   = 'string'
-                        'format' = $ContentEncoding
-                    }
-                } else {
-                    if ($ContentEncoding -ieq 'Base64') {
-                        $Content = [ordered]@{
-                            'type'            = 'string'
-                            'contentEncoding' = $ContentEncoding
-                        }
+                $Content = @{'__upload' = @{
+                        'contentEncoding' = $ContentEncoding
                     }
                 }
+
             }
         } else {
             if ($null -eq $Content ) {
@@ -2615,6 +2686,7 @@ function New-PodeOAContentMediaType {
             $props[$media] = @{
                 __array   = $true
                 __content = $Content
+                __upload  = $Upload
             }
             if ($MinItems) {
                 $props[$media].__minItems = $MinItems
@@ -2675,6 +2747,12 @@ function New-PodeOAContentMediaType {
 .PARAMETER RequestBody
     A string representing the request body to use as a request body when calling the target.
 
+.PARAMETER SpecTag
+    A string representing the unique tag for the API specification.
+    This tag helps in distinguishing between different versions or types of API specifications within the application.
+    Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+
 .EXAMPLE
     $links = New-PodeOAResponseLink -LinkList $links -Name 'address' -OperationId 'getUserByName' -Parameters @{'username' = '$request.path.username'}
     Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User'} -Links $links
@@ -2725,13 +2803,19 @@ function New-PodeOAResponseLink {
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [string]
-        $Reference
+        $Reference,
+
+        [string[]]
+        $SpecTag
 
     )
     begin {
 
+        if (Test-PodeIsEmpty -Value $SpecTag) {
+            $SpecTag = $PodeContext.Server.OpenApiSpecTag
+        }
         if ($Reference) {
-            if (!(Test-PodeOAComponentLink -Name $Reference )) {
+            if (!(Test-PodeOAComponentLink -SpecTag $SpecTag -Name $Reference )) {
                 throw "The OpenApi component Link  doesn't exist: $Reference"
             }
             if (!$Name) {
@@ -2843,17 +2927,18 @@ function Add-PodeOAExternalRoute {
         [switch]
         $PassThru,
 
-        [string]
-        $SpecTag = 'default'
+        [Parameter( ParameterSetName = 'BuiltIn')]
+        [string[]]
+        $SpecTag
     )
+
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'builtin' {
 
-            #add the default OpenApi responses
-            if ( $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.defaultResponses) {
-                $DefaultResponse = $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.defaultResponses.Clone()
-            }
             # ensure the route has appropriate slashes
             $Path = Update-PodeRouteSlashes -Path $Path
             $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
@@ -2864,19 +2949,27 @@ function Add-PodeOAExternalRoute {
                 Local   = $false
                 OpenApi = @{
                     Path           = $OpenApiPath
-                    Responses      = $DefaultResponse
+                    Responses      = $null
                     Parameters     = $null
                     RequestBody    = $null
                     callbacks      = [ordered]@{}
                     Authentication = @()
                     Servers        = $Servers
+                    SpecTag        = $SpecTag
                 }
             }
-            if (! (Test-PodeOAComponentExternalPath -Name $Path)) {
-                $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.externalPath[$Path] = @{}
+            foreach ($tag in $SpecTag) {
+                #add the default OpenApi responses
+                if ( $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses) {
+                    $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses.Clone()
+                }
+                if (! (Test-PodeOAComponentExternalPath -SpecTag $tag -Name $Path)) {
+                    $PodeContext.Server.OpenAPI[$tag].hiddenComponents.externalPath[$Path] = @{}
+                }
+
+                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
             }
 
-            $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
             if ($PassThru) {
                 return $extRoute
             }
@@ -2955,4 +3048,25 @@ function New-PodeOAServerEndpoint {
         }
     }
 }
+
+
+
+
+
+<#
+    [string[]]
+        $SpecTag
+
+    )
+
+    if (($null -eq $PodeContext.Server.OpenApiSpecTag -or $PodeContext.Server.OpenApiSpecTag.Count -eq 0) -and
+    ($null -eq $SpecTag -or $SpecTag.Count -eq 0)
+    ) {
+        throw 'New-PodeOARequestBody undefined Spec Tag'
+    } else {
+        if ($null -eq $SpecTag -or $SpecTag.Count -eq 0) {
+            $specTag = $PodeContext.Server.OpenApiSpecTag
+        }
+    }
+#>
 

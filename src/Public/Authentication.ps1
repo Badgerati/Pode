@@ -421,7 +421,7 @@ function New-PodeAuthScheme {
 
             if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
                 throw 'OAuth2 requires a Client Secret when not using PKCE'
-            } 
+            }
             return @{
                 Name          = 'OAuth2'
                 Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
@@ -1502,6 +1502,11 @@ The Name of the Authentication method to use.
 .PARAMETER Route
 A Route path for which Routes this Middleware should only be invoked against.
 
+.PARAMETER SpecTag
+An array of string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeAuthMiddleware -Name 'GlobalAuth' -Authentication AuthName
 
@@ -1522,7 +1527,10 @@ function Add-PodeAuthMiddleware {
 
         [Parameter()]
         [string]
-        $Route
+        $Route,
+
+        [string[]]
+        $SpecTag = @('default')
     )
 
     if (!(Test-PodeAuthExists -Name $Authentication)) {
@@ -1533,7 +1541,7 @@ function Add-PodeAuthMiddleware {
         New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
         Add-PodeMiddleware -Name $Name -Route $Route
 
-    Set-PodeOAGlobalAuth -Name $Authentication -Route $Route
+    Set-PodeOAGlobalAuth -SpecTag $SpecTag -Name $Authentication -Route $Route
 }
 
 <#

@@ -80,10 +80,12 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses
-
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -SpecTag 'v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -SpecTag 'v3.1'
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-    $swaggerDocs | Add-PodeOAExternalDoc
+    $swaggerDocs | Add-PodeOAExternalDoc   -SpecTag 'v3', 'v3.1'
+
+
 
     $InfoDescription = @'
 This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about Swagger at [http://swagger.io](http://swagger.io).
@@ -98,18 +100,31 @@ Some useful links:
 
 
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
-        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io'
-    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
+        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -SpecTag 'v3'
 
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
-    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
-    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
-    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode
-    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode
-    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
+    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.1' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
+        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -SpecTag 'v3.1'
 
-    Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
+    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint' -SpecTag 'v3', 'v3.1'
 
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -SpecTag 'v3'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -SpecTag 'v3'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -SpecTag 'v3'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -SpecTag 'v3'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -SpecTag 'v3'
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -SpecTag 'v3'
+
+    Enable-PodeOAViewer -Type Bookmarks -Path '/docs' -SpecTag 'v3'
+
+
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/v3.1/swagger' -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/v3.1/redoc' -DarkMode -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/v3.1/rapidoc' -DarkMode -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/v3.1/stoplight' -DarkMode -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/v3.1/explorer' -DarkMode -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/v3.1/rapipdf' -DarkMode -SpecTag 'v3.1'
+
+    Enable-PodeOAViewer -Type Bookmarks -Path '/docs/v3.1' -SpecTag 'v3.1'
 
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
@@ -180,86 +195,87 @@ Some useful links:
     Merge-PodeAuth -Name 'merged_auth_All' -Authentication   'Basic', 'api_key'  -Valid All -ScriptBlock {}
     Merge-PodeAuth -Name 'merged_auth_nokey' -Authentication   'Basic'  -Valid One
 
-    Add-PodeOATag -Name 'user' -Description 'Operations about user'
-    Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs
-    Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs
+    Add-PodeOATag -Name 'user' -Description 'Operations about user' -SpecTag 'v3'
+    Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs -SpecTag 'v3'
+    Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs -SpecTag 'v3'
 
 
-    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -Required |
-        New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 -Required |
-        New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 -Required |
-        New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
-        New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Required -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
-        New-PodeOABoolProperty -Name 'complete' |
-        New-PodeOAObjectProperty -XmlName 'order' |
-        Add-PodeOAComponentSchema -Name 'Order'
+    Add-PodeComponentGroup -SpecTag 'v3', 'v3.1'  -Components {
+        New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -Required |
+            New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 -Required |
+            New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 -Required |
+            New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
+            New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Required -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
+            New-PodeOABoolProperty -Name 'complete' |
+            New-PodeOAObjectProperty -XmlName 'order' |
+            Add-PodeOAComponentSchema -Name 'Order'
 
-    New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
-        New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
-        New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
-        New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required |
-        New-PodeOAObjectProperty   -XmlName 'address' |
-        Add-PodeOAComponentSchema -Name 'Address'
+        New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
+            New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
+            New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
+            New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required |
+            New-PodeOAObjectProperty   -XmlName 'address' |
+            Add-PodeOAComponentSchema -Name 'Address'
 
         New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 100000 |
-        New-PodeOAStringProperty -Name 'username' -example  'fehguy' |
-        New-PodeOASchemaProperty -Name 'Address' -Reference 'Address' -Array -XmlName 'addresses' -XmlWrapped |
-        New-PodeOAObjectProperty -XmlName 'customer' |
-        Add-PodeOAComponentSchema -Name 'Customer'
+            New-PodeOAStringProperty -Name 'username' -example  'fehguy' |
+            New-PodeOASchemaProperty -Name 'Address' -Reference 'Address' -Array -XmlName 'addresses' -XmlWrapped |
+            New-PodeOAObjectProperty -XmlName 'customer' |
+            Add-PodeOAComponentSchema -Name 'Customer'
 
 
-    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
-        New-PodeOAStringProperty -Name 'name' -Example 'Dogs' |
-        New-PodeOAObjectProperty  -XmlName 'category' |
-        Add-PodeOAComponentSchema -Name 'Category'
+        New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
+            New-PodeOAStringProperty -Name 'name' -Example 'Dogs' |
+            New-PodeOAObjectProperty  -XmlName 'category' |
+            Add-PodeOAComponentSchema -Name 'Category'
 
-    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 |
-        New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
-        New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
-        New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
-        New-PodeOAStringProperty -Name 'email' -Format email -Example 'john@email.com' |
-        New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
-        New-PodeOAStringProperty -Name 'password' -Format Password -Example '12345' -Required |
-        New-PodeOAStringProperty -Name 'phone' -Example '12345' |
-        New-PodeOAIntProperty -Name 'userStatus'-Format Int32 -Description 'User Status' -Example 1 |
-        New-PodeOAObjectProperty -XmlName 'user' |
-        Add-PodeOAComponentSchema -Name 'User'
-
-
-
-    New-PodeOAIntProperty -Name 'id'-Format Int64 |
-        New-PodeOAStringProperty -Name 'name' |
-        New-PodeOAObjectProperty -XmlName 'tag' |
-        Add-PodeOAComponentSchema -Name 'Tag'
-
-    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example  10 -Required |
-        New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
-        New-PodeOASchemaProperty -Name 'category' -Reference 'Category' |
-        New-PodeOAStringProperty -Name 'photoUrls' -Array  -XmlWrapped -XmlItemName 'photoUrl' -Required |
-        New-PodeOASchemaProperty -Name 'tags' -Reference 'Tag' -Array -XmlWrapped |
-        New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold') |
-        New-PodeOAObjectProperty -XmlName 'pet' |
-        Add-PodeOAComponentSchema -Name 'Pet'
+        New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 |
+            New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
+            New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
+            New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+            New-PodeOAStringProperty -Name 'email' -Format email -Example 'john@email.com' |
+            New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+            New-PodeOAStringProperty -Name 'password' -Format Password -Example '12345' -Required |
+            New-PodeOAStringProperty -Name 'phone' -Example '12345' |
+            New-PodeOAIntProperty -Name 'userStatus'-Format Int32 -Description 'User Status' -Example 1 |
+            New-PodeOAObjectProperty -XmlName 'user' |
+            Add-PodeOAComponentSchema -Name 'User'
 
 
 
-    New-PodeOAIntProperty -Name 'code'-Format Int32 |
-        New-PodeOAStringProperty -Name 'type' |
-        New-PodeOAStringProperty -Name 'message' |
-        New-PodeOAObjectProperty  -XmlName '##default' |
-        Add-PodeOAComponentSchema -Name 'ApiResponse'
+        New-PodeOAIntProperty -Name 'id'-Format Int64 |
+            New-PodeOAStringProperty -Name 'name' |
+            New-PodeOAObjectProperty -XmlName 'tag' |
+            Add-PodeOAComponentSchema -Name 'Tag'
+
+        New-PodeOAIntProperty -Name 'id'-Format Int64 -Example  10 -Required |
+            New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
+            New-PodeOASchemaProperty -Name 'category' -Reference 'Category' |
+            New-PodeOAStringProperty -Name 'photoUrls' -Array  -XmlWrapped -XmlItemName 'photoUrl' -Required |
+            New-PodeOASchemaProperty -Name 'tags' -Reference 'Tag' -Array -XmlWrapped |
+            New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold') |
+            New-PodeOAObjectProperty -XmlName 'pet' |
+            Add-PodeOAComponentSchema -Name 'Pet'
 
 
-    Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store' -Content (
-        New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet')
 
-    Add-PodeOAComponentRequestBody -Name 'UserArray' -Description 'List of user object' -Content (
-        New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content 'User' -Array)
+        New-PodeOAIntProperty -Name 'code'-Format Int32 |
+            New-PodeOAStringProperty -Name 'type' |
+            New-PodeOAStringProperty -Name 'message' |
+            New-PodeOAObjectProperty  -XmlName '##default' |
+            Add-PodeOAComponentSchema -Name 'ApiResponse'
 
 
+        #Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store' -Content (
+        New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' | Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store'
+
+        Add-PodeOAComponentRequestBody -Name 'UserArray' -Description 'List of user object' -Content (
+            New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content 'User' -Array)
 
 
-    Add-PodeRouteGroup -Path '/api/v3'   -Routes {
+    }
+
+    Add-PodeRouteGroup -Path '/api/v3' -SpecTag 'v3', 'v3.1'  -Routes {
         <#
             PUT '/pet'
         #>
@@ -815,7 +831,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
     }
-    #  $yaml = PodeOADefinition -Format Yaml
+    $yaml = get-PodeOADefinition -Format Yaml -SpecTag  'v3'
 
 
 

@@ -80,7 +80,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses
+    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses
 
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     $swaggerDocs | Add-PodeOAExternalDoc
@@ -176,9 +176,9 @@ Some useful links:
         return @{ Message = 'Invalid details supplied' }
     }
 
-    Merge-PodeAuth -Name 'merged_auth' -Authentication   'Basic', 'api_key'  -Valid One
-    Merge-PodeAuth -Name 'merged_auth_All' -Authentication   'Basic', 'api_key'  -Valid All -ScriptBlock {}
-    Merge-PodeAuth -Name 'merged_auth_nokey' -Authentication   'Basic'  -Valid One
+    Merge-PodeAuth -Name 'merged_auth' -Authentication   'Basic', 'api_key','petstore_auth'  -Valid One
+    Merge-PodeAuth -Name 'merged_auth_All' -Authentication   'Basic', 'api_key','petstore_auth'  -Valid All -ScriptBlock {}
+    Merge-PodeAuth -Name 'merged_auth_nokey' -Authentication   'Basic','petstore_auth'  -Valid One
 
     Add-PodeOATag -Name 'user' -Description 'Operations about user'
     Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs

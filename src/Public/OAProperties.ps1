@@ -1826,9 +1826,8 @@ Used to pipeline multiple properties
 .PARAMETER Name
 The Name of the property.
 
-.PARAMETER Component
+.PARAMETER Reference
 An component schema name.
-Alias: Reference
 
 .PARAMETER Description
 A Description of the property.
@@ -1892,9 +1891,9 @@ Specifically for properties treated as arrays, it defines the XML name for each 
 Indicates whether array items should be wrapped in an XML element, similar to the 'xml.wrapped' attribute in OpenAPI.
 
 .EXAMPLE
-New-PodeOASchemaProperty -Name 'Config' -Component "MyConfigSchema"
+New-PodeOAComponentSchemaProperty -Name 'Config' -Component "MyConfigSchema"
 #>
-function New-PodeOASchemaProperty {
+function New-PodeOAComponentSchemaProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
@@ -1908,10 +1907,10 @@ function New-PodeOASchemaProperty {
         $Name,
 
         [Parameter(Mandatory = $true)]
-        [Alias('Reference')]
         [string]
-        $Component,
+        $Reference,
 
+        [Parameter(  ParameterSetName = 'Array')]
         [string]
         $Description,
 
@@ -1981,89 +1980,14 @@ function New-PodeOASchemaProperty {
 
         [Parameter(ParameterSetName = 'Array')]
         [int]
-        $MaxItems,
-
-        [hashtable]
-        $Xml
+        $MaxItems
     )
     begin {
-
-        if ( !(Test-PodeOAComponentSchema -Name $Component)) {
-            throw "The OpenApi component schema doesn't exist: $Component"
+        $param = New-PodeOAPropertyInternal -type 'schema' -Params $PSBoundParameters
+        if (! $param.Name) {
+            $param.Name = $Reference
         }
-        if (! $Name) {
-            $Name = $Component
-        }
-        $param = @{
-            name   = $Name
-            type   = 'schema'
-            schema = $Component
-        }
-
-        if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -ieq 'array') {
-            if ($Description ) {
-                $param.description = $Description
-            }
-
-            if ($Array.IsPresent ) {
-                $param.array = $Array.IsPresent
-            }
-
-            if ($Required.IsPresent ) {
-                $param.required = $Required.IsPresent
-            }
-
-            if ($Deprecated.IsPresent ) {
-                $param.deprecated = $Deprecated.IsPresent
-            }
-
-            if ($Nullable.IsPresent ) {
-                $param['nullable'] = $Nullable.IsPresent
-            }
-
-            if ($WriteOnly.IsPresent ) {
-                $param['writeOnly'] = $WriteOnly.IsPresent
-            }
-
-            if ($ReadOnly.IsPresent ) {
-                $param['readOnly'] = $ReadOnly.IsPresent
-            }
-
-            if ($Example ) {
-                $param['example'] = $Example
-            }
-
-            if ($UniqueItems.IsPresent ) {
-                $param.uniqueItems = $UniqueItems.IsPresent
-            }
-
-            if ($Default) {
-                $param.default = $Default
-            }
-
-            if ($MaxItems) {
-                $param.maxItems = $MaxItems
-            }
-
-            if ($MinItems) {
-                $param.minItems = $MinItems
-            }
-
-            if ($MinProperties) {
-                $param.minProperties = $MinProperties
-            }
-
-            if ($MaxProperties) {
-                $param.maxProperties = $MaxProperties
-            }
-
-            if ($Xml) {
-                $param.xml = $Xml
-            }
-        } elseif ($Description) {
-            $ex = [System.Exception]::new("New-PodeOASchemaProperty $Component - Description can only be applied to an array")
-            $ex | Write-PodeErrorLog -Level Warning
-        }
+        $param.schema = $Reference
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
@@ -2081,3 +2005,6 @@ function New-PodeOASchemaProperty {
 }
 
 
+if (!(Test-Path Alias:New-PodeOASchemaProperty)) {
+    New-Alias New-PodeOASchemaProperty -Value New-PodeOAComponentSchemaProperty
+}

@@ -21,29 +21,57 @@ Some useful links:
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.0' -EnableSchemaValidation -DisableMinimalDefinitions -DefaultResponses @{}
-    New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-    Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
-    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
-    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
+    #Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.0' -EnableSchemaValidation -DisableMinimalDefinitions -DefaultResponses @{}
+    #  New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+    #  Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
 
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
-    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
-    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
-    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode
-    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode
-    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -SpecTag 'v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -SpecTag 'v3.1'
+    $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
-    Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
+    $swaggerDocs | Add-PodeOAExternalDoc  -SpecTag 'v3', 'v3.1'
 
 
-
-    Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc 'SwaggerDocs'
-    Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
-    Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc 'SwaggerDocs'
+    #  Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
 
 
-    <#   Add-PodeOAComponentSchema -Name 'Address' -Schema (
+    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'  -SpecTag 'v3', 'v3.1'
+
+    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
+        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -SpecTag 'v3'
+
+    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.1' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
+        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -SpecTag 'v3.1'
+
+    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint' -SpecTag 'v3', 'v3.1'
+
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -SpecTag 'v3'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -SpecTag 'v3'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -SpecTag 'v3'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -SpecTag 'v3'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -SpecTag 'v3'
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -SpecTag 'v3'
+
+    Enable-PodeOAViewer -Type Bookmarks -Path '/docs' -SpecTag 'v3'
+
+
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/v3.1/swagger' -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/v3.1/redoc' -DarkMode -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/v3.1/rapidoc' -DarkMode -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/v3.1/stoplight' -DarkMode -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/v3.1/explorer' -DarkMode -SpecTag 'v3.1'
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/v3.1/rapipdf' -DarkMode -SpecTag 'v3.1'
+
+    Enable-PodeOAViewer -Type Bookmarks -Path '/docs/v3.1' -SpecTag 'v3.1'
+
+    Add-PodeComponentGroup -SpecTag 'v3', 'v3.1'  -Components {
+
+        Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc $swaggerDocs
+        Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs
+        Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs
+
+
+        <#   Add-PodeOAComponentSchema -Name 'Address' -Schema (
         New-PodeOAObjectProperty -Name 'Address' -XmlName  'address' } -Description 'Shipping Address' -Properties (
             New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
                 New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
@@ -66,97 +94,97 @@ Some useful links:
             New-PodeOAObjectProperty -Name 'test' | Add-PodeOAComponentSchema -Name 'Test'
 
 #>
-    New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
-        New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
-        New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
-        New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required |
-        New-PodeOAObjectProperty -Name 'Address' -XmlName 'address' -Description 'Shipping Address' |
-        Add-PodeOAComponentSchema -Name 'Address'
+        New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
+            New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
+            New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
+            New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required |
+            New-PodeOAObjectProperty -Name 'Address' -XmlName 'address' -Description 'Shipping Address' |
+            Add-PodeOAComponentSchema -Name 'Address'
 
 
-    New-PodeOAIntProperty -Name 'id'-Format Int64 -ReadOnly -Example 10 |
-        New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 |
-        New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 |
-        New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
-        New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
-        New-PodeOABoolProperty -Name 'complete' |
-        New-PodeOASchemaProperty -Name 'Address' -Component 'Address' |
-        New-PodeOAObjectProperty -Name 'Order' -XmlName 'order'  -AdditionalProperties (New-PodeOAStringProperty ) |
-        Add-PodeOAComponentSchema -Name 'Order'
+        New-PodeOAIntProperty -Name 'id'-Format Int64 -ReadOnly -Example 10 |
+            New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 |
+            New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 |
+            New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
+            New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
+            New-PodeOABoolProperty -Name 'complete' |
+            New-PodeOASchemaProperty -Name 'Address' -Reference 'Address' |
+            New-PodeOAObjectProperty -Name 'Order' -XmlName 'order'  -AdditionalProperties (New-PodeOAStringProperty ) |
+            Add-PodeOAComponentSchema -Name 'Order'
 
-    Add-PodeOAComponentSchema -Name 'Category' -Schema (
-        New-PodeOAObjectProperty -Name 'Category' -XmlName  'category' -Properties  (
-            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
-                New-PodeOAStringProperty -Name 'name' -Example 'Dogs'
-        ))
+        Add-PodeOAComponentSchema -Name 'Category' -Schema (
+            New-PodeOAObjectProperty -Name 'Category' -XmlName  'category' -Properties  (
+                New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
+                    New-PodeOAStringProperty -Name 'name' -Example 'Dogs'
+            ))
 
-    Add-PodeOAComponentSchema -Name 'User' -Schema (
-        New-PodeOAObjectProperty -Name 'User' -XmlName  'user' -Properties  (
-            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 -ReadOnly |
-                New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
-                New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
-                New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
-                New-PodeOAStringProperty -Name 'email' -Format email -Example 'john@email.com' |
-                New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
-                New-PodeOAStringProperty -Name 'password' -Format Password -Example '12345' -Required |
-                New-PodeOAStringProperty -Name 'phone' -Example '12345' |
-                New-PodeOAIntProperty -Name 'userStatus'-Format int32 -Description 'User Status' -Example 1
-        ))
+        Add-PodeOAComponentSchema -Name 'User' -Schema (
+            New-PodeOAObjectProperty -Name 'User' -XmlName  'user' -Properties  (
+                New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 -ReadOnly |
+                    New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
+                    New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
+                    New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+                    New-PodeOAStringProperty -Name 'email' -Format email -Example 'john@email.com' |
+                    New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+                    New-PodeOAStringProperty -Name 'password' -Format Password -Example '12345' -Required |
+                    New-PodeOAStringProperty -Name 'phone' -Example '12345' |
+                    New-PodeOAIntProperty -Name 'userStatus'-Format int32 -Description 'User Status' -Example 1
+            ))
 
-    Merge-PodeOAProperty -Type AllOf -ObjectDefinitions 'Address', 'User' | Add-PodeOAComponentSchema -Name 'aaaaa'
+        Merge-PodeOAProperty -Type AllOf -ObjectDefinitions 'Address', 'User' | Add-PodeOAComponentSchema -Name 'aaaaa'
 
-    Add-PodeOAComponentSchema -Name 'Tag' -Component (
-        New-PodeOAObjectProperty -Name 'Tag' -XmlName  'tag' -Properties  (
-            New-PodeOAIntProperty -Name 'id'-Format Int64 |
-                New-PodeOAStringProperty -Name 'name'
-        ))
+        Add-PodeOAComponentSchema -Name 'Tag' -Component (
+            New-PodeOAObjectProperty -Name 'Tag' -XmlName  'tag' -Properties  (
+                New-PodeOAIntProperty -Name 'id'-Format Int64 |
+                    New-PodeOAStringProperty -Name 'name'
+            ))
 
-    Add-PodeOAComponentSchema -Name 'Pet' -Component (
-        New-PodeOAObjectProperty -Name 'Pet' -XmlName  'pet'  -Properties  (
-            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example @(10, 2, 4) -ReadOnly |
-                New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
-                New-PodeOASchemaProperty -Name 'category' -Component 'Category' |
-                New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
-                New-PodeOAStringProperty -Name 'photoUrls' -Array |
-                New-PodeOASchemaProperty -Name 'tags' -Component 'Tag' |
-                New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold')
-        ))
-
-
-    #XML teest
-    New-PodeOAIntProperty -Name 'id' -Format Int32 -XmlAttribute | New-PodeOAStringProperty -Name 'name' -XmlPrefix 'sample' -XmlNamespace 'http://example.com/schema/sample' |
-        New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'XmlPrefixAndNamespace'
-
-    New-PodeOAStringProperty   -Array -XmlItemName 'animal' | Add-PodeOAComponentSchema -Name 'animals'
-
-    New-PodeOAStringProperty -Array -XmlItemName 'animal' -XmlName 'aliens' | Add-PodeOAComponentSchema -Name 'AnimalsNoAliens'
-
-    New-PodeOAStringProperty -Array -XmlWrapped | Add-PodeOAComponentSchema -Name 'WrappedAnimals'
-
-    New-PodeOAStringProperty -Array -XmlWrapped -XmlItemName 'animal' | Add-PodeOAComponentSchema -Name 'WrappedAnimal'
-
-    New-PodeOAStringProperty -Array -XmlWrapped -XmlItemName 'animal' -XmlName 'aliens' | Add-PodeOAComponentSchema -Name 'WrappedAliens'
-
-    New-PodeOAStringProperty -Array -XmlWrapped  -XmlName 'aliens' | Add-PodeOAComponentSchema -Name 'WrappedAliensWithItems'
+        Add-PodeOAComponentSchema -Name 'Pet' -Component (
+            New-PodeOAObjectProperty -Name 'Pet' -XmlName  'pet'  -Properties  (
+                New-PodeOAIntProperty -Name 'id'-Format Int64 -Example @(10, 2, 4) -ReadOnly |
+                    New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
+                    New-PodeOASchemaProperty -Name 'category' -Reference 'Category' |
+                    New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
+                    New-PodeOAStringProperty -Name 'photoUrls' -Array |
+                    New-PodeOASchemaProperty -Name 'tags' -Reference 'Tag' |
+                    New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold')
+            ))
 
 
-    #Define Pet schema
-    New-PodeOAStringProperty -Name 'name' | New-PodeOAStringProperty -Name 'petType' |
-        New-PodeOAObjectProperty -DiscriminatorProperty 'petType' | Add-PodeOAComponentSchema -Name 'Pet2'
+        #XML teest
+        New-PodeOAIntProperty -Name 'id' -Format Int32 -XmlAttribute | New-PodeOAStringProperty -Name 'name' -XmlPrefix 'sample' -XmlNamespace 'http://example.com/schema/sample' |
+            New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'XmlPrefixAndNamespace'
 
-    #Define Cat schema
-    Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet2',
+        New-PodeOAStringProperty   -Array -XmlItemName 'animal' | Add-PodeOAComponentSchema -Name 'animals'
+
+        New-PodeOAStringProperty -Array -XmlItemName 'animal' -XmlName 'aliens' | Add-PodeOAComponentSchema -Name 'AnimalsNoAliens'
+
+        New-PodeOAStringProperty -Array -XmlWrapped | Add-PodeOAComponentSchema -Name 'WrappedAnimals'
+
+        New-PodeOAStringProperty -Array -XmlWrapped -XmlItemName 'animal' | Add-PodeOAComponentSchema -Name 'WrappedAnimal'
+
+        New-PodeOAStringProperty -Array -XmlWrapped -XmlItemName 'animal' -XmlName 'aliens' | Add-PodeOAComponentSchema -Name 'WrappedAliens'
+
+        New-PodeOAStringProperty -Array -XmlWrapped  -XmlName 'aliens' | Add-PodeOAComponentSchema -Name 'WrappedAliensWithItems'
+
+
+        #Define Pet schema
+        New-PodeOAStringProperty -Name 'name' | New-PodeOAStringProperty -Name 'petType' |
+            New-PodeOAObjectProperty -DiscriminatorProperty 'petType' | Add-PodeOAComponentSchema -Name 'Pet2'
+
+        #Define Cat schema
+        Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet2',
 (New-PodeOAStringProperty -Name 'huntingSkill'  -Description 'The measured skill for hunting' -Default 'lazy' -Enum 'clueless', 'lazy', 'adventurous', 'aggressive' -Required -Object ) |
-        Add-PodeOAComponentSchema -Name 'Cat2' -Description "A representation of a cat. Note that `Cat` will be used as the discriminator value."
+            Add-PodeOAComponentSchema -Name 'Cat2' -Description "A representation of a cat. Note that `Cat` will be used as the discriminator value."
 
 
-    #Define Dog schema
-    Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet2',
+        #Define Dog schema
+        Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet2',
 (New-PodeOAIntProperty -Name 'packSize'  -Description 'the size of the pack the dog is from' -Default 0 -Minimum 0 -Format Int32 -Required -Object ) |
-        Add-PodeOAComponentSchema -Name 'Dog2' -Description "A representation of a dog. Note that `Dog` will be used as the discriminator value."
+            Add-PodeOAComponentSchema -Name 'Dog2' -Description "A representation of a dog. Note that `Dog` will be used as the discriminator value."
 
 
-    <#   Alternative :
+        <#   Alternative :
         Add-PodeOAComponentSchema -Name 'Pet' -Schema (
         New-PodeOAObjectProperty -Name 'Pet' -XmlName  'pet' } -Properties @(
                     (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly),
@@ -168,76 +196,77 @@ Some useful links:
                         (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
         ))  #>
 
-    <#    Add-PodeOAComponentSchema -Name 'Cat' -Schema (   New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -Properties (
+        <#    Add-PodeOAComponentSchema -Name 'Cat' -Schema (   New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -Properties (
             New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
                 Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions @( 'Pet',
                 (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object)
                 )
         )
     )#>
-    Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet', (New-PodeOAStringProperty -Name 'rootCause' -required -object) |
-        Add-PodeOAComponentSchema -Name 'ExtendedErrorModel'
+        Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet', (New-PodeOAStringProperty -Name 'rootCause' -required -object) |
+            Add-PodeOAComponentSchema -Name 'ExtendedErrorModel'
 
-    New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object |
-        Merge-PodeOAProperty  -Type AllOf  -ObjectDefinitions 'Pet' |
-        New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
+        New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') -Object |
+            Merge-PodeOAProperty  -Type AllOf  -ObjectDefinitions 'Pet' |
+            New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
 
-        New-PodeOAObjectProperty   -Description 'Type of cat' | Add-PodeOAComponentSchema -Name 'Cat'
-
-
+            New-PodeOAObjectProperty   -Description 'Type of cat' | Add-PodeOAComponentSchema -Name 'Cat'
 
 
 
-    Add-PodeOAComponentSchema -Name 'Dog' -Component (
-        Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions @( 'Pet', ( New-PodeOAObjectProperty -Properties (
-                    New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Dingo', 'Husky', 'Retriever', 'Shepherd') |
-                        New-PodeOABoolProperty -Name 'bark'
-                ))
+
+
+        Add-PodeOAComponentSchema -Name 'Dog' -Component (
+            Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions @( 'Pet', ( New-PodeOAObjectProperty -Properties (
+                        New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Dingo', 'Husky', 'Retriever', 'Shepherd') |
+                            New-PodeOABoolProperty -Name 'bark'
+                    ))
+            )
         )
-    )
 
 
-    Add-PodeOAComponentSchema -Name 'Pets' -Component (
-        Merge-PodeOAProperty  -Type OneOf -ObjectDefinitions @( 'Cat', 'Dog') -DiscriminatorProperty 'petType')
+        Add-PodeOAComponentSchema -Name 'Pets' -Component (
+            Merge-PodeOAProperty  -Type OneOf -ObjectDefinitions @( 'Cat', 'Dog') -DiscriminatorProperty 'petType')
 
 
-    Add-PodeOAComponentSchema -Name 'ApiResponse' -Component (
-        New-PodeOAObjectProperty -Name 'ApiResponse' -XmlName  '##default'  -Properties  (
-            New-PodeOAIntProperty -Name 'code'-Format Int32 |
-                New-PodeOAStringProperty -Name 'type' -Example 'doggie' |
-                New-PodeOAStringProperty -Name 'message'
+        Add-PodeOAComponentSchema -Name 'ApiResponse' -Component (
+            New-PodeOAObjectProperty -Name 'ApiResponse' -XmlName  '##default'  -Properties  (
+                New-PodeOAIntProperty -Name 'code'-Format Int32 |
+                    New-PodeOAStringProperty -Name 'type' -Example 'doggie' |
+                    New-PodeOAStringProperty -Name 'message'
+            )
         )
-    )
 
-    New-PodeOAStringProperty -Name 'message' | New-PodeOAIntProperty -Name 'code'-Format Int32 | New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'ErrorModel'
+        New-PodeOAStringProperty -Name 'message' | New-PodeOAIntProperty -Name 'code'-Format Int32 | New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'ErrorModel'
 
 
-    Add-PodeRoute -PassThru -Method Get -Path '/peta/:id' -ScriptBlock {
-        Write-PodeJsonResponse -Value (Get-Pet -Id $WebEvent.Parameters['id']) -StatusCode 200
-    } |
-        Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
-        Set-PodeOARequest -PassThru -Parameters @(
+        Add-PodeRoute -PassThru -Method Get -Path '/peta/:id' -ScriptBlock {
+            Write-PodeJsonResponse -Value (Get-Pet -Id $WebEvent.Parameters['id']) -StatusCode 200
+        } |
+            Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
+            Set-PodeOARequest -PassThru -Parameters @(
         (  New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
-        Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{  '*/*' = New-PodeOASchemaProperty   -Component 'Pet' -array }) -PassThru |
-        Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{  'text/html' = 'ApiResponse' }) -PassThru
+            Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{  '*/*' = New-PodeOASchemaProperty   -Reference 'Pet' -array }) -PassThru |
+            Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{  'text/html' = 'ApiResponse' }) -PassThru
 
 
 
 
 
 
-    Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
-    Add-PodeOAComponentHeader -Name 'X-Expires-After' -Schema (New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires'  )
+        Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
+        Add-PodeOAComponentHeader -Name 'X-Expires-After' -Schema (New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires'  )
 
-    #define '#/components/responses/'
-    Add-PodeOAComponentResponse -Name 'UserOpSuccess' -Description 'Successful operation' -ContentSchemas (@{'application/json' = 'User' ; 'application/xml' = 'User' })
+        #define '#/components/responses/'
+        Add-PodeOAComponentResponse -Name 'UserOpSuccess' -Description 'Successful operation' -ContentSchemas (@{'application/json' = 'User' ; 'application/xml' = 'User' })
 
-    Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -ContentSchemas (@{ 'application/json' = 'Pets'; 'application/xml' = 'Pets'; 'application/x-www-form-urlencoded' = 'Pets' })
+        Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -ContentSchemas (@{ 'application/json' = 'Pets'; 'application/xml' = 'Pets'; 'application/x-www-form-urlencoded' = 'Pets' })
 
 
-    #define '#/components/parameters/'
-    Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Path )
+        #define '#/components/parameters/'
+        Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Path )
 
+    }
     # setup apikey authentication to validate a user
     New-PodeAuthScheme -ApiKey -LocationName 'api_key' | Add-PodeAuth -Name 'api_key' -Sessionless -ScriptBlock {
         param($key)
@@ -328,117 +357,118 @@ Some useful links:
         New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary   'User Example in Plain text' -ExternalValue 'http://foo.bar/examples/user-example.txt' |
         New-PodeOAExample -ContentMediaType '*/*' -Name 'user' -Summary   'User example in other forma' -ExternalValue  'http://foo.bar/examples/user-example.whatever'
 
+    Add-PodeRouteGroup -Path '/api/v4'  -SpecTag  'v3.1'  -Routes {
 
-    Add-PodeRoute -PassThru -Method Put -Path '/pat/:petId' -ScriptBlock {
-        $JsonPet = ConvertTo-Json $WebEvent.data
-        if ( Update-Pet -Id $WebEvent.Parameters['petId'] -Data  $JsonPet) {
-            Write-PodeJsonResponse -Value @{} -StatusCode 200
-        } else {
-            Write-PodeJsonResponse -Value @{} -StatusCode 405
-        }
-    } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatePasdadaetWithForm' -PassThru |
-        Set-PodeOARequest  -Parameters @(
+        Add-PodeRoute -PassThru -Method Put -Path '/pat/:petId' -ScriptBlock {
+            $JsonPet = ConvertTo-Json $WebEvent.data
+            if ( Update-Pet -Id $WebEvent.Parameters['petId'] -Data  $JsonPet) {
+                Write-PodeJsonResponse -Value @{} -StatusCode 200
+            } else {
+                Write-PodeJsonResponse -Value @{} -StatusCode 405
+            }
+        } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatePasdadaetWithForm' -PassThru |
+            Set-PodeOARequest  -Parameters @(
             (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
-        ) -RequestBody (
-            New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'User'; 'application/xml' = 'User' }  -Examples  $ex
+            ) -RequestBody (
+                New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'User'; 'application/xml' = 'User' }  -Examples  $ex
 
-        ) -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' })  -PassThru |
-        Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+            ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' })  -PassThru |
+            Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
 
-    Add-PodeRoute -PassThru -Method Put -Path '/paet/:petId' -ScriptBlock {
-        $JsonPet = ConvertTo-Json $WebEvent.data
-        if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
-            Write-PodeJsonResponse -Value @{} -StatusCode 200
-        } else {
-            Write-PodeJsonResponse -Value @{} -StatusCode 405
-        }
-    } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet' -PassThru |
-        Set-PodeOARequest  -Parameters @(
+        Add-PodeRoute -PassThru -Method Put -Path '/paet/:petId' -ScriptBlock {
+            $JsonPet = ConvertTo-Json $WebEvent.data
+            if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
+                Write-PodeJsonResponse -Value @{} -StatusCode 200
+            } else {
+                Write-PodeJsonResponse -Value @{} -StatusCode 405
+            }
+        } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet' -PassThru |
+            Set-PodeOARequest  -Parameters @(
           (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required -Examples (
-                New-PodeOAExample   -Name 'user' -Summary   'User Example' -Value  'http://foo.bar/examples/user-example.json' |
-                    New-PodeOAExample   -Name 'user1' -Summary   'User Example in XML' -Value  'http://foo.bar/examples/user-example.xml' |
-                    New-PodeOAExample   -Name 'user2' -Summary   'User Example in Plain text' -Value 'http://foo.bar/examples/user-example.txt' |
-                    New-PodeOAExample  -Name 'user3' -Summary   'User example in other forma' -Value  'http://foo.bar/examples/user-example.whatever' ))
-            ) -RequestBody (New-PodeOARequestBody -Required -Content (@{
-                        'application/x-www-form-urlencoded' = New-PodeOAObjectProperty -Properties @(
+                    New-PodeOAExample   -Name 'user' -Summary   'User Example' -Value  'http://foo.bar/examples/user-example.json' |
+                        New-PodeOAExample   -Name 'user1' -Summary   'User Example in XML' -Value  'http://foo.bar/examples/user-example.xml' |
+                        New-PodeOAExample   -Name 'user2' -Summary   'User Example in Plain text' -Value 'http://foo.bar/examples/user-example.txt' |
+                        New-PodeOAExample  -Name 'user3' -Summary   'User example in other forma' -Value  'http://foo.bar/examples/user-example.whatever' ))
+                ) -RequestBody (New-PodeOARequestBody -Required -Content (@{
+                            'application/x-www-form-urlencoded' = New-PodeOAObjectProperty -Properties @(
               (New-PodeOAStringProperty -Name 'name' -Description 'Updated name of the pet'),
               (New-PodeOAStringProperty -Name 'status' -Description 'Updated status of the pet' -Required)
-                        )
-                    })
-            ) -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
-            Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+                            )
+                        })
+                ) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+                Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/paet2/:petId' -ScriptBlock {
-        $JsonPet = ConvertTo-Json $WebEvent.data
-        if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
-            Write-PodeJsonResponse -Value @{} -StatusCode 200
-        } else {
-            Write-PodeJsonResponse -Value @{} -StatusCode 405
-        }
-    } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet2' -PassThru |
-        Set-PodeOARequest  -Parameters @(
+        Add-PodeRoute -PassThru -Method Put -Path '/paet2/:petId' -ScriptBlock {
+            $JsonPet = ConvertTo-Json $WebEvent.data
+            if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
+                Write-PodeJsonResponse -Value @{} -StatusCode 200
+            } else {
+                Write-PodeJsonResponse -Value @{} -StatusCode 405
+            }
+        } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet2' -PassThru |
+            Set-PodeOARequest  -Parameters @(
               (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
-        ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'text/plain' = New-PodeOAStringProperty   -array } ) -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
-        Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
-
-
-
-    $ex =
-    New-PodeOAExample -ContentMediaType 'application/json' -Name 'user' -Summary  'User Example' -ExternalValue   'http://foo.bar/examples/user-example.json' |
-        New-PodeOAExample -ContentMediaType 'application/xml' -Name 'user' -Summary   'User Example in XML' -ExternalValue   'http://foo.bar/examples/user-example.xml' |
-        New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary  'User Example in Plain text' -ExternalValue   'http://foo.bar/examples/user-example.txt' |
-        New-PodeOAExample -ContentMediaType '*/*' -Name 'user' -Summary   'User example in other forma' -ExternalValue  'http://foo.bar/examples/user-example.whatever'
-
-    Add-PodeOAComponentExample -name 'frog-example' -Summary   "An example of a frog with a cat's name" -Value @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' }
-
-    Add-PodeRoute -PassThru -Method Put -Path '/paet3/:petId' -ScriptBlock {
-        $JsonPet = ConvertTo-Json $WebEvent.data
-        if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
-            Write-PodeJsonResponse -Value @{} -StatusCode 200
-        } else {
-            Write-PodeJsonResponse -Value @{} -StatusCode 405
-        }
-    } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet3' -PassThru |
-        Set-PodeOARequest  -Parameters @(
-                  (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
-        ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
-                New-PodeOAExample -ContentMediaType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
-                    New-PodeOAExample -ContentMediaType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
-                    New-PodeOAExample -ContentMediaType 'application/json' -Reference 'frog-example'
-                )
-            ) -PassThru |
+            ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'text/plain' = New-PodeOAStringProperty   -array } ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
-            Add-PodeOAResponse -StatusCode 4XX -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
-
-
-    Add-PodeRoute -PassThru -Method Put -Path '/paet4/:petId' -ScriptBlock {
-        $JsonPet = ConvertTo-Json $WebEvent.data
-        if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
-            Write-PodeJsonResponse -Value @{} -StatusCode 200
-        } else {
-            Write-PodeJsonResponse -Value @{} -StatusCode 405
-        }
-    } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet4' -PassThru |
-        Set-PodeOARequest  -Parameters @(
-                          (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required -ContentType 'application/json')
-        ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
-                New-PodeOAExample -ContentMediaType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
-                    New-PodeOAExample -ContentMediaType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
-                    New-PodeOAExample -ContentMediaType 'application/json' -Reference 'frog-example'
-                )
-
-            ) -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content '') -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
 
 
+
+        $ex =
+        New-PodeOAExample -ContentMediaType 'application/json' -Name 'user' -Summary  'User Example' -ExternalValue   'http://foo.bar/examples/user-example.json' |
+            New-PodeOAExample -ContentMediaType 'application/xml' -Name 'user' -Summary   'User Example in XML' -ExternalValue   'http://foo.bar/examples/user-example.xml' |
+            New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary  'User Example in Plain text' -ExternalValue   'http://foo.bar/examples/user-example.txt' |
+            New-PodeOAExample -ContentMediaType '*/*' -Name 'user' -Summary   'User example in other forma' -ExternalValue  'http://foo.bar/examples/user-example.whatever'
+
+        Add-PodeOAComponentExample -name 'frog-example' -Summary   "An example of a frog with a cat's name" -Value @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' }
+
+        Add-PodeRoute -PassThru -Method Put -Path '/paet3/:petId' -ScriptBlock {
+            $JsonPet = ConvertTo-Json $WebEvent.data
+            if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
+                Write-PodeJsonResponse -Value @{} -StatusCode 200
+            } else {
+                Write-PodeJsonResponse -Value @{} -StatusCode 405
+            }
+        } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet3' -PassThru |
+            Set-PodeOARequest  -Parameters @(
+                  (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
+            ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
+                    New-PodeOAExample -ContentMediaType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
+                        New-PodeOAExample -ContentMediaType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
+                        New-PodeOAExample -ContentMediaType 'application/json' -Reference 'frog-example'
+                    )
+                ) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+                Add-PodeOAResponse -StatusCode 4XX -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+
+
+        Add-PodeRoute -PassThru -Method Put -Path '/paet4/:petId' -ScriptBlock {
+            $JsonPet = ConvertTo-Json $WebEvent.data
+            if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
+                Write-PodeJsonResponse -Value @{} -StatusCode 200
+            } else {
+                Write-PodeJsonResponse -Value @{} -StatusCode 405
+            }
+        } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet4' -PassThru |
+            Set-PodeOARequest  -Parameters @(
+                          (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required -ContentType 'application/json')
+            ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
+                    New-PodeOAExample -ContentMediaType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
+                        New-PodeOAExample -ContentMediaType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
+                        New-PodeOAExample -ContentMediaType 'application/json' -Reference 'frog-example'
+                    )
+
+                ) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content '') -PassThru |
+                Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+
+    }
 
     Add-PodeAuthMiddleware -Name test -Authentication 'test' -Route '/api/*'
-    Add-PodeRouteGroup -Path '/api/v3'   -Routes {
+    Add-PodeRouteGroup -Path '/api/v3'  -SpecTag 'v3', 'v3.1'  -Routes {
         #PUT
         Add-PodeRoute -PassThru -Method Put -Path '/pet' -ScriptBlock {
             $JsonPet = ConvertTo-Json $WebEvent.data
@@ -483,7 +513,6 @@ Some useful links:
                 'application/json' = (New-PodeOAObjectProperty -Properties @(    (New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')  ))
             }
 
-
         Add-PodeRoute -PassThru -Method Post -Path '/petcallback'  -Authentication 'Login-OAuth2' -Scope 'write'  -ScriptBlock {
             $JsonPet = ConvertTo-Json $WebEvent.data
             $Validate = Test-PodeOAJsonSchemaCompliance -Json $JsonPet -SchemaReference 'Pet'
@@ -510,7 +539,6 @@ Some useful links:
                     New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
                     New-PodeOAResponse -Default   -Description 'Something is wrong'
                 )
-
 
         #Define CallBack Reference
 
@@ -626,7 +654,7 @@ Some useful links:
                     New-PodeOAStringProperty -name 'id' -format 'uuid' |
                         New-PodeOAObjectProperty -name 'address' -NoProperties |
                         New-PodeOAStringProperty -name 'children' -array |
-                        New-PodeOASchemaProperty -Name 'addresses' -Component 'Address' -Array |
+                        New-PodeOASchemaProperty -Name 'addresses' -Reference 'Address' -Array |
                         New-PodeOAObjectProperty
                     }) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
@@ -884,6 +912,6 @@ Some useful links:
     }
 
 
-    $yaml = PodeOADefinition -Format Yaml
+    $yaml = PodeOADefinition -Format Yaml -SpecTag 'v3.1'
     # $json=  PodeOADefinition -Format Json
 }

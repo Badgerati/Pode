@@ -69,11 +69,15 @@ function Add-PodeOAComponentResponse {
         [System.Collections.Specialized.OrderedDictionary ]
         $Links,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
-
-    $PodeContext.Server.OpenAPI[$SpecTag].components.responses[$Name] = New-PodeOResponseInternal -Params $PSBoundParameters
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
+    foreach ($tag in $SpecTag) {
+        $PodeContext.Server.OpenAPI[$tag].components.responses[$Name] = New-PodeOResponseInternal -SpecTag $tag  -Params $PSBoundParameters
+    }
 }
 
 
@@ -129,20 +133,25 @@ function Add-PodeOAComponentSchema {
         [string]
         $Description,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
-    $PodeContext.Server.OpenAPI[$SpecTag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty)
-    if ($PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.schemaValidation) {
-        $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty) | Resolve-PodeOAReferences
-        #Resolve-PodeOAReferences -ComponentSchema  $modifiedSchema
-        $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.schemaJson[$Name] = @{
-            'schema' = $modifiedComponent
-            'json'   = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.depth
-        }
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
     }
-    if ($Description) {
-        $PodeContext.Server.OpenAPI[$SpecTag].components.schemas[$Name].description = $Description
+    foreach ($tag in $SpecTag) {
+        $PodeContext.Server.OpenAPI[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -SpecTag $tag)
+        if ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.schemaValidation) {
+            $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty  -SpecTag $tag) | Resolve-PodeOAReferences -SpecTag $tag
+            #Resolve-PodeOAReferences -ComponentSchema  $modifiedSchema
+            $PodeContext.Server.OpenAPI[$tag].hiddenComponents.schemaJson[$Name] = @{
+                'schema' = $modifiedComponent
+                'json'   = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI[$tag].hiddenComponents.depth
+            }
+        }
+        if ($Description) {
+            $PodeContext.Server.OpenAPI[$tag].components.schemas[$Name].description = $Description
+        }
     }
 }
 
@@ -192,13 +201,16 @@ function Add-PodeOAComponentHeader {
         [hashtable]
         $Schema,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
 
     )
-
-    $PodeContext.Server.OpenAPI[$SpecTag].hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty)
-
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
+    foreach ($tag in $SpecTag) {
+        $PodeContext.Server.OpenAPI[$tag].hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty -SpecTag $tag)
+    }
 }
 
 
@@ -265,20 +277,25 @@ function Add-PodeOAComponentRequestBody {
         [switch]
         $Required,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
+    foreach ($tag in $SpecTag) {
+        $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema -SpecTag $tag) }
 
-    $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema) }
+        if ($Required.IsPresent) {
+            $param['required'] = $Required.IsPresent
+        }
 
-    if ($Required.IsPresent) {
-        $param['required'] = $Required.IsPresent
+        if ( $Description) {
+            $param['description'] = $Description
+        }
+        $PodeContext.Server.OpenAPI[$tag].components.requestBodies[$Name] = $param
     }
 
-    if ( $Description) {
-        $param['description'] = $Description
-    }
-    $PodeContext.Server.OpenAPI[$SpecTag].components.requestBodies[$Name] = $param
 }
 
 <#
@@ -323,18 +340,22 @@ function Add-PodeOAComponentParameter {
         [hashtable]
         $Parameter,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
-
-    if ([string]::IsNullOrWhiteSpace($Name)) {
-        if ($Parameter.name) {
-            $Name = $Parameter.name
-        } else {
-            throw 'The Parameter has no name. Please provide a name to this component using -Name property'
-        }
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
     }
-    $PodeContext.Server.OpenAPI[$SpecTag].components.parameters[$Name] = $Parameter
+    foreach ($tag in $SpecTag) {
+        if ([string]::IsNullOrWhiteSpace($Name)) {
+            if ($Parameter.name) {
+                $Name = $Parameter.name
+            } else {
+                throw 'The Parameter has no name. Please provide a name to this component using -Name property'
+            }
+        }
+        $PodeContext.Server.OpenAPI[$tag].components.parameters[$Name] = $Parameter
+    }
 }
 
 <#
@@ -396,23 +417,28 @@ function Add-PodeOAComponentExample {
         [string]
         $ExternalValue,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
-    $Example = [ordered]@{ }
-    if ($Summary) {
-        $Example.summary = $Summary
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
     }
-    if ($Description) {
-        $Example.description = $Description
-    }
-    if ($Value) {
-        $Example.value = $Value
-    } elseif ($ExternalValue) {
-        $Example.externalValue = $ExternalValue
-    }
+    foreach ($tag in $SpecTag) {
+        $Example = [ordered]@{ }
+        if ($Summary) {
+            $Example.summary = $Summary
+        }
+        if ($Description) {
+            $Example.description = $Description
+        }
+        if ($Value) {
+            $Example.value = $Value
+        } elseif ($ExternalValue) {
+            $Example.externalValue = $ExternalValue
+        }
 
-    $PodeContext.Server.OpenAPI[$SpecTag].components.examples[$Name] = $Example
+        $PodeContext.Server.OpenAPI[$tag].components.examples[$Name] = $Example
+    }
 }
 
 
@@ -494,11 +520,16 @@ function Add-PodeOAComponentResponseLink {
         [string]
         $RequestBody,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
 
     )
-    $PodeContext.Server.OpenAPI[$SpecTag].components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
+    foreach ($tag in $SpecTag) {
+        $PodeContext.Server.OpenAPI[$tag].components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
+    }
 }
 
 
@@ -581,14 +612,57 @@ function Add-PodeOAComponentCallBack {
         [hashtable]
         $RequestBody,
 
-        [System.Collections.Specialized.OrderedDictionary]
+        [hashtable]
         $Responses,
 
-        [string]
-        $SpecTag = 'default'
+        [string[]]
+        $SpecTag
     )
-    $PodeContext.Server.OpenAPI[$SpecTag].components.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters
+    if (Test-PodeIsEmpty -Value $SpecTag) {
+        $SpecTag = $PodeContext.Server.OpenApiSpecTag
+    }
+    foreach ($tag in $SpecTag) {
+        $PodeContext.Server.OpenAPI[$tag].components.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -SpecTag $tag
+    }
 }
+
+
+
+function Add-PodeComponentGroup {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string[]]
+        $SpecTag = @('default'),
+
+        [Parameter(Mandatory = $true)]
+        [scriptblock]
+        $Components
+
+
+    )
+
+    if (Test-PodeIsEmpty $Components) {
+        throw 'No scriptblock for -Components passed'
+    }
+    foreach ($tag in $SpecTag) {
+
+        if (! ($PodeContext.Server.OpenApi.Keys -ccontains $tag)) {
+            throw "SpecTag $tag is not defined"
+        }
+    }
+
+    # check for scoped vars
+    $Components, $usingVars = Convert-PodeScopedVariables -ScriptBlock $Components -PSSession $PSCmdlet.SessionState
+    $PodeContext.Server.OpenApiSpecTag = $SpecTag
+    # add routes
+    $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Components -Arguments $_args -Splat
+    $PodeContext.Server.OpenApiSpecTag = @('default')
+
+}
+
+
 
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {

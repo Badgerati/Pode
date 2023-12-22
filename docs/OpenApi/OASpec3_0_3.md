@@ -786,7 +786,7 @@ The following may lead to ambiguous resolution:
  Add-PodeRoute -PassThru -Method Get -Path '/pets' -ScriptBlock {
             Write-PodeJsonResponse -Value (Get-Pets -All) -StatusCode 200
         } | Set-PodeOARouteInfo -Description 'Returns all pets from the system that the user has access to' -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'A list of pets.' -Default -Content (@{ 'application/json' = New-PodeOASchemaProperty -ComponentSchema 'Pet' -array })
+            Add-PodeOAResponse -StatusCode 200 -Description 'A list of pets.' -Default -Content (@{ 'application/json' = New-PodeOASchemaProperty -Reference 'Pet' -array })
 
 ```
 
@@ -865,7 +865,7 @@ Add-PodeRoute -PassThru -Method Get -Path '/peta/:id' -ScriptBlock {
       Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
       Set-PodeOARequest -PassThru -Parameters @(
       (New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
-      Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+      Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -Reference 'Pet' -array }) -PassThru |
       Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{'text/html' = 'ErrorModel' }) -PassThru
 ```
 ```json
@@ -961,7 +961,7 @@ Add-PodeOAExternalRoute -PassThru -Method Get -Path '/peta/:id' -Servers (
       Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
       Set-PodeOARequest -PassThru -Parameters @(
       (New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
-      Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+      Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -Reference 'Pet' -array }) -PassThru |
       Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{'text/html' = 'ErrorModel' }) -PassThru
 ```
 ```json
@@ -1910,7 +1910,7 @@ Examples:
       New-PodeOAStringProperty -name 'id' -format 'uuid' |
           New-PodeOAObjectProperty -name 'address' -NoProperties |
           New-PodeOAStringProperty -name 'children' -array |
-          New-PodeOASchemaProperty -Name 'addresses' -ComponentSchema 'Address' -Array |
+          New-PodeOASchemaProperty -Name 'addresses' -Reference 'Address' -Array |
           New-PodeOAObjectProperty
       )
     )
@@ -2691,7 +2691,7 @@ This object cannot be extended with additional properties and any properties add
 Multiple cmdlets support `$ref` : `Merge-PodeOAProperty`, `New-PodeOASchemaProperty`, `Add-PodeOAResponse`, `New-PodeOAResponse` `New-PodeOARequestBody`
 ##### Reference Object Example
 ```powershell
-New-PodeOASchemaProperty -Name 'something' -Component 'Pet'
+New-PodeOASchemaProperty -Name 'something' -Reference 'Pet'
 ```
 ```powershell
 Merge-PodeOAProperty -Type AllOf -ObjectDefinitions 'Pet','Animal'
@@ -2861,7 +2861,7 @@ format: email
 
 ###### Simple Model
 ```powershell
-New-PodeOAStringProperty -Name 'name'| New-PodeOASchemaProperty -Name 'Address' -Component 'Address'|
+New-PodeOAStringProperty -Name 'name'| New-PodeOASchemaProperty -Name 'Address' -Reference 'Address'|
   New-PodeOAIntProperty -Name 'age' -Minimum 0 -Format Int32 | New-PodeOAObjectProperty
 ```
 ```json
@@ -2924,7 +2924,7 @@ additionalProperties:
 
 For a string to model mapping:
 ```powershell
-New-PodeOAObjectProperty -AdditionalProperties (New-PodeOASchemaProperty  -Component 'ComplexModel')
+New-PodeOAObjectProperty -AdditionalProperties (New-PodeOASchemaProperty  -Reference 'ComplexModel')
 ```
 ```json
 {

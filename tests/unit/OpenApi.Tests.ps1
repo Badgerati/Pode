@@ -14,6 +14,7 @@ Describe 'OpenApi' {
                     Security = @{
                         autoheaders = $false
                     }
+                    OpenApiSpecTag='default'
                     OpenAPI  = @{
                         default = @{
                             info             = [ordered]@{}
@@ -1767,7 +1768,7 @@ Describe 'OpenApi' {
         }
 
         It 'Standard' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Component 'Cat'
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Reference 'Cat'
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 0
             $result.type | Should -Be 'schema'
@@ -1776,7 +1777,7 @@ Describe 'OpenApi' {
         }
 
         It 'ArrayNoSwitchesUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 1
@@ -1794,7 +1795,7 @@ Describe 'OpenApi' {
 
         }
         It 'ArrayDeprecatedUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Deprecated  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 1
@@ -1812,7 +1813,7 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayNullableUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Nullable  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
@@ -1830,7 +1831,7 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayWriteOnlyUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -WriteOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
@@ -1848,7 +1849,7 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayReadOnlyUniqueItems' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -ReadOnly  -Array  -MinItems 2 -MaxItems 4 -UniqueItems
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
@@ -1867,7 +1868,7 @@ Describe 'OpenApi' {
         }
 
         It 'ArrayNoSwitches' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 1
@@ -1884,7 +1885,7 @@ Describe 'OpenApi' {
 
         }
         It 'ArrayDeprecated' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Deprecated  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 1
@@ -1901,7 +1902,7 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayNullable' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -Nullable  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
@@ -1918,7 +1919,7 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayWriteOnly' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty'   -WriteOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
@@ -1935,7 +1936,7 @@ Describe 'OpenApi' {
             $result.maxItems | Should -BeTrue
         }
         It 'ArrayReadOnly' {
-            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Component 'Cat' -MinProperties 1 -MaxProperties 2 `
+            $result = New-PodeOASchemaProperty -Name 'testSchema' -Description 'Test for New-PodeOASchemaProperty'  -Reference 'Cat' -MinProperties 1 -MaxProperties 2 `
                 -Example 'Example for New-PodeOASchemaProperty' -ReadOnly  -Array  -MinItems 2 -MaxItems 4
             $result | Should -Not -BeNullOrEmpty
             #$result.Count | Should -Be 2
@@ -2087,10 +2088,10 @@ Describe 'OpenApi' {
         }
 
         It 'Valid values' {
-            New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-            $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs['SwaggerDocs'] | Should -Not -BeNullOrEmpty
-            $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs['SwaggerDocs'].description | Should -Be  'Find out more about Swagger'
-            $PodeContext.Server.OpenAPI.default.hiddenComponents.externalDocs['SwaggerDocs'].url | Should -Be 'http://swagger.io'
+            $SwaggerDocs=New-PodeOAExternalDoc  -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+            $SwaggerDocs | Should -Not -BeNullOrEmpty
+            $SwaggerDocs.description | Should -Be  'Find out more about Swagger'
+            $SwaggerDocs.url | Should -Be 'http://swagger.io'
         }
     }
 
@@ -2109,19 +2110,13 @@ Describe 'OpenApi' {
             $PodeContext.Server.OpenAPI.default.externalDocs.url | Should -Be 'http://swagger.io'
         }
 
-        It 'Reference' {
-            New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-            Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
+        It 'Pipe' {
+            New-PodeOAExternalDoc  -Description 'Find out more about Swagger' -Url 'http://swagger.io' | Add-PodeOAExternalDoc
             $PodeContext.Server.OpenAPI.default.externalDocs | Should -Not -BeNullOrEmpty
             $PodeContext.Server.OpenAPI.default.externalDocs.description | Should -Be  'Find out more about Swagger'
             $PodeContext.Server.OpenAPI.default.externalDocs.url | Should -Be 'http://swagger.io'
         }
-        Describe 'Testing Exception Handling' {
-            It 'ExternaDoc Reference undefined' {
-                { Add-PodeOAExternalDoc -Reference  'SwaggerDocs' } |
-                    Should  -Throw  -ExpectedMessage   "The ExternalDoc doesn't exist: SwaggerDocs"
-            }
-        }
+
 
     }
 
@@ -2132,8 +2127,8 @@ Describe 'OpenApi' {
         }
 
         It 'Valid values' {
-            New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-            Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc 'SwaggerDocs'
+            $SwaggerDocs=  New-PodeOAExternalDoc  -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+            Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc $SwaggerDocs
             $PodeContext.Server.OpenAPI.default.tags['user'] | Should -Not -BeNullOrEmpty
             $PodeContext.Server.OpenAPI.default.tags['user'].name | Should -Be 'user'
             $PodeContext.Server.OpenAPI.default.tags['user'].description | Should -Be  'Operations about user'
@@ -2141,12 +2136,6 @@ Describe 'OpenApi' {
             $PodeContext.Server.OpenAPI.default.tags['user'].externalDocs.Count | Should -Be 2
             $PodeContext.Server.OpenAPI.default.tags['user'].externalDocs.url | Should -Be 'http://swagger.io'
             $PodeContext.Server.OpenAPI.default.tags['user'].externalDocs.description | Should -Be 'Find out more about Swagger'
-        }
-        Describe 'Testing Exception Handling' {
-            It 'ExternaDoc undefined' {
-                { Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc 'SwaggerDocs' } |
-                    Should  -Throw  -ExpectedMessage   "The ExternalDoc doesn't exist: SwaggerDocs"
-            }
         }
     }
 
@@ -2166,8 +2155,8 @@ Describe 'OpenApi' {
                     Authentication = @()
                 }
             }
-            New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-            Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc 'SwaggerDocs'
+
+            Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc  (New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io')
         }
 
         # Check if the function exists
@@ -2975,6 +2964,7 @@ Describe 'OpenApi' {
             # Mock the Pode context object
             $Global:PodeContext = @{
                 Server = @{
+                    OpenApiSpecTag='default'
                     OpenAPI = @{
                         default= @{
                             components = @{
@@ -3015,10 +3005,10 @@ Describe 'OpenApi' {
             $Pet = New-PodeOAObjectProperty -Name 'Pet' -XmlName 'pet'   -Properties  (
             (New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly ),
                 (New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required) ,
-                (New-PodeOASchemaProperty -Name 'category' -Component 'Category' ),
+                (New-PodeOASchemaProperty -Name 'category' -Reference 'Category' ),
                 (New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required) ,
                 (New-PodeOAStringProperty -Name 'photoUrls' -Array) ,
-                (New-PodeOASchemaProperty -Name 'tags' -Component 'Tag') ,
+                (New-PodeOASchemaProperty -Name 'tags' -Reference 'Tag') ,
                 (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
             )
             $Pet.type | Should -be 'object'
@@ -3070,10 +3060,10 @@ Describe 'OpenApi' {
         It 'By Pipeline' {
             $Pet = New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -ReadOnly |
                 New-PodeOAStringProperty -Name 'name' -Example 'doggie' -Required |
-                New-PodeOASchemaProperty -Name 'category' -Component 'Category' |
+                New-PodeOASchemaProperty -Name 'category' -Reference 'Category' |
                 New-PodeOAStringProperty -Name 'petType' -Example 'dog' -Required |
                 New-PodeOAStringProperty -Name 'photoUrls' -Array |
-                New-PodeOASchemaProperty -Name 'tags' -Component 'Tag' |
+                New-PodeOASchemaProperty -Name 'tags' -Reference 'Tag' |
                 New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold') |
                 New-PodeOAObjectProperty -Name 'Pet' -XmlName 'pet'
             $Pet.type | Should -be 'object'
