@@ -304,7 +304,9 @@
         'New-PodeOAContentMediaType',
         'Add-PodeOAExternalRoute',
         'New-PodeOAServerEndpoint',
+
         #Components
+        'Add-PodeComponentGroup',
         'Add-PodeOAComponentResponse',
         'Add-PodeOAComponentSchema',
         'Add-PodeOAComponentRequestBody',

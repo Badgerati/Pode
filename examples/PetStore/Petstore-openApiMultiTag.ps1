@@ -265,8 +265,7 @@ Some useful links:
             New-PodeOAObjectProperty  -XmlName '##default' |
             Add-PodeOAComponentSchema -Name 'ApiResponse'
 
-
-        #Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store' -Content (
+ 
         New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' | Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store'
 
         Add-PodeOAComponentRequestBody -Name 'UserArray' -Description 'List of user object' -Content (

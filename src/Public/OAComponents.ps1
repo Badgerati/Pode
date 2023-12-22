@@ -627,6 +627,39 @@ function Add-PodeOAComponentCallBack {
 }
 
 
+<#
+.SYNOPSIS
+Adds a OpenAPI component definition group.
+
+.DESCRIPTION
+Adds a OpenAPI component definition group for each definition tags specified
+
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.PARAMETER Component
+A ScriptBlock for adding Routes.
+
+.EXAMPLE
+Add-PodeComponentGroup -DefinitionTag 'v3', 'v3.1'  -Components {
+        New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -Required |
+            New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 -Required |
+            New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 -Required |
+            New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
+            New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Required -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
+            New-PodeOABoolProperty -Name 'complete' |
+            New-PodeOAObjectProperty -XmlName 'order' |
+            Add-PodeOAComponentSchema -Name 'Order'
+
+New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' |
+    Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store'
+
+}
+
+#>
+
 
 function Add-PodeComponentGroup {
     [CmdletBinding()]
