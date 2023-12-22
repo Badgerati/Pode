@@ -29,6 +29,7 @@ Describe 'Start-PodeInternalServer' {
     Mock Start-PodeCacheHousekeeper { }
     Mock Invoke-PodeEvent { }
     Mock Write-Verbose { }
+    Mock Add-PodeScopedVariablesInbuilt { }
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {} }
