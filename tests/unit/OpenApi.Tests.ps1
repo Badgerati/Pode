@@ -2884,26 +2884,28 @@ Describe 'OpenApi' {
             Get-Command Add-PodeOAComponentHeader | Should -Not -Be $null
         }
         it 'default' {
-            Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Schema (New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' )
-            $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
-            $result = $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas['X-Rate-Limit']
+            Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Description 'calls per hour allowed by the user'  -Schema (New-PodeOAIntProperty -Format Int32  )
+            $PodeContext.Server.OpenAPI.default.components.headers['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
+            $result = $PodeContext.Server.OpenAPI.default.components.headers['X-Rate-Limit']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
-            $result.Count | Should -Be 3
+            $result.Count | Should -Be 2
+            $result.schema.Count | Should -Be 2
             $result.description | Should -Be 'calls per hour allowed by the user'
-            $result.type | Should -Be 'integer'
-            $result.format | Should -Be 'int32'
+            $result.schema.type | Should -Be 'integer'
+            $result.schema.format | Should -Be 'int32'
         }
         it 'From Pipeline' {
-            New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' | Add-PodeOAComponentHeader -Name 'X-Rate-Limit'
-            $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
-            $result = $PodeContext.Server.OpenAPI.default.hiddenComponents.headerSchemas['X-Rate-Limit']
+            New-PodeOAIntProperty -Format Int32   | Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Description 'calls per hour allowed by the user'
+            $PodeContext.Server.OpenAPI.default.components.headers['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
+            $result = $PodeContext.Server.OpenAPI.default.components.headers['X-Rate-Limit']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
-            $result.Count | Should -Be 3
+            $result.Count | Should -Be 2
+            $result.schema.Count | Should -Be 2
             $result.description | Should -Be 'calls per hour allowed by the user'
-            $result.type | Should -Be 'integer'
-            $result.format | Should -Be 'int32'
+            $result.schema.type | Should -Be 'integer'
+            $result.schema.format | Should -Be 'int32'
         }
     }
 
