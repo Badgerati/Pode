@@ -315,7 +315,9 @@
         'Add-PodeOAComponentParameter',
         'Add-PodeOAComponentResponseLink',
         'Add-PodeOAComponentCallBack',
-
+        'Add-PodeOAComponentPathItem',
+        'Add-PodeOAWebhook',
+        'Test-PodeOAComponent',
         # Metrics
         'Get-PodeServerUptime',
         'Get-PodeServerRestartCount',

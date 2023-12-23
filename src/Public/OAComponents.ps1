@@ -197,19 +197,28 @@ function Add-PodeOAComponentHeader {
         [string]
         $Name,
 
+        [Parameter()]
+        [string]
+        $Description,
+
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
         $Schema,
 
         [string[]]
         $DefinitionTag
-
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
         $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
     }
     foreach ($tag in $DefinitionTag) {
-        $PodeContext.Server.OpenAPI[$tag].hiddenComponents.headerSchemas[$Name] = ($Schema | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
+        $param = [ordered]@{
+            'schema' = ($Schema | ConvertTo-PodeOASchemaProperty -NoDescription -DefinitionTag $tag)
+        }
+        if ( $Description) {
+            $param['description'] = $Description
+        }
+        $PodeContext.Server.OpenAPI[$tag].components.headers[$Name] = $param
     }
 }
 
@@ -629,6 +638,132 @@ function Add-PodeOAComponentCallBack {
 
 <#
 .SYNOPSIS
+Sets metadate for the supplied route.
+
+.DESCRIPTION
+Sets metadate for the supplied route, such as Summary and Tags.
+
+.LINK
+https://swagger.io/docs/specification/paths-and-operations/
+
+.PARAMETER Name
+    Alias for 'Name'. A unique identifier for the route.
+    It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+
+.PARAMETER Path
+The URI path for the Route.
+
+.PARAMETER Method
+The HTTP Method of this Route, multiple can be supplied.
+
+.PARAMETER Servers
+A list of external endpoint. created with New-PodeOAServerEndpoint
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
+
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.EXAMPLE
+Add-PodeOAExternalRoute -PassThru -Method Get -Path '/peta/:id' -Servers (
+    New-PodeOAServerEndpoint -Url 'http://ext.server.com/api/v12' -Description 'ext test server' |
+    New-PodeOAServerEndpoint -Url 'http://ext13.server.com/api/v12' -Description 'ext test server 13'
+    ) |
+        Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
+        Set-PodeOARequest -PassThru -Parameters @(
+        (New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
+        Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+        Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{'text/html' = 'ErrorModel' }) -PassThru
+.EXAMPLE
+    Add-PodeOAComponentPathItem -PassThru -Method Get -Path '/peta/:id'  -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 200
+        } | Add-PodeOAExternalRoute -PassThru   -Servers (
+        New-PodeOAServerEndpoint -Url 'http://ext.server.com/api/v12' -Description 'ext test server' |
+        New-PodeOAServerEndpoint -Url 'http://ext13.server.com/api/v12' -Description 'ext test server 13'
+        ) |
+        Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
+        Set-PodeOARequest -PassThru -Parameters @(
+        (New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
+        Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+        Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{'text/html' = 'ErrorModel' }) -PassThru
+#>
+function Add-PodeOAComponentPathItem {
+    param(
+
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true )]
+        [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
+        [string]
+        $Method,
+
+        [switch]
+        $PassThru,
+
+        [string[]]
+        $DefinitionTag
+    )
+
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+    }
+
+    $refRoute = @{
+        Method      = $Method.ToLower()
+        NotPrepared = $true
+        OpenApi     = @{
+            Responses      = $null
+            Parameters     = $null
+            RequestBody    = $null
+            callbacks      = [ordered]@{}
+            Authentication = @()
+        }
+    }
+    foreach ($tag in $DefinitionTag) {
+        if (Test-OpenAPIVersion   -OpenApiVersion 3.0 -DefinitionTag $tag  ) {
+            throw 'The feature reusable component pathItems is not available in OpenAPI v3.0.x'
+        }
+        #add the default OpenApi responses
+        if ( $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses) {
+            $refRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses.Clone()
+        }
+        $PodeContext.Server.OpenAPI[$tag].components.pathItems[$Name] = $refRoute
+    }
+
+    if ($PassThru) {
+        return $refRoute
+    }
+}
+
+
+
+
+
+
+function Test-OpenAPIVersion {
+    param (
+        [ValidateSet( 3.1 , 3.0 )]
+        [decimal]
+        $OpenApiVersion,
+
+        [string ]
+        $DefinitionTag
+    )
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0 -and $OpenApiVersion -eq 3.0  ) {
+        return $true
+    } elseif ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_1 -and $OpenApiVersion -eq 3.1  ) {
+        return $true
+    }
+    return $false
+}
+<#
+.SYNOPSIS
 Adds a OpenAPI component definition group.
 
 .DESCRIPTION
@@ -657,10 +792,7 @@ New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xm
     Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store'
 
 }
-
 #>
-
-
 function Add-PodeComponentGroup {
     [CmdletBinding()]
     param(
@@ -695,7 +827,40 @@ function Add-PodeComponentGroup {
 
 }
 
+function Test-PodeOAComponents {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet( 'schemas' , 'responses' , 'parameters' , 'examples' , 'requestBodies' , 'headers' , 'securitySchemes' , 'links' , 'callbacks' , 'pathItems'  )]
+        [string]
+        $Field,
 
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $DefinitionTag,
+
+        [switch]
+        $ThrowException
+    )
+
+    foreach ($tag in $DefinitionTag) {
+        if (!($PodeContext.Server.OpenAPI[$tag].components[$field ].keys -ccontains $Name)) {
+            # If $Name is not found in the current $tag, return $false or throw an exception
+            if ($ThrowException.IsPresent ) {
+                throw "No components of type $field named $Name are available in the $tag definition."
+            } else {
+                return $false
+            }
+        }
+    }
+    if (!$ThrowException.IsPresent) {
+        return $true
+    }
+}
 
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {

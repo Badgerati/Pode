@@ -43,7 +43,6 @@ Some useful links:
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.1' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3.1'
 
-    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint' -DefinitionTag 'v3', 'v3.1'
 
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -DefinitionTag 'v3'
@@ -265,8 +264,30 @@ Some useful links:
 
         #define '#/components/parameters/'
         Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Path )
+    }
+
+    Add-PodeComponentGroup -DefinitionTag 'v3.1'  -Components {
+
+        Add-PodeOAComponentPathItem -Name 'GetPetByIdWithRef' -Method Get -PassThru | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetByIdWithRef' -PassThru |
+            Set-PodeOARequest -PassThru -Parameters (
+                New-PodeOAIntProperty -Name 'petId' -Description 'ID of pet to return'  -Format Int64 |
+                    ConvertTo-PodeOAParameter -In Path -Required ) |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet') -PassThru |
+                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
+                Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
+                Add-PodeOAResponse -StatusCode 415
+
+        Add-PodeOAComponentWebhook -Name 'WebHook' -Method Get -PassThru | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetByIdWithRef' -PassThru |
+            Set-PodeOARequest -PassThru -Parameters (
+                New-PodeOAIntProperty -Name 'petId' -Description 'ID of pet to return'  -Format Int64 |
+                    ConvertTo-PodeOAParameter -In Path -Required ) |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet') -PassThru |
+                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
+                Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
+                Add-PodeOAResponse -StatusCode 415
 
     }
+
     # setup apikey authentication to validate a user
     New-PodeAuthScheme -ApiKey -LocationName 'api_key' | Add-PodeAuth -Name 'api_key' -Sessionless -ScriptBlock {
         param($key)
@@ -908,6 +929,12 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'Order'  ) -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'
+    }
+    Add-PodeRouteGroup -Path '/api/v5'  -DefinitionTag  'v3.1'  -Routes {
+
+        Add-PodeRoute  -Method Get -Path '/petbyRef/:petId' -Authentication 'api_key' -Scope 'read' -OAReference 'GetPetByIdWithRef' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 2005
+        }
 
     }
 

@@ -189,6 +189,9 @@ function Add-PodeRoute {
         [hashtable]
         $OAResponses,
 
+        [string]
+        $OAReference,
+
         [switch]
         $PassThru,
 
@@ -383,9 +386,9 @@ function Add-PodeRoute {
 
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses) {
-            $DefaultResponse=@{}
-            foreach ($tag in $DefinitionTag) { 
-                $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses.Clone()
+            $DefaultResponse = @{}
+            foreach ($tag in $DefinitionTag) {
+                $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses.Clone()
             }
         }
 
@@ -424,7 +427,7 @@ function Add-PodeRoute {
                         CallBacks      = @{}
                         Authentication = @()
                         Servers        = @()
-                        DefinitionTag        = @('default')
+                        DefinitionTag  = $DefinitionTag
                     }
                     IsStatic         = $false
                     Metrics          = @{
@@ -445,8 +448,16 @@ function Add-PodeRoute {
             $newRoutes += $methodRoutes
         }
     }
-
-    if ($OAResponses) {
+    if ($OAReference) {
+        Test-PodeOAComponents -Field pathItems -DefinitionTag $DefinitionTag -Name $OAReference -ThrowException
+        foreach ($r in @($newRoutes)) {
+            $r.OpenApi = @{
+                '$ref'        = "#/components/paths/$OAReference"
+                DefinitionTag = $DefinitionTag
+                Path          = $OpenApiPath
+            }
+        }
+    } elseif ($OAResponses) {
         foreach ($r in @($newRoutes)) {
             $r.OpenApi.Responses = $OAResponses
         }

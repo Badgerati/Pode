@@ -168,7 +168,7 @@ function Enable-PodeOpenApi {
         NoCompress     = ($MarkupLanguage -ine 'Json-Compress')
         Mode           = $Mode
         MarkupLanguage = $MarkupLanguage
-        DefinitionTag        = $DefinitionTag
+        DefinitionTag  = $DefinitionTag
     }
     if ( $Title) {
         $PodeContext.Server.OpenAPI[$DefinitionTag].info.title = $Title
@@ -859,10 +859,7 @@ function New-PodeOARequestBody {
             }
 
             'reference' {
-                if (!(Test-PodeOAComponentRequestBody -DefinitionTag $tag -Name $Reference)) {
-                    throw "The OpenApi component request body doesn't exist: $Reference"
-                }
-
+                Test-PodeOAComponents -Field requestBodies -DefinitionTag $tag -Name $Reference -ThrowException
                 $param = @{
                     '$ref' = "#/components/requestBodies/$Reference"
                 }
@@ -1146,9 +1143,7 @@ function ConvertTo-PodeOAParameter {
         if (Test-PodeIsEmpty $Schema) {
             return $null
         }
-        if (!(Test-PodeOAComponentSchema -DefinitionTag $DefinitionTag -Name $Schema )) {
-            throw "The OpenApi component request parameter doesn't exist: $($Schema )"
-        }
+        Test-PodeOAComponents -Field schemas -DefinitionTag $DefinitionTag -Name $Schema -ThrowException
         if (!$Name ) {
             $Name = $Schema
         }
@@ -1237,10 +1232,7 @@ function ConvertTo-PodeOAParameter {
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
-        if (!(Test-PodeOAComponentParameter  -DefinitionTag $DefinitionTag  -Name $ComponentParameter)) {
-            throw "The OpenApi component request parameter doesn't exist: $ComponentParameter"
-        }
-
+        Test-PodeOAComponents -Field parameters  -DefinitionTag $DefinitionTag  -Name $ComponentParameter -ThrowException
         $prop = [ordered]@{
             '$ref' = "#/components/parameters/$ComponentParameter"
         }
@@ -1613,11 +1605,11 @@ function Enable-PodeOAViewer {
     if ($Type -ieq 'Bookmarks') {
         # setup meta info
         $meta = @{
-            Type     = $Type.ToLowerInvariant()
-            Title    = $Title
-            OpenApi  = $OpenApiUrl
-            DarkMode = $DarkMode
-            DefinitionTag  = $DefinitionTag
+            Type          = $Type.ToLowerInvariant()
+            Title         = $Title
+            OpenApi       = $OpenApiUrl
+            DarkMode      = $DarkMode
+            DefinitionTag = $DefinitionTag
         }
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
             param($meta)
@@ -2097,9 +2089,7 @@ function New-PodeOAExample {
         }
 
         if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
-            if ( !(Test-PodeOAComponentExample -DefinitionTag $DefinitionTag -Name $Reference)) {
-                throw "The OpenApi component example doesn't exist: $Reference"
-            }
+            Test-PodeOAComponents -Field examples -DefinitionTag $DefinitionTag -Name $Reference -ThrowException
             $Name = $Reference
             $Example = [ordered]@{'$ref' = "#/components/examples/$Reference" }
         } else {
@@ -2360,9 +2350,7 @@ function Add-PodeOACallBack {
     foreach ($r in @($Route)) {
         foreach ($tag in $DefinitionTag) {
             if ($Reference) {
-                if (!(Test-PodeOAComponentCallBack -DefinitionTag $tag -Name $Reference )) {
-                    throw "The OpenApi component CallBack  doesn't exist: $($Reference )"
-                }
+                Test-PodeOAComponents -Field callbacks -DefinitionTag $tag -Name $Reference -ThrowException
                 if (!$Name) {
                     $Name = $Reference
                 }
@@ -2808,9 +2796,7 @@ function New-PodeOAResponseLink {
             $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
         }
         if ($Reference) {
-            if (!(Test-PodeOAComponentLink -DefinitionTag $DefinitionTag -Name $Reference )) {
-                throw "The OpenApi component Link  doesn't exist: $Reference"
-            }
+            Test-PodeOAComponents -Field links -DefinitionTag $DefinitionTag -Name $Reference  -ThrowException
             if (!$Name) {
                 $Name = $Reference
             }
@@ -2948,7 +2934,7 @@ function Add-PodeOAExternalRoute {
                     callbacks      = [ordered]@{}
                     Authentication = @()
                     Servers        = $Servers
-                    DefinitionTag        = $DefinitionTag
+                    DefinitionTag  = $DefinitionTag
                 }
             }
             foreach ($tag in $DefinitionTag) {
@@ -2976,9 +2962,6 @@ function Add-PodeOAExternalRoute {
             }
         }
     }
-
-
-
 }
 
 
@@ -3044,22 +3027,88 @@ function New-PodeOAServerEndpoint {
 
 
 
-
-
 <#
-    [string[]]
-        $DefinitionTag
+.SYNOPSIS
+Sets metadate for the supplied route.
 
+.DESCRIPTION
+Sets metadate for the supplied route, such as Summary and Tags.
+
+.LINK
+https://swagger.io/docs/specification/paths-and-operations/
+
+.PARAMETER Name
+    Alias for 'Name'. A unique identifier for the webhook.
+    It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+
+.PARAMETER Path
+The URI path for the Route.
+
+.PARAMETER Method
+The HTTP Method of this Route, multiple can be supplied.
+
+.PARAMETER Servers
+A list of external endpoint. created with New-PodeOAServerEndpoint
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
+
+.PARAMETER DefinitionTag
+An Array of string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.EXAMPLE
+Add-PodeOAWebhook -PassThru -Method Get    |
+        Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
+        Set-PodeOARequest -PassThru -Parameters @(
+        (New-PodeOAStringProperty -Name 'id' -Description 'ID of pet to use' -array | ConvertTo-PodeOAParameter -In Path -Style Simple -Required )) |
+        Add-PodeOAResponse -StatusCode 200 -Description 'pet response'   -Content (@{ '*/*' = New-PodeOASchemaProperty   -ComponentSchema 'Pet' -array }) -PassThru |
+        Add-PodeOAResponse -Default  -Description 'error payload' -Content (@{'text/html' = 'ErrorModel' }) -PassThru
+#>
+function Add-PodeOAWebhook {
+    param(
+
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true )]
+        [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
+        [string]
+        $Method,
+
+        [switch]
+        $PassThru,
+
+        [string[]]
+        $DefinitionTag
     )
 
-    if (($null -eq $PodeContext.Server.OpenApiDefinitionTag -or $PodeContext.Server.OpenApiDefinitionTag.Count -eq 0) -and
-    ($null -eq $DefinitionTag -or $DefinitionTag.Count -eq 0)
-    ) {
-        throw 'New-PodeOARequestBody undefined Spec Tag'
-    } else {
-        if ($null -eq $DefinitionTag -or $DefinitionTag.Count -eq 0) {
-            $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+    }
+
+    $refRoute = @{
+        Method      = $Method.ToLower()
+        NotPrepared = $true
+        OpenApi     = @{
+            Responses      = @{}
+            Parameters     = $null
+            RequestBody    = $null
+            callbacks      = [ordered]@{}
+            Authentication = @()
         }
     }
-#>
+    foreach ($tag in $DefinitionTag) {
+        if (Test-OpenAPIVersion -OpenApiVersion 3.0 -DefinitionTag $tag ) {
+            throw 'The feature reusable component webhook is not available in OpenAPI v3.0.x'
+        }
+        $PodeContext.Server.OpenAPI[$tag].webhooks[$Name] = $refRoute
+    }
 
+    if ($PassThru) {
+        return $refRoute
+    }
+}
