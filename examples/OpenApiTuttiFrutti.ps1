@@ -277,14 +277,10 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
                 Add-PodeOAResponse -StatusCode 415
 
-        Add-PodeOAComponentWebhook -Name 'WebHook' -Method Get -PassThru | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetByIdWithRef' -PassThru |
-            Set-PodeOARequest -PassThru -Parameters (
-                New-PodeOAIntProperty -Name 'petId' -Description 'ID of pet to return'  -Format Int64 |
-                    ConvertTo-PodeOAParameter -In Path -Required ) |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet') -PassThru |
-                Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
-                Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
-                Add-PodeOAResponse -StatusCode 415
+        Add-PodeOAWebhook -Name 'newPet' -Method Post -PassThru | Set-PodeOARouteInfo   -Description 'Information about a new pet in the system'   -PassThru |
+            Set-PodeOARequest -PassThru -RequestBody (
+                New-PodeOARequestBody -Content @{ 'application/json' = 'Pets' }
+            ) |            Add-PodeOAResponse -StatusCode 200 -Description 'Return a 200 status to indicate that the data was received successfully'
 
     }
 

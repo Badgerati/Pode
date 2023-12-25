@@ -50,24 +50,24 @@ If supplied, generate the OpenApi Json version in human readible form.
 Define the default markup language for the OpenApi spec ('Json', 'Json-Compress', 'Yaml')
 
 .PARAMETER EnableSchemaValidation
-If suplied enable Test-PodeOAComponentSchema cmdlet that provide support for opeapi parameter schema validation
+If supplied enable Test-PodeOAComponentSchema cmdlet that provide support for opeapi parameter schema validation
 
 .PARAMETER Depth
 Define the default  depth used by any JSON,YAML OpenAPI conversion (default 20)
 
 .PARAMETER DisableMinimalDefinitions
-If suplied the OpenApi decument will include only the route validated by Set-PodeOARouteInfo. Any other not OpenApi route will be excluded.
+If supplied the OpenApi decument will include only the route validated by Set-PodeOARouteInfo. Any other not OpenApi route will be excluded.
 
 .PARAMETER NoDefaultResponses
-If suplied is going to disable the default OpenAPI response with the new provided.
+If supplied, it will disable the default OpenAPI response with the new provided.
 
 .PARAMETER DefaultResponses
-If suplied is going to replace the default OpenAPI response with the new provided.(Default: @{'200' = @{ description = 'OK' };'default' = @{ description = 'Internal server error' }} )
+If supplied, it will replace the default OpenAPI response with the new provided.(Default: @{'200' = @{ description = 'OK' };'default' = @{ description = 'Internal server error' }} )
 
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Enable-PodeOpenApi -Title 'My API' -Version '1.0.0' -RouteFilter '/api/*'
@@ -142,14 +142,17 @@ function Enable-PodeOpenApi {
         $NoDefaultResponses,
 
         [string]
-        $DefinitionTag = 'default'
+        $DefinitionTag
 
     )
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+    }
 
     if ($Description -or $Version -or $Title) {
         Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
-    if ( $DefinitionTag -ine 'default') {
+    if ( $DefinitionTag -ine $PodeContext.Server.DefaultOpenApiDefinitionTag) {
         $PodeContext.Server.OpenAPI[$DefinitionTag] = Get-PodeOABaseObject
     }
     $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
@@ -288,9 +291,9 @@ An optional string describing the host designated by the URL. [CommonMark syntax
 A map between a variable name and its value.  The value is used for substitution in the server's URL template.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAServerEndpoint -Url 'https://myserver.io/api' -Description 'My test server'
@@ -329,8 +332,12 @@ function Add-PodeOAServerEndpoint {
         $Variables,
 
         [string[]]
-        $DefinitionTag = @('default')
+        $DefinitionTag
     )
+
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = @($PodeContext.Server.OpenApiDefinitionTag)
+    }
     foreach ($tag in $DefinitionTag) {
         if (! $PodeContext.Server.OpenAPI[$tag].servers) {
             $PodeContext.Server.OpenAPI[$tag].servers = @()
@@ -384,7 +391,7 @@ If supplied, only routes that are available on the Requests URI will be used to 
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 $defInJson = Get-PodeOADefinition -Json
@@ -413,8 +420,12 @@ function Get-PodeOADefinition {
         $RestrictRoutes,
 
         [string]
-        $DefinitionTag = 'default'
+        $DefinitionTag
     )
+
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+    }
 
     $meta = @{
         RouteFilter    = $RouteFilter
@@ -492,9 +503,9 @@ If supplied, the response will be used as a default response - this overrides th
 If supplied, the route passed in will be returned for further chaining.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 
 .EXAMPLE
@@ -762,9 +773,9 @@ This attribute is only applicable to multipart and application/x-www-form-urlenc
 Use New-PodeOAEncodingObject to define the encode
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 New-PodeOARequestBody -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
@@ -916,7 +927,7 @@ Specifies how many levels of the parameter objects are included in the JSON repr
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .OUTPUTS
 result: true if the object is validate positively
@@ -938,8 +949,12 @@ function Test-PodeOAJsonSchemaCompliance {
         $SchemaReference,
 
         [string]
-        $DefinitionTag = 'default'
+        $DefinitionTag
     )
+
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+    }
 
     if (!$PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaValidation) {
         throw 'Test-PodeOAComponentSchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
@@ -1022,9 +1037,9 @@ The Examples parameter is mutually exclusive of the Example parameter.
 Furthermore, if referencing a Schema that contains an example, the Examples value SHALL _override_ the example provided by the schema.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query
@@ -1421,9 +1436,9 @@ If supplied, the route will be flagged as deprecated.
 If supplied, the route passed in will be returned for further chaining.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeRoute -PassThru | Set-PodeOARouteInfo -Summary 'A quick summary' -Tags 'Admin'
@@ -1544,7 +1559,7 @@ If supplied, the page will be rendered using a dark theme (this is not supported
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Enable-PodeOAViewer -Type Swagger -DarkMode
@@ -1581,9 +1596,11 @@ function Enable-PodeOAViewer {
         $DarkMode,
 
         [string]
-        $DefinitionTag = 'default'
+        $DefinitionTag
     )
-
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+    }
     # error if there's no OpenAPI URL
     $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI[$DefinitionTag].Path
     if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
@@ -1728,9 +1745,9 @@ The link to the external documentation
 A Description of the external documentation.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
@@ -1793,13 +1810,13 @@ The Name of the tag.
 A Description of the tag.
 
 .PARAMETER ExternalDoc
-If supplied, the tag reference to an existing external documentation reference.
+If supplied, the tag references an existing external documentation reference.
 The parameter is created by Add-PodeOAExternalDoc
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc 'SwaggerDocs'
@@ -1891,7 +1908,7 @@ The URL pointing to the contact information. MUST be in the format of a URL.
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAInfo -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
@@ -1932,8 +1949,12 @@ function Add-PodeOAInfo {
         $ContactUrl,
 
         [string]
-        $DefinitionTag = 'default'
+        $DefinitionTag
     )
+
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+    }
 
     $Info = [ordered]@{}
 
@@ -2028,9 +2049,9 @@ A URL that points to the literal example. This provides the capability to refere
 The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
@@ -2279,7 +2300,7 @@ Defines the possible responses for the callback. Can be set using New-PodeOAResp
 .PARAMETER DefinitionTag
 A array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
     Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
@@ -2407,9 +2428,9 @@ A Reference Name of an existing component response to use.
 If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 New-PodeOAResponse -StatusCode 200 -Content (  New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content(New-PodeOAIntProperty -Name 'userId' -Object) )
@@ -2729,9 +2750,9 @@ function New-PodeOAContentMediaType {
     A string representing the request body to use as a request body when calling the target.
 
 .PARAMETER DefinitionTag
-    An Array of string representing the unique tag for the API specification.
+    An Array of strings representing the unique tag for the API specification.
     This tag helps in distinguishing between different versions or types of API specifications within the application.
-    Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 
 .EXAMPLE
@@ -2854,9 +2875,9 @@ A list of external endpoint. created with New-PodeOAServerEndpoint
 If supplied, the route passed in will be returned for further chaining.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAExternalRoute -PassThru -Method Get -Path '/peta/:id' -Servers (
@@ -3041,22 +3062,16 @@ https://swagger.io/docs/specification/paths-and-operations/
     Alias for 'Name'. A unique identifier for the webhook.
     It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
 
-.PARAMETER Path
-The URI path for the Route.
-
 .PARAMETER Method
 The HTTP Method of this Route, multiple can be supplied.
-
-.PARAMETER Servers
-A list of external endpoint. created with New-PodeOAServerEndpoint
 
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAWebhook -PassThru -Method Get    |

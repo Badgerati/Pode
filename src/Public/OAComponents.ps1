@@ -17,19 +17,19 @@ https://swagger.io/docs/specification/serialization/
 .PARAMETER Name
 The reference Name of the response.
 
-.PARAMETER ContentSchemas
+.PARAMETER Content
 The content-types and schema the response returns (the schema is created using the Property functions).
 
-.PARAMETER HeaderSchemas
+.PARAMETER Headers
 The header name and schema the response returns (the schema is created using the Add-PodeOAComponentHeader cmdlet).
 
 .PARAMETER Description
 The Description of the response.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAComponentResponse -Name 'OKResponse' -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
@@ -110,9 +110,9 @@ The Component definition (the schema is created using the Property functions).
 A description of the schema
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAComponentSchema -Name 'UserIdSchema' -Component (New-PodeOAIntProperty -Name 'userId' -Object)
@@ -181,10 +181,13 @@ The reference Name of the schema.
 .PARAMETER Schema
 The Schema definition (the schema is created using the Property functions).
 
+.PARAMETER Description
+A description of the header
+
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAComponentHeader -Name 'UserIdSchema' -Schema (New-PodeOAIntProperty -Name 'userId' -Object)
@@ -254,9 +257,9 @@ A Description of the request body.
 If supplied, the request body will be flagged as required.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAComponentRequestBody -Name 'UserIdBody' -ContentSchemas @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
@@ -330,9 +333,9 @@ The reference Name of the parameter.
 The Parameter to use for the component (from ConvertTo-PodeOAParameter)
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query | Add-PodeOAComponentParameter -Name 'UserIdParam'
@@ -393,9 +396,9 @@ A URL that points to the literal example. This provides the capability to refere
 The -Value parameter and -ExternalValue parameter are mutually exclusive.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.                           |
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.                           |
 
 .EXAMPLE
 Add-PodeOAComponentExample -name 'frog-example' -Summary "An example of a frog with a cat's name" -Value @{name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni' }
@@ -486,9 +489,9 @@ function Add-PodeOAComponentExample {
     A string representing the request body to use as a request body when calling the target.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
     Add-PodeOAComponentResponseLink   -Name 'address' -OperationId 'getUserByName' -Parameters @{'username' = '$request.path.username'}
@@ -578,9 +581,9 @@ function Add-PodeOAComponentResponseLink {
     Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
     Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
@@ -663,9 +666,9 @@ A list of external endpoint. created with New-PodeOAServerEndpoint
 If supplied, the route passed in will be returned for further chaining.
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeOAExternalRoute -PassThru -Method Get -Path '/peta/:id' -Servers (
@@ -770,9 +773,9 @@ Adds a OpenAPI component definition group.
 Adds a OpenAPI component definition group for each definition tags specified
 
 .PARAMETER DefinitionTag
-An Array of string representing the unique tag for the API specification.
+An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
-Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .PARAMETER Component
 A ScriptBlock for adding Routes.
@@ -798,7 +801,7 @@ function Add-PodeComponentGroup {
     param(
         [Parameter(Mandatory = $false)]
         [string[]]
-        $DefinitionTag = @('default'),
+        $DefinitionTag  ,
 
         [Parameter(Mandatory = $true)]
         [scriptblock]
@@ -819,11 +822,15 @@ function Add-PodeComponentGroup {
 
     # check for scoped vars
     $Components, $usingVars = Convert-PodeScopedVariables -ScriptBlock $Components -PSSession $PSCmdlet.SessionState
-    $PodeContext.Server.OpenApiDefinitionTag = $DefinitionTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $PodeContext.Server.OpenApiDefinitionTag =$PodeContext.Server.DefaultOpenApiDefinitionTag
+    } else {
+        $PodeContext.Server.OpenApiDefinitionTag = $DefinitionTag
+    }
     # add routes
     $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
     $null = Invoke-PodeScriptBlock -ScriptBlock $Components -Arguments $_args -Splat
-    $PodeContext.Server.OpenApiDefinitionTag = @('default')
+    $PodeContext.Server.OpenApiDefinitionTag = $PodeContext.Server.DefaultOpenApiDefinitionTag
 
 }
 

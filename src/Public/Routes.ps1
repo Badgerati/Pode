@@ -385,7 +385,7 @@ function Add-PodeRoute {
         }
 
         #add the default OpenApi responses
-        if ( $PodeContext.Server.OpenAPI.default.hiddenComponents.defaultResponses) {
+        if ( $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.defaultResponses) {
             $DefaultResponse = @{}
             foreach ($tag in $DefinitionTag) {
                 $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses.Clone()
@@ -1129,7 +1129,7 @@ function Add-PodeRouteGroup {
         $AllowAnon,
 
         [string[]]
-        $DefinitionTag = @('default')
+        $DefinitionTag
     )
 
     if (Test-PodeIsEmpty $Routes) {
@@ -1225,11 +1225,15 @@ function Add-PodeRouteGroup {
             Custom = $CustomAccess
         }
     }
-    $PodeContext.Server.OpenApiDefinitionTag = $DefinitionTag
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $PodeContext.Server.OpenApiDefinitionTag =$PodeContext.Server.DefaultOpenApiDefinitionTag
+    } else {
+        $PodeContext.Server.OpenApiDefinitionTag = $DefinitionTag
+    }
     # add routes
     $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
     $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
-    $PodeContext.Server.OpenApiDefinitionTag = @('default')
+    $PodeContext.Server.OpenApiDefinitionTag = $PodeContext.Server.DefaultOpenApiDefinitionTag
 }
 
 <#

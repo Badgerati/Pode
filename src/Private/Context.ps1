@@ -339,12 +339,17 @@ function New-PodeContext {
     # sessions
     $ctx.Server.Sessions = @{}
 
+    #OpenApi Definition Tag
+    if ((Test-PodeIsEmpty $ctx.Server.Configuration.Server.DefaultOADefinitionTag)) {
+        $ctx.Server.DefaultOADefinitionTag = 'default'
+    } else {
+        $ctx.Server.DefaultOpenApiDefinitionTag = $ctx.Server.Configuration.Server.DefaultOADefinitionTag
+    }
 
+    $ctx.Server.OpenApiDefinitionTag = $ctx.Server.DefaultOpenApiDefinitionTag
 
     # swagger and openapi
-    $ctx.Server.OpenAPI = @{ 'default' = Get-PodeOABaseObject }
-
-    $ctx.Server.OpenApiDefinitionTag = 'default'
+    $ctx.Server.OpenAPI = @{ $ctx.Server.DefaultOpenApiDefinitionTag = Get-PodeOABaseObject }
 
     # server metrics
     $ctx.Metrics = @{
