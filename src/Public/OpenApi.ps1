@@ -496,6 +496,9 @@ A Description of the response. (Default: the HTTP StatusCode description)
 .PARAMETER Reference
 A Reference Name of an existing component response to use.
 
+.PARAMETER Links
+A Response link definition
+
 .PARAMETER Default
 If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
 
@@ -993,9 +996,12 @@ Where in the Request can the parameter be found?
 .PARAMETER Property
 The Property that need converting (such as from New-PodeOAIntProperty).
 
-.PARAMETER ComponentParameter
+.PARAMETER Reference
 The name of an existing component parameter to be reused.
-Alias: Reference
+Alias: ComponentParameter
+
+.PARAMETER Name
+Assign a name to the parameter
 
 .PARAMETER ContentType
 The content-types to be use with  component schema
@@ -1045,7 +1051,7 @@ You can use this tag to reference the specific API documentation, schema, or ver
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query
 
 .EXAMPLE
-ConvertTo-PodeOAParameter -ComponentParameter 'UserIdParam'
+ConvertTo-PodeOAParameter -Reference 'UserIdParam'
 
 .EXAMPLE
 ConvertTo-PodeOAParameter  -In Header -ContentSchemas @{ 'application/json' = 'UserIdSchema' }
@@ -1069,9 +1075,9 @@ function ConvertTo-PodeOAParameter {
         $Property,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
-        [Alias('Reference')]
+        [Alias('ComponentParameter')]
         [string]
-        $ComponentParameter,
+        $Reference,
 
         [Parameter( ParameterSetName = 'Schema')]
         [Parameter(ParameterSetName = 'Properties')]
@@ -1247,13 +1253,13 @@ function ConvertTo-PodeOAParameter {
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
-        Test-PodeOAComponents -Field parameters  -DefinitionTag $DefinitionTag  -Name $ComponentParameter -ThrowException
+        Test-PodeOAComponents -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -ThrowException
         $prop = [ordered]@{
-            '$ref' = "#/components/parameters/$ComponentParameter"
+            '$ref' = "#/components/parameters/$Reference"
         }
         foreach ($tag in $DefinitionTag) {
-            if ($PodeContext.Server.OpenAPI[$tag].components.parameters.$ComponentParameter.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $ComponentParameter -Append
+            if ($PodeContext.Server.OpenAPI[$tag].components.parameters.$Reference.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Reference -Append
             }
         }
     } else {
@@ -1732,6 +1738,9 @@ https://swagger.io/docs/specification/api-general-info/
 .LINK
 https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externalDocumentationObject
 
+.PARAMETER ExternalDoc
+An externalDoc object
+
 .PARAMETER Reference
 The Name assigned to a previoulsy created External Doc reference (created by New-PodeOAExternalDoc)
 
@@ -1758,7 +1767,7 @@ New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swa
 function Add-PodeOAExternalDoc {
     [CmdletBinding(DefaultParameterSetName = 'Pipe')]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Pipe')]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true , ParameterSetName = 'Pipe')]
         [System.Collections.Specialized.OrderedDictionary]
         $ExternalDoc,
 
@@ -2273,6 +2282,9 @@ function New-PodeOAEncodingObject {
 .SYNOPSIS
 Adds OpenAPI callback configurations to routes in a Pode web application.
 
+.PARAMETER Route
+The route to update info, usually from -PassThru on Add-PodeRoute.
+
 .DESCRIPTION
 The Add-PodeOACallBack function is used for defining OpenAPI callback configurations for routes in a Pode server.
 It enables setting up API specifications including detailed parameters, request body schemas, and response structures for various HTTP methods.
@@ -2287,6 +2299,9 @@ More information on JSON Pointer can be found at [RFC6901](https://datatracker.i
 .PARAMETER Name
 Alias for 'Name'. A unique identifier for the callback.
 It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+
+.PARAMETER Reference
+A reference to a reusable CallBack component.
 
 .PARAMETER Method
 Defines the HTTP method for the callback (e.g., GET, POST, PUT). Supports standard HTTP methods and a wildcard (*) for all methods.

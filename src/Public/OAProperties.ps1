@@ -47,13 +47,13 @@ The minimum value of the number.
 The maximum value of the number.
 (Integer,Number types only)
 
-.PARAMETER ExclusiveMaximum:
+.PARAMETER ExclusiveMaximum
 Specifies an exclusive upper limit for a numeric property in the OpenAPI schema.
 When this parameter is used, it sets the exclusiveMaximum attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified maximum value.
 This parameter is typically paired with a -Maximum parameter to define the upper bound.
 (Integer,Number types only)
 
-.PARAMETER ExclusiveMinimum:
+.PARAMETER ExclusiveMinimum
 Specifies an exclusive lower limit for a numeric property in the OpenAPI schema.
 When this parameter is used, it sets the exclusiveMinimun attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified minimun value.
 This parameter is typically paired with a -Minimum parameter to define the lower bound.
@@ -426,12 +426,12 @@ The minimum value of the integer. (Default: Int.Min)
 .PARAMETER Maximum
 The maximum value of the integer. (Default: Int.Max)
 
-.PARAMETER ExclusiveMaximum:
+.PARAMETER ExclusiveMaximum
 Specifies an exclusive upper limit for a numeric property in the OpenAPI schema.
 When this parameter is used, it sets the exclusiveMaximum attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified maximum value.
 This parameter is typically paired with a -Maximum parameter to define the upper bound.
 
-.PARAMETER ExclusiveMinimum:
+.PARAMETER ExclusiveMinimum
 Specifies an exclusive lower limit for a numeric property in the OpenAPI schema.
 When this parameter is used, it sets the exclusiveMinimun attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified minimun value.
 This parameter is typically paired with a -Minimum parameter to define the lower bound.
@@ -701,12 +701,12 @@ The minimum value of the number. (Default: Double.Min)
 .PARAMETER Maximum
 The maximum value of the number. (Default: Double.Max)
 
-.PARAMETER ExclusiveMaximum:
+.PARAMETER ExclusiveMaximum
 Specifies an exclusive upper limit for a numeric property in the OpenAPI schema.
 When this parameter is used, it sets the exclusiveMaximum attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified maximum value.
 This parameter is typically paired with a -Maximum parameter to define the upper bound.
 
-.PARAMETER ExclusiveMinimum:
+.PARAMETER ExclusiveMinimum
 Specifies an exclusive lower limit for a numeric property in the OpenAPI schema.
 When this parameter is used, it sets the exclusiveMinimun attribute in the OpenAPI definition to true, indicating that the numeric value must be strictly less than the specified minimun value.
 This parameter is typically paired with a -Minimum parameter to define the lower bound.

@@ -157,9 +157,7 @@ Some useful links:
     }
 
     New-PodeAuthScheme -Basic -Realm 'PetStore' | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
-        param($username, $password)
-        write-host $username
-        write-host $password
+        param($username, $password) 
 
         # here you'd check a real user storage, this is just for example
         if ($username -eq 'morty' -and $password -eq 'pickle') {

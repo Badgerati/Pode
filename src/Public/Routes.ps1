@@ -71,6 +71,14 @@ One or more optional Users that will be authorised to access this Route, when us
 .PARAMETER OAResponses
 An alternative way to associate OpenApi responses unsing New-PodeOAResponse instead of piping multiple Add-PodeOAResponse
 
+.PARAMETER OAReference
+A reference to OpenAPI reusable pathItem component created with Add-PodeOAComponentPathItem
+
+.PARAMETER DefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
@@ -1059,6 +1067,11 @@ One or more optional Users that will be authorised to access this Route, when us
 
 .PARAMETER AllowAnon
 If supplied, the Routes will allow anonymous access for non-authenticated users.
+
+.PARAMETER DefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
 Add-PodeRouteGroup -Path '/api' -Routes { Add-PodeRoute -Path '/route1' -Etc }
