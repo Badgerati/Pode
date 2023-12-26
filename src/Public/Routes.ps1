@@ -457,7 +457,7 @@ function Add-PodeRoute {
         }
     }
     if ($OAReference) {
-        Test-PodeOAComponents -Field pathItems -DefinitionTag $DefinitionTag -Name $OAReference -ThrowException
+        Test-PodeOAComponent -Field pathItems -DefinitionTag $DefinitionTag -Name $OAReference -ThrowException
         foreach ($r in @($newRoutes)) {
             $r.OpenApi = @{
                 '$ref'        = "#/components/paths/$OAReference"

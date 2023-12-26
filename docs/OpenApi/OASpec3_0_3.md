@@ -1504,11 +1504,9 @@ style: form
 
 A complex parameter using `content` to define serialization:
 ```powershell
-  ConvertTo-PodeOAParameter -In Query -Schema @{'application/json' = (
-    New-PodeOANumberProperty -Name 'lat' -Required |
+   New-PodeOANumberProperty -Name 'lat' -Required |
       New-PodeOANumberProperty -Name 'long' -Required |
-      New-PodeOAObjectProperty
-  )}
+      New-PodeOAObjectProperty|ConvertTo-PodeOAParameter -In Query -ContentType 'application/json' 
 ```
 ```json
 {

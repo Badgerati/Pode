@@ -109,7 +109,7 @@ function ConvertTo-PodeOAObjectSchema {
                         }
                     }
                 } else {
-                    Test-PodeOAComponents -Field schemas -DefinitionTag $DefinitionTag -Name $item -ThrowException
+                    Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $item -ThrowException
                     if ($isArray) {
                         $obj[$type].schema.items = @{
                             '$ref' = "#/components/schemas/$($item)"
@@ -168,7 +168,7 @@ The Name of the ComponentSchemaJson reference.
 #>
 
 
-function Test-PodeOAComponentSchemaJson {
+function Test-PodeOAComponentchemaJson {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -236,7 +236,7 @@ function ConvertTo-PodeOAOfProperty {
     if ($Property.schemas ) {
         foreach ($prop in $Property.schemas ) {
             if ($prop -is [string]) {
-                Test-PodeOAComponents -Field schemas -DefinitionTag $DefinitionTag -Name $prop -ThrowException
+                Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $prop -ThrowException
                 $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
             } else {
                 $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
@@ -397,7 +397,7 @@ function ConvertTo-PodeOASchemaProperty {
 
         $schema['type'] = 'array'
         if ($Property.type -ieq 'schema') {
-            Test-PodeOAComponents -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -ThrowException
+            Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -ThrowException
             $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
         } else {
             $Property.array = $false
@@ -424,7 +424,7 @@ function ConvertTo-PodeOASchemaProperty {
 
         # schema refs
         if ($Property.type -ieq 'schema') {
-            Test-PodeOAComponents -Field schemas  -DefinitionTag $DefinitionTag -Name $Property['schema'] -ThrowException
+            Test-PodeOAComponent -Field schemas  -DefinitionTag $DefinitionTag -Name $Property['schema'] -ThrowException
             $schema = @{
                 '$ref' = "#/components/schemas/$($Property['schema'])"
             }
@@ -1374,7 +1374,7 @@ function New-PodeOResponseInternal {
     }
 
     if ($Params.Reference ) {
-        Test-PodeOAComponents  -Field responses -DefinitionTag $DefinitionTag -Name $Params.Reference -ThrowException
+        Test-PodeOAComponent  -Field responses -DefinitionTag $DefinitionTag -Name $Params.Reference -ThrowException
         $response = @{
             '$ref' = "#/components/responses/$($Params.Reference)"
         }
@@ -1394,7 +1394,7 @@ function New-PodeOResponseInternal {
                 } else {
                     $_headers = @{}
                     foreach ($h in $Params.Headers) {
-                        Test-PodeOAComponents -Field headers -DefinitionTag $DefinitionTag -Name $h -ThrowException
+                        Test-PodeOAComponent -Field headers -DefinitionTag $DefinitionTag -Name $h -ThrowException
                         $_headers[$h] = @{
                             '$ref' = "#/components/headers/$h"
                         }

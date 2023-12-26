@@ -26,6 +26,12 @@ The header name and schema the response returns (the schema is created using the
 .PARAMETER Description
 The Description of the response.
 
+.PARAMETER Reference
+A Reference Name of an existing component response to use.
+
+.PARAMETER Links
+A Response link definition
+
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
@@ -247,7 +253,7 @@ https://swagger.io/docs/specification/describing-request-body/
 .PARAMETER Name
 The reference Name of the request body.
 
-.PARAMETER ContentSchemas
+.PARAMETER Content
 The content-types and schema the request body accepts (the schema is created using the Property functions).
 
 .PARAMETER Description
@@ -568,17 +574,20 @@ function Add-PodeOAComponentResponseLink {
     More information on JSON Pointer can be found at [RFC6901](https://datatracker.ietf.org/doc/html/rfc6901).
 
 .PARAMETER Name
-    Alias for 'Name'. A unique identifier for the callback.
-    It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
+Alias for 'Name'. A unique identifier for the callback.
+It must be a valid string of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
 
 .PARAMETER Method
     Defines the HTTP method for the callback (e.g., GET, POST, PUT). Supports standard HTTP methods and a wildcard (*) for all methods.
 
-.PARAMETER RequestBody
-    Defines the schema of the request body. Can be set using New-PodeOARequestBody.
+.PARAMETER Parameters
+The Parameter definitions the request uses (from ConvertTo-PodeOAParameter).
 
-.PARAMETER Response
-    Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
+.PARAMETER RequestBody
+Defines the schema of the request body. Can be set using New-PodeOARequestBody.
+
+.PARAMETER Responses
+Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
@@ -586,19 +595,19 @@ This tag helps in distinguishing between different versions or types of API spec
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-    Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
-        -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
-        -Response (
-            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array)
-            New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
-            New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
-            New-PodeOAResponse -Default -Description 'Something is wrong'
-        )
-    This example demonstrates adding a POST callback to handle a request body and define various responses based on different status codes.
+Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
+    -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
+    -Response (
+        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array)
+        New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+        New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
+        New-PodeOAResponse -Default -Description 'Something is wrong'
+    )
+This example demonstrates adding a POST callback to handle a request body and define various responses based on different status codes.
 
 .NOTES
-    Ensure that the provided parameters match the expected schema and formats of Pode and OpenAPI specifications.
-    The function is useful for dynamically configuring and documenting API callbacks in a Pode server environment.
+Ensure that the provided parameters match the expected schema and formats of Pode and OpenAPI specifications.
+The function is useful for dynamically configuring and documenting API callbacks in a Pode server environment.
 #>
 
 function Add-PodeOAComponentCallBack {
@@ -787,7 +796,32 @@ function Test-OpenAPIVersion {
     }
     return $false
 }
-function Test-PodeOAComponents {
+
+<#
+.SYNOPSIS
+Check the OpenAPI component exist
+
+.DESCRIPTION
+Check the OpenAPI component exist
+
+.PARAMETER Field
+The component type
+
+.PARAMETER Name
+The component Name
+
+.PARAMETER DefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.PARAMETER ThrowException
+Generate an exception if the component doesn't exist
+
+.EXAMPLE
+Test-PodeOAComponent -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
+#>
+function Test-PodeOAComponent {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet( 'schemas' , 'responses' , 'parameters' , 'examples' , 'requestBodies' , 'headers' , 'securitySchemes' , 'links' , 'callbacks' , 'pathItems'  )]
@@ -824,6 +858,28 @@ function Test-PodeOAComponents {
 }
 
 
+
+<#
+.SYNOPSIS
+Remove an OpenAPI component if exist
+
+.DESCRIPTION
+Remove an OpenAPI component if exist
+
+.PARAMETER Field
+The component type
+
+.PARAMETER Name
+The component Name
+
+.PARAMETER DefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.EXAMPLE
+Remove-PodeOAComponents -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
+#>
 function Remove-PodeOAComponents {
     param(
         [Parameter(Mandatory = $true)]

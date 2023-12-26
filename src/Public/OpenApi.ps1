@@ -50,7 +50,7 @@ If supplied, generate the OpenApi Json version in human readible form.
 Define the default markup language for the OpenApi spec ('Json', 'Json-Compress', 'Yaml')
 
 .PARAMETER EnableSchemaValidation
-If supplied enable Test-PodeOAComponentSchema cmdlet that provide support for opeapi parameter schema validation
+If supplied enable Test-PodeOAComponentchema cmdlet that provide support for opeapi parameter schema validation
 
 .PARAMETER Depth
 Define the default  depth used by any JSON,YAML OpenAPI conversion (default 20)
@@ -686,7 +686,6 @@ The Parameter definitions the request uses (from ConvertTo-PodeOAParameter).
 .PARAMETER RequestBody
 The Request Body definition the request uses (from New-PodeOARequestBody).
 
-
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
@@ -873,7 +872,7 @@ function New-PodeOARequestBody {
             }
 
             'reference' {
-                Test-PodeOAComponents -Field requestBodies -DefinitionTag $tag -Name $Reference -ThrowException
+                Test-PodeOAComponent -Field requestBodies -DefinitionTag $tag -Name $Reference -ThrowException
                 $param = @{
                     '$ref' = "#/components/requestBodies/$Reference"
                 }
@@ -960,9 +959,9 @@ function Test-PodeOAJsonSchemaCompliance {
     }
 
     if (!$PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaValidation) {
-        throw 'Test-PodeOAComponentSchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
+        throw 'Test-PodeOAComponentchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
     }
-    if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
+    if (!(Test-PodeOAComponentchemaJson -Name $SchemaReference)) {
         throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
     }
 
@@ -1006,7 +1005,7 @@ Assign a name to the parameter
 .PARAMETER ContentType
 The content-types to be use with  component schema
 
-.PARAMETER ContentSchema
+.PARAMETER Schema
 The component schema to use.
 
 .PARAMETER Description
@@ -1088,6 +1087,7 @@ function ConvertTo-PodeOAParameter {
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Schema')]
         [Parameter(Mandatory = $true, ParameterSetName = 'ContentSchema')]
+        [Alias('ComponentSchema')]
         [String]
         $Schema,
 
@@ -1164,7 +1164,7 @@ function ConvertTo-PodeOAParameter {
         if (Test-PodeIsEmpty $Schema) {
             return $null
         }
-        Test-PodeOAComponents -Field schemas -DefinitionTag $DefinitionTag -Name $Schema -ThrowException
+        Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $Schema -ThrowException
         if (!$Name ) {
             $Name = $Schema
         }
@@ -1253,7 +1253,7 @@ function ConvertTo-PodeOAParameter {
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
-        Test-PodeOAComponents -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -ThrowException
+        Test-PodeOAComponent -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -ThrowException
         $prop = [ordered]@{
             '$ref' = "#/components/parameters/$Reference"
         }
@@ -2046,8 +2046,12 @@ The Name of the Example.
 .PARAMETER Summary
 Short description for the example
 
+
 .PARAMETER Description
 Long description for the example.
+
+.PARAMETER Reference
+A reference to a reusable component example
 
 .PARAMETER Value
 Embedded literal example. The  value Parameter and ExternalValue parameter are mutually exclusive.
@@ -2081,7 +2085,7 @@ function New-PodeOAExample {
         $ParamsList,
 
         [string]
-        $ContentMediaType,
+        $MediaType,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Inbuilt')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
@@ -2119,7 +2123,7 @@ function New-PodeOAExample {
         }
 
         if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
-            Test-PodeOAComponents -Field examples -DefinitionTag $DefinitionTag -Name $Reference -ThrowException
+            Test-PodeOAComponent -Field examples -DefinitionTag $DefinitionTag -Name $Reference -ThrowException
             $Name = $Reference
             $Example = [ordered]@{'$ref' = "#/components/examples/$Reference" }
         } else {
@@ -2142,8 +2146,8 @@ function New-PodeOAExample {
             }
         }
         $param = [ordered]@{}
-        if ($ContentMediaType) {
-            $param.$ContentMediaType = [ordered]@{
+        if ($MediaType) {
+            $param.$MediaType = [ordered]@{
                 $Name = $Example
             }
         } else {
@@ -2173,10 +2177,10 @@ Adds a single encoding definition applied to a single schema property.
 .DESCRIPTION
 A single encoding definition applied to a single schema property.
 
-.PARAMETER  encodingList
+.PARAMETER EncodingList
 Used by pipe
 
-.PARAMETER Name
+.PARAMETER Title
 The Name of the associated encoded property .
 
 .PARAMETER ContentType
@@ -2306,16 +2310,22 @@ A reference to a reusable CallBack component.
 .PARAMETER Method
 Defines the HTTP method for the callback (e.g., GET, POST, PUT). Supports standard HTTP methods and a wildcard (*) for all methods.
 
+.PARAMETER Parameters
+The Parameter definitions the request uses (from ConvertTo-PodeOAParameter).
+
 .PARAMETER RequestBody
 Defines the schema of the request body. Can be set using New-PodeOARequestBody.
 
-.PARAMETER Response
+.PARAMETER Responses
 Defines the possible responses for the callback. Can be set using New-PodeOAResponse.
 
 .PARAMETER DefinitionTag
 A array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.PARAMETER PassThru
+If supplied, the route passed in will be returned for further chaining.
 
 .EXAMPLE
     Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
@@ -2386,7 +2396,7 @@ function Add-PodeOACallBack {
     foreach ($r in @($Route)) {
         foreach ($tag in $DefinitionTag) {
             if ($Reference) {
-                Test-PodeOAComponents -Field callbacks -DefinitionTag $tag -Name $Reference -ThrowException
+                Test-PodeOAComponent -Field callbacks -DefinitionTag $tag -Name $Reference -ThrowException
                 if (!$Name) {
                     $Name = $Reference
                 }
@@ -2438,6 +2448,9 @@ A Description of the response. (Default: the HTTP StatusCode description)
 
 .PARAMETER Reference
 A Reference Name of an existing component response to use.
+
+.PARAMETER Links
+A Response link definition
 
 .PARAMETER Default
 If supplied, the response will be used as a default response - this overrides the StatusCode supplied.
@@ -2604,13 +2617,13 @@ function New-PodeOAResponse {
 .EXAMPLE
     $content = @{ type = 'string' }
     $mediaType = 'application/json'
-    New-PodeOAContentMediaType -ContentMediaType $mediaType -Content $content
+    New-PodeOAContentMediaType -MediaType $mediaType -Content $content
     This example creates a media content type definition for 'application/json' with a simple string content type.
 
 .EXAMPLE
     $content = @{ type = 'object'; properties = @{ name = @{ type = 'string' } } }
     $mediaTypes = 'application/json', 'application/xml'
-    New-PodeOAContentMediaType -ContentMediaType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
+    New-PodeOAContentMediaType -MediaType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
     This example demonstrates defining an array of objects for both 'application/json' and 'application/xml' media types, with a specified range for the number of items and a title.
 
 .EXAMPLE
@@ -2632,7 +2645,7 @@ function New-PodeOAContentMediaType {
     [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     param (
         [string[]]
-        $ContentMediaType = '*/*',
+        $MediaType = '*/*',
 
         [object]
         $Content,
@@ -2676,7 +2689,7 @@ function New-PodeOAContentMediaType {
         $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     $props = [ordered]@{}
-    foreach ($media in $ContentMediaType) {
+    foreach ($media in $MediaType) {
         if ($media -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
             throw "Invalid content-type found for schema: $($media)"
         }
@@ -2756,6 +2769,9 @@ function New-PodeOAContentMediaType {
     This parameter is mandatory when using the 'OperationRef' parameter set and is mutually exclusive of the `OperationId` field.
     It MUST point to an Operation Object. Relative `operationRef` values MAY be used to locate an existing Operation Object in the OpenAPI specification.
 
+.PARAMETER Reference
+A Reference Name of an existing component link to use.
+
 .PARAMETER Parameters
     A map representing parameters to pass to an operation as specified with `operationId` or identified via `operationRef`.
     The key is the parameter name to be used, whereas the value can be a constant or an expression to be evaluated and passed to the linked operation.
@@ -2769,7 +2785,6 @@ function New-PodeOAContentMediaType {
     This tag helps in distinguishing between different versions or types of API specifications within the application.
     You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
-
 .EXAMPLE
     $links = New-PodeOAResponseLink -LinkList $links -Name 'address' -OperationId 'getUserByName' -Parameters @{'username' = '$request.path.username'}
     Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User'} -Links $links
@@ -2779,8 +2794,6 @@ function New-PodeOAContentMediaType {
     The function supports adding links either by specifying an 'OperationId' or an 'OperationRef', making it versatile for different OpenAPI specification needs.
     It's important to match the parameters and response structures as per the OpenAPI specification to ensure the correct functionality of the API documentation.
 #>
-
-
 function New-PodeOAResponseLink {
     [CmdletBinding(DefaultParameterSetName = 'OperationId')]
     param(
@@ -2832,7 +2845,7 @@ function New-PodeOAResponseLink {
             $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
         }
         if ($Reference) {
-            Test-PodeOAComponents -Field links -DefinitionTag $DefinitionTag -Name $Reference  -ThrowException
+            Test-PodeOAComponent -Field links -DefinitionTag $DefinitionTag -Name $Reference  -ThrowException
             if (!$Name) {
                 $Name = $Reference
             }
@@ -3009,6 +3022,8 @@ Creates an OpenAPI Server Object.
 .DESCRIPTION
 Creates an OpenAPI Server Object to use with Add-PodeOAExternalRoute
 
+.PARAMETER ServerEndpointList
+Used for piping
 
 .PARAMETER Url
 A URL to the target host.  This URL supports Server Variables and MAY be relative, to indicate that the host location is relative to the location where the OpenAPI document is being served.
@@ -3037,6 +3052,7 @@ function New-PodeOAServerEndpoint {
         [ValidatePattern('^(https?://|/).+')]
         [string]
         $Url,
+
         [string]
         $Description
     )

@@ -14,7 +14,7 @@ Describe 'Exported Functions' {
             $params = (Get-Help -Name $func -Detailed).parameters.parameter
             foreach ($param in $params) {
                 if (!$param.Description) {
-                   # $found += "$($func): $($param.Name)"
+                    $found += "$($func): $($param.Name)"
                 }
             }
         }
