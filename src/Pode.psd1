@@ -273,6 +273,7 @@
         # openapi
         'Enable-PodeOpenApi',
         'Get-PodeOpenApiDefinition',
+        'Select-PodeOADefinition',
         'Add-PodeOAResponse',
         'Remove-PodeOAResponse',
         'Set-PodeOARequest',
@@ -306,7 +307,6 @@
         'New-PodeOAServerEndpoint',
 
         #Components
-        'Add-PodeComponentGroup',
         'Add-PodeOAComponentResponse',
         'Add-PodeOAComponentSchema',
         'Add-PodeOAComponentRequestBody',
@@ -318,6 +318,7 @@
         'Add-PodeOAComponentPathItem',
         'Add-PodeOAWebhook',
         'Test-PodeOAComponent',
+        'Remove-PodeOAComponents',
         # Metrics
         'Get-PodeServerUptime',
         'Get-PodeServerRestartCount',

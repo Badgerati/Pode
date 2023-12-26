@@ -105,7 +105,7 @@ Describe 'Add-PodeStaticRoute' {
 
 Describe 'Remove-PodeRoute' {
     BeforeEach {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'EndpointsMap' = @{}; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'OpenApiDefinitionTag' = 'default' }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'EndpointsMap' = @{}; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'SelectedOADefinitionTag' = 'default' }
     }
     It 'Adds route with simple url, and then removes it' {
         Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
@@ -166,7 +166,7 @@ Describe 'Remove-PodeStaticRoute' {
 
 Describe 'Clear-PodeRoutes' {
     BeforeEach {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{} }; 'FindEndpoints' = @{}; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'OpenApiDefinitionTag' = 'default' }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{} }; 'FindEndpoints' = @{}; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'SelectedOADefinitionTag' = 'default' }
     }
     It 'Adds routes for methods, and clears everything' {
         Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello1' }
@@ -231,7 +231,7 @@ Describe 'Clear-PodeStaticRoutes' {
 
 Describe 'Add-PodeRoute' {
     BeforeEach {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'OpenApiDefinitionTag' = 'default' }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'SelectedOADefinitionTag' = 'default' }
     }
     It 'Throws invalid method error for no method' {
         { Add-PodeRoute -Method 'MOO' -Path '/' -ScriptBlock {} } | Should -Throw -ExpectedMessage "*Cannot validate argument on parameter 'Method'*"
@@ -803,7 +803,7 @@ Describe 'Get-PodeRoute' {
         Mock Test-PodeIPAddress { return $true }
         Mock Test-PodeIsAdminUser { return $true } }
     BeforeEach {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'EndpointsMap' = @{}; 'Type' = $null; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'OpenApiDefinitionTag' = 'default' }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'EndpointsMap' = @{}; 'Type' = $null; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'SelectedOADefinitionTag' = 'default' }
     }
 
     It 'Returns both routes whe nothing supplied' {
@@ -896,7 +896,7 @@ Describe 'Get-PodeStaticRoute' {
         Mock New-PodePSDrive { return './assets' }
     }
     BeforeEach {
-        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd ; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'OpenApiDefinitionTag' = 'default' }
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd ; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'OpenAPI' = @{'default' = (Get-PodeOABaseObject) }; 'SelectedOADefinitionTag' = 'default' }
     }
     It 'Returns all static routes' {
         Add-PodeStaticRoute -Path '/assets' -Source './assets'

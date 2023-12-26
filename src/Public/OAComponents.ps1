@@ -73,7 +73,7 @@ function Add-PodeOAComponentResponse {
         $DefinitionTag
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.responses[$Name] = New-PodeOResponseInternal -DefinitionTag $tag  -Params $PSBoundParameters
@@ -137,7 +137,7 @@ function Add-PodeOAComponentSchema {
         $DefinitionTag
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
@@ -212,7 +212,7 @@ function Add-PodeOAComponentHeader {
         $DefinitionTag
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     foreach ($tag in $DefinitionTag) {
         $param = [ordered]@{
@@ -293,7 +293,7 @@ function Add-PodeOAComponentRequestBody {
         $DefinitionTag
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     foreach ($tag in $DefinitionTag) {
         $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema -DefinitionTag $tag) }
@@ -356,7 +356,7 @@ function Add-PodeOAComponentParameter {
         $DefinitionTag
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     foreach ($tag in $DefinitionTag) {
         if ([string]::IsNullOrWhiteSpace($Name)) {
@@ -433,7 +433,7 @@ function Add-PodeOAComponentExample {
         $DefinitionTag
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     foreach ($tag in $DefinitionTag) {
         $Example = [ordered]@{ }
@@ -537,7 +537,7 @@ function Add-PodeOAComponentResponseLink {
 
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
@@ -631,7 +631,7 @@ function Add-PodeOAComponentCallBack {
         $DefinitionTag
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
@@ -714,7 +714,7 @@ function Add-PodeOAComponentPathItem {
     )
 
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
 
     $refRoute = @{
@@ -748,6 +748,25 @@ function Add-PodeOAComponentPathItem {
 
 
 
+<#
+.SYNOPSIS
+Check the OpenAPI version
+
+.DESCRIPTION
+Check the OpenAPI version for a specific OpenAPI Definition
+
+
+.PARAMETER OpenApiVersion
+The version number to compare
+
+.PARAMETER DefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.EXAMPLE
+Test-OpenAPIVersion -OpenApiVersion 3.1 -
+#>
 
 function Test-OpenAPIVersion {
     param (
@@ -755,9 +774,11 @@ function Test-OpenAPIVersion {
         [decimal]
         $OpenApiVersion,
 
-        [string ]
+        [Parameter(Mandatory = $true)]
+        [string[] ]
         $DefinitionTag
     )
+
     if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0 -and $OpenApiVersion -eq 3.0  ) {
         return $true
     } elseif ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_1 -and $OpenApiVersion -eq 3.1  ) {
@@ -765,75 +786,6 @@ function Test-OpenAPIVersion {
     }
     return $false
 }
-<#
-.SYNOPSIS
-Adds a OpenAPI component definition group.
-
-.DESCRIPTION
-Adds a OpenAPI component definition group for each definition tags specified
-
-.PARAMETER DefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
-
-.PARAMETER Component
-A ScriptBlock for adding Routes.
-
-.EXAMPLE
-Add-PodeComponentGroup -DefinitionTag 'v3', 'v3.1'  -Components {
-        New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -Required |
-            New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 -Required |
-            New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 -Required |
-            New-PodeOAStringProperty -Name 'shipDate' -Format Date-Time |
-            New-PodeOAStringProperty -Name 'status' -Description 'Order Status' -Required -Example 'approved' -Enum @('placed', 'approved', 'delivered') |
-            New-PodeOABoolProperty -Name 'complete' |
-            New-PodeOAObjectProperty -XmlName 'order' |
-            Add-PodeOAComponentSchema -Name 'Order'
-
-New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' |
-    Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store'
-
-}
-#>
-function Add-PodeComponentGroup {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $false)]
-        [string[]]
-        $DefinitionTag  ,
-
-        [Parameter(Mandatory = $true)]
-        [scriptblock]
-        $Components
-
-
-    )
-
-    if (Test-PodeIsEmpty $Components) {
-        throw 'No scriptblock for -Components passed'
-    }
-    foreach ($tag in $DefinitionTag) {
-
-        if (! ($PodeContext.Server.OpenApi.Keys -ccontains $tag)) {
-            throw "DefinitionTag $tag is not defined"
-        }
-    }
-
-    # check for scoped vars
-    $Components, $usingVars = Convert-PodeScopedVariables -ScriptBlock $Components -PSSession $PSCmdlet.SessionState
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $PodeContext.Server.OpenApiDefinitionTag =$PodeContext.Server.DefaultOpenApiDefinitionTag
-    } else {
-        $PodeContext.Server.OpenApiDefinitionTag = $DefinitionTag
-    }
-    # add routes
-    $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Components -Arguments $_args -Splat
-    $PodeContext.Server.OpenApiDefinitionTag = $PodeContext.Server.DefaultOpenApiDefinitionTag
-
-}
-
 function Test-PodeOAComponents {
     param(
         [Parameter(Mandatory = $true)]
@@ -846,14 +798,15 @@ function Test-PodeOAComponents {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true)]
         [string[]]
         $DefinitionTag,
 
         [switch]
         $ThrowException
     )
-
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
+    }
     foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components[$field ].keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false or throw an exception
@@ -869,6 +822,31 @@ function Test-PodeOAComponents {
     }
 }
 
+
+function Remove-PodeOAComponents {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet( 'schemas' , 'responses' , 'parameters' , 'examples' , 'requestBodies' , 'headers' , 'securitySchemes' , 'links' , 'callbacks' , 'pathItems'  )]
+        [string]
+        $Field,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [string[]]
+        $DefinitionTag
+    )
+    if (Test-PodeIsEmpty -Value $DefinitionTag) {
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
+    }
+    foreach ($tag in $DefinitionTag) {
+        if (!($PodeContext.Server.OpenAPI[$tag].components[$field ].keys -ccontains $Name)) {
+            $PodeContext.Server.OpenAPI[$tag].components[$field ].remove($Name)
+        }
+    }
+}
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
     New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer

@@ -389,7 +389,7 @@ function Add-PodeRoute {
 
 
         if (Test-PodeIsEmpty -Value $DefinitionTag) {
-            $DefinitionTag = $PodeContext.Server.OpenApiDefinitionTag
+            $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
         }
 
         #add the default OpenApi responses
@@ -1239,14 +1239,11 @@ function Add-PodeRouteGroup {
         }
     }
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $PodeContext.Server.OpenApiDefinitionTag =$PodeContext.Server.DefaultOpenApiDefinitionTag
-    } else {
-        $PodeContext.Server.OpenApiDefinitionTag = $DefinitionTag
+        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     # add routes
     $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
     $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
-    $PodeContext.Server.OpenApiDefinitionTag = $PodeContext.Server.DefaultOpenApiDefinitionTag
 }
 
 <#
