@@ -3132,7 +3132,7 @@ function Add-PodeOAWebhook {
         }
     }
     foreach ($tag in $DefinitionTag) {
-        if (Test-OpenAPIVersion -OpenApiVersion 3.0 -DefinitionTag $tag ) {
+        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $tag ) {
             throw 'The feature reusable component webhook is not available in OpenAPI v3.0.x'
         }
         $PodeContext.Server.OpenAPI[$tag].webhooks[$Name] = $refRoute

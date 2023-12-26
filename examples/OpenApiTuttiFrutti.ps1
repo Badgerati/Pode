@@ -63,7 +63,7 @@ Some useful links:
 
     Enable-PodeOAViewer -Type Bookmarks -Path '/docs/v3.1' -DefinitionTag 'v3.1'
 
-    Add-PodeComponentGroup -DefinitionTag 'v3', 'v3.1'  -Components {
+    Select-PodeOADefinition -Tag 'v3', 'v3.1'  -Scriptblock {
 
         Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc $swaggerDocs
         Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs
@@ -266,7 +266,7 @@ Some useful links:
         Add-PodeOAComponentParameter -Name 'PetIdParam' -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' -Required | ConvertTo-PodeOAParameter -In Path )
     }
 
-    Add-PodeComponentGroup -DefinitionTag 'v3.1'  -Components {
+    Select-PodeOADefinition -Tag 'v3.1'  -Scriptblock {
 
         Add-PodeOAComponentPathItem -Name 'GetPetByIdWithRef' -Method Get -PassThru | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetByIdWithRef' -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
@@ -280,7 +280,7 @@ Some useful links:
         Add-PodeOAWebhook -Name 'newPet' -Method Post -PassThru | Set-PodeOARouteInfo   -Description 'Information about a new pet in the system'   -PassThru |
             Set-PodeOARequest -PassThru -RequestBody (
                 New-PodeOARequestBody -Content @{ 'application/json' = 'Pets' }
-            ) |            Add-PodeOAResponse -StatusCode 200 -Description 'Return a 200 status to indicate that the data was received successfully'
+            ) | Add-PodeOAResponse -StatusCode 200 -Description 'Return a 200 status to indicate that the data was received successfully'
 
     }
 

@@ -199,7 +199,7 @@ Some useful links:
     Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs -DefinitionTag 'v3'
 
 
-    Add-PodeComponentGroup -DefinitionTag 'v3', 'v3.1'  -Components {
+    Select-PodeOADefinition -Tag 'v3', 'v3.1'  -Scriptblock {
         New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -Required |
             New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 -Required |
             New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 -Required |

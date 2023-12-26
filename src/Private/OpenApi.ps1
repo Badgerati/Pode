@@ -39,7 +39,7 @@ function ConvertTo-PodeOAObjectSchema {
             }
 
             if ($type -ieq 'multipart/form-data' -and $upload.content ) {
-                if (Test-OpenAPIVersion -OpenApiVersion 3.1 -DefinitionTag $DefinitionTag -and $upload.partContentMediaType) {
+                if ((Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag ) -and $upload.partContentMediaType) {
                     foreach ($key in $upload.content.Properties ) {
                         if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
                             $key.ContentMediaType = $PartContentMediaType
@@ -50,7 +50,7 @@ function ConvertTo-PodeOAObjectSchema {
                 }
                 $newContent = $upload.content
             } else {
-                if (Test-OpenAPIVersion -OpenApiVersion 3.0 -DefinitionTag $DefinitionTag  ) {
+                if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $DefinitionTag  ) {
                     $newContent = [ordered]@{
                         'type'   = 'string'
                         'format' = $upload.contentEncoding
@@ -268,7 +268,7 @@ function ConvertTo-PodeOASchemaProperty {
     } else {
         # base schema type
         $schema = [ordered]@{ }
-        if (Test-OpenAPIVersion -OpenApiVersion 3.0 -DefinitionTag $DefinitionTag ) {
+        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
             if ($Property.type -is [string[]]) {
                 throw 'Multi type properties requeired OpenApi Version 3.1 or above'
             }
@@ -296,7 +296,7 @@ function ConvertTo-PodeOASchemaProperty {
     if ($Property.deprecated) {
         $schema['deprecated'] = $Property.deprecated
     }
-    if ($Property.nullable -and (Test-OpenAPIVersion -OpenApiVersion 3.0 -DefinitionTag $DefinitionTag )) {
+    if ($Property.nullable -and (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $DefinitionTag )) {
         $schema['nullable'] = $Property.nullable
     }
 
@@ -309,7 +309,7 @@ function ConvertTo-PodeOASchemaProperty {
     }
 
     if ($Property.example) {
-        if (Test-OpenAPIVersion -OpenApiVersion 3.0 -DefinitionTag $DefinitionTag ) {
+        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
             $schema['example'] = $Property.example
         } else {
             if ($Property.example -is [Array]) {
@@ -319,7 +319,7 @@ function ConvertTo-PodeOASchemaProperty {
             }
         }
     }
-    if (Test-OpenAPIVersion -OpenApiVersion 3.0 -DefinitionTag $DefinitionTag ) {
+    if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
         if ($Property.minimum) {
             $schema['minimum'] = $Property.minimum
         }
@@ -371,7 +371,7 @@ function ConvertTo-PodeOASchemaProperty {
         $schema['xml'] = $Property.xml
     }
 
-    if (Test-OpenAPIVersion -OpenApiVersion 3.1 -DefinitionTag $DefinitionTag ) {
+    if (Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag ) {
         if ($Property.ContentMediaType) {
             $schema['contentMediaType'] = $Property.ContentMediaType
         }
@@ -605,7 +605,7 @@ function Get-PodeOpenApiDefinitionInternal {
         openapi = $Definition.Version
     }
 
-    if (Test-OpenAPIVersion   -OpenApiVersion 3.1 -DefinitionTag $DefinitionTag  ) {
+    if (Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag  ) {
         $def['jsonSchemaDialect'] = 'https://spec.openapis.org/oas/3.1/dialect/base'
     }
 
@@ -651,7 +651,7 @@ function Get-PodeOpenApiDefinitionInternal {
     # paths
     $def['paths'] = [ordered]@{}
     if (  $Definition.webhooks.count -gt 0) {
-        if (Test-OpenAPIVersion -OpenApiVersion 3.0 -DefinitionTag $tag  ) {
+        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $tag  ) {
             throw 'Feature webhooks is unsupported in OpenAPI v3.0.x'
         } else {
             $keys = [string[]]$Definition.webhooks.Keys
@@ -697,7 +697,7 @@ function Get-PodeOpenApiDefinitionInternal {
         $def['components'].callbacks = $components.callbacks
     }
     if ($components.pathItems.count -gt 0) {
-        if (Test-OpenAPIVersion -OpenApiVersion 3.0 -DefinitionTag $tag  ) {
+        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $tag  ) {
             throw 'Feature pathItems is unsupported in OpenAPI v3.0.x'
         } else {
             $keys = [string[]]$components.pathItems.Keys

@@ -729,7 +729,7 @@ function Add-PodeOAComponentPathItem {
         }
     }
     foreach ($tag in $DefinitionTag) {
-        if (Test-OpenAPIVersion   -OpenApiVersion 3.0 -DefinitionTag $tag  ) {
+        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $tag  ) {
             throw 'The feature reusable component pathItems is not available in OpenAPI v3.0.x'
         }
         #add the default OpenApi responses
@@ -756,7 +756,7 @@ Check the OpenAPI version
 Check the OpenAPI version for a specific OpenAPI Definition
 
 
-.PARAMETER OpenApiVersion
+.PARAMETER Version
 The version number to compare
 
 .PARAMETER DefinitionTag
@@ -765,23 +765,24 @@ This tag helps in distinguishing between different versions or types of API spec
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-Test-OpenAPIVersion -OpenApiVersion 3.1 -
+Test-OpenAPIVersion -Version 3.1 -DefinitionTag 'default'
 #>
 
 function Test-OpenAPIVersion {
     param (
+        [Parameter(Mandatory = $true)]
         [ValidateSet( 3.1 , 3.0 )]
         [decimal]
-        $OpenApiVersion,
+        $Version,
 
         [Parameter(Mandatory = $true)]
         [string[] ]
         $DefinitionTag
     )
 
-    if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0 -and $OpenApiVersion -eq 3.0  ) {
+    if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0 -and $Version -eq 3.0  ) {
         return $true
-    } elseif ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_1 -and $OpenApiVersion -eq 3.1  ) {
+    } elseif ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_1 -and $Version -eq 3.1  ) {
         return $true
     }
     return $false
