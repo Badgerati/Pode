@@ -148,7 +148,6 @@ function Enable-PodeOpenApi {
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
         $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
-
     if ($Description -or $Version -or $Title) {
         Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
@@ -423,9 +422,7 @@ function Get-PodeOADefinition {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     $meta = @{
         RouteFilter    = $RouteFilter
@@ -573,9 +570,7 @@ function Add-PodeOAResponse {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     # override status code with default
     if ($Default) {
         $code = 'default'
@@ -837,9 +832,7 @@ function New-PodeOARequestBody {
 
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     if ($Example -and $Examples) {
         throw 'Parameter -Examples and -Example are mutually exclusive'
@@ -954,9 +947,7 @@ function Test-PodeOAJsonSchemaCompliance {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     if (!$PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaValidation) {
         throw 'Test-PodeOAComponentchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
@@ -1156,9 +1147,7 @@ function ConvertTo-PodeOAParameter {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema' -or $PSCmdlet.ParameterSetName -ieq 'Schema') {
         if (Test-PodeIsEmpty $Schema) {
@@ -1482,9 +1471,7 @@ function Set-PodeOARouteInfo {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($r in @($Route)) {
 
         $r.OpenApi.DefinitionTag = $DefinitionTag
@@ -1496,6 +1483,12 @@ function Set-PodeOARouteInfo {
             $r.OpenApi.Description = $Description
         }
         if ($OperationId) {
+            foreach ($tag in $DefinitionTag) {
+                if ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId -ccontains $OperationId) {
+                    throw "OperationID:$OperationId has to be unique"
+                }
+                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId += $OperationId
+            }
             $r.OpenApi.OperationId = $OperationId
         }
         if ($Tags) {
@@ -1604,9 +1597,7 @@ function Enable-PodeOAViewer {
         [string]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     # error if there's no OpenAPI URL
     $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI[$DefinitionTag].Path
     if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
@@ -1650,6 +1641,9 @@ function Enable-PodeOAViewer {
             Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
         }
     } else {
+        if ($Type -ieq 'RapiPdf' -and (Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag)) {
+            throw "The Document tool RapidPdf doesn't support OpenAPI 3.1"
+        }
         # setup meta info
         $meta = @{
             Type     = $Type.ToLowerInvariant()
@@ -1782,9 +1776,7 @@ function Add-PodeOAExternalDoc {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         if ($PSCmdlet.ParameterSetName -ieq 'NewRef') {
             $param = [ordered]@{url = $Url }
@@ -1847,9 +1839,7 @@ function Add-PodeOATag {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     foreach ($tag in $DefinitionTag) {
         $param = [ordered]@{
@@ -1961,9 +1951,7 @@ function Add-PodeOAInfo {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     $Info = [ordered]@{}
 
@@ -2389,9 +2377,7 @@ function Add-PodeOACallBack {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     foreach ($r in @($Route)) {
         foreach ($tag in $DefinitionTag) {
@@ -2685,9 +2671,7 @@ function New-PodeOAContentMediaType {
 
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     $props = [ordered]@{}
     foreach ($media in $MediaType) {
         if ($media -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
@@ -2960,9 +2944,7 @@ function Add-PodeOAExternalRoute {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'builtin' {
@@ -3132,9 +3114,7 @@ function Add-PodeOAWebhook {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     $refRoute = @{
         Method      = $Method.ToLower()
@@ -3171,6 +3151,7 @@ Select a group of OpenAPI Definions for modification.
 An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+If Tag is empty or null the default Definition is selected
 
 .PARAMETER ScriptBlock
 The ScriptBlock that will modified the group.
@@ -3194,9 +3175,8 @@ New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xm
 function Select-PodeOADefinition {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
         [string[]]
-        $Tag  ,
+        $Tag,
 
         [Parameter(Mandatory = $true)]
         [scriptblock]
@@ -3208,23 +3188,60 @@ function Select-PodeOADefinition {
     if (Test-PodeIsEmpty $Scriptblock) {
         throw 'No scriptblock for -Scriptblock passed'
     }
-    foreach ($tag in $DefinitionTag) {
-
-        if (! ($PodeContext.Server.OpenApi.Keys -ccontains $tag)) {
-            throw "DefinitionTag $tag is not defined"
-        }
+    if (Test-PodeIsEmpty -Value $Tag) {
+        $Tag = $PodeContext.Server.DefaultOADefinitionTag
+    } else {
+        $Tag = Test-PodeOADefinition -Tag $Tag
     }
-
     # check for scoped vars
     $Scriptblock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $Scriptblock -PSSession $PSCmdlet.SessionState
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $PodeContext.Server.SelectedOADefinitionTag =$PodeContext.Server.DefaultOADefinitionTag
-    } else {
-        $PodeContext.Server.SelectedOADefinitionTag = $DefinitionTag
-    }
-    # add routes
+    $PodeContext.Server.OADefinitionTagSelectionStack.Push($PodeContext.Server.SelectedOADefinitionTag)
+
+    $PodeContext.Server.SelectedOADefinitionTag = $Tag
+
     $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
     $null = Invoke-PodeScriptBlock -ScriptBlock $Scriptblock -Arguments $_args -Splat
-    $PodeContext.Server.SelectedOADefinitionTag = $PodeContext.Server.DefaultOADefinitionTag
+    $PodeContext.Server.SelectedOADefinitionTag = $PodeContext.Server.OADefinitionTagSelectionStack.Pop()
 
+}
+
+
+
+
+
+
+
+
+<#
+.SYNOPSIS
+Check if a Definition exist
+
+.DESCRIPTION
+Check if a Definition exist. If the parameter Tag is empty or Null $PodeContext.Server.SelectedOADefinitionTag is returned
+
+.PARAMETER Tag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.EXAMPLE
+Test-PodeOADefinition -Tag 'v3', 'v3.1'
+#>
+function Test-PodeOADefinition {
+    param (
+        [Parameter(Mandatory = $false)]
+        [string[]]
+        $Tag
+    )
+
+    if ($Tag -and $Tag.Count -gt 0) {
+        foreach ($t in $Tag) {
+            if (! ($PodeContext.Server.OpenApi.Keys -ccontains $t)) {
+                throw "DefinitionTag $t is not defined"
+            }
+        }
+        return $Tag
+    } else {
+        return $PodeContext.Server.SelectedOADefinitionTag
+    }
 }

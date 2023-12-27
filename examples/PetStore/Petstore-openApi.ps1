@@ -813,7 +813,7 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
     }
-    #  $yaml = PodeOADefinition -Format Yaml
+      $yaml = PodeOADefinition -Format Yaml
 
 
 

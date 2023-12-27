@@ -78,9 +78,7 @@ function Add-PodeOAComponentResponse {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.responses[$Name] = New-PodeOResponseInternal -DefinitionTag $tag  -Params $PSBoundParameters
     }
@@ -142,9 +140,7 @@ function Add-PodeOAComponentSchema {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
         if ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.schemaValidation) {
@@ -217,9 +213,7 @@ function Add-PodeOAComponentHeader {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $param = [ordered]@{
             'schema' = ($Schema | ConvertTo-PodeOASchemaProperty -NoDescription -DefinitionTag $tag)
@@ -298,9 +292,7 @@ function Add-PodeOAComponentRequestBody {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema -DefinitionTag $tag) }
 
@@ -361,9 +353,7 @@ function Add-PodeOAComponentParameter {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         if ([string]::IsNullOrWhiteSpace($Name)) {
             if ($Parameter.name) {
@@ -438,9 +428,7 @@ function Add-PodeOAComponentExample {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $Example = [ordered]@{ }
         if ($Summary) {
@@ -542,9 +530,7 @@ function Add-PodeOAComponentResponseLink {
         $DefinitionTag
 
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
     }
@@ -639,9 +625,7 @@ function Add-PodeOAComponentCallBack {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
     }
@@ -722,9 +706,7 @@ function Add-PodeOAComponentPathItem {
         $DefinitionTag
     )
 
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     $refRoute = @{
         Method      = $Method.ToLower()
@@ -839,9 +821,7 @@ function Test-PodeOAComponent {
         [switch]
         $ThrowException
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components[$field ].keys -ccontains $Name)) {
             # If $Name is not found in the current $tag, return $false or throw an exception
@@ -888,6 +868,7 @@ function Remove-PodeOAComponents {
         $Field,
 
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name,
@@ -895,9 +876,7 @@ function Remove-PodeOAComponents {
         [string[]]
         $DefinitionTag
     )
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components[$field ].keys -ccontains $Name)) {
             $PodeContext.Server.OpenAPI[$tag].components[$field ].remove($Name)

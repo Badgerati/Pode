@@ -651,7 +651,7 @@ function Get-PodeOpenApiDefinitionInternal {
     # paths
     $def['paths'] = [ordered]@{}
     if (  $Definition.webhooks.count -gt 0) {
-        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $tag  ) {
+        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $DefinitionTag  ) {
             throw 'Feature webhooks is unsupported in OpenAPI v3.0.x'
         } else {
             $keys = [string[]]$Definition.webhooks.Keys
@@ -697,7 +697,7 @@ function Get-PodeOpenApiDefinitionInternal {
         $def['components'].callbacks = $components.callbacks
     }
     if ($components.pathItems.count -gt 0) {
-        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $tag  ) {
+        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $DefinitionTag  ) {
             throw 'Feature pathItems is unsupported in OpenAPI v3.0.x'
         } else {
             $keys = [string[]]$components.pathItems.Keys
@@ -958,6 +958,7 @@ function Get-PodeOABaseObject {
                 '200'     = @{ description = 'OK' }
                 'default' = @{ description = 'Internal server error' }
             }
+            operationId      = @()
         }
     }
 }

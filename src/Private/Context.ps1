@@ -350,7 +350,7 @@ function New-PodeContext {
 
     # swagger and openapi
     $ctx.Server.OpenAPI = @{ $ctx.Server.SelectedOADefinitionTag = Get-PodeOABaseObject }
-
+    $ctx.Server.OADefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
     # server metrics
     $ctx.Metrics = @{
         Server   = @{

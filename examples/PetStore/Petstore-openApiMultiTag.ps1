@@ -121,8 +121,7 @@ Some useful links:
     Enable-PodeOAViewer -Type ReDoc -Path '/docs/v3.1/redoc' -DarkMode -DefinitionTag 'v3.1'
     Enable-PodeOAViewer -Type RapiDoc -Path '/docs/v3.1/rapidoc' -DarkMode -DefinitionTag 'v3.1'
     Enable-PodeOAViewer -Type StopLight -Path '/docs/v3.1/stoplight' -DarkMode -DefinitionTag 'v3.1'
-    Enable-PodeOAViewer -Type Explorer -Path '/docs/v3.1/explorer' -DarkMode -DefinitionTag 'v3.1'
-    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/v3.1/rapipdf' -DarkMode -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/v3.1/explorer' -DarkMode -DefinitionTag 'v3.1' 
     Enable-PodeOAViewer -Type Bookmarks -Path '/docs/v3.1' -DefinitionTag 'v3.1'
 
     # setup session details
@@ -273,7 +272,7 @@ Some useful links:
 
 
 
-        Add-PodeRouteGroup -Path '/api/v3' -DefinitionTag 'v3', 'v3.1'  -Routes {
+        Add-PodeRouteGroup -Path '/api/v3'    -Routes {
             <#
             PUT '/pet'
         #>

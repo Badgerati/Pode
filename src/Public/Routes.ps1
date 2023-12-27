@@ -387,10 +387,7 @@ function Add-PodeRoute {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method -Append
         }
 
-
-        if (Test-PodeIsEmpty -Value $DefinitionTag) {
-            $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-        }
+        $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.defaultResponses) {
@@ -829,7 +826,7 @@ function Add-PodeStaticRoute {
                 TransferEncoding = $TransferEncoding
                 ErrorType        = $ErrorContentType
                 Download         = $DownloadOnly
-                OpenApi          = @{
+                <#  OpenApi          = @{
                     Path           = $OpenApiPath
                     Responses      = @{
                         '200'     = @{ description = 'OK' }
@@ -838,7 +835,7 @@ function Add-PodeStaticRoute {
                     Parameters     = @()
                     RequestBody    = @{}
                     Authentication = @()
-                }
+                }#>
                 IsStatic         = $true
                 Metrics          = @{
                     Requests = @{
@@ -1068,11 +1065,6 @@ One or more optional Users that will be authorised to access this Route, when us
 .PARAMETER AllowAnon
 If supplied, the Routes will allow anonymous access for non-authenticated users.
 
-.PARAMETER DefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
-
 .EXAMPLE
 Add-PodeRouteGroup -Path '/api' -Routes { Add-PodeRoute -Path '/route1' -Etc }
 #>
@@ -1139,10 +1131,7 @@ function Add-PodeRouteGroup {
         $User,
 
         [switch]
-        $AllowAnon,
-
-        [string[]]
-        $DefinitionTag
+        $AllowAnon
     )
 
     if (Test-PodeIsEmpty $Routes) {
@@ -1217,6 +1206,7 @@ function Add-PodeRouteGroup {
         if ($null -ne $RouteGroup.AccessMeta.Custom) {
             $CustomAccess = $RouteGroup.AccessMeta.Custom
         }
+
     }
 
     $RouteGroup = @{
@@ -1238,9 +1228,7 @@ function Add-PodeRouteGroup {
             Custom = $CustomAccess
         }
     }
-    if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
-    }
+
     # add routes
     $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
     $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
@@ -1636,6 +1624,15 @@ function Remove-PodeRoute {
         return
     }
 
+    # remove the operationId from the openapi operationId list
+    if ($PodeContext.Server.Routes[$Method][$Path].OpenAPI) {
+        foreach ( $tag  in  $PodeContext.Server.Routes[$Method][$Path].OpenAPI.DefinitionTag) {
+            if ($tag -and ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId -ccontains $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId)) {
+                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId }
+            }
+        }
+    }
+    
     # remove the route's logic
     $PodeContext.Server.Routes[$Method][$Path] = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
             $_.Endpoint.Name -ine $EndpointName
