@@ -547,11 +547,6 @@ function Add-PodeOAComponentResponseLink {
     The Add-PodeOACallBack function is used for defining OpenAPI callback configurations for routes in a Pode server.
     It enables setting up API specifications including detailed parameters, request body schemas, and response structures for various HTTP methods.
 
-.PARAMETER Name
-    Mandatory. A unique name for the callback.
-    Must be a valid string composed of alphanumeric characters, periods (.), hyphens (-), and underscores (_).
-
-
 .PARAMETER Path
     Specifies the callback path, usually a relative URL.
     The key that identifies the Path Item Object is a runtime expression evaluated in the context of a runtime HTTP request/response to identify the URL for the callback request.
@@ -581,7 +576,7 @@ This tag helps in distinguishing between different versions or types of API spec
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
+Add-PodeOAComponentCallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
     -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
     -Response (
         New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array)
@@ -589,7 +584,9 @@ Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
         New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
         New-PodeOAResponse -Default -Description 'Something is wrong'
     )
-This example demonstrates adding a POST callback to handle a request body and define various responses based on different status codes.
+Add-PodeOACallBack -Reference 'test'
+    This example demonstrates adding a POST callback to handle a request body and define various responses based on different status codes.
+
 
 .NOTES
 Ensure that the provided parameters match the expected schema and formats of Pode and OpenAPI specifications.

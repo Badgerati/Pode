@@ -94,20 +94,34 @@ Add-PodeOAInfo  -Version 1.0.17 -Description 'This is a sample Pet Store Server 
 # Endpoint for the API
 Add-PodeOAServerEndpoint -url '/api/v3.1' -Description 'default endpoint'
 # OpenApi external documentation links
-New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
+$extDoc=New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+$extDo| Add-PodeOAExternalDoc -
 # OpenApi documentation viewer
 Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
 Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc'
 Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc'
 Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight'
 Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer'
-Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf'
 Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
 ```
 ## Authentication
 
 Any authentication defined, either by [`Add-PodeAuthMiddleware`](../../Functions/Authentication/Add-PodeAuthMiddleware), or using the `-Authentication` parameter on Routes, will be automatically added to the `security` section of the OpenAPI definition.
+
+
+## Tags
+
+In OpenAPI, a "tag" is used to group related operations. Tags are often used to organize and categorize endpoints in an API specification, making it easier to understand and navigate the API documentation. Each tag can be associated with one or more API operations, and these tags are then used in tools like Swagger UI to group and display operations in a more organized way.
+
+Here how to define and use tags
+```powershell
+$swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs
+
+Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -AllowAnon -ScriptBlock {
+ #code
+} | Set-PodeOARouteInfo -Summary 'Finds Pets by status' -Description 'Multiple status values can be provided with comma-separated strings' -Tags 'pet' -OperationId 'findPetsByStatus'
+```
 
 ## Routes
 
@@ -277,7 +291,7 @@ The following is an example of defining a schema which is a object of Name, User
 # define a reusable schema user object
 New-PodeOAStringProperty -Name 'Name' |
   New-PodeOAIntProperty -Name 'UserId' |
-  New-PodeOAIntProperty -Name 'Age'|
+  New-PodeOAIntProperty -Name 'Age' |
   New-PodeOAObjectProperty |
   Add-PodeOAComponentSchema -Name 'UserSchema'
 
@@ -421,21 +435,62 @@ Add-PodeRoute -PassThru -Method Put -Path '/pet/:petId' -ScriptBlock {
 
 To define a reusable header definition you can use the [`Add-PodeOAComponentHeader`](../../Functions/OpenApi/Add-PodeOAComponentHeader) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
+```powershell
+New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user'| Add-PodeOAComponentHeader -Name 'X-Rate-Limit'
+New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires'| Add-PodeOAComponentHeader -Name 'X-Expires-After'
 
+ Add-PodeRoute -PassThru -Method Get -Path '/user/login' -ScriptBlock {
+              #code
+} | Set-PodeOARouteInfo -Summary 'Logs user into the system.' -Description 'Logs user into the system.' -Tags 'user' -OperationId 'loginUser' -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'string' ) -Header @('X-Rate-Limit', 'X-Expires-After') -PassThru |
+    Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'
+```
 
 
 ### CallBacks
 
 To define a reusable callback definition you can use the [`Add-PodeOAComponentCallBack`](../../Functions/OpenApi/Add-PodeOAComponentCallBack) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
+```powershell
+Add-PodeOAComponentCallBack -Name 'test' -Path '{$request.body#/id}' -Method Post  -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id') } ) -Response (
+    New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' -Array) |
+        New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
+        New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
+        New-PodeOAResponse -Default   -Description 'Something is wrong'
+)
 
+ Add-PodeRoute -PassThru -Method Post -Path '/petcallbackReference'  -Authentication 'Login-OAuth2' -Scope 'write'  -ScriptBlock {
+    #code
+} | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' -Tags 'pet' -OperationId 'petcallbackReference' -PassThru |
+    Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'PetBodySchema' ) -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
+    Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -Content @{
+       application/json' = ( New-PodeOAStringProperty -Name 'result' | New-PodeOAStringProperty -Name 'message' | New-PodeOAObjectProperty )
+    } -PassThru |
+    Add-PodeOACallBack -Name 'test1'   -Reference 'test'
+```
 
 
 ### ResponseLink
 
 To define a reusable response link definition you can use the [`Add-PodeOAComponentResponseLink`](../../Functions/OpenApi/Add-PodeOAComponentResponseLink) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
+```powershell
+#Add link reference
+Add-PodeOAComponentResponseLink -Name 'address' -OperationId 'getUserByName' -Parameters  @{'username' = '$request.path.username' }
 
+#use link reference
+Add-PodeRoute -PassThru -Method Put -Path '/userLinkByRef/:username' -ScriptBlock {
+    Write-PodeJsonResponse -Value 'done' -StatusCode 200
+} | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'updateUserLinkByRef' -PassThru |
+    Set-PodeOARequest -Parameters @(
+    (  New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path )
+    ) -RequestBody (New-PodeOARequestBody -Required -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )) -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User' }  -PassThru  -Links (New-PodeOAResponseLink -Name 'address2' -Reference 'address' ) |
+    Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
+    Add-PodeOAResponse -StatusCode 404 -Description 'User not found' -PassThru |
+    Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
+```
 
 ## Properties
 
@@ -618,7 +673,7 @@ As JSON, this could look as follows:
 }
 ```
 
-### oneOf,anyOf and allOf Keywords
+### oneOf, anyOf and allOf Keywords
 
 OpenAPI 3.x provides several keywords which you can use to combine schemas. You can use these keywords to create a complex schema or validate a value against multiple criteria.
 - oneOf – validates the value against exactly one of the subschemas
@@ -753,3 +808,4 @@ Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf'
 # plus a bookmark page with the link to all documentation
 Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
 ```
+##
