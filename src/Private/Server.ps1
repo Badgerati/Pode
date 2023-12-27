@@ -143,8 +143,7 @@ function Start-PodeInternalServer {
                 Write-PodeHost "`t- $($_.Url)" -ForegroundColor Yellow
             }
         }
-    }
-    catch {
+    } catch {
         throw $_.Exception
     }
 }
@@ -217,7 +216,7 @@ function Restart-PodeInternalServer {
         }
 
         # clear openapi
-        $PodeContext.Server.OpenAPI = @{ 'default' = Get-PodeOABaseObject }
+        $PodeContext.Server.OpenAPI = @{ $PodeContext.Server.DefaultOADefinitionTag = Get-PodeOABaseObject }
 
         # clear the sockets
         $PodeContext.Server.Signals.Enabled = $false
@@ -281,8 +280,7 @@ function Restart-PodeInternalServer {
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
         Start-PodeInternalServer
-    }
-    catch {
+    } catch {
         $_ | Write-PodeErrorLog
         throw $_.Exception
     }

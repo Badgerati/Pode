@@ -308,7 +308,7 @@ function New-PodeAuthScheme {
                 InnerScheme   = $InnerScheme
                 Scheme        = 'http'
                 Arguments     = @{
-                    Description = $Description
+                    Description  = $Description
                     HeaderTag    = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
                     Encoding     = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
                     AsCredential = $AsCredential
@@ -375,10 +375,10 @@ function New-PodeAuthScheme {
                 InnerScheme   = $InnerScheme
                 Arguments     = @{
                     Description = $Description
-                    HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
-                    Scopes    = $Scope
-                    AsJWT     = $AsJWT
-                    Secret    = $secretBytes
+                    HeaderTag   = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
+                    Scopes      = $Scope
+                    AsJWT       = $AsJWT
+                    Secret      = $secretBytes
                 }
             }
         }
@@ -396,7 +396,7 @@ function New-PodeAuthScheme {
                 InnerScheme   = $InnerScheme
                 Scheme        = 'http'
                 Arguments     = @{
-                    Description = $Description
+                    Description  = $Description
                     Fields       = @{
                         Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
                         Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
@@ -486,7 +486,7 @@ function New-PodeAuthScheme {
                 InnerScheme   = $InnerScheme
                 Scheme        = 'apiKey'
                 Arguments     = @{
-                    Description = $Description
+                    Description  = $Description
                     Location     = $Location
                     LocationName = $LocationName
                     AsJWT        = $AsJWT
@@ -1530,8 +1530,10 @@ function Add-PodeAuthMiddleware {
         $Route,
 
         [string[]]
-        $DefinitionTag = @('default')
+        $DefinitionTag
     )
+
+    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
 
     if (!(Test-PodeAuthExists -Name $Authentication)) {
         throw "Authentication method does not exist: $($Authentication)"
