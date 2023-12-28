@@ -1389,7 +1389,7 @@ function ConvertTo-PodeOAParameter {
     }
 
     if ($In -ieq 'Path' -and !$prop.required ) {
-        Throw "If the parameter location is 'Path', the parameter -Required and its value MUST be true"
+        Throw "If the parameter location is 'Path', the switch parameter `-Required` is required"
     }
 
     return $prop

@@ -130,7 +130,6 @@ Some useful links:
             ))
 
         Merge-PodeOAProperty -Type AllOf -ObjectDefinitions 'Address', 'User' | Add-PodeOAComponentSchema -Name 'aaaaa'
-
         Add-PodeOAComponentSchema -Name 'Tag' -Component (
             New-PodeOAObjectProperty -Name 'Tag' -XmlName  'tag' -Properties  (
                 New-PodeOAIntProperty -Name 'id'-Format Int64 |
@@ -148,6 +147,9 @@ Some useful links:
                     New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold')
             ))
 
+        Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions 'Pet', (
+            New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive') | New-PodeOAObjectProperty
+        ) | Add-PodeOAComponentSchema -Name 'NewCat'
 
         #XML teest
         New-PodeOAIntProperty -Name 'id' -Format Int32 -XmlAttribute | New-PodeOAStringProperty -Name 'name' -XmlPrefix 'sample' -XmlNamespace 'http://example.com/schema/sample' |
@@ -453,7 +455,7 @@ Some useful links:
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet3' -PassThru |
                 Set-PodeOARequest  -Parameters @(
                   (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
-                ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
+                ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'NewCat' } -Examples (
                         New-PodeOAExample -MediaType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
                             New-PodeOAExample -MediaType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
                             New-PodeOAExample -MediaType 'application/json' -Reference 'frog-example'
