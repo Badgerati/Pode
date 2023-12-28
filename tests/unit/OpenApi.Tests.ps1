@@ -2365,7 +2365,7 @@ Describe 'OpenApi' {
                 }
 
                 It 'Path - ContentSchema - Exception -Required' {
-                    { ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema 'Cat' } | Should -Throw  -ExpectedMessage '*the parameter -Required*'
+                    { ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema 'Cat' } | Should -Throw  -ExpectedMessage '*the switch parameter `-Required*'
                 }
             }
         }
