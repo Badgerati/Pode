@@ -223,7 +223,7 @@ function Enable-PodeOpenApi {
             $format = 'yaml'
         } elseif (!$format) {
             $format = $meta.MarkupLanguage.ToLower()
-        } elseif (@('yaml', 'json', 'Json-Compress') -inotcontains $format) {
+        } elseif (@('yaml', 'json', 'json-Compress') -inotcontains $format) {
             Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format $format not valid"
             return
         }
@@ -1735,8 +1735,6 @@ https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externa
 .PARAMETER ExternalDoc
 An externalDoc object
 
-.PARAMETER Reference
-The Name assigned to a previoulsy created External Doc reference (created by New-PodeOAExternalDoc)
 
 .PARAMETER Name
 The Name of the reference.
@@ -1756,13 +1754,14 @@ You can use this tag to reference the specific API documentation, schema, or ver
 Add-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
 .EXAMPLE
-New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'|Add-PodeOAExternalDoc
+$ExtDoc = New-PodeOAExternalDoc  -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+$ExtDoc|Add-PodeOAExternalDoc
 #>
 function Add-PodeOAExternalDoc {
     [CmdletBinding(DefaultParameterSetName = 'Pipe')]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true , ParameterSetName = 'Pipe')]
-        [System.Collections.Specialized.OrderedDictionary]
+        [Parameter(ValueFromPipeline = $true, DontShow = $true, ParameterSetName = 'Pipe')]
+        [System.Collections.Specialized.OrderedDictionary ]
         $ExternalDoc,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'NewRef')]

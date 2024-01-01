@@ -1262,7 +1262,7 @@ Allows referencing an external resource for extended documentation.
 
 ##### Fixed Fields
 
-| Field Name                                       |   Type   | `PodeOAExternalDoc` | Description                                                                                                                                  |
+| Field Name                                       |   Type   | `New-PodeOAExternalDoc` | Description                                                                                                                                  |
 | ------------------------------------------------ | :------: | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | <a name="externalDocDescription"></a>description | `string` | `-Description`      | A short description of the target documentation. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 | <a name="externalDocUrl"></a>url                 | `string` | `-Url`              | **REQUIRED**. The URL for the target documentation. Value MUST be in the format of a URL.                                                    |
@@ -1271,10 +1271,10 @@ This object MAY be extended with [Specification Extensions](#specificationExtens
 
 ##### External Documentation Object Example
 ```powershell
-New-PodeOAExternalDoc  -Name 'ExampleDoc' -Description 'Find more info here' -Url 'https://example.com"
-}'
+$ExampleDoc = New-PodeOAExternalDoc -Description 'Find more info here' -Url 'https://example.com'
+
 Add-PodeRoute -PassThru -Method Put -Path '/pet' -Authentication 'petstore_auth' -Scope 'write:pets', 'read:pets' -ScriptBlock { # code here
-        } | Set-PodeOARouteInfo -ExternalDoc 'ExampleDoc' -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatePetWithForm' -PassThru | # Continue .....
+        } | Set-PodeOARouteInfo -ExternalDoc 'ExampleDoc' -Summary 'Updates a pet in the store with form data' -Tags 'pet' -OperationId 'updatePetWithForm' -PassThru | # Continue .....
 ```
 ```json
 {
@@ -1506,7 +1506,7 @@ A complex parameter using `content` to define serialization:
 ```powershell
    New-PodeOANumberProperty -Name 'lat' -Required |
       New-PodeOANumberProperty -Name 'long' -Required |
-      New-PodeOAObjectProperty|ConvertTo-PodeOAParameter -In Query -ContentType 'application/json' 
+      New-PodeOAObjectProperty|ConvertTo-PodeOAParameter -In Query -ContentType 'application/json'
 ```
 ```json
 {
@@ -2650,7 +2650,7 @@ It is not mandatory to have a Tag Object per tag defined in the Operation Object
 | ------------------------------------------ | :-----------------------------------------------------------: | --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | <a name="tagName"></a>name                 |                           `string`                            | `-Name`         | **REQUIRED**. The name of the tag.                                                                                                  |
 | <a name="tagDescription"></a>description   |                           `string`                            | `-Description`  | A short description for the tag. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation.        |
-| <a name="tagExternalDocs"></a>externalDocs | [External Documentation Object](#externalDocumentationObject) | `-ExternalDocs` | Additional external documentation for this tag.  In Pode is a reference to  ExternalDoc object created with `New-PodeOAExternalDoc` |
+| <a name="tagExternalDocs"></a>externalDocs | [External Documentation Object](#externalDocumentationObject) | `-ExternalDocs` | Additional external documentation for this tag.  In Pode is an ExternalDoc object created with `New-PodeOAExternalDoc` |
 
 This object MAY be extended with [Specification Extensions](#specificationExtensions).
 

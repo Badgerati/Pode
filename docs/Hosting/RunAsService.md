@@ -88,29 +88,19 @@ sudo systemctl stop pode-server
 Traditionally in Linux, binding to ports below 1024 requires root privileges. This is a security measure, as these low-numbered ports are considered privileged. However, running applications as the root user poses significant security risks. This article explores methods to use these privileged ports with PowerShell (`pwsh`) in Linux, without running it as the root user.
 
 #### Methods to Use Ports Below 1024 Without Root Access
+There are different methods to achieve the goals.
+Reverse Proxy is the right approach for a production environment, primarily if the server is connected directly to the internet.
+The other solutions are reasonable after an in-depth risk analysis.
 
-#### 1. **Using `setcap` Command**
+#### 1. **Using a Reverse Proxy**
 
-The `setcap` utility can grant specific capabilities to an executable, like `pwsh`, enabling it to bind to privileged ports.
+A reverse proxy like Nginx can listen on the privileged port and forward requests to your application running on an unprivileged port.
 
-- **How it Works:**
-  - Run `sudo setcap 'cap_net_bind_service=+ep' $(which pwsh)`. This command sets the `CAP_NET_BIND_SERVICE` capability on the PowerShell executable, allowing it to bind to any port below 1024.
+- **Configuration:**
+  - Configure Nginx to listen on port 443 and forward requests to the port where your PowerShell script is listening.
+  - This method is widely used in web applications for its additional benefits like load balancing and SSL termination.
 
-- **Security Consideration:**
-  - This method enhances security by avoiding running PowerShell as root, but it still grants significant privileges to the PowerShell process.
-
-#### 2. **Utilizing Authbind**
-
-Authbind is a tool that allows a non-root user to bind to privileged ports.
-
-- **Setup:**
-  - Install Authbind, configure it to allow the desired port, and then start your PowerShell script using Authbind.
-  - For instance, `authbind --deep pwsh yourscript.ps1` allows the script to bind to a privileged port.
-
-- **Advantages:**
-  - It provides a finer-grained control over port access and doesn't require setting special capabilities on the PowerShell binary itself.
-
-#### 3. **iptables Redirection**
+#### 2. **iptables Redirection**
 
 Using iptables, you can redirect traffic from a privileged port to a higher, unprivileged port.
 
@@ -121,11 +111,25 @@ Using iptables, you can redirect traffic from a privileged port to a higher, unp
 - **Benefits:**
   - This approach doesn't require changing the privileges of the PowerShell executable or script.
 
-#### 4. **Using a Reverse Proxy**
+#### 3. **Using `setcap` Command**
 
-A reverse proxy like Nginx can listen on the privileged port and forward requests to your application running on an unprivileged port.
+The `setcap` utility can grant specific capabilities to an executable, like `pwsh`, enabling it to bind to privileged ports.
 
-- **Configuration:**
-  - Configure Nginx to listen on port 443 and forward requests to the port where your PowerShell script is listening.
-  - This method is widely used in web applications for its additional benefits like load balancing and SSL termination. 
+- **How it Works:**
+  - Run `sudo setcap 'cap_net_bind_service=+ep' $(which pwsh)`. This command sets the `CAP_NET_BIND_SERVICE` capability on the PowerShell executable, allowing it to bind to any port below 1024.
+
+- **Security Consideration:**
+  - This method enhances security by avoiding running PowerShell as root, but it still grants significant privileges to the PowerShell process.
+
+#### 4. **Utilizing Authbind**
+
+Authbind is a tool that allows a non-root user to bind to privileged ports.
+
+- **Setup:**
+  - Install Authbind, configure it to allow the desired port, and then start your PowerShell script using Authbind.
+  - For instance, `authbind --deep pwsh yourscript.ps1` allows the script to bind to a privileged port.
+
+- **Advantages:**
+  - It provides a finer-grained control over port access and doesn't require setting special capabilities on the PowerShell binary itself.
+
 
