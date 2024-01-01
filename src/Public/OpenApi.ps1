@@ -66,7 +66,7 @@ If supplied, it will replace the default OpenAPI response with the new provided.
 
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -291,7 +291,7 @@ A map between a variable name and its value.  The value is used for substitution
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -389,7 +389,7 @@ If supplied, only routes that are available on the Requests URI will be used to 
 
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -504,7 +504,7 @@ If supplied, the route passed in will be returned for further chaining.
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 
@@ -771,7 +771,7 @@ Use New-PodeOAEncodingObject to define the encode
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -921,7 +921,7 @@ Specifies how many levels of the parameter objects are included in the JSON repr
 
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .OUTPUTS
@@ -1034,7 +1034,7 @@ Furthermore, if referencing a Schema that contains an example, the Examples valu
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -1432,7 +1432,7 @@ If supplied, the route passed in will be returned for further chaining.
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -1555,9 +1555,18 @@ The title of the web page. (Default is the OpenAPI title from Enable-PodeOpenApi
 .PARAMETER DarkMode
 If supplied, the page will be rendered using a dark theme (this is not supported for all viewers).
 
+.PARAMETER EndpointName
+The EndpointName of an Endpoint(s) to bind the static Route against.
+
+.PARAMETER Bookmarks
+If supplied, create a new documentation bookmarks page
+
+.PARAMETER NoAdvertise
+If supplied, it is not going to state the documentation URL at the startup of the server
+
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -1567,15 +1576,15 @@ Enable-PodeOAViewer -Type Swagger -DarkMode
 Enable-PodeOAViewer -Type ReDoc -Title 'Some Title' -OpenApi 'http://some-url/openapi'
 
 .EXAMPLE
-Enable-PodeOAViewer -Type Bookmarks
+Enable-PodeOAViewer -Bookmarks
 
 Adds a route that enables a viewer to display with links to any documentation tool associated with the OpenApi.
 #>
 function Enable-PodeOAViewer {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Doc')]
     param(
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Swagger', 'ReDoc', 'RapiDoc', 'StopLight', 'Explorer', 'RapiPdf', 'Bookmarks')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Doc')]
+        [ValidateSet('Swagger', 'ReDoc', 'RapiDoc', 'StopLight', 'Explorer', 'RapiPdf' )]
         [string]
         $Type,
 
@@ -1593,6 +1602,17 @@ function Enable-PodeOAViewer {
 
         [switch]
         $DarkMode,
+
+        [string[]]
+        $EndpointName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Bookmarks')]
+        [switch]
+        $Bookmarks,
+
+        [Parameter( ParameterSetName = 'Bookmarks')]
+        [switch]
+        $NoAdvertise,
 
         [string]
         $DefinitionTag
@@ -1616,7 +1636,7 @@ function Enable-PodeOAViewer {
         throw "No route path supplied for $($Type) page"
     }
 
-    if ($Type -ieq 'Bookmarks') {
+    if ($Bookmarks.IsPresent) {
         # setup meta info
         $meta = @{
             Type          = $Type.ToLowerInvariant()
@@ -1625,7 +1645,9 @@ function Enable-PodeOAViewer {
             DarkMode      = $DarkMode
             DefinitionTag = $DefinitionTag
         }
-        Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
+
+        $route = Add-PodeRoute -Method Get -Path $Path `
+            -Middleware $Middleware -ArgumentList $meta -EndpointName $EndpointName -PassThru -ScriptBlock {
             param($meta)
             $Data = @{
                 Title   = $meta.Title
@@ -1640,6 +1662,15 @@ function Enable-PodeOAViewer {
             $podeRoot = Get-PodeModuleMiscPath
             Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
         }
+        if (! $NoAdvertise.IsPresent) {
+            $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.bookmarks = @{
+                path  = $Path
+                route = @()
+                openApiUrl=  $OpenApiUrl
+            }
+            $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.bookmarks.route += $route
+        }
+
     } else {
         if ($Type -ieq 'RapiPdf' -and (Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag)) {
             throw "The Document tool RapidPdf doesn't support OpenAPI 3.1"
@@ -1653,7 +1684,7 @@ function Enable-PodeOAViewer {
         }
         $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer[$($meta.Type)] = $Path
         # add the viewer route
-        Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -ScriptBlock {
+        Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -EndpointName $EndpointName -ScriptBlock {
             param($meta)
             $podeRoot = Get-PodeModuleMiscPath
             if ( $meta.DarkMode) { $Theme = 'dark' } else { $Theme = 'light' }
@@ -1747,7 +1778,7 @@ A Description of the external documentation.
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -1815,7 +1846,7 @@ The parameter is created by Add-PodeOAExternalDoc
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -1905,7 +1936,7 @@ The URL pointing to the contact information. MUST be in the format of a URL.
 
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -2050,7 +2081,7 @@ The -Value parameter and -ExternalValue parameter are mutually exclusive.       
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -2308,7 +2339,7 @@ Defines the possible responses for the callback. Can be set using New-PodeOAResp
 
 .PARAMETER DefinitionTag
 A array of string representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .PARAMETER PassThru
@@ -2442,7 +2473,7 @@ If supplied, the response will be used as a default response - this overrides th
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -2765,7 +2796,7 @@ A Reference Name of an existing component link to use.
 
 .PARAMETER DefinitionTag
     An Array of strings representing the unique tag for the API specification.
-    This tag helps in distinguishing between different versions or types of API specifications within the application.
+    This tag helps distinguish between different versions or types of API specifications within the application.
     You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -2887,7 +2918,7 @@ If supplied, the route passed in will be returned for further chaining.
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -3082,7 +3113,7 @@ If supplied, the route passed in will be returned for further chaining.
 
 .PARAMETER DefinitionTag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
@@ -3148,7 +3179,7 @@ Select a group of OpenAPI Definions for modification.
 
 .PARAMETER Tag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 If Tag is empty or null the default Definition is selected
 
@@ -3220,7 +3251,7 @@ Check if a Definition exist. If the parameter Tag is empty or Null $PodeContext.
 
 .PARAMETER Tag
 An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
+This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE

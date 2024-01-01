@@ -142,6 +142,41 @@ function Start-PodeInternalServer {
             $endpoints | ForEach-Object {
                 Write-PodeHost "`t- $($_.Url)" -ForegroundColor Yellow
             }
+            # state the OpenAPI endpoints for each definition
+            foreach ($key in  $PodeContext.Server.OpenAPI.keys) {
+                $bookmarks = $PodeContext.Server.OpenAPI[$key].hiddenComponents.bookmarks
+                if ( $bookmarks) {
+                    Write-PodeHost
+                    if (!$OpenAPIHeader) {
+                        Write-PodeHost 'OpenAPI Info:' -ForegroundColor Yellow
+                        $OpenAPIHeader = $true
+                    }
+                    Write-PodeHost " '$key':" -ForegroundColor Yellow
+
+                    if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint[0].Name) {
+                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor Yellow
+                        }
+                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor Yellow
+                        }
+                    } else {
+                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        $endpoints | ForEach-Object {
+                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
+                            Write-PodeHost "     . $url" -ForegroundColor Yellow
+                        }
+                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        $endpoints | ForEach-Object {
+                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
+                            Write-PodeHost "     . $url" -ForegroundColor Yellow
+                        }
+                    }
+                }
+            }
+
         }
     } catch {
         throw $_.Exception

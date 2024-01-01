@@ -51,7 +51,7 @@ Some useful links:
     Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -DefinitionTag 'v3'
 
-    Enable-PodeOAViewer -Type Bookmarks -Path '/docs' -DefinitionTag 'v3'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3'
 
 
     Enable-PodeOAViewer -Type Swagger -Path '/docs/v3.1/swagger' -DefinitionTag 'v3.1'
@@ -60,7 +60,7 @@ Some useful links:
     Enable-PodeOAViewer -Type StopLight -Path '/docs/v3.1/stoplight' -DarkMode -DefinitionTag 'v3.1'
     Enable-PodeOAViewer -Type Explorer -Path '/docs/v3.1/explorer' -DarkMode -DefinitionTag 'v3.1'
 
-    Enable-PodeOAViewer -Type Bookmarks -Path '/docs/v3.1' -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs/v3.1' -DefinitionTag 'v3.1'
 
     Select-PodeOADefinition -Tag 'v3', 'v3.1'  -Scriptblock {
 
@@ -954,9 +954,14 @@ Some useful links:
                 Write-PodeJsonResponse -Value 'done' -StatusCode 2005
             }
 
-        } }
+        }
+    }
 
 
     $yaml = PodeOADefinition -Format Yaml -DefinitionTag 'v3.1'
-    # $json=  PodeOADefinition -Format Json
+    $json = PodeOADefinition -Format Json -DefinitionTag 'v3'
+
+    Write-PodeHost "`rYAML Tag: v3.1  Output:`r $yaml"
+
+    Write-PodeHost "`rJSON Tag: v3 Output:`r $json"
 }

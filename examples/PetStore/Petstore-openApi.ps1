@@ -80,9 +80,9 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses
+    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses
 
-    $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+    $swaggerDocs = New-PodeOAExternalDoc -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     $swaggerDocs | Add-PodeOAExternalDoc
 
     $InfoDescription = @'
@@ -108,7 +108,7 @@ Some useful links:
     Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode
     Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
 
-    Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs'
 
 
     # setup session details
@@ -813,15 +813,4 @@ Some useful links:
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
     }
-      $yaml = PodeOADefinition -Format Yaml
-
-
-
-
-    #$r= ConvertFrom-PodeXML -node $xmlDoc
-
-    #$pet=$r |convertto-json
-
-    #$Validate = Test-PodeOAJsonSchemaCompliance -Json $pet -SchemaReference 'Pet'
-    # $json=  PodeOADefinition -Format Json
 }

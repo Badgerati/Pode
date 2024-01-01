@@ -108,7 +108,7 @@ Some useful links:
     Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode
     Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
 
-    Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
+    Enable-PodeOAViewer  -Bookmarks -Path '/docs'
 
 
     # setup session details
