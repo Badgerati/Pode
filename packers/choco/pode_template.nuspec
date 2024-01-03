@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>pode</id>
+    <title>Pode</title>
+    <version>$version$</version>
+    <authors>Badgerati</authors>
+    <owners>Badgerati</owners>
+    <summary>Pode is a Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites.</summary>
+    <description>
+Pode is a Cross-Platform framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.
+
+### Features
+
+* Cross-platform using PowerShell Core (with support for PS5)
+* Docker support, including images for ARM/Raspberry Pi
+* Azure Functions, AWS Lambda, and IIS support
+* OpenAPI, Swagger, and ReDoc support
+* Listen on a single or multiple IP address/hostnames
+* Cross-platform support for HTTP, HTTPS, TCP and SMTP
+* Cross-platform support for WebSockets, including secure WebSockets
+* Host REST APIs, Web Pages, and Static Content (with caching)
+* Support for custom error pages
+* Request and Response compression using GZip/Deflate
+* Multi-thread support for incoming requests
+* Inbuilt template engine, with support for third-parties
+* Async timers for short-running repeatable processes
+* Async scheduled tasks using cron expressions for short/long-running processes
+* Supports logging to CLI, Files, and custom logic for other services like LogStash
+* Cross-state variable access across multiple runspaces
+* Restart the server via file monitoring, or defined periods/times
+* Ability to allow/deny requests from certain IP addresses and subnets
+* Basic rate limiting for IP addresses and subnets
+* Middleware and Sessions on web servers, with Flash message and CSRF support
+* Authentication on requests, such as Basic, Windows and Azure AD
+* Support for dynamically building Routes from Functions and Modules
+* Generate/bind self-signed certificates
+* Secret management support to load secrets from vaults
+* Support for File Watchers
+* (Windows) Open the hosted server as a desktop application
+
+    </description>
+    <projectUrl>https://github.com/Badgerati/Pode</projectUrl>
+    <packageSourceUrl>https://github.com/Badgerati/Pode/tree/master/packers</packageSourceUrl>
+    <docsUrl>https://badgerati.github.io/Pode</docsUrl>
+    <bugTrackerUrl>https://github.com/Badgerati/Pode/issues</bugTrackerUrl>
+    <tags>powershell web server rest api smtp unix cross-platform file-monitoring multithreaded schedule middleware authentication aws azure websockets openapi</tags>
+    <copyright>Copyright 2017-2023</copyright>
+    <licenseUrl>https://github.com/Badgerati/Pode/blob/master/LICENSE.txt</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <iconUrl>https://raw.githubusercontent.com/Badgerati/Pode/master/images/icon.png</iconUrl>
+    <releaseNotes>https://github.com/Badgerati/Pode/releases</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+    <file src="..\..\pkg\**" target="src" />
+    <file src=".\VERIFICATION.txt" target="src/VERIFICATION.txt" />
+  </files>
+</package>

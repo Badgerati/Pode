@@ -1094,7 +1094,7 @@ function Resolve-PodeOAReferences {
                 #TBD
             }
         } elseif ($ComponentSchema.properties[$key].type -eq 'object') {
-            $ComponentSchema.properties[$key].properties = Resolve-PodeOAReferences -ComponentSchema $ComponentSchema.properties[$key].properties
+            $ComponentSchema.properties[$key].properties = Resolve-PodeOAReferences -DefinitionTag $DefinitionTag -ComponentSchema $ComponentSchema.properties[$key].properties
         } elseif ($ComponentSchema.properties[$key].'$ref') {
             if (($ComponentSchema.properties[$key].'$ref').StartsWith('#/components/schemas/')) {
                 $refName = ($ComponentSchema.properties[$key].'$ref') -replace '#/components/schemas/', ''

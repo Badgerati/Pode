@@ -9,6 +9,6 @@
     Server              = @{
         Timeout                     = 60
         BodySize                    = 100MB
-        DefaultOADefinitionTag = 'test1'
+        DefaultOADefinitionTag = 'v3.0.3'
     }
 }

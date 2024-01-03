@@ -1,6 +1,6 @@
 param(
     [string]
-    $Version = '',
+    $Version ='',
     [string]
     [ValidateSet(  'None', 'Normal' , 'Detailed', 'Diagnostic')]
     $PesterVerbosity = 'Normal'
@@ -15,7 +15,7 @@ $Versions = @{
     MkDocs      = '1.5.3'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
-    DotNet      = '7.0.1'
+    DotNet      = '8.0.1'
     Checksum    = '0.2.0'
     MkDocsTheme = '9.4.6'
     PlatyPS     = '0.14.2'
@@ -133,8 +133,8 @@ function Invoke-PodeBuildDotnetBuild($target) {
 Task StampVersion {
     (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
-    (Get-Content ./packers/choco/pode.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
-    (Get-Content ./packers/choco/tools/ChocolateyInstall.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
+    (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
+    (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
 }
 
 # Synopsis: Generating a Checksum of the Zip
@@ -401,4 +401,59 @@ Task DocsHelpBuild DocsDeps, {
 # Synopsis: Build the documentation
 Task DocsBuild DocsDeps, DocsHelpBuild, {
     mkdocs build
+}
+
+
+Task Clean  {
+
+    $path = './pkg'
+
+    if (  (Test-Path $path)) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    Write-Host "$path Cleanup done"
+}
+
+Task InstallCurrentUser  {
+
+    $path = './pkg'
+
+    if ($Version){
+
+        if (! (Test-Path $path)) {
+            Invoke-Build Pack
+        }
+        if ($IsWindows -or (($PSVersionTable.Keys -contains "PSEdition") -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
+            $PSPaths = $ENV:PSModulePath -split ";"
+        }
+        else {
+            $PSPaths = $ENV:PSModulePath -split ":"
+        }
+        $dest = join-path -Path  $PSPaths[0]  -ChildPath "Pode" -AdditionalChildPath "$Version"
+
+        if (Test-Path $dest) {
+            Remove-Item -Path $dest -Recurse -Force | Out-Null
+        }
+
+        # create the dest dir
+        New-Item -Path $dest -ItemType Directory -Force | Out-Null
+        # which folders do we need?
+
+        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Private'  ) -Destination  $dest -Force -Recurse | Out-Null
+        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Public'  ) -Destination  $dest -Force -Recurse | Out-Null
+        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Misc'  ) -Destination  $dest -Force -Recurse | Out-Null
+        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Libs'  ) -Destination  $dest -Force -Recurse | Out-Null
+
+
+
+        # copy general files
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.psm1') -Destination $dest -Force | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.psd1') -Destination $dest -Force | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.Internal.psm1') -Destination $dest -Force | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.Internal.psd1') -Destination $dest -Force  | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'LICENSE.txt') -Destination $dest -Force   | Out-Null
+
+        Write-Host "Deployed to $dest"
+    }
+
 }
