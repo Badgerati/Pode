@@ -272,12 +272,14 @@
 
         # openapi
         'Enable-PodeOpenApi',
-        'Get-PodeOpenApiDefinition',
+        'Get-PodeOADefinition',
         'Select-PodeOADefinition',
         'Add-PodeOAResponse',
         'Remove-PodeOAResponse',
         'Set-PodeOARequest',
         'New-PodeOARequestBody',
+        'Test-PodeOADefinitionTag',
+        'Test-PodeOADefinition',
         # properties
         'New-PodeOAIntProperty',
         'New-PodeOANumberProperty',

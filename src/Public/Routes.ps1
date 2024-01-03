@@ -387,7 +387,7 @@ function Add-PodeRoute {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method -Append
         }
 
-        $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.defaultResponses) {
@@ -454,7 +454,7 @@ function Add-PodeRoute {
         }
     }
     if ($OAReference) {
-        Test-PodeOAComponent -Field pathItems -DefinitionTag $DefinitionTag -Name $OAReference -ThrowException
+        Test-PodeOAComponent -Field pathItems -DefinitionTag $DefinitionTag -Name $OAReference -PostValidation
         foreach ($r in @($newRoutes)) {
             $r.OpenApi = @{
                 '$ref'        = "#/components/paths/$OAReference"
@@ -1632,7 +1632,7 @@ function Remove-PodeRoute {
             }
         }
     }
-    
+
     # remove the route's logic
     $PodeContext.Server.Routes[$Method][$Path] = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
             $_.Endpoint.Name -ine $EndpointName

@@ -168,6 +168,13 @@ Some useful links:
         New-PodeOAStringProperty -Array -XmlWrapped  -XmlName 'aliens' | Add-PodeOAComponentSchema -Name 'WrappedAliensWithItems'
 
 
+        New-PodeOAStringProperty -Name 'name' |
+            New-PodeOAStringProperty -Name 'type' |
+            New-PodeOASchemaProperty -Name 'children' -Array -Reference 'StructPart' |
+            New-PodeOAObjectProperty |
+            Add-PodeOAComponentSchema -Name 'StructPart'
+
+
         #Define Pet schema
         New-PodeOAStringProperty -Name 'name' | New-PodeOAStringProperty -Name 'petType' |
             New-PodeOAObjectProperty -DiscriminatorProperty 'petType' | Add-PodeOAComponentSchema -Name 'Pet2'
@@ -862,7 +869,7 @@ Some useful links:
             } | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'updateUser_1' -PassThru |
                 Set-PodeOARequest -Parameters @(
                 (  New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path )
-                ) -RequestBody (New-PodeOARequestBody -Required -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' ))
+                ) -RequestBody (New-PodeOARequestBody -Required -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'StructPart' ))
 
 
             Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -ScriptBlock {

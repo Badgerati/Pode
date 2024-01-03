@@ -109,7 +109,7 @@ function ConvertTo-PodeOAObjectSchema {
                         }
                     }
                 } else {
-                    Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $item -ThrowException
+                    Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
                     if ($isArray) {
                         $obj[$type].schema.items = @{
                             '$ref' = "#/components/schemas/$($item)"
@@ -236,7 +236,7 @@ function ConvertTo-PodeOAOfProperty {
     if ($Property.schemas ) {
         foreach ($prop in $Property.schemas ) {
             if ($prop -is [string]) {
-                Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $prop -ThrowException
+                Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $prop -PostValidation
                 $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
             } else {
                 $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
@@ -397,7 +397,7 @@ function ConvertTo-PodeOASchemaProperty {
 
         $schema['type'] = 'array'
         if ($Property.type -ieq 'schema') {
-            Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -ThrowException
+            Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
             $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
         } else {
             $Property.array = $false
@@ -424,7 +424,7 @@ function ConvertTo-PodeOASchemaProperty {
 
         # schema refs
         if ($Property.type -ieq 'schema') {
-            Test-PodeOAComponent -Field schemas  -DefinitionTag $DefinitionTag -Name $Property['schema'] -ThrowException
+            Test-PodeOAComponent -Field schemas  -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
             $schema = @{
                 '$ref' = "#/components/schemas/$($Property['schema'])"
             }
@@ -953,6 +953,18 @@ function Get-PodeOABaseObject {
             headerSchemas    = @{}
             schemaJson       = @{}
             viewer           = @{}
+            postValidation   = @{
+                schemas         = @{}
+                responses       = @{}
+                parameters      = @{}
+                examples        = @{}
+                requestBodies   = @{}
+                headers         = @{}
+                securitySchemes = @{}
+                links           = @{}
+                callbacks       = @{}
+                pathItems       = @{}
+            }
             externalPath     = [ordered]@{}
             defaultResponses = @{
                 '200'     = @{ description = 'OK' }
@@ -1375,7 +1387,7 @@ function New-PodeOResponseInternal {
     }
 
     if ($Params.Reference ) {
-        Test-PodeOAComponent  -Field responses -DefinitionTag $DefinitionTag -Name $Params.Reference -ThrowException
+        Test-PodeOAComponent  -Field responses -DefinitionTag $DefinitionTag -Name $Params.Reference -PostValidation
         $response = @{
             '$ref' = "#/components/responses/$($Params.Reference)"
         }
@@ -1395,7 +1407,7 @@ function New-PodeOResponseInternal {
                 } else {
                     $_headers = @{}
                     foreach ($h in $Params.Headers) {
-                        Test-PodeOAComponent -Field headers -DefinitionTag $DefinitionTag -Name $h -ThrowException
+                        Test-PodeOAComponent -Field headers -DefinitionTag $DefinitionTag -Name $h -PostValidation
                         $_headers[$h] = @{
                             '$ref' = "#/components/headers/$h"
                         }
@@ -1452,4 +1464,22 @@ function New-PodeOAResponseLinkInternal {
     }
 
     return $link
+}
+
+
+function  Test-PodeOADefinitionInternal {
+
+    #Validate OpenAPI definitions
+    $undefinedRefs = Test-PodeOADefinition
+    if ($undefinedRefs.count -gt 0) {
+        Write-PodeHost 'Undefined OpenAPI References :' -ForegroundColor Red
+        foreach ($tag in $undefinedRefs.keys) {
+            Write-PodeHost "  Definition $tag :" -ForegroundColor Red
+            foreach ($key in $undefinedRefs[$tag].keys) {
+                Write-PodeHost "    `$refs : $key ($($undefinedRefs[$tag][$key]))" -ForegroundColor Red
+            }
+            Write-PodeHost
+        }
+        throw 'Undefined OpenAPI reference(s)'
+    }
 }

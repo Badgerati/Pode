@@ -78,7 +78,7 @@ function Add-PodeOAComponentResponse {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.responses[$Name] = New-PodeOResponseInternal -DefinitionTag $tag  -Params $PSBoundParameters
     }
@@ -140,7 +140,7 @@ function Add-PodeOAComponentSchema {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
         if ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.schemaValidation) {
@@ -213,7 +213,7 @@ function Add-PodeOAComponentHeader {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $param = [ordered]@{
             'schema' = ($Schema | ConvertTo-PodeOASchemaProperty -NoDescription -DefinitionTag $tag)
@@ -292,7 +292,7 @@ function Add-PodeOAComponentRequestBody {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema -DefinitionTag $tag) }
 
@@ -353,7 +353,7 @@ function Add-PodeOAComponentParameter {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         if ([string]::IsNullOrWhiteSpace($Name)) {
             if ($Parameter.name) {
@@ -428,7 +428,7 @@ function Add-PodeOAComponentExample {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $Example = [ordered]@{ }
         if ($Summary) {
@@ -530,7 +530,7 @@ function Add-PodeOAComponentResponseLink {
         $DefinitionTag
 
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.links[$Name] = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
     }
@@ -622,7 +622,7 @@ function Add-PodeOAComponentCallBack {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI[$tag].components.callbacks.$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
     }
@@ -703,7 +703,7 @@ function Add-PodeOAComponentPathItem {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     $refRoute = @{
         Method      = $Method.ToLower()
@@ -797,6 +797,9 @@ You can use this tag to reference the specific API documentation, schema, or ver
 .PARAMETER ThrowException
 Generate an exception if the component doesn't exist
 
+.PARAMETER PostValidation
+Postpone the check before the server start
+
 .EXAMPLE
 Test-PodeOAComponent -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
 #>
@@ -816,21 +819,36 @@ function Test-PodeOAComponent {
         $DefinitionTag,
 
         [switch]
-        $ThrowException
+        $ThrowException,
+
+        [switch]
+        $PostValidation
+
+
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
-    foreach ($tag in $DefinitionTag) {
-        if (!($PodeContext.Server.OpenAPI[$tag].components[$field ].keys -ccontains $Name)) {
-            # If $Name is not found in the current $tag, return $false or throw an exception
-            if ($ThrowException.IsPresent ) {
-                throw "No components of type $field named $Name are available in the $tag definition."
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    if ($PostValidation.IsPresent) {
+        foreach ($tag in $DefinitionTag) {
+            if (! ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys -ccontains $Name)) { 
+                    $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name] = 1
             } else {
-                return $false
+                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name] += 1
             }
         }
-    }
-    if (!$ThrowException.IsPresent) {
-        return $true
+    } else {
+        foreach ($tag in $DefinitionTag) {
+            if (!($PodeContext.Server.OpenAPI[$tag].components[$field].keys -ccontains $Name)) {
+                # If $Name is not found in the current $tag, return $false or throw an exception
+                if ($ThrowException.IsPresent ) {
+                    throw "No components of type $field named $Name are available in the $tag definition."
+                } else {
+                    return $false
+                }
+            }
+        }
+        if (!$ThrowException.IsPresent) {
+            return $true
+        }
     }
 }
 
@@ -873,7 +891,7 @@ function Remove-PodeOAComponents {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI[$tag].components[$field ].keys -ccontains $Name)) {
             $PodeContext.Server.OpenAPI[$tag].components[$field ].remove($Name)

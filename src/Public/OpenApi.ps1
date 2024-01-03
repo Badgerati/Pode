@@ -50,7 +50,7 @@ If supplied, generate the OpenApi Json version in human readible form.
 Define the default markup language for the OpenApi spec ('Json', 'Json-Compress', 'Yaml')
 
 .PARAMETER EnableSchemaValidation
-If supplied enable Test-PodeOAComponentchema cmdlet that provide support for opeapi parameter schema validation
+If supplied enable Test-PodeOAJsonSchemaCompliance  cmdlet that provide support for opeapi parameter schema validation
 
 .PARAMETER Depth
 Define the default  depth used by any JSON,YAML OpenAPI conversion (default 20)
@@ -422,7 +422,7 @@ function Get-PodeOADefinition {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     $meta = @{
         RouteFilter    = $RouteFilter
@@ -570,7 +570,7 @@ function Add-PodeOAResponse {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     # override status code with default
     if ($Default) {
         $code = 'default'
@@ -832,7 +832,7 @@ function New-PodeOARequestBody {
 
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     if ($Example -and $Examples) {
         throw 'Parameter -Examples and -Example are mutually exclusive'
@@ -865,7 +865,7 @@ function New-PodeOARequestBody {
             }
 
             'reference' {
-                Test-PodeOAComponent -Field requestBodies -DefinitionTag $tag -Name $Reference -ThrowException
+                Test-PodeOAComponent -Field requestBodies -DefinitionTag $tag -Name $Reference -PostValidation
                 $param = @{
                     '$ref' = "#/components/requestBodies/$Reference"
                 }
@@ -947,7 +947,7 @@ function Test-PodeOAJsonSchemaCompliance {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     if (!$PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaValidation) {
         throw 'Test-PodeOAComponentchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
@@ -1147,13 +1147,13 @@ function ConvertTo-PodeOAParameter {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema' -or $PSCmdlet.ParameterSetName -ieq 'Schema') {
         if (Test-PodeIsEmpty $Schema) {
             return $null
         }
-        Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $Schema -ThrowException
+        Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $Schema -PostValidation
         if (!$Name ) {
             $Name = $Schema
         }
@@ -1242,7 +1242,7 @@ function ConvertTo-PodeOAParameter {
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
-        Test-PodeOAComponent -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -ThrowException
+        Test-PodeOAComponent -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
         $prop = [ordered]@{
             '$ref' = "#/components/parameters/$Reference"
         }
@@ -1471,7 +1471,7 @@ function Set-PodeOARouteInfo {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($r in @($Route)) {
 
         $r.OpenApi.DefinitionTag = $DefinitionTag
@@ -1617,7 +1617,7 @@ function Enable-PodeOAViewer {
         [string]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     # error if there's no OpenAPI URL
     $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI[$DefinitionTag].Path
     if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
@@ -1664,9 +1664,9 @@ function Enable-PodeOAViewer {
         }
         if (! $NoAdvertise.IsPresent) {
             $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.bookmarks = @{
-                path  = $Path
-                route = @()
-                openApiUrl=  $OpenApiUrl
+                path       = $Path
+                route      = @()
+                openApiUrl = $OpenApiUrl
             }
             $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.bookmarks.route += $route
         }
@@ -1806,7 +1806,7 @@ function Add-PodeOAExternalDoc {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
         if ($PSCmdlet.ParameterSetName -ieq 'NewRef') {
             $param = [ordered]@{url = $Url }
@@ -1869,7 +1869,7 @@ function Add-PodeOATag {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     foreach ($tag in $DefinitionTag) {
         $param = [ordered]@{
@@ -1981,7 +1981,7 @@ function Add-PodeOAInfo {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     $Info = [ordered]@{}
 
@@ -2141,7 +2141,7 @@ function New-PodeOAExample {
         }
 
         if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
-            Test-PodeOAComponent -Field examples -DefinitionTag $DefinitionTag -Name $Reference -ThrowException
+            Test-PodeOAComponent -Field examples -DefinitionTag $DefinitionTag -Name $Reference -PostValidation
             $Name = $Reference
             $Example = [ordered]@{'$ref' = "#/components/examples/$Reference" }
         } else {
@@ -2407,12 +2407,12 @@ function Add-PodeOACallBack {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     foreach ($r in @($Route)) {
         foreach ($tag in $DefinitionTag) {
             if ($Reference) {
-                Test-PodeOAComponent -Field callbacks -DefinitionTag $tag -Name $Reference -ThrowException
+                Test-PodeOAComponent -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
                 if (!$Name) {
                     $Name = $Reference
                 }
@@ -2701,7 +2701,7 @@ function New-PodeOAContentMediaType {
 
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     $props = [ordered]@{}
     foreach ($media in $MediaType) {
         if ($media -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
@@ -2859,7 +2859,7 @@ function New-PodeOAResponseLink {
             $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
         }
         if ($Reference) {
-            Test-PodeOAComponent -Field links -DefinitionTag $DefinitionTag -Name $Reference  -ThrowException
+            Test-PodeOAComponent -Field links -DefinitionTag $DefinitionTag -Name $Reference  -PostValidation
             if (!$Name) {
                 $Name = $Reference
             }
@@ -2974,7 +2974,7 @@ function Add-PodeOAExternalRoute {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'builtin' {
@@ -3144,7 +3144,7 @@ function Add-PodeOAWebhook {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     $refRoute = @{
         Method      = $Method.ToLower()
@@ -3221,7 +3221,7 @@ function Select-PodeOADefinition {
     if (Test-PodeIsEmpty -Value $Tag) {
         $Tag = $PodeContext.Server.DefaultOADefinitionTag
     } else {
-        $Tag = Test-PodeOADefinition -Tag $Tag
+        $Tag = Test-PodeOADefinitionTag -Tag $Tag
     }
     # check for scoped vars
     $Scriptblock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $Scriptblock -PSSession $PSCmdlet.SessionState
@@ -3255,9 +3255,9 @@ This tag helps distinguish between different versions or types of API specificat
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-Test-PodeOADefinition -Tag 'v3', 'v3.1'
+Test-PodeOADefinitionTag -Tag 'v3', 'v3.1'
 #>
-function Test-PodeOADefinition {
+function Test-PodeOADefinitionTag {
     param (
         [Parameter(Mandatory = $false)]
         [string[]]
@@ -3274,4 +3274,50 @@ function Test-PodeOADefinition {
     } else {
         return $PodeContext.Server.SelectedOADefinitionTag
     }
+}
+
+
+
+<#
+.SYNOPSIS
+Validate the OpenAPI definition if all Reference are satisfied
+
+.DESCRIPTION
+Validate the OpenAPI definition if all Reference are satisfied
+
+
+
+.PARAMETER DefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps distinguish between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.EXAMPLE
+    if ((Test-PodeOADefinition -DefinitionTag 'v3').count -eq 0){
+        Write-PodeHost "The OpenAPI definition is valid"
+    }
+#>
+function Test-PodeOADefinition {
+    param (
+        [string[]]
+        $DefinitionTag
+    )
+    if (! ($DefinitionTag -and $DefinitionTag.Count -gt 0)) {
+        $DefinitionTag = $PodeContext.Server.OpenAPI.keys
+    }
+
+    $undefined = @{}
+    foreach ($tag in $DefinitionTag) {
+        foreach ($field in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation.keys) {
+            foreach ($name in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys) {
+                if (! (Test-PodeOAComponent -DefinitionTag $tag -Field $field -Name $name)) {
+                    if (! $undefined.ContainsKey( $tag)) {
+                        $undefined[$tag] = @{}
+                    }
+                    $undefined[$tag]["#/components/$field/$name"] = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name]
+                }
+            }
+        }
+    }
+    return $undefined
 }

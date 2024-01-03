@@ -28,6 +28,9 @@ function Start-PodeInternalServer {
 
         Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
 
+        #Validate OpenAPI definitions
+        Test-PodeOADefinitionInternal
+
         # load any modules/snapins
         Import-PodeSnapinsIntoRunspaceState
         Import-PodeModulesIntoRunspaceState

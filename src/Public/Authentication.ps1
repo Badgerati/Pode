@@ -1533,7 +1533,7 @@ function Add-PodeAuthMiddleware {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinition -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     if (!(Test-PodeAuthExists -Name $Authentication)) {
         throw "Authentication method does not exist: $($Authentication)"
