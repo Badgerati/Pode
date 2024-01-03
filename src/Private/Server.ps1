@@ -156,7 +156,7 @@ function Start-PodeInternalServer {
                     }
                     Write-PodeHost " '$key':" -ForegroundColor Yellow
 
-                    if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint[0].Name) {
+                    if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
                         Write-PodeHost '   - Specification:' -ForegroundColor Yellow
                         foreach ($endpoint in   $bookmarks.route.Endpoint) {
                             Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor Yellow

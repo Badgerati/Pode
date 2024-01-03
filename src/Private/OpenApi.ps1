@@ -947,10 +947,8 @@ function Get-PodeOABaseObject {
         hiddenComponents = @{
             enabled          = $false
             schemaValidation = $false
-            v3_0             = $false
-            v3_1             = $false
+            version          = 3.0
             depth            = 20
-            headerSchemas    = @{}
             schemaJson       = @{}
             viewer           = @{}
             postValidation   = @{

@@ -768,12 +768,7 @@ function Test-OpenAPIVersion {
         $DefinitionTag
     )
 
-    if ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0 -and $Version -eq 3.0  ) {
-        return $true
-    } elseif ($PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_1 -and $Version -eq 3.1  ) {
-        return $true
-    }
-    return $false
+    return $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.version -eq $Version
 }
 
 <#
@@ -829,8 +824,8 @@ function Test-PodeOAComponent {
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     if ($PostValidation.IsPresent) {
         foreach ($tag in $DefinitionTag) {
-            if (! ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys -ccontains $Name)) { 
-                    $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name] = 1
+            if (! ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys -ccontains $Name)) {
+                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name] = 1
             } else {
                 $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name] += 1
             }

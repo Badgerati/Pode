@@ -160,9 +160,11 @@ function Enable-PodeOpenApi {
     # initialise openapi info
     $PodeContext.Server.OpenAPI[$DefinitionTag].Version = $OpenApiVersion
     $PodeContext.Server.OpenAPI[$DefinitionTag].Path = $Path
-
-    $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_0 = $OpenApiVersion.StartsWith('3.0')
-    $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.v3_1 = $OpenApiVersion.StartsWith('3.1')
+    if ($OpenApiVersion.StartsWith('3.0')) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.version = 3.0
+    } elseif ($OpenApiVersion.StartsWith('3.1')) {
+        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.version = 3.1
+    }
 
     $meta = @{
         RouteFilter    = $RouteFilter

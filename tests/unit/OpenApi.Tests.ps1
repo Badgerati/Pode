@@ -22,7 +22,6 @@ Describe 'OpenApi' {
             }
         }
         $global:PodeContext = GetPodeContext
-        $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_0 = $true
 
     }
 
@@ -1660,8 +1659,7 @@ Describe 'OpenApi' {
     Context 'Add-PodeOAComponentSchema' {
         Context 'OpenAPI 3.1' {
             BeforeEach {
-                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_0 = $false
-                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_1 = $true
+                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.version = 3.1
             }
             It 'Standard' {
                 Add-PodeOAComponentSchema -Name 'Category' -Schema (
@@ -1726,8 +1724,7 @@ Describe 'OpenApi' {
         }
         Context 'OpenAPI 3.0' {
             BeforeEach {
-                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_0 = $true
-                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_1 = $false
+                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.version = 3.0
             }
             It 'Standard' {
                 Add-PodeOAComponentSchema -Name 'Category' -Schema (
