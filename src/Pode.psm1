@@ -15,7 +15,7 @@ $moduleVersion=([version]::new($moduleManifest.ModuleVersion+".0"))
 $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -like 'Pode' }
 
 if ($podeDll) {
-    if ($moduleVersion -ne '$version$' -and $podeDll.GetName().Version.CompareTo($moduleVersion) -ne 0) {
+    if ($moduleManifest.ModuleVersion -ne '$version$' -and $podeDll.GetName().Version.CompareTo($moduleVersion) -ne 0) {
         throw "An existing incompatible Pode.DLL version $($podeDll.GetName().Version) is loaded. Version $moduleVersion is required. Open a new Powershell/pwsh session and retry."
     }
 } else {
