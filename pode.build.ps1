@@ -421,7 +421,7 @@ Task InstallCurrentUser  {
     if ($Version){
 
         if (! (Test-Path $path)) {
-            Invoke-Build Pack
+            Invoke-Build Pack -Version $Version
         }
         if ($IsWindows -or (($PSVersionTable.Keys -contains "PSEdition") -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
             $PSPaths = $ENV:PSModulePath -split ";"
