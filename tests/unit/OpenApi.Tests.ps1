@@ -11,49 +11,18 @@ Describe 'OpenApi' {
         function GetPodeContext {
             return @{
                 Server = @{
-                    Security = @{
+                    Security                = @{
                         autoheaders = $false
                     }
-                    SelectedOADefinitionTag='default'
-                    OpenAPI  = @{
-                        default = @{
-                            info             = [ordered]@{}
-                            Path             = $null
-                            components       = [ordered]@{
-                                schemas         = [ordered]@{}
-                                responses       = [ordered]@{}
-                                parameters      = [ordered]@{}
-                                examples        = [ordered]@{}
-                                requestBodies   = [ordered]@{}
-                                headers         = [ordered]@{}
-                                securitySchemes = [ordered]@{}
-                                links           = [ordered]@{}
-                                callbacks       = [ordered]@{}
-                                pathItems       = [ordered]@{}
-                            }
-                            Security         = @()
-                            tags             = [ordered]@{}
-                            hiddenComponents = @{
-                                v3_0             = $true
-                                v3_1             = $false
-                                enabled          = $false
-                                schemaValidation = $false
-                                depth            = 20
-                                headerSchemas    = @{}
-                                externalDocs     = @{}
-                                schemaJson       = @{}
-                                viewer           = @{}
-                                defaultResponses = @{
-                                    '200'     = @{ description = 'OK' }
-                                    'default' = @{ description = 'Internal server error' }
-                                }
-                            }
-                        }
+                    SelectedOADefinitionTag = 'default'
+                    OpenAPI                 = @{
+                        default = Get-PodeOABaseObject
                     }
                 }
             }
         }
         $global:PodeContext = GetPodeContext
+        $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_0 = $true
 
     }
 
@@ -1689,67 +1658,140 @@ Describe 'OpenApi' {
     }
 
     Context 'Add-PodeOAComponentSchema' {
-        It 'Standard' {
-            Add-PodeOAComponentSchema -Name 'Category' -Schema (
-                New-PodeOAObjectProperty -Name 'Category' -XmlName 'category'  -Properties  (
-                    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
-                        New-PodeOAStringProperty -Name 'name' -Example 'Dogs'
-                ))
+        Context 'OpenAPI 3.1' {
+            BeforeEach {
+                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_0 = $false
+                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_1 = $true
+            }
+            It 'Standard' {
+                Add-PodeOAComponentSchema -Name 'Category' -Schema (
+                    New-PodeOAObjectProperty -Name 'Category' -XmlName 'category'  -Properties  (
+                        New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
+                            New-PodeOAStringProperty -Name 'name' -Example 'Dogs' -Nullable
+                    ))
 
-            $PodeContext.Server.OpenAPI.default.components.schemas['Category'] | Should -Not -BeNullOrEmpty
-            $result = $PodeContext.Server.OpenAPI.default.components.schemas['Category']
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
-            $result.Count | Should -Be 3
-            $result.type | Should -Be 'object'
-            $result.xml | Should -Not -BeNullOrEmpty
-            $result.xml | Should -BeOfType [hashtable]
-            $result.xml.Count | Should -Be 1
-            $result.properties | Should -Not -BeNullOrEmpty
-            $result.properties | Should -BeOfType [hashtable]
-            $result.properties.Count | Should -Be 2
-            $result.properties.name | Should -Not -BeNullOrEmpty
-            $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
-            $result.properties.name.Count | Should -Be 2
-            $result.properties.name.type | Should -Be 'string'
-            $result.properties.name.example | Should -Be 'Dogs'
-            $result.properties.id | Should -Not -BeNullOrEmpty
-            $result.properties.id | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
-            $result.properties.id.Count | Should -Be 3
-            $result.properties.id.type | Should -Be 'integer'
-            $result.properties.id.example | Should -Be 1
-            $result.properties.id.format | Should -Be 'Int64'
+                $PodeContext.Server.OpenAPI.default.components.schemas['Category'] | Should -Not -BeNullOrEmpty
+                $result = $PodeContext.Server.OpenAPI.default.components.schemas['Category']
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.Count | Should -Be 3
+                $result.type | Should -Be 'object'
+                $result.xml | Should -Not -BeNullOrEmpty
+                $result.xml | Should -BeOfType [hashtable]
+                $result.xml.Count | Should -Be 1
+                $result.properties | Should -Not -BeNullOrEmpty
+                $result.properties | Should -BeOfType [hashtable]
+                $result.properties.Count | Should -Be 2
+                $result.properties.name | Should -Not -BeNullOrEmpty
+                $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.properties.name.Count | Should -Be 2
+                $result.properties.name.type | Should -Be @('string', 'null')
+                $result.properties.name.examples | Should -Be 'Dogs'
+                $result.properties.id | Should -Not -BeNullOrEmpty
+                $result.properties.id | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.properties.id.Count | Should -Be 3
+                $result.properties.id.type | Should -Be 'integer'
+                $result.properties.id.examples | Should -Be 1
+                $result.properties.id.format | Should -Be 'Int64'
+            }
+            It 'Pipeline' {
+                New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
+                    New-PodeOAStringProperty -Name 'name' -Example 'Dogs' -Nullable |
+                    New-PodeOAObjectProperty -Name 'Category' -XmlName 'category' |
+                    Add-PodeOAComponentSchema -Name 'Category'
+                $PodeContext.Server.OpenAPI.default.components.schemas['Category'] | Should -Not -BeNullOrEmpty
+                $result = $PodeContext.Server.OpenAPI.default.components.schemas['Category']
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.Count | Should -Be 3
+                $result.type | Should -Be 'object'
+                $result.xml | Should -Not -BeNullOrEmpty
+                $result.xml | Should -BeOfType [hashtable]
+                $result.xml.Count | Should -Be 1
+                $result.properties | Should -Not -BeNullOrEmpty
+                $result.properties | Should -BeOfType [hashtable]
+                $result.properties.Count | Should -Be 2
+                $result.properties.name | Should -Not -BeNullOrEmpty
+                $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.properties.name.Count | Should -Be 2
+                $result.properties.name.type | Should -Be @('string', 'null')
+                $result.properties.name.examples | Should -Be 'Dogs'
+                $result.properties.id | Should -Not -BeNullOrEmpty
+                $result.properties.id | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.properties.id.Count | Should -Be 3
+                $result.properties.id.type | Should -Be 'integer'
+                $result.properties.id.examples | Should -Be 1
+                $result.properties.id.format | Should -Be 'Int64'
+            }
         }
-        It 'Pipeline' {
-            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
-                New-PodeOAStringProperty -Name 'name' -Example 'Dogs' |
-                New-PodeOAObjectProperty -Name 'Category' -XmlName 'category' |
-                Add-PodeOAComponentSchema -Name 'Category'
-            $PodeContext.Server.OpenAPI.default.components.schemas['Category'] | Should -Not -BeNullOrEmpty
-            $result = $PodeContext.Server.OpenAPI.default.components.schemas['Category']
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
-            $result.Count | Should -Be 3
-            $result.type | Should -Be 'object'
-            $result.xml | Should -Not -BeNullOrEmpty
-            $result.xml | Should -BeOfType [hashtable]
-            $result.xml.Count | Should -Be 1
-            $result.properties | Should -Not -BeNullOrEmpty
-            $result.properties | Should -BeOfType [hashtable]
-            $result.properties.Count | Should -Be 2
-            $result.properties.name | Should -Not -BeNullOrEmpty
-            $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
-            $result.properties.name.Count | Should -Be 2
-            $result.properties.name.type | Should -Be 'string'
-            $result.properties.name.example | Should -Be 'Dogs'
-            $result.properties.id | Should -Not -BeNullOrEmpty
-            $result.properties.id | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
-            $result.properties.id.Count | Should -Be 3
-            $result.properties.id.type | Should -Be 'integer'
-            $result.properties.id.example | Should -Be 1
-            $result.properties.id.format | Should -Be 'Int64'
-        }
+        Context 'OpenAPI 3.0' {
+            BeforeEach {
+                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_0 = $true
+                $global:PodeContext.Server.OpenAPI.default.hiddenComponents.v3_1 = $false
+            }
+            It 'Standard' {
+                Add-PodeOAComponentSchema -Name 'Category' -Schema (
+                    New-PodeOAObjectProperty -Name 'Category' -XmlName 'category'  -Properties  (
+                        New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
+                            New-PodeOAStringProperty -Name 'name' -Example 'Dogs' -Nullable
+                    ))
 
+                $PodeContext.Server.OpenAPI.default.components.schemas['Category'] | Should -Not -BeNullOrEmpty
+                $result = $PodeContext.Server.OpenAPI.default.components.schemas['Category']
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.Count | Should -Be 3
+                $result.type | Should -Be 'object'
+                $result.xml | Should -Not -BeNullOrEmpty
+                $result.xml | Should -BeOfType [hashtable]
+                $result.xml.Count | Should -Be 1
+                $result.properties | Should -Not -BeNullOrEmpty
+                $result.properties | Should -BeOfType [hashtable]
+                $result.properties.Count | Should -Be 2
+                $result.properties.name | Should -Not -BeNullOrEmpty
+                $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.properties.name.Count | Should -Be 3
+                $result.properties.name.type | Should -Be 'string'
+                $result.properties.name.example | Should -Be 'Dogs'
+                $result.properties.name.nullable | Should -BeTrue
+                $result.properties.id | Should -Not -BeNullOrEmpty
+                $result.properties.id | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.properties.id.Count | Should -Be 3
+                $result.properties.id.type | Should -Be 'integer'
+                $result.properties.id.example | Should -Be 1
+                $result.properties.id.format | Should -Be 'Int64'
+            }
+            It 'Pipeline' {
+                New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
+                    New-PodeOAStringProperty -Name 'name' -Example 'Dogs' -Nullable |
+                    New-PodeOAObjectProperty -Name 'Category' -XmlName 'category' |
+                    Add-PodeOAComponentSchema -Name 'Category'
+                $PodeContext.Server.OpenAPI.default.components.schemas['Category'] | Should -Not -BeNullOrEmpty
+                $result = $PodeContext.Server.OpenAPI.default.components.schemas['Category']
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.Count | Should -Be 3
+                $result.type | Should -Be 'object'
+                $result.xml | Should -Not -BeNullOrEmpty
+                $result.xml | Should -BeOfType [hashtable]
+                $result.xml.Count | Should -Be 1
+                $result.properties | Should -Not -BeNullOrEmpty
+                $result.properties | Should -BeOfType [hashtable]
+                $result.properties.Count | Should -Be 2
+                $result.properties.name | Should -Not -BeNullOrEmpty
+                $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.properties.name.Count | Should -Be 3
+                $result.properties.name.type | Should -Be 'string'
+                $result.properties.name.example | Should -Be 'Dogs'
+                $result.properties.name.nullable | Should -BeTrue
+                $result.properties.id | Should -Not -BeNullOrEmpty
+                $result.properties.id | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+                $result.properties.id.Count | Should -Be 3
+                $result.properties.id.type | Should -Be 'integer'
+                $result.properties.id.example | Should -Be 1
+                $result.properties.id.format | Should -Be 'Int64'
+            }
+        }
     }
 
 
@@ -2088,7 +2130,7 @@ Describe 'OpenApi' {
         }
 
         It 'Valid values' {
-            $SwaggerDocs=New-PodeOAExternalDoc  -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+            $SwaggerDocs = New-PodeOAExternalDoc  -Description 'Find out more about Swagger' -Url 'http://swagger.io'
             $SwaggerDocs | Should -Not -BeNullOrEmpty
             $SwaggerDocs.description | Should -Be  'Find out more about Swagger'
             $SwaggerDocs.url | Should -Be 'http://swagger.io'
@@ -2127,7 +2169,7 @@ Describe 'OpenApi' {
         }
 
         It 'Valid values' {
-            $SwaggerDocs=  New-PodeOAExternalDoc  -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+            $SwaggerDocs = New-PodeOAExternalDoc  -Description 'Find out more about Swagger' -Url 'http://swagger.io'
             Add-PodeOATag -Name 'user' -Description 'Operations about user' -ExternalDoc $SwaggerDocs
             $PodeContext.Server.OpenAPI.default.tags['user'] | Should -Not -BeNullOrEmpty
             $PodeContext.Server.OpenAPI.default.tags['user'].name | Should -Be 'user'
@@ -2896,7 +2938,7 @@ Describe 'OpenApi' {
             $result.schema.format | Should -Be 'int32'
         }
         it 'From Pipeline' {
-            New-PodeOAIntProperty -Format Int32   | Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Description 'calls per hour allowed by the user'
+            New-PodeOAIntProperty -Format Int32 | Add-PodeOAComponentHeader -Name 'X-Rate-Limit' -Description 'calls per hour allowed by the user'
             $PodeContext.Server.OpenAPI.default.components.headers['X-Rate-Limit'] | Should -Not -BeNullOrEmpty
             $result = $PodeContext.Server.OpenAPI.default.components.headers['X-Rate-Limit']
             $result | Should -Not -BeNullOrEmpty
@@ -2966,9 +3008,9 @@ Describe 'OpenApi' {
             # Mock the Pode context object
             $Global:PodeContext = @{
                 Server = @{
-                    SelectedOADefinitionTag='default'
-                    OpenAPI = @{
-                        default= @{
+                    SelectedOADefinitionTag = 'default'
+                    OpenAPI                 = @{
+                        default = @{
                             components = @{
                                 examples = @{}
                             }
