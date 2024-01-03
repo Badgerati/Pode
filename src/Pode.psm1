@@ -10,13 +10,13 @@ $moduleManifestPath = Join-Path -Path $PSScriptRoot -ChildPath "Pode.psd1"
 
 # Import the module manifest to access its properties
 $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath
-$moduleVersion=$moduleManifest.ModuleVersion
+$moduleVersion=([version]::new($moduleManifest.ModuleVersion+".0"))
 
 $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -like 'Pode' }
 
 if ($podeDll) {
-    if ($moduleVersion -ne '$version$' -and $podeDll.GetName().Version -ne $moduleVersion) {
-        throw "An existing incompatible Pode.DLL version $($podeDll.GetName().Version) is loaded. Open a new Powershell/pwsh session and retry."
+    if ($moduleVersion -ne '$version$' -and $podeDll.GetName().Version.CompareTo($moduleVersion) -ne 0) {
+        throw "An existing incompatible Pode.DLL version $($podeDll.GetName().Version) is loaded. Version $moduleVersion is required. Open a new Powershell/pwsh session and retry."
     }
 } else {
     # netstandard2 for <7.2
