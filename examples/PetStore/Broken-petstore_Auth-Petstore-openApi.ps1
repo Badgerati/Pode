@@ -801,8 +801,8 @@ Some useful links:
         Add-PodeRoute -PassThru -Method Delete -Path '/user/:username' -ScriptBlock {
             $username = $WebEvent.Parameters['username']
             if ($username ) {
-                if ( Test-User -Id $username) {
-                    Remove-User -Id $orderId
+                if ( Test-User -Username $username) {
+                    Remove-User -Username $orderId
                     Save-PodeState -Path $using:PetDataJson
                 } else {
                     Write-PodeHtmlResponse -Value 'User not found' -StatusCode 404

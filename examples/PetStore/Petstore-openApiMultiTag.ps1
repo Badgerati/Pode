@@ -81,7 +81,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.2' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
     Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     $swaggerDocs | Add-PodeOAExternalDoc   -DefinitionTag 'v3', 'v3.1'
@@ -116,6 +116,7 @@ Some useful links:
     Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
     Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
     Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor' -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
 
     #OpenAPI 3.1
     Enable-PodeOAViewer -Type Swagger -Path '/docs/v3.1/swagger' -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
@@ -815,8 +816,8 @@ Some useful links:
             Add-PodeRoute -PassThru -Method Delete -Path '/user/:username' -ScriptBlock {
                 $username = $WebEvent.Parameters['username']
                 if ($username ) {
-                    if ( Test-User -Id $username) {
-                        Remove-User -Id $orderId
+                    if ( Test-User -Username $username) {
+                        Remove-User -Username $orderId
                         Save-PodeState -Path $using:PetDataJson
                     } else {
                         Write-PodeHtmlResponse -Value 'User not found' -StatusCode 404

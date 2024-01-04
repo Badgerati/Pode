@@ -109,7 +109,7 @@ function ConvertTo-PodeOAObjectSchema {
                         }
                     }
                 } else {
-                    Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
+                    Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
                     if ($isArray) {
                         $obj[$type].schema.items = @{
                             '$ref' = "#/components/schemas/$($item)"
@@ -236,7 +236,7 @@ function ConvertTo-PodeOAOfProperty {
     if ($Property.schemas ) {
         foreach ($prop in $Property.schemas ) {
             if ($prop -is [string]) {
-                Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $prop -PostValidation
+                Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $prop -PostValidation
                 $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
             } else {
                 $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
@@ -397,7 +397,7 @@ function ConvertTo-PodeOASchemaProperty {
 
         $schema['type'] = 'array'
         if ($Property.type -ieq 'schema') {
-            Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
+            Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
             $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
         } else {
             $Property.array = $false
@@ -424,7 +424,7 @@ function ConvertTo-PodeOASchemaProperty {
 
         # schema refs
         if ($Property.type -ieq 'schema') {
-            Test-PodeOAComponent -Field schemas  -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
+            Test-PodeOAComponentInternal -Field schemas  -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
             $schema = @{
                 '$ref' = "#/components/schemas/$($Property['schema'])"
             }
@@ -1405,7 +1405,7 @@ function New-PodeOResponseInternal {
                 } else {
                     $_headers = @{}
                     foreach ($h in $Params.Headers) {
-                        Test-PodeOAComponent -Field headers -DefinitionTag $DefinitionTag -Name $h -PostValidation
+                        Test-PodeOAComponentInternal -Field headers -DefinitionTag $DefinitionTag -Name $h -PostValidation
                         $_headers[$h] = @{
                             '$ref' = "#/components/headers/$h"
                         }
@@ -1493,5 +1493,84 @@ function  Test-PodeOADefinitionInternal {
             Write-PodeHost
         }
         throw 'OpenAPI document compliance issues'
+    }
+}
+
+
+
+
+
+<#
+.SYNOPSIS
+Check the OpenAPI component exist
+
+.DESCRIPTION
+Check the OpenAPI component exist
+
+.PARAMETER Field
+The component type
+
+.PARAMETER Name
+The component Name
+
+.PARAMETER DefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+.PARAMETER ThrowException
+Generate an exception if the component doesn't exist
+
+.PARAMETER PostValidation
+Postpone the check before the server start
+
+.EXAMPLE
+Test-PodeOAComponent -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
+#>
+function Test-PodeOAComponentInternal {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet( 'schemas' , 'responses' , 'parameters' , 'examples' , 'requestBodies' , 'headers' , 'securitySchemes' , 'links' , 'callbacks' , 'pathItems'  )]
+        [string]
+        $Field,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name,
+
+        [string[]]
+        $DefinitionTag,
+
+        [switch]
+        $ThrowException,
+
+        [switch]
+        $PostValidation
+    )
+    
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    if ($PostValidation.IsPresent) {
+        foreach ($tag in $DefinitionTag) {
+            if (! ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys -ccontains $Name)) {
+                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name] = 1
+            } else {
+                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name] += 1
+            }
+        }
+    } else {
+        foreach ($tag in $DefinitionTag) {
+            if (!($PodeContext.Server.OpenAPI[$tag].components[$field].keys -ccontains $Name)) {
+                # If $Name is not found in the current $tag, return $false or throw an exception
+                if ($ThrowException.IsPresent ) {
+                    throw "No components of type $field named $Name are available in the $tag definition."
+                } else {
+                    return $false
+                }
+            }
+        }
+        if (!$ThrowException.IsPresent) {
+            return $true
+        }
     }
 }

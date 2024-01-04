@@ -789,19 +789,14 @@ An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
-.PARAMETER ThrowException
-Generate an exception if the component doesn't exist
-
-.PARAMETER PostValidation
-Postpone the check before the server start
-
 .EXAMPLE
 Test-PodeOAComponent -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
 #>
+
 function Test-PodeOAComponent {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet( 'schemas' , 'responses' , 'parameters' , 'examples' , 'requestBodies' , 'headers' , 'securitySchemes' , 'links' , 'callbacks' , 'pathItems'  )]
+        [ValidateSet( 'schemas' , 'responses' , 'parameters' , 'examples' , 'requestBodies' , 'headers' , 'securitySchemes' , 'links' , 'callbacks' , 'pathItems' )]
         [string]
         $Field,
 
@@ -811,43 +806,20 @@ function Test-PodeOAComponent {
         $Name,
 
         [string[]]
-        $DefinitionTag,
-
-        [switch]
-        $ThrowException,
-
-        [switch]
-        $PostValidation
-
-
+        $DefinitionTag
     )
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    if ($PostValidation.IsPresent) {
-        foreach ($tag in $DefinitionTag) {
-            if (! ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys -ccontains $Name)) {
-                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name] = 1
-            } else {
-                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name] += 1
-            }
-        }
-    } else {
-        foreach ($tag in $DefinitionTag) {
-            if (!($PodeContext.Server.OpenAPI[$tag].components[$field].keys -ccontains $Name)) {
-                # If $Name is not found in the current $tag, return $false or throw an exception
-                if ($ThrowException.IsPresent ) {
-                    throw "No components of type $field named $Name are available in the $tag definition."
-                } else {
-                    return $false
-                }
-            }
-        }
-        if (!$ThrowException.IsPresent) {
-            return $true
+
+    foreach ($tag in $DefinitionTag) {
+        if (!($PodeContext.Server.OpenAPI[$tag].components[$field].keys -ccontains $Name)) {
+            return $false
         }
     }
+    if (!$ThrowException.IsPresent) {
+        return $true
+    }
 }
-
-
 
 <#
 .SYNOPSIS

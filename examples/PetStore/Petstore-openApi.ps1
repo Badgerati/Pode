@@ -101,6 +101,7 @@ Some useful links:
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io'
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
 
+
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
     Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
     Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
@@ -108,8 +109,8 @@ Some useful links:
     Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode
     Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
 
+    Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor'
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
-
 
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
@@ -799,8 +800,8 @@ Some useful links:
         Add-PodeRoute -PassThru -Method Delete -Path '/user/:username' -ScriptBlock {
             $username = $WebEvent.Parameters['username']
             if ($username ) {
-                if ( Test-User -Id $username) {
-                    Remove-User -Id $orderId
+                if ( Test-User -Username $username) {
+                    Remove-User -Username $orderId
                     Save-PodeState -Path $using:PetDataJson
                 } else {
                     Write-PodeHtmlResponse -Value 'User not found' -StatusCode 404

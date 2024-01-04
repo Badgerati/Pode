@@ -149,8 +149,8 @@ function Enable-PodeOpenApi {
         $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     if ($Description -or $Version -or $Title) {
-        if(! $Version){
-            $Version= '0.0.0'
+        if (! $Version) {
+            $Version = '0.0.0'
         }
         Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
@@ -870,7 +870,7 @@ function New-PodeOARequestBody {
             }
 
             'reference' {
-                Test-PodeOAComponent -Field requestBodies -DefinitionTag $tag -Name $Reference -PostValidation
+                Test-PodeOAComponentInternal -Field requestBodies -DefinitionTag $tag -Name $Reference -PostValidation
                 $param = @{
                     '$ref' = "#/components/requestBodies/$Reference"
                 }
@@ -1158,7 +1158,7 @@ function ConvertTo-PodeOAParameter {
         if (Test-PodeIsEmpty $Schema) {
             return $null
         }
-        Test-PodeOAComponent -Field schemas -DefinitionTag $DefinitionTag -Name $Schema -PostValidation
+        Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Schema -PostValidation
         if (!$Name ) {
             $Name = $Schema
         }
@@ -1247,7 +1247,7 @@ function ConvertTo-PodeOAParameter {
         }
     } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
-        Test-PodeOAComponent -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
+        Test-PodeOAComponentInternal -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
         $prop = [ordered]@{
             '$ref' = "#/components/parameters/$Reference"
         }
@@ -1619,6 +1619,10 @@ function Enable-PodeOAViewer {
         [switch]
         $NoAdvertise,
 
+        [Parameter(Mandatory = $true, ParameterSetName = 'Editor')]
+        [switch]
+        $Editor,
+
         [string]
         $DefinitionTag
     )
@@ -1640,11 +1644,38 @@ function Enable-PodeOAViewer {
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No route path supplied for $($Type) page"
     }
-
-    if ($Bookmarks.IsPresent) {
+    if ($Editor.IsPresent) {
+        if (Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag) {
+            throw "This version on Swagger-Editor doesn't support OpenAPI 3.1"
+        }
         # setup meta info
         $meta = @{
-            Type          = $Type.ToLowerInvariant()
+            Title             = $Title
+            OpenApi           = $OpenApiUrl
+            DarkMode          = $DarkMode
+            DefinitionTag     = $DefinitionTag
+            SwaggerEditorDist = "$Path/swagger-editor-dist"
+        }
+        $route = Add-PodeRoute -Method Get -Path $Path `
+            -Middleware $Middleware -ArgumentList $meta -EndpointName $EndpointName -PassThru -ScriptBlock {
+            param($meta)
+            $Data = @{
+                Title             = $meta.Title
+                OpenApi           = $meta.OpenApi
+                SwaggerEditorDist = $meta.SwaggerEditorDist
+            }
+
+            $podeRoot = Get-PodeModuleMiscPath
+            Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-swagger-editor.html.pode')) -Data $Data
+        }
+
+        $swaggerEditorPath = Join-Path -Path $(Get-PodeModuleMiscPath) -ChildPath 'swagger-editor-dist'
+        Add-PodeStaticRoute -Path  $meta.SwaggerEditorDist -Source $swaggerEditorPath -EndpointName $EndpointName
+        
+        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
+    } elseif ($Bookmarks.IsPresent) {
+        # setup meta info
+        $meta = @{
             Title         = $Title
             OpenApi       = $OpenApiUrl
             DarkMode      = $DarkMode
@@ -2144,7 +2175,7 @@ function New-PodeOAExample {
         }
 
         if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
-            Test-PodeOAComponent -Field examples -DefinitionTag $DefinitionTag -Name $Reference -PostValidation
+            Test-PodeOAComponentInternal -Field examples -DefinitionTag $DefinitionTag -Name $Reference -PostValidation
             $Name = $Reference
             $Example = [ordered]@{'$ref' = "#/components/examples/$Reference" }
         } else {
@@ -2415,7 +2446,7 @@ function Add-PodeOACallBack {
     foreach ($r in @($Route)) {
         foreach ($tag in $DefinitionTag) {
             if ($Reference) {
-                Test-PodeOAComponent -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
+                Test-PodeOAComponentInternal -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
                 if (!$Name) {
                     $Name = $Reference
                 }
@@ -2862,7 +2893,7 @@ function New-PodeOAResponseLink {
             $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
         }
         if ($Reference) {
-            Test-PodeOAComponent -Field links -DefinitionTag $DefinitionTag -Name $Reference  -PostValidation
+            Test-PodeOAComponentInternal -Field links -DefinitionTag $DefinitionTag -Name $Reference  -PostValidation
             if (!$Name) {
                 $Name = $Reference
             }
@@ -3310,7 +3341,7 @@ function Test-PodeOADefinition {
     }
 
     $result = @{
-        valid = $true
+        valid  = $true
         issues = @{
         }
     }
