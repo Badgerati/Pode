@@ -1468,16 +1468,30 @@ function New-PodeOAResponseLinkInternal {
 function  Test-PodeOADefinitionInternal {
 
     #Validate OpenAPI definitions
-    $undefinedRefs = Test-PodeOADefinition
-    if ($undefinedRefs.count -gt 0) {
+    $definitionIssues = Test-PodeOADefinition
+
+    if (! $definitionIssues.valid) {
         Write-PodeHost 'Undefined OpenAPI References :' -ForegroundColor Red
-        foreach ($tag in $undefinedRefs.keys) {
+        foreach ($tag in $definitionIssues.issues.keys) {
             Write-PodeHost "  Definition $tag :" -ForegroundColor Red
-            foreach ($key in $undefinedRefs[$tag].keys) {
-                Write-PodeHost "    `$refs : $key ($($undefinedRefs[$tag][$key]))" -ForegroundColor Red
+            if ($definitionIssues.issues[$tag].title ) {
+                Write-PodeHost '     info.title is mandatory' -ForegroundColor Red
+            }
+            if ($definitionIssues.issues[$tag].version ) {
+                Write-PodeHost '     info.version is mandatory' -ForegroundColor Red
+            }
+            if ($definitionIssues.issues[$tag].components ) {
+                Write-PodeHost '     Missing component(s)' -ForegroundColor Red
+                foreach ($key in $definitionIssues.issues[$tag].components.keys) {
+                    $occurences = $definitionIssues.issues[$tag].components[$key]
+                    if ( $PodeContext.Server.OpenAPI[$tag].hiddenComponents.schemaValidation) {
+                        $occurences = $occurences / 2
+                    }
+                    Write-PodeHost "      `$refs : $key ($occurences)" -ForegroundColor Red
+                }
             }
             Write-PodeHost
         }
-        throw 'Undefined OpenAPI reference(s)'
+        throw 'OpenAPI document compliance issues'
     }
 }

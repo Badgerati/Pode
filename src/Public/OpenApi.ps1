@@ -149,6 +149,9 @@ function Enable-PodeOpenApi {
         $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
     }
     if ($Description -or $Version -or $Title) {
+        if(! $Version){
+            $Version= '0.0.0'
+        }
         Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
     if ( $DefinitionTag -ine $PodeContext.Server.DefaultOADefinitionTag ) {
@@ -2005,8 +2008,6 @@ function Add-PodeOAInfo {
         $Info.title = $Title
     } elseif (  $PodeContext.Server.OpenAPI[$DefinitionTag].info.title) {
         $Info.title = $PodeContext.Server.OpenAPI[$DefinitionTag].info.title
-    } else {
-        throw 'The OpenAPI property info.title is required. Use -Title'
     }
 
     if ($Version) {
@@ -3308,18 +3309,31 @@ function Test-PodeOADefinition {
         $DefinitionTag = $PodeContext.Server.OpenAPI.keys
     }
 
-    $undefined = @{}
+    $result = @{
+        valid = $true
+        issues = @{
+        }
+    }
+
     foreach ($tag in $DefinitionTag) {
-        foreach ($field in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation.keys) {
-            foreach ($name in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys) {
-                if (! (Test-PodeOAComponent -DefinitionTag $tag -Field $field -Name $name)) {
-                    if (! $undefined.ContainsKey( $tag)) {
-                        $undefined[$tag] = @{}
+        if ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.enabled) {
+            if ([string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.title) -or [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.version)) {
+                $result.valid = $false
+            }
+            $result.issues[$tag] = @{
+                title      = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.title)
+                version    = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.version)
+                components = @{}
+            }
+            foreach ($field in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation.keys) {
+                foreach ($name in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys) {
+                    if (! (Test-PodeOAComponent -DefinitionTag $tag -Field $field -Name $name)) {
+                        $result.issues[$tag].components["#/components/$field/$name"] = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name]
+                        $result.valid = $false
                     }
-                    $undefined[$tag]["#/components/$field/$name"] = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name]
                 }
             }
         }
     }
-    return $undefined
+    return  $result
 }
