@@ -1566,6 +1566,9 @@ The EndpointName of an Endpoint(s) to bind the static Route against.
 .PARAMETER Bookmarks
 If supplied, create a new documentation bookmarks page
 
+.PARAMETER Editor
+If supplied, enable the Swagger-Editor
+
 .PARAMETER NoAdvertise
 If supplied, it is not going to state the documentation URL at the startup of the server
 
@@ -1671,7 +1674,7 @@ function Enable-PodeOAViewer {
 
         $swaggerEditorPath = Join-Path -Path $(Get-PodeModuleMiscPath) -ChildPath 'swagger-editor-dist'
         Add-PodeStaticRoute -Path  $meta.SwaggerEditorDist -Source $swaggerEditorPath -EndpointName $EndpointName
-        
+
         $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
     } elseif ($Bookmarks.IsPresent) {
         # setup meta info
