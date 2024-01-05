@@ -3361,7 +3361,7 @@ function Test-PodeOADefinition {
             }
             foreach ($field in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation.keys) {
                 foreach ($name in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys) {
-                    if (! (Test-PodeOAComponent -DefinitionTag $tag -Field $field -Name $name)) {
+                    if (! (Test-PodeOAComponentInternal -DefinitionTag $tag -Field $field -Name $name)) {
                         $result.issues[$tag].components["#/components/$field/$name"] = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name]
                         $result.valid = $false
                     }

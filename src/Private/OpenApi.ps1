@@ -1385,7 +1385,7 @@ function New-PodeOResponseInternal {
     }
 
     if ($Params.Reference ) {
-        Test-PodeOAComponent  -Field responses -DefinitionTag $DefinitionTag -Name $Params.Reference -PostValidation
+        Test-PodeOAComponentInternal  -Field responses -DefinitionTag $DefinitionTag -Name $Params.Reference -PostValidation
         $response = @{
             '$ref' = "#/components/responses/$($Params.Reference)"
         }
@@ -1502,10 +1502,10 @@ function  Test-PodeOADefinitionInternal {
 
 <#
 .SYNOPSIS
-Check the OpenAPI component exist
+Check the OpenAPI component exist (Internal Function)
 
 .DESCRIPTION
-Check the OpenAPI component exist
+Check the OpenAPI component exist (Internal Function)
 
 .PARAMETER Field
 The component type
@@ -1525,7 +1525,7 @@ Generate an exception if the component doesn't exist
 Postpone the check before the server start
 
 .EXAMPLE
-Test-PodeOAComponent -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
+Test-PodeOAComponentInternal -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
 #>
 function Test-PodeOAComponentInternal {
     param(
@@ -1548,7 +1548,7 @@ function Test-PodeOAComponentInternal {
         [switch]
         $PostValidation
     )
-    
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     if ($PostValidation.IsPresent) {
         foreach ($tag in $DefinitionTag) {
