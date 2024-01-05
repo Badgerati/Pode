@@ -1721,7 +1721,7 @@ function Enable-PodeOAViewer {
         # setup meta info
         $meta = @{
             Title             = $Title
-            OpenApi           = $OpenApiUrl
+            OpenApi           = "$($OpenApiUrl)?format=yaml"
             DarkMode          = $DarkMode
             DefinitionTag     = $DefinitionTag
             SwaggerEditorDist = "$Path/swagger-editor-dist"

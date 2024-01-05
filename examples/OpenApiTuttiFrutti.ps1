@@ -50,7 +50,7 @@ Some useful links:
     Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -DefinitionTag 'v3'
-
+    Enable-PodeOAViewer -Editor -DefinitionTag 'v3'
     Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3'
 
 
