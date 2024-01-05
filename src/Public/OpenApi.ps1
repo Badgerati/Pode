@@ -33,6 +33,18 @@ Like normal Routes, an array of Middleware that will be applied to the route.
 .PARAMETER EndpointName
 The EndpointName of an Endpoint(s) to bind the static Route against.
 
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on this Route.
+
+.PARAMETER Role
+One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
 .PARAMETER RestrictRoutes
 If supplied, only routes that are available on the Requests URI will be used to generate the OpenAPI definition.
 
@@ -111,6 +123,23 @@ function Enable-PodeOpenApi {
 
         [object[]]
         $Middleware,
+
+        [Parameter()]
+        [Alias('Auth')]
+        [string]
+        $Authentication,
+
+        [Parameter()]
+        [string[]]
+        $Role,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
 
         [switch]
         $RestrictRoutes,
@@ -259,9 +288,18 @@ function Enable-PodeOpenApi {
     }
 
     # add the OpenAPI route
-    Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
-    Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
-    Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName
+    Add-PodeRoute -Method Get -Path $Path -ArgumentList $meta -Middleware $Middleware `
+        -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName `
+        -Authentication $Authentication -Role $Role -Scope $Scope -Group $Group
+
+    Add-PodeRoute -Method Get -Path "$Path.json" -ArgumentList $meta -Middleware $Middleware `
+        -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName `
+        -Authentication $Authentication -Role $Role -Scope $Scope -Group $Group
+
+    Add-PodeRoute -Method Get -Path "$Path.yaml" -ArgumentList $meta -Middleware $Middleware `
+        -ScriptBlock $openApiCreationScriptBlock -EndpointName $EndpointName `
+        -Authentication $Authentication -Role $Role -Scope $Scope -Group $Group
+
     #set new DefaultResponses
     if ($NoDefaultResponses.IsPresent) {
         $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.defaultResponses = @{}
@@ -1563,6 +1601,18 @@ If supplied, the page will be rendered using a dark theme (this is not supported
 .PARAMETER EndpointName
 The EndpointName of an Endpoint(s) to bind the static Route against.
 
+.PARAMETER Authentication
+The name of an Authentication method which should be used as middleware on this Route.
+
+.PARAMETER Role
+One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
 .PARAMETER Bookmarks
 If supplied, create a new documentation bookmarks page
 
@@ -1614,6 +1664,23 @@ function Enable-PodeOAViewer {
         [string[]]
         $EndpointName,
 
+        [Parameter()]
+        [Alias('Auth')]
+        [string]
+        $Authentication,
+
+        [Parameter()]
+        [string[]]
+        $Role,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Bookmarks')]
         [switch]
         $Bookmarks,
@@ -1642,10 +1709,9 @@ function Enable-PodeOAViewer {
         throw "No title supplied for $($Type) page"
     }
 
-
     if ($Editor.IsPresent) {
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default "/docs/swagger-editor"
+        $Path = Protect-PodeValue -Value $Path -Default '/docs/swagger-editor'
         if ([string]::IsNullOrWhiteSpace($Title)) {
             throw "No route path supplied for $($Type) page"
         }
@@ -1660,8 +1726,11 @@ function Enable-PodeOAViewer {
             DefinitionTag     = $DefinitionTag
             SwaggerEditorDist = "$Path/swagger-editor-dist"
         }
-        $route = Add-PodeRoute -Method Get -Path $Path `
-            -Middleware $Middleware -ArgumentList $meta -EndpointName $EndpointName -PassThru -ScriptBlock {
+        Add-PodeRoute -Method Get -Path $Path `
+            -Middleware $Middleware -ArgumentList $meta `
+            -EndpointName $EndpointName -Authentication $Authentication `
+            -Role $Role -Scope $Scope -Group $Group `
+            -ScriptBlock {
             param($meta)
             $Data = @{
                 Title             = $meta.Title
@@ -1679,7 +1748,7 @@ function Enable-PodeOAViewer {
         $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
     } elseif ($Bookmarks.IsPresent) {
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default "/docs"
+        $Path = Protect-PodeValue -Value $Path -Default '/docs'
         if ([string]::IsNullOrWhiteSpace($Title)) {
             throw "No route path supplied for $($Type) page"
         }
@@ -1692,7 +1761,10 @@ function Enable-PodeOAViewer {
         }
 
         $route = Add-PodeRoute -Method Get -Path $Path `
-            -Middleware $Middleware -ArgumentList $meta -EndpointName $EndpointName -PassThru -ScriptBlock {
+            -Middleware $Middleware -ArgumentList $meta `
+            -EndpointName $EndpointName -Authentication $Authentication `
+            -Role $Role -Scope $Scope -Group $Group `
+            -PassThru -ScriptBlock {
             param($meta)
             $Data = @{
                 Title   = $meta.Title
@@ -1734,7 +1806,10 @@ function Enable-PodeOAViewer {
         }
         $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer[$($meta.Type)] = $Path
         # add the viewer route
-        Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta -EndpointName $EndpointName -ScriptBlock {
+        Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta `
+            -EndpointName $EndpointName -Authentication $Authentication `
+            -Role $Role -Scope $Scope -Group $Group `
+            -ScriptBlock {
             param($meta)
             $podeRoot = Get-PodeModuleMiscPath
             if ( $meta.DarkMode) { $Theme = 'dark' } else { $Theme = 'light' }
@@ -3369,6 +3444,7 @@ function Test-PodeOADefinition {
                 title      = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.title)
                 version    = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.version)
                 components = @{}
+                definition = ''
             }
             foreach ($field in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation.keys) {
                 foreach ($name in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys) {
@@ -3377,6 +3453,11 @@ function Test-PodeOADefinition {
                         $result.valid = $false
                     }
                 }
+            }
+            try {
+                Get-PodeOADefinition -DefinitionTag $tag | Out-Null
+            } catch {
+                $result.issues[$tag].definition = $_.Exception.Message
             }
         }
     }
