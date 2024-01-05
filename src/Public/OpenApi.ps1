@@ -1642,12 +1642,13 @@ function Enable-PodeOAViewer {
         throw "No title supplied for $($Type) page"
     }
 
-    # set a default path
-    $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())"
-    if ([string]::IsNullOrWhiteSpace($Title)) {
-        throw "No route path supplied for $($Type) page"
-    }
+
     if ($Editor.IsPresent) {
+        # set a default path
+        $Path = Protect-PodeValue -Value $Path -Default "/docs/swagger-editor"
+        if ([string]::IsNullOrWhiteSpace($Title)) {
+            throw "No route path supplied for $($Type) page"
+        }
         if (Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag) {
             throw "This version on Swagger-Editor doesn't support OpenAPI 3.1"
         }
@@ -1677,6 +1678,11 @@ function Enable-PodeOAViewer {
 
         $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
     } elseif ($Bookmarks.IsPresent) {
+        # set a default path
+        $Path = Protect-PodeValue -Value $Path -Default "/docs"
+        if ([string]::IsNullOrWhiteSpace($Title)) {
+            throw "No route path supplied for $($Type) page"
+        }
         # setup meta info
         $meta = @{
             Title         = $Title
@@ -1713,6 +1719,11 @@ function Enable-PodeOAViewer {
     } else {
         if ($Type -ieq 'RapiPdf' -and (Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag)) {
             throw "The Document tool RapidPdf doesn't support OpenAPI 3.1"
+        }
+        # set a default path
+        $Path = Protect-PodeValue -Value $Path -Default "/docs/$($Type.ToLowerInvariant())"
+        if ([string]::IsNullOrWhiteSpace($Title)) {
+            throw "No route path supplied for $($Type) page"
         }
         # setup meta info
         $meta = @{
