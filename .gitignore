@@ -258,5 +258,3 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 .vscode/launch.json
-packers/choco/pode.nuspec
-packers/choco/tools/ChocolateyInstall.ps1
