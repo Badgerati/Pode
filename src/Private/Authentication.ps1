@@ -1068,31 +1068,85 @@ function Invoke-PodeAuthValidation {
     # if it's a merged auth, re-call this function and check against "succeed" value
     if ($auth.Merged) {
         $results = @{}
+        if ([version]$PSVersionTable.PSVersion -ge [version]'7.0.0') { 
+            # Run the foreach loop in parallel
+            $auth.Authentications | ForEach-Object -Parallel {
+                $authName = $_
+                $auth = $using:auth
 
-        foreach ($authName in $auth.Authentications) {
-            $result = Invoke-PodeAuthValidation -Name $authName
+                $result = Invoke-PodeAuthValidation -Name $authName
 
-            # if the auth is trying to redirect, we need to bubble the this back now
-            if ($result.Redirected) {
-                return $result
+                # if the auth is trying to redirect, we need to bubble this back now
+                if ($result.Redirected) {
+                    return @{ Name = $authName; Result = $result }
+                }
+
+                # if the auth passed, and we only need one auth to pass, return current result
+                if ($result.Success -and $auth.PassOne) {
+                    return @{ Name = $authName; Result = $result }
+                }
+
+                # if the auth failed, but we need all to pass, return current result
+                if (!$result.Success -and !$auth.PassOne) {
+                    return @{ Name = $authName; Result = $result }
+                }
+
+                # remember result if we need all to pass
+                return @{ Name = $authName; Result = $result }
+            } -ThrottleLimit 5 | ForEach-Object {
+                $results[$_.Name] = $_.Result
             }
 
-            # if the auth passed, and we only need one auth to pass, return current result
-            if ($result.Success -and $auth.PassOne) {
-                return $result
-            }
+            if ($auth.PassOne) {
+                foreach ($key in $results.Keys) {
+                    if ( $results[$key].Success) {
+                        return $results[$key]
+                    }
+                }
+                return $results[$key]
+            } else {
+                $success = ($results.Values -notmatch 'Success').Count -eq 0
+                if ($success) {
+                    # invoke scriptblock
+                    $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables
 
-            # if the auth failed, but we need all to pass, return current result
-            if (!$result.Success -and !$auth.PassOne) {
-                return $result
+                    # reset default properties and return
+                    $result.Success = $true
+                    $result.Auth = $results.Keys
+                    return $result
+                } else {
+                    # default failure
+                    return @{
+                        Success    = $false
+                        StatusCode = 500
+                    }
+                }
             }
+        } else {
+            foreach ($authName in $auth.Authentications) {
+                $result = Invoke-PodeAuthValidation -Name $authName
 
-            # remember result if we need all to pass
-            if (!$auth.PassOne) {
-                $results[$authName] = $result
+                # if the auth is trying to redirect, we need to bubble the this back now
+                if ($result.Redirected) {
+                    return $result
+                }
+
+                # if the auth passed, and we only need one auth to pass, return current result
+                if ($result.Success -and $auth.PassOne) {
+                    return $result
+                }
+
+                # if the auth failed, but we need all to pass, return current result
+                if (!$result.Success -and !$auth.PassOne) {
+                    return $result
+                }
+
+                # remember result if we need all to pass
+                if (!$auth.PassOne) {
+                    $results[$authName] = $result
+                }
             }
         }
-
         # if the last auth failed, and we only need one auth to pass, set failure and return
         if (!$result.Success -and $auth.PassOne) {
             return $result
