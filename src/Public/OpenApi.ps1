@@ -995,7 +995,7 @@ function Test-PodeOAJsonSchemaCompliance {
     if (!$PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaValidation) {
         throw 'Test-PodeOAComponentchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
     }
-    if (!(Test-PodeOAComponentchemaJson -Name $SchemaReference)) {
+    if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
         throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
     }
 

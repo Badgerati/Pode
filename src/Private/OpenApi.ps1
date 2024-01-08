@@ -168,7 +168,7 @@ The Name of the ComponentSchemaJson reference.
 #>
 
 
-function Test-PodeOAComponentchemaJson {
+function Test-PodeOAComponentSchemaJson {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
