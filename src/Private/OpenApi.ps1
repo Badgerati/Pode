@@ -973,6 +973,29 @@ function Get-PodeOABaseObject {
     }
 }
 
+function Initialize-OpenApiTable {
+    param(
+        [string]
+        $DefaultOADefinitionTag = $null
+    )
+    $OpenAPI = @{
+        DefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
+    }
+    if ([string]::IsNullOrEmpty( $DefaultOADefinitionTag)) {
+        $OpenAPI['DefaultDefinitionTag'] = 'default'
+    } else {
+        $OpenAPI['DefaultDefinitionTag'] = $DefaultOADefinitionTag
+    }
+
+    $OpenAPI['SelectedDefinitionTag'] = $OpenAPI['DefaultDefinitionTag']
+
+    # swagger and openapi
+    $OpenAPI['Definitions'] = @{ $OpenAPI['SelectedDefinitionTag'] = Get-PodeOABaseObject }
+
+    return $OpenAPI
+}
+
+
 function Set-PodeOAAuth {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -1474,17 +1497,17 @@ function  Test-PodeOADefinitionInternal {
         Write-PodeHost 'Undefined OpenAPI References :' -ForegroundColor Red
         foreach ($tag in $definitionIssues.issues.keys) {
             Write-PodeHost "  Definition $tag :" -ForegroundColor Red
-            if($definitionIssues.issues[$tag].definition ){
+            if ($definitionIssues.issues[$tag].definition ) {
                 Write-PodeHost '     OpenAPI generation deocument error: ' -ForegroundColor Red
                 Write-PodeHost "       $definitionIssues.issues[$tag].definition" -ForegroundColor Red
             }
-            if($definitionIssues.issues[$tag].title ) {
+            if ($definitionIssues.issues[$tag].title ) {
                 Write-PodeHost '     info.title is mandatory' -ForegroundColor Red
             }
-            if($definitionIssues.issues[$tag].version ) {
+            if ($definitionIssues.issues[$tag].version ) {
                 Write-PodeHost '     info.version is mandatory' -ForegroundColor Red
             }
-            if($definitionIssues.issues[$tag].components ) {
+            if ($definitionIssues.issues[$tag].components ) {
                 Write-PodeHost '     Missing component(s)' -ForegroundColor Red
                 foreach ($key in $definitionIssues.issues[$tag].components.keys) {
                     $occurences = $definitionIssues.issues[$tag].components[$key]

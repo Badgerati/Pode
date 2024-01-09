@@ -158,7 +158,11 @@ Describe 'Restart-PodeInternalServer' {
                         Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
                     }
                 }
-                OpenAPI                = @{}
+                OpenAPI                = @{
+                    DefaultDefinitionTag = 'default'
+                    SelectedDefinitionTag='default'
+                    Definitions = @{ 'default' = Get-PodeOABaseObject }
+                }
                 BodyParsers            = @{}
                 AutoImport             = @{
                     Modules      = @{ Exported = @() }
@@ -188,7 +192,7 @@ Describe 'Restart-PodeInternalServer' {
                     Items   = @{}
                     Storage = @{}
                 }
-                DefaultOADefinitionTag = 'default'
+
             }
             Metrics   = @{
                 Server = @{
