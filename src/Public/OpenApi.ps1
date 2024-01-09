@@ -175,7 +175,7 @@ function Enable-PodeOpenApi {
 
     )
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
+        $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
     }
     if ($Description -or $Version -or $Title) {
         if (! $Version) {
@@ -183,19 +183,19 @@ function Enable-PodeOpenApi {
         }
         Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
-    if ( $DefinitionTag -ine $PodeContext.Server.DefaultOADefinitionTag ) {
-        $PodeContext.Server.OpenAPI[$DefinitionTag] = Get-PodeOABaseObject
+    if ( $DefinitionTag -ine $PodeContext.Server.OpenAPI.DefaultDefinitionTag ) {
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag] = Get-PodeOABaseObject
     }
-    $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
+    $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
 
 
     # initialise openapi info
-    $PodeContext.Server.OpenAPI[$DefinitionTag].Version = $OpenApiVersion
-    $PodeContext.Server.OpenAPI[$DefinitionTag].Path = $Path
+    $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].Version = $OpenApiVersion
+    $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].Path = $Path
     if ($OpenApiVersion.StartsWith('3.0')) {
-        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.version = 3.0
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.version = 3.0
     } elseif ($OpenApiVersion.StartsWith('3.1')) {
-        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.version = 3.1
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.version = 3.1
     }
 
     $meta = @{
@@ -207,27 +207,27 @@ function Enable-PodeOpenApi {
         DefinitionTag  = $DefinitionTag
     }
     if ( $Title) {
-        $PodeContext.Server.OpenAPI[$DefinitionTag].info.title = $Title
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.title = $Title
     }
     if ($Version) {
-        $PodeContext.Server.OpenAPI[$DefinitionTag].info.version = $Version
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.version = $Version
     }
 
     if ($Description ) {
-        $PodeContext.Server.OpenAPI[$DefinitionTag].info.description = $Description
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.description = $Description
     }
 
     if ( $EnableSchemaValidation.IsPresent) {
         #Test-Json has been introduced with version 6.1.0
         if ($PSVersionTable.PSVersion -ge [version]'6.1.0') {
-            $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaValidation = $EnableSchemaValidation.IsPresent
+            $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaValidation = $EnableSchemaValidation.IsPresent
         } else {
             throw 'Schema validation required Powershell version 6.1.0 or greater'
         }
     }
 
     if ( $Depth) {
-        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth = $Depth
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth = $Depth
     }
 
 
@@ -278,12 +278,12 @@ function Enable-PodeOpenApi {
         # write the openapi definition
         if ($format -ieq 'yaml') {
             if ($mode -ieq 'view') {
-                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
+                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
             } else {
-                Write-PodeYamlResponse -Value $def -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth
+                Write-PodeYamlResponse -Value $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
             }
         } else {
-            Write-PodeJsonResponse -Value $def -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth -NoCompress:$meta.NoCompress
+            Write-PodeJsonResponse -Value $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth -NoCompress:$meta.NoCompress
         }
     }
 
@@ -302,11 +302,11 @@ function Enable-PodeOpenApi {
 
     #set new DefaultResponses
     if ($NoDefaultResponses.IsPresent) {
-        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.defaultResponses = @{}
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = @{}
     } elseif ($DefaultResponses) {
-        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.defaultResponses = $DefaultResponses
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = $DefaultResponses
     }
-    $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.enabled = $true
+    $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.enabled = $true
 }
 
 
@@ -378,11 +378,11 @@ function Add-PodeOAServerEndpoint {
     )
 
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
-        $DefinitionTag = @($PodeContext.Server.SelectedOADefinitionTag)
+        $DefinitionTag = @($PodeContext.Server.OpenAPI.SelectedDefinitionTag)
     }
     foreach ($tag in $DefinitionTag) {
-        if (! $PodeContext.Server.OpenAPI[$tag].servers) {
-            $PodeContext.Server.OpenAPI[$tag].servers = @()
+        if (! $PodeContext.Server.OpenAPI.Definitions[$tag].servers) {
+            $PodeContext.Server.OpenAPI.Definitions[$tag].servers = @()
         }
         $lUrl = [ordered]@{url = $Url }
         if ($Description) {
@@ -392,7 +392,7 @@ function Add-PodeOAServerEndpoint {
         if ($Variables) {
             $lUrl.variables = $Variables
         }
-        $PodeContext.Server.OpenAPI[$tag].servers += $lUrl
+        $PodeContext.Server.OpenAPI.Definitions[$tag].servers += $lUrl
     }
 }
 
@@ -493,13 +493,13 @@ function Get-PodeOADefinition {
 
     switch ($Format.ToLower()) {
         'json' {
-            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth
+            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
         }
         'json-compress' {
-            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth -Compress
+            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth -Compress
         }
         'yaml' {
-            return ConvertTo-PodeYaml -InputObject $oApi -depth $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.depth
+            return ConvertTo-PodeYaml -InputObject $oApi -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
         }
         Default {
             return $oApi
@@ -992,7 +992,7 @@ function Test-PodeOAJsonSchemaCompliance {
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    if (!$PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaValidation) {
+    if (!$PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaValidation) {
         throw 'Test-PodeOAComponentchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
     }
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
@@ -1000,7 +1000,7 @@ function Test-PodeOAJsonSchemaCompliance {
     }
 
     [string[]] $message = @()
-    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.schemaJson[$SchemaReference].json -ErrorVariable jsonValidationErrors -ErrorAction SilentlyContinue
+    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaJson[$SchemaReference].json -ErrorVariable jsonValidationErrors -ErrorAction SilentlyContinue
     if ($jsonValidationErrors) {
         foreach ($item in $jsonValidationErrors) {
             $message += $item
@@ -1290,7 +1290,7 @@ function ConvertTo-PodeOAParameter {
             '$ref' = "#/components/parameters/$Reference"
         }
         foreach ($tag in $DefinitionTag) {
-            if ($PodeContext.Server.OpenAPI[$tag].components.parameters.$Reference.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+            if ($PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters.$Reference.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
                 Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Reference -Append
             }
         }
@@ -1527,10 +1527,10 @@ function Set-PodeOARouteInfo {
         }
         if ($OperationId) {
             foreach ($tag in $DefinitionTag) {
-                if ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId -ccontains $OperationId) {
+                if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
                     throw "OperationID:$OperationId has to be unique"
                 }
-                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId += $OperationId
+                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId += $OperationId
             }
             $r.OpenApi.OperationId = $OperationId
         }
@@ -1698,13 +1698,13 @@ function Enable-PodeOAViewer {
     )
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     # error if there's no OpenAPI URL
-    $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI[$DefinitionTag].Path
+    $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].Path
     if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
         throw "No OpenAPI URL supplied for $($Type)"
     }
 
     # fail if no title
-    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI[$DefinitionTag].info.Title
+    $Title = Protect-PodeValue -Value $Title -Default $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.Title
     if ([string]::IsNullOrWhiteSpace($Title)) {
         throw "No title supplied for $($Type) page"
     }
@@ -1715,7 +1715,7 @@ function Enable-PodeOAViewer {
         if ([string]::IsNullOrWhiteSpace($Title)) {
             throw "No route path supplied for $($Type) page"
         }
-        if (Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag) {
+        if (Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag) {
             throw "This version on Swagger-Editor doesn't support OpenAPI 3.1"
         }
         # setup meta info
@@ -1745,7 +1745,7 @@ function Enable-PodeOAViewer {
         $swaggerEditorPath = Join-Path -Path $(Get-PodeModuleMiscPath) -ChildPath 'swagger-editor-dist'
         Add-PodeStaticRoute -Path  $meta.SwaggerEditorDist -Source $swaggerEditorPath -EndpointName $EndpointName
 
-        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
     } elseif ($Bookmarks.IsPresent) {
         # set a default path
         $Path = Protect-PodeValue -Value $Path -Default '/docs'
@@ -1771,25 +1771,25 @@ function Enable-PodeOAViewer {
                 OpenApi = $meta.OpenApi
             }
             $DefinitionTag = $meta.DefinitionTag
-            foreach ($type in $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer.Keys) {
+            foreach ($type in $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer.Keys) {
                 $Data[$type] = $true
-                $Data["$($type)_path"] = $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer[$type]
+                $Data["$($type)_path"] = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer[$type]
             }
 
             $podeRoot = Get-PodeModuleMiscPath
             Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
         }
         if (! $NoAdvertise.IsPresent) {
-            $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.bookmarks = @{
+            $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.bookmarks = @{
                 path       = $Path
                 route      = @()
                 openApiUrl = $OpenApiUrl
             }
-            $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.bookmarks.route += $route
+            $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.bookmarks.route += $route
         }
 
     } else {
-        if ($Type -ieq 'RapiPdf' -and (Test-OpenAPIVersion -Version 3.1 -DefinitionTag $DefinitionTag)) {
+        if ($Type -ieq 'RapiPdf' -and (Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag)) {
             throw "The Document tool RapidPdf doesn't support OpenAPI 3.1"
         }
         # set a default path
@@ -1804,7 +1804,7 @@ function Enable-PodeOAViewer {
             OpenApi  = $OpenApiUrl
             DarkMode = $DarkMode
         }
-        $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.viewer[$($meta.Type)] = $Path
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer[$($meta.Type)] = $Path
         # add the viewer route
         Add-PodeRoute -Method Get -Path $Path -Middleware $Middleware -ArgumentList $meta `
             -EndpointName $EndpointName -Authentication $Authentication `
@@ -1938,9 +1938,9 @@ function Add-PodeOAExternalDoc {
             if ($Description) {
                 $param.description = $Description
             }
-            $PodeContext.Server.OpenAPI[$tag].externalDocs = $param
+            $PodeContext.Server.OpenAPI.Definitions[$tag].externalDocs = $param
         } else {
-            $PodeContext.Server.OpenAPI[$tag].externalDocs = $ExternalDoc
+            $PodeContext.Server.OpenAPI.Definitions[$tag].externalDocs = $ExternalDoc
         }
     }
 }
@@ -2009,7 +2009,7 @@ function Add-PodeOATag {
             $param.externalDocs = $ExternalDoc
         }
 
-        $PodeContext.Server.OpenAPI[$tag].tags[$Name] = $param
+        $PodeContext.Server.OpenAPI.Definitions[$tag].tags[$Name] = $param
     }
 }
 
@@ -2126,22 +2126,22 @@ function Add-PodeOAInfo {
 
     if ($Title) {
         $Info.title = $Title
-    } elseif (  $PodeContext.Server.OpenAPI[$DefinitionTag].info.title) {
-        $Info.title = $PodeContext.Server.OpenAPI[$DefinitionTag].info.title
+    } elseif (  $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.title) {
+        $Info.title = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.title
     }
 
     if ($Version) {
         $Info.version = $Version
-    } elseif ( $PodeContext.Server.OpenAPI[$DefinitionTag].info.version) {
-        $Info.version = $PodeContext.Server.OpenAPI[$DefinitionTag].info.version
+    } elseif ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.version) {
+        $Info.version = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.version
     } else {
         $Info.version = '1.0.0'
     }
 
     if ($Description ) {
         $Info.description = $Description
-    } elseif ( $PodeContext.Server.OpenAPI[$DefinitionTag].info.description) {
-        $Info.description = $PodeContext.Server.OpenAPI[$DefinitionTag].info.description
+    } elseif ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.description) {
+        $Info.description = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.description
     }
 
     if ($TermsOfService) {
@@ -2163,7 +2163,7 @@ function Add-PodeOAInfo {
             $Info['contact'].url = $ContactUrl
         }
     }
-    $PodeContext.Server.OpenAPI[$DefinitionTag].info = $Info
+    $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info = $Info
 
 }
 
@@ -2260,7 +2260,7 @@ function New-PodeOAExample {
     begin {
 
         if (Test-PodeIsEmpty -Value $DefinitionTag) {
-            $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
+            $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
         }
 
         if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
@@ -2671,7 +2671,7 @@ function New-PodeOAResponse {
     begin {
 
         if (Test-PodeIsEmpty -Value $DefinitionTag) {
-            $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
+            $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
         }
 
         # override status code with default
@@ -2979,7 +2979,7 @@ function New-PodeOAResponseLink {
     begin {
 
         if (Test-PodeIsEmpty -Value $DefinitionTag) {
-            $DefinitionTag = $PodeContext.Server.SelectedOADefinitionTag
+            $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
         }
         if ($Reference) {
             Test-PodeOAComponentInternal -Field links -DefinitionTag $DefinitionTag -Name $Reference  -PostValidation
@@ -3123,14 +3123,14 @@ function Add-PodeOAExternalRoute {
             }
             foreach ($tag in $DefinitionTag) {
                 #add the default OpenApi responses
-                if ( $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses) {
-                    $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses.Clone()
+                if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
+                    $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
                 }
                 if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
-                    $PodeContext.Server.OpenAPI[$tag].hiddenComponents.externalPath[$Path] = @{}
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = @{}
                 }
 
-                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
+                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
             }
 
             if ($PassThru) {
@@ -3281,10 +3281,10 @@ function Add-PodeOAWebhook {
         }
     }
     foreach ($tag in $DefinitionTag) {
-        if (Test-OpenAPIVersion -Version 3.0 -DefinitionTag $tag ) {
+        if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $tag ) {
             throw 'The feature reusable component webhook is not available in OpenAPI v3.0.x'
         }
-        $PodeContext.Server.OpenAPI[$tag].webhooks[$Name] = $refRoute
+        $PodeContext.Server.OpenAPI.Definitions[$tag].webhooks[$Name] = $refRoute
     }
 
     if ($PassThru) {
@@ -3342,19 +3342,19 @@ function Select-PodeOADefinition {
         throw 'No scriptblock for -Scriptblock passed'
     }
     if (Test-PodeIsEmpty -Value $Tag) {
-        $Tag = $PodeContext.Server.DefaultOADefinitionTag
+        $Tag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag
     } else {
         $Tag = Test-PodeOADefinitionTag -Tag $Tag
     }
     # check for scoped vars
     $Scriptblock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $Scriptblock -PSSession $PSCmdlet.SessionState
-    $PodeContext.Server.OADefinitionTagSelectionStack.Push($PodeContext.Server.SelectedOADefinitionTag)
+    $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Push($PodeContext.Server.OpenAPI.SelectedDefinitionTag)
 
-    $PodeContext.Server.SelectedOADefinitionTag = $Tag
+    $PodeContext.Server.OpenAPI.SelectedDefinitionTag = $Tag
 
     $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
     $null = Invoke-PodeScriptBlock -ScriptBlock $Scriptblock -Arguments $_args -Splat
-    $PodeContext.Server.SelectedOADefinitionTag = $PodeContext.Server.OADefinitionTagSelectionStack.Pop()
+    $PodeContext.Server.OpenAPI.SelectedDefinitionTag = $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Pop()
 
 }
 
@@ -3370,7 +3370,7 @@ function Select-PodeOADefinition {
 Check if a Definition exist
 
 .DESCRIPTION
-Check if a Definition exist. If the parameter Tag is empty or Null $PodeContext.Server.SelectedOADefinitionTag is returned
+Check if a Definition exist. If the parameter Tag is empty or Null $PodeContext.Server.OpenAPI.SelectedDefinitionTag is returned
 
 .PARAMETER Tag
 An Array of strings representing the unique tag for the API specification.
@@ -3389,13 +3389,13 @@ function Test-PodeOADefinitionTag {
 
     if ($Tag -and $Tag.Count -gt 0) {
         foreach ($t in $Tag) {
-            if (! ($PodeContext.Server.OpenApi.Keys -ccontains $t)) {
+            if (! ($PodeContext.Server.OpenApi.Definitions.Keys -ccontains $t)) {
                 throw "DefinitionTag $t is not defined"
             }
         }
         return $Tag
     } else {
-        return $PodeContext.Server.SelectedOADefinitionTag
+        return $PodeContext.Server.OpenAPI.SelectedDefinitionTag
     }
 }
 
@@ -3426,7 +3426,7 @@ function Test-PodeOADefinition {
         $DefinitionTag
     )
     if (! ($DefinitionTag -and $DefinitionTag.Count -gt 0)) {
-        $DefinitionTag = $PodeContext.Server.OpenAPI.keys
+        $DefinitionTag = $PodeContext.Server.OpenAPI.Definitions.keys
     }
 
     $result = @{
@@ -3436,20 +3436,20 @@ function Test-PodeOADefinition {
     }
 
     foreach ($tag in $DefinitionTag) {
-        if ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.enabled) {
-            if ([string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.title) -or [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.version)) {
+        if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.enabled) {
+            if ([string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI.Definitions[$tag].info.title) -or [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI.Definitions[$tag].info.version)) {
                 $result.valid = $false
             }
             $result.issues[$tag] = @{
-                title      = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.title)
-                version    = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI[$tag].info.version)
+                title      = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI.Definitions[$tag].info.title)
+                version    = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI.Definitions[$tag].info.version)
                 components = @{}
                 definition = ''
             }
-            foreach ($field in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation.keys) {
-                foreach ($name in $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field].keys) {
+            foreach ($field in $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.postValidation.keys) {
+                foreach ($name in $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.postValidation[$field].keys) {
                     if (! (Test-PodeOAComponentInternal -DefinitionTag $tag -Field $field -Name $name)) {
-                        $result.issues[$tag].components["#/components/$field/$name"] = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.postValidation[$field][$name]
+                        $result.issues[$tag].components["#/components/$field/$name"] = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.postValidation[$field][$name]
                         $result.valid = $false
                     }
                 }

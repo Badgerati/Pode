@@ -340,17 +340,20 @@ function New-PodeContext {
     $ctx.Server.Sessions = @{}
 
     #OpenApi Definition Tag
-    if ((Test-PodeIsEmpty $ctx.Server.Configuration.Server.DefaultOADefinitionTag)) {
-        $ctx.Server.DefaultOADefinitionTag = 'default'
+    $ctx.Server.OpenAPI = @{
+        DefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
+    }
+    if ((Test-PodeIsEmpty $ctx.Server.Configuration.Server.OpenAPI.DefaultDefinitionTag)) {
+        $ctx.Server.OpenAPI.DefaultDefinitionTag = 'default'
     } else {
-        $ctx.Server.DefaultOADefinitionTag = $ctx.Server.Configuration.Server.DefaultOADefinitionTag
+        $ctx.Server.OpenAPI.DefaultDefinitionTag = $ctx.Server.Configuration.Server.OpenAPI.DefaultOADefinitionTag
     }
 
-    $ctx.Server.SelectedOADefinitionTag = $ctx.Server.DefaultOADefinitionTag
+    $ctx.Server.OpenAPI.SelectedDefinitionTag = $ctx.Server.OpenAPI.DefaultDefinitionTag
 
     # swagger and openapi
-    $ctx.Server.OpenAPI = @{ $ctx.Server.SelectedOADefinitionTag = Get-PodeOABaseObject }
-    $ctx.Server.OADefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
+    $ctx.Server.OpenAPI.Definitions = @{ $ctx.Server.OpenAPI.SelectedDefinitionTag = Get-PodeOABaseObject }
+
     # server metrics
     $ctx.Metrics = @{
         Server   = @{

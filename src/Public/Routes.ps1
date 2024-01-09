@@ -74,7 +74,7 @@ An alternative way to associate OpenApi responses unsing New-PodeOAResponse inst
 .PARAMETER OAReference
 A reference to OpenAPI reusable pathItem component created with Add-PodeOAComponentPathItem
 
-.PARAMETER DefinitionTag
+.PARAMETER OADefinitionTag
 An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
@@ -204,7 +204,7 @@ function Add-PodeRoute {
         $PassThru,
 
         [string[]]
-        $DefinitionTag
+        $OADefinitionTag
     )
 
     # check if we have any route group info defined
@@ -387,13 +387,13 @@ function Add-PodeRoute {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method -Append
         }
 
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
         #add the default OpenApi responses
-        if ( $PodeContext.Server.OpenAPI[$DefinitionTag].hiddenComponents.defaultResponses) {
+        if ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses) {
             $DefaultResponse = @{}
             foreach ($tag in $DefinitionTag) {
-                $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.defaultResponses.Clone()
+                $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
             }
         }
 
@@ -826,16 +826,6 @@ function Add-PodeStaticRoute {
                 TransferEncoding = $TransferEncoding
                 ErrorType        = $ErrorContentType
                 Download         = $DownloadOnly
-                <#  OpenApi          = @{
-                    Path           = $OpenApiPath
-                    Responses      = @{
-                        '200'     = @{ description = 'OK' }
-                        'default' = @{ description = 'Internal server error' }
-                    }
-                    Parameters     = @()
-                    RequestBody    = @{}
-                    Authentication = @()
-                }#>
                 IsStatic         = $true
                 Metrics          = @{
                     Requests = @{
@@ -1627,8 +1617,8 @@ function Remove-PodeRoute {
     # remove the operationId from the openapi operationId list
     if ($PodeContext.Server.Routes[$Method][$Path].OpenAPI) {
         foreach ( $tag  in  $PodeContext.Server.Routes[$Method][$Path].OpenAPI.DefinitionTag) {
-            if ($tag -and ($PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId -ccontains $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId)) {
-                $PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId }
+            if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId)) {
+                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId }
             }
         }
     }

@@ -1502,7 +1502,7 @@ The Name of the Authentication method to use.
 .PARAMETER Route
 A Route path for which Routes this Middleware should only be invoked against.
 
-.PARAMETER DefinitionTag
+.PARAMETER OADefinitionTag
 An array of string representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
@@ -1530,10 +1530,10 @@ function Add-PodeAuthMiddleware {
         $Route,
 
         [string[]]
-        $DefinitionTag
+        $OADefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
     if (!(Test-PodeAuthExists -Name $Authentication)) {
         throw "Authentication method does not exist: $($Authentication)"

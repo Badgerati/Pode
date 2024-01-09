@@ -146,8 +146,8 @@ function Start-PodeInternalServer {
                 Write-PodeHost "`t- $($_.Url)" -ForegroundColor Yellow
             }
             # state the OpenAPI endpoints for each definition
-            foreach ($key in  $PodeContext.Server.OpenAPI.keys) {
-                $bookmarks = $PodeContext.Server.OpenAPI[$key].hiddenComponents.bookmarks
+            foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
+                $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
                 if ( $bookmarks) {
                     Write-PodeHost
                     if (!$OpenAPIHeader) {
@@ -254,7 +254,7 @@ function Restart-PodeInternalServer {
         }
 
         # clear openapi
-        $PodeContext.Server.OpenAPI = @{ $PodeContext.Server.DefaultOADefinitionTag = Get-PodeOABaseObject }
+        $PodeContext.Server.OpenAPI = @{ $PodeContext.Server.OpenAPI.Definitions.DefaultDefinitionTag = Get-PodeOABaseObject }
 
         # clear the sockets
         $PodeContext.Server.Signals.Enabled = $false

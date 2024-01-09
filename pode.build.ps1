@@ -459,36 +459,3 @@ Task InstallCurrentUser  {
     }
 
 }
-
-
-Task Sign{
- # Define the base directory where your scripts are located
-    $path = './pkg'
-
-    if ($Version){
-
-        if (! (Test-Path $path)) {
-            Invoke-Build Pack -Version $Version
-        }
-        #$cert = New-SelfSignedCertificate -DnsName yourname -CertStoreLocation Cert:\CurrentUser\My -Type CodeSigning
-
-        # Get the code signing certificate
-        $cert = @(Get-ChildItem cert:\CurrentUser\My -CodeSigningCert)[0]
-
-        # Check if a code signing certificate is available
-        if ($null -eq $cert ) {
-            Write-Error 'No code signing certificate found.'
-            exit
-        }
-
-        # Recursively find all .ps1 and .psd1 files and sign them
-        Get-ChildItem -Path $path -Recurse -Include *.ps1, *.psd1 | ForEach-Object {
-            write-host "Signing $($_.FullName)"
-            Set-AuthenticodeSignature -FilePath $_.FullName -Certificate $cert
-        }
-    }else{
-        Write-Error "Parameter -Version is required"
-    }
-
-
-}

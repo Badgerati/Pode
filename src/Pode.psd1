@@ -307,6 +307,7 @@
         'New-PodeOAContentMediaType',
         'Add-PodeOAExternalRoute',
         'New-PodeOAServerEndpoint',
+        'Test-PodeOAVersion',
 
         #Components
         'Add-PodeOAComponentResponse',
