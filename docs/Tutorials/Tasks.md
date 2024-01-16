@@ -2,7 +2,7 @@
 
 A Task in Pode is a script that you can later invoke either asynchronously, or synchronously. They can be invoked many times, and they also support returning values from them for later use.
 
-Similar to [Schedules](../Schedules), Tasks also run in their own separate runspaces; meaning you can have long or short running tasks. By default up to a maximum of 2 tasks can run concurrently, but this can be changed by using [`Set-PodeTaskConcurrency`](../../Functions/Tasks/Set-PodeTaskConcurrency). When more tasks are invoke than can be run concurrently, tasks will be added to the task queue and will run once there is available resource in the thread pool.
+Similar to [Schedules](../Schedules), Tasks also run in their own separate runspaces; meaning you can have long or short running tasks. By default up to a maximum of 2 tasks can run concurrently, but this can be changed by using [`Set-PodeTaskConcurrency`](../../Functions/Tasks/Set-PodeTaskConcurrency). When more tasks are invoked than can be run concurrently, tasks will be added to the task queue and will run once there is available resource in the thread pool.
 
 Behind the scenes there is a a Timer created that will automatically clean-up any completed tasks. Any task that has been completed for 1+ minutes will be disposed of to free up resources - there are functions which will let you clean-up tasks more quickly.
 
