@@ -43,11 +43,23 @@ Start-PodeServer -EnablePool Tasks {
 
 You can supply custom arguments to your tasks by using the `-ArgumentList` parameter. Similar to schedules, for tasks the `-ArgumentList` is a hashtable; this is done because parameters to the `-ScriptBlock` are splatted in, and the parameter names are literal.
 
-For example, the first parameter to a task is always `$Event` - this contains the `.Lockable` object. Other parameters come from any Key/Values contained with the optional `-ArgumentList`:
+There is always a parameter added to each task invocation in the `-Event` argument - this contains the `.Lockable` object. You can safely ignore/leave the parameter unbound if you do not need it. Other parameters come from any Key/Values contained with the optional `-ArgumentList`:
 
 ```powershell
 Add-PodeTask -Name 'Example' -ArgumentList @{ Name = 'Rick'; Environment = 'Multiverse' } -ScriptBlock {
     param($Event, $Name, $Environment)
+}
+```
+
+Tasks parameters **must** be bound in the param block in order to be used, but the values for the paramters can be set through the `-ArgumentList` hashtable parameter in either the Add-PodeTask definition or when invoking the task. The following snippet would populate the parameters to the task with the same values as the above example but the `-ArgumentList` parameter is populated during invocation. Note that Keys in the `-ArgumentList` hashtable parameter set during invocation override the same Keys set during task creation: 
+
+```powershell
+Add-PodeTask -Name 'Example' -ScriptBlock {
+    param($Event, $Name, $Environment)
+}
+
+Add-PodeRoute -Method Get -Path '/invoke-task' -ScriptBlock {
+    Invoke-PodeTask -Name 'example' -ArgumentList @{ Name = 'Rick'; Environment = 'Multiverse' }
 }
 ```
 
