@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<!-- HTML for static distribution bundle build -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Swagger Editor</title>
+  <style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: Roboto,sans-serif;
+    font-size: 9px;
+    line-height: 1.42857143;
+    color: #444;
+    margin: 0px;
+  }
+
+  #swagger-editor {
+    font-size: 1.3em;
+  }
+
+  .container {
+    height: 100%;
+    max-width: 880px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  #editor-wrapper {
+    height: 100%;
+    border:1em solid #000;
+    border:none;
+  }
+
+  .Pane2 {
+    overflow-y: scroll;
+  }
+
+  </style>
+  <link href="./swagger-editor-dist/swagger-editor.css" rel="stylesheet">
+  <link rel="icon" type="image/png" href="./swagger-editor-dist/favicon-32x32.png" sizes="32x32" />
+  <link rel="icon" type="image/png" href="./swagger-editor-dist/favicon-16x16.png" sizes="16x16" />
+</head>
+
+<body>
+  <div id="swagger-editor"></div>
+  <script src="./swagger-editor-dist/swagger-editor-bundle.js"> </script>
+  <script src="./swagger-editor-dist/swagger-editor-standalone-preset.js"> </script>
+  <script>
+  window.onload = function() {
+    // Build a system
+    // info here https://github.com/swagger-api/swagger-ui/blob/master/docs/usage/configuration.md#core
+    const editor = SwaggerEditorBundle({
+      dom_id: '#swagger-editor',
+      layout: 'StandaloneLayout',
+      presets: [
+        SwaggerEditorStandalonePreset
+      ],
+      queryConfigEnabled: false, 
+      requestSnippetsEnabled: true
+    })
+
+  window.editor = editor
+    window.editor = editor
+  }
+  </script>
+
+
+</body>
+
+</html>
