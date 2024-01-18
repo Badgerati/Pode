@@ -22,7 +22,7 @@ Start-PodeServer -Threads 2 {
 
     # STATIC asset folder route
     Add-PodeStaticRoute -Path '/editor' -Source './www' -Defaults @('index.html')
-    Add-PodeStaticRoute -Path '/edtor/swagger-editor-dist' -Source './swagger-editor-dist'
+    Add-PodeStaticRoute -Path '/editor/swagger-editor-dist' -Source './swagger-editor-dist'
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Move-PodeResponseUrl -Url '/editor'
     }
