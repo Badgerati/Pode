@@ -1148,8 +1148,30 @@ function Resolve-PodeOAReferences {
 }
 
 
+<#
+.SYNOPSIS
+  Creates a new OpenAPI property object based on provided parameters.
 
+.DESCRIPTION
+  The New-PodeOAPropertyInternal function constructs an OpenAPI property object using parameters like type, name,
+  description, and various other attributes. It is used internally for building OpenAPI documentation elements in the Pode framework.
 
+.PARAMETER Type
+  The type of the property. This parameter is optional if the type is specified in the Params hashtable.
+
+.PARAMETER Params
+  A hashtable containing various attributes of the property such as name, description, format, and constraints like
+  required, readOnly, writeOnly, etc.
+
+.OUTPUTS
+  System.Collections.Specialized.OrderedDictionary
+  An ordered dictionary representing the constructed OpenAPI property object.
+
+.EXAMPLE
+  $property = New-PodeOAPropertyInternal -Type 'string' -Params $myParams
+
+  Demonstrates how to create an OpenAPI property object of type 'string' using the specified parameters.
+#>
 function New-PodeOAPropertyInternal {
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param (
@@ -1162,182 +1184,148 @@ function New-PodeOAPropertyInternal {
 
     )
 
+    # Initialize an ordered dictionary for the property
     $param = [ordered]@{}
 
+    # Set the type of the property
     if ($type) {
         $param.type = $type
     } else {
-        $param.type = $Params.type
+        if ( $Params.type) {
+            $param.type = $Params.type
+        } else {
+            throw 'Cannot create the property no type is defined'
+        }
     }
+
+    # Set name if provided
     if ($Params.Name) {
         $param.name = $Params.Name
     }
 
-    if ($Params.Description ) {
+    # Set description if provided
+    if ($Params.Description) {
         $param.description = $Params.Description
     }
 
-    if ($Params.Array.IsPresent ) {
-        $param.array = $Params.Array.IsPresent
-    }
+    # Additional property settings based on provided parameters
+    if ($Params.Array.IsPresent) { $param.array = $Params.Array.IsPresent }
 
-    if ($Params.Object.IsPresent ) {
-        $param.object = $Params.Object.IsPresent
-    }
+    if ($Params.Object.IsPresent) { $param.object = $Params.Object.IsPresent }
 
-    if ($Params.Required.IsPresent ) {
-        $param.required = $Params.Required.IsPresent
-    }
+    if ($Params.Required.IsPresent) { $param.required = $Params.Required.IsPresent }
 
-    if ($Params.Default ) {
-        $param.default = $Params.Default
-    }
+    if ($Params.Default) { $param.default = $Params.Default }
 
-    if ($Params.Format) {
-        $param.format = $Params.Format.ToLowerInvariant()
-    }
+    if ($Params.Format) { $param.format = $Params.Format.ToLowerInvariant() }
 
-    if ($Params.Deprecated.IsPresent ) {
-        $param.deprecated = $Params.Deprecated.IsPresent
-    }
+    if ($Params.Deprecated.IsPresent) { $param.deprecated = $Params.Deprecated.IsPresent }
 
-    if ($Params.Nullable.IsPresent ) {
-        $param.nullable = $Params.Nullable.IsPresent
-    }
+    if ($Params.Nullable.IsPresent) { $param.nullable = $Params.Nullable.IsPresent }
 
-    if ($Params.WriteOnly.IsPresent ) {
-        $param.writeOnly = $Params.WriteOnly.IsPresent
-    }
+    if ($Params.WriteOnly.IsPresent) { $param.writeOnly = $Params.WriteOnly.IsPresent }
 
-    if ($Params.ReadOnly.IsPresent ) {
-        $param.readOnly = $Params.ReadOnly.IsPresent
-    }
+    if ($Params.ReadOnly.IsPresent) { $param.readOnly = $Params.ReadOnly.IsPresent }
 
-    if ($Params.Example ) {
-        $param.example = $Params.Example
-    }
+    if ($Params.Example) { $param.example = $Params.Example }
 
-    if ($Params.UniqueItems.IsPresent ) {
-        $param.uniqueItems = $Params.UniqueItems.IsPresent
-    }
+    if ($Params.UniqueItems.IsPresent) { $param.uniqueItems = $Params.UniqueItems.IsPresent }
 
-    if ($Params.MaxItems) {
-        $param.maxItems = $Params.MaxItems
-    }
+    if ($Params.MaxItems) { $param.maxItems = $Params.MaxItems }
 
-    if ($Params.MinItems) {
-        $param.minItems = $Params.MinItems
-    }
+    if ($Params.MinItems) { $param.minItems = $Params.MinItems }
 
+    if ($Params.Enum) { $param.enum = $Params.Enum }
 
-    if ($Params.Enum) {
-        $param.enum = $Params.Enum
-    }
+    if ($Params.Minimum) { $param.minimum = $Params.Minimum }
 
-    if ($Params.Minimum ) {
-        $param.minimum = $Params.Minimum
-    }
+    if ($Params.Maximum) { $param.maximum = $Params.Maximum }
 
-    if ($Params.Maximum  ) {
-        $param.maximum = $Params.Maximum
-    }
+    if ($Params.ExclusiveMaximum.IsPresent) { $param.exclusiveMaximum = $Params.ExclusiveMaximum.IsPresent }
 
-    if ($Params.ExclusiveMaximum.IsPresent  ) {
-        $param.exclusiveMaximum = $Params.ExclusiveMaximum.IsPresent
-    }
+    if ($Params.ExclusiveMinimum.IsPresent) { $param.exclusiveMinimum = $Params.ExclusiveMinimum.IsPresent }
+    if ($Params.MultiplesOf) { $param.multipleOf = $Params.MultiplesOf }
 
-    if ($Params.ExclusiveMinimum  ) {
-        $param.exclusiveMinimum = $Params.ExclusiveMinimum.IsPresent
-    }
+    if ($Params.Pattern) { $param.pattern = $Params.Pattern }
 
-    if ($Params.MultiplesOf  ) {
-        $param.multipleOf = $Params.MultiplesOf
-    }
+    if ($Params.MinLength) { $param.minLength = $Params.MinLength }
 
-    if ($Params.Pattern) {
-        $param.pattern = $Params.Pattern
-    }
+    if ($Params.MaxLength) { $param.maxLength = $Params.MaxLength }
 
-    if ($Params.MinLength) {
-        $param.minLength = $Params.MinLength
-    }
+    if ($Params.MinProperties) { $param.minProperties = $Params.MinProperties }
 
-    if ($Params.MaxLength) {
-        $param.maxLength = $Params.MaxLength
-    }
-
-    if ($Params.MinProperties) {
-        $param.minProperties = $Params.MinProperties
-    }
-
-    if ($Params.MaxProperties) {
-        $param.maxProperties = $Params.MaxProperties
-    }
-
+    if ($Params.MaxProperties) { $param.maxProperties = $Params.MaxProperties }
 
     if ($Params.XmlName -or $Params.XmlNamespace -or $Params.XmlPrefix -or $Params.XmlAttribute.IsPresent -or $Params.XmlWrapped.IsPresent) {
+
         $param.xml = @{}
-        if ($Params.XmlName) {
-            $param.xml.name = $Params.XmlName
-        }
-        if ($Params.XmlNamespace) {
-            $param.xml.namespace = $Params.XmlNamespace
-        }
 
-        if ($Params.XmlPrefix) {
-            $param.xml.prefix = $Params.XmlPrefix
-        }
+        if ($Params.XmlName) { $param.xml.name = $Params.XmlName }
 
-        if ($Params.XmlAttribute.IsPresent) {
-            $param.xml.attribute = $Params.XmlAttribute.IsPresent
-        }
+        if ($Params.XmlNamespace) { $param.xml.namespace = $Params.XmlNamespace }
 
-        if ($Params.XmlWrapped.IsPresent) {
-            $param.xml.wrapped = $Params.XmlWrapped.IsPresent
-        }
+        if ($Params.XmlPrefix) { $param.xml.prefix = $Params.XmlPrefix }
+
+        if ($Params.XmlAttribute.IsPresent) { $param.xml.attribute = $Params.XmlAttribute.IsPresent }
+
+        if ($Params.XmlWrapped.IsPresent) { $param.xml.wrapped = $Params.XmlWrapped.IsPresent }
     }
 
+    if ($Params.XmlItemName) { $param.xmlItemName = $Params.XmlItemName }
 
-    if ($Params.XmlItemName) {
-        $param.xmlItemName = $Params.XmlItemName
-    }
-
-    if ($Params.ExternalDocs) {
-        $param.externalDocs = $Params.ExternalDocs
-    }
+    if ($Params.ExternalDocs) { $param.externalDocs = $Params.ExternalDocs }
 
     if ($Params.NoAdditionalProperties.IsPresent -and $Params.AdditionalProperties) {
-        throw 'Params -NoAdditionalProperties and AdditionalProperties are mutually exclusive'
+        throw 'Params -NoAdditionalProperties and -AdditionalProperties are mutually exclusive'
     } else {
-        if ($Params.NoAdditionalProperties.IsPresent) {
-            $param.additionalProperties = $false
-        }
+        if ($Params.NoAdditionalProperties.IsPresent) { $param.additionalProperties = $false }
 
-        if ($Params.AdditionalProperties) {
-            $param.additionalProperties = $Params.AdditionalProperties
-        }
+        if ($Params.AdditionalProperties) { $param.additionalProperties = $Params.AdditionalProperties }
     }
+
     return $param
 }
 
 
+<#
+.SYNOPSIS
+  Converts header properties to a format compliant with OpenAPI specifications.
+
+.DESCRIPTION
+  The ConvertTo-PodeOAHeaderProperties function is designed to take an array of hashtables representing header properties and
+  convert them into a structure suitable for OpenAPI documentation. It ensures that each header property includes a name and
+  schema definition and can handle additional attributes like description.
+
+.PARAMETER Headers
+  An array of hashtables, where each hashtable represents a header property with attributes like name, type, description, etc.
+
+.EXAMPLE
+  $headerProperties = ConvertTo-PodeOAHeaderProperties -Headers $myHeaders
+
+  This example demonstrates how to convert an array of header properties into a format suitable for OpenAPI documentation.
+#>
 function ConvertTo-PodeOAHeaderProperties {
     param (
+        [Parameter(Mandatory = $true)]
         [hashtable[]]
         $Headers
     )
+
     $elems = @{}
-    foreach ( $e in $Headers) {
+    foreach ($e in $Headers) {
+        # Ensure each header has a name
         if ($e.name) {
             $elems.$($e.name) = @{}
-            if ($e.description ) {
+            # Add description if present
+            if ($e.description) {
                 $elems.$($e.name).description = $e.description
             }
+            # Define the schema, including the type and any additional properties
             $elems.$($e.name).schema = @{
                 type = $($e.type)
             }
             foreach ($k in $e.keys) {
-                if (@('name', 'description' ) -notcontains $k) {
+                if (@('name', 'description') -notcontains $k) {
                     $elems.$($e.name).schema.$k = $e.$k
                 }
             }
@@ -1345,11 +1333,32 @@ function ConvertTo-PodeOAHeaderProperties {
             throw 'Header requires a name when used in an encoding context'
         }
     }
+
     return $elems
 }
 
 
+<#
+.SYNOPSIS
+  Creates a new OpenAPI callback component for a given definition tag.
 
+.DESCRIPTION
+  The New-PodeOAComponentCallBackInternal function constructs an OpenAPI callback component based on provided parameters.
+  This function is designed for internal use within the Pode framework to define callbacks in OpenAPI documentation.
+  It handles the creation of callback structures including the path, HTTP method, request bodies, and responses
+  based on the given definition tag.
+
+.PARAMETER Params
+  A hashtable containing parameters for the callback component, such as Method, Path, RequestBody, and Responses.
+
+.PARAMETER DefinitionTag
+  A mandatory string parameter that specifies the definition tag in OpenAPI documentation.
+
+.EXAMPLE
+  $callback = New-PodeOAComponentCallBackInternal -Params $myParams -DefinitionTag 'myTag'
+
+  This example demonstrates how to create an OpenAPI callback component for 'myTag' using the provided parameters.
+#>
 function New-PodeOAComponentCallBackInternal {
     param(
         [Parameter(Mandatory = $true)]
@@ -1357,28 +1366,31 @@ function New-PodeOAComponentCallBackInternal {
         $Params,
 
         [Parameter(Mandatory = $true)]
-        [string ]
+        [string]
         $DefinitionTag
     )
 
+    # Convert HTTP method to lower case
     $_method = $Params.Method.ToLower()
-    #  $_name = $Params.Name
+
+    # Construct the base structure for the callback with the given path and method
     $callBack = [ordered]@{
-        #  $_name = [ordered]@{
         "'$($Params.Path)'" = [ordered]@{
             $_method = [ordered]@{}
         }
-        # }
     }
-    if ($Params.RequestBody.ContainsKey( $DefinitionTag)) {
-        # $callBack."'$($Params.Path)'".$_method.requestBody = $Params.RequestBody
+
+    # Add request body to the callback if it is specified for the given definition tag
+    if ($Params.RequestBody.ContainsKey($DefinitionTag)) {
         $callBack."'$($Params.Path)'".$_method.requestBody = $Params.RequestBody[$DefinitionTag]
     }
-    if ($Params.Responses.ContainsKey( $DefinitionTag)) {
-        #  $callBack."'$($Params.Path)'".$_method.responses = $Params.Responses
+
+    # Add responses to the callback if they are specified for the given definition tag
+    if ($Params.Responses.ContainsKey($DefinitionTag)) {
         $callBack."'$($Params.Path)'".$_method.responses = $Params.Responses[$DefinitionTag]
     }
 
+    # Return the constructed callback object
     return $callBack
 
 }
@@ -1386,16 +1398,40 @@ function New-PodeOAComponentCallBackInternal {
 
 
 
+<#
+.SYNOPSIS
+  Creates a new OpenAPI response object based on provided parameters and a definition tag.
+
+.DESCRIPTION
+  The New-PodeOResponseInternal function constructs an OpenAPI response object using provided parameters.
+  It sets a description for the status code, references existing components if specified,
+  and builds content-type and header schemas. This function is intended for internal use within the
+  Pode framework for API documentation purposes.
+
+.PARAMETER Params
+  A hashtable containing parameters for building the OpenAPI response object, including description,
+  status code, content, headers, links, and reference to existing components.
+
+.PARAMETER DefinitionTag
+  A mandatory string parameter that specifies the definition tag in OpenAPI documentation.
+
+.EXAMPLE
+  $response = New-PodeOResponseInternal -Params $myParams -DefinitionTag 'myTag'
+
+  This example demonstrates how to create an OpenAPI response object for 'myTag' using the provided parameters.
+#>
 function New-PodeOResponseInternal {
     param(
-        [hashtable]$Params,
+        [hashtable]
+        $Params,
 
         [Parameter(Mandatory = $true)]
-        [string ]
+        [string]
         $DefinitionTag
     )
-    # set a general description for the status code
-    if ([string]::IsNullOrWhiteSpace($Description)) {
+
+    # Set a general description for the status code
+    if ([string]::IsNullOrWhiteSpace($Params.Description)) {
         if ($Params.Default) {
             $Description = 'Default Response.'
         } elseif ($Params.StatusCode) {
@@ -1407,23 +1443,24 @@ function New-PodeOResponseInternal {
         $Description = $Params.Description
     }
 
-    if ($Params.Reference ) {
-        Test-PodeOAComponentInternal  -Field responses -DefinitionTag $DefinitionTag -Name $Params.Reference -PostValidation
+    # Handle response referencing an existing component
+    if ($Params.Reference) {
+        Test-PodeOAComponentInternal -Field responses -DefinitionTag $DefinitionTag -Name $Params.Reference -PostValidation
         $response = @{
             '$ref' = "#/components/responses/$($Params.Reference)"
         }
     } else {
-        # build any content-type schemas
+        # Build content-type schemas if provided
         $_content = $null
         if ($null -ne $Params.Content) {
             $_content = ConvertTo-PodeOAObjectSchema -DefinitionTag $DefinitionTag -Content $Params.Content
         }
 
-        # build any header schemas
+        # Build header schemas based on the type of the Headers parameter
         $_headers = $null
         if ($null -ne $Params.Headers) {
             if ($Params.Headers -is [System.Object[]] -or $Params.Headers -is [string] -or $Params.Headers -is [string[]]) {
-                if ($Params.Headers -is [System.Object[]] -and $Params.Headers.Count -gt 0 -and ($Params.Headers[0] -is [hashtable] -or $Params.Headers[0] -is [ordered] )) {
+                if ($Params.Headers -is [System.Object[]] -and $Params.Headers.Count -gt 0 -and ($Params.Headers[0] -is [hashtable] -or $Params.Headers[0] -is [ordered])) {
                     $_headers = ConvertTo-PodeOAHeaderProperties -Headers $Params.Headers
                 } else {
                     $_headers = @{}
@@ -1435,94 +1472,137 @@ function New-PodeOResponseInternal {
                     }
                 }
             } elseif ($Params.Headers -is [hashtable]) {
-                $_headers = ConvertTo-PodeOAObjectSchema -DefinitionTag $DefinitionTag -Content  $Params.Headers
+                $_headers = ConvertTo-PodeOAObjectSchema -DefinitionTag $DefinitionTag -Content $Params.Headers
             }
         }
 
-
+        # Construct the response object
         $response = [ordered]@{
             description = $Description
         }
-        if ($_headers) {
-            $response.headers = $_headers
-        }
-        if ($_content) {
-            $response.content = $_content
-        }
-        if ($Params.Links) {
-            $response.links = $Params.Links
-        }
+
+        if ($_headers) { $response.headers = $_headers }
+
+        if ($_content) { $response.content = $_content }
+
+        if ($Params.Links) { $response.links = $Params.Links }
+
     }
+
     return $response
 }
 
 
 
+
+<#
+.SYNOPSIS
+  Creates a new OpenAPI response link object.
+
+.DESCRIPTION
+  The New-PodeOAResponseLinkInternal function generates an OpenAPI response link object from provided parameters.
+  This includes setting up descriptions, operation IDs, references, parameters, and request bodies for the link.
+  This function is designed for internal use within the Pode framework to facilitate the creation of response
+  link objects in OpenAPI documentation.
+
+.PARAMETER Params
+  A hashtable of parameters for the OpenAPI response link.
+
+.EXAMPLE
+  $link = New-PodeOAResponseLinkInternal -Params $myParams
+
+  Generates a new OpenAPI response link object using the provided parameters in $myParams.
+#>
 function New-PodeOAResponseLinkInternal {
     param(
-        [hashtable]$Params
+        [hashtable]
+        $Params
     )
 
-    $link = [ordered]@{  }
+    # Initialize an ordered dictionary for the link
+    $link = [ordered]@{}
 
-    if ($Description) {
-        $link.description = $Params.Description
-    }
-    if ($OperationId) {
-        $link.operationId = $Params.OperationId
-    }
-    if ($OperationRef) {
-        $link.operationRef = $Params.OperationRef
-    }
-    if ($OperationRef) {
-        $link.operationRef = $Params.OperationRef
-    }
-    if ($Parameters) {
-        $link.parameters = $Params.Parameters
-    }
-    if ($RequestBody) {
-        $link.requestBody = $Params.RequestBody
-    }
+    # Add properties to the link based on the provided parameters
+    if ($Params.Description) { $link.description = $Params.Description }
+    if ($Params.OperationId) { $link.operationId = $Params.OperationId }
+    if ($Params.OperationRef) { $link.operationRef = $Params.OperationRef }
+    if ($Params.Parameters) { $link.parameters = $Params.Parameters }
+    if ($Params.RequestBody) { $link.requestBody = $Params.RequestBody }
 
     return $link
 }
 
 
-function  Test-PodeOADefinitionInternal {
+<#
+.SYNOPSIS
+  Tests the internal OpenAPI definitions for compliance and validity.
 
-    #Validate OpenAPI definitions
+.DESCRIPTION
+  The Test-PodeOADefinitionInternal function validates OpenAPI definitions within the Pode framework.
+  It checks for various issues like undefined references, mandatory fields (like title and version),
+  and missing components. If any issues are found, they are displayed with detailed messages, and
+  the function throws an error indicating non-compliance with OpenAPI document standards.
+
+.EXAMPLE
+  Test-PodeOADefinitionInternal
+
+  This example demonstrates how to call the function to validate OpenAPI definitions.
+
+.NOTES
+  This function is intended for internal use within the Pode framework.
+#>
+
+function Test-PodeOADefinitionInternal {
+
+    # Validate OpenAPI definitions and store any issues found
     $definitionIssues = Test-PodeOADefinition
 
+    # Check if the validation result indicates issues
     if (! $definitionIssues.valid) {
+        # Print a header for undefined OpenAPI references
         Write-PodeHost 'Undefined OpenAPI References :' -ForegroundColor Red
+
+        # Iterate over each issue found in the definitions
         foreach ($tag in $definitionIssues.issues.keys) {
             Write-PodeHost "  Definition $tag :" -ForegroundColor Red
+
+            # Check and display issues related to OpenAPI document generation error
             if ($definitionIssues.issues[$tag].definition ) {
-                Write-PodeHost '     OpenAPI generation deocument error: ' -ForegroundColor Red
-                Write-PodeHost "       $definitionIssues.issues[$tag].definition" -ForegroundColor Red
+                Write-PodeHost '     OpenAPI generation document error: ' -ForegroundColor Red
+                Write-PodeHost "       $($definitionIssues.issues[$tag].definition)" -ForegroundColor Red
             }
+
+            # Check for missing mandatory 'title' field
             if ($definitionIssues.issues[$tag].title ) {
                 Write-PodeHost '     info.title is mandatory' -ForegroundColor Red
             }
+
+            # Check for missing mandatory 'version' field
             if ($definitionIssues.issues[$tag].version ) {
                 Write-PodeHost '     info.version is mandatory' -ForegroundColor Red
             }
+
+            # Check for missing components and list them
             if ($definitionIssues.issues[$tag].components ) {
                 Write-PodeHost '     Missing component(s)' -ForegroundColor Red
                 foreach ($key in $definitionIssues.issues[$tag].components.keys) {
                     $occurences = $definitionIssues.issues[$tag].components[$key]
+                    # Adjust occurrence count based on schema validation setting
                     if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaValidation) {
                         $occurences = $occurences / 2
                     }
                     Write-PodeHost "      `$refs : $key ($occurences)" -ForegroundColor Red
                 }
             }
+
+            # Add a blank line for readability
             Write-PodeHost
         }
+
+        # Throw an error indicating non-compliance with OpenAPI standards
         throw 'OpenAPI document compliance issues'
     }
 }
-
 
 
 
