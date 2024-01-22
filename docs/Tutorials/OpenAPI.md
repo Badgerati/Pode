@@ -3,14 +3,11 @@
 
 Pode has built-in support for converting your routes into OpenAPI 3.0 definitions. There is also support for enabling simple Swagger and/or ReDoc viewers and others.
 
-The OpenApi module has been extended with many more functions, and some old ones have been improved. Anyway, the module is backward compatible. Please refer to the old documentation [OpenApi Tutorial 2.9](../OpenApi/OpenAPI2_9.md) for the old syntax.
+The OpenApi module has been extended with many more functions, and some old ones have been improved.
 
 For more detailed information regarding OpenAPI and Pode, please refer to [OpenAPI Specification and Pode](../OpenApi/OASpec3_0_3.md)
 
 You can enable OpenAPI in Pode, and a straightforward definition will be generated. However, to get a more complex definition with request bodies, parameters, and response payloads, you'll need to use the relevant OpenAPI functions detailed below.
-
-You can simply enable OpenAPI in Pode, and a very simple definition will be generated. However, to get a more complex definition with request bodies, parameters and response payloads, you'll need to use the relevant OpenAPI functions detailed below.
-
 
 ## Enabling OpenAPI
 
@@ -41,25 +38,27 @@ When you enable OpenAPI, and don't set any other OpenAPI data, the following is 
 * If you have multiple endpoints, then the servers section will be included
 * Any authentication will be included
 
-This can be changed with Enable-PodeOpenApi
+This can be changed with [`Enable-PodeOpenApi`]
 
 For example to change the default response 404 and 500
+
 ```powershell
-Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DefaultResponses (New-PodeOAResponse -StatusCode 404 -Description 'User not found' | Add-PodeOAResponse -StatusCode 500  )
+Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DefaultResponses (
+        New-PodeOAResponse -StatusCode 404 -Description 'User not found' | Add-PodeOAResponse -StatusCode 500
+    )
 ```
 
 For disabling the Default Response use:
+
 ```powershell
 Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -NoDefaultResponses
 ```
 
 For disabling the Minimal Definitions feature use:
+
 ```powershell
-Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions
+Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -DisableMinimalDefinitions
 ```
-
-
-
 
 ### Get Definition
 
@@ -74,36 +73,59 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
     }
 }
 ```
+
 ## OpenAPI Info object
-In previous releases some of the Info object properties like Version and Title were defined by `Enable-PodeOpenApi`.
-Starting from version 2.10 a new `Add-PodeOAInfo` function has been added to create a full OpenAPI Info spec.
+
+In previous releases some of the Info object properties like Version and Title were defined by [`Enable-PodeOpenApi`].
+Starting from version 2.10 a new [`Add-PodeOAInfo`] function has been added to create a full OpenAPI Info spec.
 
 ```powershell
-Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
--LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io'
+Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' `
+        -Version 1.0.17 `
+        -Description $InfoDescription `
+        -TermsOfService 'http://swagger.io/terms/' `
+        -LicenseName 'Apache 2.0' `
+        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' `
+        -ContactName 'API Support' `
+        -ContactEmail 'apiteam@swagger.io'
 ```
+
 ## OpenAPI configuration Best Practice
+
 Pode is rich of functions to create and configure an complete OpenApi spec. Here is a typical code you should use to initiate an OpenApi spec
 
 ```powershell
 #Initialize OpenApi
-Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0'  -OpenApiVersion 3.1 -DisableMinimalDefinitions -NoDefaultResponses
+Enable-PodeOpenApi -Path '/docs/openapi' -Title 'Swagger Petstore - OpenAPI 3.0' `
+    -OpenApiVersion 3.1 -DisableMinimalDefinitions -NoDefaultResponses
+
 # OpenApi Info
-Add-PodeOAInfo  -Version 1.0.17 -Description 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification. ...' -TermsOfService 'http://swagger.io/terms/' -License 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
+Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' `
+    -Version 1.0.17 `
+    -Description 'This is a sample Pet Store Server based on the OpenAPI 3.0 specification. ...' `
+    -TermsOfService 'http://swagger.io/terms/' `
+    -LicenseName 'Apache 2.0' `
+    -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' `
+    -ContactName 'API Support' `
+    -ContactEmail 'apiteam@swagger.io' `
+    -ContactUrl 'http://example.com/support'
 
 # Endpoint for the API
-Add-PodeOAServerEndpoint -url '/api/v3.1' -Description 'default endpoint'
-# OpenApi external documentation links
-$extDoc=New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-$extDo| Add-PodeOAExternalDoc -
-# OpenApi documentation viewer
-Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
-Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc'
-Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc'
-Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight'
-Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer'
-Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
+    Add-PodeOAServerEndpoint -url '/api/v3.1' -Description 'default endpoint'
+
+    # OpenApi external documentation links
+    $extDoc = New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+    $extDoc | Add-PodeOAExternalDoc
+
+    # OpenApi documentation viewer
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs'
 ```
+
 ## Authentication
 
 Any authentication defined, either by [`Add-PodeAuthMiddleware`](../../Functions/Authentication/Add-PodeAuthMiddleware), or using the `-Authentication` parameter on Routes, will be automatically added to the `security` section of the OpenAPI definition.
@@ -113,14 +135,19 @@ Any authentication defined, either by [`Add-PodeAuthMiddleware`](../../Functions
 
 In OpenAPI, a "tag" is used to group related operations. Tags are often used to organize and categorize endpoints in an API specification, making it easier to understand and navigate the API documentation. Each tag can be associated with one or more API operations, and these tags are then used in tools like Swagger UI to group and display operations in a more organized way.
 
-Here how to define and use tags
+Here's an example of how to define and use tags:
+
 ```powershell
-$swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+# create an External Doc reference
+$swaggerDocs = New-PodeOAExternalDoc -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+
+# create a Tag
 Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs
 
 Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'Login-OAuth2' -Scope 'read' -AllowAnon -ScriptBlock {
- #code
-} | Set-PodeOARouteInfo -Summary 'Finds Pets by status' -Description 'Multiple status values can be provided with comma-separated strings' -Tags 'pet' -OperationId 'findPetsByStatus'
+    #route code
+} | Set-PodeOARouteInfo -Summary 'Finds Pets by status' -Description 'Multiple status values can be provided with comma-separated strings' `
+    -Tags 'pet' -OperationId 'findPetsByStatus'
 ```
 
 ## Routes
@@ -177,17 +204,23 @@ the JSON response payload defined is as follows:
 ```
 
 In case the response JSON payload is an array
+
 ```powershell
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
-    Write-PodeJsonResponse -Value @{
-        Name = 'Rick'
-        UserId = $WebEvent.Parameters['userId']
-    }
-} -PassThru |
-    Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -Content (
-    New-PodeOAContentMediaType -ContentMediaType 'application/json' -Array -Content ( New-PodeOAStringProperty -Name 'Name'| New-PodeOAIntProperty -Name 'UserId'| New-PodeOAObjectProperty )
-    )
+        Write-PodeJsonResponse -Value @{
+            Name   = 'Rick'
+            UserId = $WebEvent.Parameters['userId']
+        }
+    } -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -Content (
+            New-PodeOAContentMediaType -ContentMediaType 'application/json' -Array -Content (
+                New-PodeOAStringProperty -Name 'Name' |
+                    New-PodeOAIntProperty -Name 'UserId' |
+                    New-PodeOAObjectProperty
+                )
+            )
 ```
+
 ```json
 [
     {
@@ -201,7 +234,7 @@ Internally, each route is created with an empty default 200 and 500 response. Yo
 
 ```powershell
 Add-PodeRoute -Method Get -Path "/api/user/:userId" -ScriptBlock {
-    # logic
+    # route logic
 } -PassThru |
     Remove-PodeOAResponse -StatusCode 200
 ```
@@ -235,7 +268,7 @@ Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
         UserId = $WebEvent.Query['name']
     }
 } -PassThru |
-    Set-PodeOARequest -Parameters @(
+    Set-PodeOARequest -Parameters (
         (New-PodeOAStringProperty -Name 'name' -Required | ConvertTo-PodeOAParameter -In Query),
         (New-PodeOAStringProperty -Name 'city' -Required | ConvertTo-PodeOAParameter -In Query)
     )
@@ -269,6 +302,7 @@ The expected payload would look as follows:
     "userId": [integer]
 }
 ```
+
 ```xml
 <Object>
     <name type="string"></name>
@@ -295,7 +329,6 @@ New-PodeOAStringProperty -Name 'Name' |
   New-PodeOAObjectProperty |
   Add-PodeOAComponentSchema -Name 'UserSchema'
 
-
 # reuse the above schema in a response
 Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
     Write-PodeJsonResponse -Value @{
@@ -317,14 +350,12 @@ The following is an example of defining a JSON object that a Name, UserId, and a
 
 ```powershell
 # define a reusable request body
-
-New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/x-www-form-urlencoded' -Content   (
+New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/x-www-form-urlencoded' -Content (
     New-PodeOAStringProperty -Name 'Name' |
-    New-PodeOAIntProperty -Name 'UserId' |
-    New-PodeOABoolProperty -Name 'Enabled' |
-    New-PodeOAObjectProperty |
-    Add-PodeOAComponentRequestBody -Name 'UserBody' -Required
-)
+        New-PodeOAIntProperty -Name 'UserId' |
+        New-PodeOABoolProperty -Name 'Enabled' |
+        New-PodeOAObjectProperty
+    ) | Add-PodeOAComponentRequestBody -Name 'UserBody' -Required
 
 # use the request body in a route
 Add-PodeRoute -Method Patch -Path '/api/users' -ScriptBlock {
@@ -367,17 +398,17 @@ Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
 
 To define a reusable response definition you can use the [`Add-PodeOAComponentResponse`](../../Functions/OpenApi/Add-PodeOAComponentResponse) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
-The following is an example of defining a 200 response, that has a JSON payload of an array of objects for Name/UserId. This can then be used by name on a route:
+The following is an example of defining a 200 response with a JSON payload of an array of objects for Name/UserId. The Response component can be used by a route referencing the name:
 
 ```powershell
-# defines a response with a json payload
-Add-PodeOAComponentResponse -Name 'OK' -Description 'A user object' -Content  @{
-    'application/json' = (
-         New-PodeOAStringProperty -Name 'Name' |
-         New-PodeOAIntProperty -Name 'UserId' |
-        New-PodeOAObjectProperty -Array
+# defines a response with a json payload using New-PodeOAContentMediaType
+Add-PodeOAComponentResponse -Name 'OK' -Description 'A user object' -Content (
+        New-PodeOAContentMediaType -MediaType 'application/json' -Array -Content (
+            New-PodeOAStringProperty -Name 'Name' |
+                New-PodeOAIntProperty -Name 'UserId' |
+                New-PodeOAObjectProperty
+        )
     )
-}
 
 # reuses the above response on a route using its "OK" name
 Add-PodeRoute -Method Get -Path "/api/users" -ScriptBlock {
@@ -388,7 +419,6 @@ Add-PodeRoute -Method Get -Path "/api/users" -ScriptBlock {
 } -PassThru |
     Add-PodeOAResponse -StatusCode 200 -Reference 'OK'
 ```
-
 
 the JSON response payload defined is as follows:
 
@@ -409,26 +439,34 @@ To define a reusable example definition you can use the [`Add-PodeOAComponentExa
 The following is an example that define three Pet examples and it's used update pet operation
 
 ```powershell
-# defines the frog example
-Add-PodeOAComponentExample -name 'frog-example' -Summary "An example of a frog with a cat's name" -Value @{    name = 'Jaguar', petType = 'Panthera', color = 'Lion', gender = 'Male', breed = 'Mantella Baroni' }
+ # defines the frog example
+Add-PodeOAComponentExample -name 'frog-example' -Summary "An example of a frog with a cat's name" -Value @{
+    name = 'Jaguar'; petType = 'Panthera'; color = 'Lion'; gender = 'Male'; breed = 'Mantella Baroni'
+}
 # defines the cat example
-Add-PodeOAComponentExample   -Name 'cat-example' -Summary 'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' }
+Add-PodeOAComponentExample   -Name 'cat-example' -Summary 'An example of a cat' -Value @{
+    name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian'
+}
 # defines the dog example
-Add-PodeOAComponentExample -Name 'dog-example' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' }
+Add-PodeOAComponentExample -Name 'dog-example' -Summary   "An example of a dog with a cat's name" -Value @{
+    name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed'
+}
 
 # reuses the examples
 Add-PodeRoute -PassThru -Method Put -Path '/pet/:petId' -ScriptBlock {
-    #code
-} | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepet' -PassThru |
+    # route code
+} | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data' -Tags 'pet' `
+    -OperationId 'updatepet' -PassThru |
     Set-PodeOARequest  -Parameters @(
-                (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
-    ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
-            New-PodeOAExample -ContentMediaType 'application/json','application/xml' -Reference 'cat-example' |
-                New-PodeOAExample -ContentMediaType 'application/json','application/xml'   -Reference 'dog-example' |
-                New-PodeOAExample -ContentMediaType 'application/json','application/xml' -Reference 'frog-example'
+            (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
+    ) -RequestBody (
+        New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
+            New-PodeOAExample -ContentMediaType 'application/json', 'application/xml' -Reference 'cat-example' |
+                New-PodeOAExample -ContentMediaType 'application/json', 'application/xml'   -Reference 'dog-example' |
+                New-PodeOAExample -ContentMediaType 'application/json', 'application/xml' -Reference 'frog-example'
             )
-        ) -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.'
-
+        ) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.'
 ```
 
 ### Headers
@@ -436,13 +474,20 @@ Add-PodeRoute -PassThru -Method Put -Path '/pet/:petId' -ScriptBlock {
 To define a reusable header definition you can use the [`Add-PodeOAComponentHeader`](../../Functions/OpenApi/Add-PodeOAComponentHeader) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
 ```powershell
-New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user'| Add-PodeOAComponentHeader -Name 'X-Rate-Limit'
-New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires'| Add-PodeOAComponentHeader -Name 'X-Expires-After'
+ # define Headers
+New-PodeOAIntProperty -Format Int32 -Description 'calls per hour allowed by the user' |
+    Add-PodeOAComponentHeader -Name 'X-Rate-Limit'
+New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires' |
+    Add-PodeOAComponentHeader -Name 'X-Expires-After'
 
- Add-PodeRoute -PassThru -Method Get -Path '/user/login' -ScriptBlock {
-              #code
-} | Set-PodeOARouteInfo -Summary 'Logs user into the system.' -Description 'Logs user into the system.' -Tags 'user' -OperationId 'loginUser' -PassThru |
-    Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'string' ) -Header @('X-Rate-Limit', 'X-Expires-After') -PassThru |
+Add-PodeRoute -PassThru -Method Get -Path '/user/login' -ScriptBlock {
+    # route code
+} | Set-PodeOARouteInfo -Summary 'Logs user into the system.' -Description 'Logs user into the system.' `
+    -Tags 'user' -OperationId 'loginUser' -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' `
+        -Header @('X-Rate-Limit', 'X-Expires-After')  -Content (
+        New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'string'
+    ) -PassThru |
     Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'
 ```
 
@@ -452,24 +497,22 @@ New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token 
 To define a reusable callback definition you can use the [`Add-PodeOAComponentCallBack`](../../Functions/OpenApi/Add-PodeOAComponentCallBack) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
 ```powershell
-Add-PodeOAComponentCallBack -Name 'test' -Path '{$request.body#/id}' -Method Post  -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id') } ) -Response (
-    New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' -Array) |
-        New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
-        New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
-        New-PodeOAResponse -Default   -Description 'Something is wrong'
-)
-
- Add-PodeRoute -PassThru -Method Post -Path '/petcallbackReference'  -Authentication 'Login-OAuth2' -Scope 'write'  -ScriptBlock {
-    #code
-} | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' -Tags 'pet' -OperationId 'petcallbackReference' -PassThru |
-    Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'PetBodySchema' ) -PassThru |
-    Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
+Add-PodeRoute -PassThru -Method Post -Path '/petcallbackReference'  -Authentication 'Login-OAuth2' `
+    -Scope 'write'  -ScriptBlock {
+    #route code
+} | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' `
+    -Tags 'pet' -OperationId 'petcallbackReference' -PassThru |
+    Set-PodeOARequest -RequestBody ( New-PodeOARequestBody -Reference 'PetBodySchema' ) -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (
+        New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet'
+    ) -PassThru |
     Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -Content @{
-       application/json' = ( New-PodeOAStringProperty -Name 'result' | New-PodeOAStringProperty -Name 'message' | New-PodeOAObjectProperty )
-    } -PassThru |
-    Add-PodeOACallBack -Name 'test1'   -Reference 'test'
+        'application / json' = ( New-PodeOAStringProperty -Name 'result' |
+                New-PodeOAStringProperty -Name 'message' |
+                New-PodeOAObjectProperty )
+        } -PassThru |
+        Add-PodeOACallBack -Name 'test1'   -Reference 'test'
 ```
-
 
 ### ResponseLink
 
@@ -477,16 +520,24 @@ To define a reusable response link definition you can use the [`Add-PodeOACompon
 
 ```powershell
 #Add link reference
-Add-PodeOAComponentResponseLink -Name 'address' -OperationId 'getUserByName' -Parameters  @{'username' = '$request.path.username' }
+Add-PodeOAComponentResponseLink -Name 'address' -OperationId 'getUserByName' -Parameters @{
+    'username' = '$request.path.username'
+}
 
 #use link reference
 Add-PodeRoute -PassThru -Method Put -Path '/userLinkByRef/:username' -ScriptBlock {
     Write-PodeJsonResponse -Value 'done' -StatusCode 200
-} | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'updateUserLinkByRef' -PassThru |
-    Set-PodeOARequest -Parameters @(
-    (  New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path )
-    ) -RequestBody (New-PodeOARequestBody -Required -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )) -PassThru |
-    Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User' }  -PassThru  -Links (New-PodeOAResponseLink -Name 'address2' -Reference 'address' ) |
+} | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' `
+    -Tags 'user' -OperationId 'updateUserLinkByRef' -PassThru |
+    Set-PodeOARequest -Parameters (
+        ( New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path )
+    ) -RequestBody (
+        New-PodeOARequestBody -Required -Content (
+            New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )
+    ) -PassThru |
+    Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User' }  -PassThru  -Links (
+        New-PodeOAResponseLink -Name 'address2' -Reference 'address'
+    ) |
     Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
     Add-PodeOAResponse -StatusCode 404 -Description 'User not found' -PassThru |
     Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
@@ -505,7 +556,6 @@ There are 5 simple property types: Integers, Numbers, Strings, Booleans, and Sch
 * [`New-PodeOAStringProperty`](../../Functions/OpenApi/New-PodeOAStringProperty)
 * [`New-PodeOABoolProperty`](../../Functions/OpenApi/New-PodeOABoolProperty)
 * [`New-PodeOASchemaProperty`](../../Functions/OpenApi/New-PodeOASchemaProperty)
-
 * [`New-PodeOAMultiTypeProperty`](../../Functions/OpenApi/New-PodeOASchemaProperty) Note: OpenAPI 3.1 only
 
 These properties can be created with a Name, and other flags such as Required and/or a Description:
@@ -563,7 +613,6 @@ There are two ways to define objects:
 1. Similar to arrays, you can use the `-Object` switch on the simple properties.
 2. You can use the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function to combine multiple properties.
 
-
 #### Simple
 
 If you use the `-Object` switch on the simple property function, this will automatically wrap the property as an object. The Name for this is required.
@@ -601,6 +650,18 @@ This wil result in something like the following JSON:
 Unlike the `-Object` switch that simply converts a single property into an object, the [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function can combine and convert multiple properties.
 
 For example, the following will create an object using an Integer, String, and a Boolean:
+
+Legacy Definition
+
+```powershell
+New-PodeOAObjectProperty -Properties (
+    (New-PodeOAIntProperty -Name 'userId'),
+    (New-PodeOAStringProperty -Name 'name'),
+    (New-PodeOABoolProperty -Name 'enabled')
+)
+```
+
+Using piping (new in Pode 2.10)
 
 ```powershell
 New-PodeOAIntProperty -Name 'userId'| New-PodeOAStringProperty -Name 'name'|
@@ -676,15 +737,16 @@ As JSON, this could look as follows:
 ### oneOf, anyOf and allOf Keywords
 
 OpenAPI 3.x provides several keywords which you can use to combine schemas. You can use these keywords to create a complex schema or validate a value against multiple criteria.
-- oneOf – validates the value against exactly one of the subschemas
-- allOf – validates the value against all the subschemas
-- anyOf – validates the value against any (one or more) of the subschemas
 
-You can use the [`Merge-PodeOAProperty`](../../Functions/OpenApi/Merge-PodeOAProperty)` function to merge multiple properties.
+* oneOf – validates the value against exactly one of the sub-schemas
 
+* allOf – validates the value against all the sub-schemas
 
+* anyOf – validates the value against any (one or more) of the sub-schemas
 
-Unlike the  [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) function that combine and convert multiple properties [`Merge-PodeOAProperty`](../../Functions/OpenApi/Merge-PodeOAProperty)` can define a relation between the properties
+You can use the [`Merge-PodeOAProperty`](../../Functions/OpenApi/Merge-PodeOAProperty)` will instead define a relationship between the properties.
+
+Unlike [`New-PodeOAObjectProperty`](../../Functions/OpenApi/New-PodeOAObjectProperty) which combines and converts multiple properties into an Object, [`Merge-PodeOAProperty`](../../Functions/OpenApi/Merge-PodeOAProperty) will instead define a relationship between the properties.
 
 For example, the following will create an something like an C Union object using an Integer, String, and a Boolean:
 
@@ -695,7 +757,9 @@ Merge-PodeOAProperty -Type OneOf -ObjectDefinitions @(
             (New-PodeOABoolProperty -Name 'enabled' -Object)
         )
 ```
+
 Or
+
 ```powershell
 New-PodeOAIntProperty -Name 'userId' -Object |
         New-PodeOAStringProperty -Name 'name' -Object |
@@ -710,7 +774,7 @@ As JSON, this could look as follows:
   "oneOf": [
     {
       "type": "object",
-      "properties": {
+ `     "properties": {
         "userId": {
           "type": "integer"
         }
@@ -736,7 +800,8 @@ As JSON, this could look as follows:
   ]
 }
 ```
-You can also suply Component Schema created using Add-PodeOAComponentSchema [`Add-PodeOAComponentSchema`](../../Functions/OpenApi/Add-PodeOAComponentSchema) For example, if we took the above:
+
+You can also supply a Component Schema created using [`Add-PodeOAComponentSchema`](../../Functions/OpenApi/Add-PodeOAComponentSchema). For example, if we took the above:
 
 ```powershell
     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 -ReadOnly |
@@ -780,11 +845,18 @@ As JSON, this could look as follows:
 
 ## OpenApi Documentation pages
 
-If you're not using a custom OpenAPI viewer, then you can use one of the inbuilt ones with Pode - either Swagger and ReDoc, or both!
+For each you can customise the Route path to access the page on, but by default Swagger is at `/swagger`, ReDoc is at `/redoc`, etc. If you've written your own custom OpenAPI definition then you can also set a custom Route path to fetch the definition on.
 
-For both you can customise the path to access the page on, but by default Swagger is at `/swagger` and ReDoc is at `/redoc`. If you've written your own custom OpenAPI definition then you can also set a custom path to fetch the definition.
+If you're not using a custom OpenAPI viewer, then you can use one or more of the inbuilt which Pode supports: ones with Pode:
 
-To enable either you can use the [`Enable-PodeOAViewer`](../../Functions/OpenApi/Enable-PodeOAViewer) function:
+* Swagger
+* ReDoc
+* RapiDoc
+* StopLight
+* Explorer
+* RapiPdf
+
+To enable a viewer you can use the [`Enable-PodeOAViewer`](../../Functions/OpenApi/Enable-PodeOAViewer) function:
 
 ```powershell
 # for swagger at "/docs/swagger"
@@ -808,22 +880,29 @@ Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf'
 # plus a bookmark page with the link to all documentation
 Enable-PodeOAViewer -Type Bookmarks -Path '/docs'
 ```
+
 ## Multiple OpenAPI definition
-Is possible to have multiple OpenAPI definitions inside the same Server instance.
-This feature can be very usefull in situatione like:
-- Multiple versions of the OpenAPI specification for different use case
-- Same OpenAPI but with one using the OpenAPI spec 3.0.3 and another using 3.1.0
-- Different APIs based on the IP or URL
+
+It's possible to create multiple OpenAPI definitions inside the same Server instance. This feature could be useful in situations such as:
+
+* Multiple versions of the OpenAPI specification for different use cases
+* The same OpenAPI definition, but one using OpenAPI v3.0.3 and another using v3.1.0
+* Different APIs based on the IP or URL
+
 
 ### How to use it
-Any Pode funtion that interact with OpenAPI as a `-DefinitionTag` [string[]] parameter. Here you can be specify what definition you are going to interact.
+Any Pode function that interacts with OpenAPI has a `-DefinitionTag` `[string[]]` parameter available. This allows you to specify within which OpenAPI definition(s) the API's definition should be available.
 
-Note These function accept a simple string not an array
-- `Get-PodeOADefinition`
-- `Enable-PodeOpenApi`
-- `Enable-PodeOAViewer`
-- `Add-PodeOAInfo`
-- `Test-PodeOAJsonSchemaCompliance`
+!!! note
+    These functions accept a simple string, and not an array
+
+    * `Get-PodeOADefinition`
+    * `Enable-PodeOpenApi`
+    * `Enable-PodeOAViewer`
+    * `Add-PodeOAInfo`
+    * `Test-PodeOAJsonSchemaCompliance`
+
+!!!
 
 A new OpenAPI definition has to be created using the `Enable-PodeOpenApi` function
 
@@ -833,26 +912,35 @@ Enable-PodeOpenApi -Path '/docs/openapi/v3.1' -OpenApiVersion '3.1.0' -Definitio
 Enable-PodeOpenApi -Path '/docs/openapi/admin' -OpenApiVersion '3.1.0' -DefinitionTag 'admin'
 ```
 
-We have also a new `Select-PodeOADefinition` that simplify the definition of multiple OpenAPI specs.
-Here an example:
+There is also [`Select-PodeOADefinition`], which simplifies the selection of which OpenAPI definition to use as a wrapper around multiple OpenAPI functions, or Route functions. Meaning you don't have to specify `-DefinitionTag` on embedded OpenAPI/Route calls:
+
 ```powershell
-Select-PodeOADefinition -Tag 'v3', 'v3.1'   -ScriptBlock { #your definition
+Select-PodeOADefinition -Tag 'v3', 'v3.1' -Scriptblock {
+    Add-PodeRouteGroup -Path '/api/v5' -Routes {
+        Add-PodeRoute -Method Get -Path '/petbyRef/:petId' -ScriptBlock {
+            Write-PodeJsonResponse -Value 'done' -StatusCode 2005
+        }
+    }
 }
 
-Select-PodeOADefinition -Tag 'admin'   -ScriptBlock { #your admin definition
+Select-PodeOADefinition -Tag 'admin' -ScriptBlock {
+    # your admin definition
 }
 ```
 
 The default `Definition Tag` is named "default". This can be changed using the `Server.psd1` file and the `DefaultOADefinitionTag` property
+
 ```powershell
 @{
     Server = @{ DefaultOADefinitionTag = 'NewDfault' }
 }
 ```
 
-### Example
-```powershell
+### OpenAPI example
 
+A simple OpenAPI definition
+
+```powershell
 Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
     -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3'
 
