@@ -989,13 +989,18 @@ function Test-PodeOAJsonSchemaCompliance {
         [string]
         $DefinitionTag
     )
-
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    if ($DefinitionTag) {
+        if (! ($PodeContext.Server.OpenApi.Definitions.Keys -ccontains $DefinitionTag)) {
+            throw "DefinitionTag $t is not defined"
+        }
+    } else {
+        $DefinitionTag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag
+    }
 
     if (!$PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaValidation) {
         throw 'Test-PodeOAComponentchema need to be enabled using `Enable-PodeOpenApi -EnableSchemaValidation` '
     }
-    if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference)) {
+    if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference -DefinitionTag $DefinitionTag)) {
         throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
     }
 

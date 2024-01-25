@@ -414,7 +414,7 @@ Task Clean  {
     Write-Host "$path Cleanup done"
 }
 
-Task InstallCurrentUser  {
+Task Install-Module  {
 
     $path = './pkg'
 
@@ -454,6 +454,31 @@ Task InstallCurrentUser  {
         Copy-Item -Path $(Join-Path -Path $path -ChildPath 'LICENSE.txt') -Destination $dest -Force   | Out-Null
 
         Write-Host "Deployed to $dest"
+    }else{
+        Write-Error "Parameter -Version is required"
+    }
+
+}
+
+
+Task Remove-Module  {
+
+    if ($Version){
+        if ($IsWindows -or (($PSVersionTable.Keys -contains "PSEdition") -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
+            $PSPaths = $ENV:PSModulePath -split ";"
+        }
+        else {
+            $PSPaths = $ENV:PSModulePath -split ":"
+        }
+        $dest = join-path -Path  $PSPaths[0]  -ChildPath "Pode" -AdditionalChildPath "$Version"
+
+        if (Test-Path $dest) {
+            Write-Host "Deleting module from $dest"
+            Remove-Item -Path $dest -Recurse -Force | Out-Null
+        }else{
+            Write-Error "Directory $dest doesn't exist"
+        }
+
     }else{
         Write-Error "Parameter -Version is required"
     }
