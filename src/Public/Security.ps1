@@ -123,7 +123,7 @@ function Add-PodeSecurityHeader {
         [string]
         $Name,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value,
 
@@ -132,18 +132,20 @@ function Add-PodeSecurityHeader {
         $Append
     )
 
-    if (![string]::IsNullOrWhiteSpace($Value)) {
-        if ($Append -and $PodeContext.Server.Security.Headers.ContainsKey($Name)) {
-            $Headers = $PodeContext.Server.Security.Headers[$Name].split(',')
-            if ($Headers -inotcontains $Value) {
-                $Headers += $Value
-                $PodeContext.Server.Security.Headers[$Name] = (($Headers.trim() | Select-Object -Unique) -join ', ')
+    if ($Append -and $PodeContext.Server.Security.Headers.ContainsKey($Name)) {
+        $Headers = @(($PodeContext.Server.Security.Headers[$Name].split(',')).trim())
+        if ($Headers -inotcontains $Value) {
+            if ($Name -ieq 'Access-Control-Allow-Methods') {
+                $Headers += $Value.ToUpper()
             } else {
-                return
+                $Headers += $Value
             }
+            $PodeContext.Server.Security.Headers[$Name] = (($Headers.trim() | Select-Object -Unique) -join ', ')
         } else {
-            $PodeContext.Server.Security.Headers[$Name] = $Value
+            return
         }
+    } else {
+        $PodeContext.Server.Security.Headers[$Name] = $Value
     }
 }
 
