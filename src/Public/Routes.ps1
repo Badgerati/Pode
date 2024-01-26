@@ -384,7 +384,7 @@ function Add-PodeRoute {
 
         #add security header method if autoMethods is enabled
         if (  $PodeContext.Server.Security.autoMethods ) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method -Append
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method.ToUpper() -Append
         }
 
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag

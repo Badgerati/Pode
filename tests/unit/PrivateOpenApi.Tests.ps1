@@ -62,7 +62,7 @@ Describe 'PrivateOpenApi' {
                     NoAdditionalProperties = @{
                         IsPresent = $true #emulate the [switch] type
                     }
-                    AdditionalProperties   =  @{
+                    AdditionalProperties   = @{
                         'property1' = @{ 'type' = 'string'; 'description' = 'Description for property1' }
                         'property2' = @{ 'type' = 'integer'; 'format' = 'int32' }
                     }
@@ -120,5 +120,137 @@ Describe 'PrivateOpenApi' {
         }
     }
 
+    Describe 'ConvertTo-PodeOAOfProperty Tests' {
+        It "Converts property with 'allOf' type" {
+            $property = @{
+                type    = 'allOf'
+                schemas = @('Schema1', 'Schema2')
+            }
+            { ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default' } | Should -Not -Throw
+            $result = ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default'
+            $result.allOf.Count | Should -Be 2
+        }
+
+        It "Converts property with 'oneOf' type" {
+            $property = @{
+                type    = 'oneOf'
+                schemas = @('Schema1')
+            }
+            { ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default' } | Should -Not -Throw
+            $result = ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default'
+            $result.oneOf.Count | Should -Be 1
+        }
+
+        It "Converts property with 'anyOf' type" {
+            $property = @{
+                type    = 'anyOf'
+                schemas = @(@{ type = 'string' }, @{ type = 'number' })
+            }
+            { ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default' } | Should -Not -Throw
+            $result = ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default'
+            $result.anyOf.Count | Should -Be 2
+        }
+
+        It "Returns empty for unsupported 'Of' type" {
+            $property = @{
+                type    = 'noneOf'
+                schemas = @('Schema1')
+            }
+            { ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default' } | Should -Not -Throw
+            $result = ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default'
+            $result.Count | Should -Be 0
+        }
+
+        It 'Handles property with discriminator' {
+            $property = @{
+                type          = 'allOf'
+                schemas       = @('Schema1')
+                discriminator = 'TestDiscriminator'
+            }
+            { ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default' } | Should -Not -Throw
+            $result = ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default'
+            $result.discriminator | Should -Be 'TestDiscriminator'
+        }
+
+        It 'Handles mixed schema types' {
+            $property = @{
+                type    = 'anyOf'
+                schemas = @('Schema1', @{ type = 'string' })
+            }
+            { ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default' } | Should -Not -Throw
+            $result = ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default'
+            $result.anyOf.Count | Should -Be 2
+        }
+
+        It 'Handles empty schemas' {
+            $property = @{
+                type = 'allOf'
+            }
+            { ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default' } | Should -Not -Throw
+            $result = ConvertTo-PodeOAOfProperty -Property $property -DefinitionTag 'default'
+            $result.allOf.Count | Should -Be 0
+        }
+    }
+
+    Describe 'Test-PodeOAComponentExternalPath Tests' {
+        BeforeEach {
+            # Mock the $PodeContext variable
+            $Global:PodeContext = @{
+                Server = @{
+                    OpenAPI = @{
+                        Definitions = @{
+                            tag1 = @{
+                                hiddenComponents = @{
+                                    externalPath = @{
+                                        'MyComponentName' = $true
+                                        'OtherComponent'  = $true
+                                    }
+                                }
+                            }
+                            tag2 = @{
+                                hiddenComponents = @{
+                                    externalPath = @{
+                                        'MyComponentName' = $true
+                                        'OtherComponent'  = $true
+                                    }
+                                }
+                            }
+                            tag3 = @{
+                                hiddenComponents = @{
+                                    externalPath = @{
+                                        'YourComponentName' = $true
+                                        'OtherComponent'  = $true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        It 'Returns true when name exists in all tags' {
+            $result = Test-PodeOAComponentExternalPath -Name 'MyComponentName' -DefinitionTag @('tag1', 'tag2')
+            $result | Should -Be $true
+        }
+
+        It 'Returns false when name does not exist in some tags' {
+            $result = Test-PodeOAComponentExternalPath -Name 'MyComponentName' -DefinitionTag @('tag1', 'tag3')
+            $result | Should -Be $false
+        }
+
+        It 'Returns false when name does not exist in any tags' {
+            $result = Test-PodeOAComponentExternalPath -Name 'NonExistentName' -DefinitionTag @('tag1', 'tag2', 'tag3')
+            $result | Should -Be $false
+        }
+
+        It 'Handles empty definition tags' {
+            { Test-PodeOAComponentExternalPath -Name 'AnyName' -DefinitionTag @() } | Should -Throw
+        }
+
+        AfterAll {
+            Remove-Variable -Name 'PodeContext' -Scope Global
+        }
+    }
 
 }

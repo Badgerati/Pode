@@ -189,9 +189,26 @@ function Test-PodeOAComponentSchemaJson {
     return $true
 }
 
+<#
+.SYNOPSIS
+  Tests if a given name exists in the external path keys of OpenAPI definitions for specified definition tags.
 
+.DESCRIPTION
+  The Test-PodeOAComponentExternalPath function iterates over a list of definition tags and checks if a given name
+  is present in the external path keys of OpenAPI definitions within the Pode server context. This function is typically
+  used to validate if a specific component name is already defined in the external paths of the OpenAPI documentation.
 
+.PARAMETER Name
+  The name of the external path component to be checked within the OpenAPI definitions.
 
+.PARAMETER DefinitionTag
+  An array of definition tags against which the existence of the name will be checked in the OpenAPI definitions.
+
+.EXAMPLE
+  $exists = Test-PodeOAComponentExternalPath -Name 'MyComponentName' -DefinitionTag @('tag1', 'tag2')
+
+  Checks if 'MyComponentName' exists in the external path keys of OpenAPI definitions for 'tag1' and 'tag2'.
+#>
 function Test-PodeOAComponentExternalPath {
     param(
         [Parameter(Mandatory = $true)]
@@ -204,50 +221,83 @@ function Test-PodeOAComponentExternalPath {
         $DefinitionTag
     )
 
+    # Iterate over each definition tag
     foreach ($tag in $DefinitionTag) {
+        # Check if the name exists in the external path keys of the current definition tag
         if (!($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath.keys -ccontains $Name)) {
-            # If $Name is not found in the current $tag, return $false
+            # If the name is not found in the current tag, return false
             return $false
         }
     }
+    # If the name exists in all specified tags, return true
     return $true
 }
 
 
+<#
+.SYNOPSIS
+  Converts a property into an OpenAPI 'Of' property structure based on a given definition tag.
 
+.DESCRIPTION
+  The ConvertTo-PodeOAOfProperty function is used to convert a given property into one of the OpenAPI 'Of' properties:
+  allOf, oneOf, or anyOf. These structures are used in OpenAPI documentation to define complex types. The function
+  constructs the appropriate structure based on the type of the property and the definition tag provided.
 
+.PARAMETER Property
+  A hashtable representing the property to be converted. It should contain the type (allOf, oneOf, or anyOf) and
+  potentially a list of schemas.
 
+.PARAMETER DefinitionTag
+  A mandatory string parameter specifying the definition tag in OpenAPI documentation, used for validating components.
 
+.EXAMPLE
+  $ofProperty = ConvertTo-PodeOAOfProperty -Property $myProperty -DefinitionTag 'myTag'
+
+  Converts a given property into an OpenAPI 'Of' structure using the specified definition tag.
+#>
 function ConvertTo-PodeOAOfProperty {
     param (
         [hashtable]
         $Property,
 
         [Parameter(Mandatory = $true)]
-        [string ]
+        [string]
         $DefinitionTag
     )
-    if ( @('allOf', 'oneOf', 'anyOf') -inotcontains $Property.type  ) {
-        return  @{}
+
+    # Check if the property type is one of the supported 'Of' types
+    if (@('allOf', 'oneOf', 'anyOf') -inotcontains $Property.type) {
+        return @{}
     }
+
+    # Initialize the schema with the 'Of' type
     $schema = [ordered]@{
         $Property.type = @()
     }
-    if ($Property.schemas ) {
-        foreach ($prop in $Property.schemas ) {
+
+    # Process each schema defined in the property
+    if ($Property.schemas) {
+        foreach ($prop in $Property.schemas) {
             if ($prop -is [string]) {
+                # Validate the schema component and add a reference to it
                 Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $prop -PostValidation
-                $schema[$Property.type ] += @{ '$ref' = "#/components/schemas/$prop" }
+                $schema[$Property.type] += @{ '$ref' = "#/components/schemas/$prop" }
             } else {
-                $schema[$Property.type ] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
+                # Convert the property to an OpenAPI schema property
+                $schema[$Property.type] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
             }
         }
     }
+
+    # Add discriminator if present
     if ($Property.discriminator) {
         $schema['discriminator'] = $Property.discriminator
     }
-    return  $schema
+
+    # Return the constructed 'Of' property schema
+    return $schema
 }
+
 
 function ConvertTo-PodeOASchemaProperty {
     param(

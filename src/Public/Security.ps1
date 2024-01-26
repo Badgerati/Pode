@@ -135,11 +135,7 @@ function Add-PodeSecurityHeader {
     if ($Append -and $PodeContext.Server.Security.Headers.ContainsKey($Name)) {
         $Headers = @(($PodeContext.Server.Security.Headers[$Name].split(',')).trim())
         if ($Headers -inotcontains $Value) {
-            if ($Name -ieq 'Access-Control-Allow-Methods') {
-                $Headers += $Value.ToUpper()
-            } else {
-                $Headers += $Value
-            }
+            $Headers += $Value
             $PodeContext.Server.Security.Headers[$Name] = (($Headers.trim() | Select-Object -Unique) -join ', ')
         } else {
             return
