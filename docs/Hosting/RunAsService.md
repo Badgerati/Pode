@@ -95,8 +95,8 @@ The other solutions are reasonable after an in-depth risk analysis.
 A reverse proxy like Nginx can listen on the privileged port and forward requests to your application running on an unprivileged port.
 
 **Configuration:**
-* Configure Nginx to listen on port 443 and forward requests to the port where your PowerShell script is listening.
 
+* Configure Nginx to listen on port 443 and forward requests to the port where your PowerShell script is listening.
 * This method is widely used in web applications for its additional benefits like load balancing and SSL termination.
 
 #### iptables Redirection
@@ -105,7 +105,7 @@ Using iptables, you can redirect traffic from a privileged port to a higher, unp
 
 **Implementation:**
   * Set up an iptables rule to redirect traffic from, say, port 443 to a higher port where your PowerShell script is listening.
-  
+
   * `sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8080`
 
 **Benefits:**

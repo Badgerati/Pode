@@ -122,8 +122,8 @@ function Add-PodeSecurityHeader {
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
-
-        [Parameter(Mandatory = $true)]
+        
+        [Parameter()]
         [string]
         $Value,
 
@@ -131,6 +131,10 @@ function Add-PodeSecurityHeader {
         [switch]
         $Append
     )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return
+    }
 
     if ($Append -and $PodeContext.Server.Security.Headers.ContainsKey($Name)) {
         $Headers = @(($PodeContext.Server.Security.Headers[$Name].split(',')).trim())

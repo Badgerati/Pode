@@ -247,7 +247,7 @@ Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
 }
 
 # Synopsis: Create docker tags
-Task DockerPack -If ((Test-PodeBuildIsWindows) -or $IsLinux) {
+Task DockerPack -If (((Test-PodeBuildIsWindows) -or $IsLinux) -and $global:Docker) {
     docker build -t badgerati/pode:$Version -f ./Dockerfile .
     docker build -t badgerati/pode:latest -f ./Dockerfile .
     docker build -t badgerati/pode:$Version-alpine -f ./alpine.dockerfile .
@@ -269,7 +269,16 @@ Task Pack -If (Test-PodeBuildIsWindows) Build, {
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
-
+    try {
+        # Try to get the Docker version to check if Docker is installed
+        docker --version
+        $global:Docker = $true
+    }
+    catch {
+        # If Docker is not available, exit the task
+        Write-Warning "Docker is not installed or not available in the PATH. Exiting task."
+        $global:Docker = $false
+    }
     # create the pkg dir
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
