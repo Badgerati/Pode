@@ -853,9 +853,6 @@ function Get-PodeOpenApiDefinitionInternal {
         $filter = ''
     }
 
-
-
-
     foreach ($method in $PodeContext.Server.Routes.Keys) {
         foreach ($path in ($PodeContext.Server.Routes[$method].Keys | Sort-Object)) {
             # does it match the route?
@@ -935,7 +932,7 @@ function Get-PodeOpenApiDefinitionInternal {
         }
     }
 
-    if (   $Definition.hiddenComponents.externalPath) {
+    if ( $Definition.hiddenComponents.externalPath) {
         foreach ($extPath in   $Definition.hiddenComponents.externalPath.values) {
             foreach ($method in $extPath.keys) {
                 $_route = $extPath[$method]
@@ -975,7 +972,27 @@ function ConvertTo-PodeOAPropertyFromCmdletParameter {
     New-PodeOAStringProperty -Name $Parameter.Name
 }
 
+
+<#
+.SYNOPSIS
+  Creates a base OpenAPI object structure.
+
+.DESCRIPTION
+  The Get-PodeOABaseObject function generates a foundational structure for an OpenAPI object.
+  This structure includes empty ordered dictionaries for info, paths, webhooks, components, and other OpenAPI elements.
+  It is used as a base template for building OpenAPI documentation in the Pode framework.
+
+.OUTPUTS
+  Hashtable
+  Returns a hashtable representing the base structure of an OpenAPI object.
+
+.EXAMPLE
+  $baseObject = Get-PodeOABaseObject
+
+  This example creates a base OpenAPI object structure.
+#>
 function Get-PodeOABaseObject {
+    # Returns a base template for an OpenAPI object
     return @{
         info             = [ordered]@{}
         Path             = $null
@@ -1023,29 +1040,83 @@ function Get-PodeOABaseObject {
     }
 }
 
+<#
+.SYNOPSIS
+  Initializes a table to manage OpenAPI definitions.
+
+.DESCRIPTION
+  The Initialize-OpenApiTable function creates a table to manage OpenAPI definitions within the Pode framework.
+  It sets up a default definition tag and initializes a dictionary to hold OpenAPI definitions for each tag.
+  The function is essential for managing OpenAPI documentation across different parts of the application.
+
+.PARAMETER DefaultOADefinitionTag
+  An optional parameter to set the default OpenAPI definition tag. If not provided, 'default' is used.
+
+.OUTPUTS
+  Hashtable
+  Returns a hashtable for managing OpenAPI definitions.
+
+.EXAMPLE
+  $openApiTable = Initialize-OpenApiTable -DefaultOADefinitionTag 'api-v1'
+
+  Initializes the OpenAPI table with 'api-v1' as the default definition tag.
+
+.EXAMPLE
+  $openApiTable = Initialize-OpenApiTable
+
+  Initializes the OpenAPI table with 'default' as the default definition tag.
+#>
 function Initialize-OpenApiTable {
     param(
         [string]
         $DefaultOADefinitionTag = $null
     )
+    # Initialization of the OpenAPI table with default settings
     $OpenAPI = @{
         DefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
     }
-    if ([string]::IsNullOrEmpty( $DefaultOADefinitionTag)) {
+    # Set the default definition tag
+    if ([string]::IsNullOrEmpty($DefaultOADefinitionTag)) {
         $OpenAPI['DefaultDefinitionTag'] = 'default'
     } else {
         $OpenAPI['DefaultDefinitionTag'] = $DefaultOADefinitionTag
     }
 
+    # Set the currently selected definition tag
     $OpenAPI['SelectedDefinitionTag'] = $OpenAPI['DefaultDefinitionTag']
 
-    # swagger and openapi
+    # Initialize the Definitions dictionary with a base OpenAPI object for the selected definition tag
     $OpenAPI['Definitions'] = @{ $OpenAPI['SelectedDefinitionTag'] = Get-PodeOABaseObject }
 
+    # Return the initialized OpenAPI table
     return $OpenAPI
 }
 
+<#
+.SYNOPSIS
+  Sets authentication methods for specific routes in OpenAPI documentation.
 
+.DESCRIPTION
+  The Set-PodeOAAuth function assigns specified authentication methods to given routes for OpenAPI documentation.
+  It supports setting multiple authentication methods and optionally allows anonymous access.
+  The function validates the existence of the authentication methods before applying them to the routes.
+
+.PARAMETER Route
+  An array of hashtables representing the routes to which the authentication methods will be applied.
+  Each route should contain an OpenApi key for updating OpenAPI documentation.
+
+.PARAMETER Name
+  An array of names of the authentication methods to be applied to the routes.
+  These methods should already be defined in the Pode framework.
+
+.PARAMETER AllowAnon
+  A switch parameter that, if set, allows anonymous access in addition to the specified authentication methods.
+
+.EXAMPLE
+  Set-PodeOAAuth -Route $myRoute -Name @('BasicAuth', 'ApiKeyAuth') -AllowAnon
+
+  Applies 'BasicAuth' and 'ApiKeyAuth' authentication methods to the specified route and allows anonymous access.
+#>
 function Set-PodeOAAuth {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -1060,24 +1131,52 @@ function Set-PodeOAAuth {
         $AllowAnon
     )
 
+    # Validate the existence of specified authentication methods
     foreach ($n in @($Name)) {
         if (!(Test-PodeAuthExists -Name $n)) {
             throw "Authentication method does not exist: $($n)"
         }
     }
 
+    # Iterate over each route to set authentication
     foreach ($r in @($Route)) {
+        # Set the authentication methods for the route
         $r.OpenApi.Authentication = @(foreach ($n in @($Name)) {
                 @{
-                    "$($n -replace '\s+', '')" = @()
+                    "$($n -replace '\s+', '')" = @() # Clean up auth name and initialize empty scopes
                 }
             })
+        # Add anonymous access if allowed
         if ($AllowAnon) {
             $r.OpenApi.Authentication += @{'%_allowanon_%' = '' }
         }
     }
 }
 
+
+<#
+.SYNOPSIS
+  Sets global authentication methods for specified OpenAPI definitions in the Pode framework.
+
+.DESCRIPTION
+  The Set-PodeOAGlobalAuth function is used to apply authentication methods globally to specified OpenAPI definitions.
+  It verifies the existence of the authentication methods and then updates the OpenAPI definitions with these methods,
+  associating them with specific routes.
+
+.PARAMETER Name
+  The name of the authentication method to apply. This method should already be defined in the Pode framework.
+
+.PARAMETER Route
+  The route to which the authentication method is to be applied.
+
+.PARAMETER DefinitionTag
+  An array of definition tags specifying the OpenAPI definitions to which the authentication method should be applied.
+
+.EXAMPLE
+  Set-PodeOAGlobalAuth -Name 'BasicAuth' -Route '/api/*' -DefinitionTag @('tag1', 'tag2')
+
+  Applies 'BasicAuth' authentication method to all routes under '/api/*' in the OpenAPI definitions tagged with 'tag1' and 'tag2'.
+#>
 function Set-PodeOAGlobalAuth {
     param(
         [string]
@@ -1091,26 +1190,32 @@ function Set-PodeOAGlobalAuth {
         $DefinitionTag
     )
 
+    # Check if the specified authentication method exists
     if (!(Test-PodeAuthExists -Name $Name)) {
         throw "Authentication method does not exist: $($Name)"
     }
+
+    # Iterate over each definition tag to apply the authentication method
     foreach ($tag in $DefinitionTag) {
+        # Initialize security array if it's empty
         if (Test-PodeIsEmpty $PodeContext.Server.OpenAPI.Definitions[$tag].Security) {
             $PodeContext.Server.OpenAPI.Definitions[$tag].Security = @()
         }
 
-        foreach ($authName in  (Expand-PodeAuthMerge -Names $Name)) {
+        # Apply authentication to each expanded auth name
+        foreach ($authName in (Expand-PodeAuthMerge -Names $Name)) {
             $authType = Get-PodeAuth $authName
+
+            # Determine the scopes of the authentication
             if ($authType.Scheme.Arguments.Scopes) {
-                $Scopes = @($authType.Scheme.Arguments.Scopes )
+                $Scopes = @($authType.Scheme.Arguments.Scopes)
             } else {
                 $Scopes = @()
             }
-            @($authType.Scheme.Arguments.Scopes )
+
+            # Update the OpenAPI definition with the authentication information
             $PodeContext.Server.OpenAPI.Definitions[$tag].Security += @{
-                Definition = @{
-                    "$($authName -replace '\s+', '')" = $Scopes
-                }
+                Definition = @{ "$($authName -replace '\s+', '')" = $Scopes }
                 Route      = (ConvertTo-PodeRouteRegex -Path $Route)
             }
         }
@@ -1172,9 +1277,9 @@ function Resolve-PodeOAReferences {
                 }
 
             } elseif ($key -ieq 'oneof') {
-                #TBD
+                throw 'Validation of schema with oneof is not supported '
             } elseif ($key -ieq 'anyof') {
-                #TBD
+                throw 'Validation of schema with anyof is not supported '
             }
         } elseif ($ComponentSchema.properties[$key].type -eq 'object') {
             $ComponentSchema.properties[$key].properties = Resolve-PodeOAReferences -DefinitionTag $DefinitionTag -ComponentSchema $ComponentSchema.properties[$key].properties

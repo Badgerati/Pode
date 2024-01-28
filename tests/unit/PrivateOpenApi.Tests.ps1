@@ -14,21 +14,22 @@ Describe 'PrivateOpenApi' {
                     Security = @{
                         autoheaders = $false
                     }
+                    Authentications=@{}
                     OpenAPI  = @{
                         SelectedDefinitionTag = 'default'
                         Definitions           = @{
-                            default = Get-PodeOABaseObject
+                            default     = Get-PodeOABaseObject
+                            alternative = Get-PodeOABaseObject
                         }
                     }
                 }
             }
         }
         $global:PodeContext = GetPodeContext
-
     }
 
 
-    Describe 'New-PodeOAPropertyInternal' {
+    Describe 'New-PodeOAPropertyInternal  Tests' {
         Context 'When valid parameters are provided' {
             It 'returns an OrderedDictionary with the correct type and properties' {
                 $params = @{
@@ -72,7 +73,7 @@ Describe 'PrivateOpenApi' {
         }
     }
 
-    Describe 'ConvertTo-PodeOAHeaderProperties' {
+    Describe 'ConvertTo-PodeOAHeaderProperties Tests' {
         It 'Converts single header with all properties' {
             $headers = @(
                 @{ name = 'Content-Type'; type = 'string'; description = 'The MIME type of the body of the request' }
@@ -119,6 +120,7 @@ Describe 'PrivateOpenApi' {
             $result['Custom-Header'].schema.maxLength | Should -Be 10
         }
     }
+
 
     Describe 'ConvertTo-PodeOAOfProperty Tests' {
         It "Converts property with 'allOf' type" {
@@ -219,7 +221,7 @@ Describe 'PrivateOpenApi' {
                                 hiddenComponents = @{
                                     externalPath = @{
                                         'YourComponentName' = $true
-                                        'OtherComponent'  = $true
+                                        'OtherComponent'    = $true
                                     }
                                 }
                             }
@@ -252,5 +254,110 @@ Describe 'PrivateOpenApi' {
             Remove-Variable -Name 'PodeContext' -Scope Global
         }
     }
+
+    Describe 'Set-PodeOAGlobalAuth Tests' {
+        BeforeEach {
+            # Mock dependent functions
+            Mock Test-PodeAuthExists { return $true }
+            Mock Expand-PodeAuthMerge { return @('BasicAuth') }
+            Mock Get-PodeAuth { return @{ Scheme = @{ Arguments = @{ Scopes = @('read', 'write') } } } }
+            Mock ConvertTo-PodeRouteRegex { return '^/api/.*$' }
+
+        }
+
+        It 'Successfully applies authentication to a route for a single tag' {
+            { Set-PodeOAGlobalAuth -Name 'BasicAuth' -Route '/api/*' -DefinitionTag 'default' } | Should -Not -Throw
+            $Global:PodeContext.Server.OpenAPI.Definitions.default.Security.Count | Should -Be 1
+        }
+
+        It 'Throws an exception for non-existent authentication method' {
+            Mock Test-PodeAuthExists { return $false }
+            { Set-PodeOAGlobalAuth -Name 'InvalidAuth' -Route '/api/*' -DefinitionTag 'default' } | Should -Throw
+        }
+
+        It 'Applies authentication to multiple definition tags' {
+            { Set-PodeOAGlobalAuth -Name 'BasicAuth' -Route '/api/*' -DefinitionTag @('default', 'alternative') } | Should -Not -Throw
+            $Global:PodeContext.Server.OpenAPI.Definitions.default.Security.Count | Should -Be 1
+            $Global:PodeContext.Server.OpenAPI.Definitions.alternative.Security.Count | Should -Be 1
+        }
+
+        It 'Handles authentication methods with scopes' {
+            { Set-PodeOAGlobalAuth -Name 'BasicAuth' -Route '/api/*' -DefinitionTag 'default' } | Should -Not -Throw
+            $Global:PodeContext.Server.OpenAPI.Definitions.default.Security[0].Definition.BasicAuth | Should -Be @('read', 'write')
+        }
+    }
+
+
+    Describe "Set-PodeOAAuth Tests" {
+        BeforeAll {
+            # Mock Test-PodeAuthExists to simulate authentication method existence
+            Mock Test-PodeAuthExists { return $true }
+        }
+
+        It "Applies multiple authentication methods to a route" {
+            $route = @{ OpenApi = @{} }
+            { Set-PodeOAAuth -Route @($route) -Name @('BasicAuth', 'ApiKeyAuth') } | Should -Not -Throw
+            $route.OpenApi.Authentication.Count | Should -Be 2
+        }
+
+        It "Throws an exception for non-existent authentication method" {
+            Mock Test-PodeAuthExists { return $false }
+            $route = @{ OpenApi = @{} }
+            { Set-PodeOAAuth -Route @($route) -Name 'InvalidAuth' } | Should -Throw
+        }
+
+        It "Allows anonymous access" {
+            $route = @{ OpenApi = @{ Authentication = @{} } }
+            { Set-PodeOAAuth -Route @($route) -Name 'BasicAuth' -AllowAnon } | Should -Not -Throw
+            $route.OpenApi.Authentication.keys -contains '%_allowanon_%' | Should -Be $true
+            $route.OpenApi.Authentication['%_allowanon_%'] | Should -BeNullOrEmpty
+        }
+
+        It "Applies both authenticated and anonymous access to a route" {
+            $route = @{ OpenApi = @{} }
+            { Set-PodeOAAuth -Route @($route) -Name @('BasicAuth') -AllowAnon } | Should -Not -Throw
+            $route.OpenApi.Authentication.Count | Should -Be 2
+            $route.OpenApi.Authentication[0].BasicAuth | Should  -BeNullOrEmpty
+            $route.OpenApi.Authentication[1].'%_allowanon_%' | Should  -BeNullOrEmpty
+        }
+    }
+
+    Describe "Get-PodeOABaseObject Tests" {
+        It "Returns the correct base OpenAPI object structure" {
+            $baseObject = Get-PodeOABaseObject
+
+            $baseObject | Should -BeOfType [hashtable]
+            $baseObject.info | Should -BeOfType [ordered]
+            $baseObject.Path | Should -BeNullOrEmpty
+            $baseObject.webhooks | Should -BeOfType [ordered]
+            $baseObject.components | Should -BeOfType [ordered]
+            $baseObject.tags | Should -BeOfType [ordered]
+            $baseObject.hiddenComponents | Should -BeOfType [hashtable]
+        }
+    }
+
+    Describe "Initialize-OpenApiTable Tests" {
+        It "Initializes OpenAPI table with default settings" {
+            $openApiTable = Initialize-OpenApiTable
+
+            $openApiTable | Should -BeOfType [hashtable]
+            $openApiTable.DefinitionTagSelectionStack -is  [System.Collections.Generic.Stack[System.Object]]   | Should -BeTrue
+            $openApiTable.DefaultDefinitionTag | Should -Be "default"
+            $openApiTable.SelectedDefinitionTag | Should -Be "default"
+            $openApiTable.Definitions | Should -BeOfType [hashtable]
+            $openApiTable.Definitions["default"] | Should -BeOfType [hashtable]
+        }
+
+        It "Initializes OpenAPI table with custom definition tag" {
+            $customTag = "api-v1"
+            $openApiTable = Initialize-OpenApiTable -DefaultOADefinitionTag $customTag
+
+            $openApiTable.DefaultDefinitionTag | Should -Be $customTag
+            $openApiTable.SelectedDefinitionTag | Should -Be $customTag
+            $openApiTable.Definitions | Should -BeOfType [hashtable]
+            $openApiTable.Definitions[$customTag] | Should -BeOfType [hashtable]
+        }
+    }
+
 
 }
