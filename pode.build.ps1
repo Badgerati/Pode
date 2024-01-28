@@ -15,7 +15,7 @@ $Versions = @{
     MkDocs      = '1.5.3'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
-    DotNet      = '8.0.1'
+    DotNet      = '8.0'
     Checksum    = '0.2.0'
     MkDocsTheme = '9.4.6'
     PlatyPS     = '0.14.2'
@@ -96,8 +96,8 @@ function Invoke-PodeBuildDotnetBuild($target) {
     $isCompatible = $False
     switch ($majorVersion) {
         8 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0', 'net8.0')) { $isCompatible = $True } }
-        7 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0')) { $isCompatible = $True } }
-        6 { if ($target -in @('net6.0', 'netstandard2.0')) { $isCompatible = $True } }
+        7 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0')) { $isCompatible = $False } }
+        6 { if ($target -in @('net6.0', 'netstandard2.0')) { $isCompatible = $False } }
     }
 
     # Skip build if not compatible
@@ -175,8 +175,13 @@ Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
 # Synopsis: Install dependencies for compiling/building
 Task BuildDeps {
     # install dotnet
+    if (Test-PodeBuildIsWindows){
+        $dotnet="dotnet"
+    }else{
+        $dotnet="dotnet-sdk-$($Versions.DotNet)"
+    }
     if (!(Test-PodeBuildCommand 'dotnet')) {
-        Invoke-PodeBuildInstall 'dotnet' $Versions.DotNet
+        Invoke-PodeBuildInstall $dotnet $Versions.DotNet
     }
 }
 
@@ -241,9 +246,22 @@ Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
 }, PrintChecksum
 
+
+# Synopsis: Creates a Zip of the Module
+Task Compress StampVersion, {
+    $path = './deliverable'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    # create the pkg dir
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+    Compress-Archive -Path "./pkg" -DestinationPath "$path/$Version-Binaries.zip"
+}, PrintChecksum
+
 # Synopsis: Creates a Chocolately package of the Module
 Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { choco pack ./packers/choco/pode.nuspec }
+    Move-Item -Path "pode.$Version.nupkg" -Destination "./deliverable"
 }
 
 # Synopsis: Create docker tags
@@ -273,7 +291,7 @@ Task DockerPack -If (((Test-PodeBuildIsWindows) -or $IsLinux) ) {
 }
 
 # Synopsis: Package up the Module
-Task Pack -If (Test-PodeBuildIsWindows) Build, {
+Task Pack Build, {
     $path = './pkg'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -296,7 +314,7 @@ Task Pack -If (Test-PodeBuildIsWindows) Build, {
     Copy-Item -Path ./src/Pode.Internal.psm1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./src/Pode.Internal.psd1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
-}, StampVersion, 7Zip, ChocoPack, DockerPack
+}, StampVersion, Compress, ChocoPack, DockerPack
 
 
 <#
@@ -413,6 +431,10 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 
 
 Task Clean  {
+    $path = './deliverable'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
 
     $path = './pkg'
 
@@ -445,14 +467,11 @@ Task Install-Module  {
 
         # create the dest dir
         New-Item -Path $dest -ItemType Directory -Force | Out-Null
-        # which folders do we need?
 
         Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Private'  ) -Destination  $dest -Force -Recurse | Out-Null
         Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Public'  ) -Destination  $dest -Force -Recurse | Out-Null
         Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Misc'  ) -Destination  $dest -Force -Recurse | Out-Null
         Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Libs'  ) -Destination  $dest -Force -Recurse | Out-Null
-
-
 
         # copy general files
         Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.psm1') -Destination $dest -Force | Out-Null
