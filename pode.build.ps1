@@ -156,7 +156,7 @@ Task ChocoDeps -If (Test-PodeBuildIsWindows) {
 }
 
 # Synopsis: Install dependencies for packaging
-Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, { 
+Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
     if (!(Test-PodeBuildCommand '7z')) {
         Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
     }
@@ -422,14 +422,21 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 
 Task Clean  {
     $path = './deliverable'
-    if (Test-Path $path) {
+    if (Test-Path -Path $path -PathType Container) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
 
     $path = './pkg'
 
-    if (  (Test-Path $path)) {
+    if ((Test-Path -Path $path -PathType Container )) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    if ((Test-Path -Path .\packers\choco\tools\ChocolateyInstall.ps1 -PathType Leaf )) {
+        Remove-Item -Path .\packers\choco\tools\ChocolateyInstall.ps1
+    }
+    if ((Test-Path -Path .\packers\choco\pode.nuspec -PathType Leaf )) {
+        Remove-Item -Path .\packers\choco\pode.nuspec
     }
     Write-Host "$path Cleanup done"
 }
