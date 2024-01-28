@@ -16,7 +16,6 @@ $Versions = @{
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
     DotNet      = '8.0'
-    Checksum    = '0.2.0'
     MkDocsTheme = '9.4.6'
     PlatyPS     = '0.14.2'
 }
@@ -139,12 +138,7 @@ Task StampVersion {
 
 # Synopsis: Generating a Checksum of the Zip
 Task PrintChecksum {
-    if (Test-PodeBuildIsWindows) {
-        $Script:Checksum = (checksum -t sha256 $Version-Binaries.zip)
-    } else {
-        $Script:Checksum = (shasum -a 256 ./$Version-Binaries.zip | awk '{ print $1 }').ToUpper()
-    }
-
+    $Script:Checksum =(Get-FileHash ./deliverable/2.10.0-Binaries.zip -Algorithm SHA256).Hash
     Write-Host "Checksum: $($Checksum)"
 }
 
@@ -162,11 +156,7 @@ Task ChocoDeps -If (Test-PodeBuildIsWindows) {
 }
 
 # Synopsis: Install dependencies for packaging
-Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
-    if (!(Test-PodeBuildCommand 'checksum')) {
-        Invoke-PodeBuildInstall 'checksum' $Versions.Checksum
-    }
-
+Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, { 
     if (!(Test-PodeBuildCommand '7z')) {
         Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
     }
