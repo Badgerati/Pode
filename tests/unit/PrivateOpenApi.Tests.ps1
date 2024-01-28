@@ -327,11 +327,11 @@ Describe 'PrivateOpenApi' {
             $baseObject = Get-PodeOABaseObject
 
             $baseObject | Should -BeOfType [hashtable]
-            $baseObject.info | Should -BeOfType [ordered]
+            $baseObject.info | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $baseObject.Path | Should -BeNullOrEmpty
-            $baseObject.webhooks | Should -BeOfType [ordered]
-            $baseObject.components | Should -BeOfType [ordered]
-            $baseObject.tags | Should -BeOfType [ordered]
+            $baseObject.webhooks | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+            $baseObject.components | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+            $baseObject.tags | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $baseObject.hiddenComponents | Should -BeOfType [hashtable]
         }
     }

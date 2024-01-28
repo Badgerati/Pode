@@ -1716,7 +1716,7 @@ function Enable-PodeOAViewer {
 
     if ($Editor.IsPresent) {
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default '/docs/swagger-editor'
+        $Path = Protect-PodeValue -Value $Path -Default '/editor'
         if ([string]::IsNullOrWhiteSpace($Title)) {
             throw "No route path supplied for $($Type) page"
         }
@@ -1753,7 +1753,7 @@ function Enable-PodeOAViewer {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
     } elseif ($Bookmarks.IsPresent) {
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default '/docs'
+        $Path = Protect-PodeValue -Value $Path -Default '/bookmarks'
         if ([string]::IsNullOrWhiteSpace($Title)) {
             throw "No route path supplied for $($Type) page"
         }
@@ -1798,7 +1798,7 @@ function Enable-PodeOAViewer {
             throw "The Document tool RapidPdf doesn't support OpenAPI 3.1"
         }
         # set a default path
-        $Path = Protect-PodeValue -Value $Path -Default "/docs/$($Type.ToLowerInvariant())"
+        $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())"
         if ([string]::IsNullOrWhiteSpace($Title)) {
             throw "No route path supplied for $($Type) page"
         }
