@@ -34,7 +34,7 @@ jobs:
       shell: powershell
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Install-Module -Name InvokeBuild -RequiredVersion '5.10.4' -Force
+        Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
     - name: Run Pester Tests
       shell: powershell

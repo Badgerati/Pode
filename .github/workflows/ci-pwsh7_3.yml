@@ -29,12 +29,12 @@ jobs:
       shell: pwsh
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Install-Module -Name InvokeBuild -RequiredVersion '5.10.4' -Force
+        Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
     # For Windows
     - name: Download and extract PowerShell 7.3
       run: |
-        Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.3.10/PowerShell-7.3.10-win-x64.zip" -OutFile "PowerShell-7.3.x-win-x64.zip"
+        Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.3.10/PowerShell-7.3.11-win-x64.zip" -OutFile "PowerShell-7.3.x-win-x64.zip"
         Expand-Archive -LiteralPath "PowerShell-7.3.x-win-x64.zip" -DestinationPath "C:\PowerShell-7.3"
 
     - name: Check PowerShell version

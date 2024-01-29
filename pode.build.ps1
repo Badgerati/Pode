@@ -95,8 +95,8 @@ function Invoke-PodeBuildDotnetBuild($target) {
     $isCompatible = $False
     switch ($majorVersion) {
         8 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0', 'net8.0')) { $isCompatible = $True } }
-        7 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0')) { $isCompatible = $False } }
-        6 { if ($target -in @('net6.0', 'netstandard2.0')) { $isCompatible = $False } }
+        7 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0')) { $isCompatible = $True } }
+        6 { if ($target -in @('net6.0', 'netstandard2.0')) { $isCompatible = $True } }
     }
 
     # Skip build if not compatible
