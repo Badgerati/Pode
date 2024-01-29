@@ -37,7 +37,7 @@ To build and use the code checked out on your machine, follow these steps :
 
 4. Packaging
 
-    To create a Pode package (this will build Pode) run the following:
+    To create a Pode package. Please note that docker has to be present to create the containers.
 
     ```powershell
     Invoke-Build Pack
@@ -115,7 +115,7 @@ To build and use the code checked out on your machine, follow these steps :
 
 6. Packaging
 
-    To create a Pode package (this will build Pode), run the following:
+    To create a Pode package. Please note that docker has to be present to create the containers.
 
     ```powershell
     Invoke-Build Pack

@@ -34,7 +34,7 @@ jobs:
     # For Windows
     - name: Download and extract PowerShell 7.3
       run: |
-        Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.3.10/PowerShell-7.3.11-win-x64.zip" -OutFile "PowerShell-7.3.x-win-x64.zip"
+        Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.3.11/PowerShell-7.3.11-win-x64.zip" -OutFile "PowerShell-7.3.x-win-x64.zip"
         Expand-Archive -LiteralPath "PowerShell-7.3.x-win-x64.zip" -DestinationPath "C:\PowerShell-7.3"
 
     - name: Check PowerShell version
