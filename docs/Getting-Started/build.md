@@ -135,3 +135,58 @@ To build and use the code checked out on your machine, follow these steps :
     Invoke-Build Remove-Module
     ```
 
+
+## MacOS
+
+An easy way to install the required componentS is to use [brew](https://brew.sh/)
+
+1. Install dotNet
+
+    ```shell
+    brew install dotnet
+    ```
+
+2. Install InvokeBuild Module
+
+    ```powershell
+    Install-Module InvokeBuild -Scope CurrentUser
+    ```
+
+3. Test
+
+    To run the unit tests, run the following command from the root of the repository (this will build Pode and, if needed, auto-install Pester/.NET):
+
+    ```powershell
+    Invoke-Build Test
+    ```
+
+4. Build
+
+    To just build Pode, before running any examples, run the following:
+
+    ```powershell
+    Invoke-Build Build
+    ```
+
+5. Packaging
+
+    To create a Pode package. Please note that docker has to be present to create the containers.
+
+    ```powershell
+    Invoke-Build Pack
+    ```
+
+6. Install locally
+
+    To install Pode from the repository, run the following:
+
+    ```powershell
+    Invoke-Build Install-Module
+    ```
+
+    To uninstall, use :
+
+    ```powershell
+    Invoke-Build Remove-Module
+    ```
+
