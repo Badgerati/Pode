@@ -29,7 +29,7 @@ To build and use the code checked out on your machine, follow these steps :
 
 3. Build
 
-   To just build Pode, before running any examples, run the following:
+    To just build Pode, before running any examples, run the following:
 
     ```powershell
     Invoke-Build Build
@@ -107,7 +107,7 @@ To build and use the code checked out on your machine, follow these steps :
 
 5. Build
 
-   To just build Pode, before running any examples, run the following:
+    To just build Pode, before running any examples, run the following:
 
     ```powershell
     Invoke-Build Build

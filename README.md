@@ -108,7 +108,7 @@ To just build Pode, before running any examples, run the following:
 Invoke-Build Build
 ```
 
-More information on how to build Pode can be [found here](https://github.com/Badgerati/Pode/tree/develop/docs/build.md)
+More information on how to build Pode can be [found here](./docs/Getting-Started/build.md)
 
 To work on issues you can fork Pode, and then open a Pull Request for approval. Pull Requests should be made against the `develop` branch. Each Pull Request should also have an appropriate issue created.
 

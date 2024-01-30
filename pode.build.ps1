@@ -1,6 +1,6 @@
 param(
     [string]
-    $Version ='',
+    $Version ='0.0.0',
     [string]
     [ValidateSet(  'None', 'Normal' , 'Detailed', 'Diagnostic')]
     $PesterVerbosity = 'Normal'
@@ -138,7 +138,7 @@ Task StampVersion {
 
 # Synopsis: Generating a Checksum of the Zip
 Task PrintChecksum {
-    $Script:Checksum =(Get-FileHash ./deliverable/2.10.0-Binaries.zip -Algorithm SHA256).Hash
+    $Script:Checksum =(Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
     Write-Host "Checksum: $($Checksum)"
 }
 
