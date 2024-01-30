@@ -359,5 +359,67 @@ Describe 'PrivateOpenApi' {
         }
     }
 
+    Describe "ConvertTo-PodeOASchemaObjectProperty Tests" {
+        BeforeAll {
+            # Mock ConvertTo-PodeOASchemaProperty to simulate its behavior
+            Mock ConvertTo-PodeOASchemaProperty { return @{ type = $_.type; processed = $true } }
+        }
+
+        It "Converts a list of properties excluding 'allOf', 'oneOf', 'anyOf'" {
+            $properties = @(
+                @{ name = "prop1"; type = "string" },
+                @{ name = "prop2"; type = "integer" },
+                @{ name = "prop3"; type = "allOf" }
+            )
+            $result = ConvertTo-PodeOASchemaObjectProperty -Properties $properties -DefinitionTag "myTag"
+
+            $result.Count | Should -Be 2
+            $result["prop1"].processed | Should -Be $true
+            $result["prop2"].processed | Should -Be $true
+            $result.ContainsKey("prop3") | Should -Be $false
+        }
+
+        It "Forms valid schema object for non-excluded properties" {
+            $properties = @(
+                @{ name = "prop1"; type = "string" }
+            )
+            $result = ConvertTo-PodeOASchemaObjectProperty -Properties $properties -DefinitionTag "myTag"
+
+            $result.Count | Should -Be 1
+            $result["prop1"].type | Should -Be "string"
+            $result["prop1"].processed | Should -Be $true
+        }
+    }
+
+
+    Describe "ConvertTo-PodeOAObjectSchema Tests" {
+        Mock ConvertTo-PodeOASchemaProperty { return @{ mockedResult = $true } }
+        Mock Test-PodeOAComponentInternal { return $true }
+        Mock Test-PodeOAVersion { param($Version) $Version -le 3.0 }
+
+        It "Converts valid content to schema object" {
+            $content = @{
+                "application/json" = @{ type = "String" }
+            }
+            $result = ConvertTo-PodeOAObjectSchema -Content $content -DefinitionTag "myTag"
+
+            $result.ContainsKey("application/json") | Should -Be $true
+            $result["application/json"].schema.type | Should -Be 'string'
+        }
+
+        It "Handles array structures correctly" {
+            $content = @{
+                "application/json" = @{
+                    __array = $true
+                    __content = @{ type = "String" }
+                }
+            }
+            $result = ConvertTo-PodeOAObjectSchema -Content $content -DefinitionTag "myTag"
+
+            $result["application/json"].schema.type | Should -Be "array"
+            $result["application/json"].schema.Items.type | Should -Be 'string'
+        }
+
+    }
 
 }

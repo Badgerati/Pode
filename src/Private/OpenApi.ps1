@@ -1,3 +1,26 @@
+<#
+.SYNOPSIS
+  Converts content into an OpenAPI schema object format.
+
+.DESCRIPTION
+  The ConvertTo-PodeOAObjectSchema function takes a hashtable representing content and converts it into a format suitable for OpenAPI schema objects.
+  It validates the content types, processes array structures, and converts each property or reference into the appropriate OpenAPI schema format.
+  The function is designed to handle complex content structures for OpenAPI documentation within the Pode framework.
+
+.PARAMETER Content
+  A hashtable representing the content to be converted into an OpenAPI schema object. The content can include various types and structures.
+
+.PARAMETER Properties
+  A switch to indicate if the content represents properties of an object schema.
+
+.PARAMETER DefinitionTag
+  A string representing the definition tag to be used in the conversion process. This tag is essential for correctly formatting the content according to OpenAPI specifications.
+
+.EXAMPLE
+  $schemaObject = ConvertTo-PodeOAObjectSchema -Content $myContent -DefinitionTag 'myTag'
+
+  Converts a hashtable of content into an OpenAPI schema object using the definition tag 'myTag'.
+#>
 function ConvertTo-PodeOAObjectSchema {
     param(
         [Parameter(ValueFromPipeline = $true)]
@@ -14,7 +37,7 @@ function ConvertTo-PodeOAObjectSchema {
 
     )
 
-    # ensure all content types are valid
+    # Ensure all content types are valid MIME types
     foreach ($type in $Content.Keys) {
         if ($type -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$|^"\*\/\*"$') {
             throw "Invalid content-type found for schema: $($type)"
@@ -25,12 +48,17 @@ function ConvertTo-PodeOAObjectSchema {
         $Content['"*/*"'] = $Content['*/*']
         $Content.Remove('*/*')
     }
-    # convert each schema to openapi format
+    # convert each schema to OpenAPI format
+    # Initialize an empty hashtable for the schema
     $obj = @{}
+
+    # Process each content type
     $types = [string[]]$Content.Keys
     foreach ($type in $types) {
+        # Initialize schema structure for the type
         $obj[$type] = @{ }
 
+        # Handle upload content, array structures, and shared component schema references
         if ($Content[$type].__upload) {
             if ($Content[$type].__array) {
                 $upload = $Content[$type].__content.__upload
@@ -94,7 +122,7 @@ function ConvertTo-PodeOAObjectSchema {
             $item = $Content[$type]
             $isArray = $false
         }
-        # add a shared component schema reference
+        # Add set schema objects or empty content
         if ($item -is [string]) {
             if (![string]::IsNullOrEmpty($item )) {
                 #Check for empty reference
@@ -124,8 +152,7 @@ function ConvertTo-PodeOAObjectSchema {
                 # Create an empty content
                 $obj[$type] = @{}
             }
-        }
-        # add a set schema object
+        } 
         else {
             if ($item.Count -eq 0) {
                 $result = @{}
@@ -544,6 +571,27 @@ function ConvertTo-PodeOASchemaProperty {
     return $schema
 }
 
+<#
+.SYNOPSIS
+  Converts a collection of properties into an OpenAPI schema object format.
+
+.DESCRIPTION
+  The ConvertTo-PodeOASchemaObjectProperty function takes an array of property hashtables and converts them into
+  a format suitable for OpenAPI schema objects. It specifically processes properties that are not 'allOf', 'oneOf',
+  or 'anyOf' types, using the ConvertTo-PodeOASchemaProperty function for conversion based on a given definition tag.
+
+.PARAMETER Properties
+  An array of hashtables representing properties to be converted. Each hashtable should contain the property's details.
+
+.PARAMETER DefinitionTag
+  A string representing the definition tag to be used in the conversion process. This tag is crucial for correctly
+  formatting the properties according to OpenAPI specifications.
+
+.EXAMPLE
+  $schemaObject = ConvertTo-PodeOASchemaObjectProperty -Properties $myProperties -DefinitionTag 'myTag'
+
+  Converts an array of property hashtables into an OpenAPI schema object using the definition tag 'myTag'.
+#>
 function ConvertTo-PodeOASchemaObjectProperty {
     param(
         [Parameter(Mandatory = $true)]
@@ -554,14 +602,23 @@ function ConvertTo-PodeOASchemaObjectProperty {
         [string]
         $DefinitionTag
     )
+
+    # Initialize an empty hashtable for the schema
     $schema = @{}
+
+    # Iterate over each property and convert to OpenAPI schema property if applicable
     foreach ($prop in $Properties) {
-        if ( @('allOf', 'oneOf', 'anyOf') -inotcontains $prop.type  ) {
-            $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag  )
+        # Exclude properties of type 'allOf', 'oneOf', or 'anyOf'
+        if (@('allOf', 'oneOf', 'anyOf') -inotcontains $prop.type) {
+            # Convert the property to an OpenAPI schema property and add to the schema hashtable
+            $schema[$prop.name] = ($prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
         }
     }
+
+    # Return the constructed schema object
     return $schema
 }
+
 
 function Get-PodeOpenApiDefinitionInternal {
     param(
