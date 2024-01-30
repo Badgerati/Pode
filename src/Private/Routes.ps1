@@ -50,23 +50,31 @@ function Find-PodeRoute {
         }
     }
 
-    # is this a static route?
-    $isStatic = ($Method -ieq 'static')
-
     # first ensure we have the method
     $_method = $PodeContext.Server.Routes[$Method]
     if ($null -eq $_method) {
         return $null
     }
 
+    # is this a static route?
+    $isStatic = ($Method -ieq 'static')
+
     # if we have a perfect match for the route, return it if the protocol is right
-    $found = Get-PodeRouteByUrl -Routes $_method[$Path] -EndpointName $EndpointName
-    if (!$isStatic -and ($null -ne $found)) {
-        return $found
+    if (!$isStatic) {
+        $found = Get-PodeRouteByUrl -Routes $_method[$Path] -EndpointName $EndpointName
+        if ($null -ne $found) {
+            return $found
+        }
     }
 
     # otherwise, match the path to routes on regex (first match only)
-    $valid = @(foreach ($key in $_method.Keys) {
+    $paths = @($_method.Keys)
+    if ($isStatic) {
+        [array]::Sort($paths)
+        [array]::Reverse($paths)
+    }
+
+    $valid = @(foreach ($key in $paths) {
             if ($Path -imatch "^$($key)$") {
                 $key
                 break
