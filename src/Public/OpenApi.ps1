@@ -1003,13 +1003,17 @@ function Test-PodeOAJsonSchemaCompliance {
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference -DefinitionTag $DefinitionTag)) {
         throw "The OpenApi component schema in Json doesn't exist: $SchemaReference"
     }
-
-    [string[]] $message = @()
-    $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaJson[$SchemaReference].json -ErrorVariable jsonValidationErrors -ErrorAction SilentlyContinue
-    if ($jsonValidationErrors) {
-        foreach ($item in $jsonValidationErrors) {
-            $message += $item
+    if ($PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaJson[$SchemaReference].available) {
+        [string[]] $message = @()
+        $result = Test-Json -Json $Json -Schema $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaJson[$SchemaReference].json -ErrorVariable jsonValidationErrors -ErrorAction SilentlyContinue
+        if ($jsonValidationErrors) {
+            foreach ($item in $jsonValidationErrors) {
+                $message += $item
+            }
         }
+    } else {
+        $result = $false
+        $message = 'Validation of schema with oneof or anyof is not supported'
     }
 
     return @{result = $result; message = $message }

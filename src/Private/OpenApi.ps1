@@ -152,8 +152,7 @@ function ConvertTo-PodeOAObjectSchema {
                 # Create an empty content
                 $obj[$type] = @{}
             }
-        } 
-        else {
+        } else {
             if ($item.Count -eq 0) {
                 $result = @{}
             } else {
@@ -619,6 +618,92 @@ function ConvertTo-PodeOASchemaObjectProperty {
     return $schema
 }
 
+<#
+.SYNOPSIS
+  Sets OpenAPI specifications for a given route.
+
+.DESCRIPTION
+  The Set-OpenApiRouteValues function processes and sets various OpenAPI specifications for a given route based on the provided definition tag.
+  It handles route attributes such as deprecated status, tags, summary, description, operation ID, parameters, request body, callbacks, authentication,
+  and responses to build a complete OpenAPI specification for the route.
+
+.PARAMETER Route
+  A hashtable representing the route for which OpenAPI specifications are being set.
+
+.PARAMETER DefinitionTag
+  A string representing the definition tag used for specifying OpenAPI documentation details for the route.
+
+.EXAMPLE
+  $routeValues = Set-OpenApiRouteValues -Route $route -DefinitionTag 'myTag'
+
+  Sets OpenAPI specifications for the given route using the definition tag 'myTag'.
+#>
+function Set-OpenApiRouteValues {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $Route,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $DefinitionTag
+    )
+    # Initialize an ordered hashtable to store route properties
+    $pm = [ordered]@{}
+
+    # Process various OpenAPI attributes for the route
+    if ($Route.OpenApi.Deprecated) {
+        $pm.deprecated = $Route.OpenApi.Deprecated
+    }
+    if ($Route.OpenApi.Tags  ) {
+        $pm.tags = $Route.OpenApi.Tags
+    }
+    if ($Route.OpenApi.Summary) {
+        $pm.summary = $Route.OpenApi.Summary
+    }
+    if ($Route.OpenApi.Description) {
+        $pm.description = $Route.OpenApi.Description
+    }
+    if ($Route.OpenApi.OperationId  ) {
+        $pm.operationId = $Route.OpenApi.OperationId
+    }
+    if ($Route.OpenApi.Parameters) {
+        $pm.parameters = $Route.OpenApi.Parameters
+    }
+    if ($Route.OpenApi.RequestBody.$DefinitionTag) {
+        $pm.requestBody = $Route.OpenApi.RequestBody.$DefinitionTag
+    }
+    if ($Route.OpenApi.CallBacks.$DefinitionTag) {
+        $pm.callbacks = $Route.OpenApi.CallBacks.$DefinitionTag
+    }
+    if ($Route.OpenApi.Authentication.Count -gt 0) {
+        $pm.security = @()
+        foreach ($sct in (Expand-PodeAuthMerge -Names $Route.OpenApi.Authentication.Keys)) {
+            if ($PodeContext.Server.Authentications.Methods.$sct.Scheme.Scheme -ieq 'oauth2') {
+                if ($Route.AccessMeta.Scope ) {
+                    $sctValue = $Route.AccessMeta.Scope
+                } else {
+                    #if scope is empty means 'any role' => assign an empty array
+                    $sctValue = @()
+                }
+                $pm.security += @{ $sct = $sctValue }
+            } elseif ($sct -eq '%_allowanon_%') {
+                #allow anonymous access
+                $pm.security += @{  }
+            } else {
+                $pm.security += @{$sct = @() }
+            }
+        }
+    }
+    if ($Route.OpenApi.Responses.$DefinitionTag ) {
+        $pm.responses = $Route.OpenApi.Responses.$DefinitionTag
+    } else {
+        # Set responses or default to '204 No Content' if not specified
+        $pm.responses = @{'204' = @{'description' = (Get-PodeStatusDescription -StatusCode 204) } }
+    }
+    # Return the processed route properties
+    return $pm
+}
 
 function Get-PodeOpenApiDefinitionInternal {
     param(
@@ -639,67 +724,7 @@ function Get-PodeOpenApiDefinitionInternal {
         [string]
         $DefinitionTag
     )
-    function Set-OpenApiRouteValues {
-        param(
-            [Parameter(Mandatory = $true)]
-            [hashtable]
-            $_route,
 
-            [Parameter(Mandatory = $true)]
-            [string]
-            $DefinitionTag
-        )
-        $pm = [ordered]@{}
-        if ($_route.OpenApi.Deprecated) {
-            $pm.deprecated = $_route.OpenApi.Deprecated
-        }
-        if ($_route.OpenApi.Tags  ) {
-            $pm.tags = $_route.OpenApi.Tags
-        }
-        if ($_route.OpenApi.Summary) {
-            $pm.summary = $_route.OpenApi.Summary
-        }
-        if ($_route.OpenApi.Description) {
-            $pm.description = $_route.OpenApi.Description
-        }
-        if ($_route.OpenApi.OperationId  ) {
-            $pm.operationId = $_route.OpenApi.OperationId
-        }
-        if ($_route.OpenApi.Parameters) {
-            $pm.parameters = $_route.OpenApi.Parameters
-        }
-        if ($_route.OpenApi.RequestBody.$DefinitionTag) {
-            $pm.requestBody = $_route.OpenApi.RequestBody.$DefinitionTag
-        }
-        if ($_route.OpenApi.CallBacks.$DefinitionTag) {
-            $pm.callbacks = $_route.OpenApi.CallBacks.$DefinitionTag
-        }
-        if ($_route.OpenApi.Authentication.Count -gt 0) {
-            $pm.security = @()
-            foreach ($sct in (Expand-PodeAuthMerge -Names $_route.OpenApi.Authentication.Keys)) {
-                if ($PodeContext.Server.Authentications.Methods.$sct.Scheme.Scheme -ieq 'oauth2') {
-                    if ($_route.AccessMeta.Scope ) {
-                        $sctValue = $_route.AccessMeta.Scope
-                    } else {
-                        #if scope is empty means 'any role' => assign an empty array
-                        $sctValue = @()
-                    }
-                    $pm.security += @{ $sct = $sctValue }
-                } elseif ($sct -eq '%_allowanon_%') {
-                    #allow anonymous access
-                    $pm.security += @{  }
-                } else {
-                    $pm.security += @{$sct = @() }
-                }
-            }
-        }
-        if ($_route.OpenApi.Responses.$DefinitionTag ) {
-            $pm.responses = $_route.OpenApi.Responses.$DefinitionTag
-        } else {
-            $pm.responses = @{'204' = @{'description' = (Get-PodeStatusDescription -StatusCode 204) } }
-        }
-        return $pm
-    }
 
     $Definition = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag]
 
@@ -765,7 +790,7 @@ function Get-PodeOpenApiDefinitionInternal {
             foreach ($key in $keys) {
                 if ($Definition.webhooks[$key].NotPrepared) {
                     $Definition.webhooks[$key] = @{
-                        $Definition.webhooks[$key].Method = Set-OpenApiRouteValues -_route $Definition.webhooks[$key] -DefinitionTag $DefinitionTag
+                        $Definition.webhooks[$key].Method = Set-OpenApiRouteValues -Route $Definition.webhooks[$key] -DefinitionTag $DefinitionTag
                     }
                 }
             }
@@ -811,7 +836,7 @@ function Get-PodeOpenApiDefinitionInternal {
             foreach ($key in $keys) {
                 if ($components.pathItems[$key].NotPrepared) {
                     $components.pathItems[$key] = @{
-                        $components.pathItems[$key].Method = Set-OpenApiRouteValues -_route $components.pathItems[$key] -DefinitionTag $DefinitionTag
+                        $components.pathItems[$key].Method = Set-OpenApiRouteValues -Route $components.pathItems[$key] -DefinitionTag $DefinitionTag
                     }
                 }
             }
@@ -947,7 +972,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
                 # add path's http method to defintition
 
-                $pm = Set-OpenApiRouteValues -_route $_route -DefinitionTag $DefinitionTag
+                $pm = Set-OpenApiRouteValues -Route $_route -DefinitionTag $DefinitionTag
                 $def.paths[$_route.OpenApi.Path][$method] = $pm
 
                 # add any custom server endpoints for route
@@ -996,7 +1021,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 if (! ( $def.paths.keys -ccontains $_route.Path)) {
                     $def.paths[$_route.OpenAPI.Path] = @{}
                 }
-                $pm = Set-OpenApiRouteValues -_route $_route -DefinitionTag $DefinitionTag
+                $pm = Set-OpenApiRouteValues -Route $_route -DefinitionTag $DefinitionTag
                 # add path's http method to defintition
                 $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pm
             }
@@ -1334,9 +1359,9 @@ function Resolve-PodeOAReferences {
                 }
 
             } elseif ($key -ieq 'oneof') {
-                throw 'Validation of schema with oneof is not supported '
+                throw 'Validation of schema with oneof is not supported'
             } elseif ($key -ieq 'anyof') {
-                throw 'Validation of schema with anyof is not supported '
+                throw 'Validation of schema with anyof is not supported'
             }
         } elseif ($ComponentSchema.properties[$key].type -eq 'object') {
             $ComponentSchema.properties[$key].properties = Resolve-PodeOAReferences -DefinitionTag $DefinitionTag -ComponentSchema $ComponentSchema.properties[$key].properties

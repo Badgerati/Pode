@@ -144,13 +144,22 @@ function Add-PodeOAComponentSchema {
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
         if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaValidation) {
-            $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty  -DefinitionTag $tag) | Resolve-PodeOAReferences -DefinitionTag $tag
-            #Resolve-PodeOAReferences -ComponentSchema  $modifiedSchema
-            $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
-                'schema' = $modifiedComponent
-                'json'   = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.depth
+            try {
+                $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty  -DefinitionTag $tag) | Resolve-PodeOAReferences -DefinitionTag $tag 
+                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
+                    'available' = $true
+                    'schema'    = $modifiedComponent
+                    'json'      = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.depth
+                }
+            } catch {
+                if ($_.ToString().StartsWith('Validation of schema with')) {
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
+                        'available' = $false
+                    }
+                }
             }
         }
+
         if ($Description) {
             $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name].description = $Description
         }
