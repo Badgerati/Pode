@@ -69,6 +69,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
     } else {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default
     }
+    
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     #Configure CORS

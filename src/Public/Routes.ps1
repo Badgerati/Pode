@@ -535,6 +535,9 @@ One or more optional Scopes that will be authorised to access this Route, when u
 .PARAMETER User
 One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
+.PARAMETER FileBrowser
+When supplied, If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .EXAMPLE
 Add-PodeStaticRoute -Path '/assets' -Source './assets'
 
@@ -615,6 +618,9 @@ function Add-PodeStaticRoute {
 
         [switch]
         $DownloadOnly,
+
+        [switch]
+        $FileBrowser,
 
         [switch]
         $PassThru
@@ -709,7 +715,7 @@ function Add-PodeStaticRoute {
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path -Static
-    $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+  #  $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
     $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoints from name
@@ -827,6 +833,7 @@ function Add-PodeStaticRoute {
                 ErrorType        = $ErrorContentType
                 Download         = $DownloadOnly
                 IsStatic         = $true
+                FileBrowser      = $FileBrowser.isPresent
                 Metrics          = @{
                     Requests = @{
                         Total       = 0

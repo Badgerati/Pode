@@ -52,8 +52,7 @@ function Start-PodeWebServer {
         # add to map
         if (!$endpointsMap.ContainsKey($_endpoint.Key)) {
             $endpointsMap[$_endpoint.Key] = @{ Type = $_.Type }
-        }
-        else {
+        } else {
             if ($endpointsMap[$_endpoint.Key].Type -ine $_.Type) {
                 $endpointsMap[$_endpoint.Key].Type = 'HttpAndWs'
             }
@@ -85,8 +84,7 @@ function Start-PodeWebServer {
         $PodeContext.Listeners += $listener
         $PodeContext.Server.Signals.Enabled = $true
         $PodeContext.Server.Signals.Listener = $listener
-    }
-    catch {
+    } catch {
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
         Close-PodeDisposable -Disposable $listener
@@ -188,20 +186,18 @@ function Start-PodeWebServer {
                                     if ($null -ne $WebEvent.StaticContent) {
                                         if ($WebEvent.StaticContent.IsDownload) {
                                             Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
-                                        }
-                                        else {
+                                        } else {
                                             $cachable = $WebEvent.StaticContent.IsCachable
-                                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                                            $fileBrowser = $WebEvent.Route.FileBrowser
+                                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
                                         }
-                                    }
-                                    elseif ($null -ne $WebEvent.Route.Logic) {
+                                    } elseif ($null -ne $WebEvent.Route.Logic) {
                                         $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
                                         Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
                                     }
                                 }
                             }
-                        }
-                        catch [System.OperationCanceledException] {}
+                        } catch [System.OperationCanceledException] {}
                         catch [System.Net.Http.HttpRequestException] {
                             if ($Response.StatusCode -ge 500) {
                                 $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -213,27 +209,23 @@ function Start-PodeWebServer {
                             }
 
                             Set-PodeResponseStatus -Code $code -Exception $_
-                        }
-                        catch {
+                        } catch {
                             $_ | Write-PodeErrorLog
                             $_.Exception | Write-PodeErrorLog -CheckInnerException
                             Set-PodeResponseStatus -Code 500 -Exception $_
-                        }
-                        finally {
+                        } finally {
                             Update-PodeServerRequestMetrics -WebEvent $WebEvent
                         }
 
                         # invoke endware specifc to the current web event
                         $_endware = ($WebEvent.OnEnd + @($PodeContext.Server.Endware))
                         Invoke-PodeEndware -Endware $_endware
-                    }
-                    finally {
+                    } finally {
                         $WebEvent = $null
                         Close-PodeDisposable -Disposable $context
                     }
                 }
-            }
-            catch [System.OperationCanceledException] {}
+            } catch [System.OperationCanceledException] {}
             catch {
                 $_ | Write-PodeErrorLog
                 $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -267,8 +259,7 @@ function Start-PodeWebServer {
                         # by clientId
                         if (![string]::IsNullOrWhiteSpace($message.ClientId)) {
                             $sockets = @($Listener.Signals[$message.ClientId])
-                        }
-                        else {
+                        } else {
                             $sockets = @($Listener.Signals.Values)
 
                             # by path
@@ -291,23 +282,19 @@ function Start-PodeWebServer {
                         foreach ($socket in $sockets) {
                             try {
                                 $socket.Context.Response.SendSignal($message)
-                            }
-                            catch {
+                            } catch {
                                 $null = $Listener.Signals.Remove($socket.ClientId)
                             }
                         }
-                    }
-                    catch [System.OperationCanceledException] {}
+                    } catch [System.OperationCanceledException] {}
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    }
-                    finally {
+                    } finally {
                         Close-PodeDisposable -Disposable $message
                     }
                 }
-            }
-            catch [System.OperationCanceledException] {}
+            } catch [System.OperationCanceledException] {}
             catch {
                 $_ | Write-PodeErrorLog
                 $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -371,23 +358,19 @@ function Start-PodeWebServer {
                         if ($null -ne $SignalEvent.Route) {
                             $_args = @(Get-PodeScriptblockArguments -ArgumentList $SignalEvent.Route.Arguments -UsingVariables $SignalEvent.Route.UsingVariables)
                             Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $_args -Scoped -Splat
-                        }
-                        else {
+                        } else {
                             Send-PodeSignal -Value $SignalEvent.Data.Message -Path $SignalEvent.Data.Path -ClientId $SignalEvent.Data.ClientId
                         }
-                    }
-                    catch [System.OperationCanceledException] {}
+                    } catch [System.OperationCanceledException] {}
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
-                    }
-                    finally {
+                    } finally {
                         Update-PodeServerSignalMetrics -SignalEvent $SignalEvent
                         Close-PodeDisposable -Disposable $context
                     }
                 }
-            }
-            catch [System.OperationCanceledException] {}
+            } catch [System.OperationCanceledException] {}
             catch {
                 $_ | Write-PodeErrorLog
                 $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -413,14 +396,12 @@ function Start-PodeWebServer {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Seconds 1
             }
-        }
-        catch [System.OperationCanceledException] {}
+        } catch [System.OperationCanceledException] {}
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
             throw $_.Exception
-        }
-        finally {
+        } finally {
             Close-PodeDisposable -Disposable $Listener
         }
     }

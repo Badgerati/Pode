@@ -356,6 +356,9 @@ The status code to set against the response.
 .PARAMETER Cache
 Should the file's content be cached by browsers, or not?
 
+.PARAMETER FileBrowser
+If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Files/Stuff.txt'
 
@@ -370,6 +373,9 @@ Write-PodeFileResponse -Path 'C:/Views/Index.pode' -Data @{ Counter = 2 }
 
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Files/Stuff.txt' -StatusCode 201
+
+.EXAMPLE
+Write-PodeFileResponse -Path 'C:/Files/' -FileBrowser
 #>
 function Write-PodeFileResponse {
     [CmdletBinding()]
@@ -395,14 +401,16 @@ function Write-PodeFileResponse {
         $StatusCode = 200,
 
         [switch]
-        $Cache
-    )
+        $Cache,
 
+        [switch]
+        $FileBrowser
+    )
     # resolve for relative path
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # test the file path, and set status accordingly
-    if (!(Test-PodePath $Path -FailOnDirectory)) {
+    if (! $FileBrowser.isPresent -and !(Test-PodePath $Path -FailOnDirectory)) {
         return
     }
 
@@ -426,14 +434,75 @@ function Write-PodeFileResponse {
 
     # this is a static file
     else {
-        if (Test-PodeIsPSCore) {
-            $content = (Get-Content -Path $Path -Raw -AsByteStream)
-        } else {
-            $content = (Get-Content -Path $Path -Raw -Encoding byte)
-        }
+        if ( Test-PodePathIsDirectory $Path) {
+            # If the path is a directory and FileBrowser switch is used, generate a browsable list of files/directories
+            $child = Get-ChildItem -Path $Path
+            $pathSplit = $Path.Split(':')
+            $leaf = $pathSplit[1]
+            $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
 
-        $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt))
-        Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+            # Construct the HTML content for the file browser view
+            $htmlContent = [System.Text.StringBuilder]::new()
+
+            if ($leaf -ne '\' -and $leaf -ne '/') {
+                $pathSegments = $leaf -split '[\\/]+'
+                $baseEncodedSegments = $pathSegments | ForEach-Object {
+                    # Use [Uri]::EscapeDataString for encoding to ensure spaces are encoded as %20 and other special characters are properly encoded
+                    [Uri]::EscapeDataString($_)
+                }
+                $baseLink = $baseEncodedSegments -join '/'
+                $Item = Get-Item '..'
+                $ParentLink = $baseLink.TrimEnd('/').Substring(0, $baseLink.TrimEnd('/').LastIndexOf('/') + 1)
+
+                # Format .. as an HTML row
+                if ($windowsMode) {
+                    $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='lastWriteTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
+                } else {
+                    $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='lastWriteTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
+                }
+            } else {
+                $baseLink = ''
+            }
+            if (!$baselink.EndsWith('/')) {
+                $baselink = "$baselink/"
+            }
+            foreach ($item in $child) {
+                if ($item.PSIsContainer) {
+                    $size = ''
+                } else {
+                    $size = '{0:N2}KB' -f ($item.Length / 1KB)
+                }
+                $link = "$baseLink$([uri]::EscapeDataString($item.Name))"
+
+                # Format each item as an HTML row
+                if ($windowsMode) {
+                    $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='lastWriteTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
+                } else {
+                    $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='lastWriteTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
+                }
+            }
+
+            $Data = @{
+                Path        = $baseLink
+                windowsMode = $windowsMode.ToString().ToLower()
+                fileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
+            }
+
+            $podeRoot = Get-PodeModuleMiscPath
+            # Write the response
+            Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
+
+        } else {
+
+            if (Test-PodeIsPSCore) {
+                $content = (Get-Content -Path $Path -Raw -AsByteStream)
+            } else {
+                $content = (Get-Content -Path $Path -Raw -Encoding byte)
+            }
+
+            $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt))
+            Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+        }
     }
 }
 

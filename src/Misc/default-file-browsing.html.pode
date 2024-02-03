@@ -1,0 +1,142 @@
+<html style='background-color: #01b0c4' ;>
+
+<head>
+    <title>File Browser:$($Data.Path)</title>
+    <meta charset='utf-8'>
+    <style>
+
+        h3 {
+            font-family: 'Courier New', Courier, monospace;
+            /* Applies monospace font to <h2> */
+        }
+
+        /* Add CSS styles here for column widths */
+        .unixMode {
+            width: 40px;
+            text-align: left;
+            max-width: 40px;
+            min-width: 40px;
+        }
+
+        .mode {
+            width: 40px;
+            text-align: left;
+
+            max-width: 40px;
+            min-width: 40px;
+        }
+
+        .user {
+            width: 40px;
+            text-align: right;
+        }
+
+        .group {
+            width: 40px;
+            text-align: right;
+        }
+
+        .lastWriteTime {
+            width: 70px;
+            text-align: right;
+            max-width: 70px;
+            min-width: 70px;
+            /* Align text to the right */
+        }
+
+        .size {
+            width: 80px;
+            max-width: 80px;
+            min-width: 80px;
+            text-align: right;
+            /* Align text to the right */
+            padding-right: 20px;
+            /* Adds space to the right inside the Size cell */
+        }
+
+        .name {
+            width: 200px;
+            text-align: left;
+        }
+
+        a {
+            color: blue;
+            /* Or any color that fits your design */
+            text-decoration: none;
+            /* Removes underline */
+        }
+
+        a:hover {
+            text-decoration: underline;
+            /* Optional: underline on hover for visual feedback */
+        }
+
+
+        table {
+            /*    table-layout: fixed;*/
+            width: 100%;
+            font-family: 'Courier New', Courier, monospace;
+            /* Applies monospace font to the table */
+          /*   border-collapse: collapse;
+             Removes the space between borders */
+        }
+
+        th {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: bold;
+            /* Makes the header text bold */
+            /*   border-bottom: 1px solid #000;  Adds a solid line under the header */
+        }
+
+        td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+
+</head>
+<script>
+    // Example JavaScript to toggle between Windows and Unix mode
+    document.addEventListener('DOMContentLoaded', function () {
+        var WindowsMode = $($Data.windowsMode);
+        var tableContent = '';
+        if (WindowsMode) {
+            tableContent += '<tr> <th class="mode">Mode</th> <th class="lastWriteTime">LastWriteTime</th> <th class="size">Size</th> <th class="name">Name</th> </tr> <tr> <td class="mode">----</td>' +
+                '<td class="lastWriteTime">-------------</td> <td class="size">----</td> <td class="name">----</td> </tr>';
+        } else {
+            tableContent += '<tr> <th class="unixMode">UnixMode</th>  <th class="user">User</th> <th class="group">Group</th> <th class="lastWriteTime">LastWriteTime</th> <th class="size">Size</th> <th class="name">Name</th> </tr>' +
+                '<tr> <td class="unixMode">--------</td>  <td class="user">----</td> <td class="group">-----</td> <td class="lastWriteTime">-------------</td> <td class="size">----</td> <td class="name">----</td> </tr>';
+        }
+
+        // Insert the table content into the table body
+        document.getElementById('tableBody').innerHTML = tableContent;
+    });
+</script>
+
+<body style='color: white; '>
+
+    <div  >
+
+            <h3>Directory: $($Data.Path)</h3>
+
+            <table>
+                <tbody id="tableBody">
+                </tbody>
+                $($Data.fileContent)
+            </table>
+            <p style='text-align: center;
+            width: 100%;
+            font-size: 0.9em;
+            position: fixed;
+            bottom: 0px;'>
+                🧡 Powered by <a href='https://badgerati.github.io/Pode/'
+                    style='color: wheat; text-decoration: none;'>Pode</a>
+            </p>
+    </div>
+
+</body>
+
+</html>

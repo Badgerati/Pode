@@ -1381,7 +1381,7 @@ function Resolve-PodeOAReferences {
             }
         }
     }
-    return   $ComponentSchema
+    return $ComponentSchema
 }
 
 
