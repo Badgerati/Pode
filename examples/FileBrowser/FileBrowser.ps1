@@ -12,7 +12,7 @@ $directoryPath = "$FileBrowserPath/wwwFiles"
 if (-not (Test-Path -Path $directoryPath)) {
     New-Item -ItemType Directory -Path $directoryPath
 
-    for ($j = 1; $j -le 10; $i++) {
+    for ($j = 1; $j -le 10; $j++) {
         $DirName = 'folder_'+[Guid]::NewGuid().ToString()
         $DirPath = Join-Path -Path $directoryPath -ChildPath $DirName
         New-Item -ItemType Directory -Path $DirPath
