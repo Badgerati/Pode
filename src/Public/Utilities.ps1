@@ -39,14 +39,16 @@ function Close-PodeDisposable {
         if ($Close) {
             $Disposable.Close()
         }
-    } catch [exception] {
+    }
+    catch [exception] {
         if ($CheckNetwork -and (Test-PodeValidNetworkFailure $_.Exception)) {
             return
         }
 
         $_ | Write-PodeErrorLog
         throw $_.Exception
-    } finally {
+    }
+    finally {
         $Disposable.Dispose()
     }
 }
@@ -100,10 +102,12 @@ function Start-PodeStopwatch {
     try {
         $watch = [System.Diagnostics.Stopwatch]::StartNew()
         . $ScriptBlock
-    } catch {
+    }
+    catch {
         $_ | Write-PodeErrorLog
         throw $_.Exception
-    } finally {
+    }
+    finally {
         $watch.Stop()
         "[Stopwatch]: $($watch.Elapsed) [$($Name)]" | Out-PodeHost
     }
@@ -140,10 +144,12 @@ function Use-PodeStream {
 
     try {
         return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $Stream -Return -NoNewClosure)
-    } catch {
+    }
+    catch {
         $_ | Write-PodeErrorLog
         throw $_.Exception
-    } finally {
+    }
+    finally {
         $Stream.Dispose()
     }
 }
@@ -323,7 +329,8 @@ function Import-PodeModule {
             $modulePath = Join-PodeServerRoot -Folder ([System.IO.Path]::Combine('ps_modules', $Name)) -Root $rootPath
             if (Test-PodePath -Path $modulePath -NoStatus) {
                 $Path = (Get-ChildItem ([System.IO.Path]::Combine($modulePath, '*', "$($Name).ps*1")) -Recurse -Force | Select-Object -First 1).FullName
-            } else {
+            }
+            else {
                 $Path = Find-PodeModuleFile -Name $Name -ListAvailable
             }
         }
@@ -521,13 +528,16 @@ function Invoke-PodeScriptBlock {
     if ($Scoped) {
         if ($Splat) {
             $result = (& $ScriptBlock @Arguments)
-        } else {
+        }
+        else {
             $result = (& $ScriptBlock $Arguments)
         }
-    } else {
+    }
+    else {
         if ($Splat) {
             $result = (. $ScriptBlock @Arguments)
-        } else {
+        }
+        else {
             $result = (. $ScriptBlock $Arguments)
         }
     }
@@ -746,7 +756,8 @@ function Write-PodeHost {
 
     if ($ForegroundColor) {
         Write-Host -Object $Object -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
-    } else {
+    }
+    else {
         Write-Host -Object $Object -NoNewline:$NoNewLine
     }
 }
@@ -1151,8 +1162,8 @@ function ConvertFrom-PodeXML {
         $oHash = [ordered] @{ } # start with an ordered hashtable.
         #The order of elements is always significant regardless of what they are
         write-verbose "calling with $($node.LocalName)"
-        if ($null -ne $node.Attributes  ) #if there are elements
-        { # record all the attributes first in the ordered hash
+        if ($null -ne $node.Attributes  ) { #if there are elements
+            # record all the attributes first in the ordered hash
             $node.Attributes | ForEach-Object {
                 $oHash.$($Prefix + $_.FirstChild.parentNode.LocalName) = $_.FirstChild.value
             }
@@ -1170,15 +1181,16 @@ function ConvertFrom-PodeXML {
             #now we look at each node in turn.
             write-verbose "processing the '$($child.LocalName)'"
             $childName = $child.LocalName
-            if ($child -is [system.xml.xmltext])
-            { # if it is simple XML text
+            if ($child -is [system.xml.xmltext]) {
+                # if it is simple XML text
                 write-verbose "simple xml $childname"
                 $oHash.$childname += $child.InnerText
             }
             # if it has a #text child we may need to cope with attributes
             elseif ($child.FirstChild.Name -eq '#text' -and $child.ChildNodes.Count -eq 1) {
                 write-verbose 'text'
-                if ($null -ne $child.Attributes -and $KeepAttributes ) { #hah, an attribute
+                if ($null -ne $child.Attributes -and $KeepAttributes ) {
+                    #hah, an attribute
                     <#we need to record the text with the #text label and preserve all
 					the attributes #>
                     $aHash = [ordered]@{ }
@@ -1188,22 +1200,26 @@ function ConvertFrom-PodeXML {
                     #now we add the text with an explicit name
                     $aHash.'#text' += $child.'#text'
                     $oHash.$childname += $aHash
-                } else {
+                }
+                else {
                     #phew, just a simple text attribute.
                     $oHash.$childname += $child.FirstChild.InnerText
                 }
-            } elseif ($null -ne $child.'#cdata-section' )
-            # if it is a data section, a block of text that isnt parsed by the parser,
-            { # but is otherwise recognized as markup
+            }
+            elseif ($null -ne $child.'#cdata-section' )
+            { # if it is a data section, a block of text that isnt parsed by the parser,
+                # but is otherwise recognized as markup
                 write-verbose 'cdata section'
                 $oHash.$childname = $child.'#cdata-section'
-            } elseif ($child.ChildNodes.Count -gt 1 -and
+            }
+            elseif ($child.ChildNodes.Count -gt 1 -and
                         ($child | Get-Member -MemberType Property).Count -eq 1) {
                 $oHash.$childname = @()
                 foreach ($grandchild in $child.ChildNodes) {
                     $oHash.$childname += (ConvertFrom-PodeXML $grandchild)
                 }
-            } else {
+            }
+            else {
                 # create an array as a value  to the hashtable element
                 $oHash.$childname += (ConvertFrom-PodeXML $child)
             }

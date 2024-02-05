@@ -1,9 +1,9 @@
 Describe 'REST API Requests' {
     BeforeAll {
-    $splatter = @{}
+        $splatter = @{}
 
-    if ($PSVersionTable.PSVersion.Major -le 5) {
-        Add-Type @"
+        if ($PSVersionTable.PSVersion.Major -le 5) {
+            Add-Type @'
         using System.Net;
         using System.Security.Cryptography.X509Certificates;
         public class TrustAllCertsPolicy : ICertificatePolicy {
@@ -13,12 +13,12 @@ Describe 'REST API Requests' {
                 return true;
             }
         }
-"@
-        [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-    }
-    else {
-        $splatter.SkipCertificateCheck = $true
-    }
+'@
+            [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+        }
+        else {
+            $splatter.SkipCertificateCheck = $true
+        }
 
 
         $Port = 50010
@@ -90,11 +90,11 @@ Describe 'REST API Requests' {
                 }
 
                 Add-PodeRoute -Method * -Path '/all' -ScriptBlock {
-                    Write-PodeJsonResponse -Value @{ Result ='OK' }
+                    Write-PodeJsonResponse -Value @{ Result = 'OK' }
                 }
 
                 Add-PodeRoute -Method Get -Path '/api/*/hello' -ScriptBlock {
-                    Write-PodeJsonResponse -Value @{ Result ='OK' }
+                    Write-PodeJsonResponse -Value @{ Result = 'OK' }
                 }
 
                 Add-PodeRoute -Method Get -Path '/imported/func/outer' -ScriptBlock {
@@ -183,7 +183,7 @@ Describe 'REST API Requests' {
     }
 
     It 'decodes encoded payload parameter - gzip' {
-        $data = @{ username = "rick" }
+        $data = @{ username = 'rick' }
         $message = ($data | ConvertTo-Json)
 
         # compress the message using gzip
@@ -200,7 +200,7 @@ Describe 'REST API Requests' {
     }
 
     It 'decodes encoded payload parameter - deflate' {
-        $data = @{ username = "rick" }
+        $data = @{ username = 'rick' }
         $message = ($data | ConvertTo-Json)
 
         # compress the message using deflate
@@ -217,7 +217,7 @@ Describe 'REST API Requests' {
     }
 
     It 'decodes encoded payload parameter forced to gzip' {
-        $data = @{ username = "rick" }
+        $data = @{ username = 'rick' }
         $message = ($data | ConvertTo-Json)
 
         # compress the message using gzip

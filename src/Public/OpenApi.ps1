@@ -194,7 +194,8 @@ function Enable-PodeOpenApi {
     $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].Path = $Path
     if ($OpenApiVersion.StartsWith('3.0')) {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.version = 3.0
-    } elseif ($OpenApiVersion.StartsWith('3.1')) {
+    }
+    elseif ($OpenApiVersion.StartsWith('3.1')) {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.version = 3.1
     }
 
@@ -221,7 +222,8 @@ function Enable-PodeOpenApi {
         #Test-Json has been introduced with version 6.1.0
         if ($PSVersionTable.PSVersion -ge [version]'6.1.0') {
             $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaValidation = $EnableSchemaValidation.IsPresent
-        } else {
+        }
+        else {
             throw 'Schema validation required Powershell version 6.1.0 or greater'
         }
     }
@@ -239,7 +241,8 @@ function Enable-PodeOpenApi {
 
         if (!$mode) {
             $mode = $meta.Mode
-        } elseif (@('download', 'view') -inotcontains $mode) {
+        }
+        elseif (@('download', 'view') -inotcontains $mode) {
             Write-PodeHtmlResponse -Value "Mode $mode not valid" -StatusCode 400
             return
         }
@@ -249,15 +252,18 @@ function Enable-PodeOpenApi {
                 return
             }
             $format = 'json'
-        } elseif ($WebEvent.path -ilike '*.yaml') {
+        }
+        elseif ($WebEvent.path -ilike '*.yaml') {
             if ($format) {
                 Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description 'Format query not valid when the file extension is used'
                 return
             }
             $format = 'yaml'
-        } elseif (!$format) {
+        }
+        elseif (!$format) {
             $format = $meta.MarkupLanguage.ToLower()
-        } elseif (@('yaml', 'json', 'json-Compress') -inotcontains $format) {
+        }
+        elseif (@('yaml', 'json', 'json-Compress') -inotcontains $format) {
             Show-PodeErrorPage -Code 400 -ContentType 'text/html' -Description "Format $format not valid"
             return
         }
@@ -279,10 +285,12 @@ function Enable-PodeOpenApi {
         if ($format -ieq 'yaml') {
             if ($mode -ieq 'view') {
                 Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
-            } else {
+            }
+            else {
                 Write-PodeYamlResponse -Value $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
             }
-        } else {
+        }
+        else {
             Write-PodeJsonResponse -Value $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth -NoCompress:$meta.NoCompress
         }
     }
@@ -303,7 +311,8 @@ function Enable-PodeOpenApi {
     #set new DefaultResponses
     if ($NoDefaultResponses.IsPresent) {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = @{}
-    } elseif ($DefaultResponses) {
+    }
+    elseif ($DefaultResponses) {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = $DefaultResponses
     }
     $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.enabled = $true
@@ -476,7 +485,8 @@ function Get-PodeOADefinition {
             RouteFilter    = $RouteFilter
             RestrictRoutes = $RestrictRoutes
         }
-    } else {
+    }
+    else {
         $meta = @{}
     }
     if ($Title) {
@@ -617,7 +627,8 @@ function Add-PodeOAResponse {
     # override status code with default
     if ($Default) {
         $code = 'default'
-    } else {
+    }
+    else {
         $code = "$($StatusCode)"
     }
 
@@ -923,14 +934,16 @@ function New-PodeOARequestBody {
                     foreach ($v in $e[$key].Keys) {
                         if ($v -ieq 'headers') {
                             $elems.headers = ConvertTo-PodeOAHeaderProperties -Headers $e[$key].headers
-                        } else {
+                        }
+                        else {
                             $elems.$v = $e[$key].$v
                         }
                     }
                     $r.$key = $elems
                 }
                 $param.Content.$($Content.keys[0]).encoding = $r
-            } else {
+            }
+            else {
                 throw 'The encoding attribute is only applicable to multipart and application/x-www-form-urlencoded request bodies.'
             }
         }
@@ -993,7 +1006,8 @@ function Test-PodeOAJsonSchemaCompliance {
         if (! ($PodeContext.Server.OpenApi.Definitions.Keys -ccontains $DefinitionTag)) {
             throw "DefinitionTag $t is not defined"
         }
-    } else {
+    }
+    else {
         $DefinitionTag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag
     }
 
@@ -1011,7 +1025,8 @@ function Test-PodeOAJsonSchemaCompliance {
                 $message += $item
             }
         }
-    } else {
+    }
+    else {
         $result = $false
         $message = 'Validation of schema with oneof or anyof is not supported'
     }
@@ -1242,10 +1257,12 @@ function ConvertTo-PodeOAParameter {
             }
             if ($Example ) {
                 $prop.content.$ContentType.example = $Example
-            } elseif ($Examples) {
+            }
+            elseif ($Examples) {
                 $prop.content.$ContentType.examples = $Examples
             }
-        } else {
+        }
+        else {
             $prop.schema = [ordered]@{
                 '$ref' = "#/components/schemas/$($Schema )"
             }
@@ -1292,7 +1309,8 @@ function ConvertTo-PodeOAParameter {
             }
 
         }
-    } elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
+    }
+    elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
         Test-PodeOAComponentInternal -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
         $prop = [ordered]@{
@@ -1303,12 +1321,14 @@ function ConvertTo-PodeOAParameter {
                 Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Reference -Append
             }
         }
-    } else {
+    }
+    else {
 
         if (!$Name ) {
             if ($Property.name) {
                 $Name = $Property.name
-            } else {
+            }
+            else {
                 throw 'Parameter requires a Name'
             }
         }
@@ -1330,7 +1350,8 @@ function ConvertTo-PodeOAParameter {
             if ($Property.format) {
                 $sch.items.format = $Property.format
             }
-        } else {
+        }
+        else {
             $sch.type = $Property.type
             if ($Property.format) {
                 $sch.format = $Property.format
@@ -1345,7 +1366,8 @@ function ConvertTo-PodeOAParameter {
                     schema = $sch
                 }
             }
-        } else {
+        }
+        else {
             $prop.schema = $sch
         }
 
@@ -1358,19 +1380,22 @@ function ConvertTo-PodeOAParameter {
 
         if ($Description ) {
             $prop.description = $Description
-        } elseif ($Property.description) {
+        }
+        elseif ($Property.description) {
             $prop.description = $Property.description
         }
 
         if ($Required.IsPresent ) {
             $prop.required = $Required.IsPresent
-        } elseif ($Property.required) {
+        }
+        elseif ($Property.required) {
             $prop.required = $Property.required
         }
 
         if ($Deprecated.IsPresent ) {
             $prop.deprecated = $Deprecated.IsPresent
-        } elseif ($Property.deprecated) {
+        }
+        elseif ($Property.deprecated) {
             $prop.deprecated = $Property.deprecated
         }
 
@@ -1416,7 +1441,8 @@ function ConvertTo-PodeOAParameter {
 
             if ($Example ) {
                 $prop['example'] = $Example
-            } elseif ($Examples) {
+            }
+            elseif ($Examples) {
                 $prop['examples'] = $Examples
             }
 
@@ -1427,14 +1453,17 @@ function ConvertTo-PodeOAParameter {
             if ($Property.enum) {
                 if ($Property.array) {
                     $prop.schema.items['enum'] = $Property.enum
-                } else {
+                }
+                else {
                     $prop.schema['enum'] = $Property.enum
                 }
             }
-        } else {
+        }
+        else {
             if ($Example ) {
                 $prop.content.$ContentType.example = $Example
-            } elseif ($Examples) {
+            }
+            elseif ($Examples) {
                 $prop.content.$ContentType.examples = $Examples
             }
         }
@@ -1755,7 +1784,8 @@ function Enable-PodeOAViewer {
         Add-PodeStaticRoute -Path  $meta.SwaggerEditorDist -Source $swaggerEditorPath -EndpointName $EndpointName
 
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
-    } elseif ($Bookmarks.IsPresent) {
+    }
+    elseif ($Bookmarks.IsPresent) {
         # set a default path
         $Path = Protect-PodeValue -Value $Path -Default '/bookmarks'
         if ([string]::IsNullOrWhiteSpace($Title)) {
@@ -1797,7 +1827,8 @@ function Enable-PodeOAViewer {
             $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.bookmarks.route += $route
         }
 
-    } else {
+    }
+    else {
         if ($Type -ieq 'RapiPdf' -and (Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag)) {
             throw "The Document tool RapidPdf doesn't support OpenAPI 3.1"
         }
@@ -1948,7 +1979,8 @@ function Add-PodeOAExternalDoc {
                 $param.description = $Description
             }
             $PodeContext.Server.OpenAPI.Definitions[$tag].externalDocs = $param
-        } else {
+        }
+        else {
             $PodeContext.Server.OpenAPI.Definitions[$tag].externalDocs = $ExternalDoc
         }
     }
@@ -2127,7 +2159,8 @@ function Add-PodeOAInfo {
     if ($LicenseUrl) {
         if ( $Info.license ) {
             $Info.license.url = $LicenseUrl
-        } else {
+        }
+        else {
             throw 'The OpenAPI property license.name is required. Use -LicenseName'
         }
     }
@@ -2135,21 +2168,25 @@ function Add-PodeOAInfo {
 
     if ($Title) {
         $Info.title = $Title
-    } elseif (  $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.title) {
+    }
+    elseif (  $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.title) {
         $Info.title = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.title
     }
 
     if ($Version) {
         $Info.version = $Version
-    } elseif ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.version) {
+    }
+    elseif ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.version) {
         $Info.version = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.version
-    } else {
+    }
+    else {
         $Info.version = '1.0.0'
     }
 
     if ($Description ) {
         $Info.description = $Description
-    } elseif ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.description) {
+    }
+    elseif ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.description) {
         $Info.description = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].info.description
     }
 
@@ -2276,7 +2313,8 @@ function New-PodeOAExample {
             Test-PodeOAComponentInternal -Field examples -DefinitionTag $DefinitionTag -Name $Reference -PostValidation
             $Name = $Reference
             $Example = [ordered]@{'$ref' = "#/components/examples/$Reference" }
-        } else {
+        }
+        else {
             if ( $ExternalValue -and $Value) {
                 throw '-Value or -ExternalValue are mutually exclusive'
             }
@@ -2289,9 +2327,11 @@ function New-PodeOAExample {
             }
             if ($Value) {
                 $Example.value = $Value
-            } elseif ($ExternalValue) {
+            }
+            elseif ($ExternalValue) {
                 $Example.externalValue = $ExternalValue
-            } else {
+            }
+            else {
                 throw '-Value or -ExternalValue are mandatory'
             }
         }
@@ -2300,7 +2340,8 @@ function New-PodeOAExample {
             $param.$MediaType = [ordered]@{
                 $Name = $Example
             }
-        } else {
+        }
+        else {
             $param.$Name = $Example
         }
     }
@@ -2310,11 +2351,13 @@ function New-PodeOAExample {
         if ($ParamsList) {
             if ($ParamsList.keys -contains $param.Keys[0]) {
                 $param.Values[0].GetEnumerator() | ForEach-Object { $ParamsList[$param.Keys[0]].$($_.Key) = $_.Value }
-            } else {
+            }
+            else {
                 $param.GetEnumerator() | ForEach-Object { $ParamsList[$_.Key] = $_.Value }
             }
             return $ParamsList
-        } else {
+        }
+        else {
             return [System.Collections.Specialized.OrderedDictionary] $param
         }
     }
@@ -2425,7 +2468,8 @@ function New-PodeOAEncodingObject {
     end {
         if ($collectedInput) {
             return $collectedInput + $encoding
-        } else {
+        }
+        else {
             return $encoding
         }
     }
@@ -2554,7 +2598,8 @@ function Add-PodeOACallBack {
                 $r.OpenApi.CallBacks[$tag].$Name = @{
                     '$ref' = "#/components/callbacks/$Reference"
                 }
-            } else {
+            }
+            else {
                 if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
                     $r.OpenApi.CallBacks[$tag] = [ordered]@{}
                 }
@@ -2686,7 +2731,8 @@ function New-PodeOAResponse {
         # override status code with default
         if ($Default) {
             $code = 'default'
-        } else {
+        }
+        else {
             $code = "$($StatusCode)"
         }
         $response = @{}
@@ -2708,7 +2754,8 @@ function New-PodeOAResponse {
                 $response[$tag].GetEnumerator() | ForEach-Object { $ResponseList[$tag][$_.Key] = $_.Value }
             }
             return $ResponseList
-        } else {
+        }
+        else {
             return  $response
         }
     }
@@ -2846,14 +2893,16 @@ function New-PodeOAContentMediaType {
                         'partContentMediaType' = $PartContentMediaType
                     }
                 }
-            } else {
+            }
+            else {
                 $Content = @{'__upload' = @{
                         'contentEncoding' = $ContentEncoding
                     }
                 }
 
             }
-        } else {
+        }
+        else {
             if ($null -eq $Content ) {
                 $Content = @{}
             }
@@ -2877,7 +2926,8 @@ function New-PodeOAContentMediaType {
                 $props[$media].__uniqueItems = $UniqueItems.IsPresent
             }
 
-        } else {
+        }
+        else {
             $props[$media] = $Content
         }
     }
@@ -3000,7 +3050,8 @@ function New-PodeOAResponseLink {
                     '$ref' = "#/components/links/$Reference"
                 }
             }
-        } else {
+        }
+        else {
             $link = [ordered]@{
                 $Name = New-PodeOAResponseLinkInternal -Params $PSBoundParameters
             }
@@ -3012,7 +3063,8 @@ function New-PodeOAResponseLink {
         if ($LinkList) {
             $link.GetEnumerator() | ForEach-Object { $LinkList[$_.Key] = $_.Value }
             return $LinkList
-        } else {
+        }
+        else {
             return [System.Collections.Specialized.OrderedDictionary] $link
         }
     }
@@ -3215,7 +3267,8 @@ function New-PodeOAServerEndpoint {
     end {
         if ($ServerEndpointList) {
             return $collectedInput + $lUrl
-        } else {
+        }
+        else {
             return $lUrl
         }
     }
@@ -3352,7 +3405,8 @@ function Select-PodeOADefinition {
     }
     if (Test-PodeIsEmpty -Value $Tag) {
         $Tag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag
-    } else {
+    }
+    else {
         $Tag = Test-PodeOADefinitionTag -Tag $Tag
     }
     # check for scoped vars
@@ -3403,7 +3457,8 @@ function Test-PodeOADefinitionTag {
             }
         }
         return $Tag
-    } else {
+    }
+    else {
         return $PodeContext.Server.OpenAPI.SelectedDefinitionTag
     }
 }
@@ -3465,7 +3520,8 @@ function Test-PodeOADefinition {
             }
             try {
                 Get-PodeOADefinition -DefinitionTag $tag | Out-Null
-            } catch {
+            }
+            catch {
                 $result.issues[$tag].definition = $_.Exception.Message
             }
         }

@@ -1,6 +1,6 @@
 param(
     [string]
-    $Version ='0.0.0',
+    $Version = '0.0.0',
     [string]
     [ValidateSet(  'None', 'Normal' , 'Detailed', 'Diagnostic')]
     $PesterVerbosity = 'Normal'
@@ -46,7 +46,8 @@ function Test-PodeBuildCommand($cmd) {
 
     if (Test-PodeBuildIsWindows) {
         $path = (Get-Command $cmd -ErrorAction Ignore)
-    } else {
+    }
+    else {
         $path = (which $cmd)
     }
 
@@ -64,12 +65,15 @@ function Invoke-PodeBuildInstall($name, $version) {
         if (Test-PodeBuildCommand 'choco') {
             choco install $name --version $version -y
         }
-    } else {
+    }
+    else {
         if (Test-PodeBuildCommand 'brew') {
             brew install $name
-        } elseif (Test-PodeBuildCommand 'apt-get') {
+        }
+        elseif (Test-PodeBuildCommand 'apt-get') {
             sudo apt-get install $name -y
-        } elseif (Test-PodeBuildCommand 'yum') {
+        }
+        elseif (Test-PodeBuildCommand 'yum') {
             sudo yum install $name -y
         }
     }
@@ -102,13 +106,15 @@ function Invoke-PodeBuildDotnetBuild($target) {
     # Skip build if not compatible
     if (  $isCompatible) {
         Write-Host "SDK for target framework $target is compatible with the installed SDKs"
-    } else {
+    }
+    else {
         Write-Host "SDK for target framework $target is not compatible with the installed SDKs. Skipping build."
         return
     }
     if ($Version) {
         $AssemblyVersion = "-p:Version=$Version"
-    } else {
+    }
+    else {
         $AssemblyVersion = ''
     }
     dotnet build --configuration Release --self-contained --framework $target $AssemblyVersion
@@ -138,7 +144,7 @@ Task StampVersion {
 
 # Synopsis: Generating a Checksum of the Zip
 Task PrintChecksum {
-    $Script:Checksum =(Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
+    $Script:Checksum = (Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
     Write-Host "Checksum: $($Checksum)"
 }
 
@@ -165,10 +171,11 @@ Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
 # Synopsis: Install dependencies for compiling/building
 Task BuildDeps {
     # install dotnet
-    if (Test-PodeBuildIsWindows){
-        $dotnet="dotnet"
-    }else{
-        $dotnet="dotnet-sdk-$($Versions.DotNet)"
+    if (Test-PodeBuildIsWindows) {
+        $dotnet = 'dotnet'
+    }
+    else {
+        $dotnet = "dotnet-sdk-$($Versions.DotNet)"
     }
     if (!(Test-PodeBuildCommand 'dotnet')) {
         Invoke-PodeBuildInstall $dotnet $Versions.DotNet
@@ -212,7 +219,7 @@ Task Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
-    Write-Host "Powershell Version:"
+    Write-Host 'Powershell Version:'
     $PSVersionTable.PSVersion
     Push-Location ./src/Listener
 
@@ -221,7 +228,8 @@ Task Build BuildDeps, {
         Invoke-PodeBuildDotnetBuild -target 'net6.0'
         Invoke-PodeBuildDotnetBuild -target 'net7.0'
         Invoke-PodeBuildDotnetBuild -target 'net8.0'
-    } finally {
+    }
+    finally {
         Pop-Location
     }
 }
@@ -245,13 +253,13 @@ Task Compress StampVersion, {
     }
     # create the pkg dir
     New-Item -Path $path -ItemType Directory -Force | Out-Null
-    Compress-Archive -Path "./pkg" -DestinationPath "$path/$Version-Binaries.zip"
+    Compress-Archive -Path './pkg' -DestinationPath "$path/$Version-Binaries.zip"
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
 Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { choco pack ./packers/choco/pode.nuspec }
-    Move-Item -Path "pode.$Version.nupkg" -Destination "./deliverable"
+    Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
 
 # Synopsis: Create docker tags
@@ -262,7 +270,7 @@ Task DockerPack -If (((Test-PodeBuildIsWindows) -or $IsLinux) ) {
     }
     catch {
         # If Docker is not available, exit the task
-        Write-Warning "Docker is not installed or not available in the PATH. Exiting task."
+        Write-Warning 'Docker is not installed or not available in the PATH. Exiting task.'
         return
     }
     docker build -t badgerati/pode:$Version -f ./Dockerfile .
@@ -333,7 +341,8 @@ Task Test Build, TestDeps, {
         $configuration.CodeCoverage.Enabled = $true
         $configuration.CodeCoverage.Path = $srcFiles
         $Script:TestStatus = Invoke-Pester   -Configuration $configuration
-    } else {
+    }
+    else {
         $configuration.Output.Verbosity = 'Detailed'
         $Script:TestStatus = Invoke-Pester  -Configuration $configuration
     }
@@ -355,7 +364,8 @@ Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
         Write-Host "Pushing coverage for $($branch) from $($service)"
         $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch
         Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
-    } catch {
+    }
+    catch {
         $_.Exception | Out-Default
     }
 }
@@ -420,7 +430,7 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 }
 
 
-Task Clean  {
+Task Clean {
     $path = './deliverable'
     if (Test-Path -Path $path -PathType Container) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -441,22 +451,22 @@ Task Clean  {
     Write-Host "$path Cleanup done"
 }
 
-Task Install-Module  {
+Task Install-Module {
 
     $path = './pkg'
 
-    if ($Version){
+    if ($Version) {
 
         if (! (Test-Path $path)) {
             Invoke-Build Pack -Version $Version
         }
-        if ($IsWindows -or (($PSVersionTable.Keys -contains "PSEdition") -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
-            $PSPaths = $ENV:PSModulePath -split ";"
+        if ($IsWindows -or (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
+            $PSPaths = $ENV:PSModulePath -split ';'
         }
         else {
-            $PSPaths = $ENV:PSModulePath -split ":"
+            $PSPaths = $ENV:PSModulePath -split ':'
         }
-        $dest = join-path -Path  $PSPaths[0]  -ChildPath "Pode" -AdditionalChildPath "$Version"
+        $dest = join-path -Path  $PSPaths[0]  -ChildPath 'Pode' -AdditionalChildPath "$Version"
 
         if (Test-Path $dest) {
             Remove-Item -Path $dest -Recurse -Force | Out-Null
@@ -474,37 +484,40 @@ Task Install-Module  {
         Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.psm1') -Destination $dest -Force | Out-Null
         Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.psd1') -Destination $dest -Force | Out-Null
         Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.Internal.psm1') -Destination $dest -Force | Out-Null
-        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.Internal.psd1') -Destination $dest -Force  | Out-Null
-        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'LICENSE.txt') -Destination $dest -Force   | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.Internal.psd1') -Destination $dest -Force | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'LICENSE.txt') -Destination $dest -Force | Out-Null
 
         Write-Host "Deployed to $dest"
-    }else{
-        Write-Error "Parameter -Version is required"
+    }
+    else {
+        Write-Error 'Parameter -Version is required'
     }
 
 }
 
 
-Task Remove-Module  {
+Task Remove-Module {
 
-    if ($Version){
-        if ($IsWindows -or (($PSVersionTable.Keys -contains "PSEdition") -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
-            $PSPaths = $ENV:PSModulePath -split ";"
+    if ($Version) {
+        if ($IsWindows -or (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
+            $PSPaths = $ENV:PSModulePath -split ';'
         }
         else {
-            $PSPaths = $ENV:PSModulePath -split ":"
+            $PSPaths = $ENV:PSModulePath -split ':'
         }
-        $dest = join-path -Path  $PSPaths[0]  -ChildPath "Pode" -AdditionalChildPath "$Version"
+        $dest = join-path -Path  $PSPaths[0]  -ChildPath 'Pode' -AdditionalChildPath "$Version"
 
         if (Test-Path $dest) {
             Write-Host "Deleting module from $dest"
             Remove-Item -Path $dest -Recurse -Force | Out-Null
-        }else{
+        }
+        else {
             Write-Error "Directory $dest doesn't exist"
         }
 
-    }else{
-        Write-Error "Parameter -Version is required"
+    }
+    else {
+        Write-Error 'Parameter -Version is required'
     }
 
 }

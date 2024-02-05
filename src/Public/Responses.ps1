@@ -18,6 +18,9 @@ The supplied value must match the valid ContentType format, e.g. application/jso
 .PARAMETER EndpointName
 Optional EndpointName that the static route was creating under.
 
+.PARAMETER FileBrowser
+If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'downloads/installer.exe'
 
@@ -46,7 +49,11 @@ function Set-PodeResponseAttachment {
 
         [Parameter()]
         [string]
-        $EndpointName
+        $EndpointName,
+
+        [switch]
+        $FileBrowser
+
     )
 
     # already sent? skip
@@ -71,6 +78,13 @@ function Set-PodeResponseAttachment {
         return
     }
 
+    # deal with file browsing
+    if ($FileBrowser.IsPresent -and (Test-PodePathIsDirectory $_path)) {
+        $RelativePath = Get-PodeRelativePath -Path $_path -JoinRoot
+        Write-PodeDirectoryResponseInternal  -RelativePath $RelativePath
+        return
+    }
+
     $filename = Get-PodeFileName -Path $_path
     $ext = Get-PodeFileExtension -Path $_path -TrimPeriod
 
@@ -78,7 +92,8 @@ function Set-PodeResponseAttachment {
         # setup the content type and disposition
         if (!$ContentType) {
             $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
-        } else {
+        }
+        else {
             $WebEvent.Response.ContentType = $ContentType
         }
 
@@ -88,7 +103,8 @@ function Set-PodeResponseAttachment {
         if (!$WebEvent.Streamed) {
             if (Test-PodeIsPSCore) {
                 $content = (Get-Content -Path $_path -Raw -AsByteStream)
-            } else {
+            }
+            else {
                 $content = (Get-Content -Path $_path -Raw -Encoding byte)
             }
 
@@ -112,7 +128,8 @@ function Set-PodeResponseAttachment {
                 $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
             }
         }
-    } finally {
+    }
+    finally {
         Close-PodeDisposable -Disposable $fs
     }
 }
@@ -224,7 +241,8 @@ function Write-PodeTextResponse {
     if (!$WebEvent.Streamed) {
         if ($isStringValue) {
             $res.Body = $Value
-        } else {
+        }
+        else {
             $res.Body = $Bytes
         }
     }
@@ -262,7 +280,8 @@ function Write-PodeTextResponse {
                         if ([int]$range.End -gt 0) {
                             $Bytes[$($size - $range.End)..($size - 1)]
                             $lengths += "$($size - $range.End)-$($size - 1)/$($size)"
-                        } else {
+                        }
+                        else {
                             $lengths += "0-0/$($size)"
                         }
                     }
@@ -294,7 +313,8 @@ function Write-PodeTextResponse {
                 $stream.Close()
                 $ms.Position = 0
                 $Bytes = $ms.ToArray()
-            } finally {
+            }
+            finally {
                 if ($null -ne $stream) {
                     $stream.Close()
                 }
@@ -315,14 +335,16 @@ function Write-PodeTextResponse {
             $ms = New-Object -TypeName System.IO.MemoryStream
             $ms.Write($Bytes, 0, $Bytes.Length)
             $ms.WriteTo($res.OutputStream)
-        } catch {
+        }
+        catch {
             if ((Test-PodeValidNetworkFailure $_.Exception)) {
                 return
             }
 
             $_ | Write-PodeErrorLog
             throw
-        } finally {
+        }
+        finally {
             if ($null -ne $ms) {
                 $ms.Close()
             }
@@ -410,101 +432,54 @@ function Write-PodeFileResponse {
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # test the file path, and set status accordingly
-    if (! $FileBrowser.isPresent -and !(Test-PodePath $Path -FailOnDirectory)) {
+    if ( !$FileBrowser.isPresent -and !(Test-PodePath $Path -FailOnDirectory)) {
         return
     }
 
-    # are we dealing with a dynamic file for the view engine? (ignore html)
-    $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
-
-    # generate dynamic content
-    if (![string]::IsNullOrWhiteSpace($mainExt) -and (
-        ($mainExt -ieq 'pode') -or
-        ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
-        )) {
-        $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
-
-        # get the sub-file extension, if empty, use original
-        $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
-        $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
-
-        $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
-        Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
+    if ( Test-PodePathIsDirectory $Path) {
+        Write-PodeDirectoryResponseInternal -RelativePath $Path
+    }
+    else {
+        Write-PodeFileResponseInternal -RelativePath $Path -Data $Data -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
     }
 
-    # this is a static file
-    else {
-        if ( Test-PodePathIsDirectory $Path) {
-            # If the path is a directory and FileBrowser switch is used, generate a browsable list of files/directories
-            $child = Get-ChildItem -Path $Path
-            $pathSplit = $Path.Split(':')
-            $leaf = $pathSplit[1]
-            $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
+}
 
-            # Construct the HTML content for the file browser view
-            $htmlContent = [System.Text.StringBuilder]::new()
 
-            if ($leaf -ne '\' -and $leaf -ne '/') {
-                $pathSegments = $leaf -split '[\\/]+'
-                $baseEncodedSegments = $pathSegments | ForEach-Object {
-                    # Use [Uri]::EscapeDataString for encoding to ensure spaces are encoded as %20 and other special characters are properly encoded
-                    [Uri]::EscapeDataString($_)
-                }
-                $baseLink = $baseEncodedSegments -join '/'
-                $Item = Get-Item '..'
-                $ParentLink = $baseLink.TrimEnd('/').Substring(0, $baseLink.TrimEnd('/').LastIndexOf('/') + 1)
+<#
+.SYNOPSIS
+Serves a directory listing as a web page.
 
-                # Format .. as an HTML row
-                if ($windowsMode) {
-                    $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='lastWriteTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
-                } else {
-                    $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='lastWriteTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
-                }
-            } else {
-                $baseLink = ''
-            }
-            if (!$baselink.EndsWith('/')) {
-                $baselink = "$baselink/"
-            }
-            foreach ($item in $child) {
-                if ($item.PSIsContainer) {
-                    $size = ''
-                } else {
-                    $size = '{0:N2}KB' -f ($item.Length / 1KB)
-                }
-                $link = "$baseLink$([uri]::EscapeDataString($item.Name))"
+.DESCRIPTION
+The Write-PodeDirectoryResponse function generates an HTML response that lists the contents of a specified directory,
+allowing for browsing of files and directories. It supports both Windows and Unix-like environments by adjusting the
+display of file attributes accordingly. If the path is a directory, it generates a browsable HTML view; otherwise, it
+serves the file directly.
 
-                # Format each item as an HTML row
-                if ($windowsMode) {
-                    $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='lastWriteTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
-                } else {
-                    $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='lastWriteTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
-                }
-            }
+.PARAMETER Path
+The path to the directory that should be displayed. This path is resolved and used to generate a list of contents.
 
-            $Data = @{
-                Path        = $baseLink
-                windowsMode = $windowsMode.ToString().ToLower()
-                fileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
-            }
+.EXAMPLE
+Write-PodeDirectoryResponse -Path './static'
 
-            $podeRoot = Get-PodeModuleMiscPath
-            # Write the response
-            Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
+Generates and serves an HTML page that lists the contents of the './static' directory, allowing users to click through files and directories.
+#>
+function Write-PodeDirectoryResponse {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [ValidateNotNull()]
+        [string]
+        $Path
+    )
+    # resolve for relative path
+    $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
 
-        } else {
-
-            if (Test-PodeIsPSCore) {
-                $content = (Get-Content -Path $Path -Raw -AsByteStream)
-            } else {
-                $content = (Get-Content -Path $Path -Raw -Encoding byte)
-            }
-
-            $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt))
-            Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
-        }
+    if (Test-PodePathIsDirectory -Path $RelativePath ) {
+        Write-PodeDirectoryResponseInternal -RelativePath $RelativePath
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -561,7 +536,8 @@ function Write-PodeCsvResponse {
 
                 if (Test-PodeIsPSCore) {
                     $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
-                } else {
+                }
+                else {
                     $Value = ($Value | ConvertTo-Csv -Delimiter ',' -NoTypeInformation)
                 }
 
@@ -777,7 +753,8 @@ function Write-PodeJsonResponse {
             if ($Value -isnot [string]) {
                 if ($Depth -le 0) {
                     $Value = (ConvertTo-Json -InputObject $Value -Compress:(!$NoCompress))
-                } else {
+                }
+                else {
                     $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress:(!$NoCompress))
                 }
             }
@@ -930,7 +907,8 @@ function Write-PodeYamlResponse {
             if ($Value -isnot [string]) {
                 if ( $Depth -gt 0) {
                     $Value = ConvertTo-PodeYaml -InputObject $Value -Depth $Depth
-                } else {
+                }
+                else {
                     $Value = ConvertTo-PodeYaml -InputObject $Value
                 }
             }
@@ -1017,7 +995,8 @@ function Write-PodeViewResponse {
         foreach ($name in (Get-PodeFlashMessageNames)) {
             $Data.flash[$name] = (Get-PodeFlashMessage -Name $name)
         }
-    } elseif ($null -eq $Data['flash']) {
+    }
+    elseif ($null -eq $Data['flash']) {
         $Data['flash'] = @{}
     }
 
@@ -1242,7 +1221,8 @@ function Move-PodeResponseUrl {
 
     if ($Moved) {
         Set-PodeResponseStatus -Code 301 -Description 'Moved'
-    } else {
+    }
+    else {
         Set-PodeResponseStatus -Code 302 -Description 'Redirect'
     }
 }
@@ -1664,7 +1644,8 @@ function Send-PodeSignal {
     if ($Value -isnot [string]) {
         if ($Depth -le 0) {
             $Value = (ConvertTo-Json -InputObject $Value -Compress)
-        } else {
+        }
+        else {
             $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress)
         }
     }
@@ -1687,7 +1668,8 @@ function Send-PodeSignal {
     # broadcast or direct?
     if ($Mode -iin @('Auto', 'Broadcast')) {
         $PodeContext.Server.Signals.Listener.AddServerSignal($Value, $Path, $ClientId)
-    } else {
+    }
+    else {
         $SignalEvent.Response.Write($Value)
     }
 }

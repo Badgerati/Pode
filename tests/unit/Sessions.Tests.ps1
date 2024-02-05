@@ -1,5 +1,5 @@
 BeforeAll {
-    $path = $PSCommandPath 
+    $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 
@@ -141,9 +141,9 @@ Describe 'Set-PodeSessionDataHash' {
 }
 
 Describe 'New-PodeSession' {
-    BeforeAll{
-    Mock 'Invoke-PodeScriptBlock' { return 'value' }
-}
+    BeforeAll {
+        Mock 'Invoke-PodeScriptBlock' { return 'value' }
+    }
     It 'Creates a new session object' {
         $WebEvent = @{
             Session = @{}

@@ -24,10 +24,10 @@ Describe 'Add-PodeEndpoint' {
     }
 
     Context 'Valid parameters supplied' {
-        BeforeAll{
-        Mock Test-PodeIPAddress { return $true }
-        Mock Test-PodeIsAdminUser { return $true }
-}
+        BeforeAll {
+            Mock Test-PodeIPAddress { return $true }
+            Mock Test-PodeIsAdminUser { return $true }
+        }
         It 'Set just a Hostname address - old' {
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address 'foo.com' -Protocol 'HTTP'
@@ -376,9 +376,9 @@ Describe 'Add-PodeEndpoint' {
 }
 
 Describe 'Get-PodeEndpoint' {
-    BeforeAll{
-    Mock Test-PodeIPAddress { return $true }
-    Mock Test-PodeIsAdminUser { return $true }}
+    BeforeAll {
+        Mock Test-PodeIPAddress { return $true }
+        Mock Test-PodeIsAdminUser { return $true } }
 
     It 'Returns no Endpoints' {
         $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; Type = $null }
@@ -516,10 +516,10 @@ Describe 'Import-PodeModule' {
     }
 
     Context 'Valid parameters supplied' {
-        BeforeAll{
-        Mock Resolve-Path { return @{ 'Path' = 'c:/some/file.txt' } }
-        Mock Import-Module { }
-        Mock Test-PodePath { return $true }}
+        BeforeAll {
+            Mock Resolve-Path { return @{ 'Path' = 'c:/some/file.txt' } }
+            Mock Import-Module { }
+            Mock Test-PodePath { return $true } }
 
         It 'Returns null for no shared state in context' {
             Import-PodeModule -Path 'file.txt'
@@ -541,12 +541,12 @@ Describe 'New-PodeAutoRestartServer' {
 
     It 'Creates a timer for a period server restart' {
         Mock 'Get-PodeConfig' { return @{
-            'server' = @{
-                'restart'=  @{
-                    'period' = 180;
+                'server' = @{
+                    'restart' = @{
+                        'period' = 180
+                    }
                 }
-            }
-        } }
+            } }
 
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
@@ -558,12 +558,12 @@ Describe 'New-PodeAutoRestartServer' {
 
     It 'Creates a schedule for a timed server restart' {
         Mock 'Get-PodeConfig' { return @{
-            'server' = @{
-                'restart'=  @{
-                    'times' = @('18:00');
+                'server' = @{
+                    'restart' = @{
+                        'times' = @('18:00')
+                    }
                 }
-            }
-        } }
+            } }
 
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
@@ -575,12 +575,12 @@ Describe 'New-PodeAutoRestartServer' {
 
     It 'Creates a schedule for a cron server restart' {
         Mock 'Get-PodeConfig' { return @{
-            'server' = @{
-                'restart'=  @{
-                    'crons' = @('@minutely');
+                'server' = @{
+                    'restart' = @{
+                        'crons' = @('@minutely')
+                    }
                 }
-            }
-        } }
+            } }
 
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
@@ -592,13 +592,13 @@ Describe 'New-PodeAutoRestartServer' {
 
     It 'Creates a timer and schedule for a period and cron server restart' {
         Mock 'Get-PodeConfig' { return @{
-            'server' = @{
-                'restart'=  @{
-                    'period' = 180;
-                    'crons' = @('@minutely');
+                'server' = @{
+                    'restart' = @{
+                        'period' = 180
+                        'crons'  = @('@minutely')
+                    }
                 }
-            }
-        } }
+            } }
 
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
@@ -611,13 +611,13 @@ Describe 'New-PodeAutoRestartServer' {
 
     It 'Creates a timer and schedule for a period and timed server restart' {
         Mock 'Get-PodeConfig' { return @{
-            'server' = @{
-                'restart'=  @{
-                    'period' = 180;
-                    'times' = @('18:00');
+                'server' = @{
+                    'restart' = @{
+                        'period' = 180
+                        'times'  = @('18:00')
+                    }
                 }
-            }
-        } }
+            } }
 
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer
@@ -630,13 +630,13 @@ Describe 'New-PodeAutoRestartServer' {
 
     It 'Creates two schedules for a cron and timed server restart' {
         Mock 'Get-PodeConfig' { return @{
-            'server' = @{
-                'restart'=  @{
-                    'crons' = @('@minutely');
-                    'times' = @('18:00');
+                'server' = @{
+                    'restart' = @{
+                        'crons' = @('@minutely')
+                        'times' = @('18:00')
+                    }
                 }
-            }
-        } }
+            } }
 
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; 'Schedules' = @{ Items = @{} }; }
         New-PodeAutoRestartServer

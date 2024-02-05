@@ -1,10 +1,9 @@
-<html style='background-color: #01b0c4' ;>
+<html lang="en" ; style='background-color: #01b0c4' ;>
 
 <head>
     <title>File Browser:$($Data.Path)</title>
     <meta charset='utf-8'>
     <style>
-
         h3 {
             font-family: 'Courier New', Courier, monospace;
             /* Applies monospace font to <h2> */
@@ -36,11 +35,11 @@
             text-align: right;
         }
 
-        .lastWriteTime {
-            width: 70px;
+        .DateTime {
+            width: 100px;
             text-align: right;
-            max-width: 70px;
-            min-width: 70px;
+            max-width: 100px;
+            min-width: 100px;
             /* Align text to the right */
         }
 
@@ -77,7 +76,7 @@
             width: 100%;
             font-family: 'Courier New', Courier, monospace;
             /* Applies monospace font to the table */
-          /*   border-collapse: collapse;
+            /*   border-collapse: collapse;
              Removes the space between borders */
         }
 
@@ -104,11 +103,11 @@
         var WindowsMode = $($Data.windowsMode);
         var tableContent = '';
         if (WindowsMode) {
-            tableContent += '<tr> <th class="mode">Mode</th> <th class="lastWriteTime">LastWriteTime</th> <th class="size">Size</th> <th class="name">Name</th> </tr> <tr> <td class="mode">----</td>' +
-                '<td class="lastWriteTime">-------------</td> <td class="size">----</td> <td class="name">----</td> </tr>';
+            tableContent += '<tr> <th class="mode">Mode</th> <th class="dateTime">CreationTime</th> <th class="dateTime">LastWriteTime</th> <th class="size">Size</th> <th class="name">Name</th> </tr> <tr> <td class="mode">----</td>' +
+                '<td class="dateTime">-------------</td> <td class="dateTime">-------------</td> <td class="size">----</td> <td class="name">----</td> </tr>';
         } else {
-            tableContent += '<tr> <th class="unixMode">UnixMode</th>  <th class="user">User</th> <th class="group">Group</th> <th class="lastWriteTime">LastWriteTime</th> <th class="size">Size</th> <th class="name">Name</th> </tr>' +
-                '<tr> <td class="unixMode">--------</td>  <td class="user">----</td> <td class="group">-----</td> <td class="lastWriteTime">-------------</td> <td class="size">----</td> <td class="name">----</td> </tr>';
+            tableContent += '<tr> <th class="unixMode">UnixMode</th>  <th class="user">User</th> <th class="group">Group</th> <th class="dateTime">CreationTime</th> <th class="dateTime">LastWriteTime</th> <th class="size">Size</th> <th class="name">Name</th> </tr>' +
+                '<tr> <td class="unixMode">--------</td>  <td class="user">----</td> <td class="group">-----</td> <td class="dateTime">-------------</td> <td class="dateTime">-------------</td> <td class="size">----</td> <td class="name">----</td> </tr>';
         }
 
         // Insert the table content into the table body
@@ -118,23 +117,23 @@
 
 <body style='color: white; '>
 
-    <div  >
+    <div>
 
-            <h3>Directory: $($Data.Path)</h3>
+        <h3>Directory: $($Data.Path)</h3>
 
-            <table>
-                <tbody id="tableBody">
-                </tbody>
-                $($Data.fileContent)
-            </table>
-            <p style='text-align: center;
+        <table>
+            <tbody id="tableBody">
+            </tbody>
+            $($Data.fileContent)
+        </table>
+        <p style='text-align: center;
             width: 100%;
             font-size: 0.9em;
             position: fixed;
             bottom: 0px;'>
-                🧡 Powered by <a href='https://badgerati.github.io/Pode/'
-                    style='color: wheat; text-decoration: none;'>Pode</a>
-            </p>
+            🧡 Powered by <a href='https://badgerati.github.io/Pode/'
+                style='color: wheat; text-decoration: none;'>Pode</a>
+        </p>
     </div>
 
 </body>

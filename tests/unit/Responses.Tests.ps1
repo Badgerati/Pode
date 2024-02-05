@@ -17,7 +17,7 @@ Describe 'Set-PodeResponseStatus' {
             $WebEvent.Response.StatusCode | Should -Be 418
             $WebEvent.Response.StatusDescription | Should -Be "I'm a Teapot"
             Should -Invoke Show-PodeErrorPage -Times 1 -Scope It
-         #   Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 1
+            #   Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 1
         }
 
         It 'Sets StatusCode and StatusDescription' {
@@ -37,7 +37,7 @@ Describe 'Set-PodeResponseStatus' {
             $WebEvent.Response.StatusCode | Should -Be 200
             $WebEvent.Response.StatusDescription | Should -Be 'OK'
             Should -Invoke Show-PodeErrorPage -Times 0 -Scope It
-           # Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 0
+            # Assert-MockCalled 'Show-PodeErrorPage' -Scope It -Times 0
         }
     }
 }
@@ -174,9 +174,9 @@ Describe 'Move-PodeResponseUrl' {
 }
 
 Describe 'Write-PodeJsonResponse' {
-    BeforeEach{
-    Mock Write-PodeTextResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-    $_ContentType = 'application/json'}
+    BeforeEach {
+        Mock Write-PodeTextResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
+        $_ContentType = 'application/json' }
 
     It 'Returns an empty value for an empty value' {
         $r = Write-PodeJsonResponse -Value ([string]::Empty)
@@ -200,7 +200,7 @@ Describe 'Write-PodeJsonResponse' {
         Mock Test-PodePath { return $false }
         Write-PodeJsonResponse -Path 'fake-file' | Out-Null
         Should -Invoke Test-PodePath -Times 1 -Scope It
-      #  Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
+        #  Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
     }
 
     It 'Load the file contents and returns it' {
@@ -214,9 +214,9 @@ Describe 'Write-PodeJsonResponse' {
 }
 
 Describe 'Write-PodeCsvResponse' {
-    BeforeEach{
-    Mock Write-PodeTextResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-    $_ContentType = 'text/csv'}
+    BeforeEach {
+        Mock Write-PodeTextResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
+        $_ContentType = 'text/csv' }
 
     It 'Returns an empty value for an empty value' {
         $r = Write-PodeCsvResponse -Value ([string]::Empty)
@@ -240,7 +240,7 @@ Describe 'Write-PodeCsvResponse' {
         Mock Test-PodePath { return $false }
         Write-PodeCsvResponse -Path 'fake-file' | Out-Null
         Should -Invoke Test-PodePath -Times 1 -Scope It
-       # Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
+        # Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
     }
 
     It 'Load the file contents and returns it' {
@@ -254,10 +254,10 @@ Describe 'Write-PodeCsvResponse' {
 }
 
 Describe 'Write-PodeXmlResponse' {
-BeforeEach{
-    Mock Write-PodeTextResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-    $_ContentType = 'text/xml'
-}
+    BeforeEach {
+        Mock Write-PodeTextResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
+        $_ContentType = 'text/xml'
+    }
     It 'Returns an empty value for an empty value' {
         $r = Write-PodeXmlResponse -Value ([string]::Empty)
         $r.Value | Should -Be ([string]::Empty)
@@ -280,7 +280,7 @@ BeforeEach{
         Mock Test-PodePath { return $false }
         Write-PodeXmlResponse -Path 'fake-file' | Out-Null
         Should -Invoke Test-PodePath -Times 1 -Scope It
-      #  Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
+        #  Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
     }
 
     It 'Load the file contents and returns it' {
@@ -294,9 +294,9 @@ BeforeEach{
 }
 
 Describe 'Write-PodeHtmlResponse' {
-    BeforeEach{
-    Mock Write-PodeTextResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-    $_ContentType = 'text/html'}
+    BeforeEach {
+        Mock Write-PodeTextResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
+        $_ContentType = 'text/html' }
 
     It 'Returns an empty value for an empty value' {
         $r = Write-PodeHtmlResponse -Value ([string]::Empty)
@@ -320,7 +320,7 @@ Describe 'Write-PodeHtmlResponse' {
         Mock Test-PodePath { return $false }
         Write-PodeHtmlResponse -Path 'fake-file' | Out-Null
         Should -Invoke Test-PodePath -Times 1 -Scope It
-      #  Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
+        #  Assert-MockCalled -CommandName 'Test-PodePath' -Times 1 -Scope It
     }
 
     It 'Load the file contents and returns it' {
@@ -349,7 +349,7 @@ Describe 'Write-PodeFileResponse' {
         Mock Test-PodePath { return $false }
         Write-PodeFileResponse -Path './path' | Out-Null
         Should -Invoke Test-PodePath -Times 1 -Scope It
-       # Assert-MockCalled Test-PodePath -Times 1 -Scope It
+        # Assert-MockCalled Test-PodePath -Times 1 -Scope It
     }
 
 
@@ -366,7 +366,7 @@ Describe 'Write-PodeFileResponse' {
 
     It 'Loads the contents of a static file' {
 
-    Mock Test-PodePath { return $true }
+        Mock Test-PodePath { return $true }
         Mock Get-PodeRelativePath { return $Path }
         Mock Get-Content { return 'file contents' }
         Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
@@ -374,20 +374,20 @@ Describe 'Write-PodeFileResponse' {
 
         Write-PodeFileResponse -Path './path/file.pode' | Should -Be 'file contents'
         Should -Invoke Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
-     #   Assert-MockCalled Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
+        #   Assert-MockCalled Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
     }
 }
 
 Describe 'Use-PodePartialView' {
-    BeforeEach{
-    $PodeContext = @{
-        'Server' = @{
-            'InbuiltDrives' = @{ 'views' = '.' }
-            'ViewEngine'    = @{ 'Extension' = 'pode' }
+    BeforeEach {
+        $PodeContext = @{
+            'Server' = @{
+                'InbuiltDrives' = @{ 'views' = '.' }
+                'ViewEngine'    = @{ 'Extension' = 'pode' }
+            }
         }
+        Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
     }
-    Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
-}
 
     It 'Throws an error for a path that does not exist' {
         Mock Test-PodePath { return $false }
@@ -417,14 +417,14 @@ Describe 'Close-PodeTcpClient' {
 }
 
 Describe 'Show-PodeErrorPage' {
-    BeforeEach{
-    Mock Write-PodeFileResponse { return $Data }
-}
+    BeforeEach {
+        Mock Write-PodeFileResponse { return $Data }
+    }
     It 'Does nothing when it cannot find a page' {
         Mock Find-PodeErrorPage { return $null }
         Show-PodeErrorPage -Code 404 | Out-Null
         Should -Invoke Write-PodeFileResponse -Times 0 -Scope It
-      #  Assert-MockCalled Write-PodeFileResponse -Times 0 -Scope It
+        #  Assert-MockCalled Write-PodeFileResponse -Times 0 -Scope It
     }
 
 
@@ -442,8 +442,8 @@ Describe 'Show-PodeErrorPage' {
 
     It 'Renders a page with exception' {
 
-    Mock Find-PodeErrorPage { return @{ 'Path' = './path'; 'ContentType' = 'json' } }
-    Mock Get-PodeUrl { return 'url' }
+        Mock Find-PodeErrorPage { return @{ 'Path' = './path'; 'ContentType' = 'json' } }
+        Mock Get-PodeUrl { return 'url' }
         $PodeContext = @{ 'Server' = @{ 'Web' = @{
                     'ErrorPages' = @{ 'ShowExceptions' = $true }
                 }
@@ -453,7 +453,8 @@ Describe 'Show-PodeErrorPage' {
         try {
             $v = $null
             $v.Add()
-        } catch { $e = $_ }
+        }
+        catch { $e = $_ }
 
         $d = Show-PodeErrorPage -Code 404 -Exception $e
         Should -Invoke Write-PodeFileResponse -Times 1 -Scope It

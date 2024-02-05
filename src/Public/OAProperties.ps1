@@ -336,7 +336,8 @@ function New-PodeOAMultiTypeProperty {
         if ($type -contains 'string') {
             if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
                 $_format = $CustomFormat
-            } elseif ($Format) {
+            }
+            elseif ($Format) {
                 $_format = $Format
             }
 
@@ -352,10 +353,12 @@ function New-PodeOAMultiTypeProperty {
                 }
                 $param.properties = @($null)
                 $PropertiesFromPipeline = $false
-            } elseif ($Properties) {
+            }
+            elseif ($Properties) {
                 $param.properties = $Properties
                 $PropertiesFromPipeline = $false
-            } else {
+            }
+            else {
                 $param.properties = @()
                 $PropertiesFromPipeline = $true
             }
@@ -366,7 +369,8 @@ function New-PodeOAMultiTypeProperty {
                 if ($DiscriminatorMapping) {
                     $param.discriminator.mapping = $DiscriminatorMapping
                 }
-            } elseif ($DiscriminatorMapping) {
+            }
+            elseif ($DiscriminatorMapping) {
                 throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
             }
         }
@@ -374,7 +378,8 @@ function New-PodeOAMultiTypeProperty {
             if ($Default) {
                 if ([bool]::TryParse($Default, [ref]$null) -or $Enum -icontains $Default) {
                     $param.default = $Default
-                } else {
+                }
+                else {
                     throw "The default value is not a boolean and it's not part of the enum"
                 }
             }
@@ -390,7 +395,8 @@ function New-PodeOAMultiTypeProperty {
     end {
         if ($collectedInput) {
             return $collectedInput + $param
-        } else {
+        }
+        else {
             return $param
         }
     }
@@ -664,7 +670,8 @@ function New-PodeOAIntProperty {
     end {
         if ($collectedInput) {
             return $collectedInput + $param
-        } else {
+        }
+        else {
             return $param
         }
     }
@@ -922,7 +929,8 @@ function New-PodeOANumberProperty {
     end {
         if ($collectedInput) {
             return $collectedInput + $param
-        } else {
+        }
+        else {
             return $param
         }
     }
@@ -1163,7 +1171,8 @@ function New-PodeOAStringProperty {
     begin {
         if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
             $_format = $CustomFormat
-        } elseif ($Format) {
+        }
+        elseif ($Format) {
             $_format = $Format
         }
         $param = New-PodeOAPropertyInternal -type 'string' -Params $PSBoundParameters
@@ -1183,7 +1192,8 @@ function New-PodeOAStringProperty {
     end {
         if ($collectedInput) {
             return $collectedInput + $param
-        } else {
+        }
+        else {
             return $param
         }
     }
@@ -1387,7 +1397,8 @@ function New-PodeOABoolProperty {
         if ($Default) {
             if ([bool]::TryParse($Default, [ref]$null) -or $Enum -icontains $Default) {
                 $param.default = $Default
-            } else {
+            }
+            else {
                 throw "The default value is not a boolean and it's not part of the enum"
             }
         }
@@ -1403,7 +1414,8 @@ function New-PodeOABoolProperty {
     end {
         if ($collectedInput) {
             return $collectedInput + $param
-        } else {
+        }
+        else {
             return $param
         }
     }
@@ -1640,10 +1652,12 @@ function New-PodeOAObjectProperty {
             }
             $param.properties = @($null)
             $PropertiesFromPipeline = $false
-        } elseif ($Properties) {
+        }
+        elseif ($Properties) {
             $param.properties = $Properties
             $PropertiesFromPipeline = $false
-        } else {
+        }
+        else {
             $param.properties = @()
             $PropertiesFromPipeline = $true
         }
@@ -1654,7 +1668,8 @@ function New-PodeOAObjectProperty {
             if ($DiscriminatorMapping) {
                 $param.discriminator.mapping = $DiscriminatorMapping
             }
-        } elseif ($DiscriminatorMapping) {
+        }
+        elseif ($DiscriminatorMapping) {
             throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
         }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
@@ -1664,7 +1679,8 @@ function New-PodeOAObjectProperty {
             if ($PropertiesFromPipeline) {
                 $param.properties += $ParamsList
 
-            } else {
+            }
+            else {
                 $collectedInput.AddRange($ParamsList)
             }
         }
@@ -1673,9 +1689,11 @@ function New-PodeOAObjectProperty {
     end {
         if ($PropertiesFromPipeline) {
             return $param
-        } elseif ($collectedInput) {
+        }
+        elseif ($collectedInput) {
             return $collectedInput + $param
-        } else {
+        }
+        else {
             return $param
         }
     }
@@ -1787,7 +1805,8 @@ function Merge-PodeOAProperty {
             if ($DiscriminatorMapping) {
                 $param.discriminator.mapping = $DiscriminatorMapping
             }
-        } elseif ($DiscriminatorMapping) {
+        }
+        elseif ($DiscriminatorMapping) {
             throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
         }
 
@@ -1998,7 +2017,8 @@ function New-PodeOAComponentSchemaProperty {
     end {
         if ($collectedInput) {
             return $collectedInput + $param
-        } else {
+        }
+        else {
             return $param
         }
     }

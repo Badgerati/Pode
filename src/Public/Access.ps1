@@ -86,7 +86,8 @@ function New-PodeAccessScheme {
     if (!$Custom -and (Test-PodeIsEmpty $ScriptBlock) -and [string]::IsNullOrWhiteSpace($Path)) {
         if ($Type -ieq 'user') {
             $Path = 'Username'
-        } else {
+        }
+        else {
             $Path = "$($Type)s"
         }
     }
@@ -568,7 +569,8 @@ function Test-PodeAccessRoute {
     # get route access values
     if ($access.Scheme.IsCustom) {
         $routeAccess = $WebEvent.Route.AccessMeta.Custom[$access.Name]
-    } else {
+    }
+    else {
         $routeAccess = $WebEvent.Route.AccessMeta[$access.Scheme.Type]
     }
 

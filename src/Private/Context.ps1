@@ -918,7 +918,8 @@ function Set-PodeOutputVariables {
     foreach ($key in $PodeContext.Server.Output.Variables.Keys) {
         try {
             Set-Variable -Name $key -Value $PodeContext.Server.Output.Variables[$key] -Force -Scope Global
-        } catch {
+        }
+        catch {
             $_ | Write-PodeErrorLog
         }
     }

@@ -165,7 +165,8 @@ function Start-PodeInternalServer {
                         foreach ($endpoint in   $bookmarks.route.Endpoint) {
                             Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor Yellow
                         }
-                    } else {
+                    }
+                    else {
                         Write-PodeHost '   - Specification:' -ForegroundColor Yellow
                         $endpoints | ForEach-Object {
                             $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
@@ -181,7 +182,8 @@ function Start-PodeInternalServer {
             }
 
         }
-    } catch {
+    }
+    catch {
         throw $_.Exception
     }
 }
@@ -317,7 +319,8 @@ function Restart-PodeInternalServer {
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
         Start-PodeInternalServer
-    } catch {
+    }
+    catch {
         $_ | Write-PodeErrorLog
         throw $_.Exception
     }

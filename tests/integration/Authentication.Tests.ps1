@@ -1,6 +1,6 @@
 BeforeAll {
     $path = $PSCommandPath
-    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/src/'  
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 }
 
@@ -26,7 +26,7 @@ Describe 'Authentication Requests' {
                     param($username, $password)
 
                     if (($username -eq 'morty') -and ($password -eq 'pickle')) {
-                        return @{ User = @{ ID ='M0R7Y302' } }
+                        return @{ User = @{ ID = 'M0R7Y302' } }
                     }
 
                     return @{ Message = 'Invalid details supplied' }
@@ -42,7 +42,7 @@ Describe 'Authentication Requests' {
 
                     if ($token -ieq 'test-token') {
                         return @{
-                            User = @{ ID ='M0R7Y302' }
+                            User  = @{ ID = 'M0R7Y302' }
                             Scope = 'write'
                         }
                     }
@@ -60,7 +60,7 @@ Describe 'Authentication Requests' {
 
                     if ($key -ieq 'test-key') {
                         return @{
-                            User = @{ ID ='M0R7Y302' }
+                            User = @{ ID = 'M0R7Y302' }
                         }
                     }
 
@@ -77,7 +77,7 @@ Describe 'Authentication Requests' {
 
                     if ($jwt.username -ieq 'morty') {
                         return @{
-                            User = @{ ID ='M0R7Y302' }
+                            User = @{ ID = 'M0R7Y302' }
                         }
                     }
 
@@ -94,7 +94,7 @@ Describe 'Authentication Requests' {
 
                     if ($jwt.username -ieq 'morty') {
                         return @{
-                            User = @{ ID ='M0R7Y302' }
+                            User = @{ ID = 'M0R7Y302' }
                         }
                     }
 
@@ -220,10 +220,10 @@ Describe 'Authentication Requests' {
     It 'apikey - jwt signed - returns ok for valid key - valid exp/nbf' {
         $header = @{ alg = 'hs256' }
         $payload = @{
-            sub = '123'
+            sub      = '123'
             username = 'morty'
-            nbf = ([System.DateTimeOffset]::Now.AddDays(-1).ToUnixTimeSeconds())
-            exp = ([System.DateTimeOffset]::Now.AddDays(1).ToUnixTimeSeconds())
+            nbf      = ([System.DateTimeOffset]::Now.AddDays(-1).ToUnixTimeSeconds())
+            exp      = ([System.DateTimeOffset]::Now.AddDays(1).ToUnixTimeSeconds())
         }
         $jwt = ConvertTo-PodeJwt -Header $header -Payload $payload -Secret 'secret'
 

@@ -62,7 +62,8 @@ function ConvertTo-PodeOAObjectSchema {
         if ($Content[$type].__upload) {
             if ($Content[$type].__array) {
                 $upload = $Content[$type].__content.__upload
-            } else {
+            }
+            else {
                 $upload = $Content[$type].__upload
             }
 
@@ -77,13 +78,15 @@ function ConvertTo-PodeOAObjectSchema {
                     }
                 }
                 $newContent = $upload.content
-            } else {
+            }
+            else {
                 if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag  ) {
                     $newContent = [ordered]@{
                         'type'   = 'string'
                         'format' = $upload.contentEncoding
                     }
-                } else {
+                }
+                else {
                     if ($ContentEncoding -ieq 'Base64') {
                         $newContent = [ordered]@{
                             'type'            = 'string'
@@ -94,7 +97,8 @@ function ConvertTo-PodeOAObjectSchema {
             }
             if ($Content[$type].__array) {
                 $Content[$type].__content = $newContent
-            } else {
+            }
+            else {
                 $Content[$type] = $newContent
             }
         }
@@ -118,7 +122,8 @@ function ConvertTo-PodeOAObjectSchema {
             if ( $Content[$type].minItems) {
                 $obj[$type].schema.minItems = $Content[$type].__minItems
             }
-        } else {
+        }
+        else {
             $item = $Content[$type]
             $isArray = $false
         }
@@ -131,31 +136,37 @@ function ConvertTo-PodeOAObjectSchema {
                         $obj[$type].schema.items = @{
                             'type' = $item.ToLower()
                         }
-                    } else {
+                    }
+                    else {
                         $obj[$type].schema = @{
                             'type' = $item.ToLower()
                         }
                     }
-                } else {
+                }
+                else {
                     Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
                     if ($isArray) {
                         $obj[$type].schema.items = @{
                             '$ref' = "#/components/schemas/$($item)"
                         }
-                    } else {
+                    }
+                    else {
                         $obj[$type].schema = @{
                             '$ref' = "#/components/schemas/$($item)"
                         }
                     }
                 }
-            } else {
+            }
+            else {
                 # Create an empty content
                 $obj[$type] = @{}
             }
-        } else {
+        }
+        else {
             if ($item.Count -eq 0) {
                 $result = @{}
-            } else {
+            }
+            else {
                 $result = ($item | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
             }
             if ($Properties) {
@@ -165,13 +176,16 @@ function ConvertTo-PodeOAObjectSchema {
                             $item.Name = $result
                         }
                     }
-                } else {
+                }
+                else {
                     Throw 'The Properties parameters cannot be used if the Property has no name'
                 }
-            } else {
+            }
+            else {
                 if ($isArray) {
                     $obj[$type].schema.items = $result
-                } else {
+                }
+                else {
                     $obj[$type].schema = $result
                 }
             }
@@ -308,7 +322,8 @@ function ConvertTo-PodeOAOfProperty {
                 # Validate the schema component and add a reference to it
                 Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $prop -PostValidation
                 $schema[$Property.type] += @{ '$ref' = "#/components/schemas/$prop" }
-            } else {
+            }
+            else {
                 # Convert the property to an OpenAPI schema property
                 $schema[$Property.type] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
             }
@@ -341,7 +356,8 @@ function ConvertTo-PodeOASchemaProperty {
 
     if ( @('allof', 'oneof', 'anyof') -icontains $Property.type  ) {
         $schema = ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $Property
-    } else {
+    }
+    else {
         # base schema type
         $schema = [ordered]@{ }
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
@@ -349,7 +365,8 @@ function ConvertTo-PodeOASchemaProperty {
                 throw 'Multi type properties requeired OpenApi Version 3.1 or above'
             }
             $schema['type'] = $Property.type.ToLower()
-        } else {
+        }
+        else {
             $schema.type = @($Property.type.ToLower())
             if ($Property.nullable) {
                 $schema.type += 'null'
@@ -387,10 +404,12 @@ function ConvertTo-PodeOASchemaProperty {
     if ($Property.example) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
             $schema['example'] = $Property.example
-        } else {
+        }
+        else {
             if ($Property.example -is [Array]) {
                 $schema['examples'] = $Property.example
-            } else {
+            }
+            else {
                 $schema['examples'] = @( $Property.example)
             }
         }
@@ -411,18 +430,21 @@ function ConvertTo-PodeOASchemaProperty {
         if ($Property.exclusiveMinimum) {
             $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
         }
-    } else {
+    }
+    else {
         if ($Property.maximum) {
             if ($Property.exclusiveMaximum  ) {
                 $schema['exclusiveMaximum'] = $Property.maximum
-            } else {
+            }
+            else {
                 $schema['maximum'] = $Property.maximum
             }
         }
         if ($Property.minimum) {
             if ($Property.exclusiveMinimum  ) {
                 $schema['exclusiveMinimum'] = $Property.minimum
-            } else {
+            }
+            else {
                 $schema['minimum'] = $Property.minimum
             }
         }
@@ -475,7 +497,8 @@ function ConvertTo-PodeOASchemaProperty {
         if ($Property.type -ieq 'schema') {
             Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
             $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
-        } else {
+        }
+        else {
             $Property.array = $false
             if ($Property.xml) {
                 $xmlFromProperties = $Property.xml
@@ -492,7 +515,8 @@ function ConvertTo-PodeOASchemaProperty {
             }
         }
         return $schema
-    } else {
+    }
+    else {
         #format is not applicable to array
         if ($Property.format) {
             $schema['format'] = $Property.format
@@ -543,7 +567,8 @@ function ConvertTo-PodeOASchemaProperty {
             if ( $RequiredList.Count -gt 0) {
                 $schema['required'] = @($RequiredList.name)
             }
-        } else {
+        }
+        else {
             #if noproperties parameter create an empty properties
             if ( $Property.properties.Count -eq 1 -and $null -eq $Property.properties[0]) {
                 $schema['properties'] = @{}
@@ -682,22 +707,26 @@ function Set-OpenApiRouteValues {
             if ($PodeContext.Server.Authentications.Methods.$sct.Scheme.Scheme -ieq 'oauth2') {
                 if ($Route.AccessMeta.Scope ) {
                     $sctValue = $Route.AccessMeta.Scope
-                } else {
+                }
+                else {
                     #if scope is empty means 'any role' => assign an empty array
                     $sctValue = @()
                 }
                 $pm.security += @{ $sct = $sctValue }
-            } elseif ($sct -eq '%_allowanon_%') {
+            }
+            elseif ($sct -eq '%_allowanon_%') {
                 #allow anonymous access
                 $pm.security += @{  }
-            } else {
+            }
+            else {
                 $pm.security += @{$sct = @() }
             }
         }
     }
     if ($Route.OpenApi.Responses.$DefinitionTag ) {
         $pm.responses = $Route.OpenApi.Responses.$DefinitionTag
-    } else {
+    }
+    else {
         # Set responses or default to '204 No Content' if not specified
         $pm.responses = @{'204' = @{'description' = (Get-PodeStatusDescription -StatusCode 204) } }
     }
@@ -767,7 +796,8 @@ function Get-PodeOpenApiDefinitionInternal {
         if (  $Definition.servers.Count -eq 1 -and $Definition.servers[0].url.StartsWith('/')) {
             $localEndpoint = $Definition.servers[0].url
         }
-    } elseif (!$MetaInfo.RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1)) {
+    }
+    elseif (!$MetaInfo.RestrictRoutes -and ($PodeContext.Server.Endpoints.Count -gt 1)) {
         #  $def['servers'] = $null
         $def.servers = @(foreach ($endpoint in $PodeContext.Server.Endpoints.Values) {
                 @{
@@ -785,7 +815,8 @@ function Get-PodeOpenApiDefinitionInternal {
     if (  $Definition.webhooks.count -gt 0) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag  ) {
             throw 'Feature webhooks is unsupported in OpenAPI v3.0.x'
-        } else {
+        }
+        else {
             $keys = [string[]]$Definition.webhooks.Keys
             foreach ($key in $keys) {
                 if ($Definition.webhooks[$key].NotPrepared) {
@@ -831,7 +862,8 @@ function Get-PodeOpenApiDefinitionInternal {
     if ($components.pathItems.count -gt 0) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag  ) {
             throw 'Feature pathItems is unsupported in OpenAPI v3.0.x'
-        } else {
+        }
+        else {
             $keys = [string[]]$components.pathItems.Keys
             foreach ($key in $keys) {
                 if ($components.pathItems[$key].NotPrepared) {
@@ -866,14 +898,17 @@ function Get-PodeOpenApiDefinitionInternal {
                 if ($authType.Arguments.Description) {
                     $_authObj.description = $authType.Arguments.Description
                 }
-            } elseif ($authType.Scheme -ieq 'oauth2') {
+            }
+            elseif ($authType.Scheme -ieq 'oauth2') {
                 if ($authType.Arguments.Urls.Token -and $authType.Arguments.Urls.Authorise) {
                     $oAuthFlow = 'authorizationCode'
-                } elseif ($authType.Arguments.Urls.Token ) {
+                }
+                elseif ($authType.Arguments.Urls.Token ) {
                     if ($null -ne $authType.InnerScheme) {
                         if ($authType.InnerScheme.Name -ieq 'basic' -or $authType.InnerScheme.Name -ieq 'form') {
                             $oAuthFlow = 'password'
-                        } else {
+                        }
+                        else {
                             $oAuthFlow = 'implicit'
                         }
                     }
@@ -904,12 +939,14 @@ function Get-PodeOpenApiDefinitionInternal {
                     foreach ($scope in $authType.Arguments.Scopes  ) {
                         if ($PodeContext.Server.Authorisations.Methods.ContainsKey($scope) -and $PodeContext.Server.Authorisations.Methods[$scope].Scheme.Type -ieq 'Scope' -and $PodeContext.Server.Authorisations.Methods[$scope].Description) {
                             $_authObj.flows.$oAuthFlow.scopes[$scope] = $PodeContext.Server.Authorisations.Methods[$scope].Description
-                        } else {
+                        }
+                        else {
                             $_authObj.flows.$oAuthFlow.scopes[$scope] = 'No description.'
                         }
                     }
                 }
-            } else {
+            }
+            else {
                 $_authObj = @{
                     type   = $authType.Scheme.ToLowerInvariant()
                     scheme = $authType.Name.ToLowerInvariant()
@@ -931,7 +968,8 @@ function Get-PodeOpenApiDefinitionInternal {
 
     if ($MetaInfo.RouteFilter) {
         $filter = "^$($MetaInfo.RouteFilter)"
-    } else {
+    }
+    else {
         $filter = ''
     }
 
@@ -1000,7 +1038,8 @@ function Get-PodeOpenApiDefinitionInternal {
                         $serverDef = @{
                             url = (Get-PodeEndpointByName -Name $_route.Endpoint.Name).Url
                         }
-                    } else {
+                    }
+                    else {
                         $serverDef = @{
                             url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
                         }
@@ -1039,7 +1078,8 @@ function ConvertTo-PodeOAPropertyFromCmdletParameter {
 
     if ($Parameter.SwitchParameter -or ($Parameter.ParameterType.Name -ieq 'boolean')) {
         New-PodeOABoolProperty -Name $Parameter.Name
-    } else {
+    }
+    else {
         switch ($Parameter.ParameterType.Name) {
             { @('int32', 'int64') -icontains $_ } {
                 New-PodeOAIntProperty -Name $Parameter.Name -Format $_
@@ -1160,7 +1200,8 @@ function Initialize-OpenApiTable {
     # Set the default definition tag
     if ([string]::IsNullOrEmpty($DefaultOADefinitionTag)) {
         $OpenAPI['DefaultDefinitionTag'] = 'default'
-    } else {
+    }
+    else {
         $OpenAPI['DefaultDefinitionTag'] = $DefaultOADefinitionTag
     }
 
@@ -1291,7 +1332,8 @@ function Set-PodeOAGlobalAuth {
             # Determine the scopes of the authentication
             if ($authType.Scheme.Arguments.Scopes) {
                 $Scopes = @($authType.Scheme.Arguments.Scopes)
-            } else {
+            }
+            else {
                 $Scopes = @()
             }
 
@@ -1341,10 +1383,12 @@ function Resolve-PodeOAReferences {
                                 $tmpProp += $Schemas[$refName].schema
                             }
                         }
-                    } elseif ( $comp.properties) {
+                    }
+                    elseif ( $comp.properties) {
                         if ($comp.type -eq 'object') {
                             $tmpProp += Resolve-PodeOAReferences -DefinitionTag $DefinitionTag -ComponentSchema  $comp
-                        } else {
+                        }
+                        else {
                             throw 'Unsupported object'
                         }
                     }
@@ -1358,21 +1402,26 @@ function Resolve-PodeOAReferences {
                     }
                 }
 
-            } elseif ($key -ieq 'oneof') {
+            }
+            elseif ($key -ieq 'oneof') {
                 throw 'Validation of schema with oneof is not supported'
-            } elseif ($key -ieq 'anyof') {
+            }
+            elseif ($key -ieq 'anyof') {
                 throw 'Validation of schema with anyof is not supported'
             }
-        } elseif ($ComponentSchema.properties[$key].type -eq 'object') {
+        }
+        elseif ($ComponentSchema.properties[$key].type -eq 'object') {
             $ComponentSchema.properties[$key].properties = Resolve-PodeOAReferences -DefinitionTag $DefinitionTag -ComponentSchema $ComponentSchema.properties[$key].properties
-        } elseif ($ComponentSchema.properties[$key].'$ref') {
+        }
+        elseif ($ComponentSchema.properties[$key].'$ref') {
             if (($ComponentSchema.properties[$key].'$ref').StartsWith('#/components/schemas/')) {
                 $refName = ($ComponentSchema.properties[$key].'$ref') -replace '#/components/schemas/', ''
                 if ($Schemas.ContainsKey($refName)) {
                     $ComponentSchema.properties[$key] = $Schemas[$refName].schema
                 }
             }
-        } elseif ($ComponentSchema.properties[$key].items -and $ComponentSchema.properties[$key].items.'$ref' ) {
+        }
+        elseif ($ComponentSchema.properties[$key].items -and $ComponentSchema.properties[$key].items.'$ref' ) {
             if (($ComponentSchema.properties[$key].items.'$ref').StartsWith('#/components/schemas/')) {
                 $refName = ($ComponentSchema.properties[$key].items.'$ref') -replace '#/components/schemas/', ''
                 if ($Schemas.ContainsKey($refName)) {
@@ -1427,10 +1476,12 @@ function New-PodeOAPropertyInternal {
     # Set the type of the property
     if ($type) {
         $param.type = $type
-    } else {
+    }
+    else {
         if ( $Params.type) {
             $param.type = $Params.type
-        } else {
+        }
+        else {
             throw 'Cannot create the property no type is defined'
         }
     }
@@ -1514,7 +1565,8 @@ function New-PodeOAPropertyInternal {
 
     if ($Params.NoAdditionalProperties.IsPresent -and $Params.AdditionalProperties) {
         throw 'Params -NoAdditionalProperties and -AdditionalProperties are mutually exclusive'
-    } else {
+    }
+    else {
         if ($Params.NoAdditionalProperties.IsPresent) { $param.additionalProperties = $false }
 
         if ($Params.AdditionalProperties) { $param.additionalProperties = $Params.AdditionalProperties }
@@ -1566,7 +1618,8 @@ function ConvertTo-PodeOAHeaderProperties {
                     $elems.$($e.name).schema.$k = $e.$k
                 }
             }
-        } else {
+        }
+        else {
             throw 'Header requires a name when used in an encoding context'
         }
     }
@@ -1671,12 +1724,15 @@ function New-PodeOResponseInternal {
     if ([string]::IsNullOrWhiteSpace($Params.Description)) {
         if ($Params.Default) {
             $Description = 'Default Response.'
-        } elseif ($Params.StatusCode) {
+        }
+        elseif ($Params.StatusCode) {
             $Description = Get-PodeStatusDescription -StatusCode $Params.StatusCode
-        } else {
+        }
+        else {
             throw 'A Description is required'
         }
-    } else {
+    }
+    else {
         $Description = $Params.Description
     }
 
@@ -1686,7 +1742,8 @@ function New-PodeOResponseInternal {
         $response = @{
             '$ref' = "#/components/responses/$($Params.Reference)"
         }
-    } else {
+    }
+    else {
         # Build content-type schemas if provided
         $_content = $null
         if ($null -ne $Params.Content) {
@@ -1699,7 +1756,8 @@ function New-PodeOResponseInternal {
             if ($Params.Headers -is [System.Object[]] -or $Params.Headers -is [string] -or $Params.Headers -is [string[]]) {
                 if ($Params.Headers -is [System.Object[]] -and $Params.Headers.Count -gt 0 -and ($Params.Headers[0] -is [hashtable] -or $Params.Headers[0] -is [ordered])) {
                     $_headers = ConvertTo-PodeOAHeaderProperties -Headers $Params.Headers
-                } else {
+                }
+                else {
                     $_headers = @{}
                     foreach ($h in $Params.Headers) {
                         Test-PodeOAComponentInternal -Field headers -DefinitionTag $DefinitionTag -Name $h -PostValidation
@@ -1708,7 +1766,8 @@ function New-PodeOResponseInternal {
                         }
                     }
                 }
-            } elseif ($Params.Headers -is [hashtable]) {
+            }
+            elseif ($Params.Headers -is [hashtable]) {
                 $_headers = ConvertTo-PodeOAObjectSchema -DefinitionTag $DefinitionTag -Content $Params.Headers
             }
         }
@@ -1898,17 +1957,20 @@ function Test-PodeOAComponentInternal {
         foreach ($tag in $DefinitionTag) {
             if (! ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.postValidation[$field].keys -ccontains $Name)) {
                 $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.postValidation[$field][$name] = 1
-            } else {
+            }
+            else {
                 $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.postValidation[$field][$name] += 1
             }
         }
-    } else {
+    }
+    else {
         foreach ($tag in $DefinitionTag) {
             if (!($PodeContext.Server.OpenAPI.Definitions[$tag].components[$field].keys -ccontains $Name)) {
                 # If $Name is not found in the current $tag, return $false or throw an exception
                 if ($ThrowException.IsPresent ) {
                     throw "No components of type $field named $Name are available in the $tag definition."
-                } else {
+                }
+                else {
                     return $false
                 }
             }

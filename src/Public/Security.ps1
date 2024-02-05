@@ -122,7 +122,7 @@ function Add-PodeSecurityHeader {
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
-        
+
         [Parameter()]
         [string]
         $Value,
@@ -141,10 +141,12 @@ function Add-PodeSecurityHeader {
         if ($Headers -inotcontains $Value) {
             $Headers += $Value
             $PodeContext.Server.Security.Headers[$Name] = (($Headers.trim() | Select-Object -Unique) -join ', ')
-        } else {
+        }
+        else {
             return
         }
-    } else {
+    }
+    else {
         $PodeContext.Server.Security.Headers[$Name] = $Value
     }
 }
@@ -419,7 +421,8 @@ function Set-PodeSecurityContentSecurityPolicy {
     # as having it enabled has now been found to cause more vulnerabilities
     if ($XssBlock) {
         Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '1; mode=block'
-    } else {
+    }
+    else {
         Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '0'
     }
 }
@@ -1440,7 +1443,8 @@ function Set-PodeSecurityAccessControl {
     if (![string]::IsNullOrWhiteSpace($Methods)) {
         if ($Methods -icontains '*') {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value '*'
-        } else {
+        }
+        else {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value ($Methods -join ', ')
         }
     }

@@ -1076,7 +1076,8 @@ function Test-PodeAuth {
 
     try {
         $result = Invoke-PodeAuthValidation -Name $Name
-    } catch {
+    }
+    catch {
         $_ | Write-PodeErrorLog
         return $false
     }
@@ -1841,7 +1842,8 @@ function Add-PodeAuthUserFile {
     # set the file path if not passed
     if ([string]::IsNullOrWhiteSpace($FilePath)) {
         $FilePath = Join-PodeServerRoot -Folder '.' -FilePath 'users.json'
-    } else {
+    }
+    else {
         $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot -Resolve
     }
 

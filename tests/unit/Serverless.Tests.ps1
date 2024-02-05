@@ -4,24 +4,24 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 }
 Describe 'Start-PodeAzFuncServer' {
-    BeforeAll{
-    function Push-OutputBinding($Name, $Value) {
-        return @{ Name = $Name; Value = $Value }
-    }
+    BeforeAll {
+        function Push-OutputBinding($Name, $Value) {
+            return @{ Name = $Name; Value = $Value }
+        }
 
-    Mock Get-PodePublicMiddleware { }
-    Mock Get-PodeRouteValidateMiddleware { }
-    Mock Get-PodeBodyMiddleware { }
-    Mock Get-PodeCookieMiddleware { }
-    Mock New-Object { return @{} }
-    Mock Get-PodeHeader { return 'some-value' }
-    Mock Invoke-PodeScriptBlock { }
-    Mock Write-Host { }
-    Mock Invoke-PodeEndware { }
-    Mock Set-PodeServerHeader { }
-    Mock Set-PodeResponseStatus { }
-    Mock Update-PodeServerRequestMetrics { }
-}
+        Mock Get-PodePublicMiddleware { }
+        Mock Get-PodeRouteValidateMiddleware { }
+        Mock Get-PodeBodyMiddleware { }
+        Mock Get-PodeCookieMiddleware { }
+        Mock New-Object { return @{} }
+        Mock Get-PodeHeader { return 'some-value' }
+        Mock Invoke-PodeScriptBlock { }
+        Mock Write-Host { }
+        Mock Invoke-PodeEndware { }
+        Mock Set-PodeServerHeader { }
+        Mock Set-PodeResponseStatus { }
+        Mock Update-PodeServerRequestMetrics { }
+    }
     It 'Throws error for null data' {
         { Start-PodeAzFuncServer -Data $null } | Should -Throw -ExpectedMessage '*because it is null*'
     }
@@ -33,10 +33,10 @@ Describe 'Start-PodeAzFuncServer' {
         $result = Start-PodeAzFuncServer -Data @{
             Request = @{
                 Method = 'get'
-                Query = @{}
-                Url = 'http://example.com'
-            };
-            sys = @{
+                Query  = @{}
+                Url    = 'http://example.com'
+            }
+            sys     = @{
                 MethodName = 'example'
             }
         }
@@ -55,10 +55,10 @@ Describe 'Start-PodeAzFuncServer' {
         $result = Start-PodeAzFuncServer -Data @{
             Request = @{
                 Method = 'get'
-                Query = @{ 'Static-File' = '.a/path/file.txt' }
-                Url = 'http://example.com'
-            };
-            sys = @{
+                Query  = @{ 'Static-File' = '.a/path/file.txt' }
+                Url    = 'http://example.com'
+            }
+            sys     = @{
                 MethodName = 'example'
             }
         }
@@ -77,10 +77,10 @@ Describe 'Start-PodeAzFuncServer' {
         $result = Start-PodeAzFuncServer -Data @{
             Request = @{
                 Method = 'get'
-                Query = @{}
-                Url = 'http://example.com'
-            };
-            sys = @{
+                Query  = @{}
+                Url    = 'http://example.com'
+            }
+            sys     = @{
                 MethodName = 'example'
             }
         }
@@ -100,10 +100,10 @@ Describe 'Start-PodeAzFuncServer' {
         $result = Start-PodeAzFuncServer -Data @{
             Request = @{
                 Method = 'get'
-                Query = @{}
-                Url = 'http://example.com'
-            };
-            sys = @{
+                Query  = @{}
+                Url    = 'http://example.com'
+            }
+            sys     = @{
                 MethodName = 'example'
             }
         }
@@ -123,10 +123,10 @@ Describe 'Start-PodeAzFuncServer' {
         $d = @{
             Request = @{
                 Method = 'get'
-                Query = @{}
-                Url = 'http://example.com'
-            };
-            sys = @{
+                Query  = @{}
+                Url    = 'http://example.com'
+            }
+            sys     = @{
                 MethodName = 'example'
             }
         }
@@ -139,19 +139,19 @@ Describe 'Start-PodeAzFuncServer' {
 }
 
 Describe 'Start-PodeAwsLambdaServer' {
-    BeforeAll{
-    Mock Get-PodePublicMiddleware { }
-    Mock Get-PodeRouteValidateMiddleware { }
-    Mock Get-PodeBodyMiddleware { }
-    Mock Get-PodeCookieMiddleware { }
-    Mock Get-PodeHeader { return 'some-value' }
-    Mock Set-PodeHeader { }
-    Mock Invoke-PodeScriptBlock { }
-    Mock Write-Host { }
-    Mock Invoke-PodeEndware { }
-    Mock Set-PodeServerHeader { }
-    Mock Set-PodeResponseStatus { }
-    Mock Update-PodeServerRequestMetrics { }}
+    BeforeAll {
+        Mock Get-PodePublicMiddleware { }
+        Mock Get-PodeRouteValidateMiddleware { }
+        Mock Get-PodeBodyMiddleware { }
+        Mock Get-PodeCookieMiddleware { }
+        Mock Get-PodeHeader { return 'some-value' }
+        Mock Set-PodeHeader { }
+        Mock Invoke-PodeScriptBlock { }
+        Mock Write-Host { }
+        Mock Invoke-PodeEndware { }
+        Mock Set-PodeServerHeader { }
+        Mock Set-PodeResponseStatus { }
+        Mock Update-PodeServerRequestMetrics { } }
 
     It 'Throws error for null data' {
         { Start-PodeAwsLambdaServer -Data $null } | Should -Throw -ExpectedMessage '*because it is null*'
@@ -162,9 +162,9 @@ Describe 'Start-PodeAwsLambdaServer' {
         $PodeContext = @{ Server = @{ } }
 
         $result = Start-PodeAwsLambdaServer -Data @{
-            httpMethod = 'get'
+            httpMethod            = 'get'
             queryStringParameters = @{}
-            path = '/api/users'
+            path                  = '/api/users'
         }
 
         $result | Should -Not -Be $null
@@ -178,9 +178,9 @@ Describe 'Start-PodeAwsLambdaServer' {
         $PodeContext = @{ Server = @{ } }
 
         $result = Start-PodeAwsLambdaServer -Data @{
-            httpMethod = 'get'
+            httpMethod            = 'get'
             queryStringParameters = @{}
-            path = '/api/users'
+            path                  = '/api/users'
         }
 
         $result | Should -Not -Be $null
@@ -195,9 +195,9 @@ Describe 'Start-PodeAwsLambdaServer' {
         $PodeContext = @{ Server = @{ } }
 
         $result = Start-PodeAwsLambdaServer -Data @{
-            httpMethod = 'get'
+            httpMethod            = 'get'
             queryStringParameters = @{}
-            path = '/api/users'
+            path                  = '/api/users'
         }
 
         $result | Should -Not -Be $null
@@ -212,9 +212,9 @@ Describe 'Start-PodeAwsLambdaServer' {
         $PodeContext = @{ Server = @{ } }
 
         $d = @{
-            httpMethod = 'get'
+            httpMethod            = 'get'
             queryStringParameters = @{}
-            path = '/api/users'
+            path                  = '/api/users'
         }
 
         { Start-PodeAwsLambdaServer -Data $d } | Should -Throw -ExpectedMessage 'some error'

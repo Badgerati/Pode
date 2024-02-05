@@ -462,7 +462,8 @@ function Add-PodeRoute {
                 Path          = $OpenApiPath
             }
         }
-    } elseif ($OAResponses) {
+    }
+    elseif ($OAResponses) {
         foreach ($r in @($newRoutes)) {
             $r.OpenApi.Responses = $OAResponses
         }
@@ -676,6 +677,10 @@ function Add-PodeStaticRoute {
             $DownloadOnly = $RouteGroup.DownloadOnly
         }
 
+        if ($RouteGroup.FileBrowser) {
+            $FileBrowser = $RouteGroup.FileBrowser
+        }
+
         if ($RouteGroup.IfExists -ine 'default') {
             $IfExists = $RouteGroup.IfExists
         }
@@ -715,7 +720,7 @@ function Add-PodeStaticRoute {
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path -Static
-  #  $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+    #  $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
     $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoints from name
@@ -1277,6 +1282,9 @@ Specifies what action to take when a Static Route already exists. (Default: Defa
 .PARAMETER AllowAnon
 If supplied, the Static Routes will allow anonymous access for non-authenticated users.
 
+.PARAMETER FileBrowser
+When supplied, If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .PARAMETER DownloadOnly
 When supplied, all static content on the Routes will be attached as downloads - rather than rendered.
 
@@ -1369,6 +1377,9 @@ function Add-PodeStaticRouteGroup {
         $AllowAnon,
 
         [switch]
+        $FileBrowser,
+
+        [switch]
         $DownloadOnly
     )
 
@@ -1433,6 +1444,10 @@ function Add-PodeStaticRouteGroup {
             $DownloadOnly = $RouteGroup.DownloadOnly
         }
 
+        if ($RouteGroup.FileBrowser) {
+            $FileBrowser = $RouteGroup.FileBrowser
+        }
+
         if ($RouteGroup.IfExists -ine 'default') {
             $IfExists = $RouteGroup.IfExists
         }
@@ -1471,6 +1486,7 @@ function Add-PodeStaticRouteGroup {
         Access           = $Access
         AllowAnon        = $AllowAnon
         DownloadOnly     = $DownloadOnly
+        FileBrowser      = $FileBrowser
         IfExists         = $IfExists
         AccessMeta       = @{
             Role   = $Role
@@ -1766,7 +1782,8 @@ function Clear-PodeRoutes {
 
     if (![string]::IsNullOrWhiteSpace($Method)) {
         $PodeContext.Server.Routes[$Method].Clear()
-    } else {
+    }
+    else {
         $PodeContext.Server.Routes.Keys.Clone() | ForEach-Object {
             $PodeContext.Server.Routes[$_].Clear()
         }
@@ -1938,7 +1955,8 @@ function ConvertTo-PodeRoute {
         if (Test-PodeIsEmpty $Commands) {
             Write-Verbose "Using all commands in $($Module) for converting to routes"
             $Commands = $ModuleCommands
-        } else {
+        }
+        else {
             Write-Verbose "Validating supplied commands against module's exported commands"
             foreach ($cmd in $Commands) {
                 if ($ModuleCommands -inotcontains $cmd) {
@@ -1965,7 +1983,8 @@ function ConvertTo-PodeRoute {
         if ($split.Length -ge 2) {
             $verb = $split[0]
             $noun = $split[1..($split.Length - 1)] -join ([string]::Empty)
-        } else {
+        }
+        else {
             $verb = [string]::Empty
             $noun = $split[0]
         }
@@ -2007,7 +2026,8 @@ function ConvertTo-PodeRoute {
             # either get params from the QueryString or Payload
             if ($WebEvent.Method -ieq 'get') {
                 $parameters = $WebEvent.Query
-            } else {
+            }
+            else {
                 $parameters = $WebEvent.Data
             }
 
@@ -2203,7 +2223,8 @@ function Add-PodePage {
                 # invoke the function (optional splat data)
                 if (Test-PodeIsEmpty $data) {
                     $result = (. $script)
-                } else {
+                }
+                else {
                     $result = (. $script @data)
                 }
 

@@ -92,7 +92,7 @@ Describe 'Test-PodeIsEmpty' {
         }
 
         It 'Return true for a whitespace string' {
-            Test-PodeIsEmpty -Value "  " | Should -Be $true
+            Test-PodeIsEmpty -Value '  ' | Should -Be $true
         }
 
         It 'Return true for an empty scriptblock' {
@@ -102,7 +102,7 @@ Describe 'Test-PodeIsEmpty' {
 
     Context 'Valid value is passed' {
         It 'Return false for a string' {
-            Test-PodeIsEmpty -Value "test" | Should -Be $false
+            Test-PodeIsEmpty -Value 'test' | Should -Be $false
         }
 
         It 'Return false for a number' {
@@ -114,7 +114,7 @@ Describe 'Test-PodeIsEmpty' {
         }
 
         It 'Return false for a hashtable' {
-            Test-PodeIsEmpty -Value @{'key'='value';} | Should -Be $false
+            Test-PodeIsEmpty -Value @{'key' = 'value'; } | Should -Be $false
         }
 
         It 'Return false for a scriptblock' {
@@ -618,7 +618,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $value = '<root><value>test</value></root>'
 
             $result = ConvertFrom-PodeRequestContent -Request @{
-                Body = $value
+                Body            = $value
                 ContentEncoding = [System.Text.Encoding]::UTF8
             } -ContentType 'text/xml'
 
@@ -632,7 +632,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $value = '{ "value": "test" }'
 
             $result = ConvertFrom-PodeRequestContent -Request @{
-                Body = $value
+                Body            = $value
                 ContentEncoding = [System.Text.Encoding]::UTF8
             } -ContentType 'application/json'
 
@@ -645,7 +645,7 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $value = "value`ntest"
 
             $result = ConvertFrom-PodeRequestContent -Request @{
-                Body = $value
+                Body            = $value
                 ContentEncoding = [System.Text.Encoding]::UTF8
             } -ContentType 'text/csv'
 
@@ -655,10 +655,10 @@ Describe 'ConvertFrom-PodeRequestContent' {
 
         It 'Returns original data' {
             $PodeContext = @{ 'Server' = @{ 'Type' = 'http'; 'BodyParsers' = @{} } }
-            $value = "test"
+            $value = 'test'
 
             (ConvertFrom-PodeRequestContent -Request @{
-                Body = $value
+                Body            = $value
                 ContentEncoding = [System.Text.Encoding]::UTF8
             } -ContentType 'text/custom').Data | Should -Be 'test'
         }
@@ -667,8 +667,8 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $PodeContext = @{ 'Server' = @{ 'ServerlessType' = 'AzureFunctions'; 'BodyParsers' = @{}; 'IsServerless' = $true } }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
-                'ContentEncoding' = [System.Text.Encoding]::UTF8;
-                'RawBody' = '{ "value": "test" }';
+                'ContentEncoding' = [System.Text.Encoding]::UTF8
+                'RawBody'         = '{ "value": "test" }'
             } -ContentType 'application/json'
 
             $result.Data | Should -Not -Be $null
@@ -679,8 +679,8 @@ Describe 'ConvertFrom-PodeRequestContent' {
             $PodeContext = @{ 'Server' = @{ 'ServerlessType' = 'AwsLambda'; 'BodyParsers' = @{}; 'IsServerless' = $true } }
 
             $result = ConvertFrom-PodeRequestContent -Request @{
-                'ContentEncoding' = [System.Text.Encoding]::UTF8;
-                'body' = '{ "value": "test" }';
+                'ContentEncoding' = [System.Text.Encoding]::UTF8
+                'body'            = '{ "value": "test" }'
             } -ContentType 'application/json'
 
             $result.Data | Should -Not -Be $null
@@ -706,13 +706,13 @@ Describe 'Test-PodePathIsFile' {
 }
 
 Describe 'Test-PodePathIsWildcard' {
-        It 'Returns true for a wildcard' {
-            Test-PodePathIsWildcard -Path './some/path/*' | Should -Be $true
-        }
+    It 'Returns true for a wildcard' {
+        Test-PodePathIsWildcard -Path './some/path/*' | Should -Be $true
+    }
 
-        It 'Returns false for no wildcard' {
-            Test-PodePathIsWildcard -Path './some/path/folder' | Should -Be $false
-        }
+    It 'Returns false for no wildcard' {
+        Test-PodePathIsWildcard -Path './some/path/folder' | Should -Be $false
+    }
 }
 
 Describe 'Test-PodePathIsDirectory' {
@@ -875,9 +875,9 @@ Describe 'Get-PodeUrl' {
         $WebEvent = @{
             Endpoint = @{
                 Protocol = 'http'
-                Address = 'foo.com/';
+                Address  = 'foo.com/'
             }
-            Path = 'about'
+            Path     = 'about'
         }
 
         Get-PodeUrl | Should -Be 'http://foo.com/about'
@@ -1021,12 +1021,12 @@ Describe 'ConvertFrom-PodeFile' {
 }
 
 Describe 'Get-PodeRelativePath' {
-    BeforeAll{
-    $PodeContext = @{ 'Server' = @{ 'Root' = 'c:/' } }
+    BeforeAll {
+        $PodeContext = @{ 'Server' = @{ 'Root' = 'c:/' } }
 
-    It 'Returns back a literal path' {
-        Get-PodeRelativePath -Path 'c:/path' | Should -Be 'c:/path'
-    }}
+        It 'Returns back a literal path' {
+            Get-PodeRelativePath -Path 'c:/path' | Should -Be 'c:/path'
+        } }
 
     It 'Returns path for literal path when resolving' {
         $PodeContext = @{
@@ -1049,7 +1049,7 @@ Describe 'Get-PodeRelativePath' {
             }
         }
 
-        Get-PodeRelativePath -Path ".\src" -Resolve -JoinRoot | Should -Be (Join-Path $pwd.Path "src")
+        Get-PodeRelativePath -Path '.\src' -Resolve -JoinRoot | Should -Be (Join-Path $pwd.Path 'src')
     }
 
     It 'Returns path for a relative path joined to default root' {
@@ -1063,7 +1063,7 @@ Describe 'Get-PodeRelativePath' {
             }
         }
 
-        Get-PodeRelativePath -Path './src' -JoinRoot -Resolve | Should -Be (Join-Path $pwd.Path "src")
+        Get-PodeRelativePath -Path './src' -JoinRoot -Resolve | Should -Be (Join-Path $pwd.Path 'src')
     }
 
     It 'Returns path for a relative path joined to passed root' {
@@ -1077,13 +1077,13 @@ Describe 'Get-PodeRelativePath' {
 }
 
 Describe 'Get-PodeWildcardFiles' {
-    BeforeAll{
-    Mock Get-PodeRelativePath { return $Path }
-    Mock Get-ChildItem {
-        $ext = [System.IO.Path]::GetExtension($Path)
-        return @(@{ 'FullName' = "./file1$($ext)" })
+    BeforeAll {
+        Mock Get-PodeRelativePath { return $Path }
+        Mock Get-ChildItem {
+            $ext = [System.IO.Path]::GetExtension($Path)
+            return @(@{ 'FullName' = "./file1$($ext)" })
+        }
     }
-}
 
     It 'Get files after adding a wildcard to a directory' {
         $result = @(Get-PodeWildcardFiles -Path './path' -Wildcard '*.ps1')
@@ -1132,12 +1132,12 @@ Describe 'Close-PodeRunspaces' {
 }
 
 Describe 'Close-PodeServerInternal' {
-    BeforeAll{
-    Mock Close-PodeRunspaces { }
-    Mock Stop-PodeFileMonitor { }
-    Mock Close-PodeDisposable { }
-    Mock Remove-PodePSDrives { }
-    Mock Write-Host { }}
+    BeforeAll {
+        Mock Close-PodeRunspaces { }
+        Mock Stop-PodeFileMonitor { }
+        Mock Close-PodeDisposable { }
+        Mock Remove-PodePSDrives { }
+        Mock Write-Host { } }
 
     It 'Closes out pode, but with no done flag' {
         $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }
@@ -1161,27 +1161,28 @@ Describe 'Close-PodeServerInternal' {
 Describe 'Get-PodeEndpointUrl' {
     It 'Returns default endpoint url' {
         $PodeContext = @{ Server = @{
-            Endpoints = @{
-                Example1 = @{
-                    Port = 6000
-                    Address = '127.0.0.1'
-                    FriendlyName = 'thing.com'
-                    Hostname = 'thing.com'
-                    Protocol = 'https'
+                Endpoints = @{
+                    Example1 = @{
+                        Port         = 6000
+                        Address      = '127.0.0.1'
+                        FriendlyName = 'thing.com'
+                        Hostname     = 'thing.com'
+                        Protocol     = 'https'
+                    }
                 }
             }
-        } }
+        }
 
         Get-PodeEndpointUrl | Should -Be 'https://thing.com:6000'
     }
 
     It 'Returns a passed endpoint url' {
         $endpoint = @{
-            Port = 7000
-            Address = '127.0.0.1'
+            Port         = 7000
+            Address      = '127.0.0.1'
             FriendlyName = 'stuff.com'
-            Hostname = 'stuff.com'
-            Protocol = 'http'
+            Hostname     = 'stuff.com'
+            Protocol     = 'http'
         }
 
         Get-PodeEndpointUrl -Endpoint $endpoint | Should -Be 'http://stuff.com:7000'
@@ -1189,11 +1190,11 @@ Describe 'Get-PodeEndpointUrl' {
 
     It 'Returns a passed endpoint url, with default port for http' {
         $endpoint = @{
-            Port = 8080
-            Address = '127.0.0.1'
+            Port         = 8080
+            Address      = '127.0.0.1'
             FriendlyName = 'stuff.com'
-            Hostname = 'stuff.com'
-            Protocol = 'http'
+            Hostname     = 'stuff.com'
+            Protocol     = 'http'
         }
 
         Get-PodeEndpointUrl -Endpoint $endpoint | Should -Be 'http://stuff.com:8080'
@@ -1201,11 +1202,11 @@ Describe 'Get-PodeEndpointUrl' {
 
     It 'Returns a passed endpoint url, with default port for https' {
         $endpoint = @{
-            Port = 8443
-            Address = '127.0.0.1'
+            Port         = 8443
+            Address      = '127.0.0.1'
             FriendlyName = 'stuff.com'
-            Hostname = 'stuff.com'
-            Protocol = 'https'
+            Hostname     = 'stuff.com'
+            Protocol     = 'https'
         }
 
         Get-PodeEndpointUrl -Endpoint $endpoint | Should -Be 'https://stuff.com:8443'
@@ -1222,11 +1223,11 @@ Describe 'Get-PodeEndpointUrl' {
 
 Describe 'Get-PodeCount' {
     Context 'Null' {
-        It 'Null value'{
+        It 'Null value' {
             Get-PodeCount $null | Should -Be 0
         }
     }
-    Context 'String'{
+    Context 'String' {
         It 'Empty' {
             Get-PodeCount '' | Should -Be 0
         }
@@ -1237,25 +1238,25 @@ Describe 'Get-PodeCount' {
         }
     }
 
-    Context 'Numbers'{
-        It 'Number'{
+    Context 'Numbers' {
+        It 'Number' {
             Get-PodeCount 2 | Should -Be 1
         }
     }
 
     Context 'Array' {
-        It 'Empty'{
+        It 'Empty' {
             Get-PodeCount @() | Should -Be 0
         }
 
-        It 'One'{
+        It 'One' {
             Get-PodeCount @(4) | Should -Be 1
             Get-PodeCount @('data') | Should -Be 1
             Get-PodeCount @(@(3)) | Should -Be 1
             Get-PodeCount @(@{}) | Should -Be 1
         }
 
-        It 'Two'{
+        It 'Two' {
             Get-PodeCount @(4, 7) | Should -Be 2
             Get-PodeCount @('data', 9) | Should -Be 2
             Get-PodeCount @(@(3), @()) | Should -Be 2
@@ -1264,29 +1265,29 @@ Describe 'Get-PodeCount' {
     }
 
     Context 'Hashtable' {
-        It 'Empty'{
+        It 'Empty' {
             Get-PodeCount @{} | Should -Be 0
         }
 
-        It 'One'{
-            Get-PodeCount @{'testElement1'=4} | Should -Be 1
-            Get-PodeCount @{'testElement1'='test'} | Should -Be 1
-            Get-PodeCount @{'testElement1'=@()} | Should -Be 1
-            Get-PodeCount @{'testElement1'=@{"insideElement"="won't count"}} | Should -Be 1
+        It 'One' {
+            Get-PodeCount @{'testElement1' = 4 } | Should -Be 1
+            Get-PodeCount @{'testElement1' = 'test' } | Should -Be 1
+            Get-PodeCount @{'testElement1' = @() } | Should -Be 1
+            Get-PodeCount @{'testElement1' = @{'insideElement' = "won't count" } } | Should -Be 1
         }
 
-        It 'Two'{
-            Get-PodeCount @{'testElement1'=4; 'testElement2'=10} | Should -Be 2
-            Get-PodeCount @{'testElement1'='test'; 'testElement2'=10} | Should -Be 2
-            Get-PodeCount @{'testElement1'=@(); 'testElement2'=@(9)} | Should -Be 2
-            Get-PodeCount @{'testElement1'=@{"insideElement"="won't count"}; 'testElement2'=@('testing')} | Should -Be 2
+        It 'Two' {
+            Get-PodeCount @{'testElement1' = 4; 'testElement2' = 10 } | Should -Be 2
+            Get-PodeCount @{'testElement1' = 'test'; 'testElement2' = 10 } | Should -Be 2
+            Get-PodeCount @{'testElement1' = @(); 'testElement2' = @(9) } | Should -Be 2
+            Get-PodeCount @{'testElement1' = @{'insideElement' = "won't count" }; 'testElement2' = @('testing') } | Should -Be 2
         }
     }
 }
 
 Describe 'Convert-PodePathSeparators' {
     Context 'Null' {
-        It 'Null'{
+        It 'Null' {
             Convert-PodePathSeparators -Path $null | Should -Be $null
         }
     }
@@ -1313,8 +1314,8 @@ Describe 'Convert-PodePathSeparators' {
         }
     }
 
-    Context 'Array'{
-        It  'Null'{
+    Context 'Array' {
+        It  'Null' {
             Convert-PodePathSeparators -Path @($null) | Should -Be $null
             Convert-PodePathSeparators -Path @($null, $null) | Should -Be $null
         }
@@ -1339,9 +1340,9 @@ Describe 'Convert-PodePathSeparators' {
 }
 
 Describe 'Out-PodeHost' {
-    BeforeAll{
-    Mock Out-Default {}
-}
+    BeforeAll {
+        Mock Out-Default {}
+    }
     It 'Writes a message to the Host by parameters' {
         Out-PodeHost -InputObject 'Hello'
         Assert-MockCalled Out-Default -Scope It -Times 1
@@ -1418,51 +1419,51 @@ Describe 'Convert-PodeQueryStringToHashTable' {
     }
 
     It 'Emty for uri but no query' {
-        $result = Convert-PodeQueryStringToHashTable -Uri "/api/users"
+        $result = Convert-PodeQueryStringToHashTable -Uri '/api/users'
         $result.Count | Should -Be 0
     }
 
     It 'Hashtable for root query' {
-        $result = Convert-PodeQueryStringToHashTable -Uri "/?Name=Bob"
+        $result = Convert-PodeQueryStringToHashTable -Uri '/?Name=Bob'
         $result.Count | Should -Be 1
         $result['Name'] | Should -Be 'Bob'
     }
 
     It 'Hashtable for root query, no slash' {
-        $result = Convert-PodeQueryStringToHashTable -Uri "?Name=Bob"
+        $result = Convert-PodeQueryStringToHashTable -Uri '?Name=Bob'
         $result.Count | Should -Be 1
         $result['Name'] | Should -Be 'Bob'
     }
 
     It 'Hashtable for root multi-query' {
-        $result = Convert-PodeQueryStringToHashTable -Uri "/?Name=Bob&Age=42"
+        $result = Convert-PodeQueryStringToHashTable -Uri '/?Name=Bob&Age=42'
         $result.Count | Should -Be 2
         $result['Name'] | Should -Be 'Bob'
         $result['Age'] | Should -Be 42
     }
 
     It 'Hashtable for root multi-query, no slash' {
-        $result = Convert-PodeQueryStringToHashTable -Uri "?Name=Bob&Age=42"
+        $result = Convert-PodeQueryStringToHashTable -Uri '?Name=Bob&Age=42'
         $result.Count | Should -Be 2
         $result['Name'] | Should -Be 'Bob'
         $result['Age'] | Should -Be 42
     }
 
     It 'Hashtable for non-root query' {
-        $result = Convert-PodeQueryStringToHashTable -Uri "/api/user?Name=Bob"
+        $result = Convert-PodeQueryStringToHashTable -Uri '/api/user?Name=Bob'
         $result.Count | Should -Be 1
         $result['Name'] | Should -Be 'Bob'
     }
 
     It 'Hashtable for non-root multi-query' {
-        $result = Convert-PodeQueryStringToHashTable -Uri "/api/user?Name=Bob&Age=42"
+        $result = Convert-PodeQueryStringToHashTable -Uri '/api/user?Name=Bob&Age=42'
         $result.Count | Should -Be 2
         $result['Name'] | Should -Be 'Bob'
         $result['Age'] | Should -Be 42
     }
 
     It 'Hashtable for non-root multi-query, end slash' {
-        $result = Convert-PodeQueryStringToHashTable -Uri "/api/user/?Name=Bob&Age=42"
+        $result = Convert-PodeQueryStringToHashTable -Uri '/api/user/?Name=Bob&Age=42'
         $result.Count | Should -Be 2
         $result['Name'] | Should -Be 'Bob'
         $result['Age'] | Should -Be 42
@@ -1502,13 +1503,13 @@ Describe 'ConvertFrom-PodeHeaderQValue' {
 }
 
 Describe 'Get-PodeAcceptEncoding' {
-    BeforeEach{
-    $PodeContext = @{
-        Server = @{
-            Web = @{ Compression = @{ Enabled = $true } }
-            Compression = @{ Encodings = @('gzip', 'deflate', 'x-gzip') }
-        }
-    }}
+    BeforeEach {
+        $PodeContext = @{
+            Server = @{
+                Web         = @{ Compression = @{ Enabled = $true } }
+                Compression = @{ Encodings = @('gzip', 'deflate', 'x-gzip') }
+            }
+        } }
 
     It 'Returns empty for no encoding' {
         Get-PodeAcceptEncoding -AcceptEncoding '' | Should -Be ''

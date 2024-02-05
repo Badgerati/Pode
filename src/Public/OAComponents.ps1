@@ -145,13 +145,14 @@ function Add-PodeOAComponentSchema {
         $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
         if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaValidation) {
             try {
-                $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty  -DefinitionTag $tag) | Resolve-PodeOAReferences -DefinitionTag $tag 
+                $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty  -DefinitionTag $tag) | Resolve-PodeOAReferences -DefinitionTag $tag
                 $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
                     'available' = $true
                     'schema'    = $modifiedComponent
                     'json'      = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.depth
                 }
-            } catch {
+            }
+            catch {
                 if ($_.ToString().StartsWith('Validation of schema with')) {
                     $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
                         'available' = $false
@@ -367,7 +368,8 @@ function Add-PodeOAComponentParameter {
         if ([string]::IsNullOrWhiteSpace($Name)) {
             if ($Parameter.name) {
                 $Name = $Parameter.name
-            } else {
+            }
+            else {
                 throw 'The Parameter has no name. Please provide a name to this component using -Name property'
             }
         }
@@ -448,7 +450,8 @@ function Add-PodeOAComponentExample {
         }
         if ($Value) {
             $Example.value = $Value
-        } elseif ($ExternalValue) {
+        }
+        elseif ($ExternalValue) {
             $Example.externalValue = $ExternalValue
         }
 

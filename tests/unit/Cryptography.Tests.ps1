@@ -36,7 +36,7 @@ Describe 'New-PodeGuid' {
     }
 
     It 'Returns a secure guid' {
-        Mock Get-PodeRandomBytes { return @(10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10) }
+        Mock Get-PodeRandomBytes { return @(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10) }
         New-PodeGuid -Secure -Length 16 | Should -Be '0a0a0a0a-0a0a-0a0a-0a0a-0a0a0a0a0a0a'
     }
 }

@@ -19,7 +19,7 @@ Describe 'Session Requests' {
                     param($username, $password)
 
                     if (($username -eq 'morty') -and ($password -eq 'pickle')) {
-                        return @{ User = @{ ID ='M0R7Y302' } }
+                        return @{ User = @{ ID = 'M0R7Y302' } }
                     }
 
                     return @{ Message = 'Invalid details supplied' }
@@ -29,9 +29,9 @@ Describe 'Session Requests' {
                     $WebEvent.Session.Data.Views++
 
                     Write-PodeJsonResponse -Value @{
-                        Result = 'OK'
+                        Result   = 'OK'
                         Username = $WebEvent.Auth.User.ID
-                        Views = $WebEvent.Session.Data.Views
+                        Views    = $WebEvent.Session.Data.Views
                     }
                 }
             }

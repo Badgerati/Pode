@@ -104,8 +104,10 @@ Describe 'Get-PodeFlashMessage' {
     It 'Returns empty array on key that is empty' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
         $WebEvent = @{ 'Session' = @{ 'Data' = @{
-            'Flash' = @{ 'Test1' = @(); }
-         } } }
+                    'Flash' = @{ 'Test1' = @(); }
+                }
+            }
+        }
 
         $result = (Get-PodeFlashMessage -Name 'Test1')
         $result.Length | Should -Be 0
