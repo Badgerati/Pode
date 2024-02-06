@@ -195,7 +195,7 @@ function Start-PodeWebServer {
                                         }
                                     }
                                     elseif ($null -ne $WebEvent.Route.Logic) {
-                                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
+                                        $_args = @(Merge-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
                                         Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
                                     }
                                 }
@@ -369,7 +369,7 @@ function Start-PodeWebServer {
                         $SignalEvent.Route = Find-PodeSignalRoute -Path $SignalEvent.Path -EndpointName $SignalEvent.Endpoint.Name
 
                         if ($null -ne $SignalEvent.Route) {
-                            $_args = @(Get-PodeScriptblockArguments -ArgumentList $SignalEvent.Route.Arguments -UsingVariables $SignalEvent.Route.UsingVariables)
+                            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $SignalEvent.Route.Arguments -UsingVariables $SignalEvent.Route.UsingVariables)
                             Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $_args -Scoped -Splat
                         }
                         else {

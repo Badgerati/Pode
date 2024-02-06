@@ -103,6 +103,7 @@
         'Protect-PodeValue',
         'Resolve-PodeValue',
         'Invoke-PodeScriptBlock',
+        'Merge-PodeScriptblockArguments',
         'Test-PodeIsUnix',
         'Test-PodeIsWindows',
         'Test-PodeIsMacOS',

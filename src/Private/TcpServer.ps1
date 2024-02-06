@@ -149,7 +149,7 @@ function Start-PodeTcpServer {
 
                         # invoke it
                         if ($null -ne $verb.Logic) {
-                            $_args = @(Get-PodeScriptblockArguments -ArgumentList $verb.Arguments -UsingVariables $verb.UsingVariables)
+                            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $verb.Arguments -UsingVariables $verb.UsingVariables)
                             Invoke-PodeScriptBlock -ScriptBlock $verb.Logic -Arguments $_args -Scoped -Splat
                         }
 

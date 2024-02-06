@@ -48,6 +48,12 @@ function Add-PodeScopedVariableInbuiltUsing {
             $strScriptBlock = $strScriptBlock.Replace($Matches['full'], "`$using:$($Matches['name'])")
         }
 
+        # just return if there are no $using:
+        if ($strScriptBlock -inotmatch '\$using:') {
+            return $ScriptBlock, $null
+        }
+
+        # if we found any inner usings, recreate the scriptblock
         if ($foundInnerUsing) {
             $ScriptBlock = [scriptblock]::Create($strScriptBlock)
         }

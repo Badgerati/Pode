@@ -367,7 +367,7 @@ function Start-PodeLoggingRunspace {
 
             # convert to log item into a writable format
             $_args = @($log.Item) + @($logger.Arguments)
-            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.UsingVariables)
+            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.UsingVariables)
 
             $rawItems = $log.Item
             $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -Return -Splat)
@@ -397,7 +397,7 @@ function Start-PodeLoggingRunspace {
             # send the writable log item off to the log writer
             if ($null -ne $result) {
                 $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
-                $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.Method.UsingVariables)
+                $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.Method.UsingVariables)
                 Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -Splat
             }
 
@@ -423,7 +423,7 @@ function Test-PodeLoggerBatches {
             $batch.RawItems = @()
 
             $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
-            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.Method.UsingVariables)
+            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $logger.Method.UsingVariables)
             Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -Splat
         }
     }

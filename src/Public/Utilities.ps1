@@ -547,6 +547,33 @@ function Invoke-PodeScriptBlock {
     }
 }
 
+function Merge-PodeScriptblockArguments {
+    param(
+        [Parameter()]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter()]
+        [object[]]
+        $UsingVariables
+    )
+
+    if ($null -eq $ArgumentList) {
+        $ArgumentList = @()
+    }
+
+    if (($null -eq $UsingVariables) -or ($UsingVariables.Length -le 0)) {
+        return $ArgumentList
+    }
+
+    $_vars = @()
+    foreach ($_var in $UsingVariables) {
+        $_vars += , $_var.Value
+    }
+
+    return ($_vars + $ArgumentList)
+}
+
 <#
 .SYNOPSIS
 Tests if a value is empty - the value can be of any type.

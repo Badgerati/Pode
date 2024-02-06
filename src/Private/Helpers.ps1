@@ -80,7 +80,7 @@ function Get-PodeFileContentUsingViewEngine {
                     $_args = @($Path, $Data)
                 }
 
-                $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables)
+                $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables)
                 $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -Return -Splat)
             }
         }
@@ -1484,7 +1484,7 @@ function ConvertFrom-PodeRequestContent {
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
             $parser = $PodeContext.Server.BodyParsers[$ContentType]
-            $_args = @(Get-PodeScriptblockArguments -ArgumentList $Content -UsingVariables $parser.UsingVariables)
+            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $Content -UsingVariables $parser.UsingVariables)
             $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)
             $Content = $null
             return $Result
@@ -2681,33 +2681,6 @@ function Find-PodeModuleFile {
     }
 
     return $path
-}
-
-function Get-PodeScriptblockArguments {
-    param(
-        [Parameter()]
-        [object[]]
-        $ArgumentList,
-
-        [Parameter()]
-        [object[]]
-        $UsingVariables
-    )
-
-    if ($null -eq $ArgumentList) {
-        $ArgumentList = @()
-    }
-
-    if (($null -eq $UsingVariables) -or ($UsingVariables.Length -le 0)) {
-        return $ArgumentList
-    }
-
-    $_vars = @()
-    foreach ($_var in $UsingVariables) {
-        $_vars += , $_var.Value
-    }
-
-    return ($_vars + $ArgumentList)
 }
 
 function Clear-PodeHashtableInnerKeys {

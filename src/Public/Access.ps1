@@ -429,7 +429,7 @@ function Test-PodeAccess {
     if (($null -eq $Source) -or ($Source.Length -eq 0)) {
         if ($null -ne $access.Scheme.ScriptBlock) {
             $_args = $ArgumentList + @($access.Scheme.Arguments)
-            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scheme.Scriptblock.UsingVariables)
+            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scheme.Scriptblock.UsingVariables)
             $Source = Invoke-PodeScriptBlock -ScriptBlock $access.Scheme.Scriptblock.Script -Arguments $_args -Return -Splat
         }
     }
@@ -437,7 +437,7 @@ function Test-PodeAccess {
     # check for custom validator, or use default match logic
     if ($null -ne $access.ScriptBlock) {
         $_args = @(, $Source) + @(, $Destination) + @($access.Arguments)
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.ScriptBlock.UsingVariables)
+        $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.ScriptBlock.UsingVariables)
         return [bool](Invoke-PodeScriptBlock -ScriptBlock $access.ScriptBlock.Script -Arguments $_args -Return -Splat)
     }
 
@@ -528,7 +528,7 @@ function Test-PodeAccessUser {
     # otherwise, invoke scriptblock
     else {
         $_args = @($user) + @($access.Scheme.Arguments)
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scheme.Scriptblock.UsingVariables)
+        $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scheme.Scriptblock.UsingVariables)
         $userAccess = Invoke-PodeScriptBlock -ScriptBlock $access.Scheme.Scriptblock.Script -Arguments $_args -Return -Splat
     }
 
