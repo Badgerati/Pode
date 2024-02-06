@@ -130,6 +130,8 @@ serves the file directly.
 The relative path to the directory that should be displayed. This path is resolved and used to generate a list of contents.
 
 .EXAMPLE
+# resolve for relative path
+$RelativePath = Get-PodeRelativePath -Path './static' -JoinRoot
 Write-PodeDirectoryResponseInternal -RelativePath './static'
 
 Generates and serves an HTML page that lists the contents of the './static' directory, allowing users to click through files and directories.
@@ -144,9 +146,10 @@ function Write-PodeDirectoryResponseInternal {
     )
 
     # Retrieve the child items of the specified directory
-    $child = Get-ChildItem -Path $RelativePath 
+    $child = Get-ChildItem -Path $RelativePath
     $pathSplit = $RelativePath.Split(':')
     $leaf = $pathSplit[1]
+
     # Determine if the server is running in Windows mode or is running a varsion that support Linux
     # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.4#example-10-output-for-non-windows-operating-systems
     $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
@@ -167,10 +170,10 @@ function Write-PodeDirectoryResponseInternal {
 
         #  # Add the parent directory link
         if ($windowsMode) {
-            $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
+            $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder2-open'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
         }
         else {
-            $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
+            $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
         }
     }
     else {
@@ -182,18 +185,20 @@ function Write-PodeDirectoryResponseInternal {
     foreach ($item in $child) {
         if ($item.PSIsContainer) {
             $size = ''
+            $icon = 'bi bi-folder2'
         }
         else {
             $size = '{0:N2}KB' -f ($item.Length / 1KB)
+            $icon = 'bi bi-file'
         }
         $link = "$baseLink$([uri]::EscapeDataString($item.Name))"
 
         # Format each item as an HTML row
         if ($windowsMode) {
-            $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
+            $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='icon'><i class='$icon'></i></td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
         }
         else {
-            $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
+            $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='icon'><i class='$icon'></i></td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
         }
     }
 

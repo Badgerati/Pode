@@ -1,28 +1,47 @@
 <html lang="en" ; style='background-color: #01b0c4' ;>
 
 <head>
+    <!-- Include the Bootstrap Icons stylesheet -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
+
+    <!-- Folder Icon -->
+    <i class="bi bi-folder2"></i>
+
+    <!-- File Icon -->
+    <i class="bi bi-file"></i>
+
+    <!-- Folder open 2 Icon -->
+    <i class="bi bi-folder2-open"></i>
+
     <title>File Browser:$($Data.Path)</title>
     <meta charset='utf-8'>
+
     <style>
+
+
         h3 {
             font-family: 'Courier New', Courier, monospace;
             /* Applies monospace font to <h2> */
         }
 
         /* Add CSS styles here for column widths */
-        .unixMode {
-            width: 40px;
-            text-align: left;
-            max-width: 40px;
-            min-width: 40px;
+
+
+        .icon {
+            width: 10px;
+            /* Fixed width for the icon column */
+            text-align: right;
+            /* Centers the icon within the column */
+            vertical-align: middle;
+            /* Aligns the icon vertically in the middle of the cell */
+
         }
 
+        .unixMode,
         .mode {
-            width: 40px;
+            width: 60px;
             text-align: left;
-
-            max-width: 40px;
-            min-width: 40px;
         }
 
         .user {
@@ -36,10 +55,8 @@
         }
 
         .DateTime {
-            width: 100px;
+            width: 200px;
             text-align: right;
-            max-width: 100px;
-            min-width: 100px;
             /* Align text to the right */
         }
 
@@ -72,7 +89,7 @@
 
 
         table {
-            /*    table-layout: fixed;*/
+            table-layout: fixed;
             width: 100%;
             font-family: 'Courier New', Courier, monospace;
             /* Applies monospace font to the table */
@@ -103,11 +120,11 @@
         var WindowsMode = $($Data.windowsMode);
         var tableContent = '';
         if (WindowsMode) {
-            tableContent += '<tr> <th class="mode">Mode</th> <th class="dateTime">CreationTime</th> <th class="dateTime">LastWriteTime</th> <th class="size">Size</th> <th class="name">Name</th> </tr> <tr> <td class="mode">----</td>' +
-                '<td class="dateTime">-------------</td> <td class="dateTime">-------------</td> <td class="size">----</td> <td class="name">----</td> </tr>';
+            tableContent += '<tr> <th class="mode">Mode</th> <th class="dateTime">CreationTime</th> <th class="dateTime">LastWriteTime</th> <th class="size">Size</th> <th class="icon"></th> <th class="name">Name</th> </tr> <tr> <th class="mode">----</th>' +
+                '<th class="dateTime">-------------</th> <th class="dateTime">-------------</th> <th class="size">----</th> <th class="icon"></th> <th class="name">----</th> </tr>';
         } else {
-            tableContent += '<tr> <th class="unixMode">UnixMode</th>  <th class="user">User</th> <th class="group">Group</th> <th class="dateTime">CreationTime</th> <th class="dateTime">LastWriteTime</th> <th class="size">Size</th> <th class="name">Name</th> </tr>' +
-                '<tr> <td class="unixMode">--------</td>  <td class="user">----</td> <td class="group">-----</td> <td class="dateTime">-------------</td> <td class="dateTime">-------------</td> <td class="size">----</td> <td class="name">----</td> </tr>';
+            tableContent += '<tr> <th class="unixMode">UnixMode</th>  <th class="user">User</th> <th class="group">Group</th> <th class="dateTime">CreationTime</th> <th class="dateTime">LastWriteTime</th> <th class="size">Size</th> <th class="icon"></th> <th class="name">Name</th> </tr>' +
+                '<tr> <th class="unixMode">--------</th>  <th class="user">----</th> <th class="group">-----</th> <th class="dateTime">-------------</th> <th class="dateTime">-------------</th> <th class="size">----</th> <th class="icon"></th> <th class="name">----</th> </tr>';
         }
 
         // Insert the table content into the table body

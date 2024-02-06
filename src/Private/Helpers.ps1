@@ -1745,7 +1745,8 @@ function Test-PodePathIsDirectory {
         return $false
     }
 
-    return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
+    return (Test-Path -Path $path -PathType Container)
+ #   return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
 
 function Convert-PodePathSeparators {
