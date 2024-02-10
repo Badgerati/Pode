@@ -235,13 +235,20 @@ Prior to 2.0 if you wanted to use quick local variables in your Routes/etc, you 
 The `$using:` syntax is supported in almost all `-ScriptBlock` parameters for the likes of:
 
 * Authentication
+* Access
+* Caching
 * Endware
+* Events
+* FileWatchers
 * Handlers
 * Logging
 * Middleware
 * Routes
 * Schedules
+* Secrets
 * Timers
+* Verbs
+* WebSockets
 
 Below, the `$outer_msg` and `$inner_msg` variables can now be more simply referenced in a Route:
 
@@ -258,6 +265,12 @@ Start-PodeServer -ScriptBlock {
     }
 }
 ```
+
+!!! note
+    In some environments, or for some use cases like Pode.Web, the `$outer_msg` variables need to be created within the `Start-PodeServer` scriptblock due to scoping issues.
+
+!!! tip
+    You can create custom Scoped Variables like `$using:`, `$state:`, and `$session` using the documentation for [Scoped Variables](../ScopedVariables).
 
 ## Secret Vaults
 

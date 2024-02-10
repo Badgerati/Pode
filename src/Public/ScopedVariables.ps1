@@ -143,10 +143,12 @@ function Convert-PodeScopedVariable {
             return $ScriptBlock
         }
 
-        # loop and replace "set" syntax
-        while ($strScriptBlock -imatch $scopedVar.Set.Pattern) {
-            $setReplace = $scopedVar.Set.Replace.Replace('{{name}}', $Matches['name'])
-            $strScriptBlock = $strScriptBlock.Replace($Matches['full'], $setReplace)
+        # loop and replace "set" syntax if replace template supplied
+        if (![string]::IsNullOrEmpty($scopedVar.Set.Replace)) {
+            while ($strScriptBlock -imatch $scopedVar.Set.Pattern) {
+                $setReplace = $scopedVar.Set.Replace.Replace('{{name}}', $Matches['name'])
+                $strScriptBlock = $strScriptBlock.Replace($Matches['full'], $setReplace)
+            }
         }
 
         # loop and replace "get" syntax
@@ -177,7 +179,7 @@ You can use the "{{name}}" placeholder to show where the <name> would be placed 
 For example, "$var = $state:<name>" to "Get-PodeState -Name <name>" would need a GetReplace value of "Get-PodeState -Name '{{name}}'".
 
 .PARAMETER SetReplace
-A template to be used when converting "$SV:<name> = <value>" to a "Set-SVValue -Name <name> -Value <value>" syntax.
+An optional template to be used when converting "$SV:<name> = <value>" to a "Set-SVValue -Name <name> -Value <value>" syntax.
 You can use the "{{name}}" placeholder to show where the <name> would be placed in the conversion. The <value> will automatically be appended to the end.
 For example, "$state:<name> = <value>" to "Set-PodeState -Name <name> -Value <value>" would need a SetReplace value of "Set-PodeState -Name '{{name}}' -Value ".
 
@@ -215,9 +217,9 @@ function Add-PodeScopedVariable {
         [string]
         $GetReplace,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Replace')]
+        [Parameter(ParameterSetName = 'Replace')]
         [string]
-        $SetReplace,
+        $SetReplace = $null,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ScriptBlock')]
         [scriptblock]
