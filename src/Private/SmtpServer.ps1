@@ -140,8 +140,7 @@ function Start-PodeSmtpServer {
                             $handlers = Get-PodeHandler -Type Smtp
                             foreach ($name in $handlers.Keys) {
                                 $handler = $handlers[$name]
-                                $_args = @(Merge-PodeScriptblockArguments -ArgumentList $handler.Arguments -UsingVariables $handler.UsingVariables)
-                                Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $_args -Scoped -Splat
+                                Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $handler.Arguments -UsingVariables $handler.UsingVariables -Scoped -Splat
                             }
                         }
                     }

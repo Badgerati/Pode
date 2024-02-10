@@ -16,8 +16,7 @@ function Invoke-PodeEndware {
         }
 
         try {
-            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $eware.Arguments -UsingVariables $eware.UsingVariables)
-            $null = Invoke-PodeScriptBlock -ScriptBlock $eware.Logic -Arguments $_args -Scoped -Splat
+            $null = Invoke-PodeScriptBlock -ScriptBlock $eware.Logic -Arguments $eware.Arguments -UsingVariables $eware.UsingVariables -Scoped -Splat
         }
         catch {
             $_ | Write-PodeErrorLog

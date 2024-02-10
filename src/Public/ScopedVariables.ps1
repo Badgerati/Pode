@@ -1,3 +1,27 @@
+<#
+.SYNOPSIS
+Converts Scoped Variables within a given ScriptBlock.
+
+.DESCRIPTION
+Converts Scoped Variables within a given ScriptBlock, and returns the updated ScriptBlock back, including any
+using-variable values that will need to be supplied as parameters to the ScriptBlock first.
+
+.PARAMETER ScriptBlock
+The ScriptBlock to be converted.
+
+.PARAMETER PSSession
+An optional SessionState object, used to retrieve using-variable values.
+If not supplied, using-variable values will not be converted.
+
+.PARAMETER Exclude
+An optional array of one or more Scoped Variable Names to Exclude from converting. (ie: Session, Using, or a Name from Add-PodeScopedVariable)
+
+.EXAMPLE
+$ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+.EXAMPLE
+$ScriptBlock = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -Exclude Session, Using
+#>
 function Convert-PodeScopedVariables {
     [CmdletBinding()]
     param(
@@ -46,6 +70,29 @@ function Convert-PodeScopedVariables {
     return $ScriptBlock
 }
 
+<#
+.SYNOPSIS
+Converts a Scoped Variable within a given ScriptBlock.
+
+.DESCRIPTION
+Converts a Scoped Variable within a given ScriptBlock, and returns the updated ScriptBlock back, including any
+other values that will need to be supplied as parameters to the ScriptBlock first.
+
+.PARAMETER Name
+The Name of the Scoped Variable to convert. (ie: Session, Using, or a Name from Add-PodeScopedVariable)
+
+.PARAMETER ScriptBlock
+The ScriptBlock to be converted.
+
+.PARAMETER PSSession
+An optional SessionState object, used to retrieve using-variable values or other values where scope is required.
+
+.EXAMPLE
+$ScriptBlock = Convert-PodeScopedVariable -Name State -ScriptBlock $ScriptBlock
+
+.EXAMPLE
+$ScriptBlock, $otherResults = Convert-PodeScopedVariable -Name Using -ScriptBlock $ScriptBlock
+#>
 function Convert-PodeScopedVariable {
     [CmdletBinding()]
     param(
@@ -77,7 +124,12 @@ function Convert-PodeScopedVariable {
 
     # scriptblock or replace?
     if ($null -ne $scopedVar.ScriptBlock) {
-        return (Invoke-PodeScriptBlock -ScriptBlock $scopedVar.ScriptBlock -Arguments $ScriptBlock, $PSSession -Splat -Return -NoNewClosure)
+        return Invoke-PodeScriptBlock `
+            -ScriptBlock $scopedVar.ScriptBlock `
+            -Arguments $ScriptBlock, $PSSession, $scopedVar.Get.Pattern, $scopedVar.Set.Pattern `
+            -Splat `
+            -Return `
+            -NoNewClosure
     }
 
     # replace style
@@ -108,6 +160,50 @@ function Convert-PodeScopedVariable {
     }
 }
 
+<#
+.SYNOPSIS
+Adds a new Scoped Variable.
+
+.DESCRIPTION
+Adds a new Scoped Variable, to make calling certain functions simpler.
+For example "$state:Name" instead of "Get-PodeState" and "Set-PodeState".
+
+.PARAMETER Name
+The Name of the Scoped Variable.
+
+.PARAMETER GetReplace
+A template to be used when converting "$var = $SV:<name>" to a "Get-SVValue -Name <name>" syntax.
+You can use the "{{name}}" placeholder to show where the <name> would be placed in the conversion. The result will also be automatically wrapped in brackets.
+For example, "$var = $state:<name>" to "Get-PodeState -Name <name>" would need a GetReplace value of "Get-PodeState -Name '{{name}}'".
+
+.PARAMETER SetReplace
+A template to be used when converting "$SV:<name> = <value>" to a "Set-SVValue -Name <name> -Value <value>" syntax.
+You can use the "{{name}}" placeholder to show where the <name> would be placed in the conversion. The <value> will automatically be appended to the end.
+For example, "$state:<name> = <value>" to "Set-PodeState -Name <name> -Value <value>" would need a SetReplace value of "Set-PodeState -Name '{{name}}' -Value ".
+
+.PARAMETER ScriptBlock
+For more advanced conversions, that aren't as simple as a simple find/replace, you can supply a ScriptBlock instead.
+This ScriptBlock will be supplied ScriptBlock to convert, followed by a SessionState object, and the Get/Set regex patterns, as parameters.
+The ScriptBlock should returned a converted ScriptBlock that works, plus an optional array of values that should be supplied to the ScriptBlock when invoked.
+
+.EXAMPLE
+Add-PodeScopedVariable -Name 'cache' -SetReplace "Set-PodeCache -Key '{{name}}' -InputObject " -GetReplace "Get-PodeCache -Key '{{name}}'"
+
+.EXAMPLE
+Add-PodeScopedVariable -Name 'config' -ScriptBlock {
+    param($ScriptBlock, $SessionState, $GetPattern, $SetPattern)
+    $strScriptBlock = "$($ScriptBlock)"
+    $template = "(Get-PodeConfig).'{{name}}'"
+
+    # allows "$port = $config:port" instead of "$port = (Get-PodeConfig).port"
+    while ($strScriptBlock -imatch $GetPattern) {
+        $getReplace = $template.Replace('{{name}}', $Matches['name'])
+        $strScriptBlock = $strScriptBlock.Replace($Matches['full'], "($($getReplace))")
+    }
+
+    return [scriptblock]::Create($strScriptBlock)
+}
+#>
 function Add-PodeScopedVariable {
     [CmdletBinding(DefaultParameterSetName = 'Replace')]
     param(
@@ -117,11 +213,11 @@ function Add-PodeScopedVariable {
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Replace')]
         [string]
-        $SetReplace,
+        $GetReplace,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Replace')]
         [string]
-        $GetReplace,
+        $SetReplace,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ScriptBlock')]
         [scriptblock]
@@ -137,17 +233,30 @@ function Add-PodeScopedVariable {
     $PodeContext.Server.ScopedVariables[$Name] = @{
         $Name       = $Name
         ScriptBlock = $ScriptBlock
-        Set         = @{
-            Pattern = "(?<full>\`$$($Name)\:(?<name>[a-z0-9_\?]+)\s*=)"
-            Replace = $SetReplace
-        }
         Get         = @{
             Pattern = "(?<full>\`$$($Name)\:(?<name>[a-z0-9_\?]+))"
             Replace = $GetReplace
         }
+        Set         = @{
+            Pattern = "(?<full>\`$$($Name)\:(?<name>[a-z0-9_\?]+)\s*=)"
+            Replace = $SetReplace
+        }
     }
 }
 
+<#
+.SYNOPSIS
+Removes a Scoped Variable.
+
+.DESCRIPTION
+Removes a Scoped Variable.
+
+.PARAMETER Name
+The Name of a Scoped Variable to remove.
+
+.EXAMPLE
+Remove-PodeScopedVariable -Name State
+#>
 function Remove-PodeScopedVariable {
     [CmdletBinding()]
     param(
@@ -159,6 +268,19 @@ function Remove-PodeScopedVariable {
     $null = $PodeContext.Server.ScopedVariables.Remove($Name)
 }
 
+<#
+.SYNOPSIS
+Tests if a Scoped Variable exists.
+
+.DESCRIPTION
+Tests if a Scoped Variable exists.
+
+.PARAMETER Name
+The Name of the Scoped Variable to check.
+
+.EXAMPLE
+if (Test-PodeScopedVariable -Name $Name) { ... }
+#>
 function Test-PodeScopedVariable {
     [CmdletBinding()]
     param(
@@ -170,10 +292,36 @@ function Test-PodeScopedVariable {
     return $PodeContext.Server.ScopedVariables.Contains($Name)
 }
 
+<#
+.SYNOPSIS
+Removes all Scoped Variables.
+
+.DESCRIPTION
+Removes all Scoped Variables.
+
+.EXAMPLE
+Clear-PodeScopedVariables
+#>
 function Clear-PodeScopedVariables {
     $null = $PodeContext.Server.ScopedVariables.Clear()
 }
 
+<#
+.SYNOPSIS
+Get a Scoped Variable(s).
+
+.DESCRIPTION
+Get a Scoped Variable(s).
+
+.PARAMETER Name
+The Name of the Scoped Variable(s) to retrieve.
+
+.EXAMPLE
+Get-PodeScopedVariable -Name State
+
+.EXAMPLE
+Get-PodeScopedVariable -Name State, Using
+#>
 function Get-PodeScopedVariable {
     [CmdletBinding()]
     param(
@@ -193,6 +341,22 @@ function Get-PodeScopedVariable {
         })
 }
 
+<#
+.SYNOPSIS
+Automatically loads Scoped Variable ps1 files
+
+.DESCRIPTION
+Automatically loads Scoped Variable ps1 files from either a /scoped-vars folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+
+.PARAMETER Path
+Optional Path to a folder containing ps1 files, can be relative or literal.
+
+.EXAMPLE
+Use-PodeScopedVariables
+
+.EXAMPLE
+Use-PodeScopedVariables -Path './my-vars'
+#>
 function Use-PodeScopedVariables {
     [CmdletBinding()]
     param(

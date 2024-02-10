@@ -18,8 +18,7 @@ function Invoke-PodeEvent {
         }
 
         try {
-            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $evt.Arguments -UsingVariables $evt.UsingVariables)
-            $null = Invoke-PodeScriptBlock -ScriptBlock $evt.ScriptBlock -Arguments $_args -Scoped -Splat
+            $null = Invoke-PodeScriptBlock -ScriptBlock $evt.ScriptBlock -Arguments $evt.Arguments -UsingVariables $evt.UsingVariables -Scoped -Splat
         }
         catch {
             $_ | Write-PodeErrorLog

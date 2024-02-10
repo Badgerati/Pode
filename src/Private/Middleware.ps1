@@ -38,8 +38,7 @@ function Invoke-PodeMiddleware {
         }
 
         try {
-            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $midware.Arguments -UsingVariables $midware.UsingVariables)
-            $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments $_args -Return -Scoped -Splat
+            $continue = Invoke-PodeScriptBlock -ScriptBlock $midware.Logic -Arguments $midware.Arguments -UsingVariables $midware.UsingVariables -Return -Scoped -Splat
             if ($null -eq $continue) {
                 $continue = $true
             }

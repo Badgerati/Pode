@@ -831,8 +831,7 @@ function Invoke-PodeAuthInbuiltScriptBlock {
         $UsingVariables
     )
 
-    $_args = @(Merge-PodeScriptblockArguments -ArgumentList $User -UsingVariables $UsingVariables)
-    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $_args -Return -Splat)
+    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $User -UsingVariables $UsingVariables -Return -Splat)
 }
 
 function Get-PodeAuthWindowsLocalMethod {
@@ -1204,14 +1203,12 @@ function Test-PodeAuthValidation {
             $original = $result
 
             $_args = @($result) + @($auth.Arguments)
-            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $auth.UsingVariables)
-            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -Return -Splat)
+            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -UsingVariables $auth.UsingVariables -Return -Splat)
 
             # if we have user, then run post validator if present
             if ([string]::IsNullOrEmpty($result.Code) -and ($null -ne $auth.Scheme.PostValidator.Script)) {
                 $_args = @($original) + @($result) + @($auth.Scheme.Arguments)
-                $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables)
-                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -Return -Splat)
+                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables -Return -Splat)
             }
         }
 

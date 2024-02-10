@@ -475,6 +475,9 @@ The ScriptBlock to invoke.
 .PARAMETER Arguments
 Any arguments that should be supplied to the ScriptBlock.
 
+.PARAMETER UsingVariables
+Optional array of "using-variable" values, which will be automatically prepended to any supplied Arguments when supplied to the ScriptBlock.
+
 .PARAMETER Scoped
 Run the ScriptBlock in a scoped context.
 
@@ -504,6 +507,10 @@ function Invoke-PodeScriptBlock {
         [Parameter()]
         $Arguments = $null,
 
+        [Parameter()]
+        [object[]]
+        $UsingVariables = $null,
+
         [switch]
         $Scoped,
 
@@ -517,14 +524,22 @@ function Invoke-PodeScriptBlock {
         $NoNewClosure
     )
 
+    # force no new closure if running serverless
     if ($PodeContext.Server.IsServerless) {
         $NoNewClosure = $true
     }
 
+    # if new closure needed, create it
     if (!$NoNewClosure) {
         $ScriptBlock = ($ScriptBlock).GetNewClosure()
     }
 
+    # merge arguments together, if we have using vars supplied
+    if (($null -ne $UsingVariables) -and ($UsingVariables.Length -gt 0)) {
+        $Arguments = @(Merge-PodeScriptblockArguments -ArgumentList $Arguments -UsingVariables $UsingVariables)
+    }
+
+    # invoke the scriptblock
     if ($Scoped) {
         if ($Splat) {
             $result = (& $ScriptBlock @Arguments)
@@ -542,20 +557,41 @@ function Invoke-PodeScriptBlock {
         }
     }
 
+    # if needed, return the result
     if ($Return) {
         return $result
     }
 }
 
+<#
+.SYNOPSIS
+Merges Arguments and Using Variables together.
+
+.DESCRIPTION
+Merges Arguments and Using Variables together to be supplied to a ScriptBlock.
+The Using Variables will be prepended so then are supplied first to a ScriptBlock.
+
+.PARAMETER ArgumentList
+And optional array of Arguments.
+
+.PARAMETER UsingVariables
+And optional array of "using-variable" values to be prepended.
+
+.EXAMPLE
+$Arguments = @(Merge-PodeScriptblockArguments -ArgumentList $Arguments -UsingVariables $UsingVariables)
+
+.EXAMPLE
+$Arguments = @(Merge-PodeScriptblockArguments -UsingVariables $UsingVariables)
+#>
 function Merge-PodeScriptblockArguments {
     param(
         [Parameter()]
         [object[]]
-        $ArgumentList,
+        $ArgumentList = $null,
 
         [Parameter()]
         [object[]]
-        $UsingVariables
+        $UsingVariables = $null
     )
 
     if ($null -eq $ArgumentList) {

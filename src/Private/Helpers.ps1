@@ -80,8 +80,7 @@ function Get-PodeFileContentUsingViewEngine {
                     $_args = @($Path, $Data)
                 }
 
-                $_args = @(Merge-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables)
-                $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -Return -Splat)
+                $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables -Return -Splat)
             }
         }
     }
@@ -1484,8 +1483,7 @@ function ConvertFrom-PodeRequestContent {
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
             $parser = $PodeContext.Server.BodyParsers[$ContentType]
-            $_args = @(Merge-PodeScriptblockArguments -ArgumentList $Content -UsingVariables $parser.UsingVariables)
-            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)
+            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $Content -UsingVariables $parser.UsingVariables -Return)
             $Content = $null
             return $Result
         }
