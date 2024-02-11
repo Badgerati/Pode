@@ -100,7 +100,6 @@ function Write-PodeFileResponseInternal {
         $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
         Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
     }
-
     # this is a static file
     else {
         if (Test-PodeIsPSCore) {

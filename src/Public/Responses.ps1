@@ -432,12 +432,13 @@ function Write-PodeFileResponse {
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # test the file path, and set status accordingly
-    if ( !$FileBrowser.isPresent -and !(Test-PodePath $Path -FailOnDirectory)) {
-        return
-    }
-
-    if ( Test-PodePathIsDirectory $Path) {
-        Write-PodeDirectoryResponseInternal -RelativePath $Path
+    if (Test-Path -Path $path -PathType Container) { #maybe I can try [System.IO.Directory]::exists($path) to improve performance
+        if ($FileBrowser.isPresent) {
+            Write-PodeDirectoryResponseInternal -RelativePath $Path
+        }
+        else {
+            Set-PodeResponseStatus -Code 404
+        }
     }
     else {
         Write-PodeFileResponseInternal -RelativePath $Path -Data $Data -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
