@@ -438,6 +438,9 @@ function New-PodeContext {
         }
     }
 
+    # scoped variables
+    $ctx.Server.ScopedVariables = [ordered]@{}
+
     # return the new context
     return $ctx
 }

@@ -6,7 +6,6 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 3 {
-
     # listen on localhost:8085
     Add-PodeEndpoint -Address * -Port 8090 -Protocol Http
 
@@ -42,6 +41,8 @@ Start-PodeServer -Threads 3 {
     }
     Add-PodeCacheStorage -Name 'Redis' @params
 
+    # set default value for cache
+    $cache:cpu = (Get-Random -Minimum 1 -Maximum 1000)
 
     # get cpu, and cache it
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {

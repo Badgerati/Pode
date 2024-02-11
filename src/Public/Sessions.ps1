@@ -210,7 +210,7 @@ function Save-PodeSession {
     }
 
     # save the session
-    Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Save -Arguments @($Force.IsPresent) -Splat
+    $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Save -Arguments @($Force.IsPresent) -Splat
 }
 
 <#

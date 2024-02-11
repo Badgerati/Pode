@@ -99,8 +99,7 @@ function Start-PodeFileWatcherRunspace {
                         }
 
                         # invoke main script
-                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $fileWatcher.Arguments -UsingVariables $fileWatcher.UsingVariables)
-                        Invoke-PodeScriptBlock -ScriptBlock $fileWatcher.Script -Arguments $_args -Scoped -Splat
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $fileWatcher.Script -Arguments $fileWatcher.Arguments -UsingVariables $fileWatcher.UsingVariables -Scoped -Splat
                     }
                     catch [System.OperationCanceledException] {
                     }

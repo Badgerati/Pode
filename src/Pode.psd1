@@ -103,6 +103,7 @@
         'Protect-PodeValue',
         'Resolve-PodeValue',
         'Invoke-PodeScriptBlock',
+        'Merge-PodeScriptblockArguments',
         'Test-PodeIsUnix',
         'Test-PodeIsWindows',
         'Test-PodeIsMacOS',
@@ -415,7 +416,17 @@
         'Set-PodeCacheDefaultStorage',
         'Get-PodeCacheDefaultStorage',
         'Set-PodeCacheDefaultTtl',
-        'Get-PodeCacheDefaultTtl'
+        'Get-PodeCacheDefaultTtl',
+
+        # scoped variables
+        'Convert-PodeScopedVariables',
+        'Convert-PodeScopedVariable',
+        'Add-PodeScopedVariable',
+        'Remove-PodeScopedVariable',
+        'Test-PodeScopedVariable',
+        'Clear-PodeScopedVariables',
+        'Get-PodeScopedVariable',
+        'Use-PodeScopedVariables'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

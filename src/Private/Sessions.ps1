@@ -113,7 +113,7 @@ function Revoke-PodeSession {
     }
 
     # remove session from store
-    Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Delete
+    $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Delete
 
     # blank the session
     $WebEvent.Session.Clear()
@@ -182,7 +182,7 @@ function Set-PodeSessionHelpers {
         }
 
         # save session data to store
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($session.Id, $data, $expiry) -Splat
+        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($session.Id, $data, $expiry) -Splat
 
         # update session's data hash
         Set-PodeSessionDataHash
@@ -194,7 +194,7 @@ function Set-PodeSessionHelpers {
         $session = $WebEvent.Session
 
         # remove data from store
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $session.Id
+        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $session.Id
 
         # clear session
         $session.Clear()
