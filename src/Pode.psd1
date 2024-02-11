@@ -105,6 +105,7 @@
         'Protect-PodeValue',
         'Resolve-PodeValue',
         'Invoke-PodeScriptBlock',
+        'Merge-PodeScriptblockArguments',
         'Test-PodeIsUnix',
         'Test-PodeIsWindows',
         'Test-PodeIsMacOS',
@@ -449,7 +450,17 @@
         'Set-PodeCacheDefaultStorage',
         'Get-PodeCacheDefaultStorage',
         'Set-PodeCacheDefaultTtl',
-        'Get-PodeCacheDefaultTtl'
+        'Get-PodeCacheDefaultTtl',
+
+        # scoped variables
+        'Convert-PodeScopedVariables',
+        'Convert-PodeScopedVariable',
+        'Add-PodeScopedVariable',
+        'Remove-PodeScopedVariable',
+        'Test-PodeScopedVariable',
+        'Clear-PodeScopedVariables',
+        'Get-PodeScopedVariable',
+        'Use-PodeScopedVariables'
     )
 
 

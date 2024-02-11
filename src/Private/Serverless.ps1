@@ -91,8 +91,7 @@ function Start-PodeAzFuncServer {
                         }
                     }
                     else {
-                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
-                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                     }
                 }
             }
@@ -201,8 +200,7 @@ function Start-PodeAwsLambdaServer {
                         }
                     }
                     else {
-                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
-                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                     }
                 }
             }

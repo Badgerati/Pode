@@ -134,7 +134,7 @@ function Set-PodeCache {
 
     # used custom storage
     elseif (Test-PodeCacheStorage -Key $Storage) {
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Key, $InputObject, $Ttl) -Splat
+        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Key, $InputObject, $Ttl) -Splat
     }
 
     # storage not found!
@@ -236,7 +236,7 @@ function Remove-PodeCache {
 
     # used custom storage
     elseif (Test-PodeCacheStorage -Key $Storage) {
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Remove -Arguments @($Key) -Splat
+        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Remove -Arguments @($Key) -Splat
     }
 
     # storage not found!
@@ -281,7 +281,7 @@ function Clear-PodeCache {
 
     # used custom storage
     elseif (Test-PodeCacheStorage -Key $Storage) {
-        Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Clear
+        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Clear
     }
 
     # storage not found!

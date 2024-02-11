@@ -9,7 +9,7 @@ function Initialize-PodeSecretVault {
         $ScriptBlock
     )
 
-    Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Splat -Arguments @($VaultConfig.Parameters)
+    $null = Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Splat -Arguments @($VaultConfig.Parameters)
 }
 
 function Register-PodeSecretManagementVault {
@@ -180,7 +180,7 @@ function Unregister-PodeSecretCustomVault {
     }
 
     # unregister the vault
-    Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unregister -Splat -Arguments @(
+    $null = Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unregister -Splat -Arguments @(
         $VaultConfig.Parameters
     )
 }
@@ -286,7 +286,7 @@ function Set-PodeSecretCustomKey {
     }
 
     # set the secret
-    Invoke-PodeScriptBlock -ScriptBlock $_vault.Custom.Set -Splat -Arguments (@(
+    $null = Invoke-PodeScriptBlock -ScriptBlock $_vault.Custom.Set -Splat -Arguments (@(
             $_vault.Parameters,
             $Key,
             $Value,
@@ -336,7 +336,7 @@ function Remove-PodeSecretCustomKey {
     }
 
     # remove the secret
-    Invoke-PodeScriptBlock -ScriptBlock $_vault.Custom.Remove -Splat -Arguments (@(
+    $null = Invoke-PodeScriptBlock -ScriptBlock $_vault.Custom.Remove -Splat -Arguments (@(
             $_vault.Parameters,
             $Key
         ) + $ArgumentList)

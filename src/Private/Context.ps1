@@ -438,6 +438,9 @@ function New-PodeContext {
         }
     }
 
+    # scoped variables
+    $ctx.Server.ScopedVariables = [ordered]@{}
+
     # Yaml module caching
     $ctx.Server.Cache = @{
         YamlModuleImported = $null

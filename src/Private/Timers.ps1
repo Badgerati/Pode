@@ -88,11 +88,8 @@ function Invoke-PodeInternalTimer {
             $_args += $ArgumentList
         }
 
-        # add timer $using args
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $Timer.UsingVariables)
-
         # invoke timer
-        Invoke-PodeScriptBlock -ScriptBlock $Timer.Script -Arguments $_args -Scoped -Splat
+        $null = Invoke-PodeScriptBlock -ScriptBlock $Timer.Script -Arguments $_args -UsingVariables $Timer.UsingVariables -Scoped -Splat
     }
     catch {
         $_ | Write-PodeErrorLog
