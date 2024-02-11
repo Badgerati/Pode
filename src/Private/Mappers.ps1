@@ -698,6 +698,7 @@ function Get-PodeStatusDescription {
         422 { return 'Unprocessable Entity' }
         423 { return 'Locked' }
         424 { return 'Failed Dependency' }
+        425 { return 'Too Early' }
         426 { return 'Upgrade Required' }
         428 { return 'Precondition Required' }
         429 { return 'Too Many Requests' }
