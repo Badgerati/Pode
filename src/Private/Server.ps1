@@ -30,7 +30,7 @@ function Start-PodeInternalServer {
         }
 
         $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
-        Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
+        $null = Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
 
         # load any modules/snapins
         Import-PodeSnapinsIntoRunspaceState

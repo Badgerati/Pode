@@ -149,7 +149,7 @@ function Start-PodeTcpServer {
 
                         # invoke it
                         if ($null -ne $verb.Logic) {
-                            Invoke-PodeScriptBlock -ScriptBlock $verb.Logic -Arguments $verb.Arguments -UsingVariables $verb.UsingVariables -Scoped -Splat
+                            $null = Invoke-PodeScriptBlock -ScriptBlock $verb.Logic -Arguments $verb.Arguments -UsingVariables $verb.UsingVariables -Scoped -Splat
                         }
 
                         # is the verb auto-close?

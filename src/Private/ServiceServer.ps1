@@ -20,7 +20,7 @@ function Start-PodeServiceServer {
                 $handlers = Get-PodeHandler -Type Service
                 foreach ($name in $handlers.Keys) {
                     $handler = $handlers[$name]
-                    Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $handler.Arguments -UsingVariables $handler.UsingVariables -Scoped -Splat
+                    $null = Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $handler.Arguments -UsingVariables $handler.UsingVariables -Scoped -Splat
                 }
 
                 # sleep before next run
