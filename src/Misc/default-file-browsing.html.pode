@@ -5,15 +5,6 @@
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
 
-    <!-- Folder Icon -->
-    <i class="bi bi-folder2"></i>
-
-    <!-- File Icon -->
-    <i class="bi bi-file"></i>
-
-    <!-- Folder open 2 Icon -->
-    <i class="bi bi-folder2-open"></i>
-
     <title>File Browser:$($Data.Path)</title>
     <meta charset='utf-8'>
 
@@ -26,7 +17,6 @@
         }
 
         /* Add CSS styles here for column widths */
-
 
         .icon {
             width: 10px;

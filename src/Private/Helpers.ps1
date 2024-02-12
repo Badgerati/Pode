@@ -1633,24 +1633,7 @@ function Get-PodeCount {
 
     return $Object.Count
 }
-
-function Test-PodePathAccess {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Path
-    )
-
-    try {
-        $null = Get-Item $Path
-    }
-    catch [System.UnauthorizedAccessException] {
-        return $false
-    }
-
-    return $true
-}
-
+ 
 function Test-PodePath {
     param(
         [Parameter()]
@@ -1662,35 +1645,20 @@ function Test-PodePath {
         [switch]
         $FailOnDirectory
     )
+    if (![string]::IsNullOrWhiteSpace($Path)) {
+        $item = Get-Item $Path -ErrorAction Ignore
+        if ($null -ne $item -and (! $FailOnDirectory.IsPresent -or !$item.PSIsContainer)) {
+            return $true
+        }
+    }
 
     # if the file doesnt exist then fail on 404
-    if ([string]::IsNullOrWhiteSpace($Path) -or !(Test-Path $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 404
-        }
-
+    if ($NoStatus.IsPresent) {
         return $false
     }
-
-    # if the file isn't accessible then fail 401
-    if (!(Test-PodePathAccess $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 401
-        }
-
-        return $false
+    else {
+        Set-PodeResponseStatus -Code 404
     }
-
-    # if we're failing on a directory then fail on 404
-    if ($FailOnDirectory -and (Test-PodePathIsDirectory $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 404
-        }
-
-        return $false
-    }
-
-    return $true
 }
 
 function Test-PodePathIsFile {
@@ -1737,14 +1705,15 @@ function Test-PodePathIsDirectory {
 
         [switch]
         $FailOnWildcard
+
     )
 
     if ($FailOnWildcard -and (Test-PodePathIsWildcard $Path)) {
         return $false
     }
 
-    return (Test-Path -Path $path -PathType Container)
- #   return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
+    #   return (Test-Path -Path $path -PathType Container)
+    return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
 
 function Convert-PodePathSeparators {

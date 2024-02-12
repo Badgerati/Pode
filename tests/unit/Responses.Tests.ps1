@@ -346,9 +346,11 @@ Describe 'Write-PodeTextResponse' {
 Describe 'Write-PodeFileResponse' {
     It 'Does nothing when the file does not exist' {
         Mock Get-PodeRelativePath { return $Path }
-        Mock Test-PodePath { return $false }
+        #  Mock Test-PodePath { return $false }
+        Mock Set-PodeResponseStatus {}
+        Mock Get-Item { return $null }
         Write-PodeFileResponse -Path './path' | Out-Null
-        Should -Invoke Test-PodePath -Times 1 -Scope It
+        Should -Invoke Set-PodeResponseStatus -Times 1 -Scope It
         # Assert-MockCalled Test-PodePath -Times 1 -Scope It
     }
 
@@ -358,6 +360,7 @@ Describe 'Write-PodeFileResponse' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
         Mock Write-PodeTextResponse { return $Value }
+        Mock Get-Item { return @{ PSIsContainer = $false } }
 
         Write-PodeFileResponse -Path './path/file.pode' | Should -Be 'file contents'
         Should -Invoke Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
@@ -371,7 +374,7 @@ Describe 'Write-PodeFileResponse' {
         Mock Get-Content { return 'file contents' }
         Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
         Mock Write-PodeTextResponse { return $Value }
-
+        Mock Get-Item { return @{ PSIsContainer = $false } }
         Write-PodeFileResponse -Path './path/file.pode' | Should -Be 'file contents'
         Should -Invoke Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
         #   Assert-MockCalled Get-PodeFileContentUsingViewEngine -Times 1 -Scope It

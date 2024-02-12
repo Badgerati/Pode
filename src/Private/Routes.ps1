@@ -139,23 +139,30 @@ function Find-PodeStaticRoute {
         if ($Path -imatch "$($found.Path)$") {
             $file = (Protect-PodeValue -Value $Matches['file'] -Default ([string]::Empty))
         }
+        $fileInfo = Get-Item ([System.IO.Path]::Combine($found.Source, $file)) -ErrorAction Continue
+
+        #if $file doesn't exist return $null
+        if ($null -eq $fileInfo) {
+            return $null
+        }
 
         # if there's no file, we need to check defaults
-        if (!$found.Download -and !(Test-PodePathIsFile $file) -and (Get-PodeCount @($found.Defaults)) -gt 0) {
-            if ((Get-PodeCount @($found.Defaults)) -eq 1) {
-                $file = [System.IO.Path]::Combine($file, @($found.Defaults)[0])
+        if ( !$found.Download -and $fileInfo.PSIsContainer ) {
+            #Address the issue with Default
+            if ( $file -notlike '*/' -and $Path -ne '/') {
+                Move-PodeResponseUrl -Url "$Path/"
             }
-            else {
-                foreach ($def in $found.Defaults) {
-                    if (Test-PodePath ([System.IO.Path]::Combine($found.Source, $def)) -NoStatus) {
-                        $file = [System.IO.Path]::Combine($file, $def)
-                        break
-                    }
+            foreach ($def in $found.Defaults) {
+                $combine = ([System.IO.Path]::Combine($found.Source, $file, $def))
+                if (Test-PodePath -Path $combine -NoStatus) {
+                    $source = $combine
+                    break
                 }
             }
         }
-
-        $source = [System.IO.Path]::Combine($found.Source, $file)
+        if ($null -eq $source) {
+            $source = [System.IO.Path]::Combine($found.Source, $file)
+        }
     }
 
     # check public, if flagged

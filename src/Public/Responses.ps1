@@ -79,58 +79,60 @@ function Set-PodeResponseAttachment {
     }
 
     # deal with file browsing
-    if ($FileBrowser.IsPresent -and (Test-PodePathIsDirectory $_path)) {
-        $RelativePath = Get-PodeRelativePath -Path $_path -JoinRoot
-        Write-PodeDirectoryResponseInternal  -RelativePath $RelativePath
-        return
+    if ($FileBrowser.IsPresent -and (Test-Path -Path $_path -PathType Container)) {
+        #Show directory browsing
+        Write-PodeDirectoryResponseInternal  -RelativePath $_path
+
     }
+    else {
 
-    $filename = Get-PodeFileName -Path $_path
-    $ext = Get-PodeFileExtension -Path $_path -TrimPeriod
+        $filename = Get-PodeFileName -Path $_path
+        $ext = Get-PodeFileExtension -Path $_path -TrimPeriod
 
-    try {
-        # setup the content type and disposition
-        if (!$ContentType) {
-            $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
-        }
-        else {
-            $WebEvent.Response.ContentType = $ContentType
-        }
-
-        Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
-
-        # if serverless, get the content raw and return
-        if (!$WebEvent.Streamed) {
-            if (Test-PodeIsPSCore) {
-                $content = (Get-Content -Path $_path -Raw -AsByteStream)
+        try {
+            # setup the content type and disposition
+            if (!$ContentType) {
+                $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
             }
             else {
-                $content = (Get-Content -Path $_path -Raw -Encoding byte)
+                $WebEvent.Response.ContentType = $ContentType
             }
 
-            $WebEvent.Response.Body = $content
-        }
+            Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
 
-        # else if normal, stream the content back
-        else {
-            # setup the response details and headers
-            $WebEvent.Response.SendChunked = $false
+            # if serverless, get the content raw and return
+            if (!$WebEvent.Streamed) {
+                if (Test-PodeIsPSCore) {
+                    $content = (Get-Content -Path $_path -Raw -AsByteStream)
+                }
+                else {
+                    $content = (Get-Content -Path $_path -Raw -Encoding byte)
+                }
 
-            # set file as an attachment on the response
-            $buffer = [byte[]]::new(64 * 1024)
-            $read = 0
+                $WebEvent.Response.Body = $content
+            }
 
-            # open up the file as a stream
-            $fs = (Get-Item $_path).OpenRead()
-            $WebEvent.Response.ContentLength64 = $fs.Length
+            # else if normal, stream the content back
+            else {
+                # setup the response details and headers
+                $WebEvent.Response.SendChunked = $false
 
-            while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+                # set file as an attachment on the response
+                $buffer = [byte[]]::new(64 * 1024)
+                $read = 0
+
+                # open up the file as a stream
+                $fs = (Get-Item $_path).OpenRead()
+                $WebEvent.Response.ContentLength64 = $fs.Length
+
+                while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                    $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+                }
             }
         }
-    }
-    finally {
-        Close-PodeDisposable -Disposable $fs
+        finally {
+            Close-PodeDisposable -Disposable $fs
+        }
     }
 }
 
@@ -431,19 +433,26 @@ function Write-PodeFileResponse {
     # resolve for relative path
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
-    # test the file path, and set status accordingly
-    if (Test-Path -Path $path -PathType Container) { #maybe I can try [System.IO.Directory]::exists($path) to improve performance
-        if ($FileBrowser.isPresent) {
-            Write-PodeDirectoryResponseInternal -RelativePath $Path
-        }
-        else {
-            Set-PodeResponseStatus -Code 404
-        }
+    $pathInfo = Get-Item -Path $Path -ErrorAction Continue
+
+    #if $pathInfo doesn't exist return 404
+    if ($null -eq $pathInfo) {
+        Set-PodeResponseStatus -Code 404
     }
     else {
-        Write-PodeFileResponseInternal -RelativePath $Path -Data $Data -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+        # test the file path, and set status accordingly
+        if ( $pathInfo.PSIsContainer) { 
+            if ($FileBrowser.isPresent) {
+                Write-PodeDirectoryResponseInternal -RelativePath $Path
+            }
+            else {
+                Set-PodeResponseStatus -Code 404
+            }
+        }
+        else {
+            Write-PodeFileResponseInternal -RelativePath $Path -Data $Data -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+        }
     }
-
 }
 
 
@@ -476,8 +485,11 @@ function Write-PodeDirectoryResponse {
     # resolve for relative path
     $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
 
-    if (Test-PodePathIsDirectory -Path $RelativePath ) {
+    if (Test-Path -Path $RelativePath -PathType Container) {
         Write-PodeDirectoryResponseInternal -RelativePath $RelativePath
+    }
+    else {
+        Set-PodeResponseStatus -Code 404
     }
 }
 
@@ -1387,7 +1399,7 @@ function Save-PodeRequestFile {
     foreach ($file in $files) {
         # if the path is a directory, add the filename
         $filePath = $Path
-        if (Test-PodePathIsDirectory -Path $filePath) {
+        if (Test-Path -Path $filePath -PathType Container) {
             $filePath = [System.IO.Path]::Combine($filePath, $file)
         }
 

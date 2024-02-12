@@ -32,7 +32,7 @@ Describe 'Start-PodeInternalServer' {
         Mock Start-PodeCacheHousekeeper { }
         Mock Invoke-PodeEvent { }
         Mock Write-Verbose { }
-    Mock Add-PodeScopedVariablesInbuilt { }
+        Mock Add-PodeScopedVariablesInbuilt { }
     }
 
     It 'Calls one-off script logic' {
@@ -193,6 +193,7 @@ Describe 'Restart-PodeInternalServer' {
                     Items   = @{}
                     Storage = @{}
                 }
+                ScopedVariables = @{}
             }
             Metrics   = @{
                 Server = @{
