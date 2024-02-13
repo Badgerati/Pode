@@ -32,7 +32,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic for method and exact route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic' = { Write-Host 'Test' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Root' = '/'; 'Logic' = { Write-Host 'Test' }; }); }; }; }
             $result = (Find-PodeRoute -Method GET -Path '/')
 
             $result | Should -BeOfType System.Collections.Hashtable
@@ -41,8 +41,8 @@ Describe 'Find-PodeRoute' {
 
         It 'Returns logic for method and exact route and endpoint' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
-                            @{ 'Logic' = { Write-Host 'Test' }; }
-                            @{ 'Logic' = { Write-Host 'Test' }; 'Endpoint' = @{ Name = 'example'; 'Address' = 'pode.foo.com' } }
+                            @{ 'Root' = '/'; 'Logic' = { Write-Host 'Test' }; }
+                            @{ 'Root' = '/'; 'Logic' = { Write-Host 'Test' }; 'Endpoint' = @{ Name = 'example'; 'Address' = 'pode.foo.com' } }
                         )
                     }
                 }
@@ -56,7 +56,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic and middleware for method and exact route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic' = { Write-Host 'Test' }; 'Middleware' = { Write-Host 'Middle' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{'Root'='/';  'Logic' = { Write-Host 'Test' }; 'Middleware' = { Write-Host 'Middle' }; }); }; }; }
             $result = (Find-PodeRoute -Method GET -Path '/')
 
             $result | Should -BeOfType System.Collections.Hashtable
@@ -65,7 +65,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic for method and exact route under star' {
-            $PodeContext.Server = @{ 'Routes' = @{ '*' = @{ '/' = @(@{ 'Logic' = { Write-Host 'Test' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ '*' = @{ '/' = @(@{ 'Root'='/'; 'Logic' = { Write-Host 'Test' }; }); }; }; }
             $result = (Find-PodeRoute -Method * -Path '/')
 
             $result | Should -BeOfType System.Collections.Hashtable
@@ -73,7 +73,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic and parameters for parameterised route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Logic' = { Write-Host 'Test' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Root'='/'; 'Logic' = { Write-Host 'Test' }; }); }; }; }
             $result = (Find-PodeRoute -Method GET -Path '/123')
 
             $result | Should -BeOfType System.Collections.Hashtable

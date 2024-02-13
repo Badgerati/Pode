@@ -119,12 +119,12 @@ Some useful links:
     Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor' -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
 
     #OpenAPI 3.1
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/v3.1/swagger' -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Type ReDoc -Path '/docs/v3.1/redoc' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/v3.1/rapidoc' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Type StopLight -Path '/docs/v3.1/stoplight' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Type Explorer -Path '/docs/v3.1/explorer' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Bookmarks -Path '/docs/v3.1' -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/vredoc' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
 
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend

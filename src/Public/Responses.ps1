@@ -62,9 +62,9 @@ function Set-PodeResponseAttachment {
     }
 
     # only attach files from public/static-route directories when path is relative
-    $route=(Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
-    $_path =$route.Content.Source
-    
+    $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
+    $_path = $route.Content.Source
+
     # if there's no path, check the original path (in case it's literal/relative)
     if (!(Test-PodePath $_path -NoStatus)) {
         $Path = Get-PodeRelativePath -Path $Path -JoinRoot
@@ -384,6 +384,10 @@ Should the file's content be cached by browsers, or not?
 .PARAMETER FileBrowser
 If the path is a folder, instead of returning 404, will return A browsable content of the directory.
 
+.PARAMETER RootPath
+Optional. Specifies the root path to resolve the relative path against. If not provided, the server's root will be used.
+
+
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Files/Stuff.txt'
 
@@ -433,28 +437,33 @@ function Write-PodeFileResponse {
 
         [Parameter()]
         [string]
-        $RootPath
+        $RootPath='/'
     )
     # resolve for relative path
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
+    # Attempt to retrieve information about the path
     $pathInfo = Get-Item -Path $Path -ErrorAction Continue
 
-    #if $pathInfo doesn't exist return 404
+    # Check if the path exists
     if ($null -eq $pathInfo) {
+        # If not, set the response status to 404 Not Found
         Set-PodeResponseStatus -Code 404
     }
     else {
-        # test the file path, and set status accordingly
+        # Check if the path is a directory
         if ( $pathInfo.PSIsContainer) {
+            # If directory browsing is enabled, use the directory response function
             if ($FileBrowser.isPresent) {
                 Write-PodeDirectoryResponseInternal -RelativePath $Path -RootPath $RootPath
             }
             else {
+                # If browsing is not enabled, return a 404 error
                 Set-PodeResponseStatus -Code 404
             }
         }
         else {
+            # For a file, serve it using the internal file response function
             Write-PodeFileResponseInternal -RelativePath $Path -Data $Data -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
         }
     }

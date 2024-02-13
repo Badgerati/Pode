@@ -402,7 +402,7 @@ function Add-PodeRoute {
         $methodRoutes = @(foreach ($_endpoint in $endpoints) {
                 @{
                     Logic            = $ScriptBlock
-                    Root             = $origPath
+                    Root             = ($origPath.Replace('/*/','/*?/')) -replace '([:*][^/]+)', '.*?'
                     UsingVariables   = $usingVars
                     Middleware       = $Middleware
                     Authentication   = $Authentication
@@ -817,7 +817,7 @@ function Add-PodeStaticRoute {
             @{
                 Source           = $Source
                 Path             = $Path
-                Root             = $origPath
+                Root             = ($origPath.Replace('/*/','/*?/')) -replace '([:*][^/]+)', '.*?'
                 Method           = $Method
                 Defaults         = $Defaults
                 Middleware       = $Middleware
@@ -996,7 +996,7 @@ function Add-PodeSignalRoute {
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
             @{
                 Logic          = $ScriptBlock
-                Root           = $origPath
+                Root           = ($origPath.Replace('/*/','/*?/')) -replace '([:*][^/]+)', '.*?'
                 UsingVariables = $usingVars
                 Endpoint       = @{
                     Protocol = $_endpoint.Protocol

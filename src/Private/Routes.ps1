@@ -225,6 +225,45 @@ function Test-PodeRouteValidForCaching {
     return $caching
 }
 
+<#
+.SYNOPSIS
+Finds and returns a route from an array of routes based on an endpoint name and/or path.
+
+.DESCRIPTION
+This function iterates over an array of route definitions to locate a specific route that matches the provided endpoint name and path.
+It supports scenarios where only one of the parameters is provided or both. If no matching route is found, or if the routes array is empty or null,
+the function returns $null.
+
+.PARAMETER Routes
+An array of hashtable objects, each representing a route with potentially defined properties like Root and Endpoint.Name.
+
+.PARAMETER EndpointName
+The name of the endpoint to search for within the route definitions. This parameter is optional.
+
+.PARAMETER Path
+The path to search for within the route definitions. This parameter is optional and is used to match routes based on their Root property.
+
+.EXAMPLE
+$routes = @(
+    @{ Root = '/api'; Endpoint = @{ Name = 'GetData' } },
+    @{ Root = '/home'; Endpoint = @{ Name = 'Index' } }
+)
+Get-PodeRouteByUrl -Routes $routes -EndpointName 'GetData'
+
+Returns the route for the '/api' endpoint named 'GetData'.
+
+.EXAMPLE
+$routes = @(
+    @{ Root = '/api'; Endpoint = @{ Name = 'GetData' } },
+    @{ Root = '/home'; Endpoint = @{ Name = 'Index' } }
+)
+Get-PodeRouteByUrl -Routes $routes -Path '/api'
+
+Returns the route for the '/api' path, regardless of the endpoint name.
+
+.NOTES
+The function prioritizes matching both the endpoint name and path but can return a route based on either criterion if the other is unspecified.
+#>
 function Get-PodeRouteByUrl {
     param(
         [Parameter()]
@@ -240,44 +279,63 @@ function Get-PodeRouteByUrl {
         $Path
     )
 
-    # if routes is already null/empty just return
+    # Return null immediately if routes are not defined or empty
     if (($null -eq $Routes) -or ($Routes.Length -eq 0)) {
         return $null
     }
-    # see if a route has no endpoint name
-    if ( [string]::IsNullOrWhiteSpace($EndpointName)) {
+
+    # Handle case when no specific endpoint name is provided
+    if ([string]::IsNullOrWhiteSpace($EndpointName)) {
         foreach ($route in $Routes) {
             if ($Path) {
-                #path is defined search the route that start with the path
-                if ($Path.StartsWith( $route.Root)) {
+                # Search for a route that matches the provided path
+                if ($Path -match $route.Root) {
                     return $route
                 }
             }
             else {
-                # else find first default route
+                # Return the first route as a default if no path is specified
                 return $route
             }
         }
     }
     else {
-        # see if a route has the endpoint name
-        foreach ($route in $Routes) { 
-            if ($route.Endpoint.Name -ieq $EndpointName) {
+        # Handle case when an endpoint name is provided
+        foreach ($route in $Routes) {
+            if (  $route.Endpoint.Name -ieq $EndpointName) {
                 if ($Path) {
-                    if ($Path.StartsWith( $route.Root)) {
+                    # Search for a route that matches both the provided path and endpoint name
+                    if ($Path -match $route.Root) {
                         return $route
                     }
                 }
                 else {
-                    # else find first default route
+                    # Return the first route that matches the endpoint name as a default
                     return $route
                 }
             }
         }
     }
 
+    # Last resort
+    foreach ($route in $Routes) {
+
+        if ($Path) {
+            # Search for a route that matches both the provided path and endpoint name
+            if ($Path -match $route.Root) {
+                return $route
+            }
+        }
+        else {
+            # Return the first route that matches the endpoint name as a default
+            return $route
+        }
+    }
+
+    # Return null if no matching route is found
     return $null
 }
+
 
 function ConvertTo-PodeOpenApiRoutePath {
     param(

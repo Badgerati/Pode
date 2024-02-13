@@ -15,7 +15,7 @@ Describe 'Endpoint Requests' {
                 Add-PodeEndpoint -Address localhost -Port $using:Port2 -Protocol Http -Name 'Endpoint2'
 
                 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-                Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
+                Add-PodeRoute -Method Get -Path '/close'  -ScriptBlock {
                     Close-PodeServer
                 }
 
