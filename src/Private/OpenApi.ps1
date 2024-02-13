@@ -1263,15 +1263,18 @@ function Set-PodeOAAuth {
 
     # Iterate over each route to set authentication
     foreach ($r in @($Route)) {
-        # Set the authentication methods for the route
-        $r.OpenApi.Authentication = @(foreach ($n in @($Name)) {
-                @{
-                    "$($n -replace '\s+', '')" = @() # Clean up auth name and initialize empty scopes
-                }
-            })
-        # Add anonymous access if allowed
-        if ($AllowAnon) {
-            $r.OpenApi.Authentication += @{'%_allowanon_%' = '' }
+        #exclude static route
+        if ($r.Method -ne 'Static') {
+            # Set the authentication methods for the route
+            $r.OpenApi.Authentication = @(foreach ($n in @($Name)) {
+                    @{
+                        "$($n -replace '\s+', '')" = @() # Clean up auth name and initialize empty scopes
+                    }
+                })
+            # Add anonymous access if allowed
+            if ($AllowAnon) {
+                $r.OpenApi.Authentication += @{'%_allowanon_%' = '' }
+            }
         }
     }
 }

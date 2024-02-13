@@ -59,13 +59,32 @@ Start-PodeServer -ScriptBlock {
 
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Default
 
+    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-    
-    Add-PodeStaticRoute -Path '/nobrowsing' -Source $directoryPath
-    Add-PodeStaticRouteGroup -FileBrowser  -Routes {
-        Add-PodeStaticRoute -Path '/download' -Source $using:directoryPath   -DownloadOnly
-        Add-PodeStaticRoute -Path '/nodownload' -Source $using:directoryPath
-        Add-PodeStaticRoute -Path '/' -Source $using:directoryPath   # -DownloadOnly
+
+    # setup basic auth (base64> username:password in header)
+    New-PodeAuthScheme -Basic -Realm 'Pode Static Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
+        param($username, $password)
+
+        # here you'd check a real user storage, this is just for example
+        if ($username -eq 'morty' -and $password -eq 'pickle') {
+            return @{
+                User = @{
+                    ID ='M0R7Y302'
+                    Name = 'Morty'
+                    Type = 'Human'
+                }
+            }
+        }
+
+        return @{ Message = 'Invalid details supplied' }
     }
 
+    Add-PodeStaticRouteGroup -FileBrowser  -Routes {
+        Add-PodeStaticRoute -Path '/' -Source $using:directoryPath
+        Add-PodeStaticRoute -Path '/download' -Source $using:directoryPath -DownloadOnly
+        Add-PodeStaticRoute -Path '/nodownload' -Source $using:directoryPath
+        Add-PodeStaticRoute -Path '/auth' -Source $using:directoryPath   -Authentication 'Validate'
+    }
+    Add-PodeStaticRoute -Path '/nobrowsing' -Source $directoryPath
 }

@@ -850,10 +850,6 @@ function Add-PodeStaticRoute {
             }
         })
 
-    if (![string]::IsNullOrWhiteSpace($Authentication)) {
-        Set-PodeOAAuth -Route $newRoutes -Name $Authentication
-    }
-
     $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
 
     # return the routes?
