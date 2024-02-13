@@ -260,3 +260,4 @@ $RECYCLE.BIN/
 .vscode/launch.json
 Pode.sln
 examples/FileBrowser/wwwFiles/
+examples/PetStore/data/PetData.json

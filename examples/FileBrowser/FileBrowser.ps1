@@ -57,11 +57,12 @@ else {
 # Start Pode server
 Start-PodeServer -ScriptBlock {
 
-
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Default
+    Add-PodeStaticRoute -Path '/nobrowsing' -Source $directoryPath
     Add-PodeStaticRouteGroup -FileBrowser  -Routes {
-        Add-PodeStaticRoute -Path '/download' -Source $directoryPath -DownloadOnly
-        Add-PodeStaticRoute -Path '/nodownload' -Source $directoryPath
-        Add-PodeStaticRoute -Path '/' -Source $directoryPath -DownloadOnly
+        Add-PodeStaticRoute -Path '/download' -Source $using:directoryPath   -DownloadOnly
+        Add-PodeStaticRoute -Path '/nodownload' -Source $using:directoryPath
+        Add-PodeStaticRoute -Path '/' -Source $using:directoryPath   # -DownloadOnly
     }
+
 }

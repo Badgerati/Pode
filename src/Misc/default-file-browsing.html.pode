@@ -9,8 +9,6 @@
     <meta charset='utf-8'>
 
     <style>
-
-
         h3 {
             font-family: 'Courier New', Courier, monospace;
             /* Applies monospace font to <h2> */
@@ -101,6 +99,28 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
+        /* Style the container to match h3 styling */
+        #pathContainer {
+            font-size: 1.47em;
+            /* Standard size for h3 */
+            font-weight: bold;
+            /* Bold text for h3 */
+            margin-top: 20px;
+            /* Spacing for visual separation */
+            margin-bottom: 30px; /* Additional space after the container */
+        }
+
+        #pathContainer a,
+        #pathContainer span {
+            margin-right: -1px;
+            /* Reduced spacing between segments */
+        }
+
+        #pathContainer span.separator {
+            margin-right: 0;
+            /* Remove spacing after separator */
+        }
     </style>
 
 </head>
@@ -120,14 +140,58 @@
         // Insert the table content into the table body
         document.getElementById('tableBody').innerHTML = tableContent;
     });
+
+
+    function visualizePathSegments() {
+        const basePath = '$($Data.Path)'; // Your given URL path
+        const segments = basePath.split('/').filter(Boolean); // Split by '/' and remove any empty segments
+        const pathContainer = document.getElementById('pathContainer');
+        pathContainer.innerHTML = ''; // Clear previous content
+
+        // Create the Directory label as a span to keep it inline
+        const directoryLabel = document.createElement('span');
+        directoryLabel.textContent = 'Folder: ';
+        pathContainer.appendChild(directoryLabel); // Append the label to the container
+
+        // Add initial '/' as a visual label before the first segment
+        const initialSlash = document.createElement('span');
+        initialSlash.textContent = '/';
+        initialSlash.classList.add('separator'); // Use for specific styling
+        pathContainer.appendChild(initialSlash);
+
+        segments.forEach((segment, index) => {
+            let cumulativePath = '/' + segments.slice(0, index + 1).join('/');
+
+            if (index < segments.length - 1) {
+                // Create a clickable link for this segment
+                const a = document.createElement('a');
+                a.href = cumulativePath; // Here, the href is the cumulative path
+                a.textContent = segment; // Set text to segment without '/'
+                pathContainer.appendChild(a);
+
+                // Add '/' as a label (not part of the link) after this segment
+                const separator = document.createElement('span');
+                separator.textContent = '/';
+                separator.classList.add('separator'); // Use for specific styling
+                pathContainer.appendChild(separator);
+            } else {
+                // For the last segment, make it a label instead of a clickable link
+                const lastSegmentLabel = document.createElement('span');
+                lastSegmentLabel.textContent = segment; // Set text to the last segment
+                pathContainer.appendChild(lastSegmentLabel);
+            }
+        });
+    }
+
+    // Automatically visualize the path when the page loads
+    window.onload = visualizePathSegments;
 </script>
 
 <body style='color: white; '>
 
     <div>
-
-        <h3>Directory: $($Data.Path)</h3>
-
+        <div id="pathContainer"> </div>
+        <div></div>
         <table>
             <tbody id="tableBody">
             </tbody>

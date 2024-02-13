@@ -982,7 +982,7 @@ function Get-PodeOpenApiDefinitionInternal {
             # the current route
             $_routes = @($PodeContext.Server.Routes[$method][$path])
             if ( $MetaInfo -and $MetaInfo.RestrictRoutes) {
-                $_routes = @(Get-PodeRoutesByUrl -Routes $_routes -EndpointName $EndpointName)
+                $_routes = @(Get-PodeRouteByUrl -Routes $_routes -EndpointName $EndpointName)
             }
 
             # continue if no routes

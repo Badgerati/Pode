@@ -1,207 +1,363 @@
 {
   "categories": {
-    "Scope": [
-      "Categories"
-    ],
     "Value": {
+      "Cats": 2,
       "Dogs": 1,
       "Rabbits": 3,
-      "Cats": 2,
       "Lions": 4
-    }
-  },
-  "pets": {
+    },
     "Scope": [
-      "Pets"
-    ],
+      "Categories"
+    ]
+  },
+  "orders": {
     "Value": {
-      "6": {
-        "tags": [
-          "tag3",
-          "tag4"
-        ],
-        "name": "Dog 2",
-        "id": 6,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Dogs",
-          "id": 1
-        },
-        "status": "pending"
-      },
-      "10": {
-        "tags": [
-          "tag2",
-          "tag3"
-        ],
-        "name": "Rabbit 1",
-        "id": 10,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Rabbits",
-          "id": 3
-        },
-        "status": "available"
-      },
-      "5": {
-        "tags": [
-          "tag2",
-          "tag3"
-        ],
-        "name": "Dog 2",
-        "id": 5,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Dogs",
-          "id": 1
-        },
-        "status": "sold"
-      },
-      "11": {
-        "tags": [
-          "tag3",
-          "tag4"
-        ],
-        "name": "Rabbit 2",
-        "id": 11,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Rabbits",
-          "id": 3
-        },
-        "status": "pending"
-      },
-      "4": {
-        "tags": [
-          "tag1",
-          "tag2"
-        ],
-        "name": "Dog 1",
-        "id": 4,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Dogs",
-          "id": 1
-        },
-        "status": "available"
-      },
-      "9": {
-        "tags": [
-          "tag3",
-          "tag4"
-        ],
-        "name": "Lion 2",
-        "id": 9,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Lions",
-          "id": 4
-        },
-        "status": "available"
-      },
-      "7": {
-        "tags": [
-          "tag1",
-          "tag2"
-        ],
-        "name": "Lion 1",
-        "id": 7,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Lions",
-          "id": 4
-        },
-        "status": "available"
-      },
-      "8": {
-        "tags": [
-          "tag2",
-          "tag3"
-        ],
-        "name": "Lion 2",
-        "id": 8,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Lions",
-          "id": 4
-        },
-        "status": "available"
+      "3": {
+        "status": "delivered",
+        "complete": true,
+        "shipdate": "2024-02-12T17:08:06.6050923-08:00",
+        "petId": 1,
+        "id": 3,
+        "quantity": 50
       },
       "1": {
-        "tags": [
-          "tag1",
-          "tag2"
-        ],
-        "name": "Cat 1",
+        "status": "placed",
+        "complete": true,
+        "shipdate": "2024-02-12T17:08:06.6050923-08:00",
+        "petId": 1,
         "id": 1,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Cats",
-          "id": 2
-        },
-        "status": "available"
+        "quantity": 100
       },
-      "3": {
-        "tags": [
-          "tag3",
-          "tag4"
-        ],
-        "name": "Cat 2",
-        "id": 3,
-        "photoUrls": [
-          "url1",
-          "url2"
-        ],
-        "categoryName": {
-          "name": "Cats",
-          "id": 2
-        },
-        "status": "pending"
+      "4": {
+        "status": "placed",
+        "complete": false,
+        "shipdate": "2024-02-12T17:08:06.6050923-08:00",
+        "petId": 1,
+        "id": 4,
+        "quantity": 20
       },
       "2": {
+        "status": "approved",
+        "complete": true,
+        "shipdate": "2024-02-12T17:08:06.6050923-08:00",
+        "petId": 1,
+        "id": 2,
+        "quantity": 50
+      }
+    },
+    "Scope": [
+      "Orders"
+    ]
+  },
+  "pets": {
+    "Value": {
+      "5": {
+        "status": "sold",
         "tags": [
           "tag2",
           "tag3"
         ],
-        "name": "Cat 2",
-        "id": 2,
         "photoUrls": [
           "url1",
           "url2"
         ],
         "categoryName": {
-          "name": "Cats",
-          "id": 2
+          "id": 1,
+          "name": "Dogs"
         },
-        "status": "available"
+        "name": "Dog 2",
+        "id": 5
+      },
+      "11": {
+        "status": "pending",
+        "tags": [
+          "tag3",
+          "tag4"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 3,
+          "name": "Rabbits"
+        },
+        "name": "Rabbit 2",
+        "id": 11
+      },
+      "8": {
+        "status": "available",
+        "tags": [
+          "tag2",
+          "tag3"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 4,
+          "name": "Lions"
+        },
+        "name": "Lion 2",
+        "id": 8
+      },
+      "7": {
+        "status": "available",
+        "tags": [
+          "tag1",
+          "tag2"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 4,
+          "name": "Lions"
+        },
+        "name": "Lion 1",
+        "id": 7
+      },
+      "4": {
+        "status": "available",
+        "tags": [
+          "tag1",
+          "tag2"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 1,
+          "name": "Dogs"
+        },
+        "name": "Dog 1",
+        "id": 4
+      },
+      "1": {
+        "status": "available",
+        "tags": [
+          "tag1",
+          "tag2"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 2,
+          "name": "Cats"
+        },
+        "name": "Cat 1",
+        "id": 1
+      },
+      "2": {
+        "status": "available",
+        "tags": [
+          "tag2",
+          "tag3"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 2,
+          "name": "Cats"
+        },
+        "name": "Cat 2",
+        "id": 2
+      },
+      "10": {
+        "status": "available",
+        "tags": [
+          "tag2",
+          "tag3"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 3,
+          "name": "Rabbits"
+        },
+        "name": "Rabbit 1",
+        "id": 10
+      },
+      "6": {
+        "status": "pending",
+        "tags": [
+          "tag3",
+          "tag4"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 1,
+          "name": "Dogs"
+        },
+        "name": "Dog 2",
+        "id": 6
+      },
+      "3": {
+        "status": "pending",
+        "tags": [
+          "tag3",
+          "tag4"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 2,
+          "name": "Cats"
+        },
+        "name": "Cat 2",
+        "id": 3
+      },
+      "9": {
+        "status": "available",
+        "tags": [
+          "tag3",
+          "tag4"
+        ],
+        "photoUrls": [
+          "url1",
+          "url2"
+        ],
+        "categoryName": {
+          "id": 4,
+          "name": "Lions"
+        },
+        "name": "Lion 2",
+        "id": 9
       }
-    }
+    },
+    "Scope": [
+      "Pets"
+    ]
+  },
+  "users": {
+    "Value": {
+      "user5": {
+        "userStatus": 2,
+        "firstName": "first name 5",
+        "email": "email5@test.com",
+        "lastName": "last name 5",
+        "phone": "123-456-7890",
+        "username": "user5",
+        "id": 5,
+        "password": "XXXXXXXXXXX"
+      },
+      "user2": {
+        "userStatus": 2,
+        "firstName": "first name 2",
+        "email": "email2@test.com",
+        "lastName": "last name 2",
+        "phone": "123-456-7890",
+        "username": "user2",
+        "id": 2,
+        "password": "XXXXXXXXXXX"
+      },
+      "user?10": {
+        "userStatus": 1,
+        "firstName": "first name ?10",
+        "email": "email101@test.com",
+        "lastName": "last name ?10",
+        "phone": "123-456-7890",
+        "username": "user?10",
+        "id": 11,
+        "password": "XXXXXXXXXXX"
+      },
+      "user10": {
+        "userStatus": 1,
+        "firstName": "first name 10",
+        "email": "email10@test.com",
+        "lastName": "last name 10",
+        "phone": "123-456-7890",
+        "username": "user10",
+        "id": 10,
+        "password": "XXXXXXXXXXX"
+      },
+      "user7": {
+        "userStatus": 1,
+        "firstName": "first name 7",
+        "email": "email7@test.com",
+        "lastName": "last name 7",
+        "phone": "123-456-7890",
+        "username": "user7",
+        "id": 7,
+        "password": "XXXXXXXXXXX"
+      },
+      "user1": {
+        "userStatus": 1,
+        "firstName": "first name 1",
+        "email": "email1@test.com",
+        "lastName": "last name 1",
+        "phone": "123-456-7890",
+        "username": "user1",
+        "id": 1,
+        "password": "XXXXXXXXXXX"
+      },
+      "user8": {
+        "userStatus": 2,
+        "firstName": "first name 8",
+        "email": "email8@test.com",
+        "lastName": "last name 8",
+        "phone": "123-456-7890",
+        "username": "user8",
+        "id": 8,
+        "password": "XXXXXXXXXXX"
+      },
+      "user9": {
+        "userStatus": 3,
+        "firstName": "first name 9",
+        "email": "email9@test.com",
+        "lastName": "last name 9",
+        "phone": "123-456-7890",
+        "username": "user9",
+        "id": 9,
+        "password": "XXXXXXXXXXX"
+      },
+      "user3": {
+        "userStatus": 3,
+        "firstName": "first name 3",
+        "email": "email3@test.com",
+        "lastName": "last name 3",
+        "phone": "123-456-7890",
+        "username": "user3",
+        "id": 3,
+        "password": "XXXXXXXXXXX"
+      },
+      "user4": {
+        "userStatus": 1,
+        "firstName": "first name 4",
+        "email": "email4@test.com",
+        "lastName": "last name 4",
+        "phone": "123-456-7890",
+        "username": "user4",
+        "id": 4,
+        "password": "XXXXXXXXXXX"
+      },
+      "user6": {
+        "userStatus": 3,
+        "firstName": "first name 6",
+        "email": "email6@test.com",
+        "lastName": "last name 6",
+        "phone": "123-456-7890",
+        "username": "user6",
+        "id": 6,
+        "password": "XXXXXXXXXXX"
+      }
+    },
+    "Scope": [
+      "Users"
+    ]
   }
 }

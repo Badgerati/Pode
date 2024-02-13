@@ -3414,9 +3414,8 @@ function Select-PodeOADefinition {
     $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Push($PodeContext.Server.OpenAPI.SelectedDefinitionTag)
 
     $PodeContext.Server.OpenAPI.SelectedDefinitionTag = $Tag
-
-    $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Scriptblock -Arguments $_args -Splat
+ 
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Scriptblock   -UsingVariables $usingVars -Splat
     $PodeContext.Server.OpenAPI.SelectedDefinitionTag = $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Pop()
 
 }

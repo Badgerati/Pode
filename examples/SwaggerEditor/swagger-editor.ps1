@@ -1,6 +1,6 @@
 param(
     [int]
-    $Port = 8085
+    $Port = 8080
 )
 
 $path = Split-Path -Parent -Path (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
@@ -21,9 +21,9 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type HTML
 
     # STATIC asset folder route
-    Add-PodeStaticRoute -Path '/editor/swagger-editor-dist' -Source "$($path)/src/Misc/swagger-editor-dist"
-    Add-PodeStaticRoute -Path '/editor' -Source './www' -Defaults @('index.html')
+    Add-PodeStaticRoute -Path '/editor/swagger-editor-dist' -Source "$($path)/src/Misc/swagger-editor-dist" -FileBrowser
+    Add-PodeStaticRoute -Path '/editor' -Source './www' -Defaults @('index.html') -FileBrowser
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        Move-PodeResponseUrl -Url '/editor'
+        Move-PodeResponseUrl -Url '/editor/index.html'
     }
 }

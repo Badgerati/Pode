@@ -176,6 +176,9 @@ serves the file directly.
 .PARAMETER RelativePath
 The relative path to the directory that should be displayed. This path is resolved and used to generate a list of contents.
 
+.PARAMETER RootPath
+The Root path that is the base for the relative path.
+
 .EXAMPLE
 # resolve for relative path
 $RelativePath = Get-PodeRelativePath -Path './static' -JoinRoot
@@ -189,9 +192,12 @@ function Write-PodeDirectoryResponseInternal {
         [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
-        $RelativePath
-    )
+        $RelativePath,
 
+        [Parameter()]
+        [string]
+        $RootPath
+    )
     # Retrieve the child items of the specified directory
     $child = Get-ChildItem -Path $RelativePath
     $pathSplit = $RelativePath.Split(':')
@@ -213,7 +219,15 @@ function Write-PodeDirectoryResponseInternal {
         }
         $baseLink = $baseEncodedSegments -join '/'
         $Item = Get-Item '..'
-        $ParentLink = $baseLink.TrimEnd('/').Substring(0, $baseLink.TrimEnd('/').LastIndexOf('/') + 1)
+        if ($null -eq $RootPath -or $RootPath -eq '/') {
+            $ParentLink = $baseLink.TrimEnd('/').Substring(0, $baseLink.TrimEnd('/').LastIndexOf('/') + 1)
+
+        }
+        else {
+            $baseLink = $RootPath + $baseLink
+            $ParentLink = $baseLink.TrimEnd('/').Substring(0, $baseLink.TrimEnd('/').LastIndexOf('/') + 1)
+
+        }
 
         #  # Add the parent directory link
         if ($windowsMode) {
@@ -224,21 +238,29 @@ function Write-PodeDirectoryResponseInternal {
         }
     }
     else {
-        $baseLink = ''
+        if ($null -eq $RootPath -or $RootPath -eq '/') {
+            $baseLink = ''
+        }
+        else {
+            $baseLink = $RootPath
+        }
     }
+
     if (!$baselink.EndsWith('/')) {
         $baselink = "$baselink/"
     }
+
     foreach ($item in $child) {
         if ($item.PSIsContainer) {
             $size = ''
             $icon = 'bi bi-folder2'
+            $link = "$baseLink$([uri]::EscapeDataString($item.Name))/"
         }
         else {
             $size = '{0:N2}KB' -f ($item.Length / 1KB)
             $icon = 'bi bi-file'
+            $link = "$baseLink$([uri]::EscapeDataString($item.Name))"
         }
-        $link = "$baseLink$([uri]::EscapeDataString($item.Name))"
 
         # Format each item as an HTML row
         if ($windowsMode) {
@@ -250,7 +272,7 @@ function Write-PodeDirectoryResponseInternal {
     }
 
     $Data = @{
-        Path        = $baseLink
+        Path        = $leaf.Replace('\', '/')
         windowsMode = $windowsMode.ToString().ToLower()
         fileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
     }

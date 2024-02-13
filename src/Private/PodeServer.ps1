@@ -192,11 +192,13 @@ function Start-PodeWebServer {
                                         }
                                         else {
                                             $cachable = $WebEvent.StaticContent.IsCachable
-                                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
+                                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
+                                                -Cache:$cachable -FileBrowser:$fileBrowser -RootPath $WebEvent.StaticContent.root
                                         }
                                     }
                                     elseif ($null -ne $WebEvent.Route.Logic) {
-                                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
+                                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments `
+                                            -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                                     }
                                 }
                             }

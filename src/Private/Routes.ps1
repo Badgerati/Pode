@@ -60,7 +60,7 @@ function Find-PodeRoute {
     }
 
     # if we have a perfect match for the route, return it if the protocol is right
-    $found = Get-PodeRouteByUrl -Routes $_method[$Path] -EndpointName $EndpointName
+    $found = Get-PodeRouteByUrl -Routes $_method[$Path] -EndpointName $EndpointName -Path $Path
     if (!$isStatic -and ($null -ne $found)) {
         return $found
     }
@@ -78,7 +78,7 @@ function Find-PodeRoute {
     }
 
     # is the route valid for any protocols/endpoints?
-    $found = Get-PodeRouteByUrl -Routes $_method[$valid] -EndpointName $EndpointName
+    $found = Get-PodeRouteByUrl -Routes $_method[$valid] -EndpointName $EndpointName -Path $Path
     if ($null -eq $found) {
         return $null
     }
@@ -148,10 +148,6 @@ function Find-PodeStaticRoute {
 
         # if there's no file, we need to check defaults
         if ( !$found.Download -and $fileInfo.PSIsContainer ) {
-            #Address the issue with Default
-            if ( $file -notlike '*/' -and $Path -ne '/') {
-                Move-PodeResponseUrl -Url "$Path/"
-            }
             foreach ($def in $found.Defaults) {
                 $combine = ([System.IO.Path]::Combine($found.Source, $file, $def))
                 if (Test-PodePath -Path $combine -NoStatus) {
@@ -183,6 +179,7 @@ function Find-PodeStaticRoute {
             Source     = $source
             IsDownload = $download
             IsCachable = (Test-PodeRouteValidForCaching -Path $Path)
+            Root       = $found.Root
         }
         Route   = $found
     }
@@ -236,42 +233,46 @@ function Get-PodeRouteByUrl {
 
         [Parameter()]
         [string]
-        $EndpointName
+        $EndpointName,
+
+        [Parameter()]
+        [string]
+        $Path
     )
 
     # if routes is already null/empty just return
     if (($null -eq $Routes) -or ($Routes.Length -eq 0)) {
         return $null
     }
-
-    # get the route
-    return (Get-PodeRoutesByUrl -Routes $Routes -EndpointName $EndpointName)
-}
-
-function Get-PodeRoutesByUrl {
-    param(
-        [Parameter()]
-        [hashtable[]]
-        $Routes,
-
-        [Parameter()]
-        [string]
-        $EndpointName
-    )
-
-    # see if a route has the endpoint name
-    if (![string]::IsNullOrWhiteSpace($EndpointName)) {
+    # see if a route has no endpoint name
+    if ( [string]::IsNullOrWhiteSpace($EndpointName)) {
         foreach ($route in $Routes) {
-            if ($route.Endpoint.Name -ieq $EndpointName) {
+            if ($Path) {
+                #path is defined search the route that start with the path
+                if ($Path.StartsWith( $route.Root)) {
+                    return $route
+                }
+            }
+            else {
+                # else find first default route
                 return $route
             }
         }
     }
-
-    # else find first default route
-    foreach ($route in $Routes) {
-        if ([string]::IsNullOrWhiteSpace($route.Endpoint.Name)) {
-            return $route
+    else {
+        # see if a route has the endpoint name
+        foreach ($route in $Routes) { 
+            if ($route.Endpoint.Name -ieq $EndpointName) {
+                if ($Path) {
+                    if ($Path.StartsWith( $route.Root)) {
+                        return $route
+                    }
+                }
+                else {
+                    # else find first default route
+                    return $route
+                }
+            }
         }
     }
 

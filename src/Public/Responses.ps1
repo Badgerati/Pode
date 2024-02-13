@@ -62,8 +62,9 @@ function Set-PodeResponseAttachment {
     }
 
     # only attach files from public/static-route directories when path is relative
-    $_path = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName).Content.Source
-
+    $route=(Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
+    $_path =$route.Content.Source
+    
     # if there's no path, check the original path (in case it's literal/relative)
     if (!(Test-PodePath $_path -NoStatus)) {
         $Path = Get-PodeRelativePath -Path $Path -JoinRoot
@@ -81,7 +82,7 @@ function Set-PodeResponseAttachment {
     # deal with file browsing
     if ($FileBrowser.IsPresent -and (Test-Path -Path $_path -PathType Container)) {
         #Show directory browsing
-        Write-PodeDirectoryResponseInternal  -RelativePath $_path
+        Write-PodeDirectoryResponseInternal  -RelativePath $_path -RootPath $route.Route.Root
 
     }
     else {
@@ -428,7 +429,11 @@ function Write-PodeFileResponse {
         $Cache,
 
         [switch]
-        $FileBrowser
+        $FileBrowser,
+
+        [Parameter()]
+        [string]
+        $RootPath
     )
     # resolve for relative path
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
@@ -441,9 +446,9 @@ function Write-PodeFileResponse {
     }
     else {
         # test the file path, and set status accordingly
-        if ( $pathInfo.PSIsContainer) { 
+        if ( $pathInfo.PSIsContainer) {
             if ($FileBrowser.isPresent) {
-                Write-PodeDirectoryResponseInternal -RelativePath $Path
+                Write-PodeDirectoryResponseInternal -RelativePath $Path -RootPath $RootPath
             }
             else {
                 Set-PodeResponseStatus -Code 404
