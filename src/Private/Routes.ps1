@@ -317,18 +317,19 @@ function Get-PodeRouteByUrl {
         }
     }
 
-    # Last resort
+    # Last resort check only route with no endpoint name 
     foreach ($route in $Routes) {
-
-        if ($Path) {
-            # Search for a route that matches both the provided path and endpoint name
-            if ($Path -match $route.Root) {
+        if ([string]::IsNullOrWhiteSpace($route.Endpoint.Name)) {
+            if ($Path) {
+                # Search for a route that matches both the provided path and endpoint name
+                if ($Path -match $route.Root) {
+                    return $route
+                }
+            }
+            else {
+                # Return the first route that matches the endpoint name as a default
                 return $route
             }
-        }
-        else {
-            # Return the first route that matches the endpoint name as a default
-            return $route
         }
     }
 

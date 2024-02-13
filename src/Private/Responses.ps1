@@ -272,7 +272,8 @@ function Write-PodeDirectoryResponseInternal {
     }
 
     $Data = @{
-        Path        = $leaf.Replace('\', '/')
+        rootPath    = $RootPath
+        path        = $leaf.Replace('\', '/')
         windowsMode = $windowsMode.ToString().ToLower()
         fileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
     }

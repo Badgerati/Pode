@@ -160,7 +160,7 @@
         pathContainer.appendChild(initialSlash);
 
         segments.forEach((segment, index) => {
-            let cumulativePath = '/' + segments.slice(0, index + 1).join('/');
+            let cumulativePath = '$($Data.RootPath)/' + segments.slice(0, index + 1).join('/');
 
             if (index < segments.length - 1) {
                 // Create a clickable link for this segment

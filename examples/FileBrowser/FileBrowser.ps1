@@ -58,6 +58,9 @@ else {
 Start-PodeServer -ScriptBlock {
 
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Default
+
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    
     Add-PodeStaticRoute -Path '/nobrowsing' -Source $directoryPath
     Add-PodeStaticRouteGroup -FileBrowser  -Routes {
         Add-PodeStaticRoute -Path '/download' -Source $using:directoryPath   -DownloadOnly
