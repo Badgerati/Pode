@@ -21,6 +21,12 @@ A custom ScriptBlock to generate a random unique SessionId. The value returned m
 .PARAMETER Storage
 A custom PSObject that defines methods for Delete, Get, and Set. This allow you to store Sessions in custom Storage such as Redis. A Secret is required.
 
+.PARAMETER Scope
+The Scope that the Session applies to, possible values are Browser and Tab (Default: Browser).
+The Browser scope is the default logic, where authentication and general data for the sessions are shared across all tabs.
+The Tab scope keep the authentication data shared across all tabs, but general data is separated across different tabs.
+For the Tab scope, the "Tab ID" required will be sourced from the "X-PODE-SESSION-TAB-ID" header.
+
 .PARAMETER Extend
 If supplied, the Sessions will have their durations extended on each successful Request.
 
@@ -220,7 +226,7 @@ function Save-PodeSession {
     }
 
     # save the session
-    $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Save -Arguments @($Force.IsPresent) -Splat
+    Save-PodeSessionInternal -Force:$Force
 }
 
 <#

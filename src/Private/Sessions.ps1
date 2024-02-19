@@ -120,7 +120,7 @@ function Get-PodeSession {
     }
 
     # generate the session data
-    $data = @{
+    return @{
         Name      = $name
         Id        = $sessionId
         TabId     = $tabId
@@ -129,8 +129,6 @@ function Get-PodeSession {
         TimeStamp = $null
         Data      = @{}
     }
-
-    return $data
 }
 
 function Revoke-PodeSession {
@@ -145,10 +143,7 @@ function Revoke-PodeSession {
     }
 
     # remove session from store
-    $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Delete
-
-    # blank the session
-    $WebEvent.Session.Clear()
+    Remove-PodeSessionInternal
 }
 
 function Set-PodeSessionDataHash {
@@ -180,69 +175,69 @@ function Test-PodeSessionDataHash {
     return ($WebEvent.Session.DataHash -eq $hash)
 }
 
-function Set-PodeSessionHelpers {
-    if ($null -eq $WebEvent.Session) {
-        throw 'No session available to set helpers'
+function Save-PodeSessionInternal {
+    param(
+        [switch]
+        $Force
+    )
+
+    # do nothing if session has no ID
+    if ([string]::IsNullOrEmpty($WebEvent.Session.FullId)) {
+        return
     }
 
-    # force save a session's data to the store
-    $WebEvent.Session | Add-Member -MemberType NoteProperty -Name Save -Value {
-        param($check)
+    # only save if check and hashes different, but not if extending expiry or updated
+    if (!$WebEvent.Session.Extend -and $Force -and (Test-PodeSessionDataHash)) {
+        return
+    }
 
-        # do nothing if session has no ID
-        if ([string]::IsNullOrEmpty($WebEvent.Session.FullId)) {
-            return
+    # generate the expiry
+    $expiry = Get-PodeSessionExpiry
+
+    # the data to save - which will be the data, and some extra metadata like timestamp
+    $data = @{
+        Version  = 3
+        Metadata = @{
+            TimeStamp = $WebEvent.Session.TimeStamp
         }
+        Data     = $WebEvent.Session.Data
+    }
 
-        # only save if check and hashes different, but not if extending expiry or updated
-        if (!$WebEvent.Session.Extend -and $check -and (Test-PodeSessionDataHash)) {
-            return
-        }
-
-        # generate the expiry
-        $expiry = Get-PodeSessionExpiry
-
-        # the data to save - which will be the data, and some extra metadata like timestamp
-        $data = @{
+    # save base session data to store
+    if (!$PodeContext.Server.Sessions.Info.Scope.IsBrowser -and $WebEvent.Session.TabId) {
+        $authData = @{
             Version  = 3
             Metadata = @{
                 TimeStamp = $WebEvent.Session.TimeStamp
+                Tabbed    = $true
             }
-            Data     = $WebEvent.Session.Data
+            Data     = @{
+                Auth = $WebEvent.Session.Data.Auth
+            }
         }
 
-        # save base session data to store
-        if (!$PodeContext.Server.Sessions.Info.Scope.IsBrowser -and $WebEvent.Session.TabId) {
-            $authData = @{
-                Version  = 3
-                Metadata = @{
-                    TimeStamp = $WebEvent.Session.TimeStamp
-                    Tabbed    = $true
-                }
-                Data     = @{
-                    Auth = $WebEvent.Session.Data.Auth
-                }
-            }
-
-            $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($WebEvent.Session.Id, $authData, $expiry) -Splat
-            $data.Metadata['Parent'] = $WebEvent.Session.Id
-        }
-
-        # save session data to store
-        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($WebEvent.Session.FullId, $data, $expiry) -Splat
-
-        # update session's data hash
-        Set-PodeSessionDataHash
+        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($WebEvent.Session.Id, $authData, $expiry) -Splat
+        $data.Metadata['Parent'] = $WebEvent.Session.Id
     }
 
-    # delete the current session
-    $WebEvent.Session | Add-Member -MemberType NoteProperty -Name Delete -Value {
-        # remove data from store
-        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $WebEvent.Session.Id
+    # save session data to store
+    $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Set -Arguments @($WebEvent.Session.FullId, $data, $expiry) -Splat
 
-        # clear session
-        $WebEvent.Session.Clear()
+    # update session's data hash
+    Set-PodeSessionDataHash
+}
+
+function Remove-PodeSessionInternal {
+    if ($null -eq $WebEvent.Session) {
+        return
     }
+
+    # remove data from store
+    $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Sessions.Store.Delete -Arguments $WebEvent.Session.Id
+
+    # clear session
+    $WebEvent.Session.Clear()
+    $WebEvent.Session = $null
 }
 
 function Get-PodeSessionInMemStore {
@@ -405,9 +400,6 @@ function Get-PodeSessionMiddleware {
             # set data hash
             Set-PodeSessionDataHash
 
-            # add helper methods to current session
-            Set-PodeSessionHelpers
-
             # add session to response if it's new or extendible
             if ($new -or $WebEvent.Session.Extend) {
                 Set-PodeSession
@@ -416,7 +408,9 @@ function Get-PodeSessionMiddleware {
             # assign endware for session to set cookie/header
             $WebEvent.OnEnd += @{
                 Logic = {
-                    Save-PodeSession -Force
+                    if ($null -ne $WebEvent.Session) {
+                        Save-PodeSession -Force
+                    }
                 }
             }
         }
