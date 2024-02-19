@@ -37,11 +37,11 @@ Describe 'Get-PodeSession' {
 
             $PodeContext = @{
                 Server = @{
-                    Cookies = @{}
+                    Cookies  = @{}
                     Sessions = @{
-                        Name = 'pode.sid'
+                        Name   = 'pode.sid'
                         Secret = 'key'
-                        Info = @{ 'Duration' = 60 }
+                        Info   = @{ 'Duration' = 60 }
                     }
                 }
             }
@@ -54,16 +54,17 @@ Describe 'Get-PodeSession' {
             $cookie = [System.Net.Cookie]::new('pode.sid', 's:value.kPv88V5o2uJ29sqh2a7P/f3dxcg+JdZJZT3GTIE=')
 
             $WebEvent = @{ Cookies = @{
-                'pode.sid' = $cookie
-            } }
+                    'pode.sid' = $cookie
+                } 
+            }
 
             $PodeContext = @{
                 Server = @{
-                    Cookies = @{}
+                    Cookies  = @{}
                     Sessions = @{
-                        Name = 'pode.sid'
+                        Name   = 'pode.sid'
                         Secret = 'key'
-                        Info = @{ 'Duration' = 60 }
+                        Info   = @{ 'Duration' = 60 }
                     }
                 }
             }
@@ -76,16 +77,17 @@ Describe 'Get-PodeSession' {
             $cookie = [System.Net.Cookie]::new('pode.sid', 's:value.kPv88V50o2uJ29sqch2a7P/f3dxcg+J/dZJZT3GTJIE=')
 
             $WebEvent = @{ Cookies = @{
-                'pode.sid' = $cookie
-            } }
+                    'pode.sid' = $cookie
+                } 
+            }
 
             $PodeContext = @{
                 Server = @{
-                    Cookies = @{}
+                    Cookies  = @{}
                     Sessions = @{
-                        Name = 'pode.sid'
+                        Name   = 'pode.sid'
                         Secret = 'key'
-                        Info = @{ 'Duration' = 60 }
+                        Info   = @{ 'Duration' = 60 }
                     }
                 }
             }
@@ -146,11 +148,11 @@ Describe 'New-PodeSession' {
 
         $PodeContext = @{
             Server = @{
-                Cookies = @{}
+                Cookies  = @{}
                 Sessions = @{
-                    Name = 'pode.sid'
-                    Secret = 'key'
-                    Info = @{ 'Duration' = 60 }
+                    Name       = 'pode.sid'
+                    Secret     = 'key'
+                    Info       = @{ 'Duration' = 60 }
                     GenerateId = {}
                 }
             }
@@ -165,7 +167,7 @@ Describe 'New-PodeSession' {
         $WebEvent.Session.Data.Count | Should Be 0
 
         $crypto = [System.Security.Cryptography.SHA256]::Create()
-        $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($WebEvent.Session.Data| ConvertTo-Json -Depth 10 -Compress)))
+        $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($WebEvent.Session.Data | ConvertTo-Json -Depth 10 -Compress)))
         $hash = [System.Convert]::ToBase64String($hash)
 
         $WebEvent.Session.DataHash | Should Be $hash
@@ -191,12 +193,12 @@ Describe 'Test-PodeSessionDataHash' {
         It 'Returns true for a valid hash' {
             $WebEvent = @{
                 Session = @{
-                    'Data' = @{ 'Counter' = 2; };
+                    'Data' = @{ 'Counter' = 2; }
                 }
             }
 
             $crypto = [System.Security.Cryptography.SHA256]::Create()
-            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($WebEvent.Session.Data| ConvertTo-Json -Depth 10 -Compress)))
+            $hash = $crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes(($WebEvent.Session.Data | ConvertTo-Json -Depth 10 -Compress)))
             $hash = [System.Convert]::ToBase64String($hash)
             $WebEvent.Session.DataHash = $hash
 
@@ -234,9 +236,9 @@ Describe 'Set-PodeSession' {
 
         $WebEvent = @{
             Session = @{
-                'Name' = 'name';
-                'Id' = 'sessionId';
-                'Cookie' = @{};
+                'Name'   = 'name'
+                'Id'     = 'sessionId'
+                'Cookie' = @{}
             }
         }
 
@@ -288,13 +290,14 @@ Describe 'Save-PodeSession' {
 
     It 'Call saves the session' {
         Mock Test-PodeSessionsEnabled { return $true }
-        Mock Invoke-PodeScriptBlock {}
+        Mock Save-PodeSessionInternal {}
 
         $WebEvent = @{ Session = @{
-            Save = {}
-        } }
+                Save = {}
+            } 
+        }
 
         Save-PodeSession
-        Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
+        Assert-MockCalled Save-PodeSessionInternal -Times 1 -Scope It
     }
 }
