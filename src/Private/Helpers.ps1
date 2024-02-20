@@ -1633,7 +1633,7 @@ function Get-PodeCount {
 
     return $Object.Count
 }
- 
+
 function Test-PodePath {
     param(
         [Parameter()]
@@ -3008,5 +3008,67 @@ function ConvertTo-PodeYamlInternal {
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
         throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
+    }
+}
+
+<#
+.SYNOPSIS
+Extracts a specific part of a URL based on a provided regex pattern.
+
+.DESCRIPTION
+The Get-PodeUrlPart function applies a regex pattern to a URL to extract a specific part of it. If the pattern does not contain the specific notation "/.*?/", the function returns the original URL as is. This functionality allows for conditional processing based on the presence of a flexible matching pattern in the regex. If the URL does not match the specified pattern and the pattern includes "/.*?/", the function throws a descriptive exception.
+
+.PARAMETER Pattern
+The regex pattern used to identify and extract the desired part of the URL. The pattern should potentially include the "/.*?/" notation to indicate flexible matching. If this notation is absent, the original URL is returned.
+
+.PARAMETER Url
+The URL to be processed. This should be a full URL from which a part is to be extracted based on the provided pattern, or returned as is if the pattern does not include "/.*?/".
+
+.EXAMPLE
+$pattern = "/any/.*?/test"
+$url = "http://localhost:8080/any/packers/test/something/myfile.txt"
+Get-PodeUrlPart -Pattern $pattern -Url $url
+
+Returns "/any/packers/test" from the given URL based on the specified pattern.
+
+.EXAMPLE
+$pattern = "/any/test"
+$url = "http://localhost:8080/any/packers/test/something/myfile.txt"
+Get-PodeUrlPart -Pattern $pattern -Url $url
+
+Returns the Pattern because the pattern does not contain "/.*?/" and it's a valid root.
+
+.NOTES
+This function can be particularly useful in scenarios where URLs follow a consistent pattern, and there is a need to extract a specific segment based on varying criteria. The added flexibility with pattern checking enhances its application range.
+
+.LINK
+https://www.regular-expressions.info/
+For more information on regular expressions.
+
+#>
+function Get-PodeUrlPart {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$Pattern,
+        [Parameter(Mandatory=$true)]
+        [string]$Url
+    )
+
+    # Check if the pattern contains "/.*?/"
+    if (-not $Pattern.Contains("/.*?/")) {
+        # If the pattern does not contain "/.*?/", return the Pattern
+        return $Pattern
+    }
+
+    # Modify the input pattern to capture the desired URL part
+    $modifiedPattern = $Pattern.Replace("/.*?/", "/.+?/")  # Change to greedy matching for broader capture
+    $modifiedPattern = "($modifiedPattern)(?:/[^/]+)*"     # Adjust to capture additional segments
+
+    if ($Url -match $modifiedPattern) {
+        # If a match is found, return the first capturing group
+        return $matches[1]
+    } else {
+        # If no match is found, throw a descriptive exception
+        throw [System.InvalidOperationException] "The provided URL does not match the specified pattern. Please check the URL and pattern for correctness. URL: '$Url', Pattern: '$Pattern'."
     }
 }

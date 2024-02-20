@@ -132,7 +132,10 @@ function Find-PodeStaticRoute {
         $EndpointName,
 
         [switch]
-        $CheckPublic
+        $CheckPublic,
+
+        [string]
+        $RequestUrl
     )
 
     # attempt to get a static route for the path
@@ -181,17 +184,26 @@ function Find-PodeStaticRoute {
         return $null
     }
 
+    # deal with Route Path containing /*/
+    if ($RequestUrl) {
+        $root = Get-PodeUrlPart -Pattern $found.Pattern -Url $RequestUrl
+    }
+    else {
+        $root = $found.Pattern
+    }
+
     # return the route details
     return @{
         Content = @{
             Source     = $source
             IsDownload = $download
             IsCachable = (Test-PodeRouteValidForCaching -Path $Path)
-            Root       = $found.Root
+            Root       = $root
         }
         Route   = $found
     }
 }
+
 
 function Find-PodeSignalRoute {
     param(
@@ -297,7 +309,7 @@ function Get-PodeRouteByUrl {
         foreach ($route in $Routes) {
             if ($Path) {
                 # Search for a route that matches the provided path
-                if ($Path -match $route.Root) {
+                if ($Path -match $route.Pattern) {
                     return $route
                 }
             }
@@ -313,7 +325,7 @@ function Get-PodeRouteByUrl {
             if (  $route.Endpoint.Name -ieq $EndpointName) {
                 if ($Path) {
                     # Search for a route that matches both the provided path and endpoint name
-                    if ($Path -match $route.Root) {
+                    if ($Path -match $route.Pattern) {
                         return $route
                     }
                 }
@@ -330,7 +342,7 @@ function Get-PodeRouteByUrl {
         if ([string]::IsNullOrWhiteSpace($route.Endpoint.Name)) {
             if ($Path) {
                 # Search for a route that matches both the provided path and endpoint name
-                if ($Path -match $route.Root) {
+                if ($Path -match $route.Pattern) {
                     return $route
                 }
             }

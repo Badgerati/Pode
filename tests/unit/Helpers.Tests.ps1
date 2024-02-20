@@ -1712,3 +1712,28 @@ Describe 'New-PodeCron' {
         { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage 'Cannot supply interval value for every year'
     }
 }
+
+
+Describe 'Get-PodeUrlPart Tests' {
+
+    It 'Extracts the correct URL part for a valid pattern' {
+        $pattern = "/any/.*?/test"
+        $url = "http://localhost:8080/any/packers/test/something/myfile.txt"
+        $expected = "/any/packers/test"
+        $result = Get-PodeUrlPart -Pattern $pattern -Url $url
+        $result | Should -Be $expected
+    }
+
+    It 'Returns the pattern when pattern does not contain /.*?/' {
+        $pattern = "/any/test"
+        $url = "http://localhost:8080/any/packers/test/something/myfile.txt"
+        $result = Get-PodeUrlPart -Pattern $pattern -Url $url
+        $result | Should -Be $pattern
+    }
+
+    It 'Throws an exception when URL does not match the specified pattern' {
+        $pattern = "/any/.*?/nonexistent"
+        $url = "http://localhost:8080/any/packers/test/something/myfile.txt"
+        { Get-PodeUrlPart -Pattern $pattern -Url $url } | Should -Throw -ExpectedMessage 'The provided URL does not match the specified pattern*'
+    }
+}

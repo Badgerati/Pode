@@ -63,78 +63,11 @@ function Set-PodeResponseAttachment {
 
     # only attach files from public/static-route directories when path is relative
     $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
-    $_path = $route.Content.Source
 
-    # if there's no path, check the original path (in case it's literal/relative)
-    if (!(Test-PodePath $_path -NoStatus)) {
-        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+    #call internal Attachment function
+    Write-PodeAttachmentResponse -Path $route.Content.Source -ContentType $ContentType -FileBrowser:$fileBrowser
 
-        if (Test-PodePath $Path -NoStatus) {
-            $_path = $Path
-        }
-    }
 
-    # test the file path, and set status accordingly
-    if (!(Test-PodePath $_path)) {
-        return
-    }
-
-    # deal with file browsing
-    if ($FileBrowser.IsPresent -and (Test-Path -Path $_path -PathType Container)) {
-        #Show directory browsing
-        Write-PodeDirectoryResponseInternal  -RelativePath $_path -RootPath $route.Route.Root
-
-    }
-    else {
-
-        $filename = Get-PodeFileName -Path $_path
-        $ext = Get-PodeFileExtension -Path $_path -TrimPeriod
-
-        try {
-            # setup the content type and disposition
-            if (!$ContentType) {
-                $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
-            }
-            else {
-                $WebEvent.Response.ContentType = $ContentType
-            }
-
-            Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
-
-            # if serverless, get the content raw and return
-            if (!$WebEvent.Streamed) {
-                if (Test-PodeIsPSCore) {
-                    $content = (Get-Content -Path $_path -Raw -AsByteStream)
-                }
-                else {
-                    $content = (Get-Content -Path $_path -Raw -Encoding byte)
-                }
-
-                $WebEvent.Response.Body = $content
-            }
-
-            # else if normal, stream the content back
-            else {
-                # setup the response details and headers
-                $WebEvent.Response.SendChunked = $false
-
-                # set file as an attachment on the response
-                $buffer = [byte[]]::new(64 * 1024)
-                $read = 0
-
-                # open up the file as a stream
-                $fs = (Get-Item $_path).OpenRead()
-                $WebEvent.Response.ContentLength64 = $fs.Length
-
-                while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                    $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
-                }
-            }
-        }
-        finally {
-            Close-PodeDisposable -Disposable $fs
-        }
-    }
 }
 
 <#
@@ -437,7 +370,7 @@ function Write-PodeFileResponse {
 
         [Parameter()]
         [string]
-        $RootPath='/'
+        $RootPath = '/'
     )
     # resolve for relative path
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot

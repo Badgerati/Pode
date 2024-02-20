@@ -193,11 +193,13 @@ function Start-PodeAwsLambdaServer {
                     if ($null -ne $WebEvent.StaticContent) {
                         $fileBrowser = $WebEvent.Route.FileBrowser
                         if ($WebEvent.StaticContent.IsDownload) {
-                            Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name -FileBrowser:$fileBrowser
+                            Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser `
+                                -RootPath $WebEvent.StaticContent.Root
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
+                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
+                                -Cache:$cachable -FileBrowser:$fileBrowser -RootPath $WebEvent.StaticContent.Root
                         }
                     }
                     else {

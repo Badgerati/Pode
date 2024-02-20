@@ -70,7 +70,7 @@ Start-PodeServer -ScriptBlock {
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{
                 User = @{
-                    ID ='M0R7Y302'
+                    ID   = 'M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'
                 }
@@ -84,6 +84,7 @@ Start-PodeServer -ScriptBlock {
         Add-PodeStaticRoute -Path '/' -Source $using:directoryPath
         Add-PodeStaticRoute -Path '/download' -Source $using:directoryPath -DownloadOnly
         Add-PodeStaticRoute -Path '/nodownload' -Source $using:directoryPath
+        Add-PodeStaticRoute -Path '/any/*/test' -Source $using:directoryPath
         Add-PodeStaticRoute -Path '/auth' -Source $using:directoryPath   -Authentication 'Validate'
     }
     Add-PodeStaticRoute -Path '/nobrowsing' -Source $directoryPath

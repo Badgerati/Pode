@@ -282,3 +282,129 @@ function Write-PodeDirectoryResponseInternal {
     # Write the response
     Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
 }
+
+
+<#
+.SYNOPSIS
+Sends a file as an attachment in the response, supporting both file streaming and directory browsing options.
+
+.DESCRIPTION
+The Write-PodeAttachmentResponseInternal function is designed to handle HTTP responses for file downloads or directory browsing within a Pode web server. It resolves the given file or directory path, sets the appropriate content type, and configures the response to either download the file as an attachment or list the directory contents if browsing is enabled. The function supports both PowerShell Core and Windows PowerShell environments for file content retrieval.
+
+.PARAMETER Path
+The path to the file or directory. This parameter is mandatory and accepts pipeline input. The function resolves relative paths based on the server's root directory.
+
+.PARAMETER ContentType
+The MIME type of the file being served. This is validated against a pattern to ensure it's in the format 'type/subtype'. If not specified, the function attempts to determine the content type based on the file extension.
+
+.PARAMETER FileBrowser
+A switch parameter that, when present, enables directory browsing. If the path points to a directory and this parameter is enabled, the function will list the directory's contents instead of returning a 404 error.
+
+.PARAMETER RootPath
+The root directory path used for resolving relative paths. Defaults to '/' if not specified.
+
+.EXAMPLE
+Write-PodeAttachmentResponseInternal -Path './files/document.pdf' -ContentType 'application/pdf'
+
+Serves the 'document.pdf' file with the 'application/pdf' MIME type as a downloadable attachment.
+
+.EXAMPLE
+Write-PodeAttachmentResponseInternal -Path './files' -FileBrowser
+
+Lists the contents of the './files' directory if the FileBrowser switch is enabled; otherwise, returns a 404 error.
+
+.NOTES
+This function integrates with Pode's internal handling of HTTP responses, leveraging other Pode-specific functions like Get-PodeContentType and Set-PodeResponseStatus. It differentiates between streamed and serverless environments to optimize file delivery.
+
+#>
+function Write-PodeAttachmentResponseInternal {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [string]
+        $Path,
+
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [string]
+        $ContentType,
+
+        [Parameter()]
+        [switch]
+        $FileBrowser,
+
+        [Parameter()]
+        [string]
+        $RootPath = '/'
+
+    )
+    # resolve for relative path
+    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+
+    # Attempt to retrieve information about the path
+    $pathInfo = Get-Item -Path $Path -ErrorAction Continue
+
+    # Check if the path exists
+    if ($null -eq $pathInfo) {
+        # If not, set the response status to 404 Not Found
+        Set-PodeResponseStatus -Code 404
+        return
+    }
+
+    if ( $pathInfo.PSIsContainer) {
+        # If directory browsing is enabled, use the directory response function
+        if ($FileBrowser.isPresent) {
+            Write-PodeDirectoryResponseInternal -RelativePath $Path -RootPath $RootPath
+            return
+        }
+        else {
+            # If browsing is not enabled, return a 404 error
+            Set-PodeResponseStatus -Code 404
+            return
+        }
+    }
+    try {
+        # setup the content type and disposition
+        if (!$ContentType) {
+            $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $pathInfo.Extension)
+        }
+        else {
+            $WebEvent.Response.ContentType = $ContentType
+        }
+
+        Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($pathInfo.Name)"
+
+        # if serverless, get the content raw and return
+        if (!$WebEvent.Streamed) {
+            if (Test-PodeIsPSCore) {
+                $content = (Get-Content -Path $Path -Raw -AsByteStream)
+            }
+            else {
+                $content = (Get-Content -Path $Path -Raw -Encoding byte)
+            }
+
+            $WebEvent.Response.Body = $content
+        }
+
+        # else if normal, stream the content back
+        else {
+            # setup the response details and headers
+            $WebEvent.Response.SendChunked = $false
+
+            # set file as an attachment on the response
+            $buffer = [byte[]]::new(64 * 1024)
+            $read = 0
+
+            # open up the file as a stream
+            $fs = (Get-Item $Path).OpenRead()
+            $WebEvent.Response.ContentLength64 = $fs.Length
+
+            while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
+            }
+        }
+    }
+    finally {
+        Close-PodeDisposable -Disposable $fs
+    }
+
+}
