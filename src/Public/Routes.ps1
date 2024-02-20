@@ -2524,7 +2524,6 @@ function Use-PodeRoutes {
         $IfExists = Get-PodeRouteIfExistsPreference
     }
 
-    $RouteIfExists = $IfExists
     Use-PodeFolder -Path $Path -DefaultPath 'routes'
 }
 
