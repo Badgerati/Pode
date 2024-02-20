@@ -480,6 +480,7 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
         Mock Write-PodeDirectoryResponseInternal {}
         Mock Get-Content { return 'testfile' }
         Mock Get-PodeContentType { return 'application/octet-stream' }
+        Mock Find-PodePublicRoute {}
         Mock Get-Item {
             return @{
                 PSIsContainer = $false
@@ -489,6 +490,7 @@ Describe 'Write-PodeAttachmentResponseInternal Tests' {
             }
         }
         Mock Set-PodeHeader {}
+
     }
     BeforeEach {
         $WebEvent = @{Response = @{} }
