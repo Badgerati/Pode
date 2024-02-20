@@ -238,7 +238,7 @@ function Initialize-PodeCsrf {
     }
 
     # if sessions haven't been setup and we're not using cookies, error
-    if (!$UseCookies -and !(Test-PodeSessionsConfigured)) {
+    if (!$UseCookies -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use CSRF unless you want to use cookies'
     }
 
