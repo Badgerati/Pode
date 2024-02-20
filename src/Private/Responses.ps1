@@ -324,7 +324,7 @@ function Write-PodeAttachmentResponseInternal {
         [string]
         $Path,
 
-        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [Parameter()]
         [string]
         $ContentType,
 
@@ -337,6 +337,7 @@ function Write-PodeAttachmentResponseInternal {
         $RootPath = '/'
 
     )
+
     # resolve for relative path
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
@@ -345,9 +346,19 @@ function Write-PodeAttachmentResponseInternal {
 
     # Check if the path exists
     if ($null -eq $pathInfo) {
-        # If not, set the response status to 404 Not Found
-        Set-PodeResponseStatus -Code 404
-        return
+        #if not exist try with to find with public Route if exist
+        $Path = Find-PodePublicRoute -Path $Path 
+        if ($Path) {
+            # only attach files from public/static-route directories when path is relative
+            $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+            # Attempt to retrieve information about the path
+            $pathInfo = Get-Item -Path $Path -ErrorAction Continue
+        }
+        if ($null -eq $pathInfo) {
+            # If not, set the response status to 404 Not Found
+            Set-PodeResponseStatus -Code 404
+            return
+        }
     }
 
     if ( $pathInfo.PSIsContainer) {

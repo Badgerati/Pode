@@ -88,4 +88,8 @@ Start-PodeServer -ScriptBlock {
         Add-PodeStaticRoute -Path '/auth' -Source $using:directoryPath   -Authentication 'Validate'
     }
     Add-PodeStaticRoute -Path '/nobrowsing' -Source $directoryPath
+
+    Add-PodeRoute -Method Get -Path '/attachment' -ScriptBlock {
+        Set-PodeResponseAttachment -Path 'ruler.png'
+    }
 }

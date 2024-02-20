@@ -63,9 +63,15 @@ function Set-PodeResponseAttachment {
 
     # only attach files from public/static-route directories when path is relative
     $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
+    if ($route) {
+        $_path = $route.Content.Source
 
+    }
+    else {
+        $_path = Get-PodeRelativePath -Path $Path -JoinRoot
+    } 
     #call internal Attachment function
-    Write-PodeAttachmentResponse -Path $route.Content.Source -ContentType $ContentType -FileBrowser:$fileBrowser
+    Write-PodeAttachmentResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser
 
 
 }

@@ -108,7 +108,7 @@ function Find-PodePublicRoute {
     if ([string]::IsNullOrWhiteSpace($publicPath)) {
         return $source
     }
-
+    
     # use the public static directory (but only if path is a file, and a public dir is present)
     if (Test-PodePathIsFile $Path) {
         $source = [System.IO.Path]::Combine($publicPath, $Path.TrimStart('/', '\'))
