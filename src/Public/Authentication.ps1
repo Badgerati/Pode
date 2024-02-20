@@ -415,7 +415,7 @@ function New-PodeAuthScheme {
                 throw 'OAuth2 requires an Authorise URL to be supplied'
             }
 
-            if ($UsePKCE -and !(Test-PodeSessionsConfigured)) {
+            if ($UsePKCE -and !(Test-PodeSessionsEnabled)) {
                 throw 'Sessions are required to use OAuth2 with PKCE'
             }
 
@@ -759,7 +759,7 @@ function Add-PodeAuth {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 
@@ -921,7 +921,7 @@ function Merge-PodeAuth {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 
@@ -1252,7 +1252,7 @@ function Add-PodeAuthWindowsAd {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 
@@ -1377,7 +1377,7 @@ function Add-PodeAuthSession {
     )
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions have not been configured'
     }
 
@@ -1835,7 +1835,7 @@ function Add-PodeAuthUserFile {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 
@@ -1997,7 +1997,7 @@ function Add-PodeAuthWindowsLocal {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 

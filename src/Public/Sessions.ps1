@@ -21,6 +21,12 @@ A custom ScriptBlock to generate a random unique SessionId. The value returned m
 .PARAMETER Storage
 A custom PSObject that defines methods for Delete, Get, and Set. This allow you to store Sessions in custom Storage such as Redis. A Secret is required.
 
+.PARAMETER Scope
+The Scope that the Session applies to, possible values are Browser and Tab (Default: Browser).
+The Browser scope is the default logic, where authentication and general data for the sessions are shared across all tabs.
+The Tab scope keep the authentication data shared across all tabs, but general data is separated across different tabs.
+For the Tab scope, the "Tab ID" required will be sourced from the "X-PODE-SESSION-TAB-ID" header.
+
 .PARAMETER Extend
 If supplied, the Sessions will have their durations extended on each successful Request.
 
@@ -74,7 +80,12 @@ function Enable-PodeSessionMiddleware {
 
         [Parameter()]
         [psobject]
-        $Storage,
+        $Storage = $null,
+
+        [Parameter()]
+        [ValidateSet('Browser', 'Tab')]
+        [string]
+        $Scope = 'Browser',
 
         [switch]
         $Extend,
@@ -96,7 +107,7 @@ function Enable-PodeSessionMiddleware {
     )
 
     # check that session logic hasn't already been initialised
-    if (Test-PodeSessionsConfigured) {
+    if (Test-PodeSessionsEnabled) {
         throw 'Session Middleware has already been intialised'
     }
 
@@ -138,12 +149,17 @@ function Enable-PodeSessionMiddleware {
             Strict     = $Strict.IsPresent
             HttpOnly   = $HttpOnly.IsPresent
             UseHeaders = $UseHeaders.IsPresent
+            Scope      = @{
+                Type      = $Scope.ToLowerInvariant()
+                IsBrowser = ($Scope -ieq 'Browser')
+            }
         }
     }
 
     # return scriptblock for the session middleware
-    $script = Get-PodeSessionMiddleware
-    (New-PodeMiddleware -ScriptBlock $script) | Add-PodeMiddleware -Name '__pode_mw_sessions__'
+    Get-PodeSessionMiddleware |
+        New-PodeMiddleware |
+        Add-PodeMiddleware -Name '__pode_mw_sessions__'
 }
 
 <#
@@ -161,11 +177,11 @@ function Remove-PodeSession {
     param()
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions have not been configured'
     }
 
-    # do nothin if session is null
+    # do nothing if session is null
     if ($null -eq $WebEvent.Session) {
         return
     }
@@ -195,7 +211,7 @@ function Save-PodeSession {
     )
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions have not been configured'
     }
 
@@ -210,7 +226,7 @@ function Save-PodeSession {
     }
 
     # save the session
-    $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Session.Save -Arguments @($Force.IsPresent) -Splat
+    Save-PodeSessionInternal -Force:$Force
 }
 
 <#
@@ -248,7 +264,7 @@ function Get-PodeSessionId {
     }
 
     # get the sessionId
-    $sessionId = $WebEvent.Session.Id
+    $sessionId = $WebEvent.Session.FullId
 
     # do they want the session signed?
     if ($Signed) {
@@ -268,6 +284,17 @@ function Get-PodeSessionId {
     return $sessionId
 }
 
+function Get-PodeSessionTabId {
+    [CmdletBinding()]
+    param()
+
+    if ($PodeContext.Server.Sessions.Info.Scope.IsBrowser) {
+        return $null
+    }
+
+    return Get-PodeHeader -Name 'X-PODE-SESSION-TAB-ID'
+}
+
 <#
 .SYNOPSIS
 Resets the current Session's expiry date.
@@ -283,7 +310,7 @@ function Reset-PodeSessionExpiry {
     param()
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions have not been configured'
     }
 
@@ -352,4 +379,16 @@ function Get-PodeSessionExpiry {
 
     # return expiry
     return $expiry
+}
+
+function Test-PodeSessionsEnabled {
+    return (($null -ne $PodeContext.Server.Sessions) -and ($PodeContext.Server.Sessions.Count -gt 0))
+}
+
+function Get-PodeSessionInfo {
+    return $PodeContext.Server.Sessions.Info
+}
+
+function Test-PodeSessionScopeIsBrowser {
+    return [bool]$PodeContext.Server.Sessions.Info.Scope.IsBrowser
 }

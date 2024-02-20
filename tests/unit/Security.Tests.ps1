@@ -432,7 +432,7 @@ Describe 'Initialize-PodeCsrf' {
         }
 
         Mock Test-PodeCsrfConfigured { return $false }
-        Mock Test-PodeSessionsConfigured { return $true }
+        Mock Test-PodeSessionsEnabled { return $true }
         Mock Get-PodeCookieSecret { return 'secret' }
 
         Initialize-PodeCsrf -IgnoreMethods @('Get')
@@ -451,7 +451,7 @@ Describe 'Initialize-PodeCsrf' {
         }
 
         Mock Test-PodeCsrfConfigured { return $false }
-        Mock Test-PodeSessionsConfigured { return $false }
+        Mock Test-PodeSessionsEnabled { return $false }
         Mock Get-PodeCookieSecret { return 'secret' }
 
         Initialize-PodeCsrf -IgnoreMethods @('Get') -UseCookies

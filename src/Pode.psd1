@@ -207,6 +207,10 @@
         'Reset-PodeSessionExpiry',
         'Get-PodeSessionDuration',
         'Get-PodeSessionExpiry',
+        'Test-PodeSessionsEnabled',
+        'Get-PodeSessionTabId',
+        'Get-PodeSessionInfo',
+        'Test-PodeSessionScopeIsBrowser',
 
         # auth
         'New-PodeAuthScheme',
