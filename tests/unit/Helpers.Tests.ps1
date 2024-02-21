@@ -1717,23 +1717,78 @@ Describe 'New-PodeCron' {
 Describe 'Get-PodeUrlPart Tests' {
 
     It 'Extracts the correct URL part for a valid pattern' {
-        $pattern = "/any/.*?/test"
-        $url = "http://localhost:8080/any/packers/test/something/myfile.txt"
-        $expected = "/any/packers/test"
+        $pattern = '/any/.*?/test'
+        $url = 'http://localhost:8080/any/packers/test/something/myfile.txt'
+        $expected = '/any/packers/test'
         $result = Get-PodeUrlPart -Pattern $pattern -Url $url
         $result | Should -Be $expected
     }
 
     It 'Returns the pattern when pattern does not contain /.*?/' {
-        $pattern = "/any/test"
-        $url = "http://localhost:8080/any/packers/test/something/myfile.txt"
+        $pattern = '/any/test'
+        $url = 'http://localhost:8080/any/packers/test/something/myfile.txt'
         $result = Get-PodeUrlPart -Pattern $pattern -Url $url
         $result | Should -Be $pattern
     }
 
     It 'Throws an exception when URL does not match the specified pattern' {
-        $pattern = "/any/.*?/nonexistent"
-        $url = "http://localhost:8080/any/packers/test/something/myfile.txt"
+        $pattern = '/any/.*?/nonexistent'
+        $url = 'http://localhost:8080/any/packers/test/something/myfile.txt'
         { Get-PodeUrlPart -Pattern $pattern -Url $url } | Should -Throw -ExpectedMessage 'The provided URL does not match the specified pattern*'
+    }
+}
+
+Describe 'ConvertTo-PodeYamlInternal Tests' {
+    Context 'When converting basic types' {
+        It 'Converts strings correctly' {
+            $result = 'hello world' | ConvertTo-PodeYamlInternal
+            $result | Should -Be 'hello world'
+        }
+
+        It 'Converts arrays correctly' {
+            $result =  ConvertTo-PodeYamlInternal -InputObject  @('one', 'two', 'three') -NoNewLine
+            $expected = (@'
+- one
+- two
+- three
+'@)
+            $result | Should -Be ($expected.Trim() -Replace "`r`n","`n")
+        }
+
+        It 'Converts hashtables correctly' {
+            $hashTable = @{
+                key1 = 'value1'
+                key2 = 'value2'
+            }
+            $result = $hashTable | ConvertTo-PodeYamlInternal -NoNewLine
+            $expected = @'
+key1 : value1
+key2 : value2
+'@
+            $result | Should -Be ($expected.Trim() -Replace "`r`n","`n")
+        }
+    }
+
+    Context 'When converting complex objects' {
+        It 'Handles nested hashtables' {
+            $nestedHash = @{
+                parent = @{
+                    child = 'value'
+                }
+            }
+            $result = $nestedHash | ConvertTo-PodeYamlInternal -NoNewLine
+            $expected = @'
+parent : 
+  child : value
+'@
+            $result | Should -Be ($expected.Trim() -Replace "`r`n","`n")
+        }
+    }
+
+    Context 'Error handling' {
+        It 'Returns empty string for null input' {
+            $result = $null | ConvertTo-PodeYamlInternal
+            $result | Should -Be ''
+        }
     }
 }

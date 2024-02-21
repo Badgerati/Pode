@@ -20,6 +20,9 @@
   $schemaObject = ConvertTo-PodeOAObjectSchema -Content $myContent -DefinitionTag 'myTag'
 
   Converts a hashtable of content into an OpenAPI schema object using the definition tag 'myTag'.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function ConvertTo-PodeOAObjectSchema {
     param(
@@ -196,15 +199,17 @@ function ConvertTo-PodeOAObjectSchema {
 }
 
 <#
-
 .SYNOPSIS
-Check if an ComponentSchemaJson reference exist.
+  Check if an ComponentSchemaJson reference exist.
 
 .DESCRIPTION
-Check if an ComponentSchemaJson reference with a given name exist.
+  Check if an ComponentSchemaJson reference with a given name exist.
 
 .PARAMETER Name
-The Name of the ComponentSchemaJson reference.
+  The Name of the ComponentSchemaJson reference.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 
 
@@ -248,6 +253,9 @@ function Test-PodeOAComponentSchemaJson {
   $exists = Test-PodeOAComponentExternalPath -Name 'MyComponentName' -DefinitionTag @('tag1', 'tag2')
 
   Checks if 'MyComponentName' exists in the external path keys of OpenAPI definitions for 'tag1' and 'tag2'.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeOAComponentExternalPath {
     param(
@@ -294,6 +302,9 @@ function Test-PodeOAComponentExternalPath {
   $ofProperty = ConvertTo-PodeOAOfProperty -Property $myProperty -DefinitionTag 'myTag'
 
   Converts a given property into an OpenAPI 'Of' structure using the specified definition tag.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function ConvertTo-PodeOAOfProperty {
     param (
@@ -615,6 +626,9 @@ function ConvertTo-PodeOASchemaProperty {
   $schemaObject = ConvertTo-PodeOASchemaObjectProperty -Properties $myProperties -DefinitionTag 'myTag'
 
   Converts an array of property hashtables into an OpenAPI schema object using the definition tag 'myTag'.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function ConvertTo-PodeOASchemaObjectProperty {
     param(
@@ -662,6 +676,9 @@ function ConvertTo-PodeOASchemaObjectProperty {
   $routeValues = Set-OpenApiRouteValues -Route $route -DefinitionTag 'myTag'
 
   Sets OpenAPI specifications for the given route using the definition tag 'myTag'.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function Set-OpenApiRouteValues {
     param(
@@ -733,6 +750,45 @@ function Set-OpenApiRouteValues {
     # Return the processed route properties
     return $pm
 }
+
+
+<#
+.SYNOPSIS
+  Generates an internal OpenAPI definition based on the current Pode server context and specific parameters.
+
+.DESCRIPTION
+  This function constructs an OpenAPI definition by gathering metadata, route information, and API structure based on the provided parameters.
+  It supports customization of the API documentation through MetaInfo and directly influences the output by including specific server, authentication, and endpoint details.
+
+.PARAMETER Protocol
+  Specifies the protocol used by the API (e.g., HTTP, HTTPS).
+
+.PARAMETER Address
+  The address of the API server.
+
+.PARAMETER EndpointName
+  The name of the endpoint for which the OpenAPI definition is generated.
+
+.PARAMETER MetaInfo
+  A hashtable containing metadata for the OpenAPI definition such as the API title, version, and description.
+
+.PARAMETER DefinitionTag
+  Mandatory. A tag that identifies the specific OpenAPI definition to be generated or manipulated.
+
+.OUTPUTS
+  Ordered dictionary representing the OpenAPI definition, which can be further processed into JSON or YAML format.
+
+.EXAMPLE
+  $metaInfo = @{
+    Title = "My API";
+    Version = "v1";
+    Description = "This is my API description."
+  }
+  Get-PodeOpenApiDefinitionInternal -Protocol 'HTTPS' -Address 'myapi.example.com' -EndpointName 'MyAPI' -MetaInfo $metaInfo -DefinitionTag 'MyTag'
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
+#>
 
 function Get-PodeOpenApiDefinitionInternal {
     param(
@@ -1112,6 +1168,9 @@ function ConvertTo-PodeOAPropertyFromCmdletParameter {
   $baseObject = Get-PodeOABaseObject
 
   This example creates a base OpenAPI object structure.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeOABaseObject {
     # Returns a base template for an OpenAPI object
@@ -1187,6 +1246,9 @@ function Get-PodeOABaseObject {
   $openApiTable = Initialize-OpenApiTable
 
   Initializes the OpenAPI table with 'default' as the default definition tag.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function Initialize-OpenApiTable {
     param(
@@ -1239,6 +1301,9 @@ function Initialize-OpenApiTable {
   Set-PodeOAAuth -Route $myRoute -Name @('BasicAuth', 'ApiKeyAuth') -AllowAnon
 
   Applies 'BasicAuth' and 'ApiKeyAuth' authentication methods to the specified route and allows anonymous access.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function Set-PodeOAAuth {
     param(
@@ -1302,6 +1367,9 @@ function Set-PodeOAAuth {
   Set-PodeOAGlobalAuth -Name 'BasicAuth' -Route '/api/*' -DefinitionTag @('tag1', 'tag2')
 
   Applies 'BasicAuth' authentication method to all routes under '/api/*' in the OpenAPI definitions tagged with 'tag1' and 'tag2'.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function Set-PodeOAGlobalAuth {
     param(
@@ -1460,6 +1528,9 @@ function Resolve-PodeOAReferences {
   $property = New-PodeOAPropertyInternal -Type 'string' -Params $myParams
 
   Demonstrates how to create an OpenAPI property object of type 'string' using the specified parameters.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function New-PodeOAPropertyInternal {
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
@@ -1595,6 +1666,9 @@ function New-PodeOAPropertyInternal {
   $headerProperties = ConvertTo-PodeOAHeaderProperties -Headers $myHeaders
 
   This example demonstrates how to convert an array of header properties into a format suitable for OpenAPI documentation.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function ConvertTo-PodeOAHeaderProperties {
     param (
@@ -1651,6 +1725,9 @@ function ConvertTo-PodeOAHeaderProperties {
   $callback = New-PodeOAComponentCallBackInternal -Params $myParams -DefinitionTag 'myTag'
 
   This example demonstrates how to create an OpenAPI callback component for 'myTag' using the provided parameters.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function New-PodeOAComponentCallBackInternal {
     param(
@@ -1712,6 +1789,9 @@ function New-PodeOAComponentCallBackInternal {
   $response = New-PodeOResponseInternal -Params $myParams -DefinitionTag 'myTag'
 
   This example demonstrates how to create an OpenAPI response object for 'myTag' using the provided parameters.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function New-PodeOResponseInternal {
     param(
@@ -1811,6 +1891,9 @@ function New-PodeOResponseInternal {
   $link = New-PodeOAResponseLinkInternal -Params $myParams
 
   Generates a new OpenAPI response link object using the provided parameters in $myParams.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function New-PodeOAResponseLinkInternal {
     param(
@@ -1848,7 +1931,7 @@ function New-PodeOAResponseLinkInternal {
   This example demonstrates how to call the function to validate OpenAPI definitions.
 
 .NOTES
-  This function is intended for internal use within the Pode framework.
+  This is an internal function and may change in future releases of Pode.
 #>
 
 function Test-PodeOADefinitionInternal {
@@ -1903,35 +1986,35 @@ function Test-PodeOADefinitionInternal {
     }
 }
 
-
-
-
 <#
 .SYNOPSIS
-Check the OpenAPI component exist (Internal Function)
+  Check the OpenAPI component exist (Internal Function)
 
 .DESCRIPTION
-Check the OpenAPI component exist (Internal Function)
+  Check the OpenAPI component exist (Internal Function)
 
 .PARAMETER Field
-The component type
+  The component type
 
 .PARAMETER Name
-The component Name
+  The component Name
 
 .PARAMETER DefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+  An Array of strings representing the unique tag for the API specification.
+  This tag helps in distinguishing between different versions or types of API specifications within the application.
+  You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .PARAMETER ThrowException
-Generate an exception if the component doesn't exist
+  Generate an exception if the component doesn't exist
 
 .PARAMETER PostValidation
-Postpone the check before the server start
+  Postpone the check before the server start
 
 .EXAMPLE
-Test-PodeOAComponentInternal -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
+  Test-PodeOAComponentInternal -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeOAComponentInternal {
     param(

@@ -2854,6 +2854,41 @@ function ConvertTo-PodeYaml {
     }
 }
 
+<#
+.SYNOPSIS
+  Converts PowerShell objects into a YAML-formatted string.
+
+.DESCRIPTION
+  This function takes PowerShell objects and converts them to a YAML string representation.
+  It supports various data types including arrays, hashtables, strings, and more.
+  The depth of conversion can be controlled, allowing for nested objects to be accurately represented.
+
+.PARAMETER InputObject
+  The PowerShell object to convert to YAML. This parameter accepts input via the pipeline.
+
+.PARAMETER Depth
+  Specifies the maximum depth of object nesting to convert. Default is 10 levels deep.
+
+.PARAMETER NestingLevel
+  Used internally to track the current depth of recursion. Generally not specified by the user.
+
+.PARAMETER NoNewLine
+  If specified, suppresses the newline characters in the output to create a single-line string.
+
+.OUTPUTS
+  System.String. Returns a string in YAML format.
+
+.EXAMPLE
+  $object | ConvertTo-PodeYamlInternal
+
+  Converts the object piped to it into a YAML string.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
+  It converts only basic PowerShell types, such as strings, integers, booleans, arrays, hashtables, and ordered dictionaries into a YAML format.
+
+#>
+
 function ConvertTo-PodeYamlInternal {
 
     [OutputType('System.String')]
@@ -2984,12 +3019,12 @@ function ConvertTo-PodeYamlInternal {
             }
             'array' {
                 $string = [System.Text.StringBuilder]::new()
+                $index = 0
                 foreach ($item in $InputObject ) {
-                    $null = $string.AppendLine().Append($Padding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
+                    if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                    $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
                 }
                 $string.ToString()
-                #  "$($InputObject | ForEach-Object {
-                #        "`n$padding- $(ConvertTo-PodeYamlInternal -InputObject $_ -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine)" })"
                 break
             }
             'int32' {
@@ -3039,35 +3074,35 @@ Get-PodeUrlPart -Pattern $pattern -Url $url
 Returns the Pattern because the pattern does not contain "/.*?/" and it's a valid root.
 
 .NOTES
-This function can be particularly useful in scenarios where URLs follow a consistent pattern, and there is a need to extract a specific segment based on varying criteria. The added flexibility with pattern checking enhances its application range.
+  This is an internal function and may change in future releases of Pode.
 
 .LINK
 https://www.regular-expressions.info/
 For more information on regular expressions.
-
 #>
 function Get-PodeUrlPart {
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Pattern,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Url
     )
 
     # Check if the pattern contains "/.*?/"
-    if (-not $Pattern.Contains("/.*?/")) {
+    if (-not $Pattern.Contains('/.*?/')) {
         # If the pattern does not contain "/.*?/", return the Pattern
         return $Pattern
     }
 
     # Modify the input pattern to capture the desired URL part
-    $modifiedPattern = $Pattern.Replace("/.*?/", "/.+?/")  # Change to greedy matching for broader capture
+    $modifiedPattern = $Pattern.Replace('/.*?/', '/.+?/')  # Change to greedy matching for broader capture
     $modifiedPattern = "($modifiedPattern)(?:/[^/]+)*"     # Adjust to capture additional segments
 
     if ($Url -match $modifiedPattern) {
         # If a match is found, return the first capturing group
         return $matches[1]
-    } else {
+    }
+    else {
         # If no match is found, throw a descriptive exception
         throw [System.InvalidOperationException] "The provided URL does not match the specified pattern. Please check the URL and pattern for correctness. URL: '$Url', Pattern: '$Pattern'."
     }
