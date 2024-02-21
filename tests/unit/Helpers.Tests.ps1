@@ -1756,7 +1756,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
         }
 
         It 'Converts hashtables correctly' {
-            $hashTable = @{
+            $hashTable = [ordered]@{
                 key1 = 'value1'
                 key2 = 'value2'
             }
@@ -1778,7 +1778,7 @@ key2 : value2
             }
             $result = $nestedHash | ConvertTo-PodeYamlInternal -NoNewLine
             $expected = @'
-parent : 
+parent :
   child : value
 '@
             $result | Should -Be ($expected.Trim() -Replace "`r`n","`n")
