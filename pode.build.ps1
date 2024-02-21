@@ -89,7 +89,7 @@ function Install-PodeBuildModule($name) {
     Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
 }
 
-function Invoke-PodeBuildDotnetBuild($target) {
+function Invoke-PodeBuildDotnetBuild($target,$Version) {
 
     # Retrieve the highest installed SDK version
     $highestSdkVersion = dotnet --list-sdks | Select-Object -Last 1 | ForEach-Object { $_.Split(' ')[0] }
@@ -112,6 +112,7 @@ function Invoke-PodeBuildDotnetBuild($target) {
         return
     }
     if ($Version) {
+        Write-Host "Assembly Version $Version"
         $AssemblyVersion = "-p:Version=$Version"
     }
     else {
@@ -224,10 +225,10 @@ Task Build BuildDeps, {
     Push-Location ./src/Listener
 
     try {
-        Invoke-PodeBuildDotnetBuild -target 'netstandard2.0'
-        Invoke-PodeBuildDotnetBuild -target 'net6.0'
-        Invoke-PodeBuildDotnetBuild -target 'net7.0'
-        Invoke-PodeBuildDotnetBuild -target 'net8.0'
+        Invoke-PodeBuildDotnetBuild -target 'netstandard2.0' -Version $Version
+        Invoke-PodeBuildDotnetBuild -target 'net6.0' -Version $Version
+        Invoke-PodeBuildDotnetBuild -target 'net7.0' -Version $Version
+        Invoke-PodeBuildDotnetBuild -target 'net8.0' -Version $Version
     }
     finally {
         Pop-Location
