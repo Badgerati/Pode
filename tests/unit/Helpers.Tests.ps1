@@ -1760,12 +1760,8 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
                 key1 = 'value1'
                 key2 = 'value2'
             }
-            $result = $hashTable | ConvertTo-PodeYamlInternal -NoNewLine
-            $expected = @'
-key1 : value1
-key2 : value2
-'@
-            $result | Should -Be ($expected.Trim() -Replace "`r`n","`n")
+            $result = $hashTable | ConvertTo-PodeYamlInternal -NoNewLine 
+            $result | Should -Be "key1 : value1`nkey2 : value2"
         }
     }
 
@@ -1777,11 +1773,8 @@ key2 : value2
                 }
             }
             $result = $nestedHash | ConvertTo-PodeYamlInternal -NoNewLine
-            $expected = @'
-parent :
-  child : value
-'@
-            $result | Should -Be ($expected.Trim() -Replace "`r`n","`n")
+
+            $result | Should -Be "parent : `n  child : value"
         }
     }
 
