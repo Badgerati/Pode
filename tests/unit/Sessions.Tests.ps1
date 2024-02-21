@@ -255,7 +255,7 @@ Describe 'Set-PodeSession' {
 Describe 'Remove-PodeSession' {
     It 'Throws an error if sessions are not configured' {
         Mock Test-PodeSessionsEnabled { return $false }
-        { Remove-PodeSession } | Should Throw 'Sessions have not been configured'
+        { Remove-PodeSession } | Should -Throw 'Sessions have not been configured'
     }
 
     It 'Does nothing if there is no session' {
@@ -282,7 +282,7 @@ Describe 'Remove-PodeSession' {
 Describe 'Save-PodeSession' {
     It 'Throws an error if sessions are not configured' {
         Mock Test-PodeSessionsEnabled { return $false }
-        { Save-PodeSession } | Should Throw 'Sessions have not been configured'
+        { Save-PodeSession } | Should -Throw 'Sessions have not been configured'
     }
 
     It 'Throws error if there is no session' {
