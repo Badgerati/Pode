@@ -1,9 +1,11 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+param()
+
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 }
-
 
 Describe 'OpenApi' {
 
@@ -23,7 +25,7 @@ Describe 'OpenApi' {
                 }
             }
         }
-        $global:PodeContext = GetPodeContext
+        $PodeContext = GetPodeContext
 
     }
 
@@ -1661,7 +1663,7 @@ Describe 'OpenApi' {
     Context 'Add-PodeOAComponentSchema' {
         Context 'OpenAPI 3.1' {
             BeforeEach {
-                $global:PodeContext.Server.OpenAPI.Definitions['default'].hiddenComponents.version = 3.1
+                $PodeContext.Server.OpenAPI.Definitions['default'].hiddenComponents.version = 3.1
             }
             It 'Standard' {
                 Add-PodeOAComponentSchema -Name 'Category' -Schema (
@@ -1726,7 +1728,7 @@ Describe 'OpenApi' {
         }
         Context 'OpenAPI 3.0' {
             BeforeEach {
-                $global:PodeContext.Server.OpenAPI.Definitions['default'].hiddenComponents.version = 3.0
+                $PodeContext.Server.OpenAPI.Definitions['default'].hiddenComponents.version = 3.0
             }
             It 'Standard' {
                 Add-PodeOAComponentSchema -Name 'Category' -Schema (
@@ -2988,7 +2990,7 @@ Describe 'OpenApi' {
 
     BeforeAll {
         # Mock the Pode context object
-        $Global:PodeContext = @{
+        $PodeContext = @{
             Server = @{
                 OpenAPI = @{
                     Definitions = @{
@@ -3007,7 +3009,7 @@ Describe 'OpenApi' {
     Describe 'Add-PodeOAComponentExample Tests' {
         BeforeEach {
             # Mock the Pode context object
-            $Global:PodeContext = @{
+            $PodeContext = @{
                 Server = @{
 
                     OpenAPI = @{
@@ -3027,8 +3029,8 @@ Describe 'OpenApi' {
         It 'Adds an example to the OpenAPI components' {
             Add-PodeOAComponentExample -Name 'exampleName' -Summary 'An example summary'  -Value   'Some example value'
 
-            $Global:PodeContext.Server.OpenAPI.Definitions['default'].components.examples['exampleName'].summary | Should -Be 'An example summary'
-            $Global:PodeContext.Server.OpenAPI.Definitions['default'].components.examples['exampleName'].value | Should -Be 'Some example value'
+            $PodeContext.Server.OpenAPI.Definitions['default'].components.examples['exampleName'].summary | Should -Be 'An example summary'
+            $PodeContext.Server.OpenAPI.Definitions['default'].components.examples['exampleName'].value | Should -Be 'Some example value'
         }
     }
 

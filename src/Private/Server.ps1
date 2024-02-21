@@ -9,7 +9,7 @@ function Start-PodeInternalServer {
 
     try {
         # setup temp drives for internal dirs
-        Add-PodePSInbuiltDrives
+        Add-PodePSInbuiltDrive
 
         # setup inbuilt scoped vars
         Add-PodeScopedVariablesInbuilt

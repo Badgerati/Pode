@@ -121,6 +121,8 @@
         'New-PodeCron',
         'Test-PodeInRunspace',
         'ConvertFrom-PodeXML',
+        'Set-PodeDefaultFolder',
+        'Get-PodeDefaultFolder',
 
         # routes
         'Add-PodeRoute',
@@ -327,7 +329,7 @@
         'Add-PodeOAComponentPathItem',
         'Add-PodeOAWebhook',
         'Test-PodeOAComponent',
-        'Remove-PodeOAComponents',
+        'Remove-PodeOAComponent',
         # Metrics
         'Get-PodeServerUptime',
         'Get-PodeServerRestartCount',

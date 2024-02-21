@@ -37,6 +37,7 @@ $custom_access = New-PodeAccessScheme -Custom -Path 'CustomProp'
 #>
 function New-PodeAccessScheme {
     [CmdletBinding(DefaultParameterSetName = 'Type_Path')]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Type_Scriptblock')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Type_Path')]
@@ -341,6 +342,7 @@ $methods = Get-PodeAccess -Name 'Example1', 'Example2'
 #>
 function Get-PodeAccess {
     [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter()]
         [string[]]
@@ -406,6 +408,7 @@ if (Test-PodeAccess -Name 'Example' -Source 'Developer' -Destination 'Admin') { 
 #>
 function Test-PodeAccess {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]

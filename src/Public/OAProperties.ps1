@@ -352,15 +352,12 @@ function New-PodeOAMultiTypeProperty {
                     throw '-NoProperties is not compatible with -Properties, -MinProperties and -MaxProperties'
                 }
                 $param.properties = @($null)
-                $PropertiesFromPipeline = $false
             }
             elseif ($Properties) {
                 $param.properties = $Properties
-                $PropertiesFromPipeline = $false
             }
             else {
                 $param.properties = @()
-                $PropertiesFromPipeline = $true
             }
             if ($DiscriminatorProperty) {
                 $param.discriminator = @{

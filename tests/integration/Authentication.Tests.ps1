@@ -1,3 +1,7 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseUsingScopeModifierInNewRunspaces', '')]
+param()
+
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]integration', '/src/'
@@ -13,7 +17,7 @@ Describe 'Authentication Requests' {
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
 
-            Start-PodeServer {
+            Start-PodeServer -Quiet -ScriptBlock {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
 
                 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

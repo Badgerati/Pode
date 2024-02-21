@@ -1,3 +1,6 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+param()
+
 Describe 'Schedules' {
 
     BeforeAll {
@@ -7,7 +10,7 @@ Describe 'Schedules' {
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
 
-            Start-PodeServer -RootPath $using:PSScriptRoot {
+            Start-PodeServer -RootPath $using:PSScriptRoot -Quiet -ScriptBlock {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
 
                 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

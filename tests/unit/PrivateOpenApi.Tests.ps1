@@ -1,9 +1,11 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+param()
+
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
 }
-
 
 Describe 'PrivateOpenApi' {
 
@@ -25,7 +27,7 @@ Describe 'PrivateOpenApi' {
                 }
             }
         }
-        $global:PodeContext = GetPodeContext
+        $PodeContext = GetPodeContext
     }
 
 
@@ -73,13 +75,13 @@ Describe 'PrivateOpenApi' {
         }
     }
 
-    Describe 'ConvertTo-PodeOAHeaderProperties Tests' {
+    Describe 'ConvertTo-PodeOAHeaderProperty Tests' {
         It 'Converts single header with all properties' {
             $headers = @(
                 @{ name = 'Content-Type'; type = 'string'; description = 'The MIME type of the body of the request' }
             )
-            { ConvertTo-PodeOAHeaderProperties -Headers $headers } | Should -Not -Throw
-            $result = ConvertTo-PodeOAHeaderProperties -Headers $headers
+            { ConvertTo-PodeOAHeaderProperty -Headers $headers } | Should -Not -Throw
+            $result = ConvertTo-PodeOAHeaderProperty -Headers $headers
             $result['Content-Type'].schema.type | Should -Be 'string'
             $result['Content-Type'].description | Should -Be 'The MIME type of the body of the request'
         }
@@ -89,8 +91,8 @@ Describe 'PrivateOpenApi' {
                 @{ name = 'Content-Type'; type = 'string' },
                 @{ name = 'Accept'; type = 'string' }
             )
-            { ConvertTo-PodeOAHeaderProperties -Headers $headers } | Should -Not -Throw
-            $result = ConvertTo-PodeOAHeaderProperties -Headers $headers
+            { ConvertTo-PodeOAHeaderProperty -Headers $headers } | Should -Not -Throw
+            $result = ConvertTo-PodeOAHeaderProperty -Headers $headers
             $result.Count | Should -Be 2
         }
 
@@ -98,8 +100,8 @@ Describe 'PrivateOpenApi' {
             $headers = @(
                 @{ name = 'Authorization'; type = 'string' }
             )
-            { ConvertTo-PodeOAHeaderProperties -Headers $headers } | Should -Not -Throw
-            $result = ConvertTo-PodeOAHeaderProperties -Headers $headers
+            { ConvertTo-PodeOAHeaderProperty -Headers $headers } | Should -Not -Throw
+            $result = ConvertTo-PodeOAHeaderProperty -Headers $headers
             $result['Authorization'].schema.type | Should -Be 'string'
             $result['Authorization'].PSObject.Properties.Name -notcontains 'description' | Should -Be $true
         }
@@ -108,15 +110,15 @@ Describe 'PrivateOpenApi' {
             $headers = @(
                 @{ type = 'string'; description = 'Invalid header' }
             )
-            { ConvertTo-PodeOAHeaderProperties -Headers $headers } | Should -Throw
+            { ConvertTo-PodeOAHeaderProperty -Headers $headers } | Should -Throw
         }
 
         It 'Handles additional properties in schema' {
             $headers = @(
                 @{ name = 'Custom-Header'; type = 'integer'; maxLength = 10 }
             )
-            { ConvertTo-PodeOAHeaderProperties -Headers $headers } | Should -Not -Throw
-            $result = ConvertTo-PodeOAHeaderProperties -Headers $headers
+            { ConvertTo-PodeOAHeaderProperty -Headers $headers } | Should -Not -Throw
+            $result = ConvertTo-PodeOAHeaderProperty -Headers $headers
             $result['Custom-Header'].schema.maxLength | Should -Be 10
         }
     }
@@ -197,7 +199,7 @@ Describe 'PrivateOpenApi' {
     Describe 'Test-PodeOAComponentExternalPath Tests' {
         BeforeEach {
             # Mock the $PodeContext variable
-            $Global:PodeContext = @{
+            $PodeContext = @{
                 Server = @{
                     OpenAPI = @{
                         Definitions = @{
@@ -250,9 +252,6 @@ Describe 'PrivateOpenApi' {
             { Test-PodeOAComponentExternalPath -Name 'AnyName' -DefinitionTag @() } | Should -Throw
         }
 
-        AfterAll {
-            Remove-Variable -Name 'PodeContext' -Scope Global
-        }
     }
 
     Describe 'Set-PodeOAGlobalAuth Tests' {
@@ -267,7 +266,7 @@ Describe 'PrivateOpenApi' {
 
         It 'Successfully applies authentication to a route for a single tag' {
             { Set-PodeOAGlobalAuth -Name 'BasicAuth' -Route '/api/*' -DefinitionTag 'default' } | Should -Not -Throw
-            $Global:PodeContext.Server.OpenAPI.Definitions.default.Security.Count | Should -Be 1
+            $PodeContext.Server.OpenAPI.Definitions.default.Security.Count | Should -Be 1
         }
 
         It 'Throws an exception for non-existent authentication method' {
@@ -277,13 +276,13 @@ Describe 'PrivateOpenApi' {
 
         It 'Applies authentication to multiple definition tags' {
             { Set-PodeOAGlobalAuth -Name 'BasicAuth' -Route '/api/*' -DefinitionTag @('default', 'alternative') } | Should -Not -Throw
-            $Global:PodeContext.Server.OpenAPI.Definitions.default.Security.Count | Should -Be 1
-            $Global:PodeContext.Server.OpenAPI.Definitions.alternative.Security.Count | Should -Be 1
+            $PodeContext.Server.OpenAPI.Definitions.default.Security.Count | Should -Be 1
+            $PodeContext.Server.OpenAPI.Definitions.alternative.Security.Count | Should -Be 1
         }
 
         It 'Handles authentication methods with scopes' {
             { Set-PodeOAGlobalAuth -Name 'BasicAuth' -Route '/api/*' -DefinitionTag 'default' } | Should -Not -Throw
-            $Global:PodeContext.Server.OpenAPI.Definitions.default.Security[0].Definition.BasicAuth | Should -Be @('read', 'write')
+            $PodeContext.Server.OpenAPI.Definitions.default.Security[0].Definition.BasicAuth | Should -Be @('read', 'write')
         }
     }
 

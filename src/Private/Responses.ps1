@@ -1,3 +1,37 @@
+<#
+.SYNOPSIS
+Displays a customized error page based on the provided error code and additional error details.
+
+.DESCRIPTION
+This function is responsible for displaying a custom error page when an error occurs within a Pode web application. It takes an error code, a description, an exception object, and a content type as input. The function then attempts to find a corresponding error page based on the error code and content type. If a custom error page is found, and if exception details are to be shown (as per server settings), it builds a detailed exception message. Finally, it writes the error page to the response stream, displaying the custom error page to the user.
+
+.PARAMETER Code
+The HTTP status code of the error. This code is used to find a matching custom error page.
+
+.PARAMETER Description
+A descriptive message about the error. This is displayed on the error page if available.
+
+.PARAMETER Exception
+The exception object that caused the error. If exception tracing is enabled, details from this object are displayed on the error page.
+
+.PARAMETER ContentType
+The content type of the error page to be displayed. This is used to select an appropriate error page format (e.g., HTML, JSON).
+
+.EXAMPLE
+Show-PodeErrorPage -Code 404 -Description "Not Found" -ContentType "text/html"
+
+This example shows how to display a custom 404 Not Found error page in HTML format.
+
+.OUTPUTS
+None. This function writes the error page directly to the response stream.
+
+.NOTES
+- The function uses `Find-PodeErrorPage` to locate a custom error page based on the HTTP status code and content type.
+- It checks for server configuration to determine whether to show detailed exception information on the error page.
+- The function relies on the global `$PodeContext` variable for server settings and to encode exception and URL details safely.
+- `Write-PodeFileResponse` is used to send the custom error page as the response, along with any dynamic data (e.g., exception details, URL).
+- This is an internal function and may change in future releases of Pode.
+#>
 function Show-PodeErrorPage {
     param(
         [Parameter()]
@@ -91,6 +125,9 @@ Serves the 'logo.png' file as a static file with the specified content type and 
 
 .OUTPUTS
 None. The function writes directly to the HTTP response stream.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
 #>
 
 function Write-PodeFileResponseInternal {
@@ -120,45 +157,47 @@ function Write-PodeFileResponseInternal {
         $Cache
     )
 
-    # are we dealing with a dynamic file for the view engine? (ignore html)
-    # Determine if the file is dynamic and should be processed by the view engine
-    $mainExt = Get-PodeFileExtension -Path $RelativePath -TrimPeriod
+    process {
+        # are we dealing with a dynamic file for the view engine? (ignore html)
+        # Determine if the file is dynamic and should be processed by the view engine
+        $mainExt = Get-PodeFileExtension -Path $RelativePath -TrimPeriod
 
-    # generate dynamic content
-    if (![string]::IsNullOrWhiteSpace($mainExt) -and (
+        # generate dynamic content
+        if (![string]::IsNullOrWhiteSpace($mainExt) -and (
         ($mainExt -ieq 'pode') -or
         ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
-        )
-    ) {
-        # Process dynamic content with the view engine
-        $content = Get-PodeFileContentUsingViewEngine -Path $RelativePath -Data $Data
+            )
+        ) {
+            # Process dynamic content with the view engine
+            $content = Get-PodeFileContentUsingViewEngine -Path $RelativePath -Data $Data
 
-        # Determine the correct content type for the response
-        # get the sub-file extension, if empty, use original
-        $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $RelativePath -WithoutExtension) -TrimPeriod
-        $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
+            # Determine the correct content type for the response
+            # get the sub-file extension, if empty, use original
+            $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $RelativePath -WithoutExtension) -TrimPeriod
+            $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
 
-        $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
-        # Write the processed content as the HTTP response
-        Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
-    }
-    # this is a static file
-    else {
-        if (Test-PodeIsPSCore) {
-            $content = (Get-Content -Path $RelativePath -Raw -AsByteStream)
+            $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
+            # Write the processed content as the HTTP response
+            Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
         }
+        # this is a static file
         else {
-            $content = (Get-Content -Path $RelativePath -Raw -Encoding byte)
-        }
-        if ($null -ne $content) {
-            # Determine and set the content type for static files
-            $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
-            # Write the file content as the HTTP response
-            Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
-        }
-        else {
-            # If the file does not exist, set the HTTP response status to 404 Not Found
-            Set-PodeResponseStatus -Code 404
+            if (Test-PodeIsPSCore) {
+                $content = (Get-Content -Path $RelativePath -Raw -AsByteStream)
+            }
+            else {
+                $content = (Get-Content -Path $RelativePath -Raw -Encoding byte)
+            }
+            if ($null -ne $content) {
+                # Determine and set the content type for static files
+                $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
+                # Write the file content as the HTTP response
+                Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+            }
+            else {
+                # If the file does not exist, set the HTTP response status to 404 Not Found
+                Set-PodeResponseStatus -Code 404
+            }
         }
     }
 }
@@ -185,6 +224,9 @@ $RelativePath = Get-PodeRelativePath -Path './static' -JoinRoot
 Write-PodeDirectoryResponseInternal -RelativePath './static'
 
 Generates and serves an HTML page that lists the contents of the './static' directory, allowing users to click through files and directories.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
 #>
 function Write-PodeDirectoryResponseInternal {
     [CmdletBinding()]
@@ -314,13 +356,13 @@ Write-PodeAttachmentResponseInternal -Path './files' -FileBrowser
 Lists the contents of the './files' directory if the FileBrowser switch is enabled; otherwise, returns a 404 error.
 
 .NOTES
-This function integrates with Pode's internal handling of HTTP responses, leveraging other Pode-specific functions like Get-PodeContentType and Set-PodeResponseStatus. It differentiates between streamed and serverless environments to optimize file delivery.
-
+- This function integrates with Pode's internal handling of HTTP responses, leveraging other Pode-specific functions like Get-PodeContentType and Set-PodeResponseStatus. It differentiates between streamed and serverless environments to optimize file delivery.
+- This is an internal function and may change in future releases of Pode.
 #>
 function Write-PodeAttachmentResponseInternal {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Path,
 
@@ -347,7 +389,7 @@ function Write-PodeAttachmentResponseInternal {
     # Check if the path exists
     if ($null -eq $pathInfo) {
         #if not exist try with to find with public Route if exist
-        $Path = Find-PodePublicRoute -Path $Path 
+        $Path = Find-PodePublicRoute -Path $Path
         if ($Path) {
             # only attach files from public/static-route directories when path is relative
             $Path = Get-PodeRelativePath -Path $Path -JoinRoot

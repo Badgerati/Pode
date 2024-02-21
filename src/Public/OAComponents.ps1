@@ -140,29 +140,34 @@ function Add-PodeOAComponentSchema {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    foreach ($tag in $DefinitionTag) {
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
-        if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaValidation) {
-            try {
-                $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty  -DefinitionTag $tag) | Resolve-PodeOAReferences -DefinitionTag $tag
-                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
-                    'available' = $true
-                    'schema'    = $modifiedComponent
-                    'json'      = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.depth
-                }
-            }
-            catch {
-                if ($_.ToString().StartsWith('Validation of schema with')) {
+    begin {
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    }
+
+    process {
+        foreach ($tag in $DefinitionTag) {
+            $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
+            if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaValidation) {
+                try {
+                    $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty  -DefinitionTag $tag) | Resolve-PodeOAReference -DefinitionTag $tag
                     $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
-                        'available' = $false
+                        'available' = $true
+                        'schema'    = $modifiedComponent
+                        'json'      = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.depth
+                    }
+                }
+                catch {
+                    if ($_.ToString().StartsWith('Validation of schema with')) {
+                        $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
+                            'available' = $false
+                        }
                     }
                 }
             }
-        }
 
-        if ($Description) {
-            $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name].description = $Description
+            if ($Description) {
+                $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name].description = $Description
+            }
         }
     }
 }
@@ -223,15 +228,20 @@ function Add-PodeOAComponentHeader {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    foreach ($tag in $DefinitionTag) {
-        $param = [ordered]@{
-            'schema' = ($Schema | ConvertTo-PodeOASchemaProperty -NoDescription -DefinitionTag $tag)
+    begin {
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    }
+
+    process {
+        foreach ($tag in $DefinitionTag) {
+            $param = [ordered]@{
+                'schema' = ($Schema | ConvertTo-PodeOASchemaProperty -NoDescription -DefinitionTag $tag)
+            }
+            if ( $Description) {
+                $param['description'] = $Description
+            }
+            $PodeContext.Server.OpenAPI.Definitions[$tag].components.headers[$Name] = $param
         }
-        if ( $Description) {
-            $param['description'] = $Description
-        }
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.headers[$Name] = $param
     }
 }
 
@@ -302,18 +312,23 @@ function Add-PodeOAComponentRequestBody {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    foreach ($tag in $DefinitionTag) {
-        $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema -DefinitionTag $tag) }
+    begin {
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    }
 
-        if ($Required.IsPresent) {
-            $param['required'] = $Required.IsPresent
-        }
+    process {
+        foreach ($tag in $DefinitionTag) {
+            $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema -DefinitionTag $tag) }
 
-        if ( $Description) {
-            $param['description'] = $Description
+            if ($Required.IsPresent) {
+                $param['required'] = $Required.IsPresent
+            }
+
+            if ( $Description) {
+                $param['description'] = $Description
+            }
+            $PodeContext.Server.OpenAPI.Definitions[$tag].components.requestBodies[$Name] = $param
         }
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.requestBodies[$Name] = $param
     }
 
 }
@@ -363,17 +378,22 @@ function Add-PodeOAComponentParameter {
         [string[]]
         $DefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    foreach ($tag in $DefinitionTag) {
-        if ([string]::IsNullOrWhiteSpace($Name)) {
-            if ($Parameter.name) {
-                $Name = $Parameter.name
+    begin {
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    }
+
+    process {
+        foreach ($tag in $DefinitionTag) {
+            if ([string]::IsNullOrWhiteSpace($Name)) {
+                if ($Parameter.name) {
+                    $Name = $Parameter.name
+                }
+                else {
+                    throw 'The Parameter has no name. Please provide a name to this component using -Name property'
+                }
             }
-            else {
-                throw 'The Parameter has no name. Please provide a name to this component using -Name property'
-            }
+            $PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters[$Name] = $Parameter
         }
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters[$Name] = $Parameter
     }
 }
 
@@ -852,9 +872,9 @@ This tag helps in distinguishing between different versions or types of API spec
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-Remove-PodeOAComponents -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
+Remove-PodeOAComponent -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
 #>
-function Remove-PodeOAComponents {
+function Remove-PodeOAComponent {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet( 'schemas' , 'responses' , 'parameters' , 'examples' , 'requestBodies' , 'headers' , 'securitySchemes' , 'links' , 'callbacks' , 'pathItems'  )]

@@ -108,7 +108,7 @@ function Find-PodePublicRoute {
     if ([string]::IsNullOrWhiteSpace($publicPath)) {
         return $source
     }
-    
+
     # use the public static directory (but only if path is a file, and a public dir is present)
     if (Test-PodePathIsFile $Path) {
         $source = [System.IO.Path]::Combine($publicPath, $Path.TrimStart('/', '\'))
@@ -516,6 +516,32 @@ function Convert-PodeFunctionVerbToHttpMethod {
     }
 }
 
+
+<#
+.SYNOPSIS
+Finds and returns the appropriate transfer encoding for a given route path in a Pode server context.
+
+.DESCRIPTION
+This function determines the correct transfer encoding for a specified route path within a Pode web server. It checks if a transfer encoding is already specified and returns it; otherwise, it defaults to the server's default transfer encoding. The function searches the server's transfer encoding route settings for a pattern that matches the given path. If a match is found, the corresponding transfer encoding is returned. This is useful for dynamically setting response encodings based on specific route patterns.
+
+.PARAMETER Path
+The route path for which the transfer encoding is being determined. This parameter is mandatory.
+
+.PARAMETER TransferEncoding
+The current transfer encoding, if already determined. This is an optional parameter. If specified and not null or whitespace, this function returns the given value without further processing.
+
+.EXAMPLE
+$encoding = Find-PodeRouteTransferEncoding -Path "/api/data" -TransferEncoding "chunked"
+
+This example determines the transfer encoding for the route "/api/data", with an initial encoding of "chunked". If "/api/data" matches a specific pattern in the server's transfer encoding settings, the corresponding encoding is returned; otherwise, "chunked" is returned.
+
+.OUTPUTS
+String. Returns the determined transfer encoding for the given route path. This will be either the input TransferEncoding (if provided and valid), a matched encoding from the server's settings, or the server's default transfer encoding.
+
+.NOTES
+- The function uses a case-insensitive match (`-imatch`) to find the first route key pattern that matches the specified path.
+- This is an internal function and may change in future releases of Pode.
+#>
 function Find-PodeRouteTransferEncoding {
     param(
         [Parameter(Mandatory = $true)]
@@ -536,9 +562,13 @@ function Find-PodeRouteTransferEncoding {
     $TransferEncoding = $PodeContext.Server.Web.TransferEncoding.Default
 
     # find type by pattern from settings
-    $matched = ($PodeContext.Server.Web.TransferEncoding.Routes.Keys | Where-Object {
-            $Path -imatch $_
-        } | Select-Object -First 1)
+    $matched = $null
+    foreach ($key in $PodeContext.Server.Web.TransferEncoding.Routes.Keys) {
+        if ($Path -imatch $key) {
+            $matched = $key
+            break
+        }
+    }
 
     # if we get a match, set it
     if (!(Test-PodeIsEmpty $matched)) {
@@ -568,9 +598,13 @@ function Find-PodeRouteContentType {
     $ContentType = $PodeContext.Server.Web.ContentType.Default
 
     # find type by pattern from settings
-    $matched = ($PodeContext.Server.Web.ContentType.Routes.Keys | Where-Object {
-            $Path -imatch $_
-        } | Select-Object -First 1)
+    $matched = $null
+    foreach ($key in $PodeContext.Server.Web.ContentType.Routes.Keys) {
+        if ($Path -imatch $key) {
+            $matched = $key
+            break
+        }
+    }
 
     # if we get a match, set it
     if (!(Test-PodeIsEmpty $matched)) {

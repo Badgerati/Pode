@@ -894,23 +894,45 @@ function Import-PodeModules {
     }
 }
 
-function Add-PodePSInbuiltDrives {
+<#
+.SYNOPSIS
+Creates and registers inbuilt PowerShell drives for the Pode server's default folders.
+
+.DESCRIPTION
+This function sets up inbuilt PowerShell drives for the Pode web server's default directories: views, public content, and error pages. For each of these directories, if the physical path exists on the server, a new PowerShell drive is created and mapped to this path. These drives provide an easy and consistent way to access server resources like views, static files, and custom error pages within the Pode application.
+
+The function leverages `$PodeContext` to access the server's configuration and to determine the paths for these default folders. If a folder's path exists, the function uses `New-PodePSDrive` to create a PowerShell drive for it and stores this drive in the server's `InbuiltDrives` dictionary, keyed by the folder type.
+
+.PARAMETER None
+
+.EXAMPLE
+Add-PodePSInbuiltDrive
+
+This example is typically called within the Pode server setup script or internally by the Pode framework to initialize the PowerShell drives for the server's default folders.
+
+.NOTES
+- The function is designed to be used within the Pode framework and relies on the global `$PodeContext` variable for configuration.
+- It specifically checks for the existence of paths for views, public content, and errors before attempting to create drives for them.
+- This is an internal function and may change in future releases of Pode.
+#>
+function Add-PodePSInbuiltDrive {
+
     # create drive for views, if path exists
-    $path = (Join-PodeServerRoot 'views')
+    $path = (Join-PodeServerRoot -Folder $PodeContext.Server.DefaultFolders.Views)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Views] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for public content, if path exists
-    $path = (Join-PodeServerRoot 'public')
+    $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Public)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Public] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for errors, if path exists
-    $path = (Join-PodeServerRoot 'errors')
+    $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Errors)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['errors'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Errors] = (New-PodePSDrive -Path $path)
     }
 }
 
@@ -2912,137 +2934,139 @@ function ConvertTo-PodeYamlInternal {
         $NoNewLine
     )
 
-    # if it is null return null
-    If ( !($InputObject) ) {
-        if ($InputObject -is [Object[]]) {
-            return '[]'
-        }
-        else {
-            return ''
-        }
-    }
-
-    $padding = [string]::new(' ', $NestingLevel * 2) # lets just create our left-padding for the block
-    try {
-        $Type = $InputObject.GetType().Name # we start by getting the object's type
-        if ($InputObject -is [object[]]) {
-            #what it really is
-            $Type = "$($InputObject.GetType().BaseType.Name)"
+    process {
+        # if it is null return null
+        If ( !($InputObject) ) {
+            if ($InputObject -is [Object[]]) {
+                return '[]'
+            }
+            else {
+                return ''
+            }
         }
 
-        #report the leaves in terms of object type
-        if ($Depth -ilt $NestingLevel) {
-            $Type = 'OutOfDepth'
-        }
-        # prevent these values being identified as an object
-        if ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
-            $Type = 'HashTable'
-        }
-        elseif ($Type -ieq 'List`1') {
-            $Type = 'Array'
-        }
-        elseif ($InputObject -is [array]) {
-            $Type = 'Array'
-        } # whatever it thinks it is called
-        elseif ($InputObject -is [hashtable]) {
-            $Type = 'HashTable'
-        } # for our purposes it is a hashtable
+        $padding = [string]::new(' ', $NestingLevel * 2) # lets just create our left-padding for the block
+        try {
+            $Type = $InputObject.GetType().Name # we start by getting the object's type
+            if ($InputObject -is [object[]]) {
+                #what it really is
+                $Type = "$($InputObject.GetType().BaseType.Name)"
+            }
 
-        $output += switch ($Type.ToLower()) {
-            'string' {
-                $String = "$InputObject"
-                if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
-                    $folded = [System.Text.StringBuilder]::new(">`n") # signal that we are going to use the readable 'newlines-folded' format
-                    foreach ($item in $string.Split("`n")) {
-                        $workingString = $item -replace '\r$'
-                        $length = $item.Length
-                        $IndexIntoString = 0
-                        $wrap = 80
-                        while ($length -gt $IndexIntoString + $Wrap) {
-                            $BreakPoint = $wrap
-                            $earliest = $workingString.Substring($IndexIntoString, $wrap).LastIndexOf(' ')
-                            $latest = $workingString.Substring($IndexIntoString + $wrap).IndexOf(' ')
-                            if (($earliest -eq -1) -or ($latest -eq -1)) {
+            #report the leaves in terms of object type
+            if ($Depth -ilt $NestingLevel) {
+                $Type = 'OutOfDepth'
+            }
+            # prevent these values being identified as an object
+            if ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
+                $Type = 'HashTable'
+            }
+            elseif ($Type -ieq 'List`1') {
+                $Type = 'Array'
+            }
+            elseif ($InputObject -is [array]) {
+                $Type = 'Array'
+            } # whatever it thinks it is called
+            elseif ($InputObject -is [hashtable]) {
+                $Type = 'HashTable'
+            } # for our purposes it is a hashtable
+
+            $output += switch ($Type.ToLower()) {
+                'string' {
+                    $String = "$InputObject"
+                    if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
+                        $folded = [System.Text.StringBuilder]::new(">`n") # signal that we are going to use the readable 'newlines-folded' format
+                        foreach ($item in $string.Split("`n")) {
+                            $workingString = $item -replace '\r$'
+                            $length = $item.Length
+                            $IndexIntoString = 0
+                            $wrap = 80
+                            while ($length -gt $IndexIntoString + $Wrap) {
                                 $BreakPoint = $wrap
+                                $earliest = $workingString.Substring($IndexIntoString, $wrap).LastIndexOf(' ')
+                                $latest = $workingString.Substring($IndexIntoString + $wrap).IndexOf(' ')
+                                if (($earliest -eq -1) -or ($latest -eq -1)) {
+                                    $BreakPoint = $wrap
+                                }
+                                elseif ($wrap - $earliest -lt ($latest)) {
+                                    $BreakPoint = $earliest
+                                }
+                                else {
+                                    $BreakPoint = $wrap + $latest
+                                }
+                                if (($wrap - $earliest) + $latest -gt 30) {
+                                    $BreakPoint = $wrap # in case it is a string without spaces
+                                }
+
+                                $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString, $BreakPoint).Trim())
+                                $IndexIntoString += $BreakPoint
                             }
-                            elseif ($wrap - $earliest -lt ($latest)) {
-                                $BreakPoint = $earliest
+                            if ($IndexIntoString -lt $length) {
+                                $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString).Trim())
                             }
                             else {
-                                $BreakPoint = $wrap + $latest
+                                $null = $folded.AppendLine()
                             }
-                            if (($wrap - $earliest) + $latest -gt 30) {
-                                $BreakPoint = $wrap # in case it is a string without spaces
-                            }
-
-                            $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString, $BreakPoint).Trim())
-                            $IndexIntoString += $BreakPoint
                         }
-                        if ($IndexIntoString -lt $length) {
-                            $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString).Trim())
-                        }
-                        else {
-                            $null = $folded.AppendLine()
-                        }
-                    }
-                    $folded.ToString()
-                    break
-                }
-                else {
-                    if ($string.StartsWith('#')) {
-                        "'$($string -replace '''', '''''')'"
+                        $folded.ToString()
+                        break
                     }
                     else {
-                        $string
+                        if ($string.StartsWith('#')) {
+                            "'$($string -replace '''', '''''')'"
+                        }
+                        else {
+                            $string
+                        }
+                        break
                     }
                     break
                 }
-                break
-            }
-            'hashtable' {
-                if ($InputObject.Count -gt 0 ) {
-                    $index = 0
+                'hashtable' {
+                    if ($InputObject.Count -gt 0 ) {
+                        $index = 0
+                        $string = [System.Text.StringBuilder]::new()
+                        foreach ($item in $InputObject.Keys) {
+                            if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                            if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                            $null = $string.Append( $NewPadding).Append( $item).Append(' : ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        }
+                        $string.ToString()
+                    }
+                    else { '{}' }
+                    break
+                }
+                'boolean' {
+                    if ($InputObject -eq $true) { 'true' } else { 'false' }
+                    break
+                }
+                'array' {
                     $string = [System.Text.StringBuilder]::new()
-                    foreach ($item in $InputObject.Keys) {
-                        if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                    $index = 0
+                    foreach ($item in $InputObject ) {
                         if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                        $null = $string.Append( $NewPadding).Append( $item).Append(' : ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
                     }
                     $string.ToString()
+                    break
                 }
-                else { '{}' }
-                break
-            }
-            'boolean' {
-                if ($InputObject -eq $true) { 'true' } else { 'false' }
-                break
-            }
-            'array' {
-                $string = [System.Text.StringBuilder]::new()
-                $index = 0
-                foreach ($item in $InputObject ) {
-                    if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                    $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
+                'int32' {
+                    $InputObject
                 }
-                $string.ToString()
-                break
+                'double' {
+                    $InputObject
+                }
+                default {
+                    "'$InputObject'"
+                }
             }
-            'int32' {
-                $InputObject
-            }
-            'double' {
-                $InputObject
-            }
-            default {
-                "'$InputObject'"
-            }
+            return $Output
         }
-        return $Output
-    }
-    catch {
-        $_ | Write-PodeErrorLog
-        $_.Exception | Write-PodeErrorLog -CheckInnerException
-        throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
+        catch {
+            $_ | Write-PodeErrorLog
+            $_.Exception | Write-PodeErrorLog -CheckInnerException
+            throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
+        }
     }
 }
 

@@ -1,3 +1,5 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+param()
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
@@ -1760,7 +1762,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
                 key1 = 'value1'
                 key2 = 'value2'
             }
-            $result = $hashTable | ConvertTo-PodeYamlInternal -NoNewLine 
+            $result = $hashTable | ConvertTo-PodeYamlInternal -NoNewLine
             $result | Should -Be "key1 : value1`nkey2 : value2"
         }
     }

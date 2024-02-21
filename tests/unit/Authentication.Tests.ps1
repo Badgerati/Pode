@@ -1,3 +1,5 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+param()
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
@@ -149,7 +151,7 @@ Describe 'Test-PodeJwt' {
 Describe "Expand-PodeAuthMerge Tests" {
     BeforeAll {
         # Mock the $PodeContext variable
-        $Global:PodeContext = @{
+        $PodeContext = @{
             Server = @{
                 Authentications = @{
                     Methods = @{
@@ -187,7 +189,4 @@ Describe "Expand-PodeAuthMerge Tests" {
         { Expand-PodeAuthMerge -Names @('NonExistentAuth') } | Should -Throw
     }
 
-    AfterAll {
-        Remove-Variable -Name "PodeContext" -Scope Global
-    }
 }

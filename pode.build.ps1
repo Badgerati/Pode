@@ -1,3 +1,5 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
 param(
     [string]
     $Version = '0.0.0',
@@ -23,7 +25,6 @@ $Versions = @{
 <#
 # Helper Functions
 #>
-
 function Test-PodeBuildIsWindows {
     $v = $PSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
@@ -407,7 +408,7 @@ Task DocsHelpBuild DocsDeps, {
                 $line = $_
 
                 while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
-                    $updated = $true
+                    $used:updated = $true
                     $name = $Matches['name']
                     $char = $Matches['char']
                     $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")

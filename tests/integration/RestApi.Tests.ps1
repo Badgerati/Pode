@@ -1,3 +1,7 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseUsingScopeModifierInNewRunspaces', '')]
+param()
+
 Describe 'REST API Requests' {
 
     BeforeAll {
@@ -11,7 +15,7 @@ Describe 'REST API Requests' {
                 Write-PodeJsonResponse -Value @{ Message = 'Outer Hello' }
             }
 
-            Start-PodeServer -RootPath $using:PSScriptRoot {
+            Start-PodeServer -RootPath $using:PSScriptRoot -Quiet -ScriptBlock {
                 Add-PodeEndpoint -Address localhost -Port $using:Port -Protocol Http
 
                 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
