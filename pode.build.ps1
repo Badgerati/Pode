@@ -408,7 +408,7 @@ Task DocsHelpBuild DocsDeps, {
                 $line = $_
 
                 while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
-                    $used:updated = $true
+                    $updated = $true
                     $name = $Matches['name']
                     $char = $Matches['char']
                     $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")

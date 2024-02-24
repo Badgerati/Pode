@@ -40,164 +40,162 @@ function ConvertTo-PodeOAObjectSchema {
 
     )
 
-    process {
-        # Ensure all content types are valid MIME types
-        foreach ($type in $Content.Keys) {
-            if ($type -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$|^"\*\/\*"$') {
-                throw "Invalid content-type found for schema: $($type)"
-            }
+    # Ensure all content types are valid MIME types
+    foreach ($type in $Content.Keys) {
+        if ($type -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$|^"\*\/\*"$') {
+            throw "Invalid content-type found for schema: $($type)"
         }
-        # manage generic schema json conversion issue
-        if ( $Content.ContainsKey('*/*')) {
-            $Content['"*/*"'] = $Content['*/*']
-            $Content.Remove('*/*')
-        }
-        # convert each schema to OpenAPI format
-        # Initialize an empty hashtable for the schema
-        $obj = @{}
-
-        # Process each content type
-        $types = [string[]]$Content.Keys
-        foreach ($type in $types) {
-            # Initialize schema structure for the type
-            $obj[$type] = @{ }
-
-            # Handle upload content, array structures, and shared component schema references
-            if ($Content[$type].__upload) {
-                if ($Content[$type].__array) {
-                    $upload = $Content[$type].__content.__upload
-                }
-                else {
-                    $upload = $Content[$type].__upload
-                }
-
-                if ($type -ieq 'multipart/form-data' -and $upload.content ) {
-                    if ((Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag ) -and $upload.partContentMediaType) {
-                        foreach ($key in $upload.content.Properties ) {
-                            if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
-                                $key.ContentMediaType = $PartContentMediaType
-                                $key.remove('format')
-                                break
-                            }
-                        }
-                    }
-                    $newContent = $upload.content
-                }
-                else {
-                    if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag) {
-                        $newContent = [ordered]@{
-                            'type'   = 'string'
-                            'format' = $upload.contentEncoding
-                        }
-                    }
-                    else {
-                        if ($ContentEncoding -ieq 'Base64') {
-                            $newContent = [ordered]@{
-                                'type'            = 'string'
-                                'contentEncoding' = $upload.contentEncoding
-                            }
-                        }
-                    }
-                }
-                if ($Content[$type].__array) {
-                    $Content[$type].__content = $newContent
-                }
-                else {
-                    $Content[$type] = $newContent
-                }
-            }
-
-            if ($Content[$type].__array) {
-                $isArray = $true
-                $item = $Content[$type].__content
-                $obj[$type].schema = [ordered]@{
-                    'type'  = 'array'
-                    'items' = $null
-                }
-                if ( $Content[$type].__title) {
-                    $obj[$type].schema.title = $Content[$type].__title
-                }
-                if ( $Content[$type].__uniqueItems) {
-                    $obj[$type].schema.uniqueItems = $Content[$type].__uniqueItems
-                }
-                if ( $Content[$type].__maxItems) {
-                    $obj[$type].schema.__maxItems = $Content[$type].__maxItems
-                }
-                if ( $Content[$type].minItems) {
-                    $obj[$type].schema.minItems = $Content[$type].__minItems
-                }
-            }
-            else {
-                $item = $Content[$type]
-                $isArray = $false
-            }
-            # Add set schema objects or empty content
-            if ($item -is [string]) {
-                if (![string]::IsNullOrEmpty($item )) {
-                    #Check for empty reference
-                    if (@('string', 'integer' , 'number', 'boolean' ) -icontains $item) {
-                        if ($isArray) {
-                            $obj[$type].schema.items = @{
-                                'type' = $item.ToLower()
-                            }
-                        }
-                        else {
-                            $obj[$type].schema = @{
-                                'type' = $item.ToLower()
-                            }
-                        }
-                    }
-                    else {
-                        Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
-                        if ($isArray) {
-                            $obj[$type].schema.items = @{
-                                '$ref' = "#/components/schemas/$($item)"
-                            }
-                        }
-                        else {
-                            $obj[$type].schema = @{
-                                '$ref' = "#/components/schemas/$($item)"
-                            }
-                        }
-                    }
-                }
-                else {
-                    # Create an empty content
-                    $obj[$type] = @{}
-                }
-            }
-            else {
-                if ($item.Count -eq 0) {
-                    $result = @{}
-                }
-                else {
-                    $result = ($item | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
-                }
-                if ($Properties) {
-                    if ($item.Name) {
-                        $obj[$type].schema = @{
-                            'properties' = @{
-                                $item.Name = $result
-                            }
-                        }
-                    }
-                    else {
-                        Throw 'The Properties parameters cannot be used if the Property has no name'
-                    }
-                }
-                else {
-                    if ($isArray) {
-                        $obj[$type].schema.items = $result
-                    }
-                    else {
-                        $obj[$type].schema = $result
-                    }
-                }
-            }
-        }
-
-        return $obj
     }
+    # manage generic schema json conversion issue
+    if ( $Content.ContainsKey('*/*')) {
+        $Content['"*/*"'] = $Content['*/*']
+        $Content.Remove('*/*')
+    }
+    # convert each schema to OpenAPI format
+    # Initialize an empty hashtable for the schema
+    $obj = @{}
+
+    # Process each content type
+    $types = [string[]]$Content.Keys
+    foreach ($type in $types) {
+        # Initialize schema structure for the type
+        $obj[$type] = @{ }
+
+        # Handle upload content, array structures, and shared component schema references
+        if ($Content[$type].__upload) {
+            if ($Content[$type].__array) {
+                $upload = $Content[$type].__content.__upload
+            }
+            else {
+                $upload = $Content[$type].__upload
+            }
+
+            if ($type -ieq 'multipart/form-data' -and $upload.content ) {
+                if ((Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag ) -and $upload.partContentMediaType) {
+                    foreach ($key in $upload.content.Properties ) {
+                        if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
+                            $key.ContentMediaType = $PartContentMediaType
+                            $key.remove('format')
+                            break
+                        }
+                    }
+                }
+                $newContent = $upload.content
+            }
+            else {
+                if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag) {
+                    $newContent = [ordered]@{
+                        'type'   = 'string'
+                        'format' = $upload.contentEncoding
+                    }
+                }
+                else {
+                    if ($ContentEncoding -ieq 'Base64') {
+                        $newContent = [ordered]@{
+                            'type'            = 'string'
+                            'contentEncoding' = $upload.contentEncoding
+                        }
+                    }
+                }
+            }
+            if ($Content[$type].__array) {
+                $Content[$type].__content = $newContent
+            }
+            else {
+                $Content[$type] = $newContent
+            }
+        }
+
+        if ($Content[$type].__array) {
+            $isArray = $true
+            $item = $Content[$type].__content
+            $obj[$type].schema = [ordered]@{
+                'type'  = 'array'
+                'items' = $null
+            }
+            if ( $Content[$type].__title) {
+                $obj[$type].schema.title = $Content[$type].__title
+            }
+            if ( $Content[$type].__uniqueItems) {
+                $obj[$type].schema.uniqueItems = $Content[$type].__uniqueItems
+            }
+            if ( $Content[$type].__maxItems) {
+                $obj[$type].schema.__maxItems = $Content[$type].__maxItems
+            }
+            if ( $Content[$type].minItems) {
+                $obj[$type].schema.minItems = $Content[$type].__minItems
+            }
+        }
+        else {
+            $item = $Content[$type]
+            $isArray = $false
+        }
+        # Add set schema objects or empty content
+        if ($item -is [string]) {
+            if (![string]::IsNullOrEmpty($item )) {
+                #Check for empty reference
+                if (@('string', 'integer' , 'number', 'boolean' ) -icontains $item) {
+                    if ($isArray) {
+                        $obj[$type].schema.items = @{
+                            'type' = $item.ToLower()
+                        }
+                    }
+                    else {
+                        $obj[$type].schema = @{
+                            'type' = $item.ToLower()
+                        }
+                    }
+                }
+                else {
+                    Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
+                    if ($isArray) {
+                        $obj[$type].schema.items = @{
+                            '$ref' = "#/components/schemas/$($item)"
+                        }
+                    }
+                    else {
+                        $obj[$type].schema = @{
+                            '$ref' = "#/components/schemas/$($item)"
+                        }
+                    }
+                }
+            }
+            else {
+                # Create an empty content
+                $obj[$type] = @{}
+            }
+        }
+        else {
+            if ($item.Count -eq 0) {
+                $result = @{}
+            }
+            else {
+                $result = ($item | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
+            }
+            if ($Properties) {
+                if ($item.Name) {
+                    $obj[$type].schema = @{
+                        'properties' = @{
+                            $item.Name = $result
+                        }
+                    }
+                }
+                else {
+                    Throw 'The Properties parameters cannot be used if the Property has no name'
+                }
+            }
+            else {
+                if ($isArray) {
+                    $obj[$type].schema.items = $result
+                }
+                else {
+                    $obj[$type].schema = $result
+                }
+            }
+        }
+    }
+
+    return $obj
 }
 
 <#
@@ -366,249 +364,247 @@ function ConvertTo-PodeOASchemaProperty {
         [string]
         $DefinitionTag
     )
-    process {
-        if ( @('allof', 'oneof', 'anyof') -icontains $Property.type) {
-            $schema = ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $Property
+
+    if ( @('allof', 'oneof', 'anyof') -icontains $Property.type) {
+        $schema = ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $Property
+    }
+    else {
+        # base schema type
+        $schema = [ordered]@{ }
+        if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
+            if ($Property.type -is [string[]]) {
+                throw 'Multi type properties requeired OpenApi Version 3.1 or above'
+            }
+            $schema['type'] = $Property.type.ToLower()
         }
         else {
-            # base schema type
-            $schema = [ordered]@{ }
-            if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
-                if ($Property.type -is [string[]]) {
-                    throw 'Multi type properties requeired OpenApi Version 3.1 or above'
-                }
-                $schema['type'] = $Property.type.ToLower()
-            }
-            else {
-                $schema.type = @($Property.type.ToLower())
-                if ($Property.nullable) {
-                    $schema.type += 'null'
-                }
+            $schema.type = @($Property.type.ToLower())
+            if ($Property.nullable) {
+                $schema.type += 'null'
             }
         }
+    }
 
-        if ($Property.externalDocs) {
-            $schema['externalDocs'] = $Property.externalDocs
-        }
+    if ($Property.externalDocs) {
+        $schema['externalDocs'] = $Property.externalDocs
+    }
 
-        if (!$NoDescription -and $Property.description) {
-            $schema['description'] = $Property.description
-        }
+    if (!$NoDescription -and $Property.description) {
+        $schema['description'] = $Property.description
+    }
 
-        if ($Property.default) {
-            $schema['default'] = $Property.default
-        }
+    if ($Property.default) {
+        $schema['default'] = $Property.default
+    }
 
-        if ($Property.deprecated) {
-            $schema['deprecated'] = $Property.deprecated
-        }
-        if ($Property.nullable -and (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag )) {
-            $schema['nullable'] = $Property.nullable
-        }
+    if ($Property.deprecated) {
+        $schema['deprecated'] = $Property.deprecated
+    }
+    if ($Property.nullable -and (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag )) {
+        $schema['nullable'] = $Property.nullable
+    }
 
-        if ($Property.writeOnly) {
-            $schema['writeOnly'] = $Property.writeOnly
-        }
+    if ($Property.writeOnly) {
+        $schema['writeOnly'] = $Property.writeOnly
+    }
 
-        if ($Property.readOnly) {
-            $schema['readOnly'] = $Property.readOnly
-        }
+    if ($Property.readOnly) {
+        $schema['readOnly'] = $Property.readOnly
+    }
 
-        if ($Property.example) {
-            if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
-                $schema['example'] = $Property.example
-            }
-            else {
-                if ($Property.example -is [Array]) {
-                    $schema['examples'] = $Property.example
-                }
-                else {
-                    $schema['examples'] = @( $Property.example)
-                }
-            }
-        }
+    if ($Property.example) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
-            if ($Property.minimum) {
-                $schema['minimum'] = $Property.minimum
+            $schema['example'] = $Property.example
+        }
+        else {
+            if ($Property.example -is [Array]) {
+                $schema['examples'] = $Property.example
             }
+            else {
+                $schema['examples'] = @( $Property.example)
+            }
+        }
+    }
+    if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
+        if ($Property.minimum) {
+            $schema['minimum'] = $Property.minimum
+        }
 
-            if ($Property.maximum) {
+        if ($Property.maximum) {
+            $schema['maximum'] = $Property.maximum
+        }
+
+        if ($Property.exclusiveMaximum) {
+            $schema['exclusiveMaximum'] = $Property.exclusiveMaximum
+        }
+
+        if ($Property.exclusiveMinimum) {
+            $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
+        }
+    }
+    else {
+        if ($Property.maximum) {
+            if ($Property.exclusiveMaximum) {
+                $schema['exclusiveMaximum'] = $Property.maximum
+            }
+            else {
                 $schema['maximum'] = $Property.maximum
             }
-
-            if ($Property.exclusiveMaximum) {
-                $schema['exclusiveMaximum'] = $Property.exclusiveMaximum
-            }
-
+        }
+        if ($Property.minimum) {
             if ($Property.exclusiveMinimum) {
-                $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
-            }
-        }
-        else {
-            if ($Property.maximum) {
-                if ($Property.exclusiveMaximum) {
-                    $schema['exclusiveMaximum'] = $Property.maximum
-                }
-                else {
-                    $schema['maximum'] = $Property.maximum
-                }
-            }
-            if ($Property.minimum) {
-                if ($Property.exclusiveMinimum) {
-                    $schema['exclusiveMinimum'] = $Property.minimum
-                }
-                else {
-                    $schema['minimum'] = $Property.minimum
-                }
-            }
-        }
-        if ($Property.multipleOf) {
-            $schema['multipleOf'] = $Property.multipleOf
-        }
-
-        if ($Property.pattern) {
-            $schema['pattern'] = $Property.pattern
-        }
-
-        if ($Property.minLength) {
-            $schema['minLength'] = $Property.minLength
-        }
-
-        if ($Property.maxLength) {
-            $schema['maxLength'] = $Property.maxLength
-        }
-
-        if ($Property.xml ) {
-            $schema['xml'] = $Property.xml
-        }
-
-        if (Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag ) {
-            if ($Property.ContentMediaType) {
-                $schema['contentMediaType'] = $Property.ContentMediaType
-            }
-            if ($Property.ContentEncoding) {
-                $schema['contentEncoding'] = $Property.ContentEncoding
-            }
-        }
-
-        # are we using an array?
-        if ($Property.array) {
-            if ($Property.maxItems ) {
-                $schema['maxItems'] = $Property.maxItems
-            }
-
-            if ($Property.minItems ) {
-                $schema['minItems'] = $Property.minItems
-            }
-
-            if ($Property.uniqueItems ) {
-                $schema['uniqueItems'] = $Property.uniqueItems
-            }
-
-            $schema['type'] = 'array'
-            if ($Property.type -ieq 'schema') {
-                Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
-                $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
+                $schema['exclusiveMinimum'] = $Property.minimum
             }
             else {
-                $Property.array = $false
-                if ($Property.xml) {
-                    $xmlFromProperties = $Property.xml
-                    $Property.Remove('xml')
-                }
-                $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
-                $Property.array = $true
-                if ($xmlFromProperties) {
-                    $Property.xml = $xmlFromProperties
-                }
-
-                if ($Property.xmlItemName) {
-                    $schema.items.xml = @{'name' = $Property.xmlItemName }
-                }
-            }
-            return $schema
-        }
-        else {
-            #format is not applicable to array
-            if ($Property.format) {
-                $schema['format'] = $Property.format
-            }
-
-            # schema refs
-            if ($Property.type -ieq 'schema') {
-                Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
-                $schema = @{
-                    '$ref' = "#/components/schemas/$($Property['schema'])"
-                }
-            }
-            #only if it's not an array
-            if ($Property.enum ) {
-                $schema['enum'] = $Property.enum
-            }
-        }
-
-        if ($Property.object) {
-            # are we using an object?
-            $Property.object = $false
-
-            $schema = @{
-                type       = 'object'
-                properties = (ConvertTo-PodeOASchemaObjectProperty -DefinitionTag $DefinitionTag -Properties $Property)
-            }
-            $Property.object = $true
-            if ($Property.required) {
-                $schema['required'] = @($Property.name)
-            }
-        }
-
-        if ($Property.type -ieq 'object') {
-            foreach ($prop in $Property.properties) {
-                if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type) {
-                    switch ($prop.type.ToLower()) {
-                        'allof' { $prop.type = 'allOf' }
-                        'oneof' { $prop.type = 'oneOf' }
-                        'anyof' { $prop.type = 'anyOf' }
-                    }
-                    $schema += ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $prop
-
-                }
-            }
-            if ($Property.properties) {
-                $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -DefinitionTag $DefinitionTag -Properties $Property.properties)
-                $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
-                if ( $RequiredList.Count -gt 0) {
-                    $schema['required'] = @($RequiredList.name)
-                }
-            }
-            else {
-                #if noproperties parameter create an empty properties
-                if ( $Property.properties.Count -eq 1 -and $null -eq $Property.properties[0]) {
-                    $schema['properties'] = @{}
-                }
-            }
-
-
-            if ($Property.minProperties) {
-                $schema['minProperties'] = $Property.minProperties
-            }
-
-            if ($Property.maxProperties) {
-                $schema['maxProperties'] = $Property.maxProperties
-            }
-
-            if ($Property.additionalProperties) {
-                $schema['additionalProperties'] = $Property.additionalProperties
-            }
-
-            if ($Property.discriminator) {
-                $schema['discriminator'] = $Property.discriminator
+                $schema['minimum'] = $Property.minimum
             }
         }
     }
+    if ($Property.multipleOf) {
+        $schema['multipleOf'] = $Property.multipleOf
+    }
 
-    end {
+    if ($Property.pattern) {
+        $schema['pattern'] = $Property.pattern
+    }
+
+    if ($Property.minLength) {
+        $schema['minLength'] = $Property.minLength
+    }
+
+    if ($Property.maxLength) {
+        $schema['maxLength'] = $Property.maxLength
+    }
+
+    if ($Property.xml ) {
+        $schema['xml'] = $Property.xml
+    }
+
+    if (Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag ) {
+        if ($Property.ContentMediaType) {
+            $schema['contentMediaType'] = $Property.ContentMediaType
+        }
+        if ($Property.ContentEncoding) {
+            $schema['contentEncoding'] = $Property.ContentEncoding
+        }
+    }
+
+    # are we using an array?
+    if ($Property.array) {
+        if ($Property.maxItems ) {
+            $schema['maxItems'] = $Property.maxItems
+        }
+
+        if ($Property.minItems ) {
+            $schema['minItems'] = $Property.minItems
+        }
+
+        if ($Property.uniqueItems ) {
+            $schema['uniqueItems'] = $Property.uniqueItems
+        }
+
+        $schema['type'] = 'array'
+        if ($Property.type -ieq 'schema') {
+            Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
+            $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
+        }
+        else {
+            $Property.array = $false
+            if ($Property.xml) {
+                $xmlFromProperties = $Property.xml
+                $Property.Remove('xml')
+            }
+            $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
+            $Property.array = $true
+            if ($xmlFromProperties) {
+                $Property.xml = $xmlFromProperties
+            }
+
+            if ($Property.xmlItemName) {
+                $schema.items.xml = @{'name' = $Property.xmlItemName }
+            }
+        }
         return $schema
     }
+    else {
+        #format is not applicable to array
+        if ($Property.format) {
+            $schema['format'] = $Property.format
+        }
+
+        # schema refs
+        if ($Property.type -ieq 'schema') {
+            Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
+            $schema = @{
+                '$ref' = "#/components/schemas/$($Property['schema'])"
+            }
+        }
+        #only if it's not an array
+        if ($Property.enum ) {
+            $schema['enum'] = $Property.enum
+        }
+    }
+
+    if ($Property.object) {
+        # are we using an object?
+        $Property.object = $false
+
+        $schema = @{
+            type       = 'object'
+            properties = (ConvertTo-PodeOASchemaObjectProperty -DefinitionTag $DefinitionTag -Properties $Property)
+        }
+        $Property.object = $true
+        if ($Property.required) {
+            $schema['required'] = @($Property.name)
+        }
+    }
+
+    if ($Property.type -ieq 'object') {
+        foreach ($prop in $Property.properties) {
+            if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type) {
+                switch ($prop.type.ToLower()) {
+                    'allof' { $prop.type = 'allOf' }
+                    'oneof' { $prop.type = 'oneOf' }
+                    'anyof' { $prop.type = 'anyOf' }
+                }
+                $schema += ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $prop
+
+            }
+        }
+        if ($Property.properties) {
+            $schema['properties'] = (ConvertTo-PodeOASchemaObjectProperty -DefinitionTag $DefinitionTag -Properties $Property.properties)
+            $RequiredList = @(($Property.properties | Where-Object { $_.required }) )
+            if ( $RequiredList.Count -gt 0) {
+                $schema['required'] = @($RequiredList.name)
+            }
+        }
+        else {
+            #if noproperties parameter create an empty properties
+            if ( $Property.properties.Count -eq 1 -and $null -eq $Property.properties[0]) {
+                $schema['properties'] = @{}
+            }
+        }
+
+
+        if ($Property.minProperties) {
+            $schema['minProperties'] = $Property.minProperties
+        }
+
+        if ($Property.maxProperties) {
+            $schema['maxProperties'] = $Property.maxProperties
+        }
+
+        if ($Property.additionalProperties) {
+            $schema['additionalProperties'] = $Property.additionalProperties
+        }
+
+        if ($Property.discriminator) {
+            $schema['discriminator'] = $Property.discriminator
+        }
+    }
+
+    return $schema
+
 }
 
 <#
@@ -1125,24 +1121,22 @@ function ConvertTo-PodeOAPropertyFromCmdletParameter {
         $Parameter
     )
 
-    process {
-        if ($Parameter.SwitchParameter -or ($Parameter.ParameterType.Name -ieq 'boolean')) {
-            New-PodeOABoolProperty -Name $Parameter.Name
-        }
-        else {
-            switch ($Parameter.ParameterType.Name) {
-                { @('int32', 'int64') -icontains $_ } {
-                    New-PodeOAIntProperty -Name $Parameter.Name -Format $_
-                }
+    if ($Parameter.SwitchParameter -or ($Parameter.ParameterType.Name -ieq 'boolean')) {
+        New-PodeOABoolProperty -Name $Parameter.Name
+    }
+    else {
+        switch ($Parameter.ParameterType.Name) {
+            { @('int32', 'int64') -icontains $_ } {
+                New-PodeOAIntProperty -Name $Parameter.Name -Format $_
+            }
 
-                { @('double', 'float') -icontains $_ } {
-                    New-PodeOANumberProperty -Name $Parameter.Name -Format $_
-                }
+            { @('double', 'float') -icontains $_ } {
+                New-PodeOANumberProperty -Name $Parameter.Name -Format $_
             }
         }
-
-        New-PodeOAStringProperty -Name $Parameter.Name
     }
+
+    New-PodeOAStringProperty -Name $Parameter.Name
 }
 
 
@@ -1681,38 +1675,33 @@ function ConvertTo-PodeOAHeaderProperty {
         [hashtable[]]
         $Headers
     )
-    begin {
-        $elems = @{}
-    }
 
-    process {
-        foreach ($e in $Headers) {
-            # Ensure each header has a name
-            if ($e.name) {
-                $elems.$($e.name) = @{}
-                # Add description if present
-                if ($e.description) {
-                    $elems.$($e.name).description = $e.description
-                }
-                # Define the schema, including the type and any additional properties
-                $elems.$($e.name).schema = @{
-                    type = $($e.type)
-                }
-                foreach ($k in $e.keys) {
-                    if (@('name', 'description') -notcontains $k) {
-                        $elems.$($e.name).schema.$k = $e.$k
-                    }
+    $elems = @{}
+
+    foreach ($e in $Headers) {
+        # Ensure each header has a name
+        if ($e.name) {
+            $elems.$($e.name) = @{}
+            # Add description if present
+            if ($e.description) {
+                $elems.$($e.name).description = $e.description
+            }
+            # Define the schema, including the type and any additional properties
+            $elems.$($e.name).schema = @{
+                type = $($e.type)
+            }
+            foreach ($k in $e.keys) {
+                if (@('name', 'description') -notcontains $k) {
+                    $elems.$($e.name).schema.$k = $e.$k
                 }
             }
-            else {
-                throw 'Header requires a name when used in an encoding context'
-            }
+        }
+        else {
+            throw 'Header requires a name when used in an encoding context'
         }
     }
 
-    end {
-        return $elems
-    }
+    return $elems
 }
 
 

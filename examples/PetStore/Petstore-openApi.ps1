@@ -6,7 +6,8 @@ $petStorePath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $petStorePath)
 if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
     Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
-} else {
+}
+else {
     Import-Module -Name 'Pode'
 }
 function Write-ObjectContent {
@@ -15,11 +16,10 @@ function Write-ObjectContent {
         $Object
     )
 
-    process {
-        Write-PodeHost -ForegroundColor Blue "Type:$($Object.gettype())"
-        $objectString = $Object | Out-String
-        Write-PodeHost -ForegroundColor Blue -Object $objectString
-    }
+    Write-PodeHost -ForegroundColor Blue "Type:$($Object.gettype())"
+    $objectString = $Object | Out-String
+    Write-PodeHost -ForegroundColor Blue -Object $objectString
+
 }
 
 Import-Module -Name "$petStorePath/PetData.psm1"
@@ -52,7 +52,8 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         Initialize-Order -Reset
         Initialize-Users -Reset
         Save-PodeState -Path $global:PetDataJson
-    } else {
+    }
+    else {
         Initialize-Categories
         Initialize-Pet
         Initialize-Order
@@ -66,10 +67,11 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
         $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default
-    } else {
+    }
+    else {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default
     }
-    
+
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     #Configure CORS
@@ -149,7 +151,8 @@ Some useful links:
                 Code      = 401
                 Challenge = 'qop="auth", nonce="<some-random-guid>"'
             }
-        } else {
+        }
+        else {
             return @{
                 Message = 'No Authorization header found'
                 Code    = 401
@@ -201,7 +204,7 @@ Some useful links:
         New-PodeOAObjectProperty   -XmlName 'address' |
         Add-PodeOAComponentSchema -Name 'Address'
 
-        New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 100000 |
+    New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 100000 |
         New-PodeOAStringProperty -Name 'username' -example  'fehguy' |
         New-PodeOASchemaProperty -Name 'Address' -Reference 'Address' -Array -XmlName 'addresses' -XmlWrapped |
         New-PodeOAObjectProperty -XmlName 'customer' |
@@ -278,19 +281,23 @@ Some useful links:
             if ($pet -and $WebEvent.data.id) {
                 if ($contentType -eq 'application/json') {
                     $Validate = Test-PodeOAJsonSchemaCompliance -Json $pet -SchemaReference 'Pet'
-                } else {
+                }
+                else {
                     $Validate = @{'result' = $true }
                 }
                 if ($Validate.result) {
                     if (Update-Pet -Pet (convertfrom-json -InputObject $pet -AsHashtable)) {
                         Save-PodeState -Path $using:PetDataJson
-                    } else {
+                    }
+                    else {
                         Write-PodeHtmlResponse -StatusCode 404 -Value  'Pet not found'
                     }
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
                 }
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -StatusCode 400 -Value 'Invalid ID supplied'
             }
         } | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru |
@@ -321,13 +328,15 @@ Some useful links:
             }
             if ($contentType -eq 'application/json') {
                 $Validate = Test-PodeOAJsonSchemaCompliance -Json $pet -SchemaReference 'Pet'
-            } else {
+            }
+            else {
                 $Validate = @{'result' = $true }
             }
             if ($Validate.result) {
                 Add-Pet -Pet (convertfrom-json -InputObject $pet -AsHashtable)
                 Save-PodeState -Path $using:PetDataJson
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
             }
         } | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' -Tags 'pet' -OperationId 'addPet' -PassThru |
@@ -354,7 +363,8 @@ Some useful links:
                     'application/json' { Write-PodeJsonResponse -Value $pets -StatusCode 200 }
                     default { Write-PodeHtmlResponse -StatusCode 415 }
                 }
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -Value 'Invalid status value' -StatusCode 400
             }
 
@@ -382,7 +392,8 @@ Some useful links:
                     'application/json' { Write-PodeJsonResponse -Value $pets -StatusCode 200 }
                     default { Write-PodeHtmlResponse -StatusCode 415 }
                 }
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -Value 'Invalid tag value' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Finds Pets by tags' -Description 'Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.' -Tags 'pet' -OperationId 'findPetsByTags' -PassThru |
@@ -409,10 +420,12 @@ Some useful links:
                         'application/json' { Write-PodeJsonResponse -Value $pet -StatusCode 200 }
                         default { Write-PodeHtmlResponse -StatusCode 415 }
                     }
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -Value 'Pet not found' -StatusCode 404
                 }
-            } else {
+            }
+            else {
                 Write-PodeJsonResponse -Value 'Invalid ID supplied' -StatusCode 400
             }
 
@@ -438,10 +451,12 @@ Some useful links:
             if ($petId -and (Test-Pet -Id $petId)) {
                 if (Update-Pet -Id $petId -Name $name -Status $status) {
                     Save-PodeState -Path $using:PetDataJson
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -StatusCode 405 -Value 'Invalid Input'
                 }
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -StatusCode 405 -Value 'Invalid Input'
             }
         } | Set-PodeOARouteInfo -Summary 'Updates pet with ID' -Description 'Updates a pet in the store with form data' -Tags 'pet' -OperationId 'updatePetWithForm' -PassThru |
@@ -459,7 +474,8 @@ Some useful links:
             if ($petId -and (Test-Pet -Id $petId)) {
                 Remove-Pet -Id $petId
                 Save-PodeState -Path $using:PetDataJson
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -Value 'Invalid pet value' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Deletes pet by ID' -Description 'Deletes a pet.' -Tags 'pet' -OperationId 'deletePet' -PassThru |
@@ -485,7 +501,8 @@ Some useful links:
                 $url = "$((Get-PodeConfig).Protocol)://$((Get-PodeConfig).Address):$((Get-PodeConfig).RestFulPort)/images/$image"
                 $pet.photoUrls.add($url)
                 Save-PodeState -Path $using:PetDataJson
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -Value 'Invalid pet value' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Uploads an image' -Tags 'pet' -OperationId 'uploadFile' -PassThru |
@@ -528,14 +545,16 @@ Some useful links:
             }
             if ($contentType -eq 'application/json') {
                 $Validate = Test-PodeOAJsonSchemaCompliance -Json $order -SchemaReference 'Order'
-            } else {
+            }
+            else {
                 #no test schema support for XML
                 $Validate = @{'result' = $true }
             }
             if ($Validate.result) {
                 Add-Order -Order (convertfrom-json -InputObject $order -AsHashtable)
                 Save-PodeState -Path $using:PetDataJson
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
             }
         } | Set-PodeOARouteInfo -Summary 'Place an order for a pet' -Description 'Place a new order in the store' -Tags 'store' -OperationId 'placeOrder' -PassThru |
@@ -557,10 +576,12 @@ Some useful links:
                         'application/json' { Write-PodeJsonResponse -Value $order -StatusCode 200 }
                         default { Write-PodeHtmlResponse -StatusCode 415 }
                     }
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -Value 'Order not found' -StatusCode 404
                 }
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -Value 'No orderId provided. Try again?' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Find purchase order by ID' -Description 'For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions.' -Tags 'store' -OperationId 'getOrderById' -PassThru |
@@ -580,10 +601,12 @@ Some useful links:
                 if ( Test-Order -Id $orderId) {
                     Remove-Order -Id $orderId
                     Save-PodeState -Path $using:PetDataJson
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -Value 'Order not found' -StatusCode 404
                 }
-            } else {
+            }
+            else {
                 Write-PodeJsonReWrite-PodeHtmlResponsesponse -Value 'Invalid ID supplied' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Delete purchase order by ID' -Description 'For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors.' -Tags 'store' -OperationId 'deleteOrder' -PassThru |
@@ -615,7 +638,8 @@ Some useful links:
             }
             if ($contentType -eq 'application/json') {
                 $Validate = Test-PodeOAJsonSchemaCompliance -Json $user -SchemaReference 'User'
-            } else {
+            }
+            else {
                 #no test schema support for XML
                 $Validate = @{'result' = $true }
             }
@@ -627,7 +651,8 @@ Some useful links:
                     'application/json' { Write-PodeJsonResponse -Value $newUser -StatusCode 200 }
                     default { Write-PodeHtmlResponse -StatusCode 415 }
                 }
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
             }
         } | Set-PodeOARouteInfo -Summary 'Create user.' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'createUser' -PassThru |
@@ -653,13 +678,15 @@ Some useful links:
                 }
                 if ($contentType -eq 'application/json') {
                     $Validate = Test-PodeOAJsonSchemaCompliance -Json $userJson -SchemaReference 'User'
-                } else {
+                }
+                else {
                     #no test schema support for XML
                     $Validate = @{'result' = $true }
                 }
                 if ($Validate.result) {
                     $newUsers += $user
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
                     return
                 }
@@ -698,10 +725,12 @@ Some useful links:
                         'application/json' { Write-PodeJsonResponse -Value $result -StatusCode 200 }
                         default { Write-PodeHtmlResponse -StatusCode 415 }
                     }
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -Value 'Invalid username/password supplied' -StatusCode 400
                 }
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -Value 'Invalid username/password supplied' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Logs user into the system.'  -Tags 'user' -OperationId 'loginUser' -PassThru |
@@ -735,10 +764,12 @@ Some useful links:
                         'application/json' { Write-PodeJsonResponse -Value $user -StatusCode 200 }
                         default { Write-PodeHtmlResponse -StatusCode 415 }
                     }
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -Value 'User not found' -StatusCode 404
                 }
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -Value 'Invalid username supplied' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Get user by user name'   -Tags 'user' -OperationId 'getUserByName' -PassThru |
@@ -768,7 +799,8 @@ Some useful links:
                 }
                 if ($contentType -eq 'application/json') {
                     $Validate = Test-PodeOAJsonSchemaCompliance -Json $user -SchemaReference 'User'
-                } else {
+                }
+                else {
                     #no test schema support for XML
                     $Validate = @{'result' = $true }
                 }
@@ -780,10 +812,12 @@ Some useful links:
                         'application/json' { Write-PodeJsonResponse -Value $newUser -StatusCode 200 }
                         default { Write-PodeHtmlResponse -StatusCode 415 }
                     }
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
                 }
-            } else {
+            }
+            else {
                 Write-PodeHtmlResponse -StatusCode 404 -Value   'User not found'
             }
         } | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'updateUser' -PassThru |
@@ -804,10 +838,12 @@ Some useful links:
                 if ( Test-User -Username $username) {
                     Remove-User -Username $orderId
                     Save-PodeState -Path $using:PetDataJson
-                } else {
+                }
+                else {
                     Write-PodeHtmlResponse -Value 'User not found' -StatusCode 404
                 }
-            } else {
+            }
+            else {
                 Write-PodeJsonReWrite-PodeHtmlResponsesponse -Value 'Invalid username supplied' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Delete user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'deleteUser' -PassThru |

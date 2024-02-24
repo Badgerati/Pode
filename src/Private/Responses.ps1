@@ -157,47 +157,45 @@ function Write-PodeFileResponseInternal {
         $Cache
     )
 
-    process {
-        # are we dealing with a dynamic file for the view engine? (ignore html)
-        # Determine if the file is dynamic and should be processed by the view engine
-        $mainExt = Get-PodeFileExtension -Path $RelativePath -TrimPeriod
+    # are we dealing with a dynamic file for the view engine? (ignore html)
+    # Determine if the file is dynamic and should be processed by the view engine
+    $mainExt = Get-PodeFileExtension -Path $RelativePath -TrimPeriod
 
-        # generate dynamic content
-        if (![string]::IsNullOrWhiteSpace($mainExt) -and (
+    # generate dynamic content
+    if (![string]::IsNullOrWhiteSpace($mainExt) -and (
         ($mainExt -ieq 'pode') -or
         ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
-            )
-        ) {
-            # Process dynamic content with the view engine
-            $content = Get-PodeFileContentUsingViewEngine -Path $RelativePath -Data $Data
+        )
+    ) {
+        # Process dynamic content with the view engine
+        $content = Get-PodeFileContentUsingViewEngine -Path $RelativePath -Data $Data
 
-            # Determine the correct content type for the response
-            # get the sub-file extension, if empty, use original
-            $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $RelativePath -WithoutExtension) -TrimPeriod
-            $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
+        # Determine the correct content type for the response
+        # get the sub-file extension, if empty, use original
+        $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $RelativePath -WithoutExtension) -TrimPeriod
+        $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
 
-            $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
-            # Write the processed content as the HTTP response
-            Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
+        $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
+        # Write the processed content as the HTTP response
+        Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
+    }
+    # this is a static file
+    else {
+        if (Test-PodeIsPSCore) {
+            $content = (Get-Content -Path $RelativePath -Raw -AsByteStream)
         }
-        # this is a static file
         else {
-            if (Test-PodeIsPSCore) {
-                $content = (Get-Content -Path $RelativePath -Raw -AsByteStream)
-            }
-            else {
-                $content = (Get-Content -Path $RelativePath -Raw -Encoding byte)
-            }
-            if ($null -ne $content) {
-                # Determine and set the content type for static files
-                $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
-                # Write the file content as the HTTP response
-                Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
-            }
-            else {
-                # If the file does not exist, set the HTTP response status to 404 Not Found
-                Set-PodeResponseStatus -Code 404
-            }
+            $content = (Get-Content -Path $RelativePath -Raw -Encoding byte)
+        }
+        if ($null -ne $content) {
+            # Determine and set the content type for static files
+            $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
+            # Write the file content as the HTTP response
+            Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+        }
+        else {
+            # If the file does not exist, set the HTTP response status to 404 Not Found
+            Set-PodeResponseStatus -Code 404
         }
     }
 }

@@ -621,34 +621,30 @@ function Add-PodeOAResponse {
         [string[]]
         $DefinitionTag
     )
-    begin {
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-        # override status code with default
-        if ($Default) {
-            $code = 'default'
-        }
-        else {
-            $code = "$($StatusCode)"
-        }
+
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    # override status code with default
+    if ($Default) {
+        $code = 'default'
+    }
+    else {
+        $code = "$($StatusCode)"
     }
 
-    process {
-        # add the respones to the routes
-        foreach ($r in @($Route)) {
-            foreach ($tag in $DefinitionTag) {
-                if (! $r.OpenApi.Responses.$tag) {
-                    $r.OpenApi.Responses.$tag = @{}
-                }
-                $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
+    # add the respones to the routes
+    foreach ($r in @($Route)) {
+        foreach ($tag in $DefinitionTag) {
+            if (! $r.OpenApi.Responses.$tag) {
+                $r.OpenApi.Responses.$tag = @{}
             }
+            $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
         }
     }
 
-    end {
-        if ($PassThru) {
-            return $Route
-        }
+    if ($PassThru) {
+        return $Route
     }
+
 }
 
 
@@ -696,28 +692,23 @@ function Remove-PodeOAResponse {
         [switch]
         $PassThru
     )
-    begin {
-        # override status code with default
-        $code = "$($StatusCode)"
-        if ($Default) {
-            $code = 'default'
+
+    # override status code with default
+    $code = "$($StatusCode)"
+    if ($Default) {
+        $code = 'default'
+    }
+    # remove the respones from the routes
+    foreach ($r in @($Route)) {
+        if ($r.OpenApi.Responses.ContainsKey($code)) {
+            $null = $r.OpenApi.Responses.Remove($code)
         }
     }
 
-    process {
-        # remove the respones from the routes
-        foreach ($r in @($Route)) {
-            if ($r.OpenApi.Responses.ContainsKey($code)) {
-                $null = $r.OpenApi.Responses.Remove($code)
-            }
-        }
+    if ($PassThru) {
+        return $Route
     }
 
-    end {
-        if ($PassThru) {
-            return $Route
-        }
-    }
 }
 
 <#
@@ -769,23 +760,21 @@ function Set-PodeOARequest {
         [switch]
         $PassThru
     )
-    process {
-        foreach ($r in @($Route)) {
 
-            if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
-                $r.OpenApi.Parameters = @($Parameters)
-            }
+    foreach ($r in @($Route)) {
 
-            if ($null -ne $RequestBody) {
-                $r.OpenApi.RequestBody = $RequestBody
-            }
-
+        if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
+            $r.OpenApi.Parameters = @($Parameters)
         }
+
+        if ($null -ne $RequestBody) {
+            $r.OpenApi.RequestBody = $RequestBody
+        }
+
     }
-    end {
-        if ($PassThru) {
-            return $Route
-        }
+
+    if ($PassThru) {
+        return $Route
     }
 }
 
@@ -1228,270 +1217,266 @@ function ConvertTo-PodeOAParameter {
         [string[]]
         $DefinitionTag
     )
-    begin {
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    }
 
-    process {
-        if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema' -or $PSCmdlet.ParameterSetName -ieq 'Schema') {
-            if (Test-PodeIsEmpty $Schema) {
-                return $null
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+    if ($PSCmdlet.ParameterSetName -ieq 'ContentSchema' -or $PSCmdlet.ParameterSetName -ieq 'Schema') {
+        if (Test-PodeIsEmpty $Schema) {
+            return $null
+        }
+        Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Schema -PostValidation
+        if (!$Name ) {
+            $Name = $Schema
+        }
+        $prop = [ordered]@{
+            in   = $In.ToLowerInvariant()
+            name = $Name
+        }
+        if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Schema  -Append
+        }
+        if ($AllowEmptyValue.IsPresent ) {
+            $prop['allowEmptyValue'] = $AllowEmptyValue.IsPresent
+        }
+        if ($Required.IsPresent ) {
+            $prop['required'] = $Required.IsPresent
+        }
+        if ($Description ) {
+            $prop.description = $Description
+        }
+        if ($Deprecated.IsPresent ) {
+            $prop.deprecated = $Deprecated.IsPresent
+        }
+        if ($ContentType ) {
+            # ensure all content types are valid
+            if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
+                throw "Invalid content-type found for schema: $($type)"
             }
-            Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Schema -PostValidation
-            if (!$Name ) {
-                $Name = $Schema
+            $prop.content = [ordered]@{
+                $ContentType = [ordered]@{
+                    schema = [ordered]@{
+                        '$ref' = "#/components/schemas/$($Schema )"
+                    }
+                }
             }
-            $prop = [ordered]@{
-                in   = $In.ToLowerInvariant()
-                name = $Name
+            if ($Example ) {
+                $prop.content.$ContentType.example = $Example
             }
-            if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Schema  -Append
+            elseif ($Examples) {
+                $prop.content.$ContentType.examples = $Examples
             }
+        }
+        else {
+            $prop.schema = [ordered]@{
+                '$ref' = "#/components/schemas/$($Schema )"
+            }
+            if ($Style) {
+                switch ($in.ToLower()) {
+                    'path' {
+                        if (@('Simple', 'Label', 'Matrix' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'query' {
+                        if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'header' {
+                        if (@('Simple' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'cookie' {
+                        if (@('Form' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                }
+                $prop['style'] = $Style.Substring(0, 1).ToLower() + $Style.Substring(1)
+            }
+
+            if ($Explode.IsPresent ) {
+                $prop['explode'] = $Explode.IsPresent
+            }
+
             if ($AllowEmptyValue.IsPresent ) {
                 $prop['allowEmptyValue'] = $AllowEmptyValue.IsPresent
             }
-            if ($Required.IsPresent ) {
-                $prop['required'] = $Required.IsPresent
-            }
-            if ($Description ) {
-                $prop.description = $Description
-            }
-            if ($Deprecated.IsPresent ) {
-                $prop.deprecated = $Deprecated.IsPresent
-            }
-            if ($ContentType ) {
-                # ensure all content types are valid
-                if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
-                    throw "Invalid content-type found for schema: $($type)"
-                }
-                $prop.content = [ordered]@{
-                    $ContentType = [ordered]@{
-                        schema = [ordered]@{
-                            '$ref' = "#/components/schemas/$($Schema )"
-                        }
-                    }
-                }
-                if ($Example ) {
-                    $prop.content.$ContentType.example = $Example
-                }
-                elseif ($Examples) {
-                    $prop.content.$ContentType.examples = $Examples
-                }
-            }
-            else {
-                $prop.schema = [ordered]@{
-                    '$ref' = "#/components/schemas/$($Schema )"
-                }
-                if ($Style) {
-                    switch ($in.ToLower()) {
-                        'path' {
-                            if (@('Simple', 'Label', 'Matrix' ) -inotcontains $Style) {
-                                throw "OpenApi request Style cannot be $Style for a $in parameter"
-                            }
-                            break
-                        }
-                        'query' {
-                            if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -inotcontains $Style) {
-                                throw "OpenApi request Style cannot be $Style for a $in parameter"
-                            }
-                            break
-                        }
-                        'header' {
-                            if (@('Simple' ) -inotcontains $Style) {
-                                throw "OpenApi request Style cannot be $Style for a $in parameter"
-                            }
-                            break
-                        }
-                        'cookie' {
-                            if (@('Form' ) -inotcontains $Style) {
-                                throw "OpenApi request Style cannot be $Style for a $in parameter"
-                            }
-                            break
-                        }
-                    }
-                    $prop['style'] = $Style.Substring(0, 1).ToLower() + $Style.Substring(1)
-                }
 
-                if ($Explode.IsPresent ) {
-                    $prop['explode'] = $Explode.IsPresent
-                }
+            if ($AllowReserved.IsPresent) {
+                $prop['allowReserved'] = $AllowReserved.IsPresent
+            }
 
-                if ($AllowEmptyValue.IsPresent ) {
-                    $prop['allowEmptyValue'] = $AllowEmptyValue.IsPresent
-                }
-
-                if ($AllowReserved.IsPresent) {
-                    $prop['allowReserved'] = $AllowReserved.IsPresent
-                }
-
+        }
+    }
+    elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
+        # return a reference
+        Test-PodeOAComponentInternal -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
+        $prop = [ordered]@{
+            '$ref' = "#/components/parameters/$Reference"
+        }
+        foreach ($tag in $DefinitionTag) {
+            if ($PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters.$Reference.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Reference -Append
             }
         }
-        elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
-            # return a reference
-            Test-PodeOAComponentInternal -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
-            $prop = [ordered]@{
-                '$ref' = "#/components/parameters/$Reference"
+    }
+    else {
+
+        if (!$Name ) {
+            if ($Property.name) {
+                $Name = $Property.name
             }
-            foreach ($tag in $DefinitionTag) {
-                if ($PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters.$Reference.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-                    Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Reference -Append
+            else {
+                throw 'Parameter requires a Name'
+            }
+        }
+        if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders -and $Name ) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value  $Name  -Append
+        }
+
+        # build the base parameter
+        $prop = [ordered]@{
+            in   = $In.ToLowerInvariant()
+            name = $Name
+        }
+        $sch = [ordered]@{}
+        if ($Property.array) {
+            $sch.type = 'array'
+            $sch.items = [ordered]@{
+                type = $Property.type
+            }
+            if ($Property.format) {
+                $sch.items.format = $Property.format
+            }
+        }
+        else {
+            $sch.type = $Property.type
+            if ($Property.format) {
+                $sch.format = $Property.format
+            }
+        }
+        if ($ContentType) {
+            if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
+                throw "Invalid content-type found for schema: $($type)"
+            }
+            $prop.content = [ordered]@{
+                $ContentType = [ordered] @{
+                    schema = $sch
                 }
             }
         }
         else {
+            $prop.schema = $sch
+        }
 
-            if (!$Name ) {
-                if ($Property.name) {
-                    $Name = $Property.name
+        if ($Example -and $Examples) {
+            throw '-Example and -Examples are mutually exclusive'
+        }
+        if ($AllowEmptyValue.IsPresent ) {
+            $prop['allowEmptyValue'] = $AllowEmptyValue.IsPresent
+        }
+
+        if ($Description ) {
+            $prop.description = $Description
+        }
+        elseif ($Property.description) {
+            $prop.description = $Property.description
+        }
+
+        if ($Required.IsPresent ) {
+            $prop.required = $Required.IsPresent
+        }
+        elseif ($Property.required) {
+            $prop.required = $Property.required
+        }
+
+        if ($Deprecated.IsPresent ) {
+            $prop.deprecated = $Deprecated.IsPresent
+        }
+        elseif ($Property.deprecated) {
+            $prop.deprecated = $Property.deprecated
+        }
+
+        if (!$ContentType) {
+            if ($Style) {
+                switch ($in.ToLower()) {
+                    'path' {
+                        if (@('Simple', 'Label', 'Matrix' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'query' {
+                        if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'header' {
+                        if (@('Simple' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                    'cookie' {
+                        if (@('Form' ) -inotcontains $Style) {
+                            throw "OpenApi request Style cannot be $Style for a $in parameter"
+                        }
+                        break
+                    }
+                }
+                $prop['style'] = $Style.Substring(0, 1).ToLower() + $Style.Substring(1)
+            }
+
+            if ($Explode.IsPresent ) {
+                $prop['explode'] = $Explode.IsPresent
+            }
+
+            if ($AllowReserved.IsPresent) {
+                $prop['allowReserved'] = $AllowReserved.IsPresent
+            }
+
+            if ($Example ) {
+                $prop['example'] = $Example
+            }
+            elseif ($Examples) {
+                $prop['examples'] = $Examples
+            }
+
+            if ($Property.default -and !$prop.required ) {
+                $prop.schema['default'] = $Property.default
+            }
+
+            if ($Property.enum) {
+                if ($Property.array) {
+                    $prop.schema.items['enum'] = $Property.enum
                 }
                 else {
-                    throw 'Parameter requires a Name'
-                }
-            }
-            if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders -and $Name ) {
-                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value  $Name  -Append
-            }
-
-            # build the base parameter
-            $prop = [ordered]@{
-                in   = $In.ToLowerInvariant()
-                name = $Name
-            }
-            $sch = [ordered]@{}
-            if ($Property.array) {
-                $sch.type = 'array'
-                $sch.items = [ordered]@{
-                    type = $Property.type
-                }
-                if ($Property.format) {
-                    $sch.items.format = $Property.format
-                }
-            }
-            else {
-                $sch.type = $Property.type
-                if ($Property.format) {
-                    $sch.format = $Property.format
-                }
-            }
-            if ($ContentType) {
-                if ($ContentType -inotmatch '^[\w-]+\/[\w\.\+-]+$') {
-                    throw "Invalid content-type found for schema: $($type)"
-                }
-                $prop.content = [ordered]@{
-                    $ContentType = [ordered] @{
-                        schema = $sch
-                    }
-                }
-            }
-            else {
-                $prop.schema = $sch
-            }
-
-            if ($Example -and $Examples) {
-                throw '-Example and -Examples are mutually exclusive'
-            }
-            if ($AllowEmptyValue.IsPresent ) {
-                $prop['allowEmptyValue'] = $AllowEmptyValue.IsPresent
-            }
-
-            if ($Description ) {
-                $prop.description = $Description
-            }
-            elseif ($Property.description) {
-                $prop.description = $Property.description
-            }
-
-            if ($Required.IsPresent ) {
-                $prop.required = $Required.IsPresent
-            }
-            elseif ($Property.required) {
-                $prop.required = $Property.required
-            }
-
-            if ($Deprecated.IsPresent ) {
-                $prop.deprecated = $Deprecated.IsPresent
-            }
-            elseif ($Property.deprecated) {
-                $prop.deprecated = $Property.deprecated
-            }
-
-            if (!$ContentType) {
-                if ($Style) {
-                    switch ($in.ToLower()) {
-                        'path' {
-                            if (@('Simple', 'Label', 'Matrix' ) -inotcontains $Style) {
-                                throw "OpenApi request Style cannot be $Style for a $in parameter"
-                            }
-                            break
-                        }
-                        'query' {
-                            if (@('Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' ) -inotcontains $Style) {
-                                throw "OpenApi request Style cannot be $Style for a $in parameter"
-                            }
-                            break
-                        }
-                        'header' {
-                            if (@('Simple' ) -inotcontains $Style) {
-                                throw "OpenApi request Style cannot be $Style for a $in parameter"
-                            }
-                            break
-                        }
-                        'cookie' {
-                            if (@('Form' ) -inotcontains $Style) {
-                                throw "OpenApi request Style cannot be $Style for a $in parameter"
-                            }
-                            break
-                        }
-                    }
-                    $prop['style'] = $Style.Substring(0, 1).ToLower() + $Style.Substring(1)
-                }
-
-                if ($Explode.IsPresent ) {
-                    $prop['explode'] = $Explode.IsPresent
-                }
-
-                if ($AllowReserved.IsPresent) {
-                    $prop['allowReserved'] = $AllowReserved.IsPresent
-                }
-
-                if ($Example ) {
-                    $prop['example'] = $Example
-                }
-                elseif ($Examples) {
-                    $prop['examples'] = $Examples
-                }
-
-                if ($Property.default -and !$prop.required ) {
-                    $prop.schema['default'] = $Property.default
-                }
-
-                if ($Property.enum) {
-                    if ($Property.array) {
-                        $prop.schema.items['enum'] = $Property.enum
-                    }
-                    else {
-                        $prop.schema['enum'] = $Property.enum
-                    }
-                }
-            }
-            else {
-                if ($Example ) {
-                    $prop.content.$ContentType.example = $Example
-                }
-                elseif ($Examples) {
-                    $prop.content.$ContentType.examples = $Examples
+                    $prop.schema['enum'] = $Property.enum
                 }
             }
         }
-
-        if ($In -ieq 'Path' -and !$prop.required ) {
-            Throw "If the parameter location is 'Path', the switch parameter `-Required` is required"
+        else {
+            if ($Example ) {
+                $prop.content.$ContentType.example = $Example
+            }
+            elseif ($Examples) {
+                $prop.content.$ContentType.examples = $Examples
+            }
         }
     }
-    end {
-        return $prop
+
+    if ($In -ieq 'Path' -and !$prop.required ) {
+        Throw "If the parameter location is 'Path', the switch parameter `-Required` is required"
     }
+
+    return $prop
 }
 
 <#
@@ -1570,47 +1555,44 @@ function Set-PodeOARouteInfo {
         [string[]]
         $DefinitionTag
     )
-    begin {
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    }
-    process {
-        foreach ($r in @($Route)) {
 
-            $r.OpenApi.DefinitionTag = $DefinitionTag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-            if ($Summary) {
-                $r.OpenApi.Summary = $Summary
-            }
-            if ($Description) {
-                $r.OpenApi.Description = $Description
-            }
-            if ($OperationId) {
-                foreach ($tag in $DefinitionTag) {
-                    if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
-                        throw "OperationID:$OperationId has to be unique"
-                    }
-                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId += $OperationId
+    foreach ($r in @($Route)) {
+
+        $r.OpenApi.DefinitionTag = $DefinitionTag
+
+        if ($Summary) {
+            $r.OpenApi.Summary = $Summary
+        }
+        if ($Description) {
+            $r.OpenApi.Description = $Description
+        }
+        if ($OperationId) {
+            foreach ($tag in $DefinitionTag) {
+                if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
+                    throw "OperationID:$OperationId has to be unique"
                 }
-                $r.OpenApi.OperationId = $OperationId
+                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId += $OperationId
             }
-            if ($Tags) {
-                $r.OpenApi.Tags = $Tags
-            }
+            $r.OpenApi.OperationId = $OperationId
+        }
+        if ($Tags) {
+            $r.OpenApi.Tags = $Tags
+        }
 
-            if ($ExternalDocs) {
-                $r.OpenApi.ExternalDocs = $ExternalDoc
-            }
+        if ($ExternalDocs) {
+            $r.OpenApi.ExternalDocs = $ExternalDoc
+        }
 
-            $r.OpenApi.Swagger = $true
-            if ($Deprecated.IsPresent) {
-                $r.OpenApi.Deprecated = $Deprecated.IsPresent
-            }
+        $r.OpenApi.Swagger = $true
+        if ($Deprecated.IsPresent) {
+            $r.OpenApi.Deprecated = $Deprecated.IsPresent
         }
     }
-    end {
-        if ($PassThru) {
-            return $Route
-        }
+
+    if ($PassThru) {
+        return $Route
     }
 }
 
@@ -1994,24 +1976,22 @@ function Add-PodeOAExternalDoc {
         [string[]]
         $DefinitionTag
     )
-    begin {
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    }
 
-    process {
-        foreach ($tag in $DefinitionTag) {
-            if ($PSCmdlet.ParameterSetName -ieq 'NewRef') {
-                $param = [ordered]@{url = $Url }
-                if ($Description) {
-                    $param.description = $Description
-                }
-                $PodeContext.Server.OpenAPI.Definitions[$tag].externalDocs = $param
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+    foreach ($tag in $DefinitionTag) {
+        if ($PSCmdlet.ParameterSetName -ieq 'NewRef') {
+            $param = [ordered]@{url = $Url }
+            if ($Description) {
+                $param.description = $Description
             }
-            else {
-                $PodeContext.Server.OpenAPI.Definitions[$tag].externalDocs = $ExternalDoc
-            }
+            $PodeContext.Server.OpenAPI.Definitions[$tag].externalDocs = $param
+        }
+        else {
+            $PodeContext.Server.OpenAPI.Definitions[$tag].externalDocs = $ExternalDoc
         }
     }
+
 }
 
 
@@ -2611,39 +2591,34 @@ function Add-PodeOACallBack {
         [string[]]
         $DefinitionTag
     )
-    begin {
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    }
 
-    process {
-        foreach ($r in @($Route)) {
-            foreach ($tag in $DefinitionTag) {
-                if ($Reference) {
-                    Test-PodeOAComponentInternal -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
-                    if (!$Name) {
-                        $Name = $Reference
-                    }
-                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
-                        $r.OpenApi.CallBacks[$tag] = [ordered]@{}
-                    }
-                    $r.OpenApi.CallBacks[$tag].$Name = @{
-                        '$ref' = "#/components/callbacks/$Reference"
-                    }
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+    foreach ($r in @($Route)) {
+        foreach ($tag in $DefinitionTag) {
+            if ($Reference) {
+                Test-PodeOAComponentInternal -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
+                if (!$Name) {
+                    $Name = $Reference
                 }
-                else {
-                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
-                        $r.OpenApi.CallBacks[$tag] = [ordered]@{}
-                    }
-                    $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
+                if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                    $r.OpenApi.CallBacks[$tag] = [ordered]@{}
                 }
+                $r.OpenApi.CallBacks[$tag].$Name = @{
+                    '$ref' = "#/components/callbacks/$Reference"
+                }
+            }
+            else {
+                if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                    $r.OpenApi.CallBacks[$tag] = [ordered]@{}
+                }
+                $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
             }
         }
     }
 
-    end {
-        if ($PassThru) {
-            return $Route
-        }
+    if ($PassThru) {
+        return $Route
     }
 }
 
@@ -3196,57 +3171,53 @@ function Add-PodeOAExternalRoute {
         [string[]]
         $DefinitionTag
     )
-    begin {
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    }
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    process {
-        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-            'builtin' {
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'builtin' {
 
-                # ensure the route has appropriate slashes
-                $Path = Update-PodeRouteSlashes -Path $Path
-                $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-                $Path = Resolve-PodePlaceholders -Path $Path
-                $extRoute = @{
-                    Method  = $Method.ToLower()
-                    Path    = $Path
-                    Local   = $false
-                    OpenApi = @{
-                        Path           = $OpenApiPath
-                        Responses      = $null
-                        Parameters     = $null
-                        RequestBody    = $null
-                        callbacks      = [ordered]@{}
-                        Authentication = @()
-                        Servers        = $Servers
-                        DefinitionTag  = $DefinitionTag
-                    }
-                }
-                foreach ($tag in $DefinitionTag) {
-                    #add the default OpenApi responses
-                    if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
-                        $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
-                    }
-                    if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
-                        $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = @{}
-                    }
-
-                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
-                }
-
-                if ($PassThru) {
-                    return $extRoute
+            # ensure the route has appropriate slashes
+            $Path = Update-PodeRouteSlashes -Path $Path
+            $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+            $Path = Resolve-PodePlaceholders -Path $Path
+            $extRoute = @{
+                Method  = $Method.ToLower()
+                Path    = $Path
+                Local   = $false
+                OpenApi = @{
+                    Path           = $OpenApiPath
+                    Responses      = $null
+                    Parameters     = $null
+                    RequestBody    = $null
+                    callbacks      = [ordered]@{}
+                    Authentication = @()
+                    Servers        = $Servers
+                    DefinitionTag  = $DefinitionTag
                 }
             }
+            foreach ($tag in $DefinitionTag) {
+                #add the default OpenApi responses
+                if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
+                    $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
+                }
+                if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = @{}
+                }
 
-            'pipeline' {
-                foreach ($r in @($Route)) {
-                    $r.OpenApi.Servers = $Servers
-                }
-                if ($PassThru) {
-                    return $Route
-                }
+                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
+            }
+
+            if ($PassThru) {
+                return $extRoute
+            }
+        }
+
+        'pipeline' {
+            foreach ($r in @($Route)) {
+                $r.OpenApi.Servers = $Servers
+            }
+            if ($PassThru) {
+                return $Route
             }
         }
     }
