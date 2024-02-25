@@ -538,7 +538,10 @@ One or more optional Scopes that will be authorised to access this Route, when u
 One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER FileBrowser
-When supplied, If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+If supplied, when the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
+.PARAMETER RedirectToDefault
+If supplied, the user will be redirected to the default page if found instead of the page being rendered as the folder path.
 
 .EXAMPLE
 Add-PodeStaticRoute -Path '/assets' -Source './assets'
@@ -548,6 +551,9 @@ Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html')
 
 .EXAMPLE
 Add-PodeStaticRoute -Path '/installers' -Source './exes' -DownloadOnly
+
+.EXAMPLE
+Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html') -RedirectToDefault
 #>
 function Add-PodeStaticRoute {
     [CmdletBinding()]
@@ -625,7 +631,10 @@ function Add-PodeStaticRoute {
         $FileBrowser,
 
         [switch]
-        $PassThru
+        $PassThru,
+
+        [switch]
+        $RedirectToDefault
     )
 
     # check if we have any route group info defined
@@ -680,6 +689,10 @@ function Add-PodeStaticRoute {
 
         if ($RouteGroup.FileBrowser) {
             $FileBrowser = $RouteGroup.FileBrowser
+        }
+
+        if ($RouteGroup.RedirectToDefault) {
+            $RedirectToDefault = $RouteGroup.RedirectToDefault
         }
 
         if ($RouteGroup.IfExists -ine 'default') {
@@ -771,6 +784,10 @@ function Add-PodeStaticRoute {
         $Defaults = Get-PodeStaticRouteDefaults
     }
 
+    if (!$RedirectToDefault) {
+        $RedirectToDefault = $PodeContext.Server.Web.Static.RedirectToDefault
+    }
+
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
@@ -815,22 +832,23 @@ function Add-PodeStaticRoute {
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
             @{
-                Source           = $Source
-                Path             = $Path
+                Source            = $Source
+                Path              = $Path
                 Pattern          = ($origPath.Replace('/*/', '/*?/')) -replace '([:*][^/]+)', '.*?'
-                Method           = $Method
-                Defaults         = $Defaults
-                Middleware       = $Middleware
-                Authentication   = $Authentication
-                Access           = $Access
-                AccessMeta       = @{
+                Method            = $Method
+                Defaults          = $Defaults
+                RedirectToDefault = $RedirectToDefault
+                Middleware        = $Middleware
+                Authentication    = $Authentication
+                Access            = $Access
+                AccessMeta        = @{
                     Role   = $Role
                     Group  = $Group
                     Scope  = $Scope
                     User   = $User
                     Custom = $CustomAccess
                 }
-                Endpoint         = @{
+                Endpoint          = @{
                     Protocol = $_endpoint.Protocol
                     Address  = $_endpoint.Address.Trim()
                     Name     = $_endpoint.Name
@@ -1298,6 +1316,9 @@ One or more optional Scopes that will be authorised to access this Route, when u
 .PARAMETER User
 One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
+.PARAMETER RedirectToDefault
+If supplied, the user will be redirected to the default page if found instead of the page being rendered as the folder path.
+
 .EXAMPLE
 Add-PodeStaticRouteGroup -Path '/static' -Routes { Add-PodeStaticRoute -Path '/images' -Etc }
 #>
@@ -1378,7 +1399,10 @@ function Add-PodeStaticRouteGroup {
         $FileBrowser,
 
         [switch]
-        $DownloadOnly
+        $DownloadOnly,
+
+        [switch]
+        $RedirectToDefault
     )
 
     if (Test-PodeIsEmpty $Routes) {
@@ -1446,6 +1470,10 @@ function Add-PodeStaticRouteGroup {
             $FileBrowser = $RouteGroup.FileBrowser
         }
 
+        if ($RouteGroup.RedirectToDefault) {
+            $RedirectToDefault = $RouteGroup.RedirectToDefault
+        }
+
         if ($RouteGroup.IfExists -ine 'default') {
             $IfExists = $RouteGroup.IfExists
         }
@@ -1472,21 +1500,22 @@ function Add-PodeStaticRouteGroup {
     }
 
     $RouteGroup = @{
-        Path             = $Path
-        Source           = $Source
-        Middleware       = $Middleware
-        EndpointName     = $EndpointName
-        ContentType      = $ContentType
-        TransferEncoding = $TransferEncoding
-        Defaults         = $Defaults
-        ErrorContentType = $ErrorContentType
-        Authentication   = $Authentication
-        Access           = $Access
-        AllowAnon        = $AllowAnon
-        DownloadOnly     = $DownloadOnly
+        Path              = $Path
+        Source            = $Source
+        Middleware        = $Middleware
+        EndpointName      = $EndpointName
+        ContentType       = $ContentType
+        TransferEncoding  = $TransferEncoding
+        Defaults          = $Defaults
+        RedirectToDefault = $RedirectToDefault
+        ErrorContentType  = $ErrorContentType
+        Authentication    = $Authentication
+        Access            = $Access
+        AllowAnon         = $AllowAnon
+        DownloadOnly      = $DownloadOnly
         FileBrowser      = $FileBrowser
-        IfExists         = $IfExists
-        AccessMeta       = @{
+        IfExists          = $IfExists
+        AccessMeta        = @{
             Role   = $Role
             Group  = $Group
             Scope  = $Scope

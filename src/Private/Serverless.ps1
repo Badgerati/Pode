@@ -86,6 +86,10 @@ function Start-PodeAzFuncServer {
                         if ($WebEvent.StaticContent.IsDownload) {
                             Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name -FileBrowser:$fileBrowser
                         }
+                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
+                            $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
+                            Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
+                        }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable
                             Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser -RootPath $WebEvent.StaticContent.root
@@ -195,6 +199,10 @@ function Start-PodeAwsLambdaServer {
                         if ($WebEvent.StaticContent.IsDownload) {
                             Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser `
                                 -RootPath $WebEvent.StaticContent.Root
+                        }
+                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
+                            $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
+                            Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable

@@ -843,8 +843,9 @@ function Set-PodeWebConfiguration {
     # setup the main web config
     $Context.Server.Web = @{
         Static           = @{
-            Defaults = $Configuration.Static.Defaults
-            Cache    = @{
+            Defaults          = $Configuration.Static.Defaults
+            RedirectToDefault = [bool]$Configuration.Static.RedirectToDefault
+            Cache             = @{
                 Enabled = [bool]$Configuration.Static.Cache.Enable
                 MaxAge  = [int](Protect-PodeValue -Value $Configuration.Static.Cache.MaxAge -Default 3600)
                 Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.Static.Cache.Include) -NotSlashes)

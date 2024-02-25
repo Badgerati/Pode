@@ -61,19 +61,19 @@ function Find-PodeRoute {
 
     # if we have a perfect match for the route, return it if the protocol is right
     if (!$isStatic) {
-        $found = Get-PodeRouteByUrl -Routes $_method[$Path] -EndpointName $EndpointName -Path $Path
+        $found = Get-PodeRouteByUrl -Routes $_method[$Path] -EndpointName $EndpointName  -Path $Path
         if ($null -ne $found) {
             return $found
         }
     }
 
+    # otherwise, match the path to routes on regex (first match only)
     $paths = @($_method.Keys)
     if ($isStatic) {
         [array]::Sort($paths)
         [array]::Reverse($paths)
     }
 
-    # otherwise, match the path to routes on regex (first match only)
     $valid = @(foreach ($key in $paths) {
             if ($Path -imatch "^$($key)$") {
                 $key
@@ -142,6 +142,8 @@ function Find-PodeStaticRoute {
     $found = Find-PodeRoute -Method 'static' -Path $Path -EndpointName $EndpointName
     $download = ([bool]$found.Download)
     $source = $null
+    $isDefault = $false
+    $redirectToDefault = ([bool]$found.RedirectToDefault)
 
     # if we have a defined static route, use that
     if ($null -ne $found) {
@@ -158,7 +160,26 @@ function Find-PodeStaticRoute {
         }
 
         # if there's no file, we need to check defaults
-        if ( !$found.Download -and $fileInfo.PSIsContainer ) {
+        if (!$found.Download -and !(Test-PodePathIsFile $file) -and (Get-PodeCount @($found.Defaults)) -gt 0) {
+            if ((Get-PodeCount @($found.Defaults)) -eq 1) {
+                $file = [System.IO.Path]::Combine($file, @($found.Defaults)[0])
+                $isDefault = $true
+            }
+            else {
+                foreach ($def in $found.Defaults) {
+                    if (Test-PodePath ([System.IO.Path]::Combine($found.Source, $def)) -NoStatus) {
+                        $file = [System.IO.Path]::Combine($file, $def)
+                        $isDefault = $true
+                        break
+                    }
+                }
+            }
+        }
+
+        $source = [System.IO.Path]::Combine($found.Source, $file)
+
+        #Alternative code
+        <#if ( !$found.Download -and $fileInfo.PSIsContainer ) {
             foreach ($def in $found.Defaults) {
                 $combine = ([System.IO.Path]::Combine($found.Source, $file, $def))
                 if (Test-PodePath -Path $combine -NoStatus) {
@@ -167,9 +188,10 @@ function Find-PodeStaticRoute {
                 }
             }
         }
+
         if ($null -eq $source) {
             $source = [System.IO.Path]::Combine($found.Source, $file)
-        }
+        }#>
     }
 
     # check public, if flagged
@@ -177,6 +199,8 @@ function Find-PodeStaticRoute {
         $source = Find-PodePublicRoute -Path $Path
         $download = $false
         $found = $null
+        $isDefault = $false
+        $redirectToDefault = $false
     }
 
     # return nothing if no source
@@ -193,12 +217,20 @@ function Find-PodeStaticRoute {
     }
 
     # return the route details
+    if ($redirectToDefault -and $isDefault) {
+        $redirectToDefault = $true
+    }
+    else {
+        $redirectToDefault = $false
+    }
+
     return @{
         Content = @{
-            Source     = $source
-            IsDownload = $download
-            IsCachable = (Test-PodeRouteValidForCaching -Path $Path)
+            Source            = $source
+            IsDownload        = $download
+            IsCachable        = (Test-PodeRouteValidForCaching -Path $Path)
             Root       = $root
+            RedirectToDefault = $redirectToDefault
         }
         Route   = $found
     }
