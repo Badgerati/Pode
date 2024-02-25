@@ -402,7 +402,6 @@ function Add-PodeRoute {
         $methodRoutes = @(foreach ($_endpoint in $endpoints) {
                 @{
                     Logic            = $ScriptBlock
-                    Pattern          = ($origPath.Replace('/*/', '/*?/')) -replace '([:*][^/]+)', '.*?'
                     UsingVariables   = $usingVars
                     Middleware       = $Middleware
                     Authentication   = $Authentication
@@ -834,7 +833,6 @@ function Add-PodeStaticRoute {
             @{
                 Source            = $Source
                 Path              = $Path
-                Pattern          = ($origPath.Replace('/*/', '/*?/')) -replace '([:*][^/]+)', '.*?'
                 Method            = $Method
                 Defaults          = $Defaults
                 RedirectToDefault = $RedirectToDefault
@@ -853,13 +851,13 @@ function Add-PodeStaticRoute {
                     Address  = $_endpoint.Address.Trim()
                     Name     = $_endpoint.Name
                 }
-                ContentType      = $ContentType
-                TransferEncoding = $TransferEncoding
-                ErrorType        = $ErrorContentType
-                Download         = $DownloadOnly
-                IsStatic         = $true
-                FileBrowser      = $FileBrowser.isPresent
-                Metrics          = @{
+                ContentType       = $ContentType
+                TransferEncoding  = $TransferEncoding
+                ErrorType         = $ErrorContentType
+                Download          = $DownloadOnly
+                IsStatic          = $true
+                FileBrowser       = $FileBrowser.isPresent
+                Metrics           = @{
                     Requests = @{
                         Total       = 0
                         StatusCodes = @{}
@@ -1010,7 +1008,6 @@ function Add-PodeSignalRoute {
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
             @{
                 Logic          = $ScriptBlock
-                Pattern        = ($origPath.Replace('/*/', '/*?/')) -replace '([:*][^/]+)', '.*?'
                 UsingVariables = $usingVars
                 Endpoint       = @{
                     Protocol = $_endpoint.Protocol
@@ -1513,7 +1510,7 @@ function Add-PodeStaticRouteGroup {
         Access            = $Access
         AllowAnon         = $AllowAnon
         DownloadOnly      = $DownloadOnly
-        FileBrowser      = $FileBrowser
+        FileBrowser       = $FileBrowser
         IfExists          = $IfExists
         AccessMeta        = @{
             Role   = $Role

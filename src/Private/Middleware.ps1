@@ -200,7 +200,7 @@ function Get-PodeRouteValidateMiddleware {
         Name  = '__pode_mw_route_validation__'
         Logic = {
             # check if the path is static route first, then check the main routes
-            $route = Find-PodeStaticRoute -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name -RequestUrl $WebEvent.Request.Url
+            $route = Find-PodeStaticRoute -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
             if ($null -eq $route) {
                 $route = Find-PodeRoute -Method $WebEvent.Method -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name -CheckWildMethod
             }

@@ -61,7 +61,7 @@ function Find-PodeRoute {
 
     # if we have a perfect match for the route, return it if the protocol is right
     if (!$isStatic) {
-        $found = Get-PodeRouteByUrl -Routes $_method[$Path] -EndpointName $EndpointName  -Path $Path
+        $found = Get-PodeRouteByUrl -Routes $_method[$Path] -EndpointName $EndpointName
         if ($null -ne $found) {
             return $found
         }
@@ -86,7 +86,7 @@ function Find-PodeRoute {
     }
 
     # is the route valid for any protocols/endpoints?
-    $found = Get-PodeRouteByUrl -Routes $_method[$valid] -EndpointName $EndpointName -Path $Path
+    $found = Get-PodeRouteByUrl -Routes $_method[$valid] -EndpointName $EndpointName
     if ($null -eq $found) {
         return $null
     }
@@ -132,10 +132,7 @@ function Find-PodeStaticRoute {
         $EndpointName,
 
         [switch]
-        $CheckPublic,
-
-        [string]
-        $RequestUrl
+        $CheckPublic
     )
 
     # attempt to get a static route for the path
@@ -151,16 +148,15 @@ function Find-PodeStaticRoute {
         $file = [string]::Empty
         if ($Path -imatch "$($found.Path)$") {
             $file = (Protect-PodeValue -Value $Matches['file'] -Default ([string]::Empty))
-        }
-        $fileInfo = Get-Item ([System.IO.Path]::Combine($found.Source, $file)) -ErrorAction Continue
-
+        } 
+        $fileInfo = Get-Item -Path ([System.IO.Path]::Combine($found.Source, $file)) -Force -ErrorAction Continue
         #if $file doesn't exist return $null
         if ($null -eq $fileInfo) {
             return $null
         }
 
         # if there's no file, we need to check defaults
-        if (!$found.Download -and !(Test-PodePathIsFile $file) -and (Get-PodeCount @($found.Defaults)) -gt 0) {
+        if (!$found.Download -and $fileInfo.PSIsContainer -and (Get-PodeCount @($found.Defaults)) -gt 0) {
             if ((Get-PodeCount @($found.Defaults)) -eq 1) {
                 $file = [System.IO.Path]::Combine($file, @($found.Defaults)[0])
                 $isDefault = $true
@@ -178,20 +174,6 @@ function Find-PodeStaticRoute {
 
         $source = [System.IO.Path]::Combine($found.Source, $file)
 
-        #Alternative code
-        <#if ( !$found.Download -and $fileInfo.PSIsContainer ) {
-            foreach ($def in $found.Defaults) {
-                $combine = ([System.IO.Path]::Combine($found.Source, $file, $def))
-                if (Test-PodePath -Path $combine -NoStatus) {
-                    $source = $combine
-                    break
-                }
-            }
-        }
-
-        if ($null -eq $source) {
-            $source = [System.IO.Path]::Combine($found.Source, $file)
-        }#>
     }
 
     # check public, if flagged
@@ -208,14 +190,6 @@ function Find-PodeStaticRoute {
         return $null
     }
 
-    # deal with Route Path containing /*/
-    if ($RequestUrl) {
-        $root = Get-PodeUrlPart -Pattern $found.Pattern -Url $RequestUrl
-    }
-    else {
-        $root = $found.Pattern
-    }
-
     # return the route details
     if ($redirectToDefault -and $isDefault) {
         $redirectToDefault = $true
@@ -229,7 +203,6 @@ function Find-PodeStaticRoute {
             Source            = $source
             IsDownload        = $download
             IsCachable        = (Test-PodeRouteValidForCaching -Path $Path)
-            Root       = $root
             RedirectToDefault = $redirectToDefault
         }
         Route   = $found
@@ -292,9 +265,6 @@ An array of hashtable objects, each representing a route with potentially define
 .PARAMETER EndpointName
 The name of the endpoint to search for within the route definitions. This parameter is optional.
 
-.PARAMETER Path
-The path to search for within the route definitions. This parameter is optional and is used to match routes based on their Root property.
-
 .EXAMPLE
 $routes = @(
     @{ Root = '/api'; Endpoint = @{ Name = 'GetData' } },
@@ -324,11 +294,7 @@ function Get-PodeRouteByUrl {
 
         [Parameter()]
         [string]
-        $EndpointName,
-
-        [Parameter()]
-        [string]
-        $Path
+        $EndpointName
     )
 
     # Return null immediately if routes are not defined or empty
@@ -339,32 +305,16 @@ function Get-PodeRouteByUrl {
     # Handle case when no specific endpoint name is provided
     if ([string]::IsNullOrWhiteSpace($EndpointName)) {
         foreach ($route in $Routes) {
-            if ($Path) {
-                # Search for a route that matches the provided path
-                if ($Path -match $route.Pattern) {
-                    return $route
-                }
-            }
-            else {
-                # Return the first route as a default if no path is specified
-                return $route
-            }
+            # Return the first route as a default if no path is specified
+            return $route
         }
     }
     else {
         # Handle case when an endpoint name is provided
         foreach ($route in $Routes) {
             if (  $route.Endpoint.Name -ieq $EndpointName) {
-                if ($Path) {
-                    # Search for a route that matches both the provided path and endpoint name
-                    if ($Path -match $route.Pattern) {
-                        return $route
-                    }
-                }
-                else {
-                    # Return the first route that matches the endpoint name as a default
-                    return $route
-                }
+                # Return the first route that matches the endpoint name as a default
+                return $route
             }
         }
     }
@@ -372,16 +322,8 @@ function Get-PodeRouteByUrl {
     # Last resort check only route with no endpoint name
     foreach ($route in $Routes) {
         if ([string]::IsNullOrWhiteSpace($route.Endpoint.Name)) {
-            if ($Path) {
-                # Search for a route that matches both the provided path and endpoint name
-                if ($Path -match $route.Pattern) {
-                    return $route
-                }
-            }
-            else {
-                # Return the first route that matches the endpoint name as a default
-                return $route
-            }
+            # Return the first route that matches the endpoint name as a default
+            return $route
         }
     }
 

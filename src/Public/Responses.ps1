@@ -321,10 +321,6 @@ Should the file's content be cached by browsers, or not?
 .PARAMETER FileBrowser
 If the path is a folder, instead of returning 404, will return A browsable content of the directory.
 
-.PARAMETER RootPath
-Optional. Specifies the root path to resolve the relative path against. If not provided, the server's root will be used.
-
-
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Files/Stuff.txt'
 
@@ -370,18 +366,14 @@ function Write-PodeFileResponse {
         $Cache,
 
         [switch]
-        $FileBrowser,
-
-        [Parameter()]
-        [string]
-        $RootPath = '/'
+        $FileBrowser
     )
 
     # resolve for relative path
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # Attempt to retrieve information about the path
-    $pathInfo = Get-Item -Path $Path -ErrorAction Continue
+    $pathInfo = Get-Item -Path $Path -force -ErrorAction Continue
 
     # Check if the path exists
     if ($null -eq $pathInfo) {
@@ -393,7 +385,7 @@ function Write-PodeFileResponse {
         if ( $pathInfo.PSIsContainer) {
             # If directory browsing is enabled, use the directory response function
             if ($FileBrowser.isPresent) {
-                Write-PodeDirectoryResponseInternal -RelativePath $Path -RootPath $RootPath
+                Write-PodeDirectoryResponseInternal -Path $Path
             }
             else {
                 # If browsing is not enabled, return a 404 error
@@ -440,7 +432,7 @@ function Write-PodeDirectoryResponse {
     $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
 
     if (Test-Path -Path $RelativePath -PathType Container) {
-        Write-PodeDirectoryResponseInternal -RelativePath $RelativePath
+        Write-PodeDirectoryResponseInternal -Path $RelativePath
     }
     else {
         Set-PodeResponseStatus -Code 404

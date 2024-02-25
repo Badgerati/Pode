@@ -213,8 +213,6 @@ serves the file directly.
 .PARAMETER RelativePath
 The relative path to the directory that should be displayed. This path is resolved and used to generate a list of contents.
 
-.PARAMETER RootPath
-The Root path that is the base for the relative path.
 
 .EXAMPLE
 # resolve for relative path
@@ -232,16 +230,12 @@ function Write-PodeDirectoryResponseInternal {
         [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
-        $RelativePath,
-
-        [Parameter()]
-        [string]
-        $RootPath
+        $Path
     )
-    # Retrieve the child items of the specified directory
-    $child = Get-ChildItem -Path $RelativePath
-    $pathSplit = $RelativePath.Split(':')
-    $leaf = $pathSplit[1]
+
+    # get leaf of current physical path, and set root path
+    $leaf = ($Path.Split(':')[1] -split '[\\/]+') -join '/'
+    $rootPath = $WebEvent.Path -ireplace "$($leaf)$", ''
 
     # Determine if the server is running in Windows mode or is running a varsion that support Linux
     # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.4#example-10-output-for-non-windows-operating-systems
@@ -250,26 +244,19 @@ function Write-PodeDirectoryResponseInternal {
     # Construct the HTML content for the file browser view
     $htmlContent = [System.Text.StringBuilder]::new()
 
+    $atoms = $WebEvent.Path -split '/'
+    $atoms = @(foreach ($atom in $atoms) {
+            if (![string]::IsNullOrEmpty($atom)) {
+                [uri]::EscapeDataString($atom)
+            }
+        })
+    $baseLink = "/$($atoms -join '/')"
+
     # Handle navigation to the parent directory (..)
-    if ($leaf -ne '\' -and $leaf -ne '/') {
-        $pathSegments = $leaf -split '[\\/]+'
-        $baseEncodedSegments = $pathSegments | ForEach-Object {
-            # Use [Uri]::EscapeDataString for encoding to ensure spaces are encoded as %20 and other special characters are properly encoded
-            [Uri]::EscapeDataString($_)
-        }
-        $baseLink = $baseEncodedSegments -join '/'
-        $Item = Get-Item '..'
-        if ($null -eq $RootPath -or $RootPath -eq '/') {
-            $ParentLink = $baseLink.TrimEnd('/').Substring(0, $baseLink.TrimEnd('/').LastIndexOf('/') + 1)
+    if ($leaf -ne '/') {
+        $ParentLink = $baseLink.Substring(0, $baseLink.LastIndexOf('/'))
+        $item = Get-Item '..'
 
-        }
-        else {
-            $baseLink = $RootPath + $baseLink
-            $ParentLink = $baseLink.TrimEnd('/').Substring(0, $baseLink.TrimEnd('/').LastIndexOf('/') + 1)
-
-        }
-
-        #  # Add the parent directory link
         if ($windowsMode) {
             $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder2-open'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
         }
@@ -277,29 +264,18 @@ function Write-PodeDirectoryResponseInternal {
             $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
         }
     }
-    else {
-        if ($null -eq $RootPath -or $RootPath -eq '/') {
-            $baseLink = ''
-        }
-        else {
-            $baseLink = $RootPath
-        }
-    }
-
-    if (!$baselink.EndsWith('/')) {
-        $baselink = "$baselink/"
-    }
-
+    # Retrieve the child items of the specified directory
+    $child = Get-ChildItem -Path $Path -Force
     foreach ($item in $child) {
+        $link = "$baseLink/$([uri]::EscapeDataString($item.Name))"
+
         if ($item.PSIsContainer) {
             $size = ''
             $icon = 'bi bi-folder2'
-            $link = "$baseLink$([uri]::EscapeDataString($item.Name))/"
         }
         else {
             $size = '{0:N2}KB' -f ($item.Length / 1KB)
             $icon = 'bi bi-file'
-            $link = "$baseLink$([uri]::EscapeDataString($item.Name))"
         }
 
         # Format each item as an HTML row
@@ -312,16 +288,17 @@ function Write-PodeDirectoryResponseInternal {
     }
 
     $Data = @{
-        rootPath    = $RootPath
-        path        = $leaf.Replace('\', '/')
-        windowsMode = $windowsMode.ToString().ToLower()
-        fileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
+        RootPath    = $RootPath
+        Path        = $leaf.Replace('\', '/')
+        WindowsMode = $windowsMode.ToString().ToLower()
+        FileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
     }
 
     $podeRoot = Get-PodeModuleMiscPath
     # Write the response
     Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
 }
+
 
 
 <#
@@ -382,8 +359,7 @@ function Write-PodeAttachmentResponseInternal {
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # Attempt to retrieve information about the path
-    $pathInfo = Get-Item -Path $Path -ErrorAction Continue
-
+    $pathInfo = Get-Item -Path $Path -force -ErrorAction Continue
     # Check if the path exists
     if ($null -eq $pathInfo) {
         #if not exist try with to find with public Route if exist
@@ -400,11 +376,11 @@ function Write-PodeAttachmentResponseInternal {
             return
         }
     }
-
     if ( $pathInfo.PSIsContainer) {
         # If directory browsing is enabled, use the directory response function
         if ($FileBrowser.isPresent) {
-            Write-PodeDirectoryResponseInternal -RelativePath $Path -RootPath $RootPath
+            #   Write-PodeDirectoryResponseInternal2 -RelativePath $Path -RootPath $RootPath
+            Write-PodeDirectoryResponseInternal -Path $Path #-RootPath $RootPath
             return
         }
         else {

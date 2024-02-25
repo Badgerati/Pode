@@ -795,7 +795,7 @@ An optional foreground colour.
 .PARAMETER NoNewLine
 Whether or not to write a new line.
 
-.PARAMETER ObjectContent
+.PARAMETER Explode
 Show the object content
 
 .PARAMETER ShowType
@@ -820,7 +820,7 @@ function Write-PodeHost {
 
         [Parameter( Mandatory = $true, ParameterSetName = 'object')]
         [switch]
-        $ObjectContent,
+        $Explode,
 
         [Parameter( Mandatory = $false, ParameterSetName = 'object')]
         [switch]
@@ -831,10 +831,10 @@ function Write-PodeHost {
         return
     }
 
-    if ($ObjectContent.IsPresent) {
+    if ($Explode.IsPresent) {
         $Object = $Object | Out-String
         if ($ShowType) {
-            $Object = "Type: $($Object.gettype())$Object"
+            $Object = "Type: $($Object.gettype())`n$Object"
         }
     }
 
