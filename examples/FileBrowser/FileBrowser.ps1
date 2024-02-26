@@ -59,8 +59,8 @@ Start-PodeServer -ScriptBlock {
 
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Default
 
-    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    #New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+   # New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # setup basic auth (base64> username:password in header)
     New-PodeAuthScheme -Basic -Realm 'Pode Static Page' | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
@@ -89,7 +89,7 @@ Start-PodeServer -ScriptBlock {
     }
     Add-PodeStaticRoute -Path '/nobrowsing' -Source $directoryPath
 
-    Add-PodeRoute -Method Get -Path '/attachment' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/attachment/*/test' -ScriptBlock {
         Set-PodeResponseAttachment -Path 'ruler.png'
     }
 }

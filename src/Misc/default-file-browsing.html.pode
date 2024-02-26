@@ -141,50 +141,63 @@
         document.getElementById('tableBody').innerHTML = tableContent;
     });
 
+function visualizePathSegments() {
+    const basePath = '$($Data.Path)'; // Your given URL path
+    const segments = basePath.split('/').filter(Boolean); // Split by '/' and remove any empty segments
+    const pathContainer = document.getElementById('pathContainer');
+    pathContainer.innerHTML = ''; // Clear previous content
 
-    function visualizePathSegments() {
-        const basePath = '$($Data.Path)'; // Your given URL path
-        const segments = basePath.split('/').filter(Boolean); // Split by '/' and remove any empty segments
-        const pathContainer = document.getElementById('pathContainer');
-        pathContainer.innerHTML = ''; // Clear previous content
+    // Create the Directory label as a span to keep it inline
+    const directoryLabel = document.createElement('span');
+    directoryLabel.textContent = 'Folder Path: ';
+    pathContainer.appendChild(directoryLabel); // Append the label to the container
 
-        // Create the Directory label as a span to keep it inline
-        const directoryLabel = document.createElement('span');
-        directoryLabel.textContent = 'Folder: ';
-        pathContainer.appendChild(directoryLabel); // Append the label to the container
+    // Make the root a clickable link and add a space after it
+    const rootPath = '$($Data.RootPath)/'; // Adjusted for correct root path
+    const rootLinkSpan = document.createElement('span'); // Create a span to hold the root link and the space
+    const rootLink = document.createElement('a');
+    rootLink.href = rootPath;
+    rootLink.textContent = '/'; // Display text for root
+    rootLinkSpan.appendChild(rootLink);
+    rootLinkSpan.innerHTML += ' '; // Add a space after the root link
+    pathContainer.appendChild(rootLinkSpan);
 
-        // Add initial '/' as a visual label before the first segment
-        const initialSlash = document.createElement('span');
-        initialSlash.textContent = '/';
-        initialSlash.classList.add('separator'); // Use for specific styling
-        pathContainer.appendChild(initialSlash);
+    segments.forEach((segment, index) => {
+        // Add a separator with spaces around it for better readability
+        if (index > 0) {
+            const separator = document.createElement('span');
+            separator.innerHTML = ' / '; // Added spaces around the separator
+            separator.classList.add('separator'); // Use for specific styling
+            pathContainer.appendChild(separator);
+        } else {
+            // For consistency, add a space before the first segment if there's no separator needed
+            const initialSpace = document.createElement('span');
+            initialSpace.innerHTML = ' ';
+            pathContainer.appendChild(initialSpace);
+        }
 
-        segments.forEach((segment, index) => {
-            let cumulativePath = '$($Data.RootPath)/' + segments.slice(0, index + 1).join('/');
+        let cumulativePath = rootPath + segments.slice(0, index + 1).join('/');
 
-            if (index < segments.length - 1) {
-                // Create a clickable link for this segment
-                const a = document.createElement('a');
-                a.href = cumulativePath; // Here, the href is the cumulative path
-                a.textContent = segment; // Set text to segment without '/'
-                pathContainer.appendChild(a);
+        if (index < segments.length - 1) {
+            // Create a clickable link for this segment
+            const a = document.createElement('a');
+            a.href = cumulativePath; // Here, the href is the cumulative path
+            a.textContent = segment; // Set text to segment
+            pathContainer.appendChild(a);
+            pathContainer.innerHTML += ' '; // Add a space after the segment link
+        } else {
+            // For the last segment, make it a label instead of a clickable link
+            const lastSegmentLabel = document.createElement('span');
+            lastSegmentLabel.textContent = segment; // Set text to the last segment
+            pathContainer.appendChild(lastSegmentLabel);
+        }
+    });
+}
 
-                // Add '/' as a label (not part of the link) after this segment
-                const separator = document.createElement('span');
-                separator.textContent = '/';
-                separator.classList.add('separator'); // Use for specific styling
-                pathContainer.appendChild(separator);
-            } else {
-                // For the last segment, make it a label instead of a clickable link
-                const lastSegmentLabel = document.createElement('span');
-                lastSegmentLabel.textContent = segment; // Set text to the last segment
-                pathContainer.appendChild(lastSegmentLabel);
-            }
-        });
-    }
+// Automatically visualize the path when the page loads
+window.onload = visualizePathSegments;
 
-    // Automatically visualize the path when the page loads
-    window.onload = visualizePathSegments;
+
 </script>
 
 <body style='color: white; '>

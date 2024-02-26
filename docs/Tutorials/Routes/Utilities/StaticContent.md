@@ -168,3 +168,18 @@ Start-PodeServer {
 ```
 
 When a static route is set as downloadable, then `-Defaults` and caching are not used.
+
+
+## File Browsing
+
+This feature allows the use of a static route as an HTML file browser. If you set the `-FileBrowser` switch on the  [`Add-PodeStaticRoute`] function, the route will show the folder content whenever it is invoked.
+
+```powershell
+Start-PodeServer -ScriptBlock {
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
+    Add-PodeStaticRoute -Path '/' -Source './content/assets' -FileBrowser
+    Add-PodeStaticRoute -Path '/download' -Source './content/newassets' -DownloadOnly -FileBrowser
+}
+```
+
+When used with `-Download,` the browser downloads any file selected instead of rendering. The folders are rendered and not downloaded.

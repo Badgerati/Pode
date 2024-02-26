@@ -832,9 +832,10 @@ function Write-PodeHost {
     }
 
     if ($Explode.IsPresent) {
+        $type = $Object.gettype()
         $Object = $Object | Out-String
         if ($ShowType) {
-            $Object = "Type: $($Object.gettype())`n$Object"
+            $Object = "Type: $type`n$Object"
         }
     }
 

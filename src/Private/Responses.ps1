@@ -233,70 +233,119 @@ function Write-PodeDirectoryResponseInternal {
         $Path
     )
 
-    # get leaf of current physical path, and set root path
-    $leaf = ($Path.Split(':')[1] -split '[\\/]+') -join '/'
-    $rootPath = $WebEvent.Path -ireplace "$($leaf)$", ''
+    try {
+        if ($WebEvent.Path -eq '/') {
+            $leaf = '/'
+            $rootPath = '/'
+        }
+        else {
+            # get leaf of current physical path, and set root path
+            $leaf = ($Path.Split(':')[1] -split '[\\/]+') -join '/'
+            $rootPath = $WebEvent.Path -ireplace "$($leaf)$", ''
+        }
 
-    # Determine if the server is running in Windows mode or is running a varsion that support Linux
-    # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.4#example-10-output-for-non-windows-operating-systems
-    $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
+        # Determine if the server is running in Windows mode or is running a varsion that support Linux
+        # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.4#example-10-output-for-non-windows-operating-systems
+        $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
 
-    # Construct the HTML content for the file browser view
-    $htmlContent = [System.Text.StringBuilder]::new()
+        # Construct the HTML content for the file browser view
+        $htmlContent = [System.Text.StringBuilder]::new()
 
-    $atoms = $WebEvent.Path -split '/'
-    $atoms = @(foreach ($atom in $atoms) {
-            if (![string]::IsNullOrEmpty($atom)) {
-                [uri]::EscapeDataString($atom)
+        $atoms = $WebEvent.Path -split '/'
+        $atoms = @(foreach ($atom in $atoms) {
+                if (![string]::IsNullOrEmpty($atom)) {
+                    [uri]::EscapeDataString($atom)
+                }
+            })
+        if ([string]::IsNullOrWhiteSpace($atoms)) {
+            $baseLink = ''
+        }
+        else {
+            $baseLink = "/$($atoms -join '/')"
+        }
+
+        # Handle navigation to the parent directory (..)
+        if ($leaf -ne '/') {
+            $ParentLink = $baseLink.Substring(0, $baseLink.LastIndexOf('/'))
+            if ([string]::IsNullOrWhiteSpace($ParentLink)) {
+                $ParentLink = '/'
             }
-        })
-    $baseLink = "/$($atoms -join '/')"
-
-    # Handle navigation to the parent directory (..)
-    if ($leaf -ne '/') {
-        $ParentLink = $baseLink.Substring(0, $baseLink.LastIndexOf('/'))
-        $item = Get-Item '..'
-
-        if ($windowsMode) {
-            $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder2-open'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
+            $item = Get-Item '..'
+            if ($windowsMode) {
+                $htmlContent.Append("<tr> <td class='mode'>")
+                $htmlContent.Append($item.Mode)
+            }
+            else {
+                $htmlContent.Append("<tr> <td class='unixMode'>")
+                $htmlContent.Append($item.UnixMode)
+                $htmlContent.Append("</td> <td class='user'>")
+                $htmlContent.Append($item.User)
+                $htmlContent.Append("</td> <td class='group'>")
+                $htmlContent.Append($item.Group)
+            }
+            $htmlContent.Append("</td> <td class='dateTime'>")
+            $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
+            $htmlContent.Append("</td> <td class='dateTime'>")
+            $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
+            $htmlContent.Append( "</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder2-open'></td> <td class='name'><a href='")
+            $htmlContent.Append($ParentLink)
+            $htmlContent.AppendLine("'>..</a></td> </tr>") 
         }
-        else {
-            $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder'></td> <td class='name'><a href='$ParentLink'>..</a></td> </tr>")
+        # Retrieve the child items of the specified directory
+        $child = Get-ChildItem -Path $Path -Force
+        foreach ($item in $child) {
+            $link = "$baseLink/$([uri]::EscapeDataString($item.Name))"
+            if ($item.PSIsContainer) {
+                $size = ''
+                $icon = 'bi bi-folder2'
+            }
+            else {
+                $size = '{0:N2}KB' -f ($item.Length / 1KB)
+                $icon = 'bi bi-file'
+            }
+
+            # Format each item as an HTML row
+            if ($windowsMode) {
+                $htmlContent.Append("<tr> <td class='mode'>")
+                $htmlContent.Append($item.Mode)
+            }
+            else {
+                $htmlContent.Append("<tr> <td class='unixMode'>")
+                $htmlContent.Append($item.UnixMode)
+                $htmlContent.Append("</td> <td class='user'>")
+                $htmlContent.Append($item.User)
+                $htmlContent.Append("</td> <td class='group'>")
+                $htmlContent.Append($item.Group)
+            }
+            $htmlContent.Append("</td> <td class='dateTime'>")
+            $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
+            $htmlContent.Append("</td> <td class='dateTime'>")
+            $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
+            $htmlContent.Append("</td> <td class='size'>")
+            $htmlContent.Append( $size)
+            $htmlContent.Append( "</td> <td class='icon'><i class='")
+            $htmlContent.Append( $icon)
+            $htmlContent.Append( "'></i></td> <td class='name'><a href='")
+            $htmlContent.Append( $link)
+            $htmlContent.Append( "'>")
+            $htmlContent.Append($item.Name )
+            $htmlContent.AppendLine('</a></td> </tr>' )
         }
+
+        $Data = @{
+            RootPath    = $RootPath
+            Path        = $leaf.Replace('\', '/')
+            WindowsMode = $windowsMode.ToString().ToLower()
+            FileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
+        }
+
+        $podeRoot = Get-PodeModuleMiscPath
+        # Write the response
+        Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
     }
-    # Retrieve the child items of the specified directory
-    $child = Get-ChildItem -Path $Path -Force
-    foreach ($item in $child) {
-        $link = "$baseLink/$([uri]::EscapeDataString($item.Name))"
-
-        if ($item.PSIsContainer) {
-            $size = ''
-            $icon = 'bi bi-folder2'
-        }
-        else {
-            $size = '{0:N2}KB' -f ($item.Length / 1KB)
-            $icon = 'bi bi-file'
-        }
-
-        # Format each item as an HTML row
-        if ($windowsMode) {
-            $htmlContent.AppendLine("<tr> <td class='mode'>$($item.Mode)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='icon'><i class='$icon'></i></td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
-        }
-        else {
-            $htmlContent.AppendLine("<tr> <td class='unixMode'>$($item.UnixMode)</td> <td class='user'>$($item.User)</td> <td class='group'>$($item.Group)</td> <td class='dateTime'>$($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='dateTime'>$($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))</td> <td class='size'>$size</td> <td class='icon'><i class='$icon'></i></td> <td class='name'><a href='$link'>$($item.Name)</a></td> </tr>")
-        }
+    catch {
+        write-podehost $_
     }
-
-    $Data = @{
-        RootPath    = $RootPath
-        Path        = $leaf.Replace('\', '/')
-        WindowsMode = $windowsMode.ToString().ToLower()
-        FileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
-    }
-
-    $podeRoot = Get-PodeModuleMiscPath
-    # Write the response
-    Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
 }
 
 
@@ -316,9 +365,6 @@ The MIME type of the file being served. This is validated against a pattern to e
 
 .PARAMETER FileBrowser
 A switch parameter that, when present, enables directory browsing. If the path points to a directory and this parameter is enabled, the function will list the directory's contents instead of returning a 404 error.
-
-.PARAMETER RootPath
-The root directory path used for resolving relative paths. Defaults to '/' if not specified.
 
 .EXAMPLE
 Write-PodeAttachmentResponseInternal -Path './files/document.pdf' -ContentType 'application/pdf'
@@ -347,11 +393,7 @@ function Write-PodeAttachmentResponseInternal {
 
         [Parameter()]
         [switch]
-        $FileBrowser,
-
-        [Parameter()]
-        [string]
-        $RootPath = '/'
+        $FileBrowser
 
     )
 
@@ -379,8 +421,7 @@ function Write-PodeAttachmentResponseInternal {
     if ( $pathInfo.PSIsContainer) {
         # If directory browsing is enabled, use the directory response function
         if ($FileBrowser.isPresent) {
-            #   Write-PodeDirectoryResponseInternal2 -RelativePath $Path -RootPath $RootPath
-            Write-PodeDirectoryResponseInternal -Path $Path #-RootPath $RootPath
+            Write-PodeDirectoryResponseInternal -Path $Path
             return
         }
         else {

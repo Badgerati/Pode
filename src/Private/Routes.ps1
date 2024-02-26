@@ -121,7 +121,42 @@ function Find-PodePublicRoute {
     return $source
 }
 
+
+<#
+.SYNOPSIS
+Finds a static route for a given path in a Pode web server application, with optional checks for public routes.
+
+.DESCRIPTION
+This function searches for a static route matching the specified path within a Pode web server application. It attempts to resolve the route to a physical file or directory and supports additional checks for public routes as a fallback option. The function returns a hashtable with route details, including whether the route is for a downloadable file, if it's cacheable, and whether it redirects to a default document.
+
+.PARAMETER Path
+The URL path for which to find a static route. This parameter is mandatory.
+
+.PARAMETER EndpointName
+Optional. Specifies the name of the endpoint to which the route may belong. If not provided, the function searches across all endpoints.
+
+.PARAMETER CheckPublic
+A switch parameter. If specified, the function also checks for the route in public routes as a fallback option.
+
+.EXAMPLE
+$staticRoute = Find-PodeStaticRoute -Path '/images/logo.png' -CheckPublic
+
+Searches for a static route for '/images/logo.png'. If not found, checks if a public route exists for the same path.
+
+.EXAMPLE
+$staticRoute = Find-PodeStaticRoute -Path '/css/style.css' -EndpointName 'WebUI'
+
+Searches for a static route for '/css/style.css' specifically within the 'WebUI' endpoint, without checking public routes.
+
+.OUTPUTS
+Hashtable. Returns a hashtable containing the route details, such as the source path, download flag, cacheability, and redirect status.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
 function Find-PodeStaticRoute {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -146,9 +181,17 @@ function Find-PodeStaticRoute {
     if ($null -ne $found) {
         # see if we have a file
         $file = [string]::Empty
-        if ($Path -imatch "$($found.Path)$") {
+
+        if ($found.KleeneStar) {
+            $matchingPath = "$($found.Path -ireplace '.\*', '.+?')$"
+        }
+        else {
+            $matchingPath = "$($found.Path)$"
+        }
+        if ($Path -imatch $matchingPath) {
             $file = (Protect-PodeValue -Value $Matches['file'] -Default ([string]::Empty))
-        } 
+        }
+
         $fileInfo = Get-Item -Path ([System.IO.Path]::Combine($found.Source, $file)) -Force -ErrorAction Continue
         #if $file doesn't exist return $null
         if ($null -eq $fileInfo) {

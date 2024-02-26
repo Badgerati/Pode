@@ -111,6 +111,7 @@ Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -OAResponses $Respon
 #>
 function Add-PodeRoute {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
@@ -556,6 +557,7 @@ Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html')
 #>
 function Add-PodeStaticRoute {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -733,7 +735,7 @@ function Add-PodeStaticRoute {
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlashes -Path $Path -Static
-    #  $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+    $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
     $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoints from name
@@ -827,12 +829,16 @@ function Add-PodeStaticRoute {
     # workout a default transfer encoding for the route
     $TransferEncoding = Find-PodeRouteTransferEncoding -Path $Path -TransferEncoding $TransferEncoding
 
+    #The path use KleeneStar(Asterisk)
+    $KleeneStar = $OrigPath.Contains('*')
+
     # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
             @{
                 Source            = $Source
                 Path              = $Path
+                KleeneStar        = $KleeneStar
                 Method            = $Method
                 Defaults          = $Defaults
                 RedirectToDefault = $RedirectToDefault
@@ -857,6 +863,16 @@ function Add-PodeStaticRoute {
                 Download          = $DownloadOnly
                 IsStatic          = $true
                 FileBrowser       = $FileBrowser.isPresent
+                OpenApi           = @{
+                    Path           = $OpenApiPath
+                    Responses      = @{}
+                    Parameters     = $null
+                    RequestBody    = $null
+                    CallBacks      = @{}
+                    Authentication = @()
+                    Servers        = @()
+                    DefinitionTag  = $DefinitionTag
+                }
                 Metrics           = @{
                     Requests = @{
                         Total       = 0
@@ -907,6 +923,7 @@ Add-PodeSignalRoute -Path '/message' -ScriptBlock { /* logic */ } -ArgumentList 
 #>
 function Add-PodeSignalRoute {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
