@@ -1193,6 +1193,13 @@ If the Request has multiple files in, and you specify a file path, then all file
 .PARAMETER FileName
 An optional FileName to save a specific files if multiple files were supplied in the Request. By default, every file is saved.
 
+.PARAMETER NoOverwrite
+If supplied, disables overwriting already existing files, and adds a numerical suffix to the filename if necessary.
+F.x. if C:\pode\test.txt already exists and test.txt is uploaded again, it will be saved as C:\pode\test (1).txt
+
+.PARAMETER Return
+If supplied, filepaths of all saved files will be returned as a list.
+
 .EXAMPLE
 Save-PodeRequestFile -Key 'avatar'
 
@@ -1201,6 +1208,9 @@ Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images'
 
 .EXAMPLE
 Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images' -FileName 'icon.png'
+
+.EXAMPLE
+$filePaths = Save-PodeRequestFile -Key 'avatar' -Path 'F:/Images' -NoOverwrite -Return
 #>
 function Save-PodeRequestFile {
     [CmdletBinding()]
@@ -1215,7 +1225,15 @@ function Save-PodeRequestFile {
 
         [Parameter()]
         [string[]]
-        $FileName
+        $FileName,
+		
+        [Parameter()]
+        [switch]
+        $NoOverwrite,
+		
+        [Parameter()]
+        [switch]
+        $Return
     )
 
     # if path is '.', replace with server root
@@ -1243,6 +1261,11 @@ function Save-PodeRequestFile {
         }
     }
 
+    # set up filepath list
+    if ($Return) {
+        $filePathsList = New-Object System.Collections.Generic.List[string]
+    }
+
     # save the files
     foreach ($file in $files) {
         # if the path is a directory, add the filename
@@ -1250,10 +1273,37 @@ function Save-PodeRequestFile {
         if (Test-PodePathIsDirectory -Path $filePath) {
             $filePath = [System.IO.Path]::Combine($filePath, $file)
         }
+		
+        # add numeric suffix to file name if overwrites are not permitted
+        if ($NoOverwrite -and [System.IO.File]::Exists($filePath)) {
+            # set up necessary variables for looping
+            $splitPathArray = $filePath -split '\.(?=[^\\\/]+$)'
+            $i = 0
+
+            # loop until suggested filepath doesn't already exist
+            while ([System.IO.File]::Exists($filePath)) {
+                $i++
+                $tempSplitPathArray = $splitPathArray.Clone()
+                $tempSplitPathArray[0] = -join ($splitPathArray[0], " ($i)")
+                $filePath = $tempSplitPathArray -join '.'
+            }
+        }
+		
+        # add filepath to filepath list
+        if ($Return) {
+            $filePathsList.Add($filePath)
+        }
 
         # save the file
         $WebEvent.Files[$file].Save($filePath)
+		
     }
+	
+    # return filepath list
+    if ($Return) {
+        return ,$filePathsList
+    }
+	
 }
 
 <#
