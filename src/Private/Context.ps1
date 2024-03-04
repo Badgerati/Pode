@@ -151,6 +151,10 @@ function New-PodeContext {
         Listener = $null
     }
 
+    $ctx.Server.Http = @{
+        Listener = $null
+    }
+
     $ctx.Server.WebSockets = @{
         Enabled     = ($EnablePool -icontains 'websockets')
         Receiver    = $null

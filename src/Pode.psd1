@@ -88,6 +88,10 @@
         'Use-PodePartialView',
         'Send-PodeSignal',
         'Add-PodeViewFolder',
+        'Set-PodeSseConnection',
+        'Send-PodeSseMessage',
+        'Close-PodeSseConnection',
+        'Send-PodeResponse',
 
         # utility helpers
         'Close-PodeDisposable',

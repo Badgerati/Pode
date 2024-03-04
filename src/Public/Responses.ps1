@@ -1581,3 +1581,137 @@ function Add-PodeViewFolder {
     Write-Verbose "Adding View Folder: [$($Name)] $($Source)"
     $PodeContext.Server.Views[$Name] = $Source
 }
+
+function Set-PodeSseConnection {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [ValidateSet('Local', 'Global')]
+        [string]
+        $Scope = 'Local',
+
+        [Parameter()]
+        [int]
+        $RetryDuration = 0,
+
+        [switch]
+        $AllowAllOrigins,
+
+        [switch]
+        $Force
+    )
+
+    # check Accept header - unless forcing
+    if (!$Force -and ((Get-PodeHeader -Name 'Accept') -ine 'text/event-stream')) {
+        throw 'SSE can only be configured on requests with an Accept header value of text/event-stream'
+    }
+
+    # set adn send SSE headers
+    $clientId = $WebEvent.Response.SetSseConnection($Scope, $Name, $RetryDuration, $AllowAllOrigins.IsPresent)
+
+    # create SSE property on WebEvent
+    $WebEvent.Sse = @{
+        Name        = $Name
+        ClientId    = $clientId
+        LastEventId = Get-PodeHeader -Name 'Last-Event-ID'
+        IsLocal     = ($Scope -ieq 'local')
+    }
+}
+
+function Send-PodeSseMessage {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $ClientId,
+
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $EventType,
+
+        [Parameter(Mandatory = $true)]
+        $Data,
+
+        [Parameter()]
+        [int]
+        $Depth = 10
+    )
+
+    # do nothing if no value
+    if (($null -eq $Data) -or ([string]::IsNullOrEmpty($Data))) {
+        return
+    }
+
+    # mode
+    $direct = $false
+
+    # check WebEvent
+    if ([string]::IsNullOrEmpty($Name) -and ($null -ne $WebEvent.Sse)) {
+        $Name = $WebEvent.Sse
+
+        if (($null -eq $ClientId) -or ($ClientId.Length -eq 0)) {
+            $ClientId = $WebEvent.Sse.ClientId
+            $direct = $true
+        }
+    }
+
+    # error if no name
+    if ([string]::IsNullOrEmpty($Name)) {
+        throw 'An SSE connection name is required, either from -Name or $WebEvent.Sse.Name'
+    }
+
+    # jsonify the value
+    if ($Data -isnot [string]) {
+        if ($Depth -le 0) {
+            $Data = (ConvertTo-Json -InputObject $Data -Compress)
+        }
+        else {
+            $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
+        }
+    }
+
+    if ($direct) {
+        $WebEvent.Response.SendSseMessage($EventType, $Data, $Id)
+    }
+    else {
+        $PodeContext.Server.Http.Listener.SendSseMessage($Name, $ClientId, $EventType, $Data, $Id)
+    }
+}
+
+function Close-PodeSseConnection {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $ClientId
+    )
+
+    $PodeContext.Server.Http.Listener.CloseSseConnection($Name, $ClientId)
+}
+
+#TODO: flag that this is a dangerous function, which will force send a response before the end of a route
+# only use if you know what you're doing!
+function Send-PodeResponse {
+    [CmdletBinding()]
+    param()
+
+    if ($null -ne $WebEvent.Response) {
+        $WebEvent.Response.Send()
+    }
+}

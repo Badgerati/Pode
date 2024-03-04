@@ -11,6 +11,7 @@ namespace Pode
         private IList<PodeSocket> Sockets;
 
         public IDictionary<string, PodeSignal> Signals { get; private set; }
+        public IDictionary<string, IDictionary<string, PodeServerEvent>> ServerEvents { get; private set; }
         public PodeItemQueue<PodeContext> Contexts { get; private set; }
         public PodeItemQueue<PodeServerSignal> ServerSignals { get; private set; }
         public PodeItemQueue<PodeClientSignal> ClientSignals { get; private set; }
@@ -50,6 +51,7 @@ namespace Pode
         {
             Sockets = new List<PodeSocket>();
             Signals = new Dictionary<string, PodeSignal>();
+            ServerEvents = new Dictionary<string, IDictionary<string, PodeServerEvent>>();
 
             Contexts = new PodeItemQueue<PodeContext>();
             ServerSignals = new PodeItemQueue<PodeServerSignal>();
@@ -108,6 +110,79 @@ namespace Pode
                     Signals.Add(signal.ClientId, signal);
                 }
             }
+        }
+
+        public void AddSseConnection(PodeServerEvent sse)
+        {
+            lock (ServerEvents)
+            {
+                // add sse name
+                if (!ServerEvents.ContainsKey(sse.Name))
+                {
+                    ServerEvents.Add(sse.Name, new Dictionary<string, PodeServerEvent>());
+                }
+
+                // add sse connection
+                if (ServerEvents[sse.Name].ContainsKey(sse.ClientId))
+                {
+                    ServerEvents[sse.Name][sse.ClientId]?.Dispose();
+                    ServerEvents[sse.Name][sse.ClientId] = sse;
+                }
+                else
+                {
+                    ServerEvents[sse.Name].Add(sse.ClientId, sse);
+                }
+            }
+        }
+
+        public void SendSseMessage(string name, string[] clientIds, string eventType, string data, string id = null)
+        {
+            Task.Factory.StartNew(() => {
+                if (!ServerEvents.ContainsKey(name))
+                {
+                    return;
+                }
+
+                if (clientIds == default(string[]) || clientIds.Length == 0)
+                {
+                    clientIds = ServerEvents[name].Keys.ToArray();
+                }
+
+                foreach (var clientId in clientIds)
+                {
+                    if (!ServerEvents[name].ContainsKey(clientId))
+                    {
+                        continue;
+                    }
+
+                    ServerEvents[name][clientId].Context.Response.SendSseMessage(eventType, data, id);
+                }
+            }, CancellationToken);
+        }
+
+        public void CloseSseConnection(string name, string[] clientIds)
+        {
+            Task.Factory.StartNew(() => {
+                if (!ServerEvents.ContainsKey(name))
+                {
+                    return;
+                }
+
+                if (clientIds == default(string[]) || clientIds.Length == 0)
+                {
+                    clientIds = ServerEvents[name].Keys.ToArray();
+                }
+
+                foreach (var clientId in clientIds)
+                {
+                    if (!ServerEvents[name].ContainsKey(clientId))
+                    {
+                        continue;
+                    }
+
+                    ServerEvents[name][clientId].Context.Response.CloseSseConnection();
+                }
+            }, CancellationToken);
         }
 
         public PodeServerSignal GetServerSignal(CancellationToken cancellationToken = default(CancellationToken))
@@ -187,11 +262,26 @@ namespace Pode
             PodeHelpers.WriteErrorMessage($"Closing signals", this, PodeLoggingLevel.Verbose);
             foreach (var _signal in Signals.Values.ToArray())
             {
-                _signal.Context.Dispose(true);
+                _signal.Dispose();
             }
 
             Signals.Clear();
             PodeHelpers.WriteErrorMessage($"Closed signals", this, PodeLoggingLevel.Verbose);
+
+            // close connected server events
+            PodeHelpers.WriteErrorMessage($"Closing server events", this, PodeLoggingLevel.Verbose);
+            foreach (var _sseName in ServerEvents.Values.ToArray())
+            {
+                foreach (var _sse in _sseName.Values.ToArray())
+                {
+                    _sse.Dispose();
+                }
+
+                _sseName.Clear();
+            }
+
+            ServerEvents.Clear();
+            PodeHelpers.WriteErrorMessage($"Closed server events", this, PodeLoggingLevel.Verbose);
         }
     }
 }

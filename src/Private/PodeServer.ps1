@@ -85,6 +85,7 @@ function Start-PodeWebServer {
         $PodeContext.Listeners += $listener
         $PodeContext.Server.Signals.Enabled = $true
         $PodeContext.Server.Signals.Listener = $listener
+        $PodeContext.Server.Http.Listener = $listener
     }
     catch {
         $_ | Write-PodeErrorLog
