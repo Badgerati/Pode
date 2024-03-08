@@ -370,33 +370,10 @@ function Write-PodeFileResponse {
     )
 
     # resolve for relative path
-    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+    $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
 
-    # Attempt to retrieve information about the path
-    $pathInfo = Get-Item -Path $Path -force -ErrorAction Continue
-
-    # Check if the path exists
-    if ($null -eq $pathInfo) {
-        # If not, set the response status to 404 Not Found
-        Set-PodeResponseStatus -Code 404
-    }
-    else {
-        # Check if the path is a directory
-        if ( $pathInfo.PSIsContainer) {
-            # If directory browsing is enabled, use the directory response function
-            if ($FileBrowser.isPresent) {
-                Write-PodeDirectoryResponseInternal -Path $Path
-            }
-            else {
-                # If browsing is not enabled, return a 404 error
-                Set-PodeResponseStatus -Code 404
-            }
-        }
-        else {
-            # For a file, serve it using the internal file response function
-            Write-PodeFileResponseInternal -RelativePath $Path -Data $Data -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
-        }
-    }
+    Write-PodeFileResponseInternal -Path $RelativePath -Data $Data -ContentType $ContentType -MaxAge $MaxAge `
+        -StatusCode $StatusCode -Cache:$Cache -FileBrowser:$FileBrowser
 }
 
 

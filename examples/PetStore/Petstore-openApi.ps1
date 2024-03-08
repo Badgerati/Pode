@@ -28,30 +28,30 @@ Import-Module -Name "$petStorePath/UserData.psm1"
 
 Start-PodeServer -Threads 1 -ScriptBlock {
 
-    $global:PetDataPath = Join-Path -Path $PetStorePath -ChildPath 'data'
-    If (!(Test-Path -PathType container -Path $global:PetDataPath)) {
-        New-Item -ItemType Directory -Path $global:PetDataPath -Force | Out-Null
+    $script:PetDataPath = Join-Path -Path $PetStorePath -ChildPath 'data'
+    If (!(Test-Path -PathType container -Path $script:PetDataPath)) {
+        New-Item -ItemType Directory -Path $script:PetDataPath -Force | Out-Null
     }
 
-    $global:PetImagesPath = Join-Path -Path $PetStorePath -ChildPath 'images'
-    If (!(Test-Path -PathType container -Path $global:PetImagesPath)) {
-        New-Item -ItemType Directory -Path $global:PetImagesPath -Force | Out-Null
+    $script:PetImagesPath = Join-Path -Path $PetStorePath -ChildPath 'images'
+    If (!(Test-Path -PathType container -Path $script:PetImagesPath)) {
+        New-Item -ItemType Directory -Path $script:PetImagesPath -Force | Out-Null
     }
 
-    $global:CertsPath = Join-Path -Path $PetStorePath -ChildPath 'certs'
-    If (!(Test-Path -PathType container -Path $global:CertsPath)) {
-        New-Item -ItemType Directory -Path $global:CertsPath -Force | Out-Null
+    $script:CertsPath = Join-Path -Path $PetStorePath -ChildPath 'certs'
+    If (!(Test-Path -PathType container -Path $script:CertsPath)) {
+        New-Item -ItemType Directory -Path $script:CertsPath -Force | Out-Null
     }
 
 
     #Load data
-    $global:PetDataJson = Join-Path -Path $PetDataPath   -ChildPath 'PetData.json'
-    if ($Reset.IsPresent -or !(Test-Path -Path $global:PetDataJson -PathType Leaf )) {
+    $script:PetDataJson = Join-Path -Path $PetDataPath   -ChildPath 'PetData.json'
+    if ($Reset.IsPresent -or !(Test-Path -Path $script:PetDataJson -PathType Leaf )) {
         Initialize-Categories -Reset
         Initialize-Pet -Reset
         Initialize-Order -Reset
         Initialize-Users -Reset
-        Save-PodeState -Path $global:PetDataJson
+        Save-PodeState -Path $script:PetDataJson
     }
     else {
         Initialize-Categories
@@ -59,7 +59,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         Initialize-Order
         Initialize-Users
         # attempt to re-initialise the state (will do nothing if the file doesn't exist)
-        Restore-PodeState -Path $global:PetDataJson
+        Restore-PodeState -Path $script:PetDataJson
     }
 
 
@@ -79,7 +79,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
     #image folder
-    Add-PodeStaticRoute -Path '/images' -Source $global:PetImagesPath
+    Add-PodeStaticRoute -Path '/images' -Source $script:PetImagesPath
 
 
 

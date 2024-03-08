@@ -1791,7 +1791,7 @@ function Enable-PodeOAViewer {
             }
 
             $podeRoot = Get-PodeModuleMiscPath
-            Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-swagger-editor.html.pode')) -Data $Data
+            Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-swagger-editor.html.pode')) -Data $Data
         }
 
         $swaggerEditorPath = Join-Path -Path $(Get-PodeModuleMiscPath) -ChildPath 'swagger-editor-dist'
@@ -1830,7 +1830,7 @@ function Enable-PodeOAViewer {
             }
 
             $podeRoot = Get-PodeModuleMiscPath
-            Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
+            Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-doc-bookmarks.html.pode')) -Data $Data
         }
         if (! $NoAdvertise.IsPresent) {
             $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.bookmarks = @{
@@ -1867,7 +1867,7 @@ function Enable-PodeOAViewer {
             param($meta)
             $podeRoot = Get-PodeModuleMiscPath
             if ( $meta.DarkMode) { $Theme = 'dark' } else { $Theme = 'light' }
-            Write-PodeFileResponse -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
+            Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, "default-$($meta.Type).html.pode")) -Data @{
                 Title    = $meta.Title
                 OpenApi  = $meta.OpenApi
                 DarkMode = $meta.DarkMode

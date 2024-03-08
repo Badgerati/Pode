@@ -92,7 +92,7 @@ function Start-PodeAzFuncServer {
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
+                            Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
                         }
                     }
                     else {
@@ -205,7 +205,7 @@ function Start-PodeAwsLambdaServer {
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
+                            Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
                                 -Cache:$cachable -FileBrowser:$fileBrowser
                         }
                     }

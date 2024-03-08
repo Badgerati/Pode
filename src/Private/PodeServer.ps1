@@ -196,8 +196,7 @@ function Start-PodeWebServer {
                                         }
                                         else {
                                             $cachable = $WebEvent.StaticContent.IsCachable
-                                        #    Write-PodeFileResponseInternal -RelativePath $Path   -  -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -StatusCode $StatusCode -Cache:$cachable
-                                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
+                                            Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
                                                 -Cache:$cachable -FileBrowser:$fileBrowser
                                         }
                                     }
