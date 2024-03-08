@@ -200,21 +200,15 @@ function Find-PodeStaticRoute {
 
         # if there's no file, we need to check defaults
         if (!$found.Download -and $fileInfo.PSIsContainer -and (Get-PodeCount @($found.Defaults)) -gt 0) {
-            if ((Get-PodeCount @($found.Defaults)) -eq 1) {
-                $file = [System.IO.Path]::Combine($file, @($found.Defaults)[0])
-                $isDefault = $true
-            }
-            else {
-                foreach ($def in $found.Defaults) {
-                    if (Test-PodePath ([System.IO.Path]::Combine($found.Source, $def)) -NoStatus) {
-                        $file = [System.IO.Path]::Combine($file, $def)
-                        $isDefault = $true
-                        break
-                    }
+            foreach ($def in $found.Defaults) {
+                $fileInfoDefaultFile = Get-Item -Path ([System.IO.Path]::Combine($fileInfo.FullName, $def)) -Force -ErrorAction Continue
+                if ($fileInfoDefaultFile) {
+                    $file = $fileInfoDefaultFile.FullName
+                    $isDefault = $true
+                    break
                 }
             }
         }
-
         $source = [System.IO.Path]::Combine($found.Source, $file)
 
     }
@@ -444,7 +438,7 @@ function ConvertTo-PodeRouteRegex {
     return $Path
 }
 
-function Get-PodeStaticRouteDefaults {
+function Get-PodeStaticRouteDefault {
     if (!(Test-PodeIsEmpty $PodeContext.Server.Web.Static.Defaults)) {
         return @($PodeContext.Server.Web.Static.Defaults)
     }

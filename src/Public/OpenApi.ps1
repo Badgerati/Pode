@@ -622,6 +622,8 @@ function Add-PodeOAResponse {
         $DefinitionTag
     )
 
+    if ($null -eq $Route) { throw 'Add-PodeOAResponse - The parameter -Route cannot be NULL.' }
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     # override status code with default
     if ($Default) {
@@ -693,6 +695,8 @@ function Remove-PodeOAResponse {
         $PassThru
     )
 
+    if ($null -eq $Route) { throw 'The parameter -Route cannot be NULL.' }
+
     # override status code with default
     $code = "$($StatusCode)"
     if ($Default) {
@@ -760,6 +764,8 @@ function Set-PodeOARequest {
         [switch]
         $PassThru
     )
+
+    if ($null -eq $Route) { throw 'Set-PodeOARequest - The parameter -Route cannot be NULL.' }
 
     foreach ($r in @($Route)) {
 
@@ -1556,6 +1562,8 @@ function Set-PodeOARouteInfo {
         $DefinitionTag
     )
 
+    if ($null -eq $Route) { throw 'Set-PodeOARouteInfo - The parameter -Route cannot be NULL.' }
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     foreach ($r in @($Route)) {
@@ -1569,9 +1577,12 @@ function Set-PodeOARouteInfo {
             $r.OpenApi.Description = $Description
         }
         if ($OperationId) {
+            if ($Route.Count -gt 1) {
+                throw "OperationID:$OperationId has to be unique and cannot be applied to an array."
+            }
             foreach ($tag in $DefinitionTag) {
                 if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
-                    throw "OperationID:$OperationId has to be unique"
+                    throw "OperationID:$OperationId has to be unique."
                 }
                 $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId += $OperationId
             }
@@ -1595,8 +1606,6 @@ function Set-PodeOARouteInfo {
         return $Route
     }
 }
-
-
 
 <#
 .SYNOPSIS
@@ -2592,6 +2601,8 @@ function Add-PodeOACallBack {
         $DefinitionTag
     )
 
+    if ($null -eq $Route) { throw 'Add-PodeOACallBack - The parameter -Route cannot be NULL.' }
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     foreach ($r in @($Route)) {
@@ -3171,6 +3182,9 @@ function Add-PodeOAExternalRoute {
         [string[]]
         $DefinitionTag
     )
+
+    if ($null -eq $Route) { throw 'Add-PodeOAExternalRoute - The parameter -Route cannot be NULL.' }
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {

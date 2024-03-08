@@ -199,12 +199,21 @@ function Get-PodeRouteValidateMiddleware {
     return @{
         Name  = '__pode_mw_route_validation__'
         Logic = {
-            # check if the path is static route first, then check the main routes
-            $route = Find-PodeStaticRoute -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
-            if ($null -eq $route) {
+            if ($Server.Configuration.Server.CheckNonStaticFirst) {
+                #  check the main routes and check the static routes
                 $route = Find-PodeRoute -Method $WebEvent.Method -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name -CheckWildMethod
+                if ($null -eq $route) {
+                    $route = Find-PodeStaticRoute -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
+                }
             }
-
+            else {
+                # check if the path is static route first, then check the main routes
+                $route = Find-PodeStaticRoute -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
+                if ($null -eq $route) {
+                    $route = Find-PodeRoute -Method $WebEvent.Method -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name -CheckWildMethod
+                }
+            }
+            
             # if there's no route defined, it's a 404 - or a 405 if a route exists for any other method
             if ($null -eq $route) {
                 # check if a route exists for another method

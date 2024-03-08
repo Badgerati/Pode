@@ -782,7 +782,7 @@ function Add-PodeStaticRoute {
 
     # setup default static files
     if ($null -eq $Defaults) {
-        $Defaults = Get-PodeStaticRouteDefaults
+        $Defaults = Get-PodeStaticRouteDefault
     }
 
     if (!$RedirectToDefault) {

@@ -196,6 +196,7 @@ function Start-PodeWebServer {
                                         }
                                         else {
                                             $cachable = $WebEvent.StaticContent.IsCachable
+                                        #    Write-PodeFileResponseInternal -RelativePath $Path   -  -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -StatusCode $StatusCode -Cache:$cachable
                                             Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
                                                 -Cache:$cachable -FileBrowser:$fileBrowser
                                         }
@@ -452,6 +453,7 @@ function Start-PodeWebServer {
 
 function New-PodeListener {
     [CmdletBinding()]
+    [OutputType([Pode.PodeListener])]
     param(
         [Parameter(Mandatory = $true)]
         [System.Threading.CancellationToken]
@@ -463,6 +465,7 @@ function New-PodeListener {
 
 function New-PodeListenerSocket {
     [CmdletBinding()]
+    [OutputType([Pode.PodeSocket])]
     param(
         [Parameter(Mandatory = $true)]
         [ipaddress]

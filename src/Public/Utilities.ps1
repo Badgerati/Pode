@@ -831,11 +831,18 @@ function Write-PodeHost {
         return
     }
 
-    if ($Explode.IsPresent) {
-        $type = $Object.gettype()
-        $Object = $Object | Out-String
-        if ($ShowType) {
-            $Object = "Type: $type`n$Object"
+    if ($Explode.IsPresent ) {
+        if ($null -eq $Object) {
+            if ($ShowType) {
+                $Object = "`tNull Value"
+            }
+        }
+        else {
+            $type = $Object.gettype().FullName
+            $Object = $Object | Out-String
+            if ($ShowType) {
+                $Object = "`tTypeName: $type`n$Object"
+            }
         }
     }
 
@@ -1010,6 +1017,7 @@ New-PodeCron -Every Quarter                                         # every 1st 
 #>
 function New-PodeCron {
     [CmdletBinding()]
+    [OutputType([String])]
     param(
         [Parameter()]
         [ValidateRange(0, 59)]
@@ -1231,6 +1239,7 @@ https://badgerati.github.io/Pode/Functions/Utility/ConvertFrom-PodeXML
 #>
 function ConvertFrom-PodeXML {
     [CmdletBinding()]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param
     (
         [Parameter(Mandatory = $true, ValueFromPipeline)]
@@ -1250,7 +1259,7 @@ function ConvertFrom-PodeXML {
         #if there are elements
         # record all the attributes first in the ordered hash
         $node.Attributes | ForEach-Object {
-            $oHash.$($Prefix + $_.FirstChild.parentNode.LocalName) = $_.FirstChild.value
+            $oHash.$("$Prefix$($_.FirstChild.parentNode.LocalName)") = $_.FirstChild.value
         }
     }
     # check to see if there is a pseudo-array. (more than one
@@ -1309,6 +1318,6 @@ function ConvertFrom-PodeXML {
             $oHash.$childname += (ConvertFrom-PodeXML $child)
         }
     }
-    $oHash
+    return $oHash
 
 }

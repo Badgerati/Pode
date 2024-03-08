@@ -796,10 +796,6 @@ function Write-PodeXmlResponse {
     Write-PodeTextResponse -Value $Value -ContentType 'text/xml' -StatusCode $StatusCode
 }
 
-
-
-
-
 <#
 .SYNOPSIS
 Writes YAML data to the Response.
