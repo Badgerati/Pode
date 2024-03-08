@@ -81,7 +81,7 @@ function Show-PodeErrorPage {
     }
 
     # write the error page to the stream
-    Write-PodeFileResponseInternal -Path $errorPage.Path -Data $data -ContentType $errorPage.ContentType
+    Write-PodeFileResponse -Path $errorPage.Path -Data $data -ContentType $errorPage.ContentType
 }
 
 
