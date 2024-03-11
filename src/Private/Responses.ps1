@@ -293,7 +293,12 @@ function Write-PodeDirectoryResponseInternal {
 
         # Handle navigation to the parent directory (..)
         if ($leaf -ne '/') {
-            $ParentLink = $baseLink.Substring(0, $baseLink.LastIndexOf('/'))
+            $LastSlash = $baseLink.LastIndexOf('/')
+            if ($LastSlash -eq -1) {
+                Set-PodeResponseStatus -Code 404
+                return
+            }
+            $ParentLink = $baseLink.Substring(0, $LastSlash)
             if ([string]::IsNullOrWhiteSpace($ParentLink)) {
                 $ParentLink = '/'
             }
