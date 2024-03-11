@@ -6,7 +6,7 @@ Caching is supported on static content.
 
 ## Public Directory
 
-You can place static files within the `/public` directory, at the root of your server. If a request is made for a file, then Pode will automatically check the public directory first, and if found will return the back.
+You can place static files within the `/public` directory at the root of your server, which serves as the default location for static content. However, if you need to relocate this directory, you can do so programmatically using the `Set-PodeStaticFolder` function within your server script, or specify a different location in the `server.psd1` configuration file under the `Server.DefaultFolders` property. When a request is made for a file, Pode will automatically check this designated static directory first, and if the file is found, it will be returned to the requester.
 
 For example, if you have a `logic.js` at `/public/scripts/logic.js`. The the following request would return the file's content:
 
@@ -19,6 +19,7 @@ Or, you can reference the file in a view like:
 ```html
 <script type="text/javascript" src="/scripts/logic.js"></script>
 ```
+
 
 ## Static Routes
 
@@ -183,3 +184,26 @@ Start-PodeServer -ScriptBlock {
 ```
 
 When used with `-Download,` the browser downloads any file selected instead of rendering. The folders are rendered and not downloaded.
+
+## Static Routes order
+By default, Static routes are processed before any other route.
+There are situations where you want a main `GET` route has the priority to a static one.
+For example, you have to hide or make some computation to a file or a folder before returning the result.
+
+```powershell
+Start-PodeServer -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/LICENSE.txt' -ScriptBlock {
+        $value = @'
+Don't kidding me. Nobody will believe that you want to read this legalise nonsense.
+I want to be kind; this is a summary of the content:
+
+Nothing to report :D
+'@
+        Write-PodeTextResponse -Value $value
+    }
+
+    Add-PodeStaticRoute -Path '/' -Source "./content" -FileBrowser
+}
+```
+
+To change the default behavior, you can use the `Server.RouteOrderMainBeforeStatic` property in the `server.psd1` configuration file, setting the value to `$True.` This will ensure that any static route is evaluated after any other route.
