@@ -97,6 +97,9 @@ function New-PodeContext {
     $ctx.Receivers = @()
     $ctx.Watchers = @()
 
+    # base secret that can used when needed, and a secret isn't supplied
+    $ctx.Server.BaseSecret = New-PodeGuid -Secure
+
     # list of timers/schedules/tasks/fim
     $ctx.Timers = @{
         Enabled = ($EnablePool -icontains 'timers')
@@ -153,6 +156,12 @@ function New-PodeContext {
 
     $ctx.Server.Http = @{
         Listener = $null
+    }
+
+    $ctx.Server.Sse = @{
+        Signed = $false
+        Secret = $null
+        Strict = $false
     }
 
     $ctx.Server.WebSockets = @{

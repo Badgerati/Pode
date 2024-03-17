@@ -193,7 +193,7 @@ namespace Pode
             }
         }
 
-        public string SetSseConnection(PodeSseScope scope, string name, int retry, bool allowAllOrigins)
+        public string SetSseConnection(PodeSseScope scope, string clientId, string name, int retry, bool allowAllOrigins)
         {
             // do nothing for no scope
             if (scope == PodeSseScope.None)
@@ -217,13 +217,18 @@ namespace Pode
             }
 
             // generate clientId
-            var clientId = PodeHelpers.NewGuid();
-            Headers.Set("X-Pode-ClientId", clientId);
+            if (string.IsNullOrEmpty(clientId))
+            {
+                clientId = PodeHelpers.NewGuid();
+            }
+
+            Headers.Set("X-Pode-Sse-Client-Id", clientId);
+            Headers.Set("X-Pode-Sse-Client-Name", name);
 
             // send headers, and open event
             Send();
             SendSseRetry(retry);
-            SendSseMessage("pode.open", $"{{\"clientId\": \"{clientId}\"}}");
+            SendSseEvent("pode.open", $"{{\"clientId\":\"{clientId}\",\"name\":\"{name}\"}}");
 
             // if global, cache connection in listener
             if (scope == PodeSseScope.Global)
@@ -237,10 +242,10 @@ namespace Pode
 
         public void CloseSseConnection()
         {
-            SendSseMessage("pode.close", string.Empty);
+            SendSseEvent("pode.close", string.Empty);
         }
 
-        public void SendSseMessage(string eventType, string data, string id = null)
+        public void SendSseEvent(string eventType, string data, string id = null)
         {
             if (!string.IsNullOrEmpty(id))
             {

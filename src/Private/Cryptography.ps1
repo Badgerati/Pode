@@ -196,11 +196,21 @@ function Invoke-PodeValueSign {
         [string]
         $Value,
 
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
+
+    if ([string]::IsNullOrEmpty($Secret)) {
+        $Secret = $PodeContext.Server.BaseSecret
+    }
+
+    if ($Strict) {
+        $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
+    }
 
     return "s:$($Value).$(Invoke-PodeHMACSHA256Hash -Value $Value -Secret $Secret)"
 }
@@ -212,10 +222,12 @@ function Invoke-PodeValueUnsign {
         [string]
         $Value,
 
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
+        [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     # the signed value must start with "s:"
@@ -223,11 +235,19 @@ function Invoke-PodeValueUnsign {
         return $null
     }
 
-    # the signed value mised contain a dot - splitting value and signature
+    # the signed value must contain a dot - splitting value and signature
     $Value = $Value.Substring(2)
     $periodIndex = $Value.LastIndexOf('.')
     if ($periodIndex -eq -1) {
         return $null
+    }
+
+    if ([string]::IsNullOrEmpty($Secret)) {
+        $Secret = $PodeContext.Server.BaseSecret
+    }
+
+    if ($Strict) {
+        $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
     }
 
     # get the raw value and signature
@@ -239,6 +259,38 @@ function Invoke-PodeValueUnsign {
     }
 
     return $raw
+}
+
+function Test-PodeValueSigned {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [string]
+        $Value,
+
+        [Parameter()]
+        [string]
+        $Secret,
+
+        [switch]
+        $Strict
+    )
+
+    if ([string]::IsNullOrEmpty($Value)) {
+        return $false
+    }
+
+    $result = Invoke-PodeValueUnsign -Value $Value -Secret $Secret -Strict:$Strict
+    return ![string]::IsNullOrEmpty($result)
+}
+
+function ConvertTo-PodeStrictSecret {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Secret
+    )
+
+    return "$($Secret);$($WebEvent.Request.UserAgent);$($WebEvent.Request.RemoteEndPoint.Address.IPAddressToString)"
 }
 
 function New-PodeJwtSignature {

@@ -69,12 +69,15 @@ function Set-PodeCookie {
         $Discard,
 
         [switch]
-        $Secure
+        $Secure,
+
+        [switch]
+        $Strict
     )
 
     # sign the value if we have a secret
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret)
+        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret -Strict:$Strict)
     }
 
     # create a new cookie
@@ -136,6 +139,9 @@ function Get-PodeCookie {
         $Secret,
 
         [switch]
+        $Strict,
+
+        [switch]
         $Raw
     )
 
@@ -151,7 +157,7 @@ function Get-PodeCookie {
 
     # if a secret was supplied, attempt to unsign the cookie
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret)
+        $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret -Strict:$Strict)
         if (![string]::IsNullOrWhiteSpace($value)) {
             $cookie.Value = $value
         }
@@ -188,10 +194,13 @@ function Get-PodeCookieValue {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
-    $cookie = Get-PodeCookie -Name $Name -Secret $Secret
+    $cookie = Get-PodeCookie -Name $Name -Secret $Secret -Strict:$Strict
     if ($null -eq $cookie) {
         return $null
     }
@@ -288,16 +297,18 @@ function Test-PodeCookieSigned {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     $cookie = $WebEvent.Cookies[$Name]
-    if (($null -eq $cookie) -or [string]::IsNullOrWhiteSpace($cookie.Value)) {
+    if ($null -eq $cookie) {
         return $false
     }
 
-    $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret)
-    return (![string]::IsNullOrWhiteSpace($value))
+    return Test-PodeValueSigned -Value $cookie.Value -Secret $Secret -Strict:$Strict
 }
 
 <#

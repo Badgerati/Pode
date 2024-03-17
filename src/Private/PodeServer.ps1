@@ -146,6 +146,7 @@ function Start-PodeWebServer {
                                 TransferEncoding = $null
                                 AcceptEncoding   = $null
                                 Ranges           = $null
+                                Sse              = $null
                             }
 
                             # if iis, and we have an app path, alter it
@@ -170,6 +171,20 @@ function Start-PodeWebServer {
                             # stop now if the request has an error
                             if ($Request.IsAborted) {
                                 throw $Request.Error
+                            }
+
+                            # if we have an sse clientId, verify it and then set details in WebEvent
+                            if ($WebEvent.Request.HasSseClientId) {
+                                if (!(Test-PodeSseClientIdValid)) {
+                                    throw [System.Net.Http.HttpRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
+                                }
+
+                                $WebEvent.Sse = @{
+                                    Name        = $WebEvent.Request.SseClientName
+                                    ClientId    = $WebEvent.Request.SseClientId
+                                    LastEventId = $null
+                                    IsLocal     = $false
+                                }
                             }
 
                             # invoke global and route middleware

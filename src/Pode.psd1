@@ -88,10 +88,18 @@
         'Use-PodePartialView',
         'Send-PodeSignal',
         'Add-PodeViewFolder',
-        'Set-PodeSseConnection',
-        'Send-PodeSseMessage',
-        'Close-PodeSseConnection',
         'Send-PodeResponse',
+
+        # sse
+        'Set-PodeSseConnection',
+        'Send-PodeSseEvent',
+        'Close-PodeSseConnection',
+        'Test-PodeSseClientIdSigned',
+        'Test-PodeSseClientIdValid',
+        'Get-PodeSseClientId',
+        'New-PodeSseClientId',
+        'Enable-PodeSseSigning',
+        'Disable-PodeSseSigning',
 
         # utility helpers
         'Close-PodeDisposable',

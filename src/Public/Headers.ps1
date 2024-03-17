@@ -30,12 +30,15 @@ function Add-PodeHeader {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     # sign the value if we have a secret
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret)
+        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret -Strict:$Strict)
     }
 
     # add the header to the response
@@ -72,7 +75,10 @@ function Add-PodeHeaderBulk {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     foreach ($key in $Values.Keys) {
@@ -80,7 +86,7 @@ function Add-PodeHeaderBulk {
 
         # sign the value if we have a secret
         if (![string]::IsNullOrWhiteSpace($Secret)) {
-            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret)
+            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret -Strict:$Strict)
         }
 
         # add the header to the response
@@ -145,7 +151,10 @@ function Get-PodeHeader {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     # get the value for the header from the request
@@ -153,7 +162,7 @@ function Get-PodeHeader {
 
     # if a secret was supplied, attempt to unsign the header's value
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $header = (Invoke-PodeValueUnsign -Value $header -Secret $Secret)
+        $header = (Invoke-PodeValueUnsign -Value $header -Secret $Secret -Strict:$Strict)
     }
 
     return $header
@@ -191,12 +200,15 @@ function Set-PodeHeader {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     # sign the value if we have a secret
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret)
+        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret -Strict:$Strict)
     }
 
     # set the header on the response
@@ -233,7 +245,10 @@ function Set-PodeHeaderBulk {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     foreach ($key in $Values.Keys) {
@@ -241,7 +256,7 @@ function Set-PodeHeaderBulk {
 
         # sign the value if we have a secret
         if (![string]::IsNullOrWhiteSpace($Secret)) {
-            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret)
+            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret -Strict:$Strict)
         }
 
         # set the header on the response
@@ -280,14 +295,12 @@ function Test-PodeHeaderSigned {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     $header = Get-PodeHeader -Name $Name
-    if ([string]::IsNullOrWhiteSpace($header)) {
-        return $false
-    }
-
-    $value = (Invoke-PodeValueUnsign -Value $header -Secret $Secret)
-    return (![string]::IsNullOrWhiteSpace($value))
+    return Test-PodeValueSigned -Value $header -Secret $Secret -Strict:$Strict
 }

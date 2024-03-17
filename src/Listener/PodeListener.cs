@@ -135,7 +135,7 @@ namespace Pode
             }
         }
 
-        public void SendSseMessage(string name, string[] clientIds, string eventType, string data, string id = null)
+        public void SendSseEvent(string name, string[] clientIds, string eventType, string data, string id = null)
         {
             Task.Factory.StartNew(() => {
                 if (!ServerEvents.ContainsKey(name))
@@ -155,7 +155,7 @@ namespace Pode
                         continue;
                     }
 
-                    ServerEvents[name][clientId].Context.Response.SendSseMessage(eventType, data, id);
+                    ServerEvents[name][clientId].Context.Response.SendSseEvent(eventType, data, id);
                 }
             }, CancellationToken);
         }
