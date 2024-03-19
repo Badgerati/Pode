@@ -135,7 +135,7 @@ namespace Pode
             }
         }
 
-        public void SendSseEvent(string name, string[] clientIds, string eventType, string data, string id = null)
+        public void SendSseEvent(string name, string[] groups, string[] clientIds, string eventType, string data, string id = null)
         {
             Task.Factory.StartNew(() => {
                 if (!ServerEvents.ContainsKey(name))
@@ -155,12 +155,15 @@ namespace Pode
                         continue;
                     }
 
-                    ServerEvents[name][clientId].Context.Response.SendSseEvent(eventType, data, id);
+                    if (ServerEvents[name][clientId].IsForGroup(groups))
+                    {
+                        ServerEvents[name][clientId].Context.Response.SendSseEvent(eventType, data, id);
+                    }
                 }
             }, CancellationToken);
         }
 
-        public void CloseSseConnection(string name, string[] clientIds)
+        public void CloseSseConnection(string name, string[] groups, string[] clientIds)
         {
             Task.Factory.StartNew(() => {
                 if (!ServerEvents.ContainsKey(name))
@@ -180,7 +183,10 @@ namespace Pode
                         continue;
                     }
 
-                    ServerEvents[name][clientId].Context.Response.CloseSseConnection();
+                    if (ServerEvents[name][clientId].IsForGroup(groups))
+                    {
+                        ServerEvents[name][clientId].Context.Response.CloseSseConnection();
+                    }
                 }
             }, CancellationToken);
         }

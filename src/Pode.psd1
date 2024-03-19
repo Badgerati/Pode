@@ -91,15 +91,17 @@
         'Send-PodeResponse',
 
         # sse
-        'Set-PodeSseConnection',
+        'ConvertTo-PodeSseConnection',
         'Send-PodeSseEvent',
         'Close-PodeSseConnection',
         'Test-PodeSseClientIdSigned',
         'Test-PodeSseClientIdValid',
-        'Get-PodeSseClientId',
         'New-PodeSseClientId',
         'Enable-PodeSseSigning',
         'Disable-PodeSseSigning',
+        'Set-PodeSseBroadcastLevel',
+        'Get-PodeSseBroadcastLevel',
+        'Test-PodeSseBroadcastLevel',
 
         # utility helpers
         'Close-PodeDisposable',

@@ -29,6 +29,9 @@ Inform browsers to remove the cookie.
 .PARAMETER Secure
 Only allow the cookie on secure (HTTPS) connections.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Set-PodeCookie -Name 'Views' -Value 2
 
@@ -117,6 +120,9 @@ The name of the cookie to retrieve.
 .PARAMETER Secret
 The secret used to unsign the cookie's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .PARAMETER Raw
 If supplied, the cookie returned will be the raw .NET Cookie object for manipulation.
 
@@ -178,6 +184,9 @@ The name of the cookie to retrieve.
 
 .PARAMETER Secret
 The secret used to unsign the cookie's value.
+
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
 
 .EXAMPLE
 Get-PodeCookieValue -Name 'Views'
@@ -283,6 +292,9 @@ The name of the cookie to test.
 
 .PARAMETER Secret
 A secret to use for attempting to unsign the cookie's value.
+
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
 
 .EXAMPLE
 Test-PodeCookieSigned -Name 'Views' -Secret 'hunter2'

@@ -64,6 +64,7 @@ function Start-PodeWebSocketRunspace {
                             Files     = $null
                             Lockable  = $PodeContext.Threading.Lockables.Global
                             Timestamp = [datetime]::UtcNow
+                            Metadata  = @{}
                         }
 
                         # find the websocket definition

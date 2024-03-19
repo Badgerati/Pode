@@ -1,13 +1,16 @@
 <#
 .SYNOPSIS
-Sets the current HTTP request to a Route to be an SSE connection.
+Converts the current HTTP request to a Route to be an SSE connection.
 
 .DESCRIPTION
-Sets the current HTTP request to a Route to be an SSE connection, by sending the required headers back to the client.
+Converts the current HTTP request to a Route to be an SSE connection, by sending the required headers back to the client.
 The connection can only be configured if the request's Accept header is "text/event-stream", unless Forced.
 
 .PARAMETER Name
 The Name of the SSE connection, which ClientIds will be stored under.
+
+.PARAMETER Group
+An optional Group for this SSE connection, to enable broadcasting events to all connections for an SSE connection name in a Group.
 
 .PARAMETER Scope
 The Scope of the SSE connection, either Local or Global (Default: Global).
@@ -27,23 +30,30 @@ If supplied, then Access-Control-Allow-Origin will be set to * on the response.
 If supplied, the Accept header of the request will be ignored; attempting to configure an SSE connection even if the header isn't "text/event-stream".
 
 .EXAMPLE
-Set-PodeSseConnection -Name 'Actions'
+ConvertTo-PodeSseConnection -Name 'Actions'
 
 .EXAMPLE
-Set-PodeSseConnection -Name 'Actions' -Scope Local
+ConvertTo-PodeSseConnection -Name 'Actions' -Scope Local
 
 .EXAMPLE
-Set-PodeSseConnection -Name 'Actions' -AllowAllOrigins
+ConvertTo-PodeSseConnection -Name 'Actions' -Group 'admins'
 
 .EXAMPLE
-Set-PodeSseConnection -Name 'Actions' -ClientId 'my-client-id'
+ConvertTo-PodeSseConnection -Name 'Actions' -AllowAllOrigins
+
+.EXAMPLE
+ConvertTo-PodeSseConnection -Name 'Actions' -ClientId 'my-client-id'
 #>
-function Set-PodeSseConnection {
+function ConvertTo-PodeSseConnection {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
+
+        [Parameter()]
+        [string]
+        $Group,
 
         [Parameter()]
         [ValidateSet('Local', 'Global')]
@@ -73,12 +83,13 @@ function Set-PodeSseConnection {
     # generate clientId
     $ClientId = New-PodeSseClientId -ClientId $ClientId
 
-    # set adn send SSE headers
-    $ClientId = $WebEvent.Response.SetSseConnection($Scope, $ClientId, $Name, $RetryDuration, $AllowAllOrigins.IsPresent)
+    # set and send SSE headers
+    $ClientId = $WebEvent.Response.SetSseConnection($Scope, $ClientId, $Name, $Group, $RetryDuration, $AllowAllOrigins.IsPresent)
 
     # create SSE property on WebEvent
     $WebEvent.Sse = @{
         Name        = $Name
+        Group       = $Group
         ClientId    = $ClientId
         LastEventId = Get-PodeHeader -Name 'Last-Event-ID'
         IsLocal     = ($Scope -ieq 'local')
@@ -98,6 +109,9 @@ Send an Event to one or more SSE connections. This can either be:
 .PARAMETER Name
 An SSE connection Name.
 
+.PARAMETER Group
+An optional array of 1 or more SSE connection Groups to send Events to, for the specified SSE connection Name.
+
 .PARAMETER ClientId
 An optional array of 1 or more SSE connection ClientIds to send Events to, for the specified SSE connection Name.
 
@@ -115,7 +129,7 @@ The Depth to generate the JSON document - the larger this value the worse perfor
 
 .PARAMETER FromEvent
 If supplied, the SSE connection Name and ClientId will atttempt to be retrived from $WebEvent.Sse.
-These details will be set if Set-PodeSseConnection has just been called. Or if X-PODE-SSE-CLIENT-ID and X-PODE-SSE-CLIENT-NAME are set on an HTTP request.
+These details will be set if ConvertTo-PodeSseConnection has just been called. Or if X-PODE-SSE-CLIENT-ID and X-PODE-SSE-CLIENT-NAME are set on an HTTP request.
 
 .EXAMPLE
 Send-PodeSseEvent -FromEvent -Data 'This is an event'
@@ -125,6 +139,9 @@ Send-PodeSseEvent -FromEvent -Data @{ Message = 'A message' }
 
 .EXAMPLE
 Send-PodeSseEvent -Name 'Actions' -Data @{ Message = 'A message' }
+
+.EXAMPLE
+Send-PodeSseEvent -Name 'Actions' -Group 'admins' -Data @{ Message = 'A message' }
 
 .EXAMPLE
 Send-PodeSseEvent -Name 'Actions' -Data @{ Message = 'A message' } -ID 123 -EventType 'action'
@@ -138,7 +155,11 @@ function Send-PodeSseEvent {
 
         [Parameter(ParameterSetName = 'Name')]
         [string[]]
-        $ClientId,
+        $Group = $null,
+
+        [Parameter(ParameterSetName = 'Name')]
+        [string[]]
+        $ClientId = $null,
 
         [Parameter()]
         [string]
@@ -184,6 +205,7 @@ function Send-PodeSseEvent {
     # from event and global?
     if ($FromEvent) {
         $Name = $WebEvent.Sse.Name
+        $Group = $WebEvent.Sse.Group
         $ClientId = $WebEvent.Sse.ClientId
     }
 
@@ -192,48 +214,13 @@ function Send-PodeSseEvent {
         throw 'An SSE connection Name is required, either from -Name or $WebEvent.Sse.Name'
     }
 
+    # check if broadcast level
+    if (!(Test-PodeSseBroadcastLevel -Name $Name -Group $Group -ClientId $ClientId)) {
+        throw "SSE failed to broadcast due to defined SSE broadcast level for $($Name): $(Get-PodeSseBroadcastLevel -Name $Name)"
+    }
+
     # send event
-    $PodeContext.Server.Http.Listener.SendSseEvent($Name, $ClientId, $EventType, $Data, $Id)
-
-
-
-
-
-    # mode - are we sending directly back to a client?
-    # $direct = $false
-
-    # check WebEvent
-    # if ([string]::IsNullOrEmpty($Name) -and ($null -ne $WebEvent.Sse)) {
-    #     $Name = $WebEvent.Sse.Name
-
-    #     if (($null -eq $ClientId) -or ($ClientId.Length -eq 0)) {
-    #         $ClientId = $WebEvent.Sse.ClientId
-    #         $direct = $true
-    #     }
-    # }
-
-    # error if no name
-    # if ([string]::IsNullOrEmpty($Name)) {
-    #     throw 'An SSE connection name is required, either from -Name or $WebEvent.Sse.Name'
-    # }
-
-    # jsonify the value
-    # if ($Data -isnot [string]) {
-    #     if ($Depth -le 0) {
-    #         $Data = (ConvertTo-Json -InputObject $Data -Compress)
-    #     }
-    #     else {
-    #         $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
-    #     }
-    # }
-
-    # send message
-    # if ($direct) {
-    #     $WebEvent.Response.SendSseEvent($EventType, $Data, $Id)
-    # }
-    # else {
-    #     $PodeContext.Server.Http.Listener.SendSseEvent($Name, $ClientId, $EventType, $Data, $Id)
-    # }
+    $PodeContext.Server.Http.Listener.SendSseEvent($Name, $Group, $ClientId, $EventType, $Data, $Id)
 }
 
 <#
@@ -244,7 +231,10 @@ Close one or more SSE connections.
 Close one or more SSE connections. Either all connections for an SSE connection Name, or specific ClientIds for a Name.
 
 .PARAMETER Name
-The Name of the SSE connection which has the ClientIds for the connections to close.
+The Name of the SSE connection which has the ClientIds for the connections to close. If supplied on its own, all connections will be closed.
+
+.PARAMETER Group
+An optional array of 1 or more SSE connection Groups, that are for the SSE connection Name. If supplied without any ClientIds, then all connections for the Group(s) will be closed.
 
 .PARAMETER ClientId
 An optional array of 1 or more SSE connection ClientIds, that are for the SSE connection Name.
@@ -252,6 +242,9 @@ If not supplied, every SSE connection for the supplied Name will be closed.
 
 .EXAMPLE
 Close-PodeSseConnection -Name 'Actions'
+
+.EXAMPLE
+Close-PodeSseConnection -Name 'Actions' -Group 'admins'
 
 .EXAMPLE
 Close-PodeSseConnection -Name 'Actions' -ClientId @('my-client-id', 'my-other'id')
@@ -265,10 +258,14 @@ function Close-PodeSseConnection {
 
         [Parameter()]
         [string[]]
-        $ClientId
+        $Group = $null,
+
+        [Parameter()]
+        [string[]]
+        $ClientId = $null
     )
 
-    $PodeContext.Server.Http.Listener.CloseSseConnection($Name, $ClientId)
+    $PodeContext.Server.Http.Listener.CloseSseConnection($Name, $Group, $ClientId)
 }
 
 <#
@@ -297,7 +294,7 @@ function Test-PodeSseClientIdSigned {
 
     # get clientId from WebEvent if not passed
     if ([string]::IsNullOrEmpty($ClientId)) {
-        $ClientId = Get-PodeSseClientId
+        $ClientId = $WebEvent.Request.SseClientId
     }
 
     # test if clientId is validly signed
@@ -331,7 +328,7 @@ function Test-PodeSseClientIdValid {
 
     # get clientId from WebEvent if not passed
     if ([string]::IsNullOrEmpty($ClientId)) {
-        $ClientId = Get-PodeSseClientId
+        $ClientId = $WebEvent.Request.SseClientId
     }
 
     # if no clientId, then it's not valid
@@ -346,25 +343,6 @@ function Test-PodeSseClientIdValid {
 
     # test if clientId is validly signed
     return Test-PodeSseClientIdSigned -ClientId $ClientId
-}
-
-<#
-.SYNOPSIS
-Retrieves an SSE connection ClientId from the current $WebEvent.
-
-.DESCRIPTION
-Retrieves an SSE connection ClientId from the current $WebEvent, which is set via the X-PODE-SSE-CLIENT-ID request header.
-This ClientId could be used to send events back to an originating SSE connection.
-
-.EXAMPLE
-$clientId = Get-PodeSseClientId
-#>
-function Get-PodeSseClientId {
-    [CmdletBinding()]
-    param()
-
-    # get clientId from WebEvent
-    return $WebEvent.Request.SseClientId
 }
 
 <#
@@ -468,4 +446,154 @@ function Disable-PodeSseSigning {
     $PodeContext.Server.Sse.Signed = $false
     $PodeContext.Server.Sse.Secret = $null
     $PodeContext.Server.Sse.Strict = $false
+}
+
+<#
+.SYNOPSIS
+Set an allowed broadcast level for SSE connections.
+
+.DESCRIPTION
+Set an allowed broadcast level for SSE connections, either for all SSE connection names or specific ones.
+
+.PARAMETER Name
+An optional Name for an SSE connection (default: *).
+
+.PARAMETER Type
+The broadcast level Type for the SSE connection.
+Name = Allow broadcasting at all levels, including broadcasting to all Groups and/or ClientIds for an SSE connection Name.
+Group = Allow broadcasting to only Groups or specific ClientIds. If neither Groups nor ClientIds are supplied, sending an event will fail.
+ClientId = Allow broadcasting to only ClientIds. If no ClientIds are supplied, sending an event will fail.
+
+.EXAMPLE
+Set-PodeSseBroadcastLevel -Type Name
+
+.EXAMPLE
+Set-PodeSseBroadcastLevel -Type Group
+
+.EXAMPLE
+Set-PodeSseBroadcastLevel -Name 'Actions' -Type ClientId
+#>
+function Set-PodeSseBroadcastLevel {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name = '*',
+
+        [Parameter()]
+        [ValidateSet('Name', 'Group', 'ClientId')]
+        [string]
+        $Type
+    )
+
+    $PodeContext.Server.Sse.BroadcastLevel[$Name] = $Type.ToLowerInvariant()
+}
+
+<#
+.SYNOPSIS
+Retrieve the broadcast level for an SSE connection Name.
+
+.DESCRIPTION
+Retrieve the broadcast level for an SSE connection Name. If one hasn't been set explicitly then the base level will be checked.
+If no broadcasting level have been set at all, then the "Name" level will be returned.
+
+.PARAMETER Name
+The Name of an SSE connection.
+
+.EXAMPLE
+$level = Get-PodeSseBroadcastLevel -Name 'Actions'
+#>
+function Get-PodeSseBroadcastLevel {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    # if no levels, return null
+    if ($PodeContext.Server.Sse.BroadcastLevel.Count -eq 0) {
+        return 'name'
+    }
+
+    # get level or default level
+    $level = $PodeContext.Server.Sse.BroadcastLevel[$Name]
+    if ([string]::IsNullOrEmpty($level)) {
+        $level = $PodeContext.Server.Sse.BroadcastLevel['*']
+    }
+
+    if ([string]::IsNullOrEmpty($level)) {
+        $level = 'name'
+    }
+
+    # return level
+    return $level
+}
+
+<#
+.SYNOPSIS
+Test if an SSE connection can be broadcasted to, given the Name, Group, and ClientIds.
+
+.DESCRIPTION
+Test if an SSE connection can be broadcasted to, given the Name, Group, and ClientIds.
+
+.PARAMETER Name
+The Name of the SSE connection.
+
+.PARAMETER Group
+An array of 1 or more Groups.
+
+.PARAMETER ClientId
+An array of 1 or more ClientIds.
+
+.EXAMPLE
+if (Test-PodeSseBroadcastLevel -Name 'Actions') { ... }
+
+.EXAMPLE
+if (Test-PodeSseBroadcastLevel -Name 'Actions' -Group 'admins') { ... }
+
+.EXAMPLE
+if (Test-PodeSseBroadcastLevel -Name 'Actions' -ClientId 'my-client-id') { ... }
+#>
+function Test-PodeSseBroadcastLevel {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $ClientId
+    )
+
+    # get level, and if no level or level=name, return true
+    $level = Get-PodeSseBroadcastLevel -Name $Name
+    if ([string]::IsNullOrEmpty($level) -or ($level -ieq 'name')) {
+        return $true
+    }
+
+    # if level=group, return false if no groups or clientIds
+    # if level=clientId, return false if no clientIds
+    switch ($level) {
+        'group' {
+            if ((($null -eq $Group) -or ($Group.Length -eq 0)) -and (($null -eq $ClientId) -or ($ClientId.Length -eq 0))) {
+                return $false
+            }
+        }
+
+        'clientid' {
+            if (($null -eq $ClientId) -or ($ClientId.Length -eq 0)) {
+                return $false
+            }
+        }
+    }
+
+    # valid, return true
+    return $true
 }

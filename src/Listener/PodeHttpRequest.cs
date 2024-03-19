@@ -36,6 +36,7 @@ namespace Pode
 
         public string SseClientId { get; private set; }
         public string SseClientName { get; private set; }
+        public string SseClientGroup { get; private set; }
         public bool HasSseClientId
         {
             get => !string.IsNullOrEmpty(SseClientId);
@@ -304,6 +305,7 @@ namespace Pode
             if (HasSseClientId)
             {
                 SseClientName = $"{Headers["X-Pode-Sse-Client-Name"]}";
+                SseClientGroup = $"{Headers["X-Pode-Sse-Client-Group"]}";
             }
 
             // keep-alive?

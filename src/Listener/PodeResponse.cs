@@ -193,7 +193,7 @@ namespace Pode
             }
         }
 
-        public string SetSseConnection(PodeSseScope scope, string clientId, string name, int retry, bool allowAllOrigins)
+        public string SetSseConnection(PodeSseScope scope, string clientId, string name, string group, int retry, bool allowAllOrigins)
         {
             // do nothing for no scope
             if (scope == PodeSseScope.None)
@@ -225,15 +225,20 @@ namespace Pode
             Headers.Set("X-Pode-Sse-Client-Id", clientId);
             Headers.Set("X-Pode-Sse-Client-Name", name);
 
+            if (!string.IsNullOrEmpty(group))
+            {
+                Headers.Set("X-Pode-Sse-Client-Group", group);
+            }
+
             // send headers, and open event
             Send();
             SendSseRetry(retry);
-            SendSseEvent("pode.open", $"{{\"clientId\":\"{clientId}\",\"name\":\"{name}\"}}");
+            SendSseEvent("pode.open", $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\"}}");
 
             // if global, cache connection in listener
             if (scope == PodeSseScope.Global)
             {
-                Context.Listener.AddSseConnection(new PodeServerEvent(Context, name, clientId));
+                Context.Listener.AddSseConnection(new PodeServerEvent(Context, name, group, clientId));
             }
 
             // return clientId

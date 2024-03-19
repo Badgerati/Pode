@@ -14,6 +14,9 @@ The value to set against the header.
 .PARAMETER Secret
 If supplied, the secret with which to sign the header's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Add-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
 #>
@@ -62,6 +65,9 @@ A hashtable of headers to be appended.
 
 .PARAMETER Secret
 If supplied, the secret with which to sign the header values.
+
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
 
 .EXAMPLE
 Add-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
@@ -138,6 +144,9 @@ The name of the header to retrieve.
 .PARAMETER Secret
 The secret used to unsign the header's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Get-PodeHeader -Name 'X-AuthToken'
 #>
@@ -183,6 +192,9 @@ The value to set against the header.
 
 .PARAMETER Secret
 If supplied, the secret with which to sign the header's value.
+
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
 
 .EXAMPLE
 Set-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
@@ -233,6 +245,9 @@ A hashtable of headers to be set.
 .PARAMETER Secret
 If supplied, the secret with which to sign the header values.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Set-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
 #>
@@ -281,6 +296,9 @@ The name of the header to test.
 
 .PARAMETER Secret
 A secret to use for attempting to unsign the header's value.
+
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
 
 .EXAMPLE
 Test-PodeHeaderSigned -Name 'X-Header-Name' -Secret 'hunter2'

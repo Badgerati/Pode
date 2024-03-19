@@ -98,6 +98,7 @@ function Start-PodeTcpServer {
                             }
                             Parameters = $null
                             Timestamp  = [datetime]::UtcNow
+                            Metadata   = @{}
                         }
 
                         # endpoint name

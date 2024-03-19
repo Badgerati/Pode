@@ -147,6 +147,7 @@ function Start-PodeWebServer {
                                 AcceptEncoding   = $null
                                 Ranges           = $null
                                 Sse              = $null
+                                Metadata         = @{}
                             }
 
                             # if iis, and we have an app path, alter it
@@ -181,6 +182,7 @@ function Start-PodeWebServer {
 
                                 $WebEvent.Sse = @{
                                     Name        = $WebEvent.Request.SseClientName
+                                    Group       = $WebEvent.Request.SseClientGroup
                                     ClientId    = $WebEvent.Request.SseClientId
                                     LastEventId = $null
                                     IsLocal     = $false
@@ -379,6 +381,7 @@ function Start-PodeWebServer {
                             ClientId  = $context.Signal.ClientId
                             Timestamp = $context.Timestamp
                             Streamed  = $true
+                            Metadata  = @{}
                         }
 
                         # endpoint name

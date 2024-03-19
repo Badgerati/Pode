@@ -159,9 +159,10 @@ function New-PodeContext {
     }
 
     $ctx.Server.Sse = @{
-        Signed = $false
-        Secret = $null
-        Strict = $false
+        Signed         = $false
+        Secret         = $null
+        Strict         = $false
+        BroadcastLevel = @{}
     }
 
     $ctx.Server.WebSockets = @{
