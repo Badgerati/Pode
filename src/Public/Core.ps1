@@ -396,6 +396,24 @@ function Start-PodeStaticServer {
 
 <#
 .SYNOPSIS
+A default server secret that can be for signing values like Session, Cookies, or SSE IDs.
+
+.DESCRIPTION
+A default server secret that can be for signing values like Session, Cookies, or SSE IDs. This secret is regenerated
+on every server start and restart.
+
+.EXAMPLE
+$secret = Get-PodeServerDefaultSecret
+#>
+function Get-PodeServerDefaultSecret {
+    [CmdletBinding()]
+    param()
+
+    return $PodeContext.Server.DefaultSecret
+}
+
+<#
+.SYNOPSIS
 The CLI for Pode, to initialise, build and start your Server.
 
 .DESCRIPTION

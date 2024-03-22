@@ -394,7 +394,7 @@ Enable the signing of SSE connection ClientIds.
 Enable the signing of SSE connection ClientIds.
 
 .PARAMETER Secret
-An optional Secret to sign ClientIds (Default: random GUID).
+A Secret to sign ClientIds, Get-PodeServerDefaultSecret can be used.
 
 .PARAMETER Strict
 If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
@@ -414,7 +414,7 @@ Enable-PodeSseSigning -Secret 'Sup3rS3cr37!'
 function Enable-PodeSseSigning {
     [CmdletBinding()]
     param(
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [string]
         $Secret,
 

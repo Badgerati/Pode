@@ -196,17 +196,14 @@ function Invoke-PodeValueSign {
         [string]
         $Value,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]
         $Secret,
 
         [switch]
         $Strict
     )
-
-    if ([string]::IsNullOrEmpty($Secret)) {
-        $Secret = $PodeContext.Server.BaseSecret
-    }
 
     if ($Strict) {
         $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
@@ -222,7 +219,8 @@ function Invoke-PodeValueUnsign {
         [string]
         $Value,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]
         $Secret,
 
@@ -242,10 +240,6 @@ function Invoke-PodeValueUnsign {
         return $null
     }
 
-    if ([string]::IsNullOrEmpty($Secret)) {
-        $Secret = $PodeContext.Server.BaseSecret
-    }
-
     if ($Strict) {
         $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
     }
@@ -263,11 +257,12 @@ function Invoke-PodeValueUnsign {
 
 function Test-PodeValueSigned {
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true)]
         [string]
         $Value,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]
         $Secret,
 

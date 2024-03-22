@@ -316,7 +316,7 @@ function Test-PodeCookieSigned {
     )
 
     $cookie = $WebEvent.Cookies[$Name]
-    if ($null -eq $cookie) {
+    if (($null -eq $cookie) -or [string]::IsNullOrEmpty($cookie.Value)) {
         return $false
     }
 

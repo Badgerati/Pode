@@ -286,6 +286,7 @@
         'Add-PodeEndpoint',
         'Get-PodeEndpoint',
         'Pode',
+        'Get-PodeServerDefaultSecret',
 
         # openapi
         'Enable-PodeOpenApi',

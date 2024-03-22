@@ -97,8 +97,8 @@ function New-PodeContext {
     $ctx.Receivers = @()
     $ctx.Watchers = @()
 
-    # base secret that can used when needed, and a secret isn't supplied
-    $ctx.Server.BaseSecret = New-PodeGuid -Secure
+    # default secret that can used when needed, and a secret isn't supplied
+    $ctx.Server.DefaultSecret = New-PodeGuid -Secure
 
     # list of timers/schedules/tasks/fim
     $ctx.Timers = @{

@@ -127,7 +127,7 @@ function Enable-PodeSessionMiddleware {
             throw 'A Secret is required when using custom session storage'
         }
 
-        $Secret = $PodeContext.Server.BaseSecret
+        $Secret = Get-PodeServerDefaultSecret
     }
 
     # if no custom storage, use the inmem one
