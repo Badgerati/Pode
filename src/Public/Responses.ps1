@@ -1582,8 +1582,16 @@ function Add-PodeViewFolder {
     $PodeContext.Server.Views[$Name] = $Source
 }
 
-#TODO: flag that this is a dangerous function, which will force send a response before the end of a route
-# only use if you know what you're doing!
+<#
+.SYNOPSIS
+Pre-emptively send an HTTP response back to the client. This can be dangerous, so only use this function if you know what you're doing.
+
+.DESCRIPTION
+Pre-emptively send an HTTP response back to the client. This can be dangerous, so only use this function if you know what you're doing.
+
+.EXAMPLE
+Send-PodeResponse
+#>
 function Send-PodeResponse {
     [CmdletBinding()]
     param()
