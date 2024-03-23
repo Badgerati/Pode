@@ -162,6 +162,7 @@ function New-PodeContext {
         Signed         = $false
         Secret         = $null
         Strict         = $false
+        DefaultScope   = 'Global'
         BroadcastLevel = @{}
     }
 

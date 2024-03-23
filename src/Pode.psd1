@@ -102,6 +102,10 @@
         'Set-PodeSseBroadcastLevel',
         'Get-PodeSseBroadcastLevel',
         'Test-PodeSseBroadcastLevel',
+        'Set-PodeSseDefaultScope',
+        'Get-PodeSseDefaultScope',
+        'Test-PodeSseName',
+        'Test-PodeSseClientId',
 
         # utility helpers
         'Close-PodeDisposable',

@@ -223,11 +223,11 @@ namespace Pode
             }
 
             Headers.Set("X-Pode-Sse-Client-Id", clientId);
-            Headers.Set("X-Pode-Sse-Client-Name", name);
+            Headers.Set("X-Pode-Sse-Name", name);
 
             if (!string.IsNullOrEmpty(group))
             {
-                Headers.Set("X-Pode-Sse-Client-Group", group);
+                Headers.Set("X-Pode-Sse-Group", group);
             }
 
             // send headers, and open event

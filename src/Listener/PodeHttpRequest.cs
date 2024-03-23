@@ -304,8 +304,8 @@ namespace Pode
             SseClientId = $"{Headers["X-Pode-Sse-Client-Id"]}";
             if (HasSseClientId)
             {
-                SseClientName = $"{Headers["X-Pode-Sse-Client-Name"]}";
-                SseClientGroup = $"{Headers["X-Pode-Sse-Client-Group"]}";
+                SseClientName = $"{Headers["X-Pode-Sse-Name"]}";
+                SseClientGroup = $"{Headers["X-Pode-Sse-Group"]}";
             }
 
             // keep-alive?

@@ -191,6 +191,24 @@ namespace Pode
             }, CancellationToken);
         }
 
+        public bool TestSseConnectionExists(string name, string clientId)
+        {
+            // check name
+            if (!ServerEvents.ContainsKey(name))
+            {
+                return false;
+            }
+
+            // check clientId
+            if (!string.IsNullOrEmpty(clientId) && !ServerEvents[name].ContainsKey(clientId))
+            {
+                return false;
+            }
+
+            // exists
+            return true;
+        }
+
         public PodeServerSignal GetServerSignal(CancellationToken cancellationToken = default(CancellationToken))
         {
             return ServerSignals.Get(cancellationToken);

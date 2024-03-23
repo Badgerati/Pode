@@ -13,7 +13,8 @@ The Name of the SSE connection, which ClientIds will be stored under.
 An optional Group for this SSE connection, to enable broadcasting events to all connections for an SSE connection name in a Group.
 
 .PARAMETER Scope
-The Scope of the SSE connection, either Local or Global (Default: Global).
+The Scope of the SSE connection, either Default, Local or Global (Default: Default).
+- If the Scope is Default, then it will be Global unless the default has been updated via Set-PodeSseDefaultScope.
 - If the Scope is Local, then the SSE connection will only be opened for the duration of the request to a Route that configured it.
 - If the Scope is Global, then the SSE connection will be cached internally so events can be sent to the connection from Tasks, Timers, and other Routes, etc.
 
@@ -56,9 +57,9 @@ function ConvertTo-PodeSseConnection {
         $Group,
 
         [Parameter()]
-        [ValidateSet('Local', 'Global')]
+        [ValidateSet('Default', 'Local', 'Global')]
         [string]
-        $Scope = 'Global',
+        $Scope = 'Default',
 
         [Parameter()]
         [int]
@@ -80,6 +81,11 @@ function ConvertTo-PodeSseConnection {
         throw 'SSE can only be configured on requests with an Accept header value of text/event-stream'
     }
 
+    # check for default scope, and set
+    if ($Scope -ieq 'default') {
+        $Scope = $PodeContext.Server.Sse.DefaultScope
+    }
+
     # generate clientId
     $ClientId = New-PodeSseClientId -ClientId $ClientId
 
@@ -94,6 +100,53 @@ function ConvertTo-PodeSseConnection {
         LastEventId = Get-PodeHeader -Name 'Last-Event-ID'
         IsLocal     = ($Scope -ieq 'local')
     }
+}
+
+<#
+.SYNOPSIS
+Sets the default scope for new SSE connections.
+
+.DESCRIPTION
+Sets the default scope for new SSE connections.
+
+.PARAMETER Scope
+The default Scope for new SSE connections, either Local or Global.
+- If the Scope is Local, then new SSE connections will only be opened for the duration of the request to a Route that configured it.
+- If the Scope is Global, then new SSE connections will be cached internally so events can be sent to the connection from Tasks, Timers, and other Routes, etc.
+
+.EXAMPLE
+Set-PodeSseDefaultScope -Scope Local
+
+.EXAMPLE
+Set-PodeSseDefaultScope -Scope Global
+#>
+function Set-PodeSseDefaultScope {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Local', 'Global')]
+        [string]
+        $Scope
+    )
+
+    $PodeContext.Server.Sse.DefaultScope = $Scope
+}
+
+<#
+.SYNOPSIS
+Retrieves the default SSE connection scope for new SSE connections.
+
+.DESCRIPTION
+Retrieves the default SSE connection scope for new SSE connections.
+
+.EXAMPLE
+$scope = Get-PodeSseDefaultScope
+#>
+function Get-PodeSseDefaultScope {
+    [CmdletBinding()]
+    param()
+
+    return $PodeContext.Server.Sse.DefaultScope
 }
 
 <#
@@ -129,7 +182,7 @@ The Depth to generate the JSON document - the larger this value the worse perfor
 
 .PARAMETER FromEvent
 If supplied, the SSE connection Name and ClientId will atttempt to be retrived from $WebEvent.Sse.
-These details will be set if ConvertTo-PodeSseConnection has just been called. Or if X-PODE-SSE-CLIENT-ID and X-PODE-SSE-CLIENT-NAME are set on an HTTP request.
+These details will be set if ConvertTo-PodeSseConnection has just been called. Or if X-PODE-SSE-CLIENT-ID and X-PODE-SSE-NAME are set on an HTTP request.
 
 .EXAMPLE
 Send-PodeSseEvent -FromEvent -Data 'This is an event'
@@ -147,7 +200,7 @@ Send-PodeSseEvent -Name 'Actions' -Group 'admins' -Data @{ Message = 'A message'
 Send-PodeSseEvent -Name 'Actions' -Data @{ Message = 'A message' } -ID 123 -EventType 'action'
 #>
 function Send-PodeSseEvent {
-    [CmdletBinding(DefaultParameterSetName = 'Name')]
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Name')]
         [string]
@@ -343,6 +396,61 @@ function Test-PodeSseClientIdValid {
 
     # test if clientId is validly signed
     return Test-PodeSseClientIdSigned -ClientId $ClientId
+}
+
+<#
+.SYNOPSIS
+Test if the name of an SSE connection exists or not.
+
+.DESCRIPTION
+Test if the name of an SSE connection exists or not.
+
+.PARAMETER Name
+The Name of an SSE connection to test.
+
+.EXAMPLE
+if (Test-PodeSseName -Name 'Example') { ... }
+#>
+function Test-PodeSseName {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.Http.Listener.TestSseConnectionExists($Name)
+}
+
+<#
+.SYNOPSIS
+Test if an SSE connection ClientId exists or not.
+
+.DESCRIPTION
+Test if an SSE connection ClientId exists or not.
+
+.PARAMETER Name
+The Name of an SSE connection.
+
+.PARAMETER ClientId
+The SSE connection ClientId to test.
+
+.EXAMPLE
+if (Test-PodeSseClientId -Name 'Example' -ClientId 'my-client-id') { ... }
+#>
+function Test-PodeSseClientId {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ClientId
+    )
+
+    return $PodeContext.Server.Http.Listener.TestSseConnectionExists($Name, $ClientId)
 }
 
 <#
