@@ -1581,3 +1581,22 @@ function Add-PodeViewFolder {
     Write-Verbose "Adding View Folder: [$($Name)] $($Source)"
     $PodeContext.Server.Views[$Name] = $Source
 }
+
+<#
+.SYNOPSIS
+Pre-emptively send an HTTP response back to the client. This can be dangerous, so only use this function if you know what you're doing.
+
+.DESCRIPTION
+Pre-emptively send an HTTP response back to the client. This can be dangerous, so only use this function if you know what you're doing.
+
+.EXAMPLE
+Send-PodeResponse
+#>
+function Send-PodeResponse {
+    [CmdletBinding()]
+    param()
+
+    if ($null -ne $WebEvent.Response) {
+        $WebEvent.Response.Send()
+    }
+}

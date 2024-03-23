@@ -38,30 +38,18 @@ function Get-PodeSessionFullId {
     return $SessionId
 }
 
-function ConvertTo-PodeSessionStrictSecret {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Secret
-    )
-
-    return "$($Secret);$($WebEvent.Request.UserAgent);$($WebEvent.Request.RemoteEndPoint.Address.IPAddressToString)"
-}
-
 function Set-PodeSession {
     if ($null -eq $WebEvent.Session) {
         throw 'there is no session available to set on the response'
     }
 
     # convert secret to strict mode
+    $strict = $PodeContext.Server.Sessions.Info.Strict
     $secret = $PodeContext.Server.Sessions.Secret
-    if ($PodeContext.Server.Sessions.Info.Strict) {
-        $secret = ConvertTo-PodeSessionStrictSecret -Secret $secret
-    }
 
     # set session on header
     if ($PodeContext.Server.Sessions.Info.UseHeaders) {
-        Set-PodeHeader -Name $WebEvent.Session.Name -Value $WebEvent.Session.Id -Secret $secret
+        Set-PodeHeader -Name $WebEvent.Session.Name -Value $WebEvent.Session.Id -Secret $secret -Strict:$strict
     }
 
     # set session as cookie
@@ -70,6 +58,7 @@ function Set-PodeSession {
             -Name $WebEvent.Session.Name `
             -Value $WebEvent.Session.Id `
             -Secret $secret `
+            -Strict:$strict `
             -ExpiryDate (Get-PodeSessionExpiry) `
             -HttpOnly:$PodeContext.Server.Sessions.Info.HttpOnly `
             -Secure:$PodeContext.Server.Sessions.Info.Secure
@@ -84,7 +73,7 @@ function Get-PodeSession {
 
     # convert secret to strict mode
     if ($PodeContext.Server.Sessions.Info.Strict) {
-        $secret = ConvertTo-PodeSessionStrictSecret -Secret $secret
+        $secret = ConvertTo-PodeStrictSecret -Secret $secret
     }
 
     # session from header

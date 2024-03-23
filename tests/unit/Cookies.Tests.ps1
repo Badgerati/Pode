@@ -6,7 +6,8 @@ Describe 'Test-PodeCookie' {
     It 'Returns true' {
         $WebEvent = @{ 'Cookies' = @{
                 'test' = @{ 'Value' = 'example' }
-        } }
+            } 
+        }
 
         Test-PodeCookie -Name 'test' | Should Be $true
     }
@@ -25,8 +26,9 @@ Describe 'Test-PodeCookie' {
 Describe 'Test-PodeCookieSigned' {
     It 'Returns false for no value' {
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ }
-        } }
+                'test' = @{ }
+            } 
+        }
 
         Test-PodeCookieSigned -Name 'test' | Should Be $false
     }
@@ -40,8 +42,9 @@ Describe 'Test-PodeCookieSigned' {
         Mock Invoke-PodeValueUnsign { return $null }
 
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ 'Value' = 'example' }
-        } }
+                'test' = @{ 'Value' = 'example' }
+            } 
+        }
 
         { Test-PodeCookieSigned -Name 'test' } | Should Throw 'argument is null'
         Assert-MockCalled Invoke-PodeValueUnsign -Times 0 -Scope It
@@ -51,8 +54,9 @@ Describe 'Test-PodeCookieSigned' {
         Mock Invoke-PodeValueUnsign { return $null }
 
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ 'Value' = 'example' }
-        } }
+                'test' = @{ 'Value' = 'example' }
+            } 
+        }
 
         Test-PodeCookieSigned -Name 'test' -Secret 'key' | Should Be $false
         Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
@@ -62,8 +66,9 @@ Describe 'Test-PodeCookieSigned' {
         Mock Invoke-PodeValueUnsign { return 'value' }
 
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ 'Value' = 'example' }
-        } }
+                'test' = @{ 'Value' = 'example' }
+            } 
+        }
 
         Test-PodeCookieSigned -Name 'test' -Secret 'key' | Should Be $true
         Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
@@ -73,14 +78,17 @@ Describe 'Test-PodeCookieSigned' {
         Mock Invoke-PodeValueUnsign { return 'value' }
 
         $PodeContext = @{ 'Server' = @{
-            'Cookies' = @{ 'Secrets' = @{
-                'global' = 'key'
-            }
-        } } }
+                'Cookies' = @{ 'Secrets' = @{
+                        'global' = 'key'
+                    }
+                } 
+            } 
+        }
 
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ 'Value' = 'example' }
-        } }
+                'test' = @{ 'Value' = 'example' }
+            } 
+        }
 
         Test-PodeCookieSigned -Name 'test' -Secret (Get-PodeCookieSecret -Global) | Should Be $true
         Assert-MockCalled Invoke-PodeValueUnsign -Times 1 -Scope It
@@ -90,24 +98,27 @@ Describe 'Test-PodeCookieSigned' {
 Describe 'Get-PodeCookie' {
     It 'Returns null for no value' {
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ }
-        } }
+                'test' = @{ }
+            } 
+        }
 
         Get-PodeCookie -Name 'test' | Should Be $null
     }
 
     It 'Returns null for not existing' {
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ }
-        } }
+                'test' = @{ }
+            } 
+        }
 
         Get-PodeCookie -Name 'test' | Should Be $null
     }
 
     It 'Returns a cookie, with no secret' {
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ 'Value' = 'example' }
-        } }
+                'test' = @{ 'Value' = 'example' }
+            } 
+        }
 
         $c = Get-PodeCookie -Name 'test'
         $c | Should Not Be $null
@@ -118,8 +129,9 @@ Describe 'Get-PodeCookie' {
         Mock Invoke-PodeValueUnsign { return $null }
 
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ 'Value' = 'example' }
-        } }
+                'test' = @{ 'Value' = 'example' }
+            } 
+        }
 
         $c = Get-PodeCookie -Name 'test' -Secret 'key'
         $c | Should Not Be $null
@@ -132,8 +144,9 @@ Describe 'Get-PodeCookie' {
         Mock Invoke-PodeValueUnsign { return 'some-id' }
 
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ 'Value' = 'example' }
-        } }
+                'test' = @{ 'Value' = 'example' }
+            } 
+        }
 
         $c = Get-PodeCookie -Name 'test' -Secret 'key'
         $c | Should Not Be $null
@@ -146,14 +159,17 @@ Describe 'Get-PodeCookie' {
         Mock Invoke-PodeValueUnsign { return 'some-id' }
 
         $PodeContext = @{ 'Server' = @{
-            'Cookies' = @{ 'Secrets' = @{
-                'global' = 'key'
-            }
-        } } }
+                'Cookies' = @{ 'Secrets' = @{
+                        'global' = 'key'
+                    }
+                } 
+            } 
+        }
 
         $WebEvent = @{ 'Cookies' = @{
-            'test' = @{ 'Value' = 'example' }
-        } }
+                'test' = @{ 'Value' = 'example' }
+            } 
+        }
 
         $c = Get-PodeCookie -Name 'test' -Secret (Get-PodeCookieSecret -Global)
         $c | Should Not Be $null
@@ -166,8 +182,9 @@ Describe 'Get-PodeCookie' {
 Describe 'Set-PodeCookie' {
     It 'Adds simple cookie to response' {
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        }; 'PendingCookies' = @{} }
+                'Headers' = @{}
+            }; 'PendingCookies'          = @{} 
+        }
 
         $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
             param($n, $v)
@@ -196,8 +213,9 @@ Describe 'Set-PodeCookie' {
         Mock Invoke-PodeValueSign { return 'some-id' }
 
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        }; 'PendingCookies' = @{} }
+                'Headers' = @{}
+            }; 'PendingCookies'          = @{} 
+        }
 
         $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
             param($n, $v)
@@ -224,14 +242,17 @@ Describe 'Set-PodeCookie' {
         Mock Invoke-PodeValueSign { return 'some-id' }
 
         $PodeContext = @{ 'Server' = @{
-            'Cookies' = @{ 'Secrets' = @{
-                'global' = 'key'
-            }
-        } } }
+                'Cookies' = @{ 'Secrets' = @{
+                        'global' = 'key'
+                    }
+                } 
+            } 
+        }
 
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        }; 'PendingCookies' = @{} }
+                'Headers' = @{}
+            }; 'PendingCookies'          = @{} 
+        }
 
         $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
             param($n, $v)
@@ -256,8 +277,9 @@ Describe 'Set-PodeCookie' {
 
     It 'Adds cookie to response with options' {
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        }; 'PendingCookies' = @{} }
+                'Headers' = @{}
+            }; 'PendingCookies'          = @{} 
+        }
 
         $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
             param($n, $v)
@@ -282,8 +304,9 @@ Describe 'Set-PodeCookie' {
 
     It 'Adds cookie to response with TTL' {
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        }; 'PendingCookies' = @{} }
+                'Headers' = @{}
+            }; 'PendingCookies'          = @{} 
+        }
 
         $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
             param($n, $v)
@@ -307,8 +330,9 @@ Describe 'Set-PodeCookie' {
 
     It 'Adds cookie to response with Expiry' {
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        }; 'PendingCookies' = @{} }
+                'Headers' = @{}
+            }; 'PendingCookies'          = @{} 
+        }
 
         $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
             param($n, $v)
@@ -336,11 +360,12 @@ Describe 'Update-PodeCookieExpiry' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        };
-        'PendingCookies' = @{
-            'test' = @{ 'Name' = 'test'; 'Expires' = [datetime]::UtcNow }
-        } }
+                'Headers' = @{}
+            }
+            'PendingCookies'             = @{
+                'test' = @{ 'Name' = 'test'; 'Expires' = [datetime]::UtcNow }
+            } 
+        }
 
         Update-PodeCookieExpiry -Name 'test' -Duration 3600
         ($WebEvent.PendingCookies['test'].Expires -gt [datetime]::UtcNow.AddSeconds(3000)) | Should Be $true
@@ -352,9 +377,10 @@ Describe 'Update-PodeCookieExpiry' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        };
-        'PendingCookies' = @{} }
+                'Headers' = @{}
+            }
+            'PendingCookies'             = @{} 
+        }
 
         Update-PodeCookieExpiry -Name 'test' -Duration 3600
         ($WebEvent.PendingCookies['test'].Expires -gt [datetime]::UtcNow.AddSeconds(3000)) | Should Be $true
@@ -364,11 +390,12 @@ Describe 'Update-PodeCookieExpiry' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        };
-        'PendingCookies' = @{
-            'test' = @{ 'Name' = 'test'; 'Expires' = [datetime]::UtcNow }
-        } }
+                'Headers' = @{}
+            }
+            'PendingCookies'             = @{
+                'test' = @{ 'Name' = 'test'; 'Expires' = [datetime]::UtcNow }
+            } 
+        }
 
         Update-PodeCookieExpiry -Name 'test' -Expiry ([datetime]::UtcNow.AddDays(2))
         ($WebEvent.PendingCookies['test'].Expires -gt [datetime]::UtcNow.AddDays(1)) | Should Be $true
@@ -380,11 +407,12 @@ Describe 'Update-PodeCookieExpiry' {
         $ttl = [datetime]::UtcNow
 
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        };
-        'PendingCookies' = @{
-            'test' = @{ 'Name' = 'test'; 'Expires' = $ttl }
-        } }
+                'Headers' = @{}
+            }
+            'PendingCookies'             = @{
+                'test' = @{ 'Name' = 'test'; 'Expires' = $ttl }
+            } 
+        }
 
         Update-PodeCookieExpiry -Name 'test'
         $WebEvent.PendingCookies['test'].Expires | Should Be $ttl
@@ -396,11 +424,12 @@ Describe 'Update-PodeCookieExpiry' {
         $ttl = [datetime]::UtcNow
 
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        };
-        'PendingCookies' = @{
-            'test' = @{ 'Name' = 'test'; 'Expires' = $ttl }
-        } }
+                'Headers' = @{}
+            }
+            'PendingCookies'             = @{
+                'test' = @{ 'Name' = 'test'; 'Expires' = $ttl }
+            } 
+        }
 
         Update-PodeCookieExpiry -Name 'test' -Duration -1
         $WebEvent.PendingCookies['test'].Expires | Should Be $ttl
@@ -412,11 +441,12 @@ Describe 'Remove-PodeCookie' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         $WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        };
-        'PendingCookies' = @{
-            'test' = @{ 'Name' = 'test'; 'Discard' = $false; 'Expires' = [datetime]::UtcNow }
-        } }
+                'Headers' = @{}
+            }
+            'PendingCookies'      = @{
+                'test' = @{ 'Name' = 'test'; 'Discard' = $false; 'Expires' = [datetime]::UtcNow }
+            } 
+        }
 
         Remove-PodeCookie -Name 'test'
 
@@ -430,9 +460,10 @@ Describe 'Remove-PodeCookie' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         $WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        };
-        'PendingCookies' = @{} }
+                'Headers' = @{}
+            }
+            'PendingCookies'      = @{} 
+        }
 
         Remove-PodeCookie -Name 'test'
 

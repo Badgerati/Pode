@@ -54,6 +54,7 @@ function Start-PodeAzFuncServer {
                 TransferEncoding = $null
                 AcceptEncoding   = $null
                 Ranges           = $null
+                Metadata         = @{}
             }
 
             $WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'host') -split ':')[0]
@@ -180,6 +181,7 @@ function Start-PodeAwsLambdaServer {
                 TransferEncoding = $null
                 AcceptEncoding   = $null
                 Ranges           = $null
+                Metadata         = @{}
             }
 
             $WebEvent.Endpoint.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')

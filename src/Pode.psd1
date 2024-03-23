@@ -88,6 +88,24 @@
         'Use-PodePartialView',
         'Send-PodeSignal',
         'Add-PodeViewFolder',
+        'Send-PodeResponse',
+
+        # sse
+        'ConvertTo-PodeSseConnection',
+        'Send-PodeSseEvent',
+        'Close-PodeSseConnection',
+        'Test-PodeSseClientIdSigned',
+        'Test-PodeSseClientIdValid',
+        'New-PodeSseClientId',
+        'Enable-PodeSseSigning',
+        'Disable-PodeSseSigning',
+        'Set-PodeSseBroadcastLevel',
+        'Get-PodeSseBroadcastLevel',
+        'Test-PodeSseBroadcastLevel',
+        'Set-PodeSseDefaultScope',
+        'Get-PodeSseDefaultScope',
+        'Test-PodeSseName',
+        'Test-PodeSseClientId',
 
         # utility helpers
         'Close-PodeDisposable',
@@ -272,6 +290,7 @@
         'Add-PodeEndpoint',
         'Get-PodeEndpoint',
         'Pode',
+        'Get-PodeServerDefaultSecret',
 
         # openapi
         'Enable-PodeOpenApi',

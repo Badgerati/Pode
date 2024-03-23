@@ -91,6 +91,7 @@ function Start-PodeFileWatcherRunspace {
                             Parameters = @{}
                             Lockable   = $PodeContext.Threading.Lockables.Global
                             Timestamp  = [datetime]::UtcNow
+                            Metadata   = @{}
                         }
 
                         # do we have any parameters?
