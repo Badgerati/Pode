@@ -264,6 +264,7 @@ function Restart-PodeInternalServer {
         # clear the sockets
         $PodeContext.Server.Signals.Enabled = $false
         $PodeContext.Server.Signals.Listener = $null
+        $PodeContext.Server.Http.Listener = $null
         $PodeContext.Listeners = @()
         $PodeContext.Receivers = @()
         $PodeContext.Watchers = @()

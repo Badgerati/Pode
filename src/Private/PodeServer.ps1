@@ -85,6 +85,7 @@ function Start-PodeWebServer {
         $PodeContext.Listeners += $listener
         $PodeContext.Server.Signals.Enabled = $true
         $PodeContext.Server.Signals.Listener = $listener
+        $PodeContext.Server.Http.Listener = $listener
     }
     catch {
         $_ | Write-PodeErrorLog
@@ -145,6 +146,8 @@ function Start-PodeWebServer {
                                 TransferEncoding = $null
                                 AcceptEncoding   = $null
                                 Ranges           = $null
+                                Sse              = $null
+                                Metadata         = @{}
                             }
 
                             # if iis, and we have an app path, alter it
@@ -169,6 +172,25 @@ function Start-PodeWebServer {
                             # stop now if the request has an error
                             if ($Request.IsAborted) {
                                 throw $Request.Error
+                            }
+
+                            # if we have an sse clientId, verify it and then set details in WebEvent
+                            if ($WebEvent.Request.HasSseClientId) {
+                                if (!(Test-PodeSseClientIdValid)) {
+                                    throw [System.Net.Http.HttpRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
+                                }
+
+                                if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
+                                    throw [System.Net.Http.HttpRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)")
+                                }
+
+                                $WebEvent.Sse = @{
+                                    Name        = $WebEvent.Request.SseClientName
+                                    Group       = $WebEvent.Request.SseClientGroup
+                                    ClientId    = $WebEvent.Request.SseClientId
+                                    LastEventId = $null
+                                    IsLocal     = $false
+                                }
                             }
 
                             # invoke global and route middleware
@@ -366,6 +388,7 @@ function Start-PodeWebServer {
                             ClientId  = $context.Signal.ClientId
                             Timestamp = $context.Timestamp
                             Streamed  = $true
+                            Metadata  = @{}
                         }
 
                         # endpoint name

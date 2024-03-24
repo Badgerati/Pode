@@ -34,6 +34,14 @@ namespace Pode
         private bool IsRequestLineValid;
         private MemoryStream BodyStream;
 
+        public string SseClientId { get; private set; }
+        public string SseClientName { get; private set; }
+        public string SseClientGroup { get; private set; }
+        public bool HasSseClientId
+        {
+            get => !string.IsNullOrEmpty(SseClientId);
+        }
+
         private string _body = string.Empty;
         public string Body
         {
@@ -290,6 +298,14 @@ namespace Pode
             if (Headers.ContainsKey("Sec-WebSocket-Key"))
             {
                 Type = PodeProtocolType.Ws;
+            }
+
+            // do we have an SSE ClientId?
+            SseClientId = $"{Headers["X-Pode-Sse-Client-Id"]}";
+            if (HasSseClientId)
+            {
+                SseClientName = $"{Headers["X-Pode-Sse-Name"]}";
+                SseClientGroup = $"{Headers["X-Pode-Sse-Group"]}";
             }
 
             // keep-alive?

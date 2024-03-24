@@ -79,7 +79,7 @@ namespace Pode
 
         public bool IsKeepAlive
         {
-            get => (Request.IsKeepAlive);
+            get => ((Request.IsKeepAlive && Response.SseScope != PodeSseScope.Local) || Response.SseScope == PodeSseScope.Global);
         }
 
         public bool IsErrored
@@ -123,6 +123,11 @@ namespace Pode
 
         private void TimeoutCallback(object state)
         {
+            if (Response.SseEnabled)
+            {
+                return;
+            }
+
             ContextTimeoutToken.Cancel();
             State = PodeContextState.Timeout;
 
@@ -254,6 +259,11 @@ namespace Pode
         public void RenewTimeoutToken()
         {
             ContextTimeoutToken = new CancellationTokenSource();
+        }
+
+        public void CancelTimeout()
+        {
+            TimeoutTimer.Dispose();
         }
 
         public async void Receive()
@@ -412,6 +422,12 @@ namespace Pode
                     if (!_awaitingBody && (!IsKeepAlive || force))
                     {
                         State = PodeContextState.Closed;
+
+                        if (Response.SseEnabled)
+                        {
+                            Response.CloseSseConnection();
+                        }
+
                         Request.Dispose();
                     }
 
@@ -423,7 +439,7 @@ namespace Pode
                 catch {}
 
                 // if keep-alive, or awaiting body, setup for re-receive
-                if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout)) && !force)
+                if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout && !Response.SseEnabled)) && !force)
                 {
                     StartReceive();
                 }

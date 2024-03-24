@@ -112,6 +112,7 @@ function Start-PodeSmtpServer {
                                 Name     = $null
                             }
                             Timestamp = [datetime]::UtcNow
+                            Metadata  = @{}
                         }
 
                         # endpoint name

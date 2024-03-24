@@ -43,7 +43,7 @@ If supplied, the Secret will be extended using the client request's UserAgent an
 If supplied, Sessions will be sent back in a header on the Response with the Name supplied.
 
 .EXAMPLE
-Enable-PodeSessionMiddleware  -Duration 120
+Enable-PodeSessionMiddleware -Duration 120
 
 .EXAMPLE
 Enable-PodeSessionMiddleware -Duration 120 -Extend -Generator { return [System.IO.Path]::GetRandomFileName() }
@@ -127,7 +127,7 @@ function Enable-PodeSessionMiddleware {
             throw 'A Secret is required when using custom session storage'
         }
 
-        $Secret = New-PodeGuid -Secure
+        $Secret = Get-PodeServerDefaultSecret
     }
 
     # if no custom storage, use the inmem one
@@ -271,13 +271,8 @@ function Get-PodeSessionId {
         $strict = $PodeContext.Server.Sessions.Info.Strict
         $secret = $PodeContext.Server.Sessions.Secret
 
-        # covert secret to strict mode
-        if ($strict) {
-            $secret = ConvertTo-PodeSessionStrictSecret -Secret $secret
-        }
-
         # sign the value if we have a secret
-        $sessionId = (Invoke-PodeValueSign -Value $sessionId -Secret $secret)
+        $sessionId = (Invoke-PodeValueSign -Value $sessionId -Secret $secret -Strict:$strict)
     }
 
     # return the ID

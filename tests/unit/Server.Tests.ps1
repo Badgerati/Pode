@@ -162,6 +162,9 @@ Describe 'Restart-PodeInternalServer' {
                         Connections = [System.Collections.Concurrent.ConcurrentQueue[System.Net.Sockets.SocketAsyncEventArgs]]::new()
                     }
                 }
+                Http            = @{
+                    Listener = $null
+                }
                 OpenAPI         = @{
                     DefaultDefinitionTag  = 'default'
                     SelectedDefinitionTag = 'default'
