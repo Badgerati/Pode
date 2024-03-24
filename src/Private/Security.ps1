@@ -494,25 +494,6 @@ function Add-PodeEndpointLimit {
         throw "Seconds value cannot be 0 or less for $($IP)"
     }
 
-    # we need to check endpoints on requests
-    switch ($endpoint.Type.ToLowerInvariant()) {
-        'http' {
-            $PodeContext.Server.FindEndpoints.Route = $true
-        }
-
-        'ws' {
-            $PodeContext.Server.FindEndpoints.Route = $true
-        }
-
-        'smtp' {
-            $PodeContext.Server.FindEndpoints.Smtp = $true
-        }
-
-        'tcp' {
-            $PodeContext.Server.FindEndpoints.Tcp = $true
-        }
-    }
-
     # get current rules
     $rules = $PodeContext.Server.Limits.Rules[$type]
 

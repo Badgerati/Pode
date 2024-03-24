@@ -216,7 +216,7 @@ function Find-PodeEndpointName {
 
     # change localhost/computer name to ip address
     if (($Address -ilike 'localhost:*') -or ($Address -ilike "$($PodeContext.Server.ComputerName):*")) {
-        $Address = ($Address -ireplace "(localhost|$([regex]::Escape($PodeContext.Server.ComputerName)))\:", "(127\.0\.0\.1|0\.0\.0\.0|localhost|$([regex]::Escape($PodeContext.Server.ComputerName))):")
+        $Address = ($Address -ireplace "(localhost|$([regex]::Escape($PodeContext.Server.ComputerName)))\:", "(127\.0\.0\.1|0\.0\.0\.0|\:\:ffff\:127\.0\.0\.1|\:\:ffff\:0\:0|\[\:\:\]|\[\:\:1\]|\:\:1|\:\:|localhost|$([regex]::Escape($PodeContext.Server.ComputerName))):")
     }
     else {
         $Address = [regex]::Escape($Address)
@@ -265,7 +265,7 @@ function Find-PodeEndpointName {
     #>
 
     # set * address as string
-    $_anyAddress = "0\.0\.0\.0:$($LocalAddress.Port)"
+    $_anyAddress = "(0\.0\.0\.0|\[\:\:\]|\:\:|\:\:ffff\:0\:0):$($LocalAddress.Port)"
     $key = "$($Protocol)\|$($_anyAddress)"
 
     # try and find endpoint for any address

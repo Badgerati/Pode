@@ -7,13 +7,20 @@ function Start-PodeTcpServer {
     @(Get-PodeEndpoints -Type Tcp) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
-        $_ip = (Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1)
-        $_ip = (Get-PodeIPAddress $_ip)
+        $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
+        $_ip = Get-PodeIPAddress $_ip -DualMode:($_.DualMode)
+
+        # dual mode?
+        $addrs = $_ip
+        if ($_.DualMode) {
+            $addrs = Resolve-PodeIPDualMode -IP $_ip
+        }
 
         # the endpoint
         $_endpoint = @{
+            Name                   = $_.Name
             Key                    = "$($_ip):$($_.Port)"
-            Address                = $_ip
+            Address                = $addrs
             Hostname               = $_.HostName
             IsIPAddress            = $_.IsIPAddress
             Port                   = $_.Port
@@ -27,6 +34,7 @@ function Start-PodeTcpServer {
             Acknowledge            = $_.Tcp.Acknowledge
             CRLFMessageEnd         = $_.Tcp.CRLFMessageEnd
             SslProtocols           = $_.Ssl.Protocols
+            DualMode               = $_.DualMode
         }
 
         # add endpoint to list
@@ -43,7 +51,7 @@ function Start-PodeTcpServer {
     try {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = [PodeSocket]::new($_.Address, $_.Port, $_.SslProtocols, [PodeProtocolType]::Tcp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
+            $socket = [PodeSocket]::new($_.Name, $_.Address, $_.Port, $_.SslProtocols, [PodeProtocolType]::Tcp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode, $_.DualMode)
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
             $socket.AcknowledgeMessage = $_.Acknowledge
             $socket.CRLFMessageEnd = $_.CRLFMessageEnd
@@ -94,15 +102,12 @@ function Start-PodeTcpServer {
                             Endpoint   = @{
                                 Protocol = $Request.Scheme
                                 Address  = $Request.Address
-                                Name     = $null
+                                Name     = $context.EndpointName
                             }
                             Parameters = $null
                             Timestamp  = [datetime]::UtcNow
                             Metadata   = @{}
                         }
-
-                        # endpoint name
-                        $TcpEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $TcpEvent.Endpoint.Protocol -Address $TcpEvent.Endpoint.Address -LocalAddress $TcpEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Tcp))
 
                         # stop now if the request has an error
                         if ($Request.IsAborted) {
@@ -218,8 +223,9 @@ function Start-PodeTcpServer {
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {
             @{
-                Url  = $endpoint.Url
-                Pool = $endpoint.Pool
+                Url      = $endpoint.Url
+                Pool     = $endpoint.Pool
+                DualMode = $endpoint.DualMode
             }
         })
 }

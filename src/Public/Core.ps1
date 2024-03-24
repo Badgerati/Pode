@@ -751,6 +751,10 @@ If supplied, the endpoint created will be returned.
 .PARAMETER LookupHostname
 If supplied, a supplied Hostname will have its IP Address looked up from host file or DNS.
 
+.PARAMETER DualMode
+If supplied, this endpoint will listen on both the IPv4 and IPv6 versions of the supplied -Address.
+For IPv6, this will only work if the IPv6 address can convert to a valid IPv4 address.
+
 .PARAMETER Default
 If supplied, this endpoint will be the default one used for internally generating URLs.
 
@@ -873,6 +877,9 @@ function Add-PodeEndpoint {
         $LookupHostname,
 
         [switch]
+        $DualMode,
+
+        [switch]
         $Default
     )
 
@@ -954,6 +961,7 @@ function Add-PodeEndpoint {
     $obj = @{
         Name         = $Name
         Description  = $Description
+        DualMode     = $DualMode
         Address      = $null
         RawAddress   = $null
         Port         = $null
@@ -989,13 +997,15 @@ function Add-PodeEndpoint {
     }
 
     # set the ip for the context (force to localhost for IIS)
-    $obj.Address = (Get-PodeIPAddress $_endpoint.Host)
+    $obj.Address = Get-PodeIPAddress $_endpoint.Host -DualMode:$DualMode
     $obj.IsIPAddress = [string]::IsNullOrWhiteSpace($obj.HostName)
 
     if ($obj.IsIPAddress) {
-        $obj.FriendlyName = 'localhost'
         if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
             $obj.FriendlyName = "$($obj.Address)"
+        }
+        else {
+            $obj.FriendlyName = 'localhost'
         }
     }
 

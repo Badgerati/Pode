@@ -31,7 +31,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic for method and exact route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic' = { Write-Host 'Test' }; }); }; }; }
             $result = (Find-PodeRoute -Method GET -Path '/')
 
             $result | Should BeOfType System.Collections.Hashtable
@@ -40,9 +40,12 @@ Describe 'Find-PodeRoute' {
 
         It 'Returns logic for method and exact route and endpoint' {
             $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
-                @{ 'Logic'= { Write-Host 'Test' }; };
-                @{ 'Logic'= { Write-Host 'Test' }; 'Endpoint' = @{ Name = 'example'; 'Address' = 'pode.foo.com' } };
-            ); }; }; }
+                            @{ 'Logic' = { Write-Host 'Test' }; }
+                            @{ 'Logic' = { Write-Host 'Test' }; 'Endpoint' = @{ Name = 'example'; 'Address' = 'pode.foo.com' } }
+                        ) 
+                    } 
+                } 
+            }
 
             $result = (Find-PodeRoute -Method GET -Path '/' -EndpointName 'example')
 
@@ -52,7 +55,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic and middleware for method and exact route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic'= { Write-Host 'Test' }; 'Middleware' = { Write-Host 'Middle' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{ 'Logic' = { Write-Host 'Test' }; 'Middleware' = { Write-Host 'Middle' }; }); }; }; }
             $result = (Find-PodeRoute -Method GET -Path '/')
 
             $result | Should BeOfType System.Collections.Hashtable
@@ -61,7 +64,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic for method and exact route under star' {
-            $PodeContext.Server = @{ 'Routes' = @{ '*' = @{ '/' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ '*' = @{ '/' = @(@{ 'Logic' = { Write-Host 'Test' }; }); }; }; }
             $result = (Find-PodeRoute -Method * -Path '/')
 
             $result | Should BeOfType System.Collections.Hashtable
@@ -69,7 +72,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic and parameters for parameterised route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Logic'= { Write-Host 'Test' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Logic' = { Write-Host 'Test' }; }); }; }; }
             $result = (Find-PodeRoute -Method GET -Path '/123')
 
             $result | Should BeOfType System.Collections.Hashtable
@@ -83,7 +86,7 @@ Describe 'Add-PodeStaticRoute' {
         Mock Test-PodePath { return $true }
         Mock New-PodePSDrive { return './assets' }
 
-        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd; FindEndpoints = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
         Add-PodeStaticRoute -Path '/assets' -Source './assets'
 
         $route = $PodeContext.Server.Routes['static']
@@ -94,14 +97,14 @@ Describe 'Add-PodeStaticRoute' {
 
     It 'Throws error when adding static route for non-existing folder' {
         Mock Test-PodePath { return $false }
-        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd; FindEndpoints = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
         { Add-PodeStaticRoute -Path '/assets' -Source './assets' } | Should Throw 'does not exist'
     }
 }
 
 Describe 'Remove-PodeRoute' {
     It 'Adds route with simple url, and then removes it' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
 
         Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
 
@@ -118,7 +121,7 @@ Describe 'Remove-PodeRoute' {
     }
 
     It 'Adds two routes with simple url, and then removes one' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; }; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; }; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
 
@@ -144,7 +147,7 @@ Describe 'Remove-PodeStaticRoute' {
         Mock Test-PodePath { return $true }
         Mock New-PodePSDrive { return './assets' }
 
-        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd; FindEndpoints = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
         Add-PodeStaticRoute -Path '/assets' -Source './assets'
 
         $routes = $PodeContext.Server.Routes['static']
@@ -162,7 +165,7 @@ Describe 'Remove-PodeStaticRoute' {
 
 Describe 'Clear-PodeRoutes' {
     It 'Adds routes for methods, and clears everything' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello1' }
         Add-PodeRoute -Method POST -Path '/messages' -ScriptBlock { Write-Host 'hello2' }
 
@@ -182,7 +185,7 @@ Describe 'Clear-PodeRoutes' {
     }
 
     It 'Adds routes for methods, and clears one method' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello1' }
         Add-PodeRoute -Method POST -Path '/messages' -ScriptBlock { Write-Host 'hello2' }
 
@@ -207,7 +210,7 @@ Describe 'Clear-PodeStaticRoutes' {
         Mock Test-PodePath { return $true }
         Mock New-PodePSDrive { return './assets' }
 
-        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd; FindEndpoints = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
 
         Add-PodeStaticRoute -Path '/assets' -Source './assets'
         Add-PodeStaticRoute -Path '/images' -Source './images'
@@ -244,40 +247,43 @@ Describe 'Add-PodeRoute' {
     It 'Throws error when file path is a directory' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Test-PodePath { return $true }
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{} }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{} } }
         { Add-PodeRoute -Method GET -Path '/' -FilePath './path' } | Should Throw 'cannot be a wildcard or a directory'
     }
 
     It 'Throws error when file path is a wildcard' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Test-PodePath { return $true }
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{} }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{} } }
         { Add-PodeRoute -Method GET -Path '/' -FilePath './path/*' } | Should Throw 'cannot be a wildcard or a directory'
     }
 
     It 'Throws error because no scriptblock supplied' {
-        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock {} } | Should Throw "No logic passed"
+        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock {} } | Should Throw 'No logic passed'
     }
 
     It 'Throws error because only querystring has been given' {
-        { Add-PodeRoute -Method GET -Path "?k=v" -ScriptBlock { write-host 'hi' } } | Should Throw "No path supplied"
+        { Add-PodeRoute -Method GET -Path '?k=v' -ScriptBlock { write-host 'hi' } } | Should Throw 'No path supplied'
     }
 
     It 'Throws error because route already exists' {
         $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(
-            @{ 'Endpoint' = @{'Protocol' = ''; 'Address' = ''} }
-        ); }; }; 'FindEndpoints' = @{} }
+                        @{ 'Endpoint' = @{'Protocol' = ''; 'Address' = '' } }
+                    ) 
+                } 
+            } 
+        }
 
         { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } } | Should Throw 'already defined'
     }
 
     It 'Throws error on GET route for endpoint name not existing' {
-        $PodeContext.Server = @{ 'Endpoints' = @{}; 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Endpoints' = @{}; 'Routes' = @{ 'GET' = @{}; } }
         { Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' } -EndpointName 'test' } | Should Throw 'does not exist'
     }
 
     It 'Adds route with simple url' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' }
 
         $routes = $PodeContext.Server.Routes['get']
@@ -295,7 +301,7 @@ Describe 'Add-PodeRoute' {
         Mock Test-PodePath { return $true }
         Mock Use-PodeScript { return { Write-Host 'bye' } }
 
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users' -FilePath './path/route.ps1'
 
         $routes = $PodeContext.Server.Routes['get']
@@ -311,7 +317,7 @@ Describe 'Add-PodeRoute' {
     Mock Test-PodePath { return $false }
 
     It 'Adds route with simple url with content type' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users' -ContentType 'application/json' -ScriptBlock { Write-Host 'hello' }
 
         $routes = $PodeContext.Server.Routes['get']
@@ -326,12 +332,12 @@ Describe 'Add-PodeRoute' {
 
     It 'Adds route with simple url with default content type' {
         $PodeContext.Server = @{
-            'Routes' = @{ 'GET' = @{}; };
-            'Web' = @{ 'ContentType' = @{
-                'Default' = 'text/xml';
-                'Routes' = @{};
-            } };
-            'FindEndpoints' = @{}
+            'Routes' = @{ 'GET' = @{}; }
+            'Web'    = @{ 'ContentType' = @{
+                    'Default' = 'text/xml'
+                    'Routes'  = @{}
+                } 
+            }
         }
 
         Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' }
@@ -348,12 +354,12 @@ Describe 'Add-PodeRoute' {
 
     It 'Adds route with simple url with route pattern content type' {
         $PodeContext.Server = @{
-            'Routes' = @{ 'GET' = @{}; };
-            'Web' = @{ 'ContentType' = @{
-                'Default' = 'text/xml';
-                'Routes' = @{ '/users' = 'text/plain' };
-            } };
-            'FindEndpoints' = @{}
+            'Routes' = @{ 'GET' = @{}; }
+            'Web'    = @{ 'ContentType' = @{
+                    'Default' = 'text/xml'
+                    'Routes'  = @{ '/users' = 'text/plain' }
+                } 
+            }
         }
 
         Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' }
@@ -369,7 +375,7 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with middleware supplied as scriptblock and no logic' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users' -Middleware ({ Write-Host 'middle' }) -ScriptBlock {}
 
         $route = $PodeContext.Server.Routes['get']
@@ -383,22 +389,22 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with middleware supplied as hashtable with null logic' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         { Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = $null }) -ScriptBlock {} } | Should Throw 'no logic defined'
     }
 
     It 'Adds route with middleware supplied as hashtable with invalid type logic' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         { Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = 74 }) -ScriptBlock {} } | Should Throw 'invalid logic type'
     }
 
     It 'Adds route with invalid middleware type' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         { Add-PodeRoute -Method GET -Path '/users' -Middleware 74 -ScriptBlock {} } | Should Throw 'invalid type'
     }
 
     It 'Adds route with middleware supplied as hashtable and empty logic' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; };  'FindEndpoints' = @{}}
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; }
         Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = { Write-Host 'middle' }; 'Arguments' = 'test' }) -ScriptBlock {}
 
         $routes = $PodeContext.Server.Routes['get']
@@ -418,7 +424,7 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with middleware supplied as hashtable and no logic' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = { Write-Host 'middle' }; 'Arguments' = 'test' }) -ScriptBlock {}
 
         $routes = $PodeContext.Server.Routes['get']
@@ -438,7 +444,7 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with middleware and logic supplied' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users' -Middleware { Write-Host 'middle' } -ScriptBlock { Write-Host 'logic' }
 
         $routes = $PodeContext.Server.Routes['get']
@@ -457,12 +463,12 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with array of middleware and no logic supplied' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
 
         Add-PodeRoute -Method GET -Path '/users' -Middleware @(
             { Write-Host 'middle1' },
             { Write-Host 'middle2' }
-            ) -ScriptBlock {}
+        ) -ScriptBlock {}
 
         $routes = $PodeContext.Server.Routes['get']
         $routes | Should Not be $null
@@ -479,11 +485,11 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with array of middleware and logic supplied' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users' -Middleware @(
             { Write-Host 'middle1' },
             { Write-Host 'middle2' }
-            ) -ScriptBlock { Write-Host 'logic' }
+        ) -ScriptBlock { Write-Host 'logic' }
 
         $route = $PodeContext.Server.Routes['get']
         $route | Should Not be $null
@@ -498,7 +504,7 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with simple url and querystring' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users?k=v' -ScriptBlock { Write-Host 'hello' }
 
         $route = $PodeContext.Server.Routes['get']
@@ -510,7 +516,7 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with url parameters' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users/:userId' -ScriptBlock { Write-Host 'hello' }
 
         $route = $PodeContext.Server.Routes['get']
@@ -522,7 +528,7 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with url parameters and querystring' {
-        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; }; 'FindEndpoints' = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; } }
         Add-PodeRoute -Method GET -Path '/users/:userId?k=v' -ScriptBlock { Write-Host 'hello' }
 
         $route = $PodeContext.Server.Routes['get']
@@ -768,16 +774,16 @@ Describe 'Get-PodeRouteByUrl' {
     $routeNameSet = @{
         Endpoint = @{
             Protocol = 'HTTP'
-            Address = '/assets'
-            Name = 'Example1'
+            Address  = '/assets'
+            Name     = 'Example1'
         }
     }
 
     $routeNoNameSet = @{
         Endpoint = @{
             Protocol = ''
-            Address = '/assets'
-            Name = 'Example2'
+            Address  = '/assets'
+            Name     = 'Example2'
         }
     }
 
@@ -813,7 +819,7 @@ Describe 'Get-PodeRoute' {
     Mock Test-PodeIsAdminUser { return $true }
 
     It 'Returns both routes whe nothing supplied' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; FindEndpoints = @{} }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; } }
         Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
@@ -823,7 +829,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns both routes for GET method' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; FindEndpoints = @{} }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; } }
         Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
@@ -833,7 +839,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns one route for POST method' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; FindEndpoints = @{} }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; } }
         Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
@@ -843,7 +849,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns both routes for users path' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; FindEndpoints = @{} }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; } }
         Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
@@ -853,7 +859,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns one route for users path and GET method' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; FindEndpoints = @{} }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; } }
         Add-PodeRoute -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Get -Path '/about' -ScriptBlock { Write-Host 'hello' }
         Add-PodeRoute -Method Post -Path '/users' -ScriptBlock { Write-Host 'hello' }
@@ -863,7 +869,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns one route for users path and endpoint name user' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -878,7 +884,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns both routes for users path and endpoint names' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -891,7 +897,7 @@ Describe 'Get-PodeRoute' {
     }
 
     It 'Returns both routes for user endpoint name' {
-        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ GET = @{}; POST = @{}; }; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -909,7 +915,7 @@ Describe 'Get-PodeStaticRoute' {
     Mock New-PodePSDrive { return './assets' }
 
     It 'Returns all static routes' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; FindEndpoints = @{}; Root = $pwd }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd }
         Add-PodeStaticRoute -Path '/assets' -Source './assets'
         Add-PodeStaticRoute -Path '/images' -Source './images'
 
@@ -918,7 +924,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns one static route' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; FindEndpoints = @{}; Root = $pwd }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd }
         Add-PodeStaticRoute -Path '/assets' -Source './assets'
         Add-PodeStaticRoute -Path '/images' -Source './images'
 
@@ -927,7 +933,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns one static route for endpoint name user' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -942,7 +948,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns both routes for users path and endpoint names' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -955,7 +961,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns both routes for user endpoint' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -984,8 +990,11 @@ Describe 'Find-PodeRouteTransferEncoding' {
 
     It 'Returns a path match' {
         $PodeContext.Server = @{ Web = @{ TransferEncoding = @{ Routes = @{
-            '/users' = 'text/json' 
-        } } } }
+                        '/users' = 'text/json'
+                    } 
+                } 
+            } 
+        }
 
         Find-PodeRouteTransferEncoding -Path '/users' | Should Be 'text/json'
     }
@@ -1007,8 +1016,11 @@ Describe 'Find-PodeRouteContentType' {
 
     It 'Returns a path match' {
         $PodeContext.Server = @{ Web = @{ ContentType = @{ Routes = @{
-            '/users' = 'text/json' 
-        } } } }
+                        '/users' = 'text/json'
+                    } 
+                } 
+            } 
+        }
 
         Find-PodeRouteContentType -Path '/users' | Should Be 'text/json'
     }
