@@ -11,7 +11,7 @@ $directoryPath = $podePath
 # Start Pode server
 Start-PodeServer -ScriptBlock {
 
-    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Default
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
 
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

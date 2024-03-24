@@ -3183,8 +3183,6 @@ function Add-PodeOAExternalRoute {
         $DefinitionTag
     )
 
-    if ($null -eq $Route) { throw 'Add-PodeOAExternalRoute - The parameter -Route cannot be NULL.' }
-
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -3227,6 +3225,7 @@ function Add-PodeOAExternalRoute {
         }
 
         'pipeline' {
+            if ($null -eq $Route) { throw 'Add-PodeOAExternalRoute - The parameter -Route cannot be NULL.' }
             foreach ($r in @($Route)) {
                 $r.OpenApi.Servers = $Servers
             }

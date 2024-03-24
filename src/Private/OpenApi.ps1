@@ -719,6 +719,9 @@ function Set-OpenApiRouteValue {
     if ($Route.OpenApi.CallBacks.$DefinitionTag) {
         $pm.callbacks = $Route.OpenApi.CallBacks.$DefinitionTag
     }
+    if ($Route.OpenApi.Servers) {
+        $pm.servers = $Route.OpenApi.Servers
+    }
     if ($Route.OpenApi.Authentication.Count -gt 0) {
         $pm.security = @()
         foreach ($sct in (Expand-PodeAuthMerge -Names $Route.OpenApi.Authentication.Keys)) {
@@ -1068,36 +1071,35 @@ function Get-PodeOpenApiDefinitionInternal {
                         if ($localEndpoint) {
                             $def.paths[$_route.OpenApi.Path][$method].servers += $Definition.servers[0]
                         }
-                        $def.paths[$_route.OpenApi.Path][$method].servers += $_route.OpenApi.Servers
                     }
-                    if ([string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -or ($_route.Endpoint.Address -ieq '*:*')) {
-                        continue
-                    }
+                    if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -and ($_route.Endpoint.Address -ine '*:*')) {
 
-                    if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers) {
-                        $def.paths[$_route.OpenApi.Path][$method].servers = @()
-                    }
-
-                    $serverDef = $null
-                    if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Name)) {
-                        $serverDef = @{
-                            url = (Get-PodeEndpointByName -Name $_route.Endpoint.Name).Url
+                        if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers) {
+                            $def.paths[$_route.OpenApi.Path][$method].servers = @()
                         }
-                    }
-                    else {
-                        $serverDef = @{
-                            url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
-                        }
-                    }
 
-                    if ($null -ne $serverDef) {
-                        $def.paths[$_route.OpenApi.Path][$method].servers += $serverDef
+                        $serverDef = $null
+                        if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Name)) {
+                            $serverDef = @{
+                                url = (Get-PodeEndpointByName -Name $_route.Endpoint.Name).Url
+                            }
+                        }
+                        else {
+                            $serverDef = @{
+                                url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
+                            }
+                        }
+
+                        if ($null -ne $serverDef) {
+                            $def.paths[$_route.OpenApi.Path][$method].servers += $serverDef
+                        }
                     }
                 }
             }
         }
     }
 
+    #deal with the external OpenAPI paths
     if ( $Definition.hiddenComponents.externalPath) {
         foreach ($extPath in $Definition.hiddenComponents.externalPath.values) {
             foreach ($method in $extPath.keys) {
@@ -1107,7 +1109,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
                 $pm = Set-OpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
                 # add path's http method to defintition
-                $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pm
+                $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pmF
             }
         }
     }
