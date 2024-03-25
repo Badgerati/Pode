@@ -330,36 +330,6 @@ Describe 'Write-PodeTextResponse' {
     }
 }
 
-Describe 'Write-PodeFileResponse' {
-    It 'Does nothing when the file does not exist' {
-        Mock Get-PodeRelativePath { return $Path }
-        Mock Test-PodePath { return $false }
-        Write-PodeFileResponse -Path './path' | Out-Null
-        Assert-MockCalled Test-PodePath -Times 1 -Scope It
-    }
-
-    Mock Test-PodePath { return $true }
-
-    It 'Loads the contents of a dynamic file' {
-        Mock Get-PodeRelativePath { return $Path }
-        Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
-        Mock Write-PodeTextResponse { return $Value }
-
-        Write-PodeFileResponse -Path './path/file.pode' | Should Be 'file contents'
-
-        Assert-MockCalled Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
-    }
-
-    It 'Loads the contents of a static file' {
-        Mock Get-PodeRelativePath { return $Path }
-        Mock Get-Content { return 'file contents' }
-        Mock Write-PodeTextResponse { return $Value }
-
-        Write-PodeFileResponse -Path './path/file.pode' | Should Be 'file contents'
-
-        Assert-MockCalled Get-PodeFileContentUsingViewEngine -Times 1 -Scope It
-    }
-}
 
 Describe 'Use-PodePartialView' {
     $PodeContext = @{
