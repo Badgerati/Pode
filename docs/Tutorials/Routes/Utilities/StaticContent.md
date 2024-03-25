@@ -170,7 +170,6 @@ Start-PodeServer {
 
 When a static route is set as downloadable, then `-Defaults` and caching are not used.
 
-
 ## File Browsing
 
 This feature allows the use of a static route as an HTML file browser. If you set the `-FileBrowser` switch on the  [`Add-PodeStaticRoute`] function, the route will show the folder content whenever it is invoked.

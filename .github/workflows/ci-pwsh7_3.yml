@@ -28,7 +28,6 @@ jobs:
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
     # For Windows
@@ -44,13 +43,11 @@ jobs:
     - name: Run Pester Tests
       run: |
         C:\PowerShell-7.3\pwsh.exe -Command {
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Invoke-Build Test
         }
 
     - name: Test docker builds
       run: |
         C:\PowerShell-7.3\pwsh.exe -Command {
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Invoke-Build DockerPack -Version '0.0.0'
         }

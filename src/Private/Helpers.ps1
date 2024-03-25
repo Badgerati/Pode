@@ -1656,6 +1656,38 @@ function Get-PodeCount {
     return $Object.Count
 }
 
+<#
+.SYNOPSIS
+    Tests if a given file system path is valid and optionally if it is not a directory.
+
+.DESCRIPTION
+    This function tests if the provided file system path is valid. It checks if the path is not null or whitespace, and if the item at the path exists. If the item exists and is not a directory (unless the $FailOnDirectory switch is not used), it returns true. If the path is not valid, it can optionally set a 404 response status code.
+
+.PARAMETER Path
+    The file system path to test for validity.
+
+.PARAMETER NoStatus
+    A switch to suppress setting the 404 response status code if the path is not valid.
+
+.PARAMETER FailOnDirectory
+    A switch to indicate that the function should return false if the path is a directory.
+
+.EXAMPLE
+    $isValid = Test-PodePath -Path "C:\temp\file.txt"
+    if ($isValid) {
+        # The file exists and is not a directory
+    }
+
+.EXAMPLE
+    $isValid = Test-PodePath -Path "C:\temp\folder" -FailOnDirectory
+    if (!$isValid) {
+        # The path is a directory or does not exist
+    }
+
+.NOTES
+    This function is used within the Pode framework to validate file system paths for serving static content.
+
+#>
 function Test-PodePath {
     param(
         [Parameter()]
@@ -1734,7 +1766,6 @@ function Test-PodePathIsDirectory {
         return $false
     }
 
-    #   return (Test-Path -Path $path -PathType Container)
     return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
 
