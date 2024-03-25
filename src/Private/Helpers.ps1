@@ -358,7 +358,7 @@ function Resolve-PodeIPDualMode {
     }
 
     # check loopbacks
-    if ($IP -eq [ipaddress]::Loopback) {
+    if (($IP -eq [ipaddress]::Loopback) -and [System.Net.Sockets.Socket]::OSSupportsIPv6) {
         return @($IP, [ipaddress]::IPv6Loopback)
     }
 
@@ -367,7 +367,7 @@ function Resolve-PodeIPDualMode {
     }
 
     # if iIPv4, convert and return both
-    if ($IP.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) {
+    if (($IP.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) -and [System.Net.Sockets.Socket]::OSSupportsIPv6) {
         return @($IP, $IP.MapToIPv6())
     }
 
