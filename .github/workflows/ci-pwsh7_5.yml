@@ -1,4 +1,4 @@
-name: Pode CI - pwsh 7.4 on windows-latest
+name: Pode CI - pwsh 7.5 on windows-latest
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
 
     - name: Install Invoke-Build
       shell: pwsh
-      run: | 
+      run: |
         Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
     # For Windows
