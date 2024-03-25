@@ -306,6 +306,9 @@ An array of default pages to display, such as 'index.html'.
 .PARAMETER DownloadOnly
 When supplied, all static content on this Route will be attached as downloads - rather than rendered.
 
+.PARAMETER FileBrowser
+When supplied, If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .PARAMETER Browse
 Open the web server's default endpoint in your default browser.
 
@@ -369,6 +372,9 @@ function Start-PodeStaticServer {
         $DownloadOnly,
 
         [switch]
+        $FileBrowser,
+
+        [switch]
         $Browse
     )
 
@@ -390,7 +396,7 @@ function Start-PodeStaticServer {
         }
 
         # add the static route
-        Add-PodeStaticRoute -Path $Path -Source (Get-PodeServerPath) -Defaults $Defaults -DownloadOnly:$DownloadOnly
+        Add-PodeStaticRoute -Path $Path -Source (Get-PodeServerPath) -Defaults $Defaults -DownloadOnly:$DownloadOnly -FileBrowser:$FileBrowser
     }
 }
 

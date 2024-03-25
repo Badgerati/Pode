@@ -1,0 +1,225 @@
+<html lang="en" ; style='background-color: #01b0c4' ;>
+
+<head>
+    <!-- Include the Bootstrap Icons stylesheet -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
+
+    <title>File Browser:$($Data.Path)</title>
+    <meta charset='utf-8'>
+
+    <style>
+        h3 {
+            font-family: 'Courier New', Courier, monospace;
+            /* Applies monospace font to <h2> */
+        }
+
+        /* Add CSS styles here for column widths */
+
+        .icon {
+            width: 10px;
+            /* Fixed width for the icon column */
+            text-align: right;
+            /* Centers the icon within the column */
+            vertical-align: middle;
+            /* Aligns the icon vertically in the middle of the cell */
+
+        }
+
+        .unixMode,
+        .mode {
+            width: 60px;
+            text-align: left;
+        }
+
+        .user {
+            width: 40px;
+            text-align: right;
+        }
+
+        .group {
+            width: 40px;
+            text-align: right;
+        }
+
+        .DateTime {
+            width: 200px;
+            text-align: right;
+            /* Align text to the right */
+        }
+
+        .size {
+            width: 80px;
+            max-width: 80px;
+            min-width: 80px;
+            text-align: right;
+            /* Align text to the right */
+            padding-right: 20px;
+            /* Adds space to the right inside the Size cell */
+        }
+
+        .name {
+            width: 200px;
+            text-align: left;
+        }
+
+        a {
+            color: blue;
+            /* Or any color that fits your design */
+            text-decoration: none;
+            /* Removes underline */
+        }
+
+        a:hover {
+            text-decoration: underline;
+            /* Optional: underline on hover for visual feedback */
+        }
+
+
+        table {
+            table-layout: fixed;
+            width: 100%;
+            font-family: 'Courier New', Courier, monospace;
+            /* Applies monospace font to the table */
+            /*   border-collapse: collapse;
+             Removes the space between borders */
+        }
+
+        th {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: bold;
+            /* Makes the header text bold */
+            /*   border-bottom: 1px solid #000;  Adds a solid line under the header */
+        }
+
+        td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Style the container to match h3 styling */
+        #pathContainer {
+            font-size: 1.47em;
+            /* Standard size for h3 */
+            font-weight: bold;
+            /* Bold text for h3 */
+            margin-top: 20px;
+            /* Spacing for visual separation */
+            margin-bottom: 30px; /* Additional space after the container */
+        }
+
+        #pathContainer a,
+        #pathContainer span {
+            margin-right: -1px;
+            /* Reduced spacing between segments */
+        }
+
+        #pathContainer span.separator {
+            margin-right: 0;
+            /* Remove spacing after separator */
+        }
+    </style>
+
+</head>
+<script>
+    // Example JavaScript to toggle between Windows and Unix mode
+    document.addEventListener('DOMContentLoaded', function () {
+        var WindowsMode = $($Data.windowsMode);
+        var tableContent = '';
+        if (WindowsMode) {
+            tableContent += '<tr> <th class="mode">Mode</th> <th class="dateTime">CreationTime</th> <th class="dateTime">LastWriteTime</th> <th class="size">Size</th> <th class="icon"></th> <th class="name">Name</th> </tr> <tr> <th class="mode">----</th>' +
+                '<th class="dateTime">-------------</th> <th class="dateTime">-------------</th> <th class="size">----</th> <th class="icon"></th> <th class="name">----</th> </tr>';
+        } else {
+            tableContent += '<tr> <th class="unixMode">UnixMode</th>  <th class="user">User</th> <th class="group">Group</th> <th class="dateTime">CreationTime</th> <th class="dateTime">LastWriteTime</th> <th class="size">Size</th> <th class="icon"></th> <th class="name">Name</th> </tr>' +
+                '<tr> <th class="unixMode">--------</th>  <th class="user">----</th> <th class="group">-----</th> <th class="dateTime">-------------</th> <th class="dateTime">-------------</th> <th class="size">----</th> <th class="icon"></th> <th class="name">----</th> </tr>';
+        }
+
+        // Insert the table content into the table body
+        document.getElementById('tableBody').innerHTML = tableContent;
+    });
+
+function visualizePathSegments() {
+    const basePath = '$($Data.Path)'; // Your given URL path
+    const segments = basePath.split('/').filter(Boolean); // Split by '/' and remove any empty segments
+    const pathContainer = document.getElementById('pathContainer');
+    pathContainer.innerHTML = ''; // Clear previous content
+
+    // Create the Directory label as a span to keep it inline
+    const directoryLabel = document.createElement('span');
+    directoryLabel.textContent = 'Folder Path: ';
+    pathContainer.appendChild(directoryLabel); // Append the label to the container
+
+    // Make the root a clickable link and add a space after it
+    const rootPath = '$($Data.RootPath)/'; // Adjusted for correct root path
+    const rootLinkSpan = document.createElement('span'); // Create a span to hold the root link and the space
+    const rootLink = document.createElement('a');
+    rootLink.href = rootPath;
+    rootLink.textContent = '/'; // Display text for root
+    rootLinkSpan.appendChild(rootLink);
+    rootLinkSpan.innerHTML += ' '; // Add a space after the root link
+    pathContainer.appendChild(rootLinkSpan);
+
+    segments.forEach((segment, index) => {
+        // Add a separator with spaces around it for better readability
+        if (index > 0) {
+            const separator = document.createElement('span');
+            separator.innerHTML = ' / '; // Added spaces around the separator
+            separator.classList.add('separator'); // Use for specific styling
+            pathContainer.appendChild(separator);
+        } else {
+            // For consistency, add a space before the first segment if there's no separator needed
+            const initialSpace = document.createElement('span');
+            initialSpace.innerHTML = ' ';
+            pathContainer.appendChild(initialSpace);
+        }
+
+        let cumulativePath = rootPath + segments.slice(0, index + 1).join('/');
+
+        if (index < segments.length - 1) {
+            // Create a clickable link for this segment
+            const a = document.createElement('a');
+            a.href = cumulativePath; // Here, the href is the cumulative path
+            a.textContent = segment; // Set text to segment
+            pathContainer.appendChild(a);
+            pathContainer.innerHTML += ' '; // Add a space after the segment link
+        } else {
+            // For the last segment, make it a label instead of a clickable link
+            const lastSegmentLabel = document.createElement('span');
+            lastSegmentLabel.textContent = segment; // Set text to the last segment
+            pathContainer.appendChild(lastSegmentLabel);
+        }
+    });
+}
+
+// Automatically visualize the path when the page loads
+window.onload = visualizePathSegments;
+
+
+</script>
+
+<body style='color: white; '>
+
+    <div>
+        <div id="pathContainer"> </div>
+        <div></div>
+        <table>
+            <tbody id="tableBody">
+            </tbody>
+            $($Data.fileContent)
+        </table>
+        <p style='text-align: center;
+            width: 100%;
+            font-size: 0.9em;
+            position: fixed;
+            bottom: 0px;'>
+            🧡 Powered by <a href='https://badgerati.github.io/Pode/'
+                style='color: wheat; text-decoration: none;'>Pode</a>
+        </p>
+    </div>
+
+</body>
+
+</html>
