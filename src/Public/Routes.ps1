@@ -2166,10 +2166,10 @@ function Add-PodePage {
 
                 # invoke the function (optional splat data)
                 if (Test-PodeIsEmpty $data) {
-                    $result = (. $script)
+                    $result = & $script
                 }
                 else {
-                    $result = (. $script @data)
+                    $result = & $script @data
                 }
 
                 # if we have a result, convert it to html
