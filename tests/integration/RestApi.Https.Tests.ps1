@@ -4,7 +4,7 @@ param()
 
 Describe 'REST API Requests' {
     BeforeAll {
-        $splatter = @{}
+   <#     $splatter = @{}
 
         if ($PSVersionTable.PSVersion.Major -le 5) {
             Add-Type @'
@@ -23,7 +23,7 @@ Describe 'REST API Requests' {
         else {
             $splatter.SkipCertificateCheck = $true
         }
-
+#>
 
         $Port = 50010
         $Endpoint = "https://localhost:$($Port)"
