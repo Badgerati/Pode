@@ -34,6 +34,7 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
                 $UseCurl = $true
             }
             else {
+                $UseCurl = $false
                 $splatter.SkipCertificateCheck = $true
                 # Running on Windows but with PowerShell version less than 7.4.
             }
@@ -42,6 +43,7 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
         else {
             # Not running on Windows."
             $UseCurl = $false
+            $splatter.SkipCertificateCheck = $true
         }
 
 
