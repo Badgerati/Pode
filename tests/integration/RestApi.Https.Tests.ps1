@@ -5,31 +5,30 @@ param()
 Describe 'REST API Requests' {
     BeforeAll {
         $splatter = @{}
-        $UseCurl = $false
-        # Check if running on Windows
-        if ($PSVersionTable.OS -like '*Windows*') {
-            # OS check passed, now check PowerShell version
-            # Split version by '.' and compare major and minor version
-            $version = $PSVersionTable.PSVersion
-            if ( $version.Major -eq 5) {
-                # Ignore SSL certificate validation errors
-                Add-Type @'
+        $UseCurl = $true
+        $version = $PSVersionTable.PSVersion
+        if ( $version.Major -eq 5) {
+            # Ignore SSL certificate validation errors
+            Add-Type @'
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 public class TrustAllCertsPolicy : ICertificatePolicy {
-    public bool CheckValidationResult(
-        ServicePoint srvPoint, X509Certificate certificate,
-        WebRequest request, int certificateProblem) {
-        return true;
-    }
+public bool CheckValidationResult(
+    ServicePoint srvPoint, X509Certificate certificate,
+    WebRequest request, int certificateProblem) {
+    return true;
+}
 }
 '@
 
-                [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-                [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-
-            }
-            elseif (  $version.Major -gt 7 -or ($version.Major -eq 7 -and $version.Minor -ge 4)) {
+            [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+            $UseCurl = $false
+        }
+        elseif ($PSVersionTable.OS -like '*Windows*') {
+            # OS check passed, now check PowerShell version
+            # Split version by '.' and compare major and minor version
+            if (  $version.Major -gt 7 -or ($version.Major -eq 7 -and $version.Minor -ge 4)) {
                 # Running on Windows with PowerShell Core 7.4 or greater.
                 $UseCurl = $true
             }
