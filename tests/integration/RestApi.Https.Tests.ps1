@@ -135,13 +135,13 @@ Describe 'REST API Requests' {
 
     It 'responds back with 404 for invalid route' {
         #  { Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop @splatter } | Should -Throw  -ExpectedMessage '*404*'
-        $status_code = (curl.exe -s -o /dev/null -w '%{http_code}' "$Endpoint/eek" -k)
+        $status_code = (curl -s -o /dev/null -w '%{http_code}' "$Endpoint/eek" -k)
         $status_code | Should -be 404
     }
 
     It 'responds back with 405 for incorrect method' {
         #{ Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post -ErrorAction Stop @splatter } | Should -Throw  -ExpectedMessage '*405*'
-        $status_code = (curl.exe -X POST -s -o /dev/null -w '%{http_code}' "$Endpoint/ping" -k)
+        $status_code = (curl -X POST -s -o /dev/null -w '%{http_code}' "$Endpoint/ping" -k)
         $status_code | Should -be 405
     }
 
@@ -218,7 +218,7 @@ Describe 'REST API Requests' {
         $tempFile = [System.IO.Path]::GetTempFileName()
         [System.IO.File]::WriteAllBytes($tempFile, $compressedData)
         # make the request
-        $result = curl.exe -s -X POST "$Endpoint/encoding/transfer" -H 'Transfer-Encoding: gzip' -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
+        $result = curl -s -X POST "$Endpoint/encoding/transfer" -H 'Transfer-Encoding: gzip' -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
         # $ms.Position = 0
         # $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{ 'Transfer-Encoding' = 'gzip' } -ContentType 'application/json' @splatter
         $result.Username | Should -Be 'rick'
@@ -248,7 +248,7 @@ Describe 'REST API Requests' {
         # make the request
         # $ms.Position = 0
         # $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $ms.ToArray() -Headers @{  'Transfer-Encoding' = 'deflate' } -ContentType 'application/json' @splatter
-        $result = curl.exe -s -X POST "$Endpoint/encoding/transfer" -H 'Transfer-Encoding: deflate' -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
+        $result = curl -s -X POST "$Endpoint/encoding/transfer" -H 'Transfer-Encoding: deflate' -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
         $result.Username | Should -Be 'rick'
 
         # Cleanup the temporary file
@@ -275,7 +275,7 @@ Describe 'REST API Requests' {
         # make the request
         # $ms.Position = 0
         # $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer-forced-type" -Method Post -Body $ms.ToArray() -ContentType 'application/json' @splatter
-        $result = curl.exe -s -X POST "$Endpoint/encoding/transfer-forced-type"  -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
+        $result = curl -s -X POST "$Endpoint/encoding/transfer-forced-type"  -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
         $result.Username | Should -Be 'rick'
 
         # Cleanup the temporary file
