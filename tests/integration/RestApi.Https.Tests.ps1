@@ -22,7 +22,6 @@ public bool CheckValidationResult(
 '@
 
             [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
             $UseCurl = $false
         }
         elseif ($PSVersionTable.OS -like '*Windows*') {
@@ -136,11 +135,6 @@ public bool CheckValidationResult(
     }
 
     AfterAll {
-        #  $splatter = @{}
-        #  if ($PSVersionTable.PSVersion.Major -ge 6) {
-        #      $splatter.SkipCertificateCheck = $true
-        #   }
-
         Receive-Job -Name 'Pode' | Out-Default
         if ($UseCurl) {
             curl -s -X DELETE "$($Endpoint)/close" -k

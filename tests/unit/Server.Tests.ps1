@@ -15,7 +15,7 @@ BeforeAll {
 
 Describe 'Start-PodeInternalServer' {
     BeforeAll {
-        Mock Add-PodePSInbuiltDrive { }
+        Mock Add-PodePSInbuiltDrives { }
         Mock Invoke-PodeScriptBlock { }
         Mock New-PodeRunspaceState { }
         Mock New-PodeRunspacePools { }
