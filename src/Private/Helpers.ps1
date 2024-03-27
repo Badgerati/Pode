@@ -148,7 +148,7 @@ function Get-PodeHostIPRegex {
         $Type
     )
 
-    $ip_rgx = '\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d*|\*|all'
+    $ip_rgx = '\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|((\d+\.){3}\d+)|\*|all'
     $host_rgx = '([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
 
     switch ($Type.ToLowerInvariant()) {
@@ -232,7 +232,7 @@ function Test-PodeIPAddress {
         $IPOnly
     )
 
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
+    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
         return $true
     }
 
@@ -322,7 +322,7 @@ function Test-PodeIPAddressLocal {
         $IP
     )
 
-    return (@('127.0.0.1', '::1', '[::1]', 'localhost') -icontains $IP)
+    return (@('127.0.0.1', '::1', '[::1]', '::ffff:127.0.0.1', 'localhost') -icontains $IP)
 }
 
 function Test-PodeIPAddressAny {
@@ -345,26 +345,73 @@ function Test-PodeIPAddressLocalOrAny {
     return ((Test-PodeIPAddressLocal -IP $IP) -or (Test-PodeIPAddressAny -IP $IP))
 }
 
+function Resolve-PodeIPDualMode {
+    param(
+        [Parameter()]
+        [ipaddress]
+        $IP
+    )
+
+    # do nothing if IPv6Any
+    if ($IP -eq [ipaddress]::IPv6Any) {
+        return $IP
+    }
+
+    # check loopbacks
+    if (($IP -eq [ipaddress]::Loopback) -and [System.Net.Sockets.Socket]::OSSupportsIPv6) {
+        return @($IP, [ipaddress]::IPv6Loopback)
+    }
+
+    if ($IP -eq [ipaddress]::IPv6Loopback) {
+        return @($IP, [ipaddress]::Loopback)
+    }
+
+    # if iIPv4, convert and return both
+    if (($IP.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) -and [System.Net.Sockets.Socket]::OSSupportsIPv6) {
+        return @($IP, $IP.MapToIPv6())
+    }
+
+    # if IPv6, only convert if valid IPv4
+    if (($IP.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6) -and $IP.IsIPv4MappedToIPv6) {
+        return @($IP, $IP.MapToIPv4())
+    }
+
+    # just return the IP
+    return $IP
+}
+
 function Get-PodeIPAddress {
     param(
         [Parameter()]
         [string]
-        $IP
+        $IP,
+
+        [switch]
+        $DualMode
     )
 
-    # any address for IPv4
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
+    # any address for IPv4 (or IPv6 for DualMode)
+    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
+        if ($DualMode) {
+            return [System.Net.IPAddress]::IPv6Any
+        }
+
         return [System.Net.IPAddress]::Any
     }
 
-    # any address for IPv6
-    if (($IP -ieq '::') -or ($IP -ieq '[::]')) {
+    # any address for IPv6 explicitly
+    if ($IP -iin @('::', '[::]')) {
         return [System.Net.IPAddress]::IPv6Any
     }
 
     # localhost
     if ($IP -ieq 'localhost') {
         return [System.Net.IPAddress]::Loopback
+    }
+
+    # localhost IPv6 explicitly
+    if ($IP -iin @('[::1]', '::1')) {
+        return [System.Net.IPAddress]::IPv6Loopback
     }
 
     # hostname

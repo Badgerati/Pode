@@ -8,7 +8,7 @@ param(
 #>
 
 $Versions = @{
-    Pester      = '4.8.0'
+    Pester      = '5.5.0'
     MkDocs      = '1.5.3'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'

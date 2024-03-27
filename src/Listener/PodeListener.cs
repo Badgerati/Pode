@@ -137,7 +137,8 @@ namespace Pode
 
         public void SendSseEvent(string name, string[] groups, string[] clientIds, string eventType, string data, string id = null)
         {
-            Task.Factory.StartNew(() => {
+            Task.Factory.StartNew(() =>
+            {
                 if (!ServerEvents.ContainsKey(name))
                 {
                     return;
@@ -165,7 +166,8 @@ namespace Pode
 
         public void CloseSseConnection(string name, string[] groups, string[] clientIds)
         {
-            Task.Factory.StartNew(() => {
+            Task.Factory.StartNew(() =>
+            {
                 if (!ServerEvents.ContainsKey(name))
                 {
                     return;
