@@ -15,13 +15,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
+
+    - name: Check PowerShell version
+      shell: pwsh
+      run: |
+        $PSVersionTable.PSVersion
 
     - name: Install Invoke-Build
       shell: pwsh
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Install-Module -Name InvokeBuild -RequiredVersion '5.5.1' -Force
+        Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
     - name: Run Pester Tests
       shell: pwsh

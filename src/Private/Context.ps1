@@ -178,6 +178,13 @@ function New-PodeContext {
         BodySize = 100MB
     }
 
+    # default Folders
+    $ctx.Server.DefaultFolders = @{
+        'Views'  = 'views'
+        'Public' = 'public'
+        'Errors' = 'errors'
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -349,8 +356,8 @@ function New-PodeContext {
     # sessions
     $ctx.Server.Sessions = @{}
 
-    # swagger and openapi
-    $ctx.Server.OpenAPI = Get-PodeOABaseObject
+    #OpenApi Definition Tag
+    $ctx.Server.OpenAPI = Initialize-OpenApiTable -DefaultOADefinitionTag $ctx.Server.Configuration.Server.DefaultOADefinitionTags
 
     # server metrics
     $ctx.Metrics = @{
@@ -450,6 +457,11 @@ function New-PodeContext {
 
     # scoped variables
     $ctx.Server.ScopedVariables = [ordered]@{}
+
+    # Yaml module caching
+    $ctx.Server.Cache = @{
+        YamlModuleImported = $null
+    }
 
     # return the new context
     return $ctx
@@ -813,6 +825,18 @@ function Set-PodeServerConfiguration {
 
     if ([long]$Configuration.Request.BodySize -gt 0) {
         $Context.Server.Request.BodySize = [long]$Configuration.Request.BodySize
+    }
+
+    if ($Configuration.DefaultFolders) {
+        if ($Configuration.DefaultFolders.Public) {
+            $Context.Server.DefaultFolders.Public = $Configuration.DefaultFolders.Public
+        }
+        if ($Configuration.DefaultFolders.View) {
+            $Context.Server.DefaultFolders.View = $Configuration.DefaultFolders.View
+        }
+        if ($Configuration.DefaultFolders.Errors) {
+            $Context.Server.DefaultFolders.Errors = $Configuration.DefaultFolders.Errors
+        }
     }
 }
 

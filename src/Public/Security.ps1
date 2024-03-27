@@ -110,6 +110,9 @@ The Name of the security header.
 .PARAMETER Value
 The Value of the security header.
 
+.PARAMETER Append
+Append the value to the header instead of replacing it
+
 .EXAMPLE
 Add-PodeSecurityHeader -Name 'X-Header-Name' -Value 'SomeValue'
 #>
@@ -122,10 +125,28 @@ function Add-PodeSecurityHeader {
 
         [Parameter()]
         [string]
-        $Value
+        $Value,
+
+        [Parameter()]
+        [switch]
+        $Append
     )
 
-    if (![string]::IsNullOrWhiteSpace($Value)) {
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return
+    }
+
+    if ($Append -and $PodeContext.Server.Security.Headers.ContainsKey($Name)) {
+        $Headers = @(($PodeContext.Server.Security.Headers[$Name].split(',')).trim())
+        if ($Headers -inotcontains $Value) {
+            $Headers += $Value
+            $PodeContext.Server.Security.Headers[$Name] = (($Headers.trim() | Select-Object -Unique) -join ', ')
+        }
+        else {
+            return
+        }
+    }
+    else {
         $PodeContext.Server.Security.Headers[$Name] = $Value
     }
 }
@@ -1346,12 +1367,32 @@ Specifies a value for Access-Control-Allow-Headers.
 
 .PARAMETER Duration
 Specifies a value for Access-Control-Max-Age in seconds. (Default: 7200)
+Use a value of one for debugging any CORS related issues
 
 .PARAMETER Credentials
 Specifies a value for Access-Control-Allow-Credentials
 
 .PARAMETER WithOptions
 If supplied, a global Options Route will be created.
+
+.PARAMETER AuthorizationHeader
+Add 'Authorization' to the headers list
+
+.PARAMETER AutoHeaders
+Automatically populate the list of allowed Headers based on the OpenApi definition.
+This parameter can works in conjuntion with CrossDomainXhrRequests,AuthorizationHeader and Headers (Headers cannot be '*').
+By default add  'content-type' to the headers
+
+.PARAMETER AutoMethods
+Automatically populate the list of allowed Methods based on the defined Routes.
+This parameter can works in conjuntion with the parameter Methods, if Methods is not including '*'
+
+.PARAMETER CrossDomainXhrRequests
+Add 'x-requested-with' to the list of allowed headers
+More info available here:
+https://fetch.spec.whatwg.org/
+https://learn.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-7.0#credentials-in-cross-origin-requests
+https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 
 .EXAMPLE
 Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
@@ -1380,7 +1421,19 @@ function Set-PodeSecurityAccessControl {
         $Credentials,
 
         [switch]
-        $WithOptions
+        $WithOptions,
+
+        [switch]
+        $AuthorizationHeader,
+
+        [switch]
+        $AutoHeaders,
+
+        [switch]
+        $AutoMethods,
+
+        [switch]
+        $CrossDomainXhrRequests
     )
 
     # origin
@@ -1392,18 +1445,54 @@ function Set-PodeSecurityAccessControl {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value '*'
         }
         else {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value ($Methods -join ', ').ToUpperInvariant()
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value ($Methods -join ', ')
         }
     }
 
     # headers
-    if (![string]::IsNullOrWhiteSpace($Headers)) {
+    if (![string]::IsNullOrWhiteSpace($Headers) -or $AuthorizationHeader -or $CrossDomainXhrRequests) {
         if ($Headers -icontains '*') {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value '*'
+            if ($Credentials) {
+                throw 'The * wildcard for Headers, when Credentials is passed, will be taken as a literal string and not a wildcard'
+            }
+
+            $Headers = @('*')
         }
-        else {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value ($Headers -join ', ').ToUpperInvariant()
+
+        if ($AuthorizationHeader) {
+            if ([string]::IsNullOrWhiteSpace($Headers)) {
+                $Headers = @()
+            }
+
+            $Headers += 'Authorization'
         }
+
+        if ($CrossDomainXhrRequests) {
+            if ([string]::IsNullOrWhiteSpace($Headers)) {
+                $Headers = @()
+            }
+            $Headers += 'x-requested-with'
+        }
+        Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value (($Headers | Select-Object -Unique) -join ', ')
+    }
+
+    if ($AutoHeaders) {
+        if ($Headers -icontains '*') {
+            throw 'The * wildcard for Headers, is not comptatibile with the AutoHeaders switch'
+        }
+
+        Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value 'content-type' -Append
+        $PodeContext.Server.Security.autoHeaders = $true
+    }
+
+    if ($AutoMethods) {
+        if ($Methods -icontains '*') {
+            throw 'The * wildcard for Methods, is not comptatibile with the AutoMethods switch'
+        }
+        if ($WithOptions) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value 'Options' -Append
+        }
+        $PodeContext.Server.Security.autoMethods = $true
     }
 
     # duration

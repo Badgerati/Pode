@@ -146,3 +146,47 @@ Describe 'Test-PodeJwt' {
         { Test-PodeJwt @{nbf = 99999999999 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage 'The JWT is not yet valid for use'
     }
 }
+
+
+Describe "Expand-PodeAuthMerge Tests" {
+    BeforeAll {
+        # Mock the $PodeContext variable
+        $PodeContext = @{
+            Server = @{
+                Authentications = @{
+                    Methods = @{
+                        BasicAuth = @{ Name = 'BasicAuth'; merged = $false }
+                        ApiKeyAuth = @{ Name = 'ApiKeyAuth'; merged = $false }
+                        CustomMergedAuth = @{ Name = 'CustomMergedAuth'; merged = $true; Authentications = @('BasicAuth', 'ApiKeyAuth') }
+                    }
+                }
+            }
+        }
+    }
+
+    It "Expands discrete authentication methods correctly" {
+        $expandedAuthNames = Expand-PodeAuthMerge -Names @('BasicAuth', 'ApiKeyAuth')
+        $expandedAuthNames | Should -Contain 'BasicAuth'
+        $expandedAuthNames | Should -Contain 'ApiKeyAuth'
+        $expandedAuthNames.Count | Should -Be 2
+    }
+
+    It "Expands merged authentication methods into individual components" {
+        $expandedAuthNames = Expand-PodeAuthMerge -Names @('CustomMergedAuth')
+        $expandedAuthNames | Should -Contain 'BasicAuth'
+        $expandedAuthNames | Should -Contain 'ApiKeyAuth'
+        $expandedAuthNames.Count | Should -Be 2
+    }
+
+    It "Handles anonymous access special case" {
+        $expandedAuthNames = Expand-PodeAuthMerge -Names @('%_allowanon_%')
+        $expandedAuthNames | Should -Contain '%_allowanon_%'
+        $expandedAuthNames.Count | Should -Be 1
+    }
+
+    It "Handles empty and invalid inputs" {
+        { Expand-PodeAuthMerge -Names @() } | Should -Throw
+        { Expand-PodeAuthMerge -Names @('NonExistentAuth') } | Should -Throw
+    }
+
+}

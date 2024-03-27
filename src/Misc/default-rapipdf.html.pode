@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang='en' style='background-color: #01b0c4; overflow-y: hidden'>
+
+<head>
+    <title>RapiPdf Web Page</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            text-align: left;
+        }
+
+        /* Style for the separate container for the RapiPdf element */
+        .rapipdf-container {
+            text-align: center;
+            margin-top: 20px;
+            /* Add some space between the form and the RapiPdf element */
+        }
+    </style>
+</head>
+
+<body style='color: white; font-family: Helvetica,Arial,sans-serif;'>
+    <div class="container">
+        <h1>RapiPdf Configuration</h1>
+
+        <!-- Form to set RapiPdf properties -->
+        <form id="rapipdf-form">
+            <table>
+                <tr>
+                    <th>Description</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Colour used for headings of main sections in PDF</td>
+                    <td><input type="color" id="pdf-primary-color" name="pdf-primary-color" value="#b44646"></td>
+                </tr>
+                <tr>
+                    <td>Colour used for sub-headings</td>
+                    <td><input type="color" id="pdf-alternate-color" name="pdf-alternate-color" value="#005b96"></td>
+                </tr>
+                <tr>
+                    <td>Title of the generated PDF</td>
+                    <td><input type="text" id="pdf-title" name="pdf-title" value="API Reference"></td>
+                </tr>
+                <tr>
+                    <td>Text to be printed at the bottom of every page</td>
+                    <td><input type="text" id="pdf-footer-text" name="pdf-footer-text" value=""></td>
+                </tr>
+                <tr>
+                    <td>Include the info section in the generated PDF?</td>
+                    <td class="checkbox-label">
+                        <input type="checkbox" id="include-info" name="include-info" value="true" checked>
+                        <label for="include-info">Yes</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Include a table of contents in the generated PDF?</td>
+                    <td class="checkbox-label">
+                        <input type="checkbox" id="include-toc" name="include-toc" value="true" checked>
+                        <label for="include-toc">Yes</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Include the security section in the generated PDF?</td>
+                    <td class="checkbox-label">
+                        <input type="checkbox" id="include-security" name="include-security" value="true" checked>
+                        <label for="include-security">Yes</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Include all API details in the generated PDF?</td>
+                    <td class="checkbox-label">
+                        <input type="checkbox" id="include-api-details" name="include-api-details" value="true" checked>
+                        <label for="include-api-details">Yes</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Include a list of all APIs and their summaries at the end of the generated PDF?</td>
+                    <td class="checkbox-label">
+                        <input type="checkbox" id="include-api-list" name="include-api-list" value="true">
+                        <label for="include-api-list">Yes</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Include OpenAPI specified examples in the generated PDF?</td>
+                    <td class="checkbox-label">
+                        <input type="checkbox" id="include-example" name="include-example" value="true">
+                        <label for="include-example">Yes</label>
+                    </td>
+                </tr>
+            </table>
+        </form>
+
+        <div class="rapipdf-container">
+            <rapi-pdf id="rapipdf" style="width:700px; height:40px; font-size:18px;" spec-url='$($data.OpenApi)'
+                hide-input="true"></rapi-pdf>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/rapipdf/dist/rapipdf-min.js"></script>
+    <script>
+        // Get all form elements
+        const formElements = document.querySelectorAll("#rapipdf-form input, #rapipdf-form textarea");
+
+        // Add event listener for each form element
+        formElements.forEach((element) => {
+            element.addEventListener("input", updateRapiPdf);
+        });
+
+        function updateRapiPdf() {
+            // Get form data
+            const formData = new FormData(document.getElementById('rapipdf-form'));
+
+            // Get the RapiPdf component
+            const rapipdf = document.getElementById('rapipdf');
+
+            // Set RapiPdf properties based on form data
+            for (const [property, value] of formData.entries()) {
+                rapipdf.setAttribute(property, value);
+            }
+        }
+    </script>
+</body>
+
+</html>

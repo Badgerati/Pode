@@ -941,23 +941,45 @@ function Import-PodeModules {
     }
 }
 
-function Add-PodePSInbuiltDrives {
+<#
+.SYNOPSIS
+Creates and registers inbuilt PowerShell drives for the Pode server's default folders.
+
+.DESCRIPTION
+This function sets up inbuilt PowerShell drives for the Pode web server's default directories: views, public content, and error pages. For each of these directories, if the physical path exists on the server, a new PowerShell drive is created and mapped to this path. These drives provide an easy and consistent way to access server resources like views, static files, and custom error pages within the Pode application.
+
+The function leverages `$PodeContext` to access the server's configuration and to determine the paths for these default folders. If a folder's path exists, the function uses `New-PodePSDrive` to create a PowerShell drive for it and stores this drive in the server's `InbuiltDrives` dictionary, keyed by the folder type.
+
+.PARAMETER None
+
+.EXAMPLE
+Add-PodePSInbuiltDrive
+
+This example is typically called within the Pode server setup script or internally by the Pode framework to initialize the PowerShell drives for the server's default folders.
+
+.NOTES
+- The function is designed to be used within the Pode framework and relies on the global `$PodeContext` variable for configuration.
+- It specifically checks for the existence of paths for views, public content, and errors before attempting to create drives for them.
+- This is an internal function and may change in future releases of Pode.
+#>
+function Add-PodePSInbuiltDrive {
+
     # create drive for views, if path exists
-    $path = (Join-PodeServerRoot 'views')
+    $path = (Join-PodeServerRoot -Folder $PodeContext.Server.DefaultFolders.Views)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Views] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for public content, if path exists
-    $path = (Join-PodeServerRoot 'public')
+    $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Public)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Public] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for errors, if path exists
-    $path = (Join-PodeServerRoot 'errors')
+    $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Errors)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['errors'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Errors] = (New-PodePSDrive -Path $path)
     }
 }
 
@@ -1000,7 +1022,7 @@ function Remove-PodeEmptyItemsFromArray {
         return @()
     }
 
-    return @(@($Array -ne ([string]::Empty)) -ne $null)
+    return @( @($Array -ne ([string]::Empty)) -ne $null )
 }
 
 function Remove-PodeNullKeysFromHashtable {
@@ -1408,6 +1430,21 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
+        { $_ -ilike '*/yaml' -or $_ -ilike '*/x-yaml' } {
+            if ($InputObject -isnot [string]) {
+                if ($Depth -le 0) {
+                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
+                }
+                else {
+                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
+                }
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return '[]'
+            }
+        }
+
         { $_ -ilike '*/xml' } {
             if ($InputObject -isnot [string]) {
                 $temp = @(foreach ($item in $InputObject) {
@@ -1666,23 +1703,38 @@ function Get-PodeCount {
     return $Object.Count
 }
 
-function Test-PodePathAccess {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Path
-    )
+<#
+.SYNOPSIS
+    Tests if a given file system path is valid and optionally if it is not a directory.
 
-    try {
-        $null = Get-Item $Path
+.DESCRIPTION
+    This function tests if the provided file system path is valid. It checks if the path is not null or whitespace, and if the item at the path exists. If the item exists and is not a directory (unless the $FailOnDirectory switch is not used), it returns true. If the path is not valid, it can optionally set a 404 response status code.
+
+.PARAMETER Path
+    The file system path to test for validity.
+
+.PARAMETER NoStatus
+    A switch to suppress setting the 404 response status code if the path is not valid.
+
+.PARAMETER FailOnDirectory
+    A switch to indicate that the function should return false if the path is a directory.
+
+.EXAMPLE
+    $isValid = Test-PodePath -Path "C:\temp\file.txt"
+    if ($isValid) {
+        # The file exists and is not a directory
     }
-    catch [System.UnauthorizedAccessException] {
-        return $false
+
+.EXAMPLE
+    $isValid = Test-PodePath -Path "C:\temp\folder" -FailOnDirectory
+    if (!$isValid) {
+        # The path is a directory or does not exist
     }
 
-    return $true
-}
+.NOTES
+    This function is used within the Pode framework to validate file system paths for serving static content.
 
+#>
 function Test-PodePath {
     param(
         [Parameter()]
@@ -1694,35 +1746,20 @@ function Test-PodePath {
         [switch]
         $FailOnDirectory
     )
+    if (![string]::IsNullOrWhiteSpace($Path)) {
+        $item = Get-Item $Path -ErrorAction Ignore
+        if ($null -ne $item -and (! $FailOnDirectory.IsPresent -or !$item.PSIsContainer)) {
+            return $true
+        }
+    }
 
     # if the file doesnt exist then fail on 404
-    if ([string]::IsNullOrWhiteSpace($Path) -or !(Test-Path $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 404
-        }
-
+    if ($NoStatus.IsPresent) {
         return $false
     }
-
-    # if the file isn't accessible then fail 401
-    if (!(Test-PodePathAccess $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 401
-        }
-
-        return $false
+    else {
+        Set-PodeResponseStatus -Code 404
     }
-
-    # if we're failing on a directory then fail on 404
-    if ($FailOnDirectory -and (Test-PodePathIsDirectory $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 404
-        }
-
-        return $false
-    }
-
-    return $true
 }
 
 function Test-PodePathIsFile {
@@ -1769,6 +1806,7 @@ function Test-PodePathIsDirectory {
 
         [switch]
         $FailOnWildcard
+
     )
 
     if ($FailOnWildcard -and (Test-PodePathIsWildcard $Path)) {
@@ -2877,4 +2915,297 @@ function Test-PodePlaceholders {
     }
 
     return ($Path -imatch $Placeholder)
+}
+
+<#
+.SYNOPSIS
+creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
+.DESCRIPTION
+This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
+.PARAMETER Object
+the object that you want scripted out
+.PARAMETER Depth
+The depth that you want your object scripted to
+.EXAMPLE
+Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
+#>
+
+function ConvertTo-PodeYaml {
+    [OutputType('System.String')]
+
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
+        $InputObject,
+        [parameter() ]
+        [int]$Depth = 16
+    )
+
+    if ($null -eq $PodeContext.Server.Cache.YamlModuleImported) {
+        $PodeContext.Server.Cache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
+    }
+
+    if ($PodeContext.Server.YamlModuleImported) {
+        return ($InputObject | ConvertTo-Yaml)
+    }
+    else {
+        return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+    }
+}
+
+<#
+.SYNOPSIS
+  Converts PowerShell objects into a YAML-formatted string.
+
+.DESCRIPTION
+  This function takes PowerShell objects and converts them to a YAML string representation.
+  It supports various data types including arrays, hashtables, strings, and more.
+  The depth of conversion can be controlled, allowing for nested objects to be accurately represented.
+
+.PARAMETER InputObject
+  The PowerShell object to convert to YAML. This parameter accepts input via the pipeline.
+
+.PARAMETER Depth
+  Specifies the maximum depth of object nesting to convert. Default is 10 levels deep.
+
+.PARAMETER NestingLevel
+  Used internally to track the current depth of recursion. Generally not specified by the user.
+
+.PARAMETER NoNewLine
+  If specified, suppresses the newline characters in the output to create a single-line string.
+
+.OUTPUTS
+  System.String. Returns a string in YAML format.
+
+.EXAMPLE
+  $object | ConvertTo-PodeYamlInternal
+
+  Converts the object piped to it into a YAML string.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
+  It converts only basic PowerShell types, such as strings, integers, booleans, arrays, hashtables, and ordered dictionaries into a YAML format.
+
+#>
+
+function ConvertTo-PodeYamlInternal {
+
+    [OutputType('System.String')]
+
+    [CmdletBinding()]
+    param (
+        [parameter(  Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
+        $InputObject,
+
+        [parameter()]
+        [int]
+        $Depth = 10,
+
+        [parameter()]
+        [int]
+        $NestingLevel = 0,
+
+        [parameter()]
+        [switch]
+        $NoNewLine
+    )
+
+    process {
+        # if it is null return null
+        If ( !($InputObject) ) {
+            if ($InputObject -is [Object[]]) {
+                return '[]'
+            }
+            else {
+                return ''
+            }
+        }
+
+        $padding = [string]::new(' ', $NestingLevel * 2) # lets just create our left-padding for the block
+        try {
+            $Type = $InputObject.GetType().Name # we start by getting the object's type
+            if ($InputObject -is [object[]]) {
+                #what it really is
+                $Type = "$($InputObject.GetType().BaseType.Name)"
+            }
+
+            #report the leaves in terms of object type
+            if ($Depth -ilt $NestingLevel) {
+                $Type = 'OutOfDepth'
+            }
+            # prevent these values being identified as an object
+            if ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
+                $Type = 'HashTable'
+            }
+            elseif ($Type -ieq 'List`1') {
+                $Type = 'Array'
+            }
+            elseif ($InputObject -is [array]) {
+                $Type = 'Array'
+            } # whatever it thinks it is called
+            elseif ($InputObject -is [hashtable]) {
+                $Type = 'HashTable'
+            } # for our purposes it is a hashtable
+
+            $output += switch ($Type.ToLower()) {
+                'string' {
+                    $String = "$InputObject"
+                    if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
+                        $folded = [System.Text.StringBuilder]::new(">`n") # signal that we are going to use the readable 'newlines-folded' format
+                        foreach ($item in $string.Split("`n")) {
+                            $workingString = $item -replace '\r$'
+                            $length = $item.Length
+                            $IndexIntoString = 0
+                            $wrap = 80
+                            while ($length -gt $IndexIntoString + $Wrap) {
+                                $BreakPoint = $wrap
+                                $earliest = $workingString.Substring($IndexIntoString, $wrap).LastIndexOf(' ')
+                                $latest = $workingString.Substring($IndexIntoString + $wrap).IndexOf(' ')
+                                if (($earliest -eq -1) -or ($latest -eq -1)) {
+                                    $BreakPoint = $wrap
+                                }
+                                elseif ($wrap - $earliest -lt ($latest)) {
+                                    $BreakPoint = $earliest
+                                }
+                                else {
+                                    $BreakPoint = $wrap + $latest
+                                }
+                                if (($wrap - $earliest) + $latest -gt 30) {
+                                    $BreakPoint = $wrap # in case it is a string without spaces
+                                }
+
+                                $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString, $BreakPoint).Trim())
+                                $IndexIntoString += $BreakPoint
+                            }
+                            if ($IndexIntoString -lt $length) {
+                                $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString).Trim())
+                            }
+                            else {
+                                $null = $folded.AppendLine()
+                            }
+                        }
+                        $folded.ToString()
+                        break
+                    }
+                    else {
+                        if ($string.StartsWith('#')) {
+                            "'$($string -replace '''', '''''')'"
+                        }
+                        else {
+                            $string
+                        }
+                        break
+                    }
+                    break
+                }
+                'hashtable' {
+                    if ($InputObject.Count -gt 0 ) {
+                        $index = 0
+                        $string = [System.Text.StringBuilder]::new()
+                        foreach ($item in $InputObject.Keys) {
+                            if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                            if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                            $null = $string.Append( $NewPadding).Append( $item).Append(' : ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        }
+                        $string.ToString()
+                    }
+                    else { '{}' }
+                    break
+                }
+                'boolean' {
+                    if ($InputObject -eq $true) { 'true' } else { 'false' }
+                    break
+                }
+                'array' {
+                    $string = [System.Text.StringBuilder]::new()
+                    $index = 0
+                    foreach ($item in $InputObject ) {
+                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                        $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
+                    }
+                    $string.ToString()
+                    break
+                }
+                'int32' {
+                    $InputObject
+                }
+                'double' {
+                    $InputObject
+                }
+                default {
+                    "'$InputObject'"
+                }
+            }
+            return $Output
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            $_.Exception | Write-PodeErrorLog -CheckInnerException
+            throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Extracts a specific part of a URL based on a provided regex pattern.
+
+.DESCRIPTION
+The Get-PodeUrlPart function applies a regex pattern to a URL to extract a specific part of it. If the pattern does not contain the specific notation "/.*?/", the function returns the original URL as is. This functionality allows for conditional processing based on the presence of a flexible matching pattern in the regex. If the URL does not match the specified pattern and the pattern includes "/.*?/", the function throws a descriptive exception.
+
+.PARAMETER Pattern
+The regex pattern used to identify and extract the desired part of the URL. The pattern should potentially include the "/.*?/" notation to indicate flexible matching. If this notation is absent, the original URL is returned.
+
+.PARAMETER Url
+The URL to be processed. This should be a full URL from which a part is to be extracted based on the provided pattern, or returned as is if the pattern does not include "/.*?/".
+
+.EXAMPLE
+$pattern = "/any/.*?/test"
+$url = "http://localhost:8080/any/packers/test/something/myfile.txt"
+Get-PodeUrlPart -Pattern $pattern -Url $url
+
+Returns "/any/packers/test" from the given URL based on the specified pattern.
+
+.EXAMPLE
+$pattern = "/any/test"
+$url = "http://localhost:8080/any/packers/test/something/myfile.txt"
+Get-PodeUrlPart -Pattern $pattern -Url $url
+
+Returns the Pattern because the pattern does not contain "/.*?/" and it's a valid root.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
+
+.LINK
+https://www.regular-expressions.info/
+For more information on regular expressions.
+#>
+function Get-PodeUrlPart {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Pattern,
+        [Parameter(Mandatory = $true)]
+        [string]$Url
+    )
+
+    # Check if the pattern contains "/.*?/"
+    if (-not $Pattern.Contains('/.*?/')) {
+        # If the pattern does not contain "/.*?/", return the Pattern
+        return $Pattern
+    }
+
+    # Modify the input pattern to capture the desired URL part
+    $modifiedPattern = $Pattern.Replace('/.*?/', '/.+?/')  # Change to greedy matching for broader capture
+    $modifiedPattern = "($modifiedPattern)(?:/[^/]+)*"     # Adjust to capture additional segments
+
+    if ($Url -match $modifiedPattern) {
+        # If a match is found, return the first capturing group
+        return $matches[1]
+    }
+    else {
+        # If no match is found, throw a descriptive exception
+        throw [System.InvalidOperationException] "The provided URL does not match the specified pattern. Please check the URL and pattern for correctness. URL: '$Url', Pattern: '$Pattern'."
+    }
 }

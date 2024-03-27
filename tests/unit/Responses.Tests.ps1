@@ -475,3 +475,57 @@ Describe 'Show-PodeErrorPage' {
         $d.Status.Code | Should -Be 404
     }
 }
+
+
+Describe 'Write-PodeAttachmentResponseInternal Tests' {
+    BeforeAll {
+        Mock Set-PodeResponseStatus {}
+        Mock Write-PodeDirectoryResponseInternal {}
+        Mock Get-Content { return 'testfile' }
+        Mock Get-PodeContentType { return 'application/octet-stream' }
+        Mock Find-PodePublicRoute {}
+        Mock Get-Item {
+            return @{
+                PSIsContainer = $false
+                Name          = 'myfile.txt'
+                Extension     = '.txt'
+                OpenRead      = { [System.IO.MemoryStream]::new([System.Text.Encoding]::UTF8.GetBytes('Test file content')) }
+            }
+        }
+        Mock Set-PodeHeader {}
+
+    }
+    BeforeEach {
+        $WebEvent = @{Response = @{} }
+    }
+
+    It 'Sets response status to 404 if file does not exist' {
+        Mock Get-Item { return $null } -Verifiable
+
+        Write-PodeAttachmentResponseInternal -Path 'nonexistent.txt' -ContentType 'text/plain' | Should -BeNullOrEmpty
+        Should -Invoke Set-PodeResponseStatus -Times 1 -Scope It -ParameterFilter { $Code -eq 404 }
+    }
+
+    It 'Sets correct content type and downloads file' {
+        Write-PodeAttachmentResponseInternal -Path 'existing.txt' -ContentType 'text/plain'
+
+        Should -Invoke Set-PodeHeader -Times 1 -Scope It -ParameterFilter {
+            $Name -eq 'Content-Disposition' -and $Value -like '*filename=myfile.txt'
+        }
+        Should -Invoke Get-PodeContentType -Times 0 -Scope It # ContentType is provided, so it should not attempt to get it
+    }
+
+    It 'Returns directory listing if FileBrowser is present and path is a directory' {
+        Mock Get-Item {
+            return @{
+                PSIsContainer = $true
+                Name          = 'mydirectory'
+            }
+        }
+
+        Write-PodeAttachmentResponseInternal -Path 'mydirectory' -FileBrowser
+
+        Should -Invoke Write-PodeDirectoryResponseInternal -Times 1 -Scope It
+    }
+
+}

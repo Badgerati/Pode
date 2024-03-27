@@ -75,8 +75,10 @@
         'Write-PodeHtmlResponse',
         'Write-PodeMarkdownResponse',
         'Write-PodeJsonResponse',
+        'Write-PodeYamlResponse',
         'Write-PodeXmlResponse',
         'Write-PodeViewResponse',
+        'Write-PodeDirectoryResponse',
         'Set-PodeResponseStatus',
         'Move-PodeResponseUrl',
         'Write-PodeTcpClient',
@@ -136,6 +138,9 @@
         'Test-PodeIsHosted',
         'New-PodeCron',
         'Test-PodeInRunspace',
+        'ConvertFrom-PodeXML',
+        'Set-PodeDefaultFolder',
+        'Get-PodeDefaultFolder',
 
         # routes
         'Add-PodeRoute',
@@ -294,25 +299,56 @@
 
         # openapi
         'Enable-PodeOpenApi',
-        'Get-PodeOpenApiDefinition',
+        'Get-PodeOADefinition',
+        'Select-PodeOADefinition',
         'Add-PodeOAResponse',
         'Remove-PodeOAResponse',
-        'Add-PodeOAComponentResponse',
         'Set-PodeOARequest',
         'New-PodeOARequestBody',
-        'Add-PodeOAComponentSchema',
-        'Add-PodeOAComponentRequestBody',
-        'Add-PodeOAComponentParameter',
+        'Test-PodeOADefinitionTag',
+        'Test-PodeOADefinition',
+        # properties
         'New-PodeOAIntProperty',
         'New-PodeOANumberProperty',
         'New-PodeOAStringProperty',
         'New-PodeOABoolProperty',
         'New-PodeOAObjectProperty',
         'New-PodeOASchemaProperty',
+        'New-PodeOAMultiTypeProperty',
+        'Merge-PodeOAProperty',
+
         'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
-        'Enable-PodeOpenApiViewer',
+        'Enable-PodeOAViewer',
+        'Test-PodeOAJsonSchemaCompliance',
+        'Add-PodeOAInfo',
+        'Add-PodeOAExternalDoc',
+        'New-PodeOAExternalDoc',
+        'Add-PodeOATag',
+        'Add-PodeOAServerEndpoint',
+        'New-PodeOAExample',
+        'New-PodeOAEncodingObject',
+        'New-PodeOAResponse',
+        'Add-PodeOACallBack',
+        'New-PodeOAResponseLink',
+        'New-PodeOAContentMediaType',
+        'Add-PodeOAExternalRoute',
+        'New-PodeOAServerEndpoint',
+        'Test-PodeOAVersion',
 
+        #Components
+        'Add-PodeOAComponentResponse',
+        'Add-PodeOAComponentSchema',
+        'Add-PodeOAComponentRequestBody',
+        'Add-PodeOAComponentHeader',
+        'Add-PodeOAComponentExample',
+        'Add-PodeOAComponentParameter',
+        'Add-PodeOAComponentResponseLink',
+        'Add-PodeOAComponentCallBack',
+        'Add-PodeOAComponentPathItem',
+        'Add-PodeOAWebhook',
+        'Test-PodeOAComponent',
+        'Remove-PodeOAComponent',
         # Metrics
         'Get-PodeServerUptime',
         'Get-PodeServerRestartCount',
@@ -451,6 +487,11 @@
         'Get-PodeScopedVariable',
         'Use-PodeScopedVariables'
     )
+
+
+    # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
+    AliasesToExport   = @('Enable-PodeOpenApiViewer', 'Enable-PodeOA')
+
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData       = @{

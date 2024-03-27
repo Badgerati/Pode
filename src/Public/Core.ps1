@@ -306,6 +306,9 @@ An array of default pages to display, such as 'index.html'.
 .PARAMETER DownloadOnly
 When supplied, all static content on this Route will be attached as downloads - rather than rendered.
 
+.PARAMETER FileBrowser
+When supplied, If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .PARAMETER Browse
 Open the web server's default endpoint in your default browser.
 
@@ -369,6 +372,9 @@ function Start-PodeStaticServer {
         $DownloadOnly,
 
         [switch]
+        $FileBrowser,
+
+        [switch]
         $Browse
     )
 
@@ -390,7 +396,7 @@ function Start-PodeStaticServer {
         }
 
         # add the static route
-        Add-PodeStaticRoute -Path $Path -Source (Get-PodeServerPath) -Defaults $Defaults -DownloadOnly:$DownloadOnly
+        Add-PodeStaticRoute -Path $Path -Source (Get-PodeServerPath) -Defaults $Defaults -DownloadOnly:$DownloadOnly -FileBrowser:$FileBrowser
     }
 }
 
@@ -1246,4 +1252,92 @@ function Get-PodeEndpoint {
 
     # return
     return $endpoints
+}
+
+<#
+.SYNOPSIS
+Sets the path for a specified default folder type in the Pode server context.
+
+.DESCRIPTION
+This function configures the path for one of the Pode server's default folder types: Views, Public, or Errors.
+It updates the server's configuration to reflect the new path for the specified folder type.
+The function first checks if the provided path exists and is a directory;
+if so, it updates the `Server.DefaultFolders` dictionary with the new path.
+If the path does not exist or is not a directory, the function throws an error.
+
+The purpose of this function is to allow dynamic configuration of the server's folder paths, which can be useful during server setup or when altering the server's directory structure at runtime.
+
+.PARAMETER Type
+The type of the default folder to set the path for. Must be one of 'Views', 'Public', or 'Errors'.
+This parameter determines which default folder's path is being set.
+
+.PARAMETER Path
+The new file system path for the specified default folder type. This path must exist and be a directory; otherwise, an exception is thrown.
+
+.EXAMPLE
+Set-PodeDefaultFolder -Type 'Views' -Path 'C:\Pode\Views'
+
+This example sets the path for the server's default 'Views' folder to 'C:\Pode\Views', assuming this path exists and is a directory.
+
+.EXAMPLE
+Set-PodeDefaultFolder -Type 'Public' -Path 'C:\Pode\Public'
+
+This example sets the path for the server's default 'Public' folder to 'C:\Pode\Public'.
+
+#>
+function Set-PodeDefaultFolder {
+
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [ValidateSet('Views', 'Public', 'Errors')]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [string]
+        $Path
+    )
+    if (Test-Path -Path $Path -PathType Container) {
+        $PodeContext.Server.DefaultFolders[$Type] = $Path
+    }
+    else {
+        throw "Folder $Path doesn't exist"
+    }
+}
+
+<#
+.SYNOPSIS
+Retrieves the path of a specified default folder type from the Pode server context.
+
+.DESCRIPTION
+This function returns the path for one of the Pode server's default folder types: Views, Public, or Errors. It accesses the server's configuration stored in the `$PodeContext` variable and retrieves the path for the specified folder type from the `DefaultFolders` dictionary. This function is useful for scripts or modules that need to dynamically access server resources based on the server's current configuration.
+
+.PARAMETER Type
+The type of the default folder for which to retrieve the path. The valid options are 'Views', 'Public', or 'Errors'. This parameter determines which folder's path will be returned by the function.
+
+.EXAMPLE
+$path = Get-PodeDefaultFolder -Type 'Views'
+
+This example retrieves the current path configured for the server's 'Views' folder and stores it in the `$path` variable.
+
+.EXAMPLE
+$path = Get-PodeDefaultFolder -Type 'Public'
+
+This example retrieves the current path configured for the server's 'Public' folder.
+
+.OUTPUTS
+String. The file system path of the specified default folder.
+#>
+function Get-PodeDefaultFolder {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param (
+        [Parameter()]
+        [ValidateSet('Views', 'Public', 'Errors')]
+        [string]
+        $Type
+    )
+
+    return $PodeContext.Server.DefaultFolders[$Type]
 }
