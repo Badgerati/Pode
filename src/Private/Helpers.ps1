@@ -941,23 +941,45 @@ function Import-PodeModules {
     }
 }
 
+<#
+.SYNOPSIS
+Creates and registers inbuilt PowerShell drives for the Pode server's default folders.
+
+.DESCRIPTION
+This function sets up inbuilt PowerShell drives for the Pode web server's default directories: views, public content, and error pages. For each of these directories, if the physical path exists on the server, a new PowerShell drive is created and mapped to this path. These drives provide an easy and consistent way to access server resources like views, static files, and custom error pages within the Pode application.
+
+The function leverages `$PodeContext` to access the server's configuration and to determine the paths for these default folders. If a folder's path exists, the function uses `New-PodePSDrive` to create a PowerShell drive for it and stores this drive in the server's `InbuiltDrives` dictionary, keyed by the folder type.
+
+.PARAMETER None
+
+.EXAMPLE
+Add-PodePSInbuiltDrives
+
+This example is typically called within the Pode server setup script or internally by the Pode framework to initialize the PowerShell drives for the server's default folders.
+
+.NOTES
+- The function is designed to be used within the Pode framework and relies on the global `$PodeContext` variable for configuration.
+- It specifically checks for the existence of paths for views, public content, and errors before attempting to create drives for them.
+- This is an internal function and may change in future releases of Pode.
+#>
 function Add-PodePSInbuiltDrives {
+
     # create drive for views, if path exists
-    $path = (Join-PodeServerRoot 'views')
+    $path = (Join-PodeServerRoot -Folder $PodeContext.Server.DefaultFolders.Views)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Views] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for public content, if path exists
-    $path = (Join-PodeServerRoot 'public')
+    $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Public)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Public] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for errors, if path exists
-    $path = (Join-PodeServerRoot 'errors')
+    $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Errors)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['errors'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Errors] = (New-PodePSDrive -Path $path)
     }
 }
 

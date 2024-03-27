@@ -6,7 +6,7 @@ Caching is supported on static content.
 
 ## Public Directory
 
-You can place static files within the `/public` directory, at the root of your server. If a request is made for a file, then Pode will automatically check the public directory first, and if found will return the back.
+You can place static files within the `/public` directory at the root of your server, which serves as the default location for static content. However, if you need to relocate this directory, you can do so programmatically using the `Set-PodeStaticFolder` function within your server script, or specify a different location in the `server.psd1` configuration file under the `Server.DefaultFolders` property. When a request is made for a file, Pode will automatically check this designated static directory first, and if the file is found, it will be returned to the requester.
 
 For example, if you have a `logic.js` at `/public/scripts/logic.js`. The the following request would return the file's content:
 
