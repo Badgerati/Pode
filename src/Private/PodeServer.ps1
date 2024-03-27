@@ -27,13 +27,20 @@ function Start-PodeWebServer {
     @(Get-PodeEndpoints -Type Http, Ws) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
-        $_ip = (Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1)
-        $_ip = (Get-PodeIPAddress $_ip)
+        $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
+        $_ip = Get-PodeIPAddress -IP $_ip -DualMode:($_.DualMode)
+
+        # dual mode?
+        $addrs = $_ip
+        if ($_.DualMode) {
+            $addrs = Resolve-PodeIPDualMode -IP $_ip
+        }
 
         # the endpoint
         $_endpoint = @{
+            Name                   = $_.Name
             Key                    = "$($_ip):$($_.Port)"
-            Address                = $_ip
+            Address                = $addrs
             Hostname               = $_.HostName
             IsIPAddress            = $_.IsIPAddress
             Port                   = $_.Port
@@ -44,6 +51,7 @@ function Start-PodeWebServer {
             Type                   = $_.Type
             Pool                   = $_.Runspace.PoolName
             SslProtocols           = $_.Ssl.Protocols
+            DualMode               = $_.DualMode
         }
 
         # add endpoint to list
@@ -71,7 +79,7 @@ function Start-PodeWebServer {
     try {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Address `$_.Address -Port `$_.Port -SslProtocols `$_.SslProtocols -Type `$endpointsMap[`$_.Key].Type -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate")))
+            $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Name `$_.Name -Address `$_.Address -Port `$_.Port -SslProtocols `$_.SslProtocols -Type `$endpointsMap[`$_.Key].Type -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate -DualMode:`$_.DualMode")))
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
 
             if (!$_.IsIPAddress) {
@@ -130,7 +138,7 @@ function Start-PodeWebServer {
                                 Endpoint         = @{
                                     Protocol = $Request.Url.Scheme
                                     Address  = $Request.Host
-                                    Name     = $null
+                                    Name     = $context.EndpointName
                                 }
                                 ContentType      = $Request.ContentType
                                 ErrorType        = $null
@@ -162,9 +170,6 @@ function Start-PodeWebServer {
                             $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
                             $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
                             $WebEvent.Ranges = (Get-PodeRanges -Range (Get-PodeHeader -Name 'Range') -ThrowError)
-
-                            # endpoint name
-                            $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address -LocalAddress $WebEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Route))
 
                             # add logging endware for post-request
                             Add-PodeRequestLogEndware -WebEvent $WebEvent
@@ -379,7 +384,7 @@ function Start-PodeWebServer {
                             Endpoint  = @{
                                 Protocol = $Request.Url.Scheme
                                 Address  = $Request.Host
-                                Name     = $null
+                                Name     = $context.Signal.Context.EndpointName
                             }
                             Route     = $null
                             ClientId  = $context.Signal.ClientId
@@ -387,9 +392,6 @@ function Start-PodeWebServer {
                             Streamed  = $true
                             Metadata  = @{}
                         }
-
-                        # endpoint name
-                        $SignalEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SignalEvent.Endpoint.Protocol -Address $SignalEvent.Endpoint.Address -LocalAddress $SignalEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Route))
 
                         # see if we have a route and invoke it, otherwise auto-send
                         $SignalEvent.Route = Find-PodeSignalRoute -Path $SignalEvent.Path -EndpointName $SignalEvent.Endpoint.Name
@@ -464,8 +466,9 @@ function Start-PodeWebServer {
 
     return @(foreach ($endpoint in $endpoints) {
             @{
-                Url  = $endpoint.Url
-                Pool = $endpoint.Pool
+                Url      = $endpoint.Url
+                Pool     = $endpoint.Pool
+                DualMode = $endpoint.DualMode
             }
         })
 }
@@ -485,7 +488,11 @@ function New-PodeListenerSocket {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ipaddress]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ipaddress[]]
         $Address,
 
         [Parameter(Mandatory = $true)]
@@ -506,8 +513,11 @@ function New-PodeListenerSocket {
 
         [Parameter()]
         [bool]
-        $AllowClientCertificate
+        $AllowClientCertificate,
+
+        [switch]
+        $DualMode
     )
 
-    return [PodeSocket]::new($Address, $Port, $SslProtocols, $Type, $Certificate, $AllowClientCertificate)
+    return [PodeSocket]::new($Name, $Address, $Port, $SslProtocols, $Type, $Certificate, $AllowClientCertificate, 'Implicit', $DualMode.IsPresent)
 }

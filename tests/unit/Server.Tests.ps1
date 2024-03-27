@@ -1,35 +1,42 @@
-$path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+param()
 
-$PodeContext = @{
-    Server        = $null
-    Metrics       = @{ Server = @{ StartTime = [datetime]::UtcNow } }
-    RunspacePools = @{}
-}
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+
+
+    $PodeContext = @{
+        Server        = $null
+        Metrics       = @{ Server = @{ StartTime = [datetime]::UtcNow } }
+        RunspacePools = @{}
+    } }
 
 Describe 'Start-PodeInternalServer' {
-    Mock Add-PodePSInbuiltDrives { }
-    Mock Invoke-PodeScriptBlock { }
-    Mock New-PodeRunspaceState { }
-    Mock New-PodeRunspacePools { }
-    Mock Start-PodeLoggingRunspace { }
-    Mock Start-PodeTimerRunspace { }
-    Mock Start-PodeScheduleRunspace { }
-    Mock Start-PodeGuiRunspace { }
-    Mock Start-Sleep { }
-    Mock New-PodeAutoRestartServer { }
-    Mock Start-PodeSmtpServer { }
-    Mock Start-PodeTcpServer { }
-    Mock Start-PodeWebServer { }
-    Mock Start-PodeServiceServer { }
-    Mock Import-PodeModulesIntoRunspaceState { }
-    Mock Import-PodeSnapinsIntoRunspaceState { }
-    Mock Import-PodeFunctionsIntoRunspaceState { }
-    Mock Start-PodeCacheHousekeeper { }
-    Mock Invoke-PodeEvent { }
-    Mock Write-Verbose { }
-    Mock Add-PodeScopedVariablesInbuilt { }
+    BeforeAll {
+        Mock Add-PodePSInbuiltDrives { }
+        Mock Invoke-PodeScriptBlock { }
+        Mock New-PodeRunspaceState { }
+        Mock New-PodeRunspacePools { }
+        Mock Start-PodeLoggingRunspace { }
+        Mock Start-PodeTimerRunspace { }
+        Mock Start-PodeScheduleRunspace { }
+        Mock Start-PodeGuiRunspace { }
+        Mock Start-Sleep { }
+        Mock New-PodeAutoRestartServer { }
+        Mock Start-PodeSmtpServer { }
+        Mock Start-PodeTcpServer { }
+        Mock Start-PodeWebServer { }
+        Mock Start-PodeServiceServer { }
+        Mock Import-PodeModulesIntoRunspaceState { }
+        Mock Import-PodeSnapinsIntoRunspaceState { }
+        Mock Import-PodeFunctionsIntoRunspaceState { }
+        Mock Start-PodeCacheHousekeeper { }
+        Mock Invoke-PodeEvent { }
+        Mock Write-Verbose { }
+        Mock Add-PodeScopedVariablesInbuilt { }
+    }
 
     It 'Calls one-off script logic' {
         $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {} }
@@ -89,15 +96,16 @@ Describe 'Start-PodeInternalServer' {
 }
 
 Describe 'Restart-PodeInternalServer' {
-    Mock Write-Host { }
-    Mock Close-PodeRunspaces { }
-    Mock Remove-PodePSDrives { }
-    Mock Open-PodeConfiguration { return $null }
-    Mock Start-PodeInternalServer { }
-    Mock Write-PodeErrorLog { }
-    Mock Close-PodeDisposable { }
-    Mock Invoke-PodeEvent { }
-
+    BeforeAll {
+        Mock Write-Host { }
+        Mock Close-PodeRunspaces { }
+        Mock Remove-PodePSDrives { }
+        Mock Open-PodeConfiguration { return $null }
+        Mock Start-PodeInternalServer { }
+        Mock Write-PodeErrorLog { }
+        Mock Close-PodeDisposable { }
+        Mock Invoke-PodeEvent { }
+    }
     It 'Resetting the server values' {
         $PodeContext = @{
             Tokens    = @{
@@ -229,30 +237,30 @@ Describe 'Restart-PodeInternalServer' {
 
         Restart-PodeInternalServer | Out-Null
 
-        $PodeContext.Server.Routes['GET'].Count | Should Be 0
-        $PodeContext.Server.Logging.Types.Count | Should Be 0
-        $PodeContext.Server.Middleware.Count | Should Be 0
-        $PodeContext.Server.Endware.Count | Should Be 0
-        $PodeContext.Server.Sessions.Count | Should Be 0
-        $PodeContext.Server.Authentications.Methods.Count | Should Be 0
-        $PodeContext.Server.State.Count | Should Be 0
-        $PodeContext.Server.Configuration | Should Be $null
+        $PodeContext.Server.Routes['GET'].Count | Should -Be 0
+        $PodeContext.Server.Logging.Types.Count | Should -Be 0
+        $PodeContext.Server.Middleware.Count | Should -Be 0
+        $PodeContext.Server.Endware.Count | Should -Be 0
+        $PodeContext.Server.Sessions.Count | Should -Be 0
+        $PodeContext.Server.Authentications.Methods.Count | Should -Be 0
+        $PodeContext.Server.State.Count | Should -Be 0
+        $PodeContext.Server.Configuration | Should -Be $null
 
-        $PodeContext.Timers.Items.Count | Should Be 0
-        $PodeContext.Schedules.Items.Count | Should Be 0
+        $PodeContext.Timers.Items.Count | Should -Be 0
+        $PodeContext.Schedules.Items.Count | Should -Be 0
 
-        $PodeContext.Server.ViewEngine.Type | Should Be 'html'
-        $PodeContext.Server.ViewEngine.Extension | Should Be 'html'
-        $PodeContext.Server.ViewEngine.ScriptBlock | Should Be $null
-        $PodeContext.Server.ViewEngine.UsingVariables | Should Be $null
-        $PodeContext.Server.ViewEngine.IsDynamic | Should Be $false
+        $PodeContext.Server.ViewEngine.Type | Should -Be 'html'
+        $PodeContext.Server.ViewEngine.Extension | Should -Be 'html'
+        $PodeContext.Server.ViewEngine.ScriptBlock | Should -Be $null
+        $PodeContext.Server.ViewEngine.UsingVariables | Should -Be $null
+        $PodeContext.Server.ViewEngine.IsDynamic | Should -Be $false
 
-        $PodeContext.Metrics.Server.RestartCount | Should Be 1
+        $PodeContext.Metrics.Server.RestartCount | Should -Be 1
     }
 
     It 'Catches exception and throws it' {
         Mock Write-Host { throw 'some error' }
         Mock Write-PodeErrorLog {}
-        { Restart-PodeInternalServer } | Should Throw 'some error'
+        { Restart-PodeInternalServer } | Should -Throw -ExpectedMessage 'some error'
     }
 }
