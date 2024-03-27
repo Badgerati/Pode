@@ -161,7 +161,7 @@ function Write-PodeFileResponseInternal {
     )
 
     # Attempt to retrieve information about the path
-    $pathInfo = Get-Item -Path $Path -force -ErrorAction Continue
+    $pathInfo = Get-Item -Path $Path -force -ErrorAction SilentlyContinue
 
     # Check if the path exists
     if ($null -eq $pathInfo) {
@@ -433,7 +433,7 @@ function Write-PodeAttachmentResponseInternal {
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # Attempt to retrieve information about the path
-    $pathInfo = Get-Item -Path $Path -force -ErrorAction Continue
+    $pathInfo = Get-Item -Path $Path -force -ErrorAction SilentlyContinue
     # Check if the path exists
     if ($null -eq $pathInfo) {
         #if not exist try with to find with public Route if exist
@@ -442,7 +442,7 @@ function Write-PodeAttachmentResponseInternal {
             # only attach files from public/static-route directories when path is relative
             $Path = Get-PodeRelativePath -Path $Path -JoinRoot
             # Attempt to retrieve information about the path
-            $pathInfo = Get-Item -Path $Path -ErrorAction Continue
+            $pathInfo = Get-Item -Path $Path -ErrorAction SilentlyContinue
         }
         if ($null -eq $pathInfo) {
             # If not, set the response status to 404 Not Found
