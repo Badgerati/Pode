@@ -15,9 +15,14 @@ namespace Pode
         public PodeResponse Response { get; private set; }
         public PodeListener Listener { get; private set; }
         public Socket Socket { get; private set; }
-        public PodeSocket PodeSocket { get; private set;}
+        public PodeSocket PodeSocket { get; private set; }
         public DateTime Timestamp { get; private set; }
         public Hashtable Data { get; private set; }
+
+        public string EndpointName
+        {
+            get => PodeSocket.Name;
+        }
 
         private object _lockable = new object();
 
@@ -281,7 +286,7 @@ namespace Pode
                     SetContextType();
                     EndReceive(close);
                 }
-                catch (OperationCanceledException) {}
+                catch (OperationCanceledException) { }
             }
             catch (Exception ex)
             {
@@ -436,7 +441,7 @@ namespace Pode
                         Response.Dispose();
                     }
                 }
-                catch {}
+                catch { }
 
                 // if keep-alive, or awaiting body, setup for re-receive
                 if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout && !Response.SseEnabled)) && !force)

@@ -5,10 +5,10 @@ Describe 'Endpoint Requests' {
 
     BeforeAll {
         $Port1 = 50000
-        $Endpoint1 = "http://localhost:$($Port1)"
+        $Endpoint1 = "http://127.0.0.1:$($Port1)"
 
         $Port2 = 50001
-        $Endpoint2 = "http://localhost:$($Port2)"
+        $Endpoint2 = "http://127.0.0.1:$($Port2)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"

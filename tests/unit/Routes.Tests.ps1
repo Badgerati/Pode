@@ -59,7 +59,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic and middleware for method and exact route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{'Root'='/';  'Logic' = { Write-Host 'Test' }; 'Middleware' = { Write-Host 'Middle' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/' = @(@{'Root' = '/'; 'Logic' = { Write-Host 'Test' }; 'Middleware' = { Write-Host 'Middle' }; }); }; }; }
             $result = (Find-PodeRoute -Method GET -Path '/')
 
             $result | Should -BeOfType System.Collections.Hashtable
@@ -68,7 +68,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic for method and exact route under star' {
-            $PodeContext.Server = @{ 'Routes' = @{ '*' = @{ '/' = @(@{ 'Root'='/'; 'Logic' = { Write-Host 'Test' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ '*' = @{ '/' = @(@{ 'Root' = '/'; 'Logic' = { Write-Host 'Test' }; }); }; }; }
             $result = (Find-PodeRoute -Method * -Path '/')
 
             $result | Should -BeOfType System.Collections.Hashtable
@@ -76,7 +76,7 @@ Describe 'Find-PodeRoute' {
         }
 
         It 'Returns logic and parameters for parameterised route' {
-            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Root'='/'; 'Logic' = { Write-Host 'Test' }; }); }; }; }
+            $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{ '/(?<userId>[^\/]+?)' = @(@{ 'Root' = '/'; 'Logic' = { Write-Host 'Test' }; }); }; }; }
             $result = (Find-PodeRoute -Method GET -Path '/123')
 
             $result | Should -BeOfType System.Collections.Hashtable
@@ -90,7 +90,7 @@ Describe 'Add-PodeStaticRoute' {
         Mock Test-PodePath { return $true }
         Mock New-PodePSDrive { return './assets' }
 
-        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd; FindEndpoints = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
         Add-PodeStaticRoute -Path '/assets' -Source './assets'
 
         $route = $PodeContext.Server.Routes['static']
@@ -158,7 +158,7 @@ Describe 'Remove-PodeStaticRoute' {
         Mock Test-PodePath { return $true }
         Mock New-PodePSDrive { return './assets' }
 
-        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd; FindEndpoints = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
         Add-PodeStaticRoute -Path '/assets' -Source './assets'
 
         $routes = $PodeContext.Server.Routes['static']
@@ -229,7 +229,7 @@ Describe 'Clear-PodeStaticRoutes' {
         Mock Test-PodePath { return $true }
         Mock New-PodePSDrive { return './assets' }
 
-        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd; FindEndpoints = @{} }
+        $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd }
 
         Add-PodeStaticRoute -Path '/assets' -Source './assets'
         Add-PodeStaticRoute -Path '/images' -Source './images'
@@ -947,7 +947,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns one static route for endpoint name user' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -962,7 +962,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns both routes for users path and endpoint names' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
@@ -975,7 +975,7 @@ Describe 'Get-PodeStaticRoute' {
     }
 
     It 'Returns both routes for user endpoint' {
-        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; FindEndpoints = @{}; Type = $null }
+        $PodeContext.Server = @{ Routes = @{ STATIC = @{}; }; Root = $pwd; Endpoints = @{}; EndpointsMap = @{}; Type = $null }
 
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8081 -Protocol Http -Name admin
