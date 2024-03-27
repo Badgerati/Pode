@@ -46,7 +46,7 @@ public bool CheckValidationResult(
 
 
         $Port = 50010
-        $Endpoint = "https://localhost:$($Port)"
+        $Endpoint = "https://127.0.0.1:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"

@@ -257,11 +257,6 @@ function New-PodeContext {
     # set the IP address details
     $ctx.Server.Endpoints = @{}
     $ctx.Server.EndpointsMap = @{}
-    $ctx.Server.FindEndpoints = @{
-        Route = $false
-        Smtp  = $false
-        Tcp   = $false
-    }
 
     # general encoding for the server
     $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding

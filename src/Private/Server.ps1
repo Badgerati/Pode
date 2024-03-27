@@ -147,7 +147,19 @@ function Start-PodeInternalServer {
         if ($endpoints.Length -gt 0) {
             Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
             $endpoints | ForEach-Object {
-                Write-PodeHost "`t- $($_.Url)" -ForegroundColor Yellow
+                $flags = @()
+                if ($_.DualMode) {
+                    $flags += 'DualMode'
+                }
+
+                if ($flags.Length -eq 0) {
+                    $flags = [string]::Empty
+                }
+                else {
+                    $flags = "[$($flags -join ',')]"
+                }
+
+                Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
             }
             # state the OpenAPI endpoints for each definition
             foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
@@ -253,11 +265,6 @@ function Restart-PodeInternalServer {
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
         $PodeContext.Server.EndpointsMap.Clear()
-        $PodeContext.Server.FindEndpoints = @{
-            Route = $false
-            Smtp  = $false
-            Tcp   = $false
-        }
 
         # clear openapi
         $PodeContext.Server.OpenAPI = Initialize-OpenApiTable -DefaultOADefinitionTag $PodeContext.Server.Configuration.Server.DefaultOADefinitionTag

@@ -289,10 +289,6 @@ function Add-PodeRoute {
     $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindEndpoints.Route) {
-        $PodeContext.Server.FindEndpoints.Route = !(Test-PodeIsEmpty $EndpointName)
-    }
-
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
 
     # get default route IfExists state
@@ -739,10 +735,6 @@ function Add-PodeStaticRoute {
     $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindEndpoints.Route) {
-        $PodeContext.Server.FindEndpoints.Route = !(Test-PodeIsEmpty $EndpointName)
-    }
-
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
 
     # get default route IfExists state
@@ -975,10 +967,6 @@ function Add-PodeSignalRoute {
     $Path = Update-PodeRouteSlashes -Path $Path
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindEndpoints.Route) {
-        $PodeContext.Server.FindEndpoints.Route = !(Test-PodeIsEmpty $EndpointName)
-    }
-
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
 
     # get default route IfExists state

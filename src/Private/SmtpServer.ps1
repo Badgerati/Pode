@@ -12,13 +12,20 @@ function Start-PodeSmtpServer {
     @(Get-PodeEndpoints -Type Smtp) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
-        $_ip = (Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1)
-        $_ip = (Get-PodeIPAddress $_ip)
+        $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
+        $_ip = Get-PodeIPAddress $_ip -DualMode:($_.DualMode)
+
+        # dual mode?
+        $addrs = $_ip
+        if ($_.DualMode) {
+            $addrs = Resolve-PodeIPDualMode -IP $_ip
+        }
 
         # the endpoint
         $_endpoint = @{
+            Name                   = $_.Name
             Key                    = "$($_ip):$($_.Port)"
-            Address                = $_ip
+            Address                = $addrs
             Hostname               = $_.HostName
             IsIPAddress            = $_.IsIPAddress
             Port                   = $_.Port
@@ -31,6 +38,7 @@ function Start-PodeSmtpServer {
             Pool                   = $_.Runspace.PoolName
             Acknowledge            = $_.Tcp.Acknowledge
             SslProtocols           = $_.Ssl.Protocols
+            DualMode               = $_.DualMode
         }
 
         # add endpoint to list
@@ -47,7 +55,7 @@ function Start-PodeSmtpServer {
     try {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = [PodeSocket]::new($_.Address, $_.Port, $_.SslProtocols, [PodeProtocolType]::Smtp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode)
+            $socket = [PodeSocket]::new($_.Name, $_.Address, $_.Port, $_.SslProtocols, [PodeProtocolType]::Smtp, $_.Certificate, $_.AllowClientCertificate, $_.TlsMode, $_.DualMode)
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
             $socket.AcknowledgeMessage = $_.Acknowledge
 
@@ -109,14 +117,11 @@ function Start-PodeSmtpServer {
                             Endpoint  = @{
                                 Protocol = $Request.Scheme
                                 Address  = $Request.Address
-                                Name     = $null
+                                Name     = $context.EndpointName
                             }
                             Timestamp = [datetime]::UtcNow
                             Metadata  = @{}
                         }
-
-                        # endpoint name
-                        $SmtpEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SmtpEvent.Endpoint.Protocol -Address $SmtpEvent.Endpoint.Address -LocalAddress $SmtpEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Smtp))
 
                         # stop now if the request has an error
                         if ($Request.IsAborted) {
@@ -199,8 +204,9 @@ function Start-PodeSmtpServer {
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {
             @{
-                Url  = $endpoint.Url
-                Pool = $endpoint.Pool
+                Url      = $endpoint.Url
+                Pool     = $endpoint.Pool
+                DualMode = $endpoint.DualMode
             }
         })
 }

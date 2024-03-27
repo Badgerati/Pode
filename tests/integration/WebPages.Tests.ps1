@@ -4,7 +4,7 @@ Describe 'Web Page Requests' {
 
     BeforeAll {
         $Port = 50000
-        $Endpoint = "http://localhost:$($Port)"
+        $Endpoint = "http://127.0.0.1:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
             Import-Module -Name "$($using:PSScriptRoot)\..\..\src\Pode.psm1"
