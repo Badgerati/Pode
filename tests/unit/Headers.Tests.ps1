@@ -1,149 +1,167 @@
-$path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+param()
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+}
 Describe 'Test-PodeHeader' {
     Context 'WebServer' {
         $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         It 'Returns true' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{
-                    'test' = 'value'
+                    'Headers' = @{
+                        'test' = 'value'
+                    }
                 }
-            } }
+            }
 
-            Test-PodeHeader -Name 'test' | Should Be $true
+            Test-PodeHeader -Name 'test' | Should -Be $true
         }
 
         It 'Returns false for no value' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{}
-            } }
+                    'Headers' = @{}
+                }
+            }
 
-            Test-PodeHeader -Name 'test' | Should Be $false
+            Test-PodeHeader -Name 'test' | Should -Be $false
         }
 
         It 'Returns false for not existing' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{}
-            } }
+                    'Headers' = @{}
+                }
+            }
 
-            Test-PodeHeader -Name 'test' | Should Be $false
+            Test-PodeHeader -Name 'test' | Should -Be $false
         }
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
+        BeforeEach {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } } }
 
         It 'Returns true' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{
-                    'test' = 'value'
+                    'Headers' = @{
+                        'test' = 'value'
+                    }
                 }
-            } }
+            }
 
-            Test-PodeHeader -Name 'test' | Should Be $true
+            Test-PodeHeader -Name 'test' | Should -Be $true
         }
 
         It 'Returns false for no value' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{}
-            } }
+                    'Headers' = @{}
+                }
+            }
 
-            Test-PodeHeader -Name 'test' | Should Be $false
+            Test-PodeHeader -Name 'test' | Should -Be $false
         }
 
         It 'Returns false for not existing' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{}
-            } }
+                    'Headers' = @{}
+                }
+            }
 
-            Test-PodeHeader -Name 'test' | Should Be $false
+            Test-PodeHeader -Name 'test' | Should -Be $false
         }
     }
 }
 
 Describe 'Get-PodeHeader' {
-    Context 'WebServer' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+    Context 'WebServer' { BeforeEach {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } } }
 
         It 'Returns null for no value' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{
-                    'test' = $null
+                    'Headers' = @{
+                        'test' = $null
+                    }
                 }
-            } }
+            }
 
-            Get-PodeHeader -Name 'test' | Should Be $null
+            Get-PodeHeader -Name 'test' | Should -Be $null
         }
 
         It 'Returns null for not existing' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{
-                    'test' = $null
+                    'Headers' = @{
+                        'test' = $null
+                    }
                 }
-            } }
+            }
 
-            Get-PodeHeader -Name 'test' | Should Be $null
+            Get-PodeHeader -Name 'test' | Should -Be $null
         }
 
         It 'Returns a header' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{
-                    'test' = 'example'
+                    'Headers' = @{
+                        'test' = 'example'
+                    }
                 }
-            } }
+            }
 
             $h = Get-PodeHeader -Name 'test'
-            $h | Should Be 'example'
+            $h | Should -Be 'example'
         }
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
+        BeforeEach {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } } }
 
         It 'Returns null for no value' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{
-                    'test' = $null
+                    'Headers' = @{
+                        'test' = $null
+                    }
                 }
-            } }
+            }
 
-            Get-PodeHeader -Name 'test' | Should Be $null
+            Get-PodeHeader -Name 'test' | Should -Be $null
         }
 
         It 'Returns null for not existing' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{
-                    'test' = $null
+                    'Headers' = @{
+                        'test' = $null
+                    }
                 }
-            } }
+            }
 
-            Get-PodeHeader -Name 'test' | Should Be $null
+            Get-PodeHeader -Name 'test' | Should -Be $null
         }
 
         It 'Returns a header' {
             $WebEvent = @{ 'Request' = @{
-                'Headers' = @{
-                    'test' = 'example'
+                    'Headers' = @{
+                        'test' = 'example'
+                    }
                 }
-            } }
+            }
 
             $h = Get-PodeHeader -Name 'test'
-            $h | Should Be 'example'
+            $h | Should -Be 'example'
         }
     }
 }
 
 Describe 'Set-PodeHeader' {
     Context 'WebServer' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
-
         It 'Sets a header to response' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
+
             $script:WebEvent = @{ 'Response' = @{
-                'Headers' = @{}
-            } }
+                    'Headers' = @{}
+                }
+            }
 
             $WebEvent.Response.Headers | Add-Member -MemberType ScriptMethod -Name 'Set' -Value {
                 param($n, $v)
@@ -151,20 +169,21 @@ Describe 'Set-PodeHeader' {
             }
 
             Set-PodeHeader -Name 'test' -Value 'example'
-            $WebEvent.Response.Headers['test'] | Should Be 'example'
+            $WebEvent.Response.Headers['test'] | Should -Be 'example'
         }
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ ServerlessType = 'azurefunctions'; IsServerless = $true } }
-
         It 'Sets a header to response' {
+            $PodeContext = @{ 'Server' = @{ ServerlessType = 'azurefunctions'; IsServerless = $true } }
+
             $script:WebEvent = @{ 'Response' = @{
-                'Headers' = @{}
-            } }
+                    'Headers' = @{}
+                }
+            }
 
             Set-PodeHeader -Name 'test' -Value 'example'
-            $WebEvent.Response.Headers['test'] | Should Be 'example'
+            $WebEvent.Response.Headers['test'] | Should -Be 'example'
         }
     }
 }
@@ -172,8 +191,9 @@ Describe 'Set-PodeHeader' {
 Describe 'Set-PodeServerHeader' {
     It 'Sets the server header to response' {
         $script:WebEvent = @{ 'Response' = @{
-            'Headers' = @{}
-        } }
+                'Headers' = @{}
+            }
+        }
 
         $WebEvent.Response.Headers | Add-Member -MemberType ScriptMethod -Name 'Set' -Value {
             param($n, $v)
@@ -181,18 +201,19 @@ Describe 'Set-PodeServerHeader' {
         }
 
         Set-PodeServerHeader -Type 'Example'
-        $WebEvent.Response.Headers['Server'] | Should Be 'Pode - Example'
+        $WebEvent.Response.Headers['Server'] | Should -Be 'Pode - Example'
     }
 }
 
 Describe 'Add-PodeHeader' {
     Context 'WebServer' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
 
         It 'Adds a header to response' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'http' } }
             $script:WebEvent = @{ 'Response' = @{
-                'Headers' = @{}
-            } }
+                    'Headers' = @{}
+                }
+            }
 
             $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
                 param($n, $v)
@@ -200,17 +221,17 @@ Describe 'Add-PodeHeader' {
             }
 
             Add-PodeHeader -Name 'test' -Value 'example'
-            $WebEvent.Response.Headers['test'] | Should Be 'example'
+            $WebEvent.Response.Headers['test'] | Should -Be 'example'
         }
     }
 
     Context 'Serverless' {
-        $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
-
         It 'Adds a header to response' {
+            $PodeContext = @{ 'Server' = @{ 'Type' = 'azurefunctions' } }
             $script:WebEvent = @{ 'Response' = @{
-                'Headers' = @{}
-            } }
+                    'Headers' = @{}
+                }
+            }
 
             $WebEvent.Response | Add-Member -MemberType ScriptMethod -Name 'AppendHeader' -Value {
                 param($n, $v)
@@ -218,7 +239,7 @@ Describe 'Add-PodeHeader' {
             }
 
             Add-PodeHeader -Name 'test' -Value 'example'
-            $WebEvent.Response.Headers['test'] | Should Be 'example'
+            $WebEvent.Response.Headers['test'] | Should -Be 'example'
         }
     }
 }

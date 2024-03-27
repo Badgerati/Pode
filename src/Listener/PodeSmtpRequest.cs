@@ -398,7 +398,7 @@ namespace Pode
                 var contentType = $"{headers["Content-Type"]}";
                 var contentEncoding = $"{headers["Content-Transfer-Encoding"]}";
 
-                // get the boundary 
+                // get the boundary
                 var body = ParseBody(boundaryBody, Boundary);
                 var bodyBytes = ConvertBodyEncoding(body, contentEncoding);
 
