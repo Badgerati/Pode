@@ -83,8 +83,9 @@ function Start-PodeAzFuncServer {
                 if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
+                        $fileBrowser = $WebEvent.Route.FileBrowser
                         if ($WebEvent.StaticContent.IsDownload) {
-                            Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
+                            Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
                         }
                         elseif ($WebEvent.StaticContent.RedirectToDefault) {
                             $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
@@ -92,7 +93,7 @@ function Start-PodeAzFuncServer {
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                            Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
                         }
                     }
                     else {
@@ -196,8 +197,9 @@ function Start-PodeAwsLambdaServer {
                 if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
+                        $fileBrowser = $WebEvent.Route.FileBrowser
                         if ($WebEvent.StaticContent.IsDownload) {
-                            Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
+                            Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
                         }
                         elseif ($WebEvent.StaticContent.RedirectToDefault) {
                             $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
@@ -205,7 +207,8 @@ function Start-PodeAwsLambdaServer {
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                            Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
+                                -Cache:$cachable -FileBrowser:$fileBrowser
                         }
                     }
                     else {
