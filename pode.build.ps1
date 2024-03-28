@@ -322,7 +322,7 @@ Task Pack Build, {
 #>
 
 # Synopsis: Run the tests
-Task Test Build, TestDeps, {
+Task TestNoBuild TestDeps, {
     $p = (Get-Command Invoke-Pester)
     if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
         Remove-Module Pester -Force -ErrorAction Ignore
@@ -349,6 +349,10 @@ Task Test Build, TestDeps, {
         $Script:TestStatus = Invoke-Pester  -Configuration $configuration
     }
 }, PushCodeCoverage, CheckFailedTests
+
+# Synopsis: Run tests after a build
+Task Test Build, TestNoBuild
+
 
 # Synopsis: Check if any of the tests failed
 Task CheckFailedTests {
@@ -431,32 +435,45 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
     mkdocs build
 }
 
-
+# Synopsis: Clean the build enviroment
 Task Clean {
     $path = './deliverable'
     if (Test-Path -Path $path -PathType Container) {
-        Remove-Item -Path $path -Recurse -Force | Out-Null
+        Write-Host "Removing ./deliverable folder"
+        Remove-Item -Path $path -Recurse -Force -Verbose | Out-Null
     }
 
     $path = './pkg'
-
     if ((Test-Path -Path $path -PathType Container )) {
-        Remove-Item -Path $path -Recurse -Force | Out-Null
+        Write-Host "Removing ./pkg folder"
+        Remove-Item -Path $path -Recurse -Force -Verbose | Out-Null
     }
 
     if ((Test-Path -Path .\packers\choco\tools\ChocolateyInstall.ps1 -PathType Leaf )) {
+        Write-Host "Removing .\packers\choco\tools\ChocolateyInstall.ps1"
         Remove-Item -Path .\packers\choco\tools\ChocolateyInstall.ps1
     }
     if ((Test-Path -Path .\packers\choco\pode.nuspec -PathType Leaf )) {
+        Write-Host "Removing .\packers\choco\pode.nuspec"
         Remove-Item -Path .\packers\choco\pode.nuspec
     }
-    Write-Host "$path Cleanup done"
+    Write-Host "Cleanup done"
 }
 
+
+# Synopsis: Clean the build enviroment including libs
+Task CleanAll {
+    $path = './src/Libs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing ./src/Libs contents"
+        Remove-Item -Path $path -Recurse -Force  | Out-Null
+    }
+}, Clean
+
+
+# Synopsis: Install Pode Module locally
 Task Install-Module {
-
     $path = './pkg'
-
     if ($Version) {
 
         if (! (Test-Path $path)) {
@@ -497,7 +514,7 @@ Task Install-Module {
 
 }
 
-
+# Synopsis: Remove the Pode Module from the local registry
 Task Remove-Module {
 
     if ($Version) {
