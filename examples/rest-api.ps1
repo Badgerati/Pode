@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a server, and start listening on port 8086
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address * -Port 8086 -Protocol Http
+    Add-PodeEndpoint -Address 'localhost' -Port 8086 -Protocol Http -DualMode
 
     # request logging
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging

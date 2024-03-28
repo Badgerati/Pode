@@ -1,10 +1,13 @@
-$path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Import-Module "$($src)/Pode.psm1" -Force
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+}
 
 Describe 'Exported Functions' {
     It 'Have Parameter Descriptions' {
-        $funcs = (Get-Module Pode).ExportedFunctions.Values.Name
+        $psDataFile = Import-PowerShellDataFile "$src/Pode.psd1"
+        $funcs = $psDataFile.FunctionsToExport
         $found = @()
 
         foreach ($func in $funcs) {
@@ -16,6 +19,6 @@ Describe 'Exported Functions' {
             }
         }
 
-        $found | Should Be @()
+        $found | Should -Be @()
     }
 }
