@@ -1,10 +1,10 @@
-name: Pode CI Coverage
+name: Pode CI - Powershell Desktop
 
 on:
   push:
     branches:
-    - 'master'
-    - 'develop'
+    - '*'
+    - '!gh-pages'
   pull_request:
     branches:
     - '*'
@@ -12,27 +12,32 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Check PowerShell version
-      shell: pwsh
+      shell: powershell
       run: |
         $PSVersionTable.PSVersion
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
     - name: Install Invoke-Build
-      shell: pwsh
+      shell: powershell
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
     - name: Run Pester Tests
-      shell: pwsh
-      env:
-        PODE_COVERALLS_TOKEN: ${{ secrets.PODE_COVERALLS_TOKEN }}
-        PODE_RUN_CODE_COVERAGE: false
+      shell: powershell
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-Build Test
