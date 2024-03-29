@@ -11,7 +11,6 @@ examples/issues/
 pkg/
 .vs/
 
-
 # Code Runner
 tempCodeRunnerFile.ps1
 
@@ -189,7 +188,6 @@ ClientBin/
 *.publishsettings
 node_modules/
 
-
 # RIA/Silverlight projects
 Generated_Code/
 
@@ -259,3 +257,5 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+packers/choco/pode.nuspec
+packers/choco/tools/ChocolateyInstall.ps1

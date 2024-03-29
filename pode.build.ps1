@@ -90,11 +90,10 @@ function Install-PodeBuildModule($name) {
     Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
 }
 
-function Invoke-PodeBuildDotnetBuild($target,$Version) {
+function Invoke-PodeBuildDotnetBuild($target ) {
 
     # Retrieve the highest installed SDK version
-    $highestSdkVersion = dotnet --list-sdks | Select-Object -Last 1 | ForEach-Object { $_.Split(' ')[0] }
-    $majorVersion = [int]$highestSdkVersion.Split('.')[0]
+    $majorVersion = ([version](dotnet --version)).Major
 
     # Determine if the target framework is compatible
     $isCompatible = $False
@@ -345,7 +344,6 @@ Task TestNoBuild TestDeps, {
         $Script:TestStatus = Invoke-Pester   -Configuration $configuration
     }
     else {
-        $configuration.Output.Verbosity = 'Detailed'
         $Script:TestStatus = Invoke-Pester  -Configuration $configuration
     }
 }, PushCodeCoverage, CheckFailedTests
@@ -436,17 +434,24 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 }
 
 # Synopsis: Clean the build enviroment
-Task Clean {
+Task Clean  CleanPkg,CleanDeliverable,CleanLibs
+
+# Synopsis: Clean the Deliverable folder
+Task CleanDeliverable {
     $path = './deliverable'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing ./deliverable folder"
-        Remove-Item -Path $path -Recurse -Force -Verbose | Out-Null
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
+    Write-Host "Cleanup $path done"
+}
 
+# Synopsis: Clean the pkg directory
+Task CleanPkg {
     $path = './pkg'
     if ((Test-Path -Path $path -PathType Container )) {
         Write-Host "Removing ./pkg folder"
-        Remove-Item -Path $path -Recurse -Force -Verbose | Out-Null
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
 
     if ((Test-Path -Path .\packers\choco\tools\ChocolateyInstall.ps1 -PathType Leaf )) {
@@ -457,18 +462,18 @@ Task Clean {
         Write-Host "Removing .\packers\choco\pode.nuspec"
         Remove-Item -Path .\packers\choco\pode.nuspec
     }
-    Write-Host "Cleanup done"
+    Write-Host "Cleanup $path done"
 }
 
-
-# Synopsis: Clean the build enviroment including libs
-Task CleanAll {
+# Synopsis: Clean the libs folder
+Task CleanLibs {
     $path = './src/Libs'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing ./src/Libs contents"
         Remove-Item -Path $path -Recurse -Force  | Out-Null
     }
-}, Clean
+    Write-Host "Cleanup $path done"
+}
 
 
 # Synopsis: Install Pode Module locally
