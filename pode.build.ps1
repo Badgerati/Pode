@@ -434,7 +434,7 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 }
 
 # Synopsis: Clean the build enviroment
-Task Clean  CleanPkg,CleanDeliverable,CleanLibs
+Task Clean  CleanPkg,CleanDeliverable,CleanLibs,CleanListener
 
 # Synopsis: Clean the Deliverable folder
 Task CleanDeliverable {
@@ -469,12 +469,21 @@ Task CleanPkg {
 Task CleanLibs {
     $path = './src/Libs'
     if (Test-Path -Path $path -PathType Container) {
-        Write-Host "Removing ./src/Libs contents"
+        Write-Host "Removing $path  contents"
         Remove-Item -Path $path -Recurse -Force  | Out-Null
     }
     Write-Host "Cleanup $path done"
 }
 
+# Synopsis: Clean the Listener folder
+Task CleanListener {
+    $path = './src/Listener/bin'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path contents"
+        Remove-Item -Path $path -Recurse -Force  | Out-Null
+    }
+    Write-Host "Cleanup $path done"
+}
 
 # Synopsis: Install Pode Module locally
 Task Install-Module {
