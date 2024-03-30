@@ -9,6 +9,7 @@ examples/state.json
 examples/issue-*
 examples/issues/
 pkg/
+deliverable/
 .vs/
 
 # Code Runner

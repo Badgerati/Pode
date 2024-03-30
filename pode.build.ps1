@@ -254,7 +254,7 @@ Task Compress StampVersion, {
     }
     # create the pkg dir
     New-Item -Path $path -ItemType Directory -Force | Out-Null
-    Compress-Archive -Path './pkg' -DestinationPath "$path/$Version-Binaries.zip"
+    Compress-Archive -Path './pkg/*' -DestinationPath "$path/$Version-Binaries.zip"
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
