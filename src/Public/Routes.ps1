@@ -2249,10 +2249,10 @@ function Add-PodePage {
 
                 # invoke the function (optional splat data)
                 if (Test-PodeIsEmpty $data) {
-                    $result = (. $script)
+                    $result = Invoke-PodeScriptBlock -ScriptBlock $script -Return
                 }
                 else {
-                    $result = (. $script @data)
+                    $result = Invoke-PodeScriptBlock -ScriptBlock $script -Arguments $data -Return
                 }
 
                 # if we have a result, convert it to html
