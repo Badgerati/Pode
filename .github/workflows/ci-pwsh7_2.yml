@@ -22,6 +22,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Setup Powershell
+      uses: bjompen/UpdatePWSHAction@v1.0.0
+      with:
+        FixedVersion: '7.2.18'
+
     - name: Check PowerShell version
       shell: pwsh
       run: |
