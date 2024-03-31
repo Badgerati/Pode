@@ -1,4 +1,4 @@
-name: Pode CI - pwsh
+name: Pode CI - pwsh preview
 
 on:
   push:
@@ -40,13 +40,11 @@ jobs:
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
     - name: Run Pester Tests
       shell: pwsh
-      run: |
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+      run: | 
         Invoke-Build Test
 
     - name: Test docker builds
