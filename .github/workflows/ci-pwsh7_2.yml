@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Setup Powershell
-      uses: bjompen/UpdatePWSHAction@1.0.0
+      uses: bjompen/UpdatePWSHAction@v1
       with:
         FixedVersion: '7.1.0'
 
