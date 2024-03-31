@@ -1,4 +1,4 @@
-name: Pode CI - pwsh
+name: Pode CI - pwsh with UpdatePWSHAction
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Setup Powershell
-      uses: bjompen/UpdatePWSHAction@version
+      uses: bjompen/UpdatePWSHAction@1.0.0
       with:
         FixedVersion: '7.1.0'
 
