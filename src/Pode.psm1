@@ -22,19 +22,17 @@ if ($podeDll) {
     }
 }
 else {
-    # netstandard2 for any Powershell Core version EOL or Desktop
-    if (($PSVersionTable.PSEdition -eq 'Desktop') -or
-        (($moduleManifest.ModuleVersion -ne '$version$') -and ($PSVersionTable.PSVersion -lt [version]$moduleManifest.PrivateData.PwshCoreVersionUntested))
-    ) {
-        Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
+    if ($PSVersionTable.PSVersion -ge [version]'7.4.0') {
+        Add-Type -LiteralPath "$($root)/Libs/net8.0/Pode.dll" -ErrorAction Stop
     }
-    # net7 for =7.3
-    elseif ($PSVersionTable.PSVersion -lt [version]'7.4.0') {
+    elseif ($PSVersionTable.PSVersion -ge [version]'7.3.0') {
         Add-Type -LiteralPath "$($root)/Libs/net7.0/Pode.dll" -ErrorAction Stop
     }
-    # net8 for =7.4
+    elseif ($PSVersionTable.PSVersion -ge [version]'7.2.0') {
+        Add-Type -LiteralPath "$($root)/Libs/net6.0/Pode.dll" -ErrorAction Stop
+    }
     else {
-        Add-Type -LiteralPath "$($root)/Libs/net8.0/Pode.dll" -ErrorAction Stop
+        Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
     }
 }
 

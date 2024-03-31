@@ -241,7 +241,7 @@ Task Build BuildDeps, {
 
     try {
         Invoke-PodeBuildDotnetBuild -target 'netstandard2.0' -Version $Version
-        # Invoke-PodeBuildDotnetBuild -target 'net6.0' -Version $Version
+        Invoke-PodeBuildDotnetBuild -target 'net6.0' -Version $Version
         Invoke-PodeBuildDotnetBuild -target 'net7.0' -Version $Version
         Invoke-PodeBuildDotnetBuild -target 'net8.0' -Version $Version
     }
