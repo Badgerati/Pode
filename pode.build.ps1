@@ -1,13 +1,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
 param(
     [string]
-    $Version = '0.0.0',
-    [string]
-    [ValidateSet(  'None', 'Normal' , 'Detailed', 'Diagnostic')]
-    $PesterVerbosity = 'Normal'
     $Version = '0.0.0',
     [string]
     [ValidateSet(  'None', 'Normal' , 'Detailed', 'Diagnostic')]
@@ -23,7 +17,6 @@ $Versions = @{
     MkDocs      = '1.5.3'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
-    DotNet      = '8.0'
     DotNet      = '8.0'
     MkDocsTheme = '9.4.6'
     PlatyPS     = '0.14.2'
@@ -129,13 +122,6 @@ function Invoke-PodeBuildDotnetBuild($target ) {
     if (!$?) {
         throw "dotnet build failed for $($target)"
     }
-
-    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
-    if (!$?) {
-        throw "dotnet publish failed for $($target)"
-    }
-
-
 }
 
 
@@ -163,13 +149,9 @@ Task StampVersion {
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
-    (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
-    (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
 }
 
 # Synopsis: Generating a Checksum of the Zip
-Task PrintChecksum {
-    $Script:Checksum = (Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
 Task PrintChecksum {
     $Script:Checksum = (Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
     Write-Host "Checksum: $($Checksum)"
@@ -182,7 +164,6 @@ Task PrintChecksum {
 
 # Synopsis: Installs Chocolatey
 Task ChocoDeps -If (Test-PodeBuildIsWindows) {
-Task ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
         Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
@@ -190,7 +171,6 @@ Task ChocoDeps -If (Test-PodeBuildIsWindows) {
 }
 
 # Synopsis: Install dependencies for packaging
-Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
 Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
     if (!(Test-PodeBuildCommand '7z')) {
         Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
@@ -214,12 +194,10 @@ Task BuildDeps {
     }
     if (!(Test-PodeBuildCommand 'dotnet')) {
         Invoke-PodeBuildInstall $dotnet $Versions.DotNet
-        Invoke-PodeBuildInstall $dotnet $Versions.DotNet
     }
 }
 
 # Synopsis: Install dependencies for running tests
-Task TestDeps {
 Task TestDeps {
     # install pester
     Install-PodeBuildModule Pester
@@ -231,7 +209,6 @@ Task TestDeps {
 }
 
 # Synopsis: Install dependencies for documentation
-Task DocsDeps ChocoDeps, {
 Task DocsDeps ChocoDeps, {
     # install mkdocs
     if (!(Test-PodeBuildCommand 'mkdocs')) {
@@ -254,12 +231,9 @@ Task DocsDeps ChocoDeps, {
 
 # Synopsis: Build the .NET Listener
 Task Build BuildDeps, {
-Task Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
-    Write-Host 'Powershell Version:'
-    $PSVersionTable.PSVersion
     Write-Host 'Powershell Version:'
     $PSVersionTable.PSVersion
     Push-Location ./src/Listener
@@ -282,7 +256,6 @@ Task Build BuildDeps, {
 
 # Synopsis: Creates a Zip of the Module
 Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
-Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
 }, PrintChecksum
 
@@ -300,23 +273,12 @@ Task Compress StampVersion, {
 
 # Synopsis: Creates a Chocolately package of the Module
 Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
-Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { choco pack ./packers/choco/pode.nuspec }
     Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
     Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
 
 # Synopsis: Create docker tags
-Task DockerPack -If (((Test-PodeBuildIsWindows) -or $IsLinux) ) {
-    try {
-        # Try to get the Docker version to check if Docker is installed
-        docker --version
-    }
-    catch {
-        # If Docker is not available, exit the task
-        Write-Warning 'Docker is not installed or not available in the PATH. Exiting task.'
-        return
-    }
 Task DockerPack -If (((Test-PodeBuildIsWindows) -or $IsLinux) ) {
     try {
         # Try to get the Docker version to check if Docker is installed
@@ -407,14 +369,12 @@ Task Test Build, TestNoBuild
 
 # Synopsis: Check if any of the tests failed
 Task CheckFailedTests {
-Task CheckFailedTests {
     if ($TestStatus.FailedCount -gt 0) {
         throw "$($TestStatus.FailedCount) tests failed"
     }
 }
 
 # Synopsis: If AppyVeyor or GitHub, push code coverage stats
-Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
 Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
     try {
         $service = Get-PodeBuildService
@@ -436,12 +396,10 @@ Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
 
 # Synopsis: Run the documentation locally
 Task Docs DocsDeps, DocsHelpBuild, {
-Task Docs DocsDeps, DocsHelpBuild, {
     mkdocs serve
 }
 
 # Synopsis: Build the function help documentation
-Task DocsHelpBuild DocsDeps, {
 Task DocsHelpBuild DocsDeps, {
     # import the local module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
@@ -486,7 +444,6 @@ Task DocsHelpBuild DocsDeps, {
 }
 
 # Synopsis: Build the documentation
-Task DocsBuild DocsDeps, DocsHelpBuild, {
 Task DocsBuild DocsDeps, DocsHelpBuild, {
     mkdocs build
 }
