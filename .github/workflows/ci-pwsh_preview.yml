@@ -1,4 +1,4 @@
-name: Pode CI - pwsh
+name: Pode CI - pwsh preview
 
 on:
   push:
@@ -22,6 +22,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Setup Powershell
+      uses: bjompen/UpdatePWSHAction@v1.0.0
+      with:
+        ReleaseVersion: 'Preview'
+
     - name: Check PowerShell version
       shell: pwsh
       run: |
@@ -35,13 +40,11 @@ jobs:
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
     - name: Run Pester Tests
       shell: pwsh
-      run: |
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+      run: | 
         Invoke-Build Test
 
     - name: Test docker builds

@@ -1,4 +1,4 @@
-name: Pode CI - pwsh 7.3 on windows-latest
+name: Pode CI - pwsh 7.3
 
 on:
   push:
@@ -12,13 +12,25 @@ on:
 jobs:
   build:
 
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Setup Powershell
+      uses: bjompen/UpdatePWSHAction@v1.0.0
+      with:
+        FixedVersion: '7.3.11'
+
+    - name: Check PowerShell version
+      shell: pwsh
+      run: |
+        $PSVersionTable.PSVersion
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -30,24 +42,12 @@ jobs:
       run: |
         Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
-    # For Windows
-    - name: Download and extract PowerShell 7.3
-      run: |
-        Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.3.11/PowerShell-7.3.11-win-x64.zip" -OutFile "PowerShell-7.3.x-win-x64.zip"
-        Expand-Archive -LiteralPath "PowerShell-7.3.x-win-x64.zip" -DestinationPath "C:\PowerShell-7.3"
-
-    - name: Check PowerShell version
-      run: |
-        C:\PowerShell-7.3\pwsh.exe -version
-
     - name: Run Pester Tests
+      shell: pwsh
       run: |
-        C:\PowerShell-7.3\pwsh.exe -Command {
-          Invoke-Build Test
-        }
+        Invoke-Build Test
 
     - name: Test docker builds
+      shell: pwsh
       run: |
-        C:\PowerShell-7.3\pwsh.exe -Command {
-          Invoke-Build DockerPack -Version '0.0.0'
-        }
+        Invoke-Build DockerPack -Version '0.0.0'
