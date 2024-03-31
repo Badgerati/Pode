@@ -247,6 +247,10 @@ Task Build BuildDeps, {
     finally {
         Pop-Location
     }
+
+    if (Test-Path ./src/Listener/bin/Release) {
+        Copy-Item -Path ./src/Listener/bin/Release -Destination ./src/Libs -Recurse
+    }
 }
 
 
