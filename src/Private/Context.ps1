@@ -826,8 +826,8 @@ function Set-PodeServerConfiguration {
         if ($Configuration.DefaultFolders.Public) {
             $Context.Server.DefaultFolders.Public = $Configuration.DefaultFolders.Public
         }
-        if ($Configuration.DefaultFolders.View) {
-            $Context.Server.DefaultFolders.View = $Configuration.DefaultFolders.View
+        if ($Configuration.DefaultFolders.Views) {
+            $Context.Server.DefaultFolders.Views = $Configuration.DefaultFolders.Views
         }
         if ($Configuration.DefaultFolders.Errors) {
             $Context.Server.DefaultFolders.Errors = $Configuration.DefaultFolders.Errors
