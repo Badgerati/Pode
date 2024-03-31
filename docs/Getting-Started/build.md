@@ -1,5 +1,5 @@
 
-# Build Pode locally
+# Build Pode
 
 To build and use the code checked out on your machine, follow these steps :
 
@@ -90,14 +90,14 @@ To build and use the code checked out on your machine, follow these steps :
     ```
 
 
-3. Install InvokeBuild Module
+2. Install InvokeBuild Module
 
     ```powershell
     Install-Module InvokeBuild -Scope CurrentUser
     ```
 
 
-4. Test
+3. Test
 
     To run the unit tests, run the following command from the root of the repository (this will build Pode and, if needed, auto-install Pester/.NET):
 
@@ -105,7 +105,7 @@ To build and use the code checked out on your machine, follow these steps :
     Invoke-Build Test
     ```
 
-5. Build
+4. Build
 
     To just build Pode, before running any examples, run the following:
 
@@ -113,7 +113,7 @@ To build and use the code checked out on your machine, follow these steps :
     Invoke-Build Build
     ```
 
-6. Packaging
+5. Packaging
 
     To create a Pode package. Please note that docker has to be present to create the containers.
 
@@ -121,7 +121,7 @@ To build and use the code checked out on your machine, follow these steps :
     Invoke-Build Pack
     ```
 
-7. Install locally
+6. Install locally
 
     To install Pode from the repository, run the following:
 

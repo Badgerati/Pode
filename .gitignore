@@ -9,6 +9,7 @@ examples/state.json
 examples/issue-*
 examples/issues/
 pkg/
+deliverable/
 .vs/
 
 # Code Runner
@@ -261,3 +262,6 @@ $RECYCLE.BIN/
 Pode.sln
 examples/FileBrowser/wwwFiles/
 examples/PetStore/data/PetData.json
+
+packers/choco/pode.nuspec
+packers/choco/tools/ChocolateyInstall.ps1

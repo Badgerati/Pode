@@ -52,9 +52,10 @@ Pode is a Cross-Platform framework for creating web servers to host REST APIs an
     <iconUrl>https://raw.githubusercontent.com/Badgerati/Pode/master/images/icon.png</iconUrl>
     <releaseNotes>https://github.com/Badgerati/Pode/releases</releaseNotes>
   </metadata>
-  <files>
-    <file src="tools\**" target="tools" />
+  <files> 
     <file src="..\..\pkg\**" target="src" />
     <file src=".\VERIFICATION.txt" target="src/VERIFICATION.txt" />
+    <file src="tools\ChocolateyInstall.ps1" target="tools" />
+    <file src="tools\ChocolateyUninstall.ps1" target="tools" />
   </files>
 </package>
