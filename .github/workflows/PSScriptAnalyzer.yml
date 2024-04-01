@@ -39,7 +39,7 @@ jobs:
           path: .\
           recurse: true
           # Include your own basic security rules. Removing this option will run all the rules
-          includeRule: '"PSAvoidGlobalAliases", "PSAvoidUsingConvertToSecureStringWithPlainText"'
+          includeRule: '"PSAvoidUsingCmdletAliases" ,"PSAvoidUsingPlainTextForPassword","PSAvoidUsingWriteHost","PSAvoidUsingInvokeExpression","PSUseShouldProcessForStateChangingFunctions","PSAvoidUsingUsernameAndPasswordParams","PSUseProcessBlockForPipelineCommand","PSAvoidUsingConvertToSecureStringWithPlainText","PSUseSingularNouns","PSReviewUnusedParameter"'
           output: results.sarif
 
       # Upload the SARIF file generated in the previous step
