@@ -181,7 +181,7 @@ Start-PodeServer -ScriptBlock {
 }
 ```
 
-When used with `-Download,` the browser downloads any file selected instead of rendering. The folders are rendered and not downloaded.
+When used with `-DownloadOnly`, the browser downloads any file selected instead of rendering. The folders are rendered and not downloaded.
 
 ## Static Routes order
 By default, Static routes are processed before any other route.
@@ -204,4 +204,4 @@ Nothing to report :D
 }
 ```
 
-To change the default behavior, you can use the `Server.RouteOrderMainBeforeStatic` property in the `server.psd1` configuration file, setting the value to `$True.` This will ensure that any static route is evaluated after any other route.
+To change the default behavior, you can use the `Server.Web.Static.ValidateLast` property in the `server.psd1` configuration file, setting the value to `$True.` This will ensure that any static route is evaluated after any other route.

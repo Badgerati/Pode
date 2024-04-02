@@ -77,7 +77,7 @@ A "path" like `Server.Ssl.Protocols` looks like the below in the file:
 | Server.Root                       | Overrides root path of the server                                       | [link](../Misc/ServerRoot)                 |
 | Server.Restart                    | Defines configuration for automatically restarting the server           | [link](../Restarting/Types/AutoRestarting) |
 | Server.FileMonitor                | Defines configuration for restarting the server based on file updates   | [link](../Restarting/Types/FileMonitoring) |
-| Server.RouteOrderMainBeforeStatic | Changes the way routes are processed.                                   | [link](../Routes/Utilities/StaticContent)  |
+| Server.Web.Static.ValidateLast | Changes the way routes are processed.                                   | [link](../Routes/Utilities/StaticContent)  |
 | Web.TransferEncoding              | Sets the Request TransferEncoding                                       | [link](../Compression/Requests)            |
 | Web.Compression                   | Sets any compression to use on the Response                             | [link](../Compression/Responses)           |
 | Web.ContentType                   | Define expected Content Types for certain Routes                        | [link](../Routes/Utilities/ContentTypes)   |

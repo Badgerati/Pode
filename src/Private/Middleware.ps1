@@ -216,7 +216,7 @@ function Get-PodeRouteValidateMiddleware {
     return @{
         Name  = '__pode_mw_route_validation__'
         Logic = {
-            if ($Server.Configuration.Server.RouteOrderMainBeforeStatic) {
+            if ($Server.Configuration.Server.Web.Static.ValidateLast) {
                 #  check the main routes and check the static routes
                 $route = Find-PodeRoute -Method $WebEvent.Method -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name -CheckWildMethod
                 if ($null -eq $route) {

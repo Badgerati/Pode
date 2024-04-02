@@ -260,124 +260,120 @@ function Write-PodeDirectoryResponseInternal {
         $Path
     )
 
-    try {
-        if ($WebEvent.Path -eq '/') {
-            $leaf = '/'
-            $rootPath = '/'
+    if ($WebEvent.Path -eq '/') {
+        $leaf = '/'
+        $rootPath = '/'
+    }
+    else {
+        # get leaf of current physical path, and set root path
+        $leaf = ($Path.Split(':')[1] -split '[\\/]+') -join '/'
+        $rootPath = $WebEvent.Path -ireplace "$($leaf)$", ''
+    }
+
+    # Determine if the server is running in Windows mode or is running a varsion that support Linux
+    # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.4#example-10-output-for-non-windows-operating-systems
+    $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
+
+    # Construct the HTML content for the file browser view
+    $htmlContent = [System.Text.StringBuilder]::new()
+
+    $atoms = $WebEvent.Path -split '/'
+    $atoms = @(foreach ($atom in $atoms) {
+            if (![string]::IsNullOrEmpty($atom)) {
+                [uri]::EscapeDataString($atom)
+            }
+        })
+    if ([string]::IsNullOrWhiteSpace($atoms)) {
+        $baseLink = ''
+    }
+    else {
+        $baseLink = "/$($atoms -join '/')"
+    }
+
+    # Handle navigation to the parent directory (..)
+    if ($leaf -ne '/') {
+        $LastSlash = $baseLink.LastIndexOf('/')
+        if ($LastSlash -eq -1) {
+            Set-PodeResponseStatus -Code 404
+            return
+        }
+        $ParentLink = $baseLink.Substring(0, $LastSlash)
+        if ([string]::IsNullOrWhiteSpace($ParentLink)) {
+            $ParentLink = '/'
+        }
+        $item = Get-Item '..'
+        if ($windowsMode) {
+            $htmlContent.Append("<tr> <td class='mode'>")
+            $htmlContent.Append($item.Mode)
         }
         else {
-            # get leaf of current physical path, and set root path
-            $leaf = ($Path.Split(':')[1] -split '[\\/]+') -join '/'
-            $rootPath = $WebEvent.Path -ireplace "$($leaf)$", ''
+            $htmlContent.Append("<tr> <td class='unixMode'>")
+            $htmlContent.Append($item.UnixMode)
+            $htmlContent.Append("</td> <td class='user'>")
+            $htmlContent.Append($item.User)
+            $htmlContent.Append("</td> <td class='group'>")
+            $htmlContent.Append($item.Group)
         }
-
-        # Determine if the server is running in Windows mode or is running a varsion that support Linux
-        # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.4#example-10-output-for-non-windows-operating-systems
-        $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
-
-        # Construct the HTML content for the file browser view
-        $htmlContent = [System.Text.StringBuilder]::new()
-
-        $atoms = $WebEvent.Path -split '/'
-        $atoms = @(foreach ($atom in $atoms) {
-                if (![string]::IsNullOrEmpty($atom)) {
-                    [uri]::EscapeDataString($atom)
-                }
-            })
-        if ([string]::IsNullOrWhiteSpace($atoms)) {
-            $baseLink = ''
+        $htmlContent.Append("</td> <td class='dateTime'>")
+        $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
+        $htmlContent.Append("</td> <td class='dateTime'>")
+        $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
+        $htmlContent.Append( "</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder2-open'></td> <td class='name'><a href='")
+        $htmlContent.Append($ParentLink)
+        $htmlContent.AppendLine("'>..</a></td> </tr>")
+    }
+    # Retrieve the child items of the specified directory
+    $child = Get-ChildItem -Path $Path -Force
+    foreach ($item in $child) {
+        $link = "$baseLink/$([uri]::EscapeDataString($item.Name))"
+        if ($item.PSIsContainer) {
+            $size = ''
+            $icon = '📁'
         }
         else {
-            $baseLink = "/$($atoms -join '/')"
+            $size = '{0:N2}KB' -f ($item.Length / 1KB)
+            $icon = '📄'
         }
 
-        # Handle navigation to the parent directory (..)
-        if ($leaf -ne '/') {
-            $LastSlash = $baseLink.LastIndexOf('/')
-            if ($LastSlash -eq -1) {
-                Set-PodeResponseStatus -Code 404
-                return
-            }
-            $ParentLink = $baseLink.Substring(0, $LastSlash)
-            if ([string]::IsNullOrWhiteSpace($ParentLink)) {
-                $ParentLink = '/'
-            }
-            $item = Get-Item '..'
-            if ($windowsMode) {
-                $htmlContent.Append("<tr> <td class='mode'>")
-                $htmlContent.Append($item.Mode)
-            }
-            else {
-                $htmlContent.Append("<tr> <td class='unixMode'>")
-                $htmlContent.Append($item.UnixMode)
-                $htmlContent.Append("</td> <td class='user'>")
-                $htmlContent.Append($item.User)
-                $htmlContent.Append("</td> <td class='group'>")
-                $htmlContent.Append($item.Group)
-            }
-            $htmlContent.Append("</td> <td class='dateTime'>")
-            $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
-            $htmlContent.Append("</td> <td class='dateTime'>")
-            $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
-            $htmlContent.Append( "</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder2-open'></td> <td class='name'><a href='")
-            $htmlContent.Append($ParentLink)
-            $htmlContent.AppendLine("'>..</a></td> </tr>")
+        # Format each item as an HTML row
+        if ($windowsMode) {
+            $htmlContent.Append("<tr> <td class='mode'>")
+            $htmlContent.Append($item.Mode)
         }
-        # Retrieve the child items of the specified directory
-        $child = Get-ChildItem -Path $Path -Force
-        foreach ($item in $child) {
-            $link = "$baseLink/$([uri]::EscapeDataString($item.Name))"
-            if ($item.PSIsContainer) {
-                $size = ''
-                $icon = 'bi bi-folder2'
-            }
-            else {
-                $size = '{0:N2}KB' -f ($item.Length / 1KB)
-                $icon = 'bi bi-file'
-            }
-
-            # Format each item as an HTML row
-            if ($windowsMode) {
-                $htmlContent.Append("<tr> <td class='mode'>")
-                $htmlContent.Append($item.Mode)
-            }
-            else {
-                $htmlContent.Append("<tr> <td class='unixMode'>")
-                $htmlContent.Append($item.UnixMode)
-                $htmlContent.Append("</td> <td class='user'>")
-                $htmlContent.Append($item.User)
-                $htmlContent.Append("</td> <td class='group'>")
-                $htmlContent.Append($item.Group)
-            }
-            $htmlContent.Append("</td> <td class='dateTime'>")
-            $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
-            $htmlContent.Append("</td> <td class='dateTime'>")
-            $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
-            $htmlContent.Append("</td> <td class='size'>")
-            $htmlContent.Append( $size)
-            $htmlContent.Append( "</td> <td class='icon'><i class='")
-            $htmlContent.Append( $icon)
-            $htmlContent.Append( "'></i></td> <td class='name'><a href='")
-            $htmlContent.Append( $link)
-            $htmlContent.Append( "'>")
-            $htmlContent.Append($item.Name )
-            $htmlContent.AppendLine('</a></td> </tr>' )
+        else {
+            $htmlContent.Append("<tr> <td class='unixMode'>")
+            $htmlContent.Append($item.UnixMode)
+            $htmlContent.Append("</td> <td class='user'>")
+            $htmlContent.Append($item.User)
+            $htmlContent.Append("</td> <td class='group'>")
+            $htmlContent.Append($item.Group)
         }
-
-        $Data = @{
-            RootPath    = $RootPath
-            Path        = $leaf.Replace('\', '/')
-            WindowsMode = $windowsMode.ToString().ToLower()
-            FileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
-        }
-
-        $podeRoot = Get-PodeModuleMiscPath
-        # Write the response
-        Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
+        $htmlContent.Append("</td> <td class='dateTime'>")
+        $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
+        $htmlContent.Append("</td> <td class='dateTime'>")
+        $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
+        $htmlContent.Append("</td> <td class='size'>")
+        $htmlContent.Append( $size)
+        $htmlContent.Append( "</td> <td class='icon'>")
+        $htmlContent.Append( $icon)
+        $htmlContent.Append( "</td> <td class='name'><a href='")
+        $htmlContent.Append( $link)
+        $htmlContent.Append( "'>")
+        $htmlContent.Append($item.Name )
+        $htmlContent.AppendLine('</a></td> </tr>' )
     }
-    catch {
-        write-podehost $_
+
+    $Data = @{
+        RootPath    = $RootPath
+        Path        = $leaf.Replace('\', '/')
+        WindowsMode = $windowsMode.ToString().ToLower()
+        FileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
     }
+
+    $podeRoot = Get-PodeModuleMiscPath
+    # Write the response
+    Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
+
 }
 
 
@@ -454,13 +450,12 @@ function Write-PodeAttachmentResponseInternal {
         # If directory browsing is enabled, use the directory response function
         if ($FileBrowser.isPresent) {
             Write-PodeDirectoryResponseInternal -Path $Path
-            return
         }
         else {
             # If browsing is not enabled, return a 404 error
             Set-PodeResponseStatus -Code 404
-            return
         }
+        return
     }
     try {
         # setup the content type and disposition

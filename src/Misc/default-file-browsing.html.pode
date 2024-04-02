@@ -9,8 +9,8 @@
     <meta charset='utf-8'>
 
     <style>
-        h3 {
-            font-family: 'Courier New', Courier, monospace;
+        body {
+            font-family: Helvetica,Arial,sans-serif;
             /* Applies monospace font to <h2> */
         }
 
