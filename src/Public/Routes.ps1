@@ -759,16 +759,12 @@ function Add-PodeStaticRoute {
     # workout a default transfer encoding for the route
     $TransferEncoding = Find-PodeRouteTransferEncoding -Path $Path -TransferEncoding $TransferEncoding
 
-    #The path use KleeneStar(Asterisk)
-    $KleeneStar = $OrigPath.Contains('*')
-
     # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
             @{
                 Source            = $Source
                 Path              = $Path
-                KleeneStar        = $KleeneStar
                 Method            = $Method
                 Defaults          = $Defaults
                 RedirectToDefault = $RedirectToDefault
