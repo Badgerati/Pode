@@ -6,7 +6,8 @@ Caching is supported on static content.
 
 ## Public Directory
 
-You can place static files within the `/public` directory at the root of your server, which serves as the default location for static content. However, if you need to relocate this directory, you can do so programmatically using the `Set-PodeStaticFolder` function within your server script, or specify a different location in the `server.psd1` configuration file under the `Server.DefaultFolders` property. When a request is made for a file, Pode will automatically check this designated static directory first, and if the file is found, it will be returned to the requester.
+You can place static files within the `/public` directory at the root of your server, which serves as the default location for static content. When a request is made for a file, Pode will automatically check this designated static directory first, and if the file is found, it will be returned to the requester.
+
 
 For example, if you have a `logic.js` at `/public/scripts/logic.js`. The the following request would return the file's content:
 
@@ -18,6 +19,68 @@ Or, you can reference the file in a view like:
 
 ```html
 <script type="text/javascript" src="/scripts/logic.js"></script>
+```
+
+### How to change the Default Folders
+
+Usually, the Default Folders are located under the RootPath specified by  `Start-PodeServer -RootPath <path>`.
+But if you need to relocate this directory, you can do so programmatically using the `Set-PodeStaticFolder` function within your server script or specify a different location in the `server.psd1` configuration file under the `Server.DefaultFolders` property. When a file request is made, Pode will automatically check this designated static directory first, and if the file is found, it will be returned to the requester.
+
+Here an example:
+
+1. Using `Set-PodeStaticFolder`
+
+```powershell
+Set-PodeDefaultFolder -Type 'Public' -Path 'c:\custom\public'
+Set-PodeDefaultFolder -Type 'Views' -Path 'd:\shared\views'
+Set-PodeDefaultFolder -Type 'Errors' -Path 'e:\logs\errors'
+```
+
+2. Using `server.psd1` configuration file
+
+```powershell
+@{
+    # For more information  https://badgerati.github.io/Pode/Tutorials/Configuration/
+    Server = @{
+        # Any othe properties you need in your application
+        DefaultFolders = @{
+            Public = 'c:\custom\public'
+            Views  = 'd:\shared\views'
+            Errors = 'e:\logs\errors'
+        }
+    }
+}
+```
+
+### How to change the Default Folders
+
+Usually, the Default Folders are located under the RootPath specified by  `Start-PodeServer -RootPath <path>`.
+But if you need to relocate this directory, you can do so programmatically using the `Set-PodeStaticFolder` function within your server script or specify a different location in the `server.psd1` configuration file under the `Server.DefaultFolders` property. When a file request is made, Pode will automatically check this designated static directory first, and if the file is found, it will be returned to the requester.
+
+Here an example:
+
+1. Using `Set-PodeStaticFolder`
+
+```powershell
+Set-PodeDefaultFolder -Type 'Public' -Path 'c:\custom\public'
+Set-PodeDefaultFolder -Type 'Views' -Path 'd:\shared\views'
+Set-PodeDefaultFolder -Type 'Errors' -Path 'e:\logs\errors'
+```
+
+2. Using `server.psd1` configuration file
+
+```powershell
+@{
+    # For more information  https://badgerati.github.io/Pode/Tutorials/Configuration/
+    Server = @{
+        # Any othe properties you need in your application
+        DefaultFolders = @{
+            Public = 'c:\custom\public'
+            Views  = 'd:\shared\views'
+            Errors = 'e:\logs\errors'
+        }
+    }
+}
 ```
 
 
