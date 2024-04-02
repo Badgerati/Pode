@@ -122,8 +122,13 @@ function Invoke-PodeBuildDotnetBuild($target ) {
     if (!$?) {
         throw "dotnet build failed for $($target)"
     }
-}
 
+    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
+    if (!$?) {
+        throw "dotnet publish failed for $($target)"
+    }
+
+}
 
 function Get-PwshCoreEndOfLife {
     param(
@@ -186,12 +191,6 @@ Task BuildDeps {
     else {
         $dotnet = "dotnet-sdk-$($Versions.DotNet)"
     }
-    if (Test-PodeBuildIsWindows) {
-        $dotnet = 'dotnet'
-    }
-    else {
-        $dotnet = "dotnet-sdk-$($Versions.DotNet)"
-    }
     if (!(Test-PodeBuildCommand 'dotnet')) {
         Invoke-PodeBuildInstall $dotnet $Versions.DotNet
     }
@@ -247,10 +246,6 @@ Task Build BuildDeps, {
     finally {
         Pop-Location
     }
-
-    if (Test-Path ./src/Listener/bin/Release) {
-        Copy-Item -Path ./src/Listener/bin/Release -Destination ./src/Libs -Recurse
-    }
 }
 
 
@@ -278,7 +273,6 @@ Task Compress StampVersion, {
 # Synopsis: Creates a Chocolately package of the Module
 Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { choco pack ./packers/choco/pode.nuspec }
-    Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
     Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
 
