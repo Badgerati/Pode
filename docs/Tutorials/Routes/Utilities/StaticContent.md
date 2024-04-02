@@ -52,38 +52,6 @@ Set-PodeDefaultFolder -Type 'Errors' -Path 'e:\logs\errors'
 }
 ```
 
-### How to change the Default Folders
-
-Usually, the Default Folders are located under the RootPath specified by  `Start-PodeServer -RootPath <path>`.
-But if you need to relocate this directory, you can do so programmatically using the `Set-PodeStaticFolder` function within your server script or specify a different location in the `server.psd1` configuration file under the `Server.DefaultFolders` property. When a file request is made, Pode will automatically check this designated static directory first, and if the file is found, it will be returned to the requester.
-
-Here an example:
-
-1. Using `Set-PodeStaticFolder`
-
-```powershell
-Set-PodeDefaultFolder -Type 'Public' -Path 'c:\custom\public'
-Set-PodeDefaultFolder -Type 'Views' -Path 'd:\shared\views'
-Set-PodeDefaultFolder -Type 'Errors' -Path 'e:\logs\errors'
-```
-
-2. Using `server.psd1` configuration file
-
-```powershell
-@{
-    # For more information  https://badgerati.github.io/Pode/Tutorials/Configuration/
-    Server = @{
-        # Any othe properties you need in your application
-        DefaultFolders = @{
-            Public = 'c:\custom\public'
-            Views  = 'd:\shared\views'
-            Errors = 'e:\logs\errors'
-        }
-    }
-}
-```
-
-
 ## Static Routes
 
 The following is an example of using the [`Add-PodeStaticRoute`](../../../../Functions/Routes/Add-PodeStaticRoute) function to define a route to some static content directory; this tells Pode where to get static files from for certain routes. This example will define a static route for `/assets`, and will point the route at the internal directory path of `./content/assets`:
@@ -245,7 +213,7 @@ Start-PodeServer -ScriptBlock {
 }
 ```
 
-When used with `-Download,` the browser downloads any file selected instead of rendering. The folders are rendered and not downloaded.
+When used with `-DownloadOnly`, the browser downloads any file selected instead of rendering. The folders are rendered and not downloaded.
 
 ## Static Routes order
 By default, Static routes are processed before any other route.
@@ -268,4 +236,4 @@ Nothing to report :D
 }
 ```
 
-To change the default behavior, you can use the `Server.RouteOrderMainBeforeStatic` property in the `server.psd1` configuration file, setting the value to `$True.` This will ensure that any static route is evaluated after any other route.
+To change the default behavior, you can use the `Server.Web.Static.ValidateLast` property in the `server.psd1` configuration file, setting the value to `$True.` This will ensure that any static route is evaluated after any other route.
