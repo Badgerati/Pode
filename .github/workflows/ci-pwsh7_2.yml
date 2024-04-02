@@ -1,10 +1,10 @@
-name: Pode CI Coverage
+name: Pode CI - pwsh 7.2
 
 on:
   push:
     branches:
-    - 'master'
-    - 'develop'
+    - '*'
+    - '!gh-pages'
   pull_request:
     branches:
     - '*'
@@ -12,10 +12,20 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Setup Powershell
+      uses: bjompen/UpdatePWSHAction@v1.0.0
+      with:
+        FixedVersion: '7.2.18'
 
     - name: Check PowerShell version
       shell: pwsh
@@ -29,13 +39,15 @@ jobs:
 
     - name: Install Invoke-Build
       shell: pwsh
-      run: |
+      run: | 
         Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
 
     - name: Run Pester Tests
       shell: pwsh
-      env:
-        PODE_COVERALLS_TOKEN: ${{ secrets.PODE_COVERALLS_TOKEN }}
-        PODE_RUN_CODE_COVERAGE: false
       run: |
         Invoke-Build Test
+
+    - name: Test docker builds
+      shell: pwsh
+      run: |
+        Invoke-Build DockerPack -Version '0.0.0'

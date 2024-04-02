@@ -178,6 +178,13 @@ function New-PodeContext {
         BodySize = 100MB
     }
 
+    # default Folders
+    $ctx.Server.DefaultFolders = @{
+        'Views'  = 'views'
+        'Public' = 'public'
+        'Errors' = 'errors'
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -813,6 +820,18 @@ function Set-PodeServerConfiguration {
 
     if ([long]$Configuration.Request.BodySize -gt 0) {
         $Context.Server.Request.BodySize = [long]$Configuration.Request.BodySize
+    }
+
+    if ($Configuration.DefaultFolders) {
+        if ($Configuration.DefaultFolders.Public) {
+            $Context.Server.DefaultFolders.Public = $Configuration.DefaultFolders.Public
+        }
+        if ($Configuration.DefaultFolders.Views) {
+            $Context.Server.DefaultFolders.Views = $Configuration.DefaultFolders.Views
+        }
+        if ($Configuration.DefaultFolders.Errors) {
+            $Context.Server.DefaultFolders.Errors = $Configuration.DefaultFolders.Errors
+        }
     }
 }
 

@@ -137,6 +137,8 @@
         'Test-PodeIsHosted',
         'New-PodeCron',
         'Test-PodeInRunspace',
+        'Set-PodeDefaultFolder',
+        'Get-PodeDefaultFolder',
 
         # routes
         'Add-PodeRoute',

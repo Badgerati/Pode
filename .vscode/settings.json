@@ -20,6 +20,7 @@
     "powershell.codeFormatting.whitespaceBeforeOpenParen": true,
     "powershell.codeFormatting.whitespaceBetweenParameters": false,
     "powershell.codeFormatting.whitespaceInsideBrace": true,
+    "powershell.scriptAnalysis.settingsPath": "PSScriptAnalyzerSettings.psd1",
     "files.trimTrailingWhitespace": true,
     "files.associations": {
         "*.pode": "html"
