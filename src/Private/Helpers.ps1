@@ -1730,22 +1730,40 @@ function Test-PodePath {
         $NoStatus,
 
         [switch]
-        $FailOnDirectory
+        $FailOnDirectory,
+
+        [switch]
+        $Force
     )
+
+    $statusCode = 200
+
     if (![string]::IsNullOrWhiteSpace($Path)) {
-        $item = Get-Item $Path -ErrorAction Ignore
-        if ($null -ne $item -and (! $FailOnDirectory.IsPresent -or !$item.PSIsContainer)) {
+        try {
+            $item = Get-Item $Path -Force:$Force -ErrorAction Stop
+        }
+        catch [System.Management.Automation.ItemNotFoundException] {
+            $statusCode = 404
+        }
+        catch [System.UnauthorizedAccessException] {
+            $statusCode = 401
+        }
+        catch {
+            $statusCode = 400
+        }
+
+        if (($null -ne $item) -and ($statusCode -eq 200) -and (!$FailOnDirectory -or !$item.PSIsContainer)) {
             return $true
         }
     }
 
-    # if the file doesnt exist then fail on 404
-    if ($NoStatus.IsPresent) {
-        return $false
+    # if we failed to get the file, report back the status code and/or return true/false
+    if (!$NoStatus.IsPresent) {
+        Set-PodeResponseStatus -Code $statusCode
     }
-    else {
-        Set-PodeResponseStatus -Code 404
-    }
+
+    return $false
+
 }
 
 function Test-PodePathIsFile {
