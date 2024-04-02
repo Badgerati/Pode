@@ -20,13 +20,13 @@
     Author            = 'Matthew Kelly (Badgerati)'
 
     # Copyright statement for this module
-    Copyright         = 'Copyright (c) 2017-2023 Matthew Kelly (Badgerati), licensed under the MIT License.'
+    Copyright         = 'Copyright (c) 2017-$buildyear$ Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
     Description       = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '5.0'
+    PowerShellVersion = '5.1'
 
     # Functions to export from this Module
     FunctionsToExport = @(
@@ -456,14 +456,16 @@
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData       = @{
-        PSData = @{
+        PSData                  = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags         = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
-                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform',
-                'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
-                'authentication', 'authorisation', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim')
+            Tags         = @(
+                'powershell', 'web', 'server', 'http', 'https', 'listener', 'rest', 'api', 'tcp',
+                'smtp', 'websites', 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core',
+                'cross-platform', 'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
+                'authentication', 'authorisation', 'authorization', 'arm', 'raspberry-pi', 'aws-lambda',
+                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim'
+            )
 
             # A URL to the license for this module.
             LicenseUri   = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'
@@ -478,5 +480,6 @@
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
 
         }
+        PwshCoreVersionUntested = '$versionUntested$'
     }
 }
