@@ -175,7 +175,7 @@ function Write-PodeFileResponseInternal {
     else {
         # are we dealing with a dynamic file for the view engine? (ignore html)
         # Determine if the file is dynamic and should be processed by the view engine
-        $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
+        $mainExt = $pathInfo.Extension.TrimStart('.')
 
         # generate dynamic content
         if (![string]::IsNullOrWhiteSpace($mainExt) -and (
@@ -218,9 +218,9 @@ function Write-PodeFileResponseInternal {
             catch {
                 $statusCode = 400
             }
-            # If the file does not exist, set the HTTP response status to 404 Not Found
+            # If the file does not exist, set the HTTP response status code appropriately
             Set-PodeResponseStatus -Code $StatusCode
-            
+
         }
     }
 }

@@ -1764,12 +1764,6 @@ function Test-PodePath {
             $statusCode = 400
         }
 
-        if ($statusCode -eq 200) {
-            if ($ReturnItem) {
-                return $item
-            }
-            return $true
-        }
     }
 
     # if we failed to get the file, report back the status code and/or return true/false
