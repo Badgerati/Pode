@@ -170,13 +170,7 @@ function Write-PodeFileResponseInternal {
     # Check if the path is a directory
     if ( $pathInfo.PSIsContainer) {
         # If directory browsing is enabled, use the directory response function
-        #if ($FileBrowser.isPresent) {
         Write-PodeDirectoryResponseInternal -Path $Path
-        #}
-        # else {
-        # If browsing is not enabled, return a 404 error
-        #     Set-PodeResponseStatus -Code 404
-        #  }
     }
     else {
         # are we dealing with a dynamic file for the view engine? (ignore html)
@@ -194,31 +188,39 @@ function Write-PodeFileResponseInternal {
 
             # Determine the correct content type for the response
             # get the sub-file extension, if empty, use original
-            $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
+            $subExt = [System.IO.Path]::GetExtension($pathInfo.BaseName).TrimStart('.')
+
             $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
 
             $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
+
             # Write the processed content as the HTTP response
             Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
         }
         # this is a static file
         else {
-            if (Test-PodeIsPSCore) {
-                $content = (Get-Content -Path $Path -Raw -AsByteStream)
-            }
-            else {
-                $content = (Get-Content -Path $Path -Raw -Encoding byte)
-            }
-            if ($null -ne $content) {
+            try {
+                if (Test-PodeIsPSCore) {
+                    $content = (Get-Content -Path $Path -Raw -AsByteStream)
+                }
+                else {
+                    $content = (Get-Content -Path $Path -Raw -Encoding byte)
+                }
                 # Determine and set the content type for static files
                 $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
                 # Write the file content as the HTTP response
                 Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+                return
             }
-            else {
-                # If the file does not exist, set the HTTP response status to 404 Not Found
-                Set-PodeResponseStatus -Code 404
+            catch [System.UnauthorizedAccessException] {
+                $statusCode = 401
             }
+            catch {
+                $statusCode = 400
+            }
+            # If the file does not exist, set the HTTP response status to 404 Not Found
+            Set-PodeResponseStatus -Code $StatusCode
+            
         }
     }
 }
