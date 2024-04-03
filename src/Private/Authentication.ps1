@@ -828,10 +828,13 @@ function Invoke-PodeAuthInbuiltScriptBlock {
         $ScriptBlock,
 
         [Parameter()]
-        $UsingVariables
+        $UsingVariables,
+
+        [switch]
+        $NoSplat
     )
 
-    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $User -UsingVariables $UsingVariables -Return -Splat)
+    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $User -UsingVariables $UsingVariables -Return -Splat:(!$NoSplat))
 }
 
 function Get-PodeAuthWindowsLocalMethod {
@@ -1120,8 +1123,13 @@ function Invoke-PodeAuthValidation {
 
         # if the last auth succeeded, and we need all to pass, merge users/headers and return result
         if ($result.Success -and !$auth.PassOne) {
-            # invoke scriptblock
-            $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables
+            # invoke scriptblock, or use result of merge default
+            if ($null -ne $auth.ScriptBlock.Script) {
+                $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables -NoSplat
+            }
+            else {
+                $result = $results[$auth.MergeDefault]
+            }
 
             # reset default properties and return
             $result.Success = $true
