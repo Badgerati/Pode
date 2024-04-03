@@ -160,22 +160,23 @@ function Write-PodeFileResponseInternal {
         $FileBrowser
     )
 
-    if (!(Test-PodePath -Path $Path -Force)) {
+    # Attempt to retrieve information about the path
+    $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
+
+    if (!$pathinfo) {
         return
     }
-    # Attempt to retrieve information about the path
-    $pathInfo = Get-Item -Path $Path -force -ErrorAction Stop
 
     # Check if the path is a directory
     if ( $pathInfo.PSIsContainer) {
         # If directory browsing is enabled, use the directory response function
-        if ($FileBrowser.isPresent) {
-            Write-PodeDirectoryResponseInternal -Path $Path
-        }
-        else {
-            # If browsing is not enabled, return a 404 error
-            Set-PodeResponseStatus -Code 404
-        }
+        #if ($FileBrowser.isPresent) {
+        Write-PodeDirectoryResponseInternal -Path $Path
+        #}
+        # else {
+        # If browsing is not enabled, return a 404 error
+        #     Set-PodeResponseStatus -Code 404
+        #  }
     }
     else {
         # are we dealing with a dynamic file for the view engine? (ignore html)
@@ -421,20 +422,26 @@ function Write-PodeAttachmentResponseInternal {
     )
 
     # Attempt to retrieve information about the path
-    $pathInfo = Get-Item -Path $Path -force -ErrorAction SilentlyContinue
+    $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
+
     # Check if the path exists
     if ($null -eq $pathInfo) {
+        if ($FileBrowser) {
+            return
+        }
         #if not exist try with to find with public Route if exist
         $Path = Find-PodePublicRoute -Path $Path
         if ($Path) {
             # only attach files from public/static-route directories when path is relative
             $Path = Get-PodeRelativePath -Path $Path -JoinRoot
             # Attempt to retrieve information about the path
-            $pathInfo = Get-Item -Path $Path -ErrorAction SilentlyContinue
+            $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory
+
+            if ($null -eq $pathInfo) {
+                return
+            }
         }
-        if ($null -eq $pathInfo) {
-            # If not, set the response status to 404 Not Found
-            Set-PodeResponseStatus -Code 404
+        else {
             return
         }
     }

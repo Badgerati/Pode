@@ -1704,6 +1704,12 @@ function Get-PodeCount {
 .PARAMETER FailOnDirectory
     A switch to indicate that the function should return false if the path is a directory.
 
+.PARAMETER Force
+    A switch to indicate that the file with the hidden attribute has to be includede
+
+.PARAMETER ReturnItem
+    Return the item file item itself instead of true or false
+
 .EXAMPLE
     $isValid = Test-PodePath -Path "C:\temp\file.txt"
     if ($isValid) {
@@ -1733,9 +1739,13 @@ function Test-PodePath {
         $FailOnDirectory,
 
         [switch]
-        $Force
+        $Force,
+
+        [switch]
+        $ReturnItem
     )
 
+    
     $statusCode = 200
 
     if (![string]::IsNullOrWhiteSpace($Path)) {
@@ -1753,6 +1763,9 @@ function Test-PodePath {
         }
 
         if (($null -ne $item) -and ($statusCode -eq 200) -and (!$FailOnDirectory -or !$item.PSIsContainer)) {
+            if ($ReturnItem){
+                return $item
+            }
             return $true
         }
     }
@@ -1762,6 +1775,9 @@ function Test-PodePath {
         Set-PodeResponseStatus -Code $statusCode
     }
 
+    if ($ReturnItem){
+        return $null
+    }
     return $false
 
 }
