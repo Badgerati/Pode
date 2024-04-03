@@ -1773,10 +1773,10 @@ function Test-PodePath {
 
     if ($ReturnItem) {
         if ($statusCode -eq 200) {
-            return $item
+            return  $item, $statusCode
         }
         else {
-            return $null
+            return  $null, $statusCode
         }
     }
 
