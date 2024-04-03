@@ -118,10 +118,6 @@ function Invoke-PodeBuildDotnetBuild($target ) {
     else {
         $AssemblyVersion = ''
     }
-    dotnet build --configuration Release --self-contained --framework $target $AssemblyVersion
-    if (!$?) {
-        throw "dotnet build failed for $($target)"
-    }
 
     dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
     if (!$?) {
