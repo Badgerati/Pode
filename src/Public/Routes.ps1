@@ -1176,7 +1176,7 @@ function Add-PodeRouteGroup {
     }
 
     # add routes
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -UsingVariables $usingVars -Splat
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -UsingVariables $usingVars -Splat -NoNewClosure
 }
 
 <#
@@ -1441,7 +1441,7 @@ function Add-PodeStaticRouteGroup {
     }
 
     # add routes
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -UsingVariables $usingVars -Splat
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -UsingVariables $usingVars -Splat -NoNewClosure
 }
 
 
@@ -1521,7 +1521,7 @@ function Add-PodeSignalRouteGroup {
     }
 
     # add routes
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -UsingVariables $usingVars -Splat
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -UsingVariables $usingVars -Splat -NoNewClosure
 }
 
 <#
