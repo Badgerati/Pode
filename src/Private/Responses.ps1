@@ -426,34 +426,12 @@ function Write-PodeAttachmentResponseInternal {
 
     # Check if the path exists
     if ($null -eq $pathInfo) {
-        if ($FileBrowser) {
-            return
-        }
-        #if not exist try with to find with public Route if exist
-        $Path = Find-PodePublicRoute -Path $Path
-        if ($Path) {
-            # only attach files from public/static-route directories when path is relative
-            $Path = Get-PodeRelativePath -Path $Path -JoinRoot
-            # Attempt to retrieve information about the path
-            $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory
-
-            if ($null -eq $pathInfo) {
-                return
-            }
-        }
-        else {
-            return
-        }
+        return
     }
+
     if ( $pathInfo.PSIsContainer) {
-        # If directory browsing is enabled, use the directory response function
-        if ($FileBrowser.isPresent) {
-            Write-PodeDirectoryResponseInternal -Path $Path
-        }
-        else {
-            # If browsing is not enabled, return a 404 error
-            Set-PodeResponseStatus -Code 404
-        }
+        # filebrowsing is enabled, use the directory response function
+        Write-PodeDirectoryResponseInternal -Path $Path
         return
     }
     try {

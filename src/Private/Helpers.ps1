@@ -1745,12 +1745,14 @@ function Test-PodePath {
         $ReturnItem
     )
 
-    
-    $statusCode = 200
+    $statusCode = 404
 
     if (![string]::IsNullOrWhiteSpace($Path)) {
         try {
             $item = Get-Item $Path -Force:$Force -ErrorAction Stop
+            if (($null -ne $item) -and (!$FailOnDirectory -or !$item.PSIsContainer)) {
+                $statusCode = 200
+            }
         }
         catch [System.Management.Automation.ItemNotFoundException] {
             $statusCode = 404
@@ -1762,8 +1764,8 @@ function Test-PodePath {
             $statusCode = 400
         }
 
-        if (($null -ne $item) -and ($statusCode -eq 200) -and (!$FailOnDirectory -or !$item.PSIsContainer)) {
-            if ($ReturnItem){
+        if ($statusCode -eq 200) {
+            if ($ReturnItem) {
                 return $item
             }
             return $true
@@ -1775,10 +1777,16 @@ function Test-PodePath {
         Set-PodeResponseStatus -Code $statusCode
     }
 
-    if ($ReturnItem){
-        return $null
+    if ($ReturnItem) {
+        if ($statusCode -eq 200) {
+            return $item
+        }
+        else {
+            return $null
+        }
     }
-    return $false
+
+    return ($statusCode -eq 200)
 
 }
 
