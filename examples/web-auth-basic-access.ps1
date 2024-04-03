@@ -26,14 +26,8 @@ Start-PodeServer -Threads 2 {
     Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
 
     # setup RBAC
-    # Add-PodeAccess -Type Role -Name 'TestRbac'
-    # Add-PodeAccess -Type Group -Name 'TestGbac'
     New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'TestRbac'
     New-PodeAccessScheme -Type Group | Add-PodeAccess -Name 'TestGbac'
-    # Add-PodeAccess -Type Custom -Name 'TestRbac' -Path 'CustomAccess' -Validator {
-    #     param($userRoles, $customValues)
-    #     return $userRoles.Example -iin $customValues.Example
-    # }
 
     Merge-PodeAccess -Name 'TestMergedAll' -Access 'TestRbac', 'TestGbac' -Valid All
     Merge-PodeAccess -Name 'TestMergedOne' -Access 'TestRbac', 'TestGbac' -Valid One
@@ -46,12 +40,12 @@ Start-PodeServer -Threads 2 {
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{
                 User = @{
-                    ID ='M0R7Y302'
-                    Name = 'Morty'
-                    Type = 'Human'
-                    Username = 'm.orty'
-                    Roles = @('Developer')
-                    Groups = @('Software', 'Admins')
+                    ID           = 'M0R7Y302'
+                    Name         = 'Morty'
+                    Type         = 'Human'
+                    Username     = 'm.orty'
+                    Roles        = @('Developer')
+                    Groups       = @('Software', 'Admins')
                     CustomAccess = @{ Example = 'test-val-1' }
                 }
             }
