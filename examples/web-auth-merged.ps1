@@ -21,24 +21,25 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
 
     # setup access
-    Add-PodeAccess -Type Role -Name 'Rbac'
-    Add-PodeAccess -Type Group -Name 'Gbac'
+    New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'Rbac'
+    New-PodeAccessScheme -Type Group | Add-PodeAccess -Name 'Gbac'
 
     # setup a merged access
     Merge-PodeAccess -Name 'MergedAccess' -Access 'Rbac', 'Gbac' -Valid All
 
     # setup apikey auth
-    New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Access 'Gbac' -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
         param($key)
 
         # here you'd check a real user storage, this is just for example
         if ($key -ieq 'test-api-key') {
             return @{
                 User = @{
-                    ID ='M0R7Y302'
-                    Name = 'Morty'
-                    Type = 'Human'
-                    Groups = @('Software')
+                    ID     = 'M0R7Y302'
+                    Name   = 'Morty'
+                    Type   = 'Human'
+                    Roles  = @('Developer')
+                    Groups = @('Platform')
                 }
             }
         }
@@ -47,7 +48,7 @@ Start-PodeServer -Threads 2 {
     }
 
     # setup basic auth (base64> username:password in header)
-    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Basic' -Access 'MergedAccess' -Sessionless -ScriptBlock {
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
@@ -55,11 +56,11 @@ Start-PodeServer -Threads 2 {
             return @{
                 User = @{
                     Username = 'morty'
-                    ID ='M0R7Y302'
-                    Name = 'Morty'
-                    Type = 'Human'
-                    Roles = @('Developer')
-                    Groups = @('Software')
+                    ID       = 'M0R7Y302'
+                    Name     = 'Morty'
+                    Type     = 'Human'
+                    Roles    = @('Developer')
+                    Groups   = @('Software')
                 }
             }
         }
@@ -68,10 +69,26 @@ Start-PodeServer -Threads 2 {
     }
 
     # merge the auths together
-    Merge-PodeAuth -Name 'MergedAuth' -Authentication 'ApiKey', 'Basic' -Valid All
+    Merge-PodeAuth -Name 'MergedAuth' -Authentication 'ApiKey', 'Basic' -Valid All -ScriptBlock {
+        param($results)
+
+        $apiUser = $results['ApiKey'].User
+        $basicUser = $results['Basic'].User
+
+        return @{
+            User = @{
+                Username = $basicUser.Username
+                ID       = $apiUser.ID
+                Name     = $apiUser.Name
+                Type     = $apiUser.Type
+                Roles    = @($apiUser.Roles + $basicUser.Roles) | Sort-Object -Unique
+                Groups   = @($apiUser.Groups + $basicUser.Groups) | Sort-Object -Unique
+            }
+        }
+    }
 
     # GET request to get list of users (since there's no session, authentication will always happen)
-    Add-PodeRoute -Method Get -Path '/users' -Authentication 'MergedAuth' -Role Developer -Group Software -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/users' -Authentication 'MergedAuth' -Access 'MergedAccess' -Role Developer -Group Software -ScriptBlock {
         Write-PodeJsonResponse -Value @{
             Users = $WebEvent.Auth.User
         }
