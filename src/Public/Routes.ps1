@@ -472,6 +472,9 @@ One or more optional Scopes that will be authorised to access this Route, when u
 .PARAMETER User
 One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
+.PARAMETER FileBrowser
+If supplied, when the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .PARAMETER RedirectToDefault
 If supplied, the user will be redirected to the default page if found instead of the page being rendered as the folder path.
 
@@ -560,6 +563,9 @@ function Add-PodeStaticRoute {
         $DownloadOnly,
 
         [switch]
+        $FileBrowser,
+
+        [switch]
         $PassThru,
 
         [switch]
@@ -614,6 +620,10 @@ function Add-PodeStaticRoute {
 
         if ($RouteGroup.DownloadOnly) {
             $DownloadOnly = $RouteGroup.DownloadOnly
+        }
+
+        if ($RouteGroup.FileBrowser) {
+            $FileBrowser = $RouteGroup.FileBrowser
         }
 
         if ($RouteGroup.RedirectToDefault) {
@@ -777,6 +787,8 @@ function Add-PodeStaticRoute {
                 TransferEncoding  = $TransferEncoding
                 ErrorType         = $ErrorContentType
                 Download          = $DownloadOnly
+                IsStatic          = $true
+                FileBrowser       = $FileBrowser.isPresent
                 OpenApi           = @{
                     Path           = $OpenApiPath
                     Responses      = @{
@@ -787,7 +799,6 @@ function Add-PodeStaticRoute {
                     RequestBody    = @{}
                     Authentication = @()
                 }
-                IsStatic          = $true
                 Metrics           = @{
                     Requests = @{
                         Total       = 0
@@ -1225,6 +1236,9 @@ Specifies what action to take when a Static Route already exists. (Default: Defa
 .PARAMETER AllowAnon
 If supplied, the Static Routes will allow anonymous access for non-authenticated users.
 
+.PARAMETER FileBrowser
+When supplied, If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .PARAMETER DownloadOnly
 When supplied, all static content on the Routes will be attached as downloads - rather than rendered.
 
@@ -1320,6 +1334,9 @@ function Add-PodeStaticRouteGroup {
         $AllowAnon,
 
         [switch]
+        $FileBrowser,
+
+        [switch]
         $DownloadOnly,
 
         [switch]
@@ -1387,6 +1404,10 @@ function Add-PodeStaticRouteGroup {
             $DownloadOnly = $RouteGroup.DownloadOnly
         }
 
+        if ($RouteGroup.FileBrowser) {
+            $FileBrowser = $RouteGroup.FileBrowser
+        }
+
         if ($RouteGroup.RedirectToDefault) {
             $RedirectToDefault = $RouteGroup.RedirectToDefault
         }
@@ -1430,6 +1451,7 @@ function Add-PodeStaticRouteGroup {
         Access            = $Access
         AllowAnon         = $AllowAnon
         DownloadOnly      = $DownloadOnly
+        FileBrowser       = $FileBrowser
         IfExists          = $IfExists
         AccessMeta        = @{
             Role   = $Role
