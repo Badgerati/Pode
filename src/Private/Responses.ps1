@@ -161,68 +161,66 @@ function Write-PodeFileResponseInternal {
     )
 
     # Attempt to retrieve information about the path
-    $pathInfo = Get-Item -Path $Path -force -ErrorAction Continue
+    $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
 
-    # Check if the path exists
-    if ($null -eq $pathInfo) {
-        # If not, set the response status to 404 Not Found
-        Set-PodeResponseStatus -Code 404
+    if (!$pathinfo) {
+        return
+    }
+
+    # Check if the path is a directory
+    if ( $pathInfo.PSIsContainer) {
+        # If directory browsing is enabled, use the directory response function
+        Write-PodeDirectoryResponseInternal -Path $Path
     }
     else {
-        # Check if the path is a directory
-        if ( $pathInfo.PSIsContainer) {
-            # If directory browsing is enabled, use the directory response function
-            if ($FileBrowser.isPresent) {
-                Write-PodeDirectoryResponseInternal -Path $Path
-            }
-            else {
-                # If browsing is not enabled, return a 404 error
-                Set-PodeResponseStatus -Code 404
-            }
-        }
-        else {
+        # are we dealing with a dynamic file for the view engine? (ignore html)
+        # Determine if the file is dynamic and should be processed by the view engine
+        $mainExt = $pathInfo.Extension.TrimStart('.')
 
-            # are we dealing with a dynamic file for the view engine? (ignore html)
-            # Determine if the file is dynamic and should be processed by the view engine
-            $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
-
-            # generate dynamic content
-            if (![string]::IsNullOrWhiteSpace($mainExt) -and (
+        # generate dynamic content
+        if (![string]::IsNullOrWhiteSpace($mainExt) -and (
         ($mainExt -ieq 'pode') -or
         ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
-                )
-            ) {
-                # Process dynamic content with the view engine
-                $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
+            )
+        ) {
+            # Process dynamic content with the view engine
+            $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
 
-                # Determine the correct content type for the response
-                # get the sub-file extension, if empty, use original
-                $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
-                $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
+            # Determine the correct content type for the response
+            # get the sub-file extension, if empty, use original
+            $subExt = [System.IO.Path]::GetExtension($pathInfo.BaseName).TrimStart('.')
 
-                $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
-                # Write the processed content as the HTTP response
-                Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
-            }
-            # this is a static file
-            else {
+            $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
+
+            $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
+
+            # Write the processed content as the HTTP response
+            Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
+        }
+        # this is a static file
+        else {
+            try {
                 if (Test-PodeIsPSCore) {
                     $content = (Get-Content -Path $Path -Raw -AsByteStream)
                 }
                 else {
                     $content = (Get-Content -Path $Path -Raw -Encoding byte)
                 }
-                if ($null -ne $content) {
-                    # Determine and set the content type for static files
-                    $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
-                    # Write the file content as the HTTP response
-                    Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
-                }
-                else {
-                    # If the file does not exist, set the HTTP response status to 404 Not Found
-                    Set-PodeResponseStatus -Code 404
-                }
+                # Determine and set the content type for static files
+                $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
+                # Write the file content as the HTTP response
+                Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+                return
             }
+            catch [System.UnauthorizedAccessException] {
+                $statusCode = 401
+            }
+            catch {
+                $statusCode = 400
+            }
+            # If the file does not exist, set the HTTP response status code appropriately
+            Set-PodeResponseStatus -Code $StatusCode
+
         }
     }
 }
@@ -260,124 +258,120 @@ function Write-PodeDirectoryResponseInternal {
         $Path
     )
 
-    try {
-        if ($WebEvent.Path -eq '/') {
-            $leaf = '/'
-            $rootPath = '/'
+    if ($WebEvent.Path -eq '/') {
+        $leaf = '/'
+        $rootPath = '/'
+    }
+    else {
+        # get leaf of current physical path, and set root path
+        $leaf = ($Path.Split(':')[1] -split '[\\/]+') -join '/'
+        $rootPath = $WebEvent.Path -ireplace "$($leaf)$", ''
+    }
+
+    # Determine if the server is running in Windows mode or is running a varsion that support Linux
+    # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.4#example-10-output-for-non-windows-operating-systems
+    $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
+
+    # Construct the HTML content for the file browser view
+    $htmlContent = [System.Text.StringBuilder]::new()
+
+    $atoms = $WebEvent.Path -split '/'
+    $atoms = @(foreach ($atom in $atoms) {
+            if (![string]::IsNullOrEmpty($atom)) {
+                [uri]::EscapeDataString($atom)
+            }
+        })
+    if ([string]::IsNullOrWhiteSpace($atoms)) {
+        $baseLink = ''
+    }
+    else {
+        $baseLink = "/$($atoms -join '/')"
+    }
+
+    # Handle navigation to the parent directory (..)
+    if ($leaf -ne '/') {
+        $LastSlash = $baseLink.LastIndexOf('/')
+        if ($LastSlash -eq -1) {
+            Set-PodeResponseStatus -Code 404
+            return
+        }
+        $ParentLink = $baseLink.Substring(0, $LastSlash)
+        if ([string]::IsNullOrWhiteSpace($ParentLink)) {
+            $ParentLink = '/'
+        }
+        $item = Get-Item '..'
+        if ($windowsMode) {
+            $htmlContent.Append("<tr> <td class='mode'>")
+            $htmlContent.Append($item.Mode)
         }
         else {
-            # get leaf of current physical path, and set root path
-            $leaf = ($Path.Split(':')[1] -split '[\\/]+') -join '/'
-            $rootPath = $WebEvent.Path -ireplace "$($leaf)$", ''
+            $htmlContent.Append("<tr> <td class='unixMode'>")
+            $htmlContent.Append($item.UnixMode)
+            $htmlContent.Append("</td> <td class='user'>")
+            $htmlContent.Append($item.User)
+            $htmlContent.Append("</td> <td class='group'>")
+            $htmlContent.Append($item.Group)
         }
-
-        # Determine if the server is running in Windows mode or is running a varsion that support Linux
-        # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.4#example-10-output-for-non-windows-operating-systems
-        $windowsMode = ((Test-PodeIsWindows) -or ($PSVersionTable.PSVersion -lt [version]'7.1.0') )
-
-        # Construct the HTML content for the file browser view
-        $htmlContent = [System.Text.StringBuilder]::new()
-
-        $atoms = $WebEvent.Path -split '/'
-        $atoms = @(foreach ($atom in $atoms) {
-                if (![string]::IsNullOrEmpty($atom)) {
-                    [uri]::EscapeDataString($atom)
-                }
-            })
-        if ([string]::IsNullOrWhiteSpace($atoms)) {
-            $baseLink = ''
+        $htmlContent.Append("</td> <td class='dateTime'>")
+        $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
+        $htmlContent.Append("</td> <td class='dateTime'>")
+        $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
+        $htmlContent.Append( "</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder2-open'></td> <td class='name'><a href='")
+        $htmlContent.Append($ParentLink)
+        $htmlContent.AppendLine("'>..</a></td> </tr>")
+    }
+    # Retrieve the child items of the specified directory
+    $child = Get-ChildItem -Path $Path -Force
+    foreach ($item in $child) {
+        $link = "$baseLink/$([uri]::EscapeDataString($item.Name))"
+        if ($item.PSIsContainer) {
+            $size = ''
+            $icon = '📁'
         }
         else {
-            $baseLink = "/$($atoms -join '/')"
+            $size = '{0:N2}KB' -f ($item.Length / 1KB)
+            $icon = '📄'
         }
 
-        # Handle navigation to the parent directory (..)
-        if ($leaf -ne '/') {
-            $LastSlash = $baseLink.LastIndexOf('/')
-            if ($LastSlash -eq -1) {
-                Set-PodeResponseStatus -Code 404
-                return
-            }
-            $ParentLink = $baseLink.Substring(0, $LastSlash)
-            if ([string]::IsNullOrWhiteSpace($ParentLink)) {
-                $ParentLink = '/'
-            }
-            $item = Get-Item '..'
-            if ($windowsMode) {
-                $htmlContent.Append("<tr> <td class='mode'>")
-                $htmlContent.Append($item.Mode)
-            }
-            else {
-                $htmlContent.Append("<tr> <td class='unixMode'>")
-                $htmlContent.Append($item.UnixMode)
-                $htmlContent.Append("</td> <td class='user'>")
-                $htmlContent.Append($item.User)
-                $htmlContent.Append("</td> <td class='group'>")
-                $htmlContent.Append($item.Group)
-            }
-            $htmlContent.Append("</td> <td class='dateTime'>")
-            $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
-            $htmlContent.Append("</td> <td class='dateTime'>")
-            $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
-            $htmlContent.Append( "</td> <td class='size'></td> <td class='icon'><i class='bi bi-folder2-open'></td> <td class='name'><a href='")
-            $htmlContent.Append($ParentLink)
-            $htmlContent.AppendLine("'>..</a></td> </tr>")
+        # Format each item as an HTML row
+        if ($windowsMode) {
+            $htmlContent.Append("<tr> <td class='mode'>")
+            $htmlContent.Append($item.Mode)
         }
-        # Retrieve the child items of the specified directory
-        $child = Get-ChildItem -Path $Path -Force
-        foreach ($item in $child) {
-            $link = "$baseLink/$([uri]::EscapeDataString($item.Name))"
-            if ($item.PSIsContainer) {
-                $size = ''
-                $icon = 'bi bi-folder2'
-            }
-            else {
-                $size = '{0:N2}KB' -f ($item.Length / 1KB)
-                $icon = 'bi bi-file'
-            }
-
-            # Format each item as an HTML row
-            if ($windowsMode) {
-                $htmlContent.Append("<tr> <td class='mode'>")
-                $htmlContent.Append($item.Mode)
-            }
-            else {
-                $htmlContent.Append("<tr> <td class='unixMode'>")
-                $htmlContent.Append($item.UnixMode)
-                $htmlContent.Append("</td> <td class='user'>")
-                $htmlContent.Append($item.User)
-                $htmlContent.Append("</td> <td class='group'>")
-                $htmlContent.Append($item.Group)
-            }
-            $htmlContent.Append("</td> <td class='dateTime'>")
-            $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
-            $htmlContent.Append("</td> <td class='dateTime'>")
-            $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
-            $htmlContent.Append("</td> <td class='size'>")
-            $htmlContent.Append( $size)
-            $htmlContent.Append( "</td> <td class='icon'><i class='")
-            $htmlContent.Append( $icon)
-            $htmlContent.Append( "'></i></td> <td class='name'><a href='")
-            $htmlContent.Append( $link)
-            $htmlContent.Append( "'>")
-            $htmlContent.Append($item.Name )
-            $htmlContent.AppendLine('</a></td> </tr>' )
+        else {
+            $htmlContent.Append("<tr> <td class='unixMode'>")
+            $htmlContent.Append($item.UnixMode)
+            $htmlContent.Append("</td> <td class='user'>")
+            $htmlContent.Append($item.User)
+            $htmlContent.Append("</td> <td class='group'>")
+            $htmlContent.Append($item.Group)
         }
-
-        $Data = @{
-            RootPath    = $RootPath
-            Path        = $leaf.Replace('\', '/')
-            WindowsMode = $windowsMode.ToString().ToLower()
-            FileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
-        }
-
-        $podeRoot = Get-PodeModuleMiscPath
-        # Write the response
-        Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
+        $htmlContent.Append("</td> <td class='dateTime'>")
+        $htmlContent.Append($item.CreationTime.ToString('yyyy-MM-dd HH:mm:ss'))
+        $htmlContent.Append("</td> <td class='dateTime'>")
+        $htmlContent.Append($item.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
+        $htmlContent.Append("</td> <td class='size'>")
+        $htmlContent.Append( $size)
+        $htmlContent.Append( "</td> <td class='icon'>")
+        $htmlContent.Append( $icon)
+        $htmlContent.Append( "</td> <td class='name'><a href='")
+        $htmlContent.Append( $link)
+        $htmlContent.Append( "'>")
+        $htmlContent.Append($item.Name )
+        $htmlContent.AppendLine('</a></td> </tr>' )
     }
-    catch {
-        write-podehost $_
+
+    $Data = @{
+        RootPath    = $RootPath
+        Path        = $leaf.Replace('\', '/')
+        WindowsMode = $windowsMode.ToString().ToLower()
+        FileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
     }
+
+    $podeRoot = Get-PodeModuleMiscPath
+    # Write the response
+    Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-file-browsing.html.pode')) -Data $Data
+
 }
 
 
@@ -429,38 +423,22 @@ function Write-PodeAttachmentResponseInternal {
 
     )
 
-    # resolve for relative path
-    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
-
     # Attempt to retrieve information about the path
-    $pathInfo = Get-Item -Path $Path -force -ErrorAction Continue
+    $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
+
+    if (!$pathinfo) {
+        return
+    }
+
     # Check if the path exists
     if ($null -eq $pathInfo) {
-        #if not exist try with to find with public Route if exist
-        $Path = Find-PodePublicRoute -Path $Path
-        if ($Path) {
-            # only attach files from public/static-route directories when path is relative
-            $Path = Get-PodeRelativePath -Path $Path -JoinRoot
-            # Attempt to retrieve information about the path
-            $pathInfo = Get-Item -Path $Path -ErrorAction Continue
-        }
-        if ($null -eq $pathInfo) {
-            # If not, set the response status to 404 Not Found
-            Set-PodeResponseStatus -Code 404
-            return
-        }
+        return
     }
+
     if ( $pathInfo.PSIsContainer) {
-        # If directory browsing is enabled, use the directory response function
-        if ($FileBrowser.isPresent) {
-            Write-PodeDirectoryResponseInternal -Path $Path
-            return
-        }
-        else {
-            # If browsing is not enabled, return a 404 error
-            Set-PodeResponseStatus -Code 404
-            return
-        }
+        # filebrowsing is enabled, use the directory response function
+        Write-PodeDirectoryResponseInternal -Path $Path
+        return
     }
     try {
         # setup the content type and disposition

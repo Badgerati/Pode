@@ -1,16 +1,12 @@
 <html lang="en" ; style='background-color: #01b0c4' ;>
 
 <head>
-    <!-- Include the Bootstrap Icons stylesheet -->
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
-
     <title>File Browser:$($Data.Path)</title>
     <meta charset='utf-8'>
 
     <style>
-        h3 {
-            font-family: 'Courier New', Courier, monospace;
+        body {
+            font-family: Helvetica,Arial,sans-serif;
             /* Applies monospace font to <h2> */
         }
 

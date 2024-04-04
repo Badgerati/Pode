@@ -1719,6 +1719,12 @@ function Get-PodeCount {
 .PARAMETER FailOnDirectory
     A switch to indicate that the function should return false if the path is a directory.
 
+.PARAMETER Force
+    A switch to indicate that the file with the hidden attribute has to be includede
+
+.PARAMETER ReturnItem
+    Return the item file item itself instead of true or false
+
 .EXAMPLE
     $isValid = Test-PodePath -Path "C:\temp\file.txt"
     if ($isValid) {
@@ -1735,6 +1741,7 @@ function Get-PodeCount {
     This function is used within the Pode framework to validate file system paths for serving static content.
 
 #>
+
 function Test-PodePath {
     param(
         [Parameter()]
@@ -1744,22 +1751,52 @@ function Test-PodePath {
         $NoStatus,
 
         [switch]
-        $FailOnDirectory
+        $FailOnDirectory,
+
+        [switch]
+        $Force,
+
+        [switch]
+        $ReturnItem
     )
+
+    $statusCode = 404
+
     if (![string]::IsNullOrWhiteSpace($Path)) {
-        $item = Get-Item $Path -ErrorAction Ignore
-        if ($null -ne $item -and (! $FailOnDirectory.IsPresent -or !$item.PSIsContainer)) {
-            return $true
+        try {
+            $item = Get-Item $Path -Force:$Force -ErrorAction Stop
+            if (($null -ne $item) -and (!$FailOnDirectory -or !$item.PSIsContainer)) {
+                $statusCode = 200
+            }
         }
+        catch [System.Management.Automation.ItemNotFoundException] {
+            $statusCode = 404
+        }
+        catch [System.UnauthorizedAccessException] {
+            $statusCode = 401
+        }
+        catch {
+            $statusCode = 400
+        }
+
     }
 
-    # if the file doesnt exist then fail on 404
-    if ($NoStatus.IsPresent) {
-        return $false
+    if ($statusCode -eq 200) {
+        if ($ReturnItem.IsPresent) {
+            return  $item
+        }
+        return $true
     }
-    else {
-        Set-PodeResponseStatus -Code 404
+
+    # if we failed to get the file, report back the status code and/or return true/false
+    if (!$NoStatus.IsPresent) {
+        Set-PodeResponseStatus -Code $statusCode
     }
+
+    if ($ReturnItem.IsPresent) {
+        return  $null
+    }
+    return $false
 }
 
 function Test-PodePathIsFile {

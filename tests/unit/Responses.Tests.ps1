@@ -359,7 +359,7 @@ Describe 'Write-PodeFileResponse' {
 
 
     It 'Loads the contents of a dynamic file' {
-        Mock Test-PodePath { return $true }
+        Mock Test-PodePath { return @{ PSIsContainer = $false ; extension = '.pode' } }
         Mock Get-PodeRelativePath { return $Path }
         Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }
         Mock Write-PodeTextResponse { return $Value }
@@ -372,7 +372,7 @@ Describe 'Write-PodeFileResponse' {
 
     It 'Loads the contents of a static file' {
 
-        Mock Test-PodePath { return $true }
+        Mock Test-PodePath { return @{ PSIsContainer = $false ; extension = '.pode' } }
         Mock Get-PodeRelativePath { return $Path }
         Mock Get-Content { return 'file contents' }
         Mock Get-PodeFileContentUsingViewEngine { return 'file contents' }

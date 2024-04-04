@@ -861,6 +861,7 @@ function Set-PodeWebConfiguration {
                 Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.Static.Cache.Include) -NotSlashes)
                 Exclude = (Convert-PodePathPatternsToRegex -Paths @($Configuration.Static.Cache.Exclude) -NotSlashes)
             }
+            ValidateLast      = [bool]$Configuration.Static.ValidateLast
         }
         ErrorPages       = @{
             ShowExceptions      = [bool]$Configuration.ErrorPages.ShowExceptions

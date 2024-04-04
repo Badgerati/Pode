@@ -36,6 +36,7 @@ Set-PodeResponseAttachment -Path './data.txt' -ContentType 'application/json'
 .EXAMPLE
 Set-PodeResponseAttachment -Path '/assets/data.txt' -EndpointName 'Example'
 #>
+
 function Set-PodeResponseAttachment {
     [CmdletBinding()]
     param (
@@ -73,6 +74,7 @@ function Set-PodeResponseAttachment {
     #call internal Attachment function
     Write-PodeAttachmentResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser
 }
+
 
 <#
 .SYNOPSIS
@@ -376,8 +378,6 @@ function Write-PodeFileResponse {
         -StatusCode $StatusCode -Cache:$Cache -FileBrowser:$FileBrowser
 }
 
-
-
 <#
 .SYNOPSIS
 Serves a directory listing as a web page.
@@ -415,8 +415,6 @@ function Write-PodeDirectoryResponse {
         Set-PodeResponseStatus -Code 404
     }
 }
-
-
 <#
 .SYNOPSIS
 Writes CSV data to the Response.

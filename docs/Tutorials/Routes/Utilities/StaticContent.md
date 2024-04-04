@@ -236,4 +236,4 @@ Nothing to report :D
 }
 ```
 
-To change the default behavior, you can use the `Server.Web.Static.ValidateLast` property in the `server.psd1` configuration file, setting the value to `$True.` This will ensure that any static route is evaluated after any other route.
+To change the default behavior, you can use the `Web.Static.ValidateLast` property in the `server.psd1` configuration file, setting the value to `$True.` This will ensure that any static route is evaluated after any other route.
