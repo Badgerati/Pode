@@ -1221,7 +1221,7 @@ The Initialize-OpenApiTable function creates a table to manage OpenAPI definitio
 It sets up a default definition tag and initializes a dictionary to hold OpenAPI definitions for each tag.
 The function is essential for managing OpenAPI documentation across different parts of the application.
 
-.PARAMETER DefaultOADefinitionTag
+.PARAMETER DefaultDefinitionTag
 An optional parameter to set the default OpenAPI definition tag. If not provided, 'default' is used.
 
 .OUTPUTS
@@ -1229,7 +1229,7 @@ Hashtable
 Returns a hashtable for managing OpenAPI definitions.
 
 .EXAMPLE
-$openApiTable = Initialize-OpenApiTable -DefaultOADefinitionTag 'api-v1'
+$openApiTable = Initialize-OpenApiTable -DefaultDefinitionTag 'api-v1'
 
 Initializes the OpenAPI table with 'api-v1' as the default definition tag.
 
@@ -1244,18 +1244,18 @@ This is an internal function and may change in future releases of Pode.
 function Initialize-OpenApiTable {
     param(
         [string]
-        $DefaultOADefinitionTag = $null
+        $DefaultDefinitionTag = $null
     )
     # Initialization of the OpenAPI table with default settings
     $OpenAPI = @{
         DefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
     }
     # Set the default definition tag
-    if ([string]::IsNullOrEmpty($DefaultOADefinitionTag)) {
+    if ([string]::IsNullOrEmpty($DefaultDefinitionTag)) {
         $OpenAPI['DefaultDefinitionTag'] = 'default'
     }
     else {
-        $OpenAPI['DefaultDefinitionTag'] = $DefaultOADefinitionTag
+        $OpenAPI['DefaultDefinitionTag'] = $DefaultDefinitionTag
     }
 
     # Set the currently selected definition tag

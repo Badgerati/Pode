@@ -8,28 +8,28 @@
 
 @{
     # Script module or binary module file associated with this manifest.
-    RootModule            = 'Pode.psm1'
+    RootModule        = 'Pode.psm1'
 
     # Version number of this module.
-    ModuleVersion         = '$version$'
+    ModuleVersion     = '$version$'
 
     # ID used to uniquely identify this module
-    GUID                  = 'e3ea217c-fc3d-406b-95d5-4304ab06c6af'
+    GUID              = 'e3ea217c-fc3d-406b-95d5-4304ab06c6af'
 
     # Author of this module
-    Author                = 'Matthew Kelly (Badgerati)'
+    Author            = 'Matthew Kelly (Badgerati)'
 
     # Copyright statement for this module
-    Copyright             = 'Copyright (c) 2017-$buildyear$ Matthew Kelly (Badgerati), licensed under the MIT License.'
+    Copyright         = 'Copyright (c) 2017-$buildyear$ Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
-    Description           = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
+    Description       = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion     = '5.1'
+    PowerShellVersion = '5.0'
 
     # Functions to export from this Module
-    FunctionsToExport     = @(
+    FunctionsToExport = @(
         # cookies
         'Get-PodeCookie',
         'Get-PodeCookieSecret',
@@ -490,21 +490,19 @@
 
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport       = @('Enable-PodeOpenApiViewer', 'Enable-PodeOA')
+    AliasesToExport   = @('Enable-PodeOpenApiViewer', 'Enable-PodeOA')
 
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-    PrivateData           = @{
+    PrivateData       = @{
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags         = @(
-                'powershell', 'web', 'server', 'http', 'https', 'listener', 'rest', 'api', 'tcp',
-                'smtp', 'websites', 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core',
-                'cross-platform', 'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
-                'authentication', 'authorisation', 'authorization', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim'
-            )
+            Tags         = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
+                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform',
+                'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
+                'authentication', 'authorisation', 'arm', 'raspberry-pi', 'aws-lambda',
+                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim')
 
             # A URL to the license for this module.
             LicenseUri   = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'
@@ -519,6 +517,5 @@
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
 
         }
-        PwshCoreVersionUntested = '$versionUntested$'
     }
 }

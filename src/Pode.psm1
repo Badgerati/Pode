@@ -5,35 +5,17 @@ $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName System.Net.Http
 
-# Construct the path to the module manifest (.psd1 file)
-$moduleManifestPath = Join-Path -Path $PSScriptRoot -ChildPath 'Pode.psd1'
-
-# Import the module manifest to access its properties
-$moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath
-
-$podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -like 'Pode' }
-
-if ($podeDll) {
-    if ( $moduleManifest.ModuleVersion -ne '$version$') {
-        $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
-        if ( $podeDll.GetName().Version.CompareTo($moduleVersion) -ne 0) {
-            throw "An existing incompatible Pode.DLL version $($podeDll.GetName().Version) is loaded. Version $moduleVersion is required. Open a new Powershell/pwsh session and retry."
-        }
-    }
+# netstandard2 for <7.2
+if ($PSVersionTable.PSVersion -lt [version]'7.2.0') {
+    Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
 }
+# net6 for =7.2
+elseif ($PSVersionTable.PSVersion -lt [version]'7.3.0') {
+    Add-Type -LiteralPath "$($root)/Libs/net6.0/Pode.dll" -ErrorAction Stop
+}
+# net7 for >7.2
 else {
-    if ($PSVersionTable.PSVersion -ge [version]'7.4.0') {
-        Add-Type -LiteralPath "$($root)/Libs/net8.0/Pode.dll" -ErrorAction Stop
-    }
-    elseif ($PSVersionTable.PSVersion -ge [version]'7.3.0') {
-        Add-Type -LiteralPath "$($root)/Libs/net7.0/Pode.dll" -ErrorAction Stop
-    }
-    elseif ($PSVersionTable.PSVersion -ge [version]'7.2.0') {
-        Add-Type -LiteralPath "$($root)/Libs/net6.0/Pode.dll" -ErrorAction Stop
-    }
-    else {
-        Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
-    }
+    Add-Type -LiteralPath "$($root)/Libs/net7.0/Pode.dll" -ErrorAction Stop
 }
 
 # load private functions

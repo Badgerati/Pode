@@ -130,18 +130,7 @@ function Invoke-PodeBuildDotnetBuild($target ) {
 
 }
 
-function Get-PwshCoreEndOfLife {
-    param(
-        [switch] $RecentCycle
-    )
-    $eol = invoke-restmethod  -Uri 'https://endoflife.date/api/powershell.json' -Headers @{Accept = 'application/json' }
-    $expired = $eol.Where({ (get-date $_.eol) -lt (get-date) })
-    if ($RecentCycle){
-        return $expired[0].cycle
-    }else {
-        return $expired
-    }
-}
+
 
 <#
 # Helper Tasks
@@ -149,8 +138,7 @@ function Get-PwshCoreEndOfLife {
 
 # Synopsis: Stamps the version onto the Module
 Task StampVersion {
-    $pwshCoreEndOfLife = Get-PwshCoreEndOfLife -RecentCycle
-    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionUntested\$', $pwshCoreEndOfLife -replace '\$buildyear\$', ((get-date).Year)  } | Set-Content ./pkg/Pode.psd1
+    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$' } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1

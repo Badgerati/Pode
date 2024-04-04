@@ -72,10 +72,10 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.2' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.2' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses  -EndpointName  'endpoint_v3'
     Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-    $swaggerDocs | Add-PodeOAExternalDoc   -DefinitionTag 'v3', 'v3.1'
+    $swaggerDocs | Add-PodeOAExternalDoc   -DefinitionTag 'v3.0.3', 'v3.1'
 
 
 
@@ -92,22 +92,22 @@ Some useful links:
 
 
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
-        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3'
+        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3.0.3'
 
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.1' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3.1'
 
-    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint' -DefinitionTag 'v3', 'v3.1'
+    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint' -DefinitionTag 'v3.0.3', 'v3.1'
 
     #OpenAPI 3.0
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor' -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor' -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
 
     #OpenAPI 3.1
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
@@ -187,12 +187,12 @@ Some useful links:
     Merge-PodeAuth -Name 'merged_auth_All' -Authentication   'Basic', 'api_key'  -Valid All -ScriptBlock {}
     Merge-PodeAuth -Name 'merged_auth_nokey' -Authentication   'Basic'  -Valid One
 
-    Add-PodeOATag -Name 'user' -Description 'Operations about user' -DefinitionTag 'v3'
-    Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs -DefinitionTag 'v3'
-    Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs -DefinitionTag 'v3'
+    Add-PodeOATag -Name 'user' -Description 'Operations about user' -DefinitionTag 'v3.0.3'
+    Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs -DefinitionTag 'v3.0.3'
+    Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs -DefinitionTag 'v3.0.3'
 
 
-    Select-PodeOADefinition -Tag 'v3', 'v3.1'  -Scriptblock {
+    Select-PodeOADefinition -Tag 'v3.0.3', 'v3.1'  -Scriptblock {
         New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -Required |
             New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 -Required |
             New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 -Required |
@@ -856,7 +856,7 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
         }
     }
-    $yaml = get-PodeOADefinition -Format Yaml -DefinitionTag  'v3'
+    $yaml = get-PodeOADefinition -Format Yaml -DefinitionTag  'v3.0.3'
 
     $yaml_31 = get-PodeOADefinition -Format Yaml -DefinitionTag  'v3.1'
 

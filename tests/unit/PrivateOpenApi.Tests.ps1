@@ -349,7 +349,7 @@ Describe 'PrivateOpenApi' {
 
         It "Initializes OpenAPI table with custom definition tag" {
             $customTag = "api-v1"
-            $openApiTable = Initialize-OpenApiTable -DefaultOADefinitionTag $customTag
+            $openApiTable = Initialize-OpenApiTable -DefaultDefinitionTag $customTag
 
             $openApiTable.DefaultDefinitionTag | Should -Be $customTag
             $openApiTable.SelectedDefinitionTag | Should -Be $customTag

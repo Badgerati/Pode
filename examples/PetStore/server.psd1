@@ -9,6 +9,10 @@
     Server              = @{
         Timeout                     = 60
         BodySize                    = 100MB
-        DefaultOADefinitionTag = 'v3.0.3'
+    }
+    Web=@{
+        OpenApi=@{
+            DefaultDefinitionTag = 'v3.0.3'
+        }
     }
 }

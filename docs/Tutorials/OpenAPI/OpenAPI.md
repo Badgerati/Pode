@@ -924,11 +924,15 @@ Select-PodeOADefinition -Tag 'admin' -ScriptBlock {
 }
 ```
 
-The default `Definition Tag` is named "default". This can be changed using the `Server.psd1` file and the `DefaultOADefinitionTag` property
+The default `Definition Tag` is named "default". This can be changed using the `Server.psd1` file and the `Web.OpenApi.DefaultDefinitionTag` property
 
 ```powershell
 @{
-    Server = @{ DefaultOADefinitionTag = 'NewDfault' }
+    Web=@{
+        OpenApi=@{
+            DefaultDefinitionTag= 'NewDfault'
+        }
+    }
 }
 ```
 
