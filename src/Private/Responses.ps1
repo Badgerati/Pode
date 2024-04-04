@@ -161,10 +161,9 @@ function Write-PodeFileResponseInternal {
     )
 
     # Attempt to retrieve information about the path
-    $pathInfo , $statusCode = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser) -NoStatus
+    $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
 
     if (!$pathinfo) {
-        Set-PodeResponseStatus -Code $statusCode
         return
     }
 
@@ -425,10 +424,9 @@ function Write-PodeAttachmentResponseInternal {
     )
 
     # Attempt to retrieve information about the path
-    $pathInfo , $statusCode = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser) -NoStatus
+    $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
 
     if (!$pathinfo) {
-        Set-PodeResponseStatus -Code $statusCode
         return
     }
 

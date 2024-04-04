@@ -1766,22 +1766,21 @@ function Test-PodePath {
 
     }
 
-    # if we failed to get the file, report back the status code and/or return true/false
-    if (!$NoStatus.IsPresent) {
-        Set-PodeResponseStatus -Code $statusCode
+    if ($statusCode -eq 200) {
+        if ($ReturnItem) {
+            return  $item
+        }
+        return $true
     }
 
     if ($ReturnItem) {
-        if ($statusCode -eq 200) {
-            return  $item, $statusCode
+        # if we failed to get the file, report back the status code and/or return true/false
+        if (!$NoStatus.IsPresent) {
+            Set-PodeResponseStatus -Code $statusCode
         }
-        else {
-            return  $null, $statusCode
-        }
+        return  $null
     }
-
-    return ($statusCode -eq 200)
-
+    return $false
 }
 
 function Test-PodePathIsFile {
