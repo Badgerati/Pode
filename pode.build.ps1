@@ -126,7 +126,7 @@ function Invoke-PodeBuildDotnetBuild($target ) {
 
 }
 
-function Get-PwshCoreEndOfLife {
+function Get-PodeBuildPwshEOL   {
     param(
         [switch] $RecentCycle
     )
@@ -145,7 +145,7 @@ function Get-PwshCoreEndOfLife {
 
 # Synopsis: Stamps the version onto the Module
 Task StampVersion {
-    $pwshCoreEndOfLife = Get-PwshCoreEndOfLife -RecentCycle
+    $pwshCoreEndOfLife = Get-PodeBuildPwshEOL   -RecentCycle
     (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionUntested\$', $pwshCoreEndOfLife -replace '\$buildyear\$', ((get-date).Year)  } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec

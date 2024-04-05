@@ -293,6 +293,7 @@
         'Get-PodeEndpoint',
         'Pode',
         'Get-PodeServerDefaultSecret',
+        'Get-PodeVersion',
 
         # openapi
         'Enable-PodeOpenApi',

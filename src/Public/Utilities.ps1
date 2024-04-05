@@ -988,6 +988,7 @@ New-PodeCron -Every Quarter                                         # every 1st 
 #>
 function New-PodeCron {
     [CmdletBinding()]
+    [OutputType([String])]
     param(
         [Parameter()]
         [ValidateRange(0, 59)]
@@ -1165,4 +1166,46 @@ function New-PodeCron {
 
     # build and return
     return "$($cron.Minute) $($cron.Hour) $($cron.Date) $($cron.Month) $($cron.Day)"
+}
+
+
+
+<#
+.SYNOPSIS
+Gets the version of the Pode module.
+
+.DESCRIPTION
+The Get-PodeVersion function checks the version of the Pode module specified in the module manifest. If the module version is not a placeholder value ('$version$'), it returns the actual version prefixed with 'v.'. If the module version is the placeholder value, indicating the development branch, it returns '[develop branch]'.
+
+.PARAMETER None
+This function does not accept any parameters.
+
+.OUTPUTS
+System.String
+Returns a string indicating the version of the Pode module or '[develop branch]' if on a development version.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
+PS> Get-PodeVersion
+
+Returns 'v.1.2.3'.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '$version$' }
+PS> Get-PodeVersion
+
+Returns '[develop branch]'.
+
+.NOTES
+This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
+
+#>
+function Get-PodeVersion {
+    $moduleManifest = Get-PodeModuleManifest
+    if ($moduleManifest.ModuleVersion -ne '$version$') {
+        return "v$($moduleManifest.ModuleVersion)"
+    }
+    else {
+        return '[dev]'
+    }
 }
