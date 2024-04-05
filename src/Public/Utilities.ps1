@@ -1182,19 +1182,19 @@ This function does not accept any parameters.
 
 .OUTPUTS
 System.String
-Returns a string indicating the version of the Pode module or '[develop branch]' if on a development version.
+Returns a string indicating the version of the Pode module or '[dev]' if on a development version.
 
 .EXAMPLE
 PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
 PS> Get-PodeVersion
 
-Returns 'v.1.2.3'.
+Returns 'v1.2.3'.
 
 .EXAMPLE
 PS> $moduleManifest = @{ ModuleVersion = '$version$' }
 PS> Get-PodeVersion
 
-Returns '[develop branch]'.
+Returns '[dev]'.
 
 .NOTES
 This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
