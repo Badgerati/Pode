@@ -309,7 +309,6 @@ function Start-PodeWebServer {
                                 $sockets = @(foreach ($socket in $sockets) {
                                         if ($socket.Path -ieq $message.Path) {
                                             $socket
-                                            break
                                         }
                                     })
                             }
