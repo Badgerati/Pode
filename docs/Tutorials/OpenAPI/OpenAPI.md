@@ -877,6 +877,9 @@ Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf'
 
 # plus a bookmark page with the link to all documentation
 Enable-PodeOAViewer -Bookmarks -Path '/docs'
+
+# there is also an OpenAPI editor (only for v3.0.x)
+Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor'
 ```
 
 ## Multiple OpenAPI definition
@@ -889,16 +892,16 @@ It's possible to create multiple OpenAPI definitions inside the same Server inst
 
 
 ### How to use it
-Any Pode function that interacts with OpenAPI has a `-DefinitionTag` `[string[]]` parameter available. This allows you to specify within which OpenAPI definition(s) the API's definition should be available.
+Any Pode function that interacts with OpenAPI has a `-DefinitionTag [string[]]` parameter available. This allows you to specify within which OpenAPI definition(s) the API's definition should be available.
 
 !!! note
     These functions accept a simple string, and not an array
 
-    * `Get-PodeOADefinition`
-    * `Enable-PodeOpenApi`
-    * `Enable-PodeOAViewer`
-    * `Add-PodeOAInfo`
-    * `Test-PodeOAJsonSchemaCompliance`
+    * Get-PodeOADefinition
+    * Enable-PodeOpenApi
+    * Enable-PodeOAViewer
+    * Add-PodeOAInfo
+    * Test-PodeOAJsonSchemaCompliance
 
 A new OpenAPI definition has to be created using the `Enable-PodeOpenApi` function
 
