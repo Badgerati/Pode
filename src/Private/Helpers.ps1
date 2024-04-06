@@ -1688,22 +1688,44 @@ function Get-PodeCount {
     return $Object.Count
 }
 
-function Test-PodePathAccess {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Path
-    )
+<#
+.SYNOPSIS
+    Tests if a given file system path is valid and optionally if it is not a directory.
 
-    try {
-        $null = Get-Item $Path
-    }
-    catch [System.UnauthorizedAccessException] {
-        return $false
+.DESCRIPTION
+    This function tests if the provided file system path is valid. It checks if the path is not null or whitespace, and if the item at the path exists. If the item exists and is not a directory (unless the $FailOnDirectory switch is not used), it returns true. If the path is not valid, it can optionally set a 404 response status code.
+
+.PARAMETER Path
+    The file system path to test for validity.
+
+.PARAMETER NoStatus
+    A switch to suppress setting the 404 response status code if the path is not valid.
+
+.PARAMETER FailOnDirectory
+    A switch to indicate that the function should return false if the path is a directory.
+
+.PARAMETER Force
+    A switch to indicate that the file with the hidden attribute has to be includede
+
+.PARAMETER ReturnItem
+    Return the item file item itself instead of true or false
+
+.EXAMPLE
+    $isValid = Test-PodePath -Path "C:\temp\file.txt"
+    if ($isValid) {
+        # The file exists and is not a directory
     }
 
-    return $true
-}
+.EXAMPLE
+    $isValid = Test-PodePath -Path "C:\temp\folder" -FailOnDirectory
+    if (!$isValid) {
+        # The path is a directory or does not exist
+    }
+
+.NOTES
+    This function is used within the Pode framework to validate file system paths for serving static content.
+
+#>
 
 function Test-PodePath {
     param(
@@ -1714,37 +1736,52 @@ function Test-PodePath {
         $NoStatus,
 
         [switch]
-        $FailOnDirectory
+        $FailOnDirectory,
+
+        [switch]
+        $Force,
+
+        [switch]
+        $ReturnItem
     )
 
-    # if the file doesnt exist then fail on 404
-    if ([string]::IsNullOrWhiteSpace($Path) -or !(Test-Path $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 404
+    $statusCode = 404
+
+    if (![string]::IsNullOrWhiteSpace($Path)) {
+        try {
+            $item = Get-Item $Path -Force:$Force -ErrorAction Stop
+            if (($null -ne $item) -and (!$FailOnDirectory -or !$item.PSIsContainer)) {
+                $statusCode = 200
+            }
+        }
+        catch [System.Management.Automation.ItemNotFoundException] {
+            $statusCode = 404
+        }
+        catch [System.UnauthorizedAccessException] {
+            $statusCode = 401
+        }
+        catch {
+            $statusCode = 400
         }
 
-        return $false
     }
 
-    # if the file isn't accessible then fail 401
-    if (!(Test-PodePathAccess $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 401
+    if ($statusCode -eq 200) {
+        if ($ReturnItem.IsPresent) {
+            return  $item
         }
-
-        return $false
+        return $true
     }
 
-    # if we're failing on a directory then fail on 404
-    if ($FailOnDirectory -and (Test-PodePathIsDirectory $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 404
-        }
-
-        return $false
+    # if we failed to get the file, report back the status code and/or return true/false
+    if (!$NoStatus.IsPresent) {
+        Set-PodeResponseStatus -Code $statusCode
     }
 
-    return $true
+    if ($ReturnItem.IsPresent) {
+        return  $null
+    }
+    return $false
 }
 
 function Test-PodePathIsFile {

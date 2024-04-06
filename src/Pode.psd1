@@ -77,6 +77,7 @@
         'Write-PodeJsonResponse',
         'Write-PodeXmlResponse',
         'Write-PodeViewResponse',
+        'Write-PodeDirectoryResponse',
         'Set-PodeResponseStatus',
         'Move-PodeResponseUrl',
         'Write-PodeTcpClient',
