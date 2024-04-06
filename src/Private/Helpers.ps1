@@ -3003,14 +3003,14 @@ function Test-PodeVersionPwshEOL {
     }
 
     $psVersion = $PSVersionTable.PSVersion
-    $eolVersions = $moduleManifest.PrivateData.PwshVersionsUntested -split ','
+    $eolVersions = $moduleManifest.PrivateData.PwshVersions.Untested -split ','
     $isEol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
 
     if ($isEol) {
         Write-PodeHost "[WARNING] The running version of PowerShell $($PSVersionTable.PSVersion), was EOL when Pode $(Get-PodeVersion) was released. Pode should work but has not been tested on this version of PowerShell." -ForegroundColor Yellow
     }
 
-    $SupportedVersions = $moduleManifest.PrivateData.PwshVersionSupported -split ','
+    $SupportedVersions = $moduleManifest.PrivateData.PwshVersion.Supported -split ','
     $isSupported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
 
     if ((! $isSupported) -and (! $isEol) -and $ReportUntested) {

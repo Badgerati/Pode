@@ -481,7 +481,9 @@
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
 
         }
-        PwshVersionsUntested = '$versionsUntested$'
-        PwshVersionSupported = '$versionsSupported$'
+        PwshVersions = @{
+            Untested  = '$versionsUntested$'
+            Supported = '$versionsSupported$'
+        }
     }
 }
