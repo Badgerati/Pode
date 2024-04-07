@@ -1,4 +1,4 @@
-# Pode PowerShell Version Support Policy
+# PowerShell Support Policy
 
 ## Overview
 This document details the support policy for PowerShell versions as they relate to Pode releases. Our aim is to provide clarity on which versions of PowerShell are supported by each release of Pode, ensuring a secure, efficient, and compatible development environment.
