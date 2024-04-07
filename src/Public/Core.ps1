@@ -122,7 +122,10 @@ function Start-PodeServer {
 
         [Parameter(ParameterSetName = 'File')]
         [switch]
-        $CurrentPath
+        $CurrentPath,
+
+        [switch]
+        $EnableBreakpoints
     )
 
     # ensure the session is clean
@@ -162,7 +165,8 @@ function Start-PodeServer {
             -EnablePool $EnablePool `
             -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
-            -Quiet:$Quiet
+            -Quiet:$Quiet `
+            -EnableBreakpoints:$EnableBreakpoints
 
         # set it so ctrl-c can terminate, unless serverless/iis, or disabled
         if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {
@@ -781,6 +785,7 @@ Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '
 #>
 function Add-PodeEndpoint {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
+    [OutputType([hashtable])]
     param(
         [Parameter()]
         [string]
@@ -1340,4 +1345,25 @@ function Get-PodeDefaultFolder {
     )
 
     return $PodeContext.Server.DefaultFolders[$Type]
+}
+
+<#
+.SYNOPSIS
+Attaches a breakpoint which can be used for debugging.
+
+.DESCRIPTION
+Attaches a breakpoint which can be used for debugging.
+
+.EXAMPLE
+Wait-PodeDebugger
+#>
+function Wait-PodeDebugger {
+    [CmdletBinding()]
+    param()
+
+    if (!$PodeContext.Server.Debug.Breakpoints.Enabled) {
+        return
+    }
+
+    Wait-Debugger
 }

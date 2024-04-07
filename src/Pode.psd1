@@ -294,6 +294,7 @@
         'Get-PodeEndpoint',
         'Pode',
         'Get-PodeServerDefaultSecret',
+        'Wait-PodeDebugger',
 
         # openapi
         'Enable-PodeOpenApi',

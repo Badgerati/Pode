@@ -47,7 +47,10 @@ function New-PodeContext {
         $DisableTermination,
 
         [switch]
-        $Quiet
+        $Quiet,
+
+        [switch]
+        $EnableBreakpoints
     )
 
     # set a random server name if one not supplied
@@ -201,6 +204,19 @@ function New-PodeContext {
     $ctx.Server.Root = $ServerRoot
     if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
         $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
+    }
+
+    if (Test-PodeIsEmpty $ctx.Server.Root) {
+        $ctx.Server.Root = $PWD.Path
+    }
+
+    # debugging
+    if ($EnableBreakpoints) {
+        if ($null -eq $ctx.Server.Debug) {
+            $ctx.Server.Debug = @{ Breakpoints = @{} }
+        }
+
+        $ctx.Server.Debug.Breakpoints.Enabled = $EnableBreakpoints.IsPresent
     }
 
     # set the server's listener type
@@ -784,10 +800,10 @@ function Set-PodeServerConfiguration {
 
     # file monitoring
     $Context.Server.FileMonitor = @{
-        Enabled   = ([bool]$Configuration.FileMonitor.Enable)
+        Enabled   = [bool]$Configuration.FileMonitor.Enable
         Exclude   = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Exclude))
         Include   = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Include))
-        ShowFiles = ([bool]$Configuration.FileMonitor.ShowFiles)
+        ShowFiles = [bool]$Configuration.FileMonitor.ShowFiles
         Files     = @()
     }
 
@@ -822,6 +838,7 @@ function Set-PodeServerConfiguration {
         $Context.Server.Request.BodySize = [long]$Configuration.Request.BodySize
     }
 
+    # default folders
     if ($Configuration.DefaultFolders) {
         if ($Configuration.DefaultFolders.Public) {
             $Context.Server.DefaultFolders.Public = $Configuration.DefaultFolders.Public
@@ -831,6 +848,13 @@ function Set-PodeServerConfiguration {
         }
         if ($Configuration.DefaultFolders.Errors) {
             $Context.Server.DefaultFolders.Errors = $Configuration.DefaultFolders.Errors
+        }
+    }
+
+    # debug
+    $Context.Server.Debug = @{
+        Breakpoints = @{
+            Enabled = [bool]$Configuration.Debug.Breakpoints.Enable
         }
     }
 }
