@@ -8,6 +8,10 @@ function Start-PodeInternalServer {
     )
 
     try {
+        # Check if the running version of Powershell is EOL
+        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID))" -ForegroundColor Cyan
+        $null = Test-PodeVersionPwshEOL -ReportUntested
+
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
 
@@ -140,12 +144,8 @@ function Start-PodeInternalServer {
         # run running event hooks
         Invoke-PodeEvent -Type Running
 
-        # Check if the running version of Powershell is EOL
-        $null = Test-PodeVersionPwshEOL
-
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
-            Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID))" -ForegroundColor Yellow
             Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
             $endpoints | ForEach-Object {
                 $flags = @()
