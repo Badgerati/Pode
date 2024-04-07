@@ -53,6 +53,9 @@ Sets the Server's root path to be the current working path - for -FilePath only.
 .PARAMETER EnablePool
 Tells Pode to configure certain RunspacePools when they're being used adhoc, such as Timers or Schedules.
 
+.PARAMETER EnableBreakpoints
+If supplied, any breakpoints created by using Wait-PodeDebugger will be enabled - or disabled if false passed explicitly, or not supplied.
+
 .EXAMPLE
 Start-PodeServer { /* logic */ }
 
