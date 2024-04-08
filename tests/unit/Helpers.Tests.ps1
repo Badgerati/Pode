@@ -195,9 +195,9 @@ Describe 'Get-PodeHostIPRegex' {
     }
 }
 
-Describe 'Get-PortRegex' {
+Describe 'Get-PodePortRegex' {
     It 'Returns valid port regex' {
-        Get-PortRegex | Should -Be '(?<port>\d+)'
+        Get-PodePortRegex | Should -Be '(?<port>\d+)'
     }
 }
 
