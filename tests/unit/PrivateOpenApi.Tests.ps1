@@ -335,9 +335,9 @@ Describe 'PrivateOpenApi' {
         }
     }
 
-    Describe "Initialize-OpenApiTable Tests" {
+    Describe "Initialize-PodeOpenApiTable Tests" {
         It "Initializes OpenAPI table with default settings" {
-            $openApiTable = Initialize-OpenApiTable
+            $openApiTable = Initialize-PodeOpenApiTable
 
             $openApiTable | Should -BeOfType [hashtable]
             $openApiTable.DefinitionTagSelectionStack -is  [System.Collections.Generic.Stack[System.Object]]   | Should -BeTrue
@@ -349,7 +349,7 @@ Describe 'PrivateOpenApi' {
 
         It "Initializes OpenAPI table with custom definition tag" {
             $customTag = "api-v1"
-            $openApiTable = Initialize-OpenApiTable -DefaultDefinitionTag $customTag
+            $openApiTable = Initialize-PodeOpenApiTable -DefaultDefinitionTag $customTag
 
             $openApiTable.DefaultDefinitionTag | Should -Be $customTag
             $openApiTable.SelectedDefinitionTag | Should -Be $customTag

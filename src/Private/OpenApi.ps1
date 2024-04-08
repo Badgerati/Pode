@@ -663,7 +663,7 @@ function ConvertTo-PodeOASchemaObjectProperty {
 Sets OpenAPI specifications for a given route.
 
 .DESCRIPTION
-The Set-OpenApiRouteValue function processes and sets various OpenAPI specifications for a given route based on the provided definition tag.
+The Set-PodeOpenApiRouteValue function processes and sets various OpenAPI specifications for a given route based on the provided definition tag.
 It handles route attributes such as deprecated status, tags, summary, description, operation ID, parameters, request body, callbacks, authentication,
 and responses to build a complete OpenAPI specification for the route.
 
@@ -674,14 +674,14 @@ A hashtable representing the route for which OpenAPI specifications are being se
 A string representing the definition tag used for specifying OpenAPI documentation details for the route.
 
 .EXAMPLE
-$routeValues = Set-OpenApiRouteValue -Route $route -DefinitionTag 'myTag'
+$routeValues = Set-PodeOpenApiRouteValue -Route $route -DefinitionTag 'myTag'
 
 Sets OpenAPI specifications for the given route using the definition tag 'myTag'.
 
 .NOTES
 This is an internal function and may change in future releases of Pode.
 #>
-function Set-OpenApiRouteValue {
+function Set-PodeOpenApiRouteValue {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]
@@ -869,7 +869,7 @@ function Get-PodeOpenApiDefinitionInternal {
             foreach ($key in $keys) {
                 if ($Definition.webhooks[$key].NotPrepared) {
                     $Definition.webhooks[$key] = @{
-                        $Definition.webhooks[$key].Method = Set-OpenApiRouteValue -Route $Definition.webhooks[$key] -DefinitionTag $DefinitionTag
+                        $Definition.webhooks[$key].Method = Set-PodeOpenApiRouteValue -Route $Definition.webhooks[$key] -DefinitionTag $DefinitionTag
                     }
                 }
             }
@@ -916,7 +916,7 @@ function Get-PodeOpenApiDefinitionInternal {
             foreach ($key in $keys) {
                 if ($components.pathItems[$key].NotPrepared) {
                     $components.pathItems[$key] = @{
-                        $components.pathItems[$key].Method = Set-OpenApiRouteValue -Route $components.pathItems[$key] -DefinitionTag $DefinitionTag
+                        $components.pathItems[$key].Method = Set-PodeOpenApiRouteValue -Route $components.pathItems[$key] -DefinitionTag $DefinitionTag
                     }
                 }
             }
@@ -1058,7 +1058,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
                 # add path's http method to defintition
 
-                $pm = Set-OpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
+                $pm = Set-PodeOpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
                 $def.paths[$_route.OpenApi.Path][$method] = $pm
 
                 # add any custom server endpoints for route
@@ -1107,7 +1107,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 if (! ( $def.paths.keys -ccontains $_route.Path)) {
                     $def.paths[$_route.OpenAPI.Path] = @{}
                 }
-                $pm = Set-OpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
+                $pm = Set-PodeOpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
                 # add path's http method to defintition
                 $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pmF
             }
@@ -1217,7 +1217,7 @@ function Get-PodeOABaseObject {
 Initializes a table to manage OpenAPI definitions.
 
 .DESCRIPTION
-The Initialize-OpenApiTable function creates a table to manage OpenAPI definitions within the Pode framework.
+The Initialize-PodeOpenApiTable function creates a table to manage OpenAPI definitions within the Pode framework.
 It sets up a default definition tag and initializes a dictionary to hold OpenAPI definitions for each tag.
 The function is essential for managing OpenAPI documentation across different parts of the application.
 
@@ -1229,19 +1229,19 @@ Hashtable
 Returns a hashtable for managing OpenAPI definitions.
 
 .EXAMPLE
-$openApiTable = Initialize-OpenApiTable -DefaultDefinitionTag 'api-v1'
+$openApiTable = Initialize-PodeOpenApiTable -DefaultDefinitionTag 'api-v1'
 
 Initializes the OpenAPI table with 'api-v1' as the default definition tag.
 
 .EXAMPLE
-$openApiTable = Initialize-OpenApiTable
+$openApiTable = Initialize-PodeOpenApiTable
 
 Initializes the OpenAPI table with 'default' as the default definition tag.
 
 .NOTES
 This is an internal function and may change in future releases of Pode.
 #>
-function Initialize-OpenApiTable {
+function Initialize-PodeOpenApiTable {
     param(
         [string]
         $DefaultDefinitionTag = $null

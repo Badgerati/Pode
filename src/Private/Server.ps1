@@ -271,7 +271,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.EndpointsMap.Clear()
 
         # clear openapi
-        $PodeContext.Server.OpenAPI = Initialize-OpenApiTable -DefaultDefinitionTag $PodeContext.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
+        $PodeContext.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $PodeContext.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
         # clear the sockets
         $PodeContext.Server.Signals.Enabled = $false
         $PodeContext.Server.Signals.Listener = $null

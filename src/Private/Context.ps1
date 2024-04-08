@@ -373,7 +373,7 @@ function New-PodeContext {
     $ctx.Server.Sessions = @{}
 
     #OpenApi Definition Tag
-    $ctx.Server.OpenAPI = Initialize-OpenApiTable -DefaultDefinitionTag $ctx.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
+    $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
 
     # server metrics
     $ctx.Metrics = @{
