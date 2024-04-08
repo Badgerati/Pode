@@ -1,7 +1,7 @@
 
-# Build Pode
+# Building Pode
 
-To build and use the code checked out on your machine, follow these steps :
+If you have Pode's source code checked out locally on your machine, you can follow these steps to build Pode:
 
 ## Windows
 
@@ -51,7 +51,7 @@ To build and use the code checked out on your machine, follow these steps :
     Invoke-Build Install-Module
     ```
 
-    To uninstall, use :
+    To uninstall, use:
     ```powershell
     Invoke-Build Remove-Module
     ```
@@ -69,13 +69,13 @@ To build and use the code checked out on your machine, follow these steps :
 
 1. Register the Microsoft Repository
 
-    #### Centos
+    #### CentOS
     ```shell
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo curl -o /etc/yum.repos.d/microsoft.repo https://packages.microsoft.com/config/centos/8/prod.repo
     ```
 
-    #### ReadHat
+    #### RedHat
     ```shell
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo curl -o /etc/yum.repos.d/microsoft.repo https://packages.microsoft.com/config/rhel/9/prod.repo
@@ -129,7 +129,7 @@ To build and use the code checked out on your machine, follow these steps :
     Invoke-Build Install-Module
     ```
 
-    To uninstall, use :
+    To uninstall, use:
 
     ```powershell
     Invoke-Build Remove-Module
@@ -138,9 +138,9 @@ To build and use the code checked out on your machine, follow these steps :
 
 ## MacOS
 
-An easy way to install the required componentS is to use [brew](https://brew.sh/)
+An easy way to install the required components is to use [brew](https://brew.sh/):
 
-1. Install dotNet
+1. Install dotnet:
 
     ```shell
     brew install dotnet
@@ -184,9 +184,8 @@ An easy way to install the required componentS is to use [brew](https://brew.sh/
     Invoke-Build Install-Module
     ```
 
-    To uninstall, use :
+    To uninstall, use:
 
     ```powershell
     Invoke-Build Remove-Module
     ```
-

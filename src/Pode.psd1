@@ -26,7 +26,7 @@
     Description       = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '5.0'
+    PowerShellVersion = '5.1'
 
     # Functions to export from this Module
     FunctionsToExport = @(
@@ -183,6 +183,7 @@
         'Get-PodeScheduleNextTrigger',
         'Use-PodeSchedules',
         'Test-PodeSchedule',
+        'Clear-PodeSchedules',
 
         # timers
         'Add-PodeTimer',
@@ -218,6 +219,9 @@
         'Initialize-PodeCsrf',
         'Enable-PodeCsrfMiddleware',
         'Use-PodeMiddleware',
+        'New-PodeMiddleware',
+        'Add-PodeBodyParser',
+        'Remove-PodeBodyParser',
 
         # sessions
         'Enable-PodeSessionMiddleware',
@@ -296,6 +300,8 @@
         'Get-PodeEndpoint',
         'Pode',
         'Get-PodeServerDefaultSecret',
+        'Wait-PodeDebugger',
+        'Get-PodeVersion',
 
         # openapi
         'Enable-PodeOpenApi',
@@ -495,14 +501,16 @@
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData       = @{
-        PSData = @{
+        PSData       = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags         = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
-                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform',
-                'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
-                'authentication', 'authorisation', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim')
+            Tags         = @(
+                'powershell', 'web', 'server', 'http', 'https', 'listener', 'rest', 'api', 'tcp',
+                'smtp', 'websites', 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core',
+                'cross-platform', 'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
+                'authentication', 'authorisation', 'authorization', 'arm', 'raspberry-pi', 'aws-lambda',
+                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim'
+            )
 
             # A URL to the license for this module.
             LicenseUri   = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'
@@ -516,6 +524,10 @@
             # Release notes for this particular version of the module
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
 
+        }
+        PwshVersions = @{
+            Untested  = '$versionsUntested$'
+            Supported = '$versionsSupported$'
         }
     }
 }

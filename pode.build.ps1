@@ -118,10 +118,6 @@ function Invoke-PodeBuildDotnetBuild($target ) {
     else {
         $AssemblyVersion = ''
     }
-    dotnet build --configuration Release --self-contained --framework $target $AssemblyVersion
-    if (!$?) {
-        throw "dotnet build failed for $($target)"
-    }
 
     dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
     if (!$?) {
@@ -130,7 +126,13 @@ function Invoke-PodeBuildDotnetBuild($target ) {
 
 }
 
-
+function Get-PodeBuildPwshEOL {
+    $eol = invoke-restmethod  -Uri 'https://endoflife.date/api/powershell.json' -Headers @{Accept = 'application/json' }
+    return @{
+        eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
+        supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
+    }
+}
 
 <#
 # Helper Tasks
@@ -138,7 +140,8 @@ function Invoke-PodeBuildDotnetBuild($target ) {
 
 # Synopsis: Stamps the version onto the Module
 Task StampVersion {
-    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$' } | Set-Content ./pkg/Pode.psd1
+    $pwshVersions = Get-PodeBuildPwshEOL
+    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
@@ -435,13 +438,13 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 }
 
 # Synopsis: Clean the build enviroment
-Task Clean  CleanPkg,CleanDeliverable,CleanLibs,CleanListener
+Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener
 
 # Synopsis: Clean the Deliverable folder
 Task CleanDeliverable {
     $path = './deliverable'
     if (Test-Path -Path $path -PathType Container) {
-        Write-Host "Removing ./deliverable folder"
+        Write-Host 'Removing ./deliverable folder'
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
     Write-Host "Cleanup $path done"
@@ -451,16 +454,16 @@ Task CleanDeliverable {
 Task CleanPkg {
     $path = './pkg'
     if ((Test-Path -Path $path -PathType Container )) {
-        Write-Host "Removing ./pkg folder"
+        Write-Host 'Removing ./pkg folder'
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
 
     if ((Test-Path -Path .\packers\choco\tools\ChocolateyInstall.ps1 -PathType Leaf )) {
-        Write-Host "Removing .\packers\choco\tools\ChocolateyInstall.ps1"
+        Write-Host 'Removing .\packers\choco\tools\ChocolateyInstall.ps1'
         Remove-Item -Path .\packers\choco\tools\ChocolateyInstall.ps1
     }
     if ((Test-Path -Path .\packers\choco\pode.nuspec -PathType Leaf )) {
-        Write-Host "Removing .\packers\choco\pode.nuspec"
+        Write-Host 'Removing .\packers\choco\pode.nuspec'
         Remove-Item -Path .\packers\choco\pode.nuspec
     }
     Write-Host "Cleanup $path done"
@@ -471,7 +474,7 @@ Task CleanLibs {
     $path = './src/Libs'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing $path  contents"
-        Remove-Item -Path $path -Recurse -Force  | Out-Null
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
     Write-Host "Cleanup $path done"
 }
@@ -481,7 +484,7 @@ Task CleanListener {
     $path = './src/Listener/bin'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing $path contents"
-        Remove-Item -Path $path -Recurse -Force  | Out-Null
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
     Write-Host "Cleanup $path done"
 }

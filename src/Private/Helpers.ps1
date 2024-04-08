@@ -166,7 +166,7 @@ function Get-PodeHostIPRegex {
     }
 }
 
-function Get-PortRegex {
+function Get-PodePortRegex {
     return '(?<port>\d+)'
 }
 
@@ -185,7 +185,7 @@ function Get-PodeEndpointInfo {
     }
 
     $hostRgx = Get-PodeHostIPRegex -Type Both
-    $portRgx = Get-PortRegex
+    $portRgx = Get-PodePortRegex
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
     # validate that we have a valid ip/host:port address
@@ -2953,6 +2953,129 @@ function Test-PodePlaceholders {
 
     return ($Path -imatch $Placeholder)
 }
+
+
+<#
+.SYNOPSIS
+Retrieves the PowerShell module manifest object for the specified module.
+
+.DESCRIPTION
+This function constructs the path to a PowerShell module manifest file (.psd1) located in the parent directory of the script root. It then imports the module manifest file to access its properties and returns the manifest object. This can be useful for scripts that need to dynamically discover and utilize module metadata, such as version, dependencies, and exported functions.
+
+.PARAMETERS
+This function does not accept any parameters.
+
+.EXAMPLE
+$manifest = Get-PodeModuleManifest
+This example calls the `Get-PodeModuleManifest` function to retrieve the module manifest object and stores it in the variable `$manifest`.
+
+#>
+function Get-PodeModuleManifest {
+    # Construct the path to the module manifest (.psd1 file)
+    $moduleManifestPath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -ChildPath 'Pode.psd1'
+
+    # Import the module manifest to access its properties
+    $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath
+    return  $moduleManifest
+}
+
+
+<#
+.SYNOPSIS
+Tests if the Pode module is from the development branch.
+
+.DESCRIPTION
+The Test-PodeVersionDev function checks if the Pode module's version matches the placeholder value ('$version$'), which is used to indicate the development branch of the module. It returns $true if the version matches, indicating the module is from the development branch, and $false otherwise.
+
+.PARAMETER None
+This function does not accept any parameters.
+
+.OUTPUTS
+System.Boolean
+Returns $true if the Pode module version is '$version$', indicating the development branch. Returns $false for any other version.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '$version$' }
+PS> Test-PodeVersionDev
+
+Returns $true, indicating the development branch.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
+PS> Test-PodeVersionDev
+
+Returns $false, indicating a specific release version.
+
+.NOTES
+This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
+
+#>
+function Test-PodeVersionDev {
+    return (Get-PodeModuleManifest).ModuleVersion -eq '$version$'
+}
+
+<#
+.SYNOPSIS
+Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.
+
+.DESCRIPTION
+The `Test-PodeVersionPwshEOL` function checks the current PowerShell version against a list of versions that were either supported or EOL at the time of the Pode release. It uses the module manifest to determine which PowerShell versions are considered EOL and which are officially supported. If the current version is EOL or was not tested with the current release of Pode, the function generates a warning. This function aids in maintaining best practices for using supported PowerShell versions with Pode.
+
+.PARAMETER ReportUntested
+If specified, the function will report if the current PowerShell version was not available and thus untested at the time of the Pode release. This is useful for identifying potential compatibility issues with newer versions of PowerShell.
+
+.OUTPUTS
+A hashtable containing two keys:
+- `eol`: A boolean indicating if the current PowerShell version was EOL at the time of the Pode release.
+- `supported`: A boolean indicating if the current PowerShell version was officially supported by Pode at the time of the release.
+
+.EXAMPLE
+Test-PodeVersionPwshEOL
+
+Checks the current PowerShell version against Pode's supported and EOL versions list. Outputs a warning if the version is EOL or untested, and returns a hashtable indicating the compatibility status.
+
+.EXAMPLE
+Test-PodeVersionPwshEOL -ReportUntested
+
+Similar to the basic usage, but also reports if the current PowerShell version was untested because it was not available at the time of the Pode release.
+
+.NOTES
+This function is part of the Pode module's utilities to ensure compatibility and encourage the use of supported PowerShell versions.
+
+#>
+function Test-PodeVersionPwshEOL {
+    param(
+        [switch] $ReportUntested
+    )
+    $moduleManifest = Get-PodeModuleManifest
+    if ($moduleManifest.ModuleVersion -eq '$version$') {
+        return @{
+            eol       = $false
+            supported = $true
+        }
+    }
+
+    $psVersion = $PSVersionTable.PSVersion
+    $eolVersions = $moduleManifest.PrivateData.PwshVersions.Untested -split ','
+    $isEol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
+
+    if ($isEol) {
+        Write-PodeHost "[WARNING] Pode $(Get-PodeVersion) has not been tested on PowerShell $($PSVersionTable.PSVersion), as it is EOL." -ForegroundColor Yellow
+    }
+
+    $SupportedVersions = $moduleManifest.PrivateData.PwshVersions.Supported -split ','
+    $isSupported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
+
+    if ((! $isSupported) -and (! $isEol) -and $ReportUntested) {
+        Write-PodeHost "[WARNING] Pode $(Get-PodeVersion) has not been tested on PowerShell $($PSVersionTable.PSVersion), as it was not available when Pode was released." -ForegroundColor Yellow
+    }
+
+    return @{
+        eol       = $isEol
+        supported = $isSupported
+    }
+}
+
 
 <#
 .SYNOPSIS

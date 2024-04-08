@@ -8,6 +8,10 @@ function Start-PodeInternalServer {
     )
 
     try {
+        # Check if the running version of Powershell is EOL
+        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID))" -ForegroundColor Cyan
+        $null = Test-PodeVersionPwshEOL -ReportUntested
+
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrive
 
