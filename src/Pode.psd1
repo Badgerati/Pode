@@ -181,6 +181,7 @@
         'Get-PodeScheduleNextTrigger',
         'Use-PodeSchedules',
         'Test-PodeSchedule',
+        'Clear-PodeSchedules',
 
         # timers
         'Add-PodeTimer',
@@ -216,6 +217,9 @@
         'Initialize-PodeCsrf',
         'Enable-PodeCsrfMiddleware',
         'Use-PodeMiddleware',
+        'New-PodeMiddleware',
+        'Add-PodeBodyParser',
+        'Remove-PodeBodyParser',
 
         # sessions
         'Enable-PodeSessionMiddleware',

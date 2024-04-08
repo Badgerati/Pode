@@ -166,7 +166,7 @@ function Get-PodeHostIPRegex {
     }
 }
 
-function Get-PortRegex {
+function Get-PodePortRegex {
     return '(?<port>\d+)'
 }
 
@@ -185,7 +185,7 @@ function Get-PodeEndpointInfo {
     }
 
     $hostRgx = Get-PodeHostIPRegex -Type Both
-    $portRgx = Get-PortRegex
+    $portRgx = Get-PodePortRegex
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
     # validate that we have a valid ip/host:port address
