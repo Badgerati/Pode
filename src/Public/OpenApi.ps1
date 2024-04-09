@@ -326,9 +326,6 @@ Creates an OpenAPI Server Object.
 .DESCRIPTION
 Creates an OpenAPI Server Object.
 
-.LINK
-https://swagger.io/docs/specification/api-host-and-base-path/
-
 .PARAMETER Url
 A URL to the target host.  This URL supports Server Variables and MAY be relative, to indicate that the host location is relative to the location where the OpenAPI document is being served.
 Variable substitutions will be made when a variable is named in `{`brackets`}`.
@@ -412,12 +409,6 @@ Gets the OpenAPI definition.
 
 .DESCRIPTION
 Gets the OpenAPI definition for custom use in routes, or other functions.
-
-.LINK
-https://swagger.io/docs/specification/
-
-.LINK
-https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md
 
 .PARAMETER Format
 Return the definition  in a specific format 'Json', 'Json-Compress', 'Yaml', 'HashTable'
@@ -722,15 +713,6 @@ Sets the definition of a request for a route.
 .DESCRIPTION
 Sets the definition of a request for a route.
 
-.LINK
-https://swagger.io/docs/specification/basic-structure/
-
-.LINK
-https://swagger.io/docs/specification/data-models/
-
-.LINK
-https://swagger.io/docs/specification/serialization/
-
 .PARAMETER Route
 The route to set a request definition, usually from -PassThru on Add-PodeRoute.
 
@@ -790,18 +772,6 @@ Creates a Request Body definition for routes.
 
 .DESCRIPTION
 Creates a Request Body definition for routes from the supplied content-types and schemas.
-
-.LINK
-https://swagger.io/docs/specification/basic-structure/
-
-.LINK
-https://swagger.io/docs/specification/data-models/
-
-.LINK
-https://swagger.io/docs/specification/serialization/
-
-.LINK
-https://swagger.io/docs/specification/describing-request-body/
 
 .PARAMETER Reference
 A reference name from an existing component request body.
@@ -969,20 +939,11 @@ Validate a parameter with a provided schema.
 .DESCRIPTION
 Validate the parameter of a method against it's own schema
 
-.LINK
-https://swagger.io/docs/specification/basic-structure/
-
-.LINK
-https://swagger.io/docs/specification/data-models/
-
 .PARAMETER Json
 The object in Json format to validate
 
 .PARAMETER SchemaReference
 The schema name to use to validate the property.
-
-.PARAMETER Depth
-Specifies how many levels of the parameter objects are included in the JSON representation.
 
 .PARAMETER DefinitionTag
 A string representing the unique tag for the API specification.
@@ -1001,7 +962,7 @@ $UserInfo = Test-PodeOAJsonSchemaCompliance -Json $UserInfo -SchemaReference 'Us
 function Test-PodeOAJsonSchemaCompliance {
     param (
         [Parameter(Mandatory = $true)]
-        [String]
+        [System.Object]
         $Json,
 
         [Parameter(Mandatory = $true)]
@@ -1018,6 +979,10 @@ function Test-PodeOAJsonSchemaCompliance {
     }
     else {
         $DefinitionTag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag
+    }
+
+    if ($Json -isnot [string]) {
+        $json = ConvertTo-Json -InputObject $Json -Depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
     }
 
     if (!$PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaValidation) {
@@ -1049,12 +1014,6 @@ Converts an OpenAPI property into a Request Parameter.
 
 .DESCRIPTION
 Converts an OpenAPI property (such as from New-PodeOAIntProperty) into a Request Parameter.
-
-.LINK
-https://swagger.io/docs/specification/describing-parameters/
-
-.LINK
-https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#parameterObject
 
 .PARAMETER In
 Where in the Request can the parameter be found?
@@ -1492,9 +1451,6 @@ Sets metadate for the supplied route.
 .DESCRIPTION
 Sets metadate for the supplied route, such as Summary and Tags.
 
-.LINK
-https://swagger.io/docs/specification/paths-and-operations/
-
 .PARAMETER Route
 The route to update info, usually from -PassThru on Add-PodeRoute.
 
@@ -1886,13 +1842,6 @@ Define an external docs reference.
 .DESCRIPTION
 Define an external docs reference.
 
-.LINK
-https://swagger.io/docs/specification/grouping-operations-with-tags/
-
-.LINK
-https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externalDocumentationObject
-
-
 .PARAMETER url
 The link to the external documentation
 
@@ -1935,12 +1884,6 @@ Add an external docs reference to the OpenApi document.
 
 .DESCRIPTION
 Add an external docs reference to the OpenApi document.
-
-.LINK
-https://swagger.io/docs/specification/api-general-info/
-
-.LINK
-https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#externalDocumentationObject
 
 .PARAMETER ExternalDoc
 An externalDoc object
@@ -2011,12 +1954,6 @@ Creates a OpenAPI Tag reference property.
 .DESCRIPTION
 Creates a new OpenAPI tag reference.
 
-.LINK
-https://swagger.io/docs/specification/grouping-operations-with-tags/
-
-.LINK
-https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#tagObject
-
 .PARAMETER Name
 The Name of the tag.
 
@@ -2079,12 +2016,6 @@ Creates an OpenAPI metadata.
 .DESCRIPTION
 Creates an OpenAPI metadata like TermOfService, license and so on.
 The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.
-
-.LINK
-https://swagger.io/docs/specification/api-general-info/
-
-.LINK
-https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#infoObject
 
 .PARAMETER Title
 The Title of the API.
@@ -3105,9 +3036,6 @@ Sets metadate for the supplied route.
 .DESCRIPTION
 Sets metadate for the supplied route, such as Summary and Tags.
 
-.LINK
-https://swagger.io/docs/specification/paths-and-operations/
-
 .PARAMETER Route
 The route to update info, usually from -PassThru on Add-PodeRoute.
 
@@ -3309,9 +3237,6 @@ Sets metadate for the supplied route.
 
 .DESCRIPTION
 Sets metadate for the supplied route, such as Summary and Tags.
-
-.LINK
-https://swagger.io/docs/specification/paths-and-operations/
 
 .PARAMETER Name
     Alias for 'Name'. A unique identifier for the webhook.
