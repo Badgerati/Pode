@@ -107,7 +107,7 @@ You can define a custom storage by supplying a `psobject` to the `-Storage` para
 [void]      Delete([string] $sessionId)
 ```
 
-For example, the following is a mock-up of a Storage for Redis (note that the functions are fake):
+For example, the following is a mock up of a Storage for Redis. Note that the functions are fake and also that the returned User property in the hashtable MUST be an object (such as via PSCO cast):
 
 ```powershell
 # create the object
@@ -117,7 +117,12 @@ $store = New-Object -TypeName psobject
 $store | Add-Member -MemberType NoteProperty -Name Get -Value {
     param($sessionId)
     $data = Get-RedisKey -Key $sessionId
-    return ($data | ConvertFrom-Json -AsHashtable)
+    $session = $data | ConvertFrom-Json -AsHashtable
+    try {
+        $session.Data.Auth.User = [PSCustomObject]$session.Data.Auth.User
+    }
+    catch {}
+    return $session
 }
 
 # add a Set property to save a session's data
