@@ -1,58 +1,68 @@
-$path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+param()
 
-$PodeContext = @{ 'Server' = $null; }
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    $PodeContext = @{ 'Server' = $null; }
+}
 
 Describe 'Get-PodeHandler' {
     Context 'Invalid parameters supplied' {
         It 'Throw invalid type error' {
-            { Get-PodeHandler -Type 'Moo' } | Should Throw "Cannot validate argument on parameter 'Type'"
+            { Get-PodeHandler -Type 'Moo' } | Should -Throw -ExpectedMessage "*Cannot validate argument on parameter 'Type'*"
         }
     }
 
     Context 'Valid parameters' {
         It 'Return null as type does not exist' {
             $PodeContext.Server = @{ 'Handlers' = @{}; }
-            Get-PodeHandler -Type Smtp | Should Be $null
+            Get-PodeHandler -Type Smtp | Should -Be $null
         }
 
         It 'Returns handlers for type' {
             $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{
-                'Main' = @{
-                    'Logic' = { Write-Host 'hello' };
-                };
-             }; }; }
+                        'Main' = @{
+                            'Logic' = { Write-Host 'hello' }
+                        }
+                    }
+                }
+            }
 
             $result = (Get-PodeHandler -Type Smtp)
 
-            $result | Should Not Be $null
-            $result.Count | Should Be 1
-            $result.Main.Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $result | Should -Not -Be $null
+            $result.Count | Should -Be 1
+            $result.Main.Logic.ToString() | Should -Be ({ Write-Host 'hello' }).ToString()
         }
 
         It 'Returns handler for type by name' {
             $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{
-                'Main' = @{
-                    'Logic' = { Write-Host 'hello' };
-                };
-             }; }; }
+                        'Main' = @{
+                            'Logic' = { Write-Host 'hello' }
+                        }
+                    }
+                }
+            }
 
             $result = (Get-PodeHandler -Type Smtp -Name 'Main')
 
-            $result | Should Not Be $null
-            $result.Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+            $result | Should -Not -Be $null
+            $result.Logic.ToString() | Should -Be ({ Write-Host 'hello' }).ToString()
         }
 
         It 'Returns no handler for type by name' {
             $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{
-                'Main' = @{
-                    'Logic' = { Write-Host 'hello' };
-                };
-             }; }; }
+                        'Main' = @{
+                            'Logic' = { Write-Host 'hello' }
+                        }
+                    }
+                }
+            }
 
             $result = (Get-PodeHandler -Type Smtp -Name 'Fail')
-            $result | Should Be $null
+            $result | Should -Be $null
         }
     }
 }
@@ -60,7 +70,7 @@ Describe 'Get-PodeHandler' {
 Describe 'Add-PodeHandler' {
     It 'Throws error because type already exists' {
         $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{ 'Main' = @{}; }; }; }
-        { Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {} } | Should Throw 'already defined'
+        { Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {} } | Should -Throw -ExpectedMessage '*already defined*'
     }
 
     It 'Adds smtp handler' {
@@ -68,8 +78,8 @@ Describe 'Add-PodeHandler' {
         Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock { Write-Host 'hello' }
 
         $handler = $PodeContext.Server.Handlers['smtp']
-        $handler.Count | Should Be 1
-        $handler['Main'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $handler.Count | Should -Be 1
+        $handler['Main'].Logic.ToString() | Should -Be ({ Write-Host 'hello' }).ToString()
     }
 
     It 'Adds service handler' {
@@ -77,8 +87,8 @@ Describe 'Add-PodeHandler' {
         Add-PodeHandler -Type Service -Name 'Main' -ScriptBlock { Write-Host 'hello' }
 
         $handler = $PodeContext.Server.Handlers['service']
-        $handler.Count | Should Be 1
-        $handler['Main'].Logic.ToString() | Should Be ({ Write-Host 'hello' }).ToString()
+        $handler.Count | Should -Be 1
+        $handler['Main'].Logic.ToString() | Should -Be ({ Write-Host 'hello' }).ToString()
     }
 }
 
@@ -90,64 +100,66 @@ Describe 'Remove-PodeHandler' {
         Add-PodeHandler -Type Smtp -Name 'Main2' -ScriptBlock { Write-Host 'hello2' }
 
         $handler = $PodeContext.Server.Handlers['Smtp']
-        $handler.Count | Should Be 2
-        $handler['Main1'].Logic.ToString() | Should Be ({ Write-Host 'hello1' }).ToString()
-        $handler['Main2'].Logic.ToString() | Should Be ({ Write-Host 'hello2' }).ToString()
+        $handler.Count | Should -Be 2
+        $handler['Main1'].Logic.ToString() | Should -Be ({ Write-Host 'hello1' }).ToString()
+        $handler['Main2'].Logic.ToString() | Should -Be ({ Write-Host 'hello2' }).ToString()
 
         Remove-PodeHandler -Type Smtp -Name 'Main1'
 
         $handler = $PodeContext.Server.Handlers['Smtp']
-        $handler.Count | Should Be 1
-        $handler['Main2'].Logic.ToString() | Should Be ({ Write-Host 'hello2' }).ToString()
+        $handler.Count | Should -Be 1
+        $handler['Main2'].Logic.ToString() | Should -Be ({ Write-Host 'hello2' }).ToString()
     }
 }
 
 Describe 'Clear-PodeHandlers' {
     It 'Adds handlers, and removes them all for one type' {
         $PodeContext.Server = @{ 'Handlers' = @{
-            'SMTP' = @{};
-            'Service' = @{};
-        }; }
+                'SMTP'    = @{}
+                'Service' = @{}
+            }
+        }
 
         Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock { Write-Host 'hello' }
         Add-PodeHandler -Type Service -Name 'Main' -ScriptBlock { Write-Host 'hello' }
 
         $handler = $PodeContext.Server.Handlers['smtp']
-        $handler.Count | Should Be 1
+        $handler.Count | Should -Be 1
 
         $handler = $PodeContext.Server.Handlers['service']
-        $handler.Count | Should Be 1
+        $handler.Count | Should -Be 1
 
         Clear-PodeHandlers -Type Smtp
 
         $handler = $PodeContext.Server.Handlers['smtp']
-        $handler.Count | Should Be 0
+        $handler.Count | Should -Be 0
 
         $handler = $PodeContext.Server.Handlers['service']
-        $handler.Count | Should Be 1
+        $handler.Count | Should -Be 1
     }
 
     It 'Adds handlers, and removes them all' {
         $PodeContext.Server = @{ 'Handlers' = @{
-            'SMTP' = @{};
-            'Service' = @{};
-        }; }
+                'SMTP'    = @{}
+                'Service' = @{}
+            }
+        }
 
         Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock { Write-Host 'hello' }
         Add-PodeHandler -Type Service -Name 'Main' -ScriptBlock { Write-Host 'hello' }
 
         $handler = $PodeContext.Server.Handlers['smtp']
-        $handler.Count | Should Be 1
+        $handler.Count | Should -Be 1
 
         $handler = $PodeContext.Server.Handlers['service']
-        $handler.Count | Should Be 1
+        $handler.Count | Should -Be 1
 
         Clear-PodeHandlers
 
         $handler = $PodeContext.Server.Handlers['smtp']
-        $handler.Count | Should Be 0
+        $handler.Count | Should -Be 0
 
         $handler = $PodeContext.Server.Handlers['service']
-        $handler.Count | Should Be 0
+        $handler.Count | Should -Be 0
     }
 }

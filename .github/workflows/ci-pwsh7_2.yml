@@ -1,0 +1,53 @@
+name: Pode CI - pwsh 7.2
+
+on:
+  push:
+    branches:
+    - '*'
+    - '!gh-pages'
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Powershell
+      uses: bjompen/UpdatePWSHAction@v1.0.0
+      with:
+        FixedVersion: '7.2.18'
+
+    - name: Check PowerShell version
+      shell: pwsh
+      run: |
+        $PSVersionTable.PSVersion
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Install Invoke-Build
+      shell: pwsh
+      run: | 
+        Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
+
+    - name: Run Pester Tests
+      shell: pwsh
+      run: |
+        Invoke-Build Test
+
+    - name: Test docker builds
+      shell: pwsh
+      run: |
+        Invoke-Build DockerPack -Version '0.0.0'

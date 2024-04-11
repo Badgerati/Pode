@@ -10,7 +10,7 @@ namespace Pode
         private RecoveringFileSystemWatcher FileWatcher;
 
         public string Name { get; private set; }
-        public ISet<PodeFileWatcherChangeType> EventsRegistered {get; private set; }
+        public ISet<PodeFileWatcherChangeType> EventsRegistered { get; private set; }
 
         public PodeFileWatcher(string name, string path, bool includeSubdirectories, int internalBufferSize, NotifyFilters notifyFilters)
         {

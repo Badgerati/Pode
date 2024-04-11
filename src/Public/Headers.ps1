@@ -14,6 +14,9 @@ The value to set against the header.
 .PARAMETER Secret
 If supplied, the secret with which to sign the header's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Add-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
 #>
@@ -30,12 +33,15 @@ function Add-PodeHeader {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     # sign the value if we have a secret
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret)
+        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret -Strict:$Strict)
     }
 
     # add the header to the response
@@ -60,6 +66,9 @@ A hashtable of headers to be appended.
 .PARAMETER Secret
 If supplied, the secret with which to sign the header values.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Add-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
 #>
@@ -72,7 +81,10 @@ function Add-PodeHeaderBulk {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     foreach ($key in $Values.Keys) {
@@ -80,7 +92,7 @@ function Add-PodeHeaderBulk {
 
         # sign the value if we have a secret
         if (![string]::IsNullOrWhiteSpace($Secret)) {
-            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret)
+            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret -Strict:$Strict)
         }
 
         # add the header to the response
@@ -132,6 +144,9 @@ The name of the header to retrieve.
 .PARAMETER Secret
 The secret used to unsign the header's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Get-PodeHeader -Name 'X-AuthToken'
 #>
@@ -145,7 +160,10 @@ function Get-PodeHeader {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     # get the value for the header from the request
@@ -153,7 +171,7 @@ function Get-PodeHeader {
 
     # if a secret was supplied, attempt to unsign the header's value
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $header = (Invoke-PodeValueUnsign -Value $header -Secret $Secret)
+        $header = (Invoke-PodeValueUnsign -Value $header -Secret $Secret -Strict:$Strict)
     }
 
     return $header
@@ -175,6 +193,9 @@ The value to set against the header.
 .PARAMETER Secret
 If supplied, the secret with which to sign the header's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Set-PodeHeader -Name 'X-AuthToken' -Value 'AA-BB-CC-33'
 #>
@@ -191,12 +212,15 @@ function Set-PodeHeader {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     # sign the value if we have a secret
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret)
+        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret -Strict:$Strict)
     }
 
     # set the header on the response
@@ -221,6 +245,9 @@ A hashtable of headers to be set.
 .PARAMETER Secret
 If supplied, the secret with which to sign the header values.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Set-PodeHeaderBulk -Values @{ Name1 = 'Value1'; Name2 = 'Value2' }
 #>
@@ -233,7 +260,10 @@ function Set-PodeHeaderBulk {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     foreach ($key in $Values.Keys) {
@@ -241,7 +271,7 @@ function Set-PodeHeaderBulk {
 
         # sign the value if we have a secret
         if (![string]::IsNullOrWhiteSpace($Secret)) {
-            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret)
+            $value = (Invoke-PodeValueSign -Value $value -Secret $Secret -Strict:$Strict)
         }
 
         # set the header on the response
@@ -267,6 +297,9 @@ The name of the header to test.
 .PARAMETER Secret
 A secret to use for attempting to unsign the header's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Test-PodeHeaderSigned -Name 'X-Header-Name' -Secret 'hunter2'
 #>
@@ -280,14 +313,12 @@ function Test-PodeHeaderSigned {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     $header = Get-PodeHeader -Name $Name
-    if ([string]::IsNullOrWhiteSpace($header)) {
-        return $false
-    }
-
-    $value = (Invoke-PodeValueUnsign -Value $header -Secret $Secret)
-    return (![string]::IsNullOrWhiteSpace($value))
+    return Test-PodeValueSigned -Value $header -Secret $Secret -Strict:$Strict
 }

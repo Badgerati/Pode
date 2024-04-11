@@ -406,7 +406,7 @@ function New-PodeAuthScheme {
                 throw 'OAuth2 requires an Authorise URL to be supplied'
             }
 
-            if ($UsePKCE -and !(Test-PodeSessionsConfigured)) {
+            if ($UsePKCE -and !(Test-PodeSessionsEnabled)) {
                 throw 'Sessions are required to use OAuth2 with PKCE'
             }
 
@@ -749,7 +749,7 @@ function Add-PodeAuth {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 
@@ -804,11 +804,14 @@ Multiple Autentication method Names to be merged.
 How many of the Authentication methods are required to be valid, One or All. (Default: One)
 
 .PARAMETER ScriptBlock
-This is mandatory when Valid is All. A scriptblock to merge the mutliple users/headers returned by valid authentications into 1 user/header objects.
+This is mandatory, and only used, when $Valid=All. A scriptblock to merge the mutliple users/headers returned by valid authentications into 1 user/header objects.
 This scriptblock will receive a hashtable of all result objects returned from Authentication methods. The key for the hashtable will be the authentication names that passed.
 
 .PARAMETER Default
 The Default Authentication method to use as a fallback for Failure URLs and other settings.
+
+.PARAMETER MergeDefault
+The Default Authentication method's User details result object to use, when $Valid=All.
 
 .PARAMETER FailureUrl
 The URL to redirect to when authentication fails.
@@ -831,13 +834,16 @@ If supplied, successful authentication from a login page will redirect back to t
 This will be used as fallback for the merged Authentication methods if not set on them.
 
 .EXAMPLE
-Merge-PodeAuth -Name MergedAuth -Authentication ApiTokenAuth, BasicAuth -Valid All
+Merge-PodeAuth -Name MergedAuth -Authentication ApiTokenAuth, BasicAuth -Valid All -ScriptBlock { ... }
+
+.EXAMPLE
+Merge-PodeAuth -Name MergedAuth -Authentication ApiTokenAuth, BasicAuth -Valid All -MergeDefault BasicAuth
 
 .EXAMPLE
 Merge-PodeAuth -Name MergedAuth -Authentication ApiTokenAuth, BasicAuth -FailureUrl 'http://localhost:8080/login'
 #>
 function Merge-PodeAuth {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ScriptBlock')]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -853,13 +859,17 @@ function Merge-PodeAuth {
         [string]
         $Valid = 'One',
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'ScriptBlock')]
         [scriptblock]
         $ScriptBlock,
 
         [Parameter()]
         [string]
         $Default,
+
+        [Parameter(ParameterSetName = 'MergeDefault')]
+        [string]
+        $MergeDefault,
 
         [Parameter()]
         [string]
@@ -892,6 +902,11 @@ function Merge-PodeAuth {
         }
     }
 
+    # ensure the merge default is in the auth list
+    if (![string]::IsNullOrEmpty($MergeDefault) -and ($MergeDefault -inotin @($Authentication))) {
+        throw "the MergeDefault Authentication '$($MergeDefault)' is not in the Authentication list supplied"
+    }
+
     # ensure the default is in the auth list
     if (![string]::IsNullOrEmpty($Default) -and ($Default -inotin @($Authentication))) {
         throw "the Default Authentication '$($Default)' is not in the Authentication list supplied"
@@ -911,7 +926,7 @@ function Merge-PodeAuth {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 
@@ -936,12 +951,17 @@ function Merge-PodeAuth {
     }
 
     # deal with using vars in scriptblock
-    if ($Valid -ieq 'all') {
+    if (($Valid -ieq 'all') -and [string]::IsNullOrEmpty($MergeDefault)) {
         if ($null -eq $ScriptBlock) {
             throw 'A Scriptblock for merging multiple authenticated users into 1 object is required When Valid is All'
         }
 
         $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    }
+    else {
+        if ($null -ne $ScriptBlock) {
+            Write-Warning -Message 'The Scriptblock for merged authentications, when Valid=One, will be ignored'
+        }
     }
 
     # set parent auth
@@ -959,6 +979,7 @@ function Merge-PodeAuth {
             UsingVariables = $usingVars
         }
         Default         = $Default
+        MergeDefault    = $MergeDefault
         Sessionless     = $Sessionless.IsPresent
         Failure         = @{
             Url     = $FailureUrl
@@ -1242,7 +1263,7 @@ function Add-PodeAuthWindowsAd {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 
@@ -1367,7 +1388,7 @@ function Add-PodeAuthSession {
     )
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions have not been configured'
     }
 
@@ -1815,7 +1836,7 @@ function Add-PodeAuthUserFile {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 
@@ -1977,7 +1998,7 @@ function Add-PodeAuthWindowsLocal {
     }
 
     # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsConfigured)) {
+    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use session persistent authentication'
     }
 

@@ -27,7 +27,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http
 
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

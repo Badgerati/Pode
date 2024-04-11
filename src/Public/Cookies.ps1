@@ -29,6 +29,9 @@ Inform browsers to remove the cookie.
 .PARAMETER Secure
 Only allow the cookie on secure (HTTPS) connections.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Set-PodeCookie -Name 'Views' -Value 2
 
@@ -69,12 +72,15 @@ function Set-PodeCookie {
         $Discard,
 
         [switch]
-        $Secure
+        $Secure,
+
+        [switch]
+        $Strict
     )
 
     # sign the value if we have a secret
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret)
+        $Value = (Invoke-PodeValueSign -Value $Value -Secret $Secret -Strict:$Strict)
     }
 
     # create a new cookie
@@ -114,6 +120,9 @@ The name of the cookie to retrieve.
 .PARAMETER Secret
 The secret used to unsign the cookie's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .PARAMETER Raw
 If supplied, the cookie returned will be the raw .NET Cookie object for manipulation.
 
@@ -136,6 +145,9 @@ function Get-PodeCookie {
         $Secret,
 
         [switch]
+        $Strict,
+
+        [switch]
         $Raw
     )
 
@@ -151,7 +163,7 @@ function Get-PodeCookie {
 
     # if a secret was supplied, attempt to unsign the cookie
     if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret)
+        $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret -Strict:$Strict)
         if (![string]::IsNullOrWhiteSpace($value)) {
             $cookie.Value = $value
         }
@@ -173,6 +185,9 @@ The name of the cookie to retrieve.
 .PARAMETER Secret
 The secret used to unsign the cookie's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Get-PodeCookieValue -Name 'Views'
 
@@ -188,10 +203,13 @@ function Get-PodeCookieValue {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
-    $cookie = Get-PodeCookie -Name $Name -Secret $Secret
+    $cookie = Get-PodeCookie -Name $Name -Secret $Secret -Strict:$Strict
     if ($null -eq $cookie) {
         return $null
     }
@@ -275,6 +293,9 @@ The name of the cookie to test.
 .PARAMETER Secret
 A secret to use for attempting to unsign the cookie's value.
 
+.PARAMETER Strict
+If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+
 .EXAMPLE
 Test-PodeCookieSigned -Name 'Views' -Secret 'hunter2'
 #>
@@ -288,16 +309,18 @@ function Test-PodeCookieSigned {
 
         [Parameter()]
         [string]
-        $Secret
+        $Secret,
+
+        [switch]
+        $Strict
     )
 
     $cookie = $WebEvent.Cookies[$Name]
-    if (($null -eq $cookie) -or [string]::IsNullOrWhiteSpace($cookie.Value)) {
+    if (($null -eq $cookie) -or [string]::IsNullOrEmpty($cookie.Value)) {
         return $false
     }
 
-    $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret)
-    return (![string]::IsNullOrWhiteSpace($value))
+    return Test-PodeValueSigned -Value $cookie.Value -Secret $Secret -Strict:$Strict
 }
 
 <#

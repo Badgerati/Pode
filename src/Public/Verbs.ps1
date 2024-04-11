@@ -73,10 +73,6 @@ function Add-PodeVerb {
     $Verb = Resolve-PodePlaceholders -Path $Verb
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindEndpoints.Tcp) {
-        $PodeContext.Server.FindEndpoints.Tcp = !(Test-PodeIsEmpty $EndpointName)
-    }
-
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
 
     # ensure the verb doesn't already exist for each endpoint

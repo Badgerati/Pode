@@ -8,8 +8,15 @@ function Start-PodeInternalServer {
     )
 
     try {
+        # Check if the running version of Powershell is EOL
+        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID))" -ForegroundColor Cyan
+        $null = Test-PodeVersionPwshEOL -ReportUntested
+
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrives
+
+        # setup inbuilt scoped vars
+        Add-PodeScopedVariablesInbuilt
 
         # create the shared runspace state
         New-PodeRunspaceState
@@ -26,7 +33,8 @@ function Start-PodeInternalServer {
             $_script = Convert-PodeFileToScriptBlock -FilePath $PodeContext.Server.LogicPath
         }
 
-        Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
+        $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
+        $null = Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
 
         # load any modules/snapins
         Import-PodeSnapinsIntoRunspaceState
@@ -140,7 +148,19 @@ function Start-PodeInternalServer {
         if ($endpoints.Length -gt 0) {
             Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
             $endpoints | ForEach-Object {
-                Write-PodeHost "`t- $($_.Url)" -ForegroundColor Yellow
+                $flags = @()
+                if ($_.DualMode) {
+                    $flags += 'DualMode'
+                }
+
+                if ($flags.Length -eq 0) {
+                    $flags = [string]::Empty
+                }
+                else {
+                    $flags = "[$($flags -join ',')]"
+                }
+
+                Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
             }
         }
     }
@@ -210,11 +230,6 @@ function Restart-PodeInternalServer {
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
         $PodeContext.Server.EndpointsMap.Clear()
-        $PodeContext.Server.FindEndpoints = @{
-            Route = $false
-            Smtp  = $false
-            Tcp   = $false
-        }
 
         # clear openapi
         $PodeContext.Server.OpenAPI = Get-PodeOABaseObject
@@ -222,6 +237,7 @@ function Restart-PodeInternalServer {
         # clear the sockets
         $PodeContext.Server.Signals.Enabled = $false
         $PodeContext.Server.Signals.Listener = $null
+        $PodeContext.Server.Http.Listener = $null
         $PodeContext.Listeners = @()
         $PodeContext.Receivers = @()
         $PodeContext.Watchers = @()
@@ -244,6 +260,9 @@ function Restart-PodeInternalServer {
 
         # clear up shared state
         $PodeContext.Server.State.Clear()
+
+        # clear scoped variables
+        $PodeContext.Server.ScopedVariables.Clear()
 
         # clear cache
         $PodeContext.Server.Cache.Items.Clear()

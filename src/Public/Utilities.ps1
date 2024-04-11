@@ -475,6 +475,9 @@ The ScriptBlock to invoke.
 .PARAMETER Arguments
 Any arguments that should be supplied to the ScriptBlock.
 
+.PARAMETER UsingVariables
+Optional array of "using-variable" values, which will be automatically prepended to any supplied Arguments when supplied to the ScriptBlock.
+
 .PARAMETER Scoped
 Run the ScriptBlock in a scoped context.
 
@@ -504,6 +507,10 @@ function Invoke-PodeScriptBlock {
         [Parameter()]
         $Arguments = $null,
 
+        [Parameter()]
+        [object[]]
+        $UsingVariables = $null,
+
         [switch]
         $Scoped,
 
@@ -517,14 +524,22 @@ function Invoke-PodeScriptBlock {
         $NoNewClosure
     )
 
+    # force no new closure if running serverless
     if ($PodeContext.Server.IsServerless) {
         $NoNewClosure = $true
     }
 
+    # if new closure needed, create it
     if (!$NoNewClosure) {
         $ScriptBlock = ($ScriptBlock).GetNewClosure()
     }
 
+    # merge arguments together, if we have using vars supplied
+    if (($null -ne $UsingVariables) -and ($UsingVariables.Length -gt 0)) {
+        $Arguments = @(Merge-PodeScriptblockArguments -ArgumentList $Arguments -UsingVariables $UsingVariables)
+    }
+
+    # invoke the scriptblock
     if ($Scoped) {
         if ($Splat) {
             $result = (& $ScriptBlock @Arguments)
@@ -542,9 +557,57 @@ function Invoke-PodeScriptBlock {
         }
     }
 
+    # if needed, return the result
     if ($Return) {
         return $result
     }
+}
+
+<#
+.SYNOPSIS
+Merges Arguments and Using Variables together.
+
+.DESCRIPTION
+Merges Arguments and Using Variables together to be supplied to a ScriptBlock.
+The Using Variables will be prepended so then are supplied first to a ScriptBlock.
+
+.PARAMETER ArgumentList
+And optional array of Arguments.
+
+.PARAMETER UsingVariables
+And optional array of "using-variable" values to be prepended.
+
+.EXAMPLE
+$Arguments = @(Merge-PodeScriptblockArguments -ArgumentList $Arguments -UsingVariables $UsingVariables)
+
+.EXAMPLE
+$Arguments = @(Merge-PodeScriptblockArguments -UsingVariables $UsingVariables)
+#>
+function Merge-PodeScriptblockArguments {
+    param(
+        [Parameter()]
+        [object[]]
+        $ArgumentList = $null,
+
+        [Parameter()]
+        [object[]]
+        $UsingVariables = $null
+    )
+
+    if ($null -eq $ArgumentList) {
+        $ArgumentList = @()
+    }
+
+    if (($null -eq $UsingVariables) -or ($UsingVariables.Length -le 0)) {
+        return $ArgumentList
+    }
+
+    $_vars = @()
+    foreach ($_var in $UsingVariables) {
+        $_vars += , $_var.Value
+    }
+
+    return ($_vars + $ArgumentList)
 }
 
 <#
@@ -925,6 +988,7 @@ New-PodeCron -Every Quarter                                         # every 1st 
 #>
 function New-PodeCron {
     [CmdletBinding()]
+    [OutputType([String])]
     param(
         [Parameter()]
         [ValidateRange(0, 59)]
@@ -1102,4 +1166,46 @@ function New-PodeCron {
 
     # build and return
     return "$($cron.Minute) $($cron.Hour) $($cron.Date) $($cron.Month) $($cron.Day)"
+}
+
+
+
+<#
+.SYNOPSIS
+Gets the version of the Pode module.
+
+.DESCRIPTION
+The Get-PodeVersion function checks the version of the Pode module specified in the module manifest. If the module version is not a placeholder value ('$version$'), it returns the actual version prefixed with 'v.'. If the module version is the placeholder value, indicating the development branch, it returns '[develop branch]'.
+
+.PARAMETER None
+This function does not accept any parameters.
+
+.OUTPUTS
+System.String
+Returns a string indicating the version of the Pode module or '[dev]' if on a development version.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
+PS> Get-PodeVersion
+
+Returns 'v1.2.3'.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '$version$' }
+PS> Get-PodeVersion
+
+Returns '[dev]'.
+
+.NOTES
+This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
+
+#>
+function Get-PodeVersion {
+    $moduleManifest = Get-PodeModuleManifest
+    if ($moduleManifest.ModuleVersion -ne '$version$') {
+        return "v$($moduleManifest.ModuleVersion)"
+    }
+    else {
+        return '[dev]'
+    }
 }

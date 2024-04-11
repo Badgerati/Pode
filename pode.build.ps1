@@ -1,6 +1,11 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
 param(
     [string]
-    $Version = ''
+    $Version = '0.0.0',
+    [string]
+    [ValidateSet(  'None', 'Normal' , 'Detailed', 'Diagnostic')]
+    $PesterVerbosity = 'Normal'
 )
 
 <#
@@ -8,12 +13,11 @@ param(
 #>
 
 $Versions = @{
-    Pester      = '4.8.0'
+    Pester      = '5.5.0'
     MkDocs      = '1.5.3'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
-    DotNet      = '7.0.1'
-    Checksum    = '0.2.0'
+    DotNet      = '8.0'
     MkDocsTheme = '9.4.6'
     PlatyPS     = '0.14.2'
 }
@@ -21,7 +25,6 @@ $Versions = @{
 <#
 # Helper Functions
 #>
-
 function Test-PodeBuildIsWindows {
     $v = $PSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
@@ -87,40 +90,66 @@ function Install-PodeBuildModule($name) {
     Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
 }
 
-function Invoke-PodeBuildDotnetBuild($target) {
-    dotnet build --configuration Release --self-contained --framework $target
-    if (!$?) {
-        throw "dotnet build failed for $($target)"
+function Invoke-PodeBuildDotnetBuild($target ) {
+
+    # Retrieve the highest installed SDK version
+    $majorVersion = ([version](dotnet --version)).Major
+
+    # Determine if the target framework is compatible
+    $isCompatible = $False
+    switch ($majorVersion) {
+        8 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0', 'net8.0')) { $isCompatible = $True } }
+        7 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0')) { $isCompatible = $True } }
+        6 { if ($target -in @('net6.0', 'netstandard2.0')) { $isCompatible = $True } }
     }
 
-    dotnet publish --configuration Release --self-contained --framework $target --output ../Libs/$target
+    # Skip build if not compatible
+    if (  $isCompatible) {
+        Write-Host "SDK for target framework $target is compatible with the installed SDKs"
+    }
+    else {
+        Write-Host "SDK for target framework $target is not compatible with the installed SDKs. Skipping build."
+        return
+    }
+    if ($Version) {
+        Write-Host "Assembly Version $Version"
+        $AssemblyVersion = "-p:Version=$Version"
+    }
+    else {
+        $AssemblyVersion = ''
+    }
+
+    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
     if (!$?) {
         throw "dotnet publish failed for $($target)"
     }
+
 }
 
+function Get-PodeBuildPwshEOL {
+    $eol = invoke-restmethod  -Uri 'https://endoflife.date/api/powershell.json' -Headers @{Accept = 'application/json' }
+    return @{
+        eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
+        supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
+    }
+}
 
 <#
 # Helper Tasks
 #>
 
 # Synopsis: Stamps the version onto the Module
-task StampVersion {
-    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.psd1
+Task StampVersion {
+    $pwshVersions = Get-PodeBuildPwshEOL
+    (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
-    (Get-Content ./packers/choco/pode.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
-    (Get-Content ./packers/choco/tools/ChocolateyInstall.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
+    (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
+    (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
 }
 
 # Synopsis: Generating a Checksum of the Zip
-task PrintChecksum {
-    if (Test-PodeBuildIsWindows) {
-        $Script:Checksum = (checksum -t sha256 $Version-Binaries.zip)
-    }
-    else {
-        $Script:Checksum = (shasum -a 256 ./$Version-Binaries.zip | awk '{ print $1 }').ToUpper()
-    }
-
+Task PrintChecksum {
+    $Script:Checksum = (Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
     Write-Host "Checksum: $($Checksum)"
 }
 
@@ -130,7 +159,7 @@ task PrintChecksum {
 #>
 
 # Synopsis: Installs Chocolatey
-task ChocoDeps -If (Test-PodeBuildIsWindows) {
+Task ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
         Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
@@ -138,26 +167,28 @@ task ChocoDeps -If (Test-PodeBuildIsWindows) {
 }
 
 # Synopsis: Install dependencies for packaging
-task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
-    if (!(Test-PodeBuildCommand 'checksum')) {
-        Invoke-PodeBuildInstall 'checksum' $Versions.Checksum
-    }
-
+Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
     if (!(Test-PodeBuildCommand '7z')) {
         Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
     }
 }
 
 # Synopsis: Install dependencies for compiling/building
-task BuildDeps {
+Task BuildDeps {
     # install dotnet
+    if (Test-PodeBuildIsWindows) {
+        $dotnet = 'dotnet'
+    }
+    else {
+        $dotnet = "dotnet-sdk-$($Versions.DotNet)"
+    }
     if (!(Test-PodeBuildCommand 'dotnet')) {
-        Invoke-PodeBuildInstall 'dotnet' $Versions.DotNet
+        Invoke-PodeBuildInstall $dotnet $Versions.DotNet
     }
 }
 
 # Synopsis: Install dependencies for running tests
-task TestDeps {
+Task TestDeps {
     # install pester
     Install-PodeBuildModule Pester
 
@@ -168,7 +199,7 @@ task TestDeps {
 }
 
 # Synopsis: Install dependencies for documentation
-task DocsDeps ChocoDeps, {
+Task DocsDeps ChocoDeps, {
     # install mkdocs
     if (!(Test-PodeBuildCommand 'mkdocs')) {
         Invoke-PodeBuildInstall 'mkdocs' $Versions.MkDocs
@@ -189,17 +220,19 @@ task DocsDeps ChocoDeps, {
 #>
 
 # Synopsis: Build the .NET Listener
-task Build BuildDeps, {
+Task Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
-
+    Write-Host 'Powershell Version:'
+    $PSVersionTable.PSVersion
     Push-Location ./src/Listener
 
     try {
         Invoke-PodeBuildDotnetBuild -target 'netstandard2.0'
         Invoke-PodeBuildDotnetBuild -target 'net6.0'
         Invoke-PodeBuildDotnetBuild -target 'net7.0'
+        Invoke-PodeBuildDotnetBuild -target 'net8.0'
     }
     finally {
         Pop-Location
@@ -212,17 +245,39 @@ task Build BuildDeps, {
 #>
 
 # Synopsis: Creates a Zip of the Module
-task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
+Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
 }, PrintChecksum
 
+
+# Synopsis: Creates a Zip of the Module
+Task Compress StampVersion, {
+    $path = './deliverable'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    # create the pkg dir
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+    Compress-Archive -Path './pkg/*' -DestinationPath "$path/$Version-Binaries.zip"
+}, PrintChecksum
+
 # Synopsis: Creates a Chocolately package of the Module
-task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
+Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { choco pack ./packers/choco/pode.nuspec }
+    Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
 
 # Synopsis: Create docker tags
-task DockerPack -If ((Test-PodeBuildIsWindows) -or $IsLinux) {
+Task DockerPack -If (((Test-PodeBuildIsWindows) -or $IsLinux) ) {
+    try {
+        # Try to get the Docker version to check if Docker is installed
+        docker --version
+    }
+    catch {
+        # If Docker is not available, exit the task
+        Write-Warning 'Docker is not installed or not available in the PATH. Exiting task.'
+        return
+    }
     docker build -t badgerati/pode:$Version -f ./Dockerfile .
     docker build -t badgerati/pode:latest -f ./Dockerfile .
     docker build -t badgerati/pode:$Version-alpine -f ./alpine.dockerfile .
@@ -239,12 +294,11 @@ task DockerPack -If ((Test-PodeBuildIsWindows) -or $IsLinux) {
 }
 
 # Synopsis: Package up the Module
-task Pack -If (Test-PodeBuildIsWindows) Build, {
+Task Pack Build, {
     $path = './pkg'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
-
     # create the pkg dir
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
@@ -263,7 +317,7 @@ task Pack -If (Test-PodeBuildIsWindows) Build, {
     Copy-Item -Path ./src/Pode.Internal.psm1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./src/Pode.Internal.psd1 -Destination $path -Force | Out-Null
     Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
-}, StampVersion, 7Zip, ChocoPack, DockerPack
+}, StampVersion, Compress, ChocoPack, DockerPack
 
 
 <#
@@ -271,7 +325,7 @@ task Pack -If (Test-PodeBuildIsWindows) Build, {
 #>
 
 # Synopsis: Run the tests
-task Test Build, TestDeps, {
+Task TestNoBuild TestDeps, {
     $p = (Get-Command Invoke-Pester)
     if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
         Remove-Module Pester -Force -ErrorAction Ignore
@@ -279,26 +333,38 @@ task Test Build, TestDeps, {
     }
 
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
-
+    # get default from static property
+    $configuration = [PesterConfiguration]::Default
+    $configuration.run.path = @('./tests/unit', './tests/integration')
+    $configuration.run.PassThru = $true
+    $configuration.TestResult.OutputFormat = 'NUnitXml'
+    $configuration.Output.Verbosity = $PesterVerbosity
+    $configuration.TestResult.OutputPath = $Script:TestResultFile
     # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
-        $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -CodeCoverage $srcFiles -PassThru
+        $configuration.CodeCoverage.Enabled = $true
+        $configuration.CodeCoverage.Path = $srcFiles
+        $Script:TestStatus = Invoke-Pester   -Configuration $configuration
     }
     else {
-        $Script:TestStatus = Invoke-Pester './tests/unit', './tests/integration' -OutputFormat NUnitXml -OutputFile $TestResultFile -Show Failed -PassThru
+        $Script:TestStatus = Invoke-Pester  -Configuration $configuration
     }
 }, PushCodeCoverage, CheckFailedTests
 
+# Synopsis: Run tests after a build
+Task Test Build, TestNoBuild
+
+
 # Synopsis: Check if any of the tests failed
-task CheckFailedTests {
+Task CheckFailedTests {
     if ($TestStatus.FailedCount -gt 0) {
         throw "$($TestStatus.FailedCount) tests failed"
     }
 }
 
 # Synopsis: If AppyVeyor or GitHub, push code coverage stats
-task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
+Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
     try {
         $service = Get-PodeBuildService
         $branch = Get-PodeBuildBranch
@@ -318,12 +384,12 @@ task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
 #>
 
 # Synopsis: Run the documentation locally
-task Docs DocsDeps, DocsHelpBuild, {
+Task Docs DocsDeps, DocsHelpBuild, {
     mkdocs serve
 }
 
 # Synopsis: Build the function help documentation
-task DocsHelpBuild DocsDeps, {
+Task DocsHelpBuild DocsDeps, {
     # import the local module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
     Import-Module ./src/Pode.psm1 -Force | Out-Null
@@ -367,6 +433,128 @@ task DocsHelpBuild DocsDeps, {
 }
 
 # Synopsis: Build the documentation
-task DocsBuild DocsDeps, DocsHelpBuild, {
+Task DocsBuild DocsDeps, DocsHelpBuild, {
     mkdocs build
+}
+
+# Synopsis: Clean the build enviroment
+Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener
+
+# Synopsis: Clean the Deliverable folder
+Task CleanDeliverable {
+    $path = './deliverable'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host 'Removing ./deliverable folder'
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    Write-Host "Cleanup $path done"
+}
+
+# Synopsis: Clean the pkg directory
+Task CleanPkg {
+    $path = './pkg'
+    if ((Test-Path -Path $path -PathType Container )) {
+        Write-Host 'Removing ./pkg folder'
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    if ((Test-Path -Path .\packers\choco\tools\ChocolateyInstall.ps1 -PathType Leaf )) {
+        Write-Host 'Removing .\packers\choco\tools\ChocolateyInstall.ps1'
+        Remove-Item -Path .\packers\choco\tools\ChocolateyInstall.ps1
+    }
+    if ((Test-Path -Path .\packers\choco\pode.nuspec -PathType Leaf )) {
+        Write-Host 'Removing .\packers\choco\pode.nuspec'
+        Remove-Item -Path .\packers\choco\pode.nuspec
+    }
+    Write-Host "Cleanup $path done"
+}
+
+# Synopsis: Clean the libs folder
+Task CleanLibs {
+    $path = './src/Libs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path  contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    Write-Host "Cleanup $path done"
+}
+
+# Synopsis: Clean the Listener folder
+Task CleanListener {
+    $path = './src/Listener/bin'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    Write-Host "Cleanup $path done"
+}
+
+# Synopsis: Install Pode Module locally
+Task Install-Module {
+    $path = './pkg'
+    if ($Version) {
+
+        if (! (Test-Path $path)) {
+            Invoke-Build Pack -Version $Version
+        }
+        if ($IsWindows -or (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
+            $PSPaths = $ENV:PSModulePath -split ';'
+        }
+        else {
+            $PSPaths = $ENV:PSModulePath -split ':'
+        }
+        $dest = join-path -Path  $PSPaths[0]  -ChildPath 'Pode' -AdditionalChildPath "$Version"
+
+        if (Test-Path $dest) {
+            Remove-Item -Path $dest -Recurse -Force | Out-Null
+        }
+
+        # create the dest dir
+        New-Item -Path $dest -ItemType Directory -Force | Out-Null
+
+        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Private'  ) -Destination  $dest -Force -Recurse | Out-Null
+        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Public'  ) -Destination  $dest -Force -Recurse | Out-Null
+        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Misc'  ) -Destination  $dest -Force -Recurse | Out-Null
+        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Libs'  ) -Destination  $dest -Force -Recurse | Out-Null
+
+        # copy general files
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.psm1') -Destination $dest -Force | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.psd1') -Destination $dest -Force | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.Internal.psm1') -Destination $dest -Force | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.Internal.psd1') -Destination $dest -Force | Out-Null
+        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'LICENSE.txt') -Destination $dest -Force | Out-Null
+
+        Write-Host "Deployed to $dest"
+    }
+    else {
+        Write-Error 'Parameter -Version is required'
+    }
+
+}
+
+# Synopsis: Remove the Pode Module from the local registry
+Task Remove-Module {
+
+    if ($Version) {
+        if ($IsWindows -or (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
+            $PSPaths = $ENV:PSModulePath -split ';'
+        }
+        else {
+            $PSPaths = $ENV:PSModulePath -split ':'
+        }
+        $dest = join-path -Path  $PSPaths[0]  -ChildPath 'Pode' -AdditionalChildPath "$Version"
+
+        if (Test-Path $dest) {
+            Write-Host "Deleting module from $dest"
+            Remove-Item -Path $dest -Recurse -Force | Out-Null
+        }
+        else {
+            Write-Error "Directory $dest doesn't exist"
+        }
+
+    }
+    else {
+        Write-Error 'Parameter -Version is required'
+    }
+
 }

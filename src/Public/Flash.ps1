@@ -28,7 +28,7 @@ function Add-PodeFlashMessage {
     )
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -60,7 +60,7 @@ function Clear-PodeFlashMessages {
     param()
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -94,7 +94,7 @@ function Get-PodeFlashMessage {
     )
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -129,7 +129,7 @@ function Get-PodeFlashMessageNames {
     param()
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -163,7 +163,7 @@ function Remove-PodeFlashMessage {
     )
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use Flash messages'
     }
 
@@ -196,7 +196,7 @@ function Test-PodeFlashMessage {
     )
 
     # if sessions haven't been setup, error
-    if (!(Test-PodeSessionsConfigured)) {
+    if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions are required to use Flash messages'
     }
 

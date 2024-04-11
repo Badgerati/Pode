@@ -80,8 +80,7 @@ function Get-PodeFileContentUsingViewEngine {
                     $_args = @($Path, $Data)
                 }
 
-                $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables)
-                $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -Return -Splat)
+                $content = (Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.ViewEngine.ScriptBlock -Arguments $_args -UsingVariables $PodeContext.Server.ViewEngine.UsingVariables -Return -Splat)
             }
         }
     }
@@ -149,7 +148,7 @@ function Get-PodeHostIPRegex {
         $Type
     )
 
-    $ip_rgx = '\[[a-f0-9\:]+\]|((\d+\.){3}\d+)|\:\:\d*|\*|all'
+    $ip_rgx = '\[?([a-f0-9]*\:){1,}[a-f0-9]*((\d+\.){3}\d+)?\]?|((\d+\.){3}\d+)|\*|all'
     $host_rgx = '([a-z]|\*\.)(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])+'
 
     switch ($Type.ToLowerInvariant()) {
@@ -167,7 +166,7 @@ function Get-PodeHostIPRegex {
     }
 }
 
-function Get-PortRegex {
+function Get-PodePortRegex {
     return '(?<port>\d+)'
 }
 
@@ -186,7 +185,7 @@ function Get-PodeEndpointInfo {
     }
 
     $hostRgx = Get-PodeHostIPRegex -Type Both
-    $portRgx = Get-PortRegex
+    $portRgx = Get-PodePortRegex
     $cmbdRgx = "$($hostRgx)\:$($portRgx)"
 
     # validate that we have a valid ip/host:port address
@@ -233,7 +232,7 @@ function Test-PodeIPAddress {
         $IPOnly
     )
 
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
+    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
         return $true
     }
 
@@ -323,7 +322,7 @@ function Test-PodeIPAddressLocal {
         $IP
     )
 
-    return (@('127.0.0.1', '::1', '[::1]', 'localhost') -icontains $IP)
+    return (@('127.0.0.1', '::1', '[::1]', '::ffff:127.0.0.1', 'localhost') -icontains $IP)
 }
 
 function Test-PodeIPAddressAny {
@@ -346,26 +345,73 @@ function Test-PodeIPAddressLocalOrAny {
     return ((Test-PodeIPAddressLocal -IP $IP) -or (Test-PodeIPAddressAny -IP $IP))
 }
 
+function Resolve-PodeIPDualMode {
+    param(
+        [Parameter()]
+        [ipaddress]
+        $IP
+    )
+
+    # do nothing if IPv6Any
+    if ($IP -eq [ipaddress]::IPv6Any) {
+        return $IP
+    }
+
+    # check loopbacks
+    if (($IP -eq [ipaddress]::Loopback) -and [System.Net.Sockets.Socket]::OSSupportsIPv6) {
+        return @($IP, [ipaddress]::IPv6Loopback)
+    }
+
+    if ($IP -eq [ipaddress]::IPv6Loopback) {
+        return @($IP, [ipaddress]::Loopback)
+    }
+
+    # if iIPv4, convert and return both
+    if (($IP.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) -and [System.Net.Sockets.Socket]::OSSupportsIPv6) {
+        return @($IP, $IP.MapToIPv6())
+    }
+
+    # if IPv6, only convert if valid IPv4
+    if (($IP.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6) -and $IP.IsIPv4MappedToIPv6) {
+        return @($IP, $IP.MapToIPv4())
+    }
+
+    # just return the IP
+    return $IP
+}
+
 function Get-PodeIPAddress {
     param(
         [Parameter()]
         [string]
-        $IP
+        $IP,
+
+        [switch]
+        $DualMode
     )
 
-    # any address for IPv4
-    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -ieq '*') -or ($IP -ieq 'all')) {
+    # any address for IPv4 (or IPv6 for DualMode)
+    if ([string]::IsNullOrWhiteSpace($IP) -or ($IP -iin @('*', 'all'))) {
+        if ($DualMode) {
+            return [System.Net.IPAddress]::IPv6Any
+        }
+
         return [System.Net.IPAddress]::Any
     }
 
-    # any address for IPv6
-    if (($IP -ieq '::') -or ($IP -ieq '[::]')) {
+    # any address for IPv6 explicitly
+    if ($IP -iin @('::', '[::]')) {
         return [System.Net.IPAddress]::IPv6Any
     }
 
     # localhost
     if ($IP -ieq 'localhost') {
         return [System.Net.IPAddress]::Loopback
+    }
+
+    # localhost IPv6 explicitly
+    if ($IP -iin @('[::1]', '::1')) {
+        return [System.Net.IPAddress]::IPv6Loopback
     }
 
     # hostname
@@ -895,23 +941,45 @@ function Import-PodeModules {
     }
 }
 
+<#
+.SYNOPSIS
+Creates and registers inbuilt PowerShell drives for the Pode server's default folders.
+
+.DESCRIPTION
+This function sets up inbuilt PowerShell drives for the Pode web server's default directories: views, public content, and error pages. For each of these directories, if the physical path exists on the server, a new PowerShell drive is created and mapped to this path. These drives provide an easy and consistent way to access server resources like views, static files, and custom error pages within the Pode application.
+
+The function leverages `$PodeContext` to access the server's configuration and to determine the paths for these default folders. If a folder's path exists, the function uses `New-PodePSDrive` to create a PowerShell drive for it and stores this drive in the server's `InbuiltDrives` dictionary, keyed by the folder type.
+
+.PARAMETER None
+
+.EXAMPLE
+Add-PodePSInbuiltDrives
+
+This example is typically called within the Pode server setup script or internally by the Pode framework to initialize the PowerShell drives for the server's default folders.
+
+.NOTES
+- The function is designed to be used within the Pode framework and relies on the global `$PodeContext` variable for configuration.
+- It specifically checks for the existence of paths for views, public content, and errors before attempting to create drives for them.
+- This is an internal function and may change in future releases of Pode.
+#>
 function Add-PodePSInbuiltDrives {
+
     # create drive for views, if path exists
-    $path = (Join-PodeServerRoot 'views')
+    $path = (Join-PodeServerRoot -Folder $PodeContext.Server.DefaultFolders.Views)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['views'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Views] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for public content, if path exists
-    $path = (Join-PodeServerRoot 'public')
+    $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Public)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['public'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Public] = (New-PodePSDrive -Path $path)
     }
 
     # create drive for errors, if path exists
-    $path = (Join-PodeServerRoot 'errors')
+    $path = (Join-PodeServerRoot $PodeContext.Server.DefaultFolders.Errors)
     if (Test-Path $path) {
-        $PodeContext.Server.InbuiltDrives['errors'] = (New-PodePSDrive -Path $path)
+        $PodeContext.Server.InbuiltDrives[$PodeContext.Server.DefaultFolders.Errors] = (New-PodePSDrive -Path $path)
     }
 }
 
@@ -1484,8 +1552,7 @@ function ConvertFrom-PodeRequestContent {
         # check if there is a defined custom body parser
         if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
             $parser = $PodeContext.Server.BodyParsers[$ContentType]
-            $_args = @(Get-PodeScriptblockArguments -ArgumentList $Content -UsingVariables $parser.UsingVariables)
-            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $_args -Return)
+            $Result.Data = (Invoke-PodeScriptBlock -ScriptBlock $parser.ScriptBlock -Arguments $Content -UsingVariables $parser.UsingVariables -Return)
             $Content = $null
             return $Result
         }
@@ -1621,22 +1688,44 @@ function Get-PodeCount {
     return $Object.Count
 }
 
-function Test-PodePathAccess {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Path
-    )
+<#
+.SYNOPSIS
+    Tests if a given file system path is valid and optionally if it is not a directory.
 
-    try {
-        $null = Get-Item $Path
-    }
-    catch [System.UnauthorizedAccessException] {
-        return $false
+.DESCRIPTION
+    This function tests if the provided file system path is valid. It checks if the path is not null or whitespace, and if the item at the path exists. If the item exists and is not a directory (unless the $FailOnDirectory switch is not used), it returns true. If the path is not valid, it can optionally set a 404 response status code.
+
+.PARAMETER Path
+    The file system path to test for validity.
+
+.PARAMETER NoStatus
+    A switch to suppress setting the 404 response status code if the path is not valid.
+
+.PARAMETER FailOnDirectory
+    A switch to indicate that the function should return false if the path is a directory.
+
+.PARAMETER Force
+    A switch to indicate that the file with the hidden attribute has to be includede
+
+.PARAMETER ReturnItem
+    Return the item file item itself instead of true or false
+
+.EXAMPLE
+    $isValid = Test-PodePath -Path "C:\temp\file.txt"
+    if ($isValid) {
+        # The file exists and is not a directory
     }
 
-    return $true
-}
+.EXAMPLE
+    $isValid = Test-PodePath -Path "C:\temp\folder" -FailOnDirectory
+    if (!$isValid) {
+        # The path is a directory or does not exist
+    }
+
+.NOTES
+    This function is used within the Pode framework to validate file system paths for serving static content.
+
+#>
 
 function Test-PodePath {
     param(
@@ -1647,37 +1736,52 @@ function Test-PodePath {
         $NoStatus,
 
         [switch]
-        $FailOnDirectory
+        $FailOnDirectory,
+
+        [switch]
+        $Force,
+
+        [switch]
+        $ReturnItem
     )
 
-    # if the file doesnt exist then fail on 404
-    if ([string]::IsNullOrWhiteSpace($Path) -or !(Test-Path $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 404
+    $statusCode = 404
+
+    if (![string]::IsNullOrWhiteSpace($Path)) {
+        try {
+            $item = Get-Item $Path -Force:$Force -ErrorAction Stop
+            if (($null -ne $item) -and (!$FailOnDirectory -or !$item.PSIsContainer)) {
+                $statusCode = 200
+            }
+        }
+        catch [System.Management.Automation.ItemNotFoundException] {
+            $statusCode = 404
+        }
+        catch [System.UnauthorizedAccessException] {
+            $statusCode = 401
+        }
+        catch {
+            $statusCode = 400
         }
 
-        return $false
     }
 
-    # if the file isn't accessible then fail 401
-    if (!(Test-PodePathAccess $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 401
+    if ($statusCode -eq 200) {
+        if ($ReturnItem.IsPresent) {
+            return  $item
         }
-
-        return $false
+        return $true
     }
 
-    # if we're failing on a directory then fail on 404
-    if ($FailOnDirectory -and (Test-PodePathIsDirectory $Path)) {
-        if (!$NoStatus) {
-            Set-PodeResponseStatus -Code 404
-        }
-
-        return $false
+    # if we failed to get the file, report back the status code and/or return true/false
+    if (!$NoStatus.IsPresent) {
+        Set-PodeResponseStatus -Code $statusCode
     }
 
-    return $true
+    if ($ReturnItem.IsPresent) {
+        return  $null
+    }
+    return $false
 }
 
 function Test-PodePathIsFile {
@@ -2424,340 +2528,6 @@ function Convert-PodeQueryStringToHashTable {
     return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
 }
 
-function Convert-PodeScopedVariables {
-    param(
-        [Parameter()]
-        [scriptblock]
-        $ScriptBlock,
-
-        [Parameter()]
-        [System.Management.Automation.SessionState]
-        $PSSession,
-
-        [Parameter()]
-        [ValidateSet('State', 'Session', 'Secret', 'Using', 'Cache')]
-        $Skip
-    )
-
-    # do nothing if no script
-    if ($null -eq $ScriptBlock) {
-        if (($null -ne $Skip) -and ($Skip -icontains 'Using')) {
-            return $ScriptBlock
-        }
-        else {
-            return @($ScriptBlock, $null)
-        }
-    }
-
-    # conversions
-    $usingVars = $null
-    if (($null -eq $Skip) -or ($Skip -inotcontains 'Using')) {
-        $ScriptBlock, $usingVars = Invoke-PodeUsingScriptConversion -ScriptBlock $ScriptBlock -PSSession $PSSession
-    }
-
-    if (($null -eq $Skip) -or ($Skip -inotcontains 'State')) {
-        $ScriptBlock = Invoke-PodeStateScriptConversion -ScriptBlock $ScriptBlock
-    }
-
-    if (($null -eq $Skip) -or ($Skip -inotcontains 'Session')) {
-        $ScriptBlock = Invoke-PodeSessionScriptConversion -ScriptBlock $ScriptBlock
-    }
-
-    if (($null -eq $Skip) -or ($Skip -inotcontains 'Secret')) {
-        $ScriptBlock = Invoke-PodeSecretScriptConversion -ScriptBlock $ScriptBlock
-    }
-
-    if (($null -eq $Skip) -or ($Skip -inotcontains 'Cache')) {
-        $ScriptBlock = Invoke-PodeCacheScriptConversion -ScriptBlock $ScriptBlock
-    }
-
-    # return
-    if (($null -ne $Skip) -and ($Skip -icontains 'Using')) {
-        return $ScriptBlock
-    }
-    else {
-        return @($ScriptBlock, $usingVars)
-    }
-}
-
-function Invoke-PodeStateScriptConversion {
-    param(
-        [Parameter()]
-        [scriptblock]
-        $ScriptBlock
-    )
-
-    # do nothing if no script
-    if ($null -eq $ScriptBlock) {
-        return $ScriptBlock
-    }
-
-    # rename any $state:<name> vars
-    $scriptStr = "$($ScriptBlock)"
-    $found = $false
-
-    while ($scriptStr -imatch '(?<full>\$state\:(?<name>[a-z0-9_\?]+)\s*=)') {
-        $found = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "Set-PodeState -Name '$($Matches['name'])' -Value ")
-    }
-
-    while ($scriptStr -imatch '(?<full>\$state\:(?<name>[a-z0-9_\?]+))') {
-        $found = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "`$PodeContext.Server.State.'$($Matches['name'])'.Value")
-    }
-
-    if ($found) {
-        $ScriptBlock = [scriptblock]::Create($scriptStr)
-    }
-
-    return $ScriptBlock
-}
-
-function Invoke-PodeSecretScriptConversion {
-    param(
-        [Parameter()]
-        [scriptblock]
-        $ScriptBlock
-    )
-
-    # do nothing if no script
-    if ($null -eq $ScriptBlock) {
-        return $ScriptBlock
-    }
-
-    # rename any $secret:<name> vars
-    $scriptStr = "$($ScriptBlock)"
-    $found = $false
-
-    while ($scriptStr -imatch '(?<full>\$secret\:(?<name>[a-z0-9_\?]+)\s*=)') {
-        $found = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "Update-PodeSecret -Name '$($Matches['name'])' -InputObject ")
-    }
-
-    while ($scriptStr -imatch '(?<full>\$secret\:(?<name>[a-z0-9_\?]+))') {
-        $found = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "(Get-PodeSecret -Name '$($Matches['name'])')")
-    }
-
-    if ($found) {
-        $ScriptBlock = [scriptblock]::Create($scriptStr)
-    }
-
-    return $ScriptBlock
-}
-
-function Invoke-PodeCacheScriptConversion {
-    param(
-        [Parameter()]
-        [scriptblock]
-        $ScriptBlock
-    )
-
-    # do nothing if no script
-    if ($null -eq $ScriptBlock) {
-        return $ScriptBlock
-    }
-
-    # rename any $secret:<name> vars
-    $scriptStr = "$($ScriptBlock)"
-    $found = $false
-
-    while ($scriptStr -imatch '(?<full>\$cache\:(?<name>[a-z0-9_\?]+)\s*=)') {
-        $found = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "Set-PodeCache -Key '$($Matches['name'])' -InputObject ")
-    }
-
-    while ($scriptStr -imatch '(?<full>\$cache\:(?<name>[a-z0-9_\?]+))') {
-        $found = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "(Get-PodeCache -Key '$($Matches['name'])')")
-    }
-
-    if ($found) {
-        $ScriptBlock = [scriptblock]::Create($scriptStr)
-    }
-
-    return $ScriptBlock
-}
-
-function Invoke-PodeSessionScriptConversion {
-    param(
-        [Parameter()]
-        [scriptblock]
-        $ScriptBlock
-    )
-
-    # do nothing if no script
-    if ($null -eq $ScriptBlock) {
-        return $ScriptBlock
-    }
-
-    # rename any $session:<name> vars
-    $scriptStr = "$($ScriptBlock)"
-    $found = $false
-
-    while ($scriptStr -imatch '(?<full>\$session\:(?<name>[a-z0-9_\?]+))') {
-        $found = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "`$WebEvent.Session.Data.'$($Matches['name'])'")
-    }
-
-    if ($found) {
-        $ScriptBlock = [scriptblock]::Create($scriptStr)
-    }
-
-    return $ScriptBlock
-}
-
-function Invoke-PodeUsingScriptConversion {
-    param(
-        [Parameter()]
-        [scriptblock]
-        $ScriptBlock,
-
-        [Parameter(Mandatory = $true)]
-        [System.Management.Automation.SessionState]
-        $PSSession
-    )
-
-    # do nothing if no script
-    if ($null -eq $ScriptBlock) {
-        return @($ScriptBlock, $null)
-    }
-
-    # rename any __using_ vars for inner timers, etcs
-    $scriptStr = "$($ScriptBlock)"
-    $foundInnerUsing = $false
-
-    while ($scriptStr -imatch '(?<full>\$__using_(?<name>[a-z0-9_\?]+))') {
-        $foundInnerUsing = $true
-        $scriptStr = $scriptStr.Replace($Matches['full'], "`$using:$($Matches['name'])")
-    }
-
-    if ($foundInnerUsing) {
-        $ScriptBlock = [scriptblock]::Create($scriptStr)
-    }
-
-    # get any using variables
-    $usingVars = Get-PodeScriptUsingVariables -ScriptBlock $ScriptBlock
-    if (Test-PodeIsEmpty $usingVars) {
-        return @($ScriptBlock, $null)
-    }
-
-    # convert any using vars to use new names
-    $usingVars = ConvertTo-PodeUsingVariables -UsingVariables $usingVars -PSSession $PSSession
-
-    # now convert the script
-    $newScriptBlock = ConvertTo-PodeUsingScript -ScriptBlock $ScriptBlock -UsingVariables $usingVars
-
-    # return converted script
-    return @($newScriptBlock, $usingVars)
-}
-
-function Get-PodeScriptUsingVariables {
-    param(
-        [Parameter(Mandatory = $true)]
-        [scriptblock]
-        $ScriptBlock
-    )
-
-    return $ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $true)
-}
-
-function ConvertTo-PodeUsingVariables {
-    param(
-        [Parameter()]
-        $UsingVariables,
-
-        [Parameter(Mandatory = $true)]
-        [System.Management.Automation.SessionState]
-        $PSSession
-    )
-
-    if (Test-PodeIsEmpty $UsingVariables) {
-        return $null
-    }
-
-    $mapped = @{}
-
-    foreach ($usingVar in $UsingVariables) {
-        # var name
-        $varName = $usingVar.SubExpression.VariablePath.UserPath
-
-        # only retrieve value if new var
-        if (!$mapped.ContainsKey($varName)) {
-            # get value, or get __using_ value for child scripts
-            $value = $PSSession.PSVariable.Get($varName)
-            if ([string]::IsNullOrEmpty($value)) {
-                $value = $PSSession.PSVariable.Get("__using_$($varName)")
-            }
-
-            if ([string]::IsNullOrEmpty($value)) {
-                throw "Value for `$using:$($varName) could not be found"
-            }
-
-            # add to mapped
-            $mapped[$varName] = @{
-                OldName           = $usingVar.SubExpression.Extent.Text
-                NewName           = "__using_$($varName)"
-                NewNameWithDollar = "`$__using_$($varName)"
-                SubExpressions    = @()
-                Value             = $value.Value
-            }
-        }
-
-        # add the vars sub-expression for replacing later
-        $mapped[$varName].SubExpressions += $usingVar.SubExpression
-    }
-
-    return @($mapped.Values)
-}
-
-function ConvertTo-PodeUsingScript {
-    param(
-        [Parameter(Mandatory = $true)]
-        [scriptblock]
-        $ScriptBlock,
-
-        [Parameter()]
-        [hashtable[]]
-        $UsingVariables
-    )
-
-    # return original script if no using vars
-    if (Test-PodeIsEmpty $UsingVariables) {
-        return $ScriptBlock
-    }
-
-    $varsList = New-Object 'System.Collections.Generic.List`1[System.Management.Automation.Language.VariableExpressionAst]'
-    $newParams = New-Object System.Collections.ArrayList
-
-    foreach ($usingVar in $UsingVariables) {
-        foreach ($subExp in $usingVar.SubExpressions) {
-            $null = $varsList.Add($subExp)
-        }
-    }
-
-    $newParams.AddRange(@($UsingVariables.NewNameWithDollar))
-    $newParams = ($newParams -join ', ')
-    $tupleParams = [tuple]::Create($varsList, $newParams)
-
-    $bindingFlags = [System.Reflection.BindingFlags]'Default, NonPublic, Instance'
-    $_varReplacerMethod = $ScriptBlock.Ast.GetType().GetMethod('GetWithInputHandlingForInvokeCommandImpl', $bindingFlags)
-    $convertedScriptBlockStr = $_varReplacerMethod.Invoke($ScriptBlock.Ast, @($tupleParams))
-
-    if (!$ScriptBlock.Ast.ParamBlock) {
-        $convertedScriptBlockStr = "param($($newParams))`n$($convertedScriptBlockStr)"
-    }
-
-    $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)
-
-    if ($convertedScriptBlock.Ast.EndBlock[0].Statements.Extent.Text.StartsWith('$input |')) {
-        $convertedScriptBlockStr = ($convertedScriptBlockStr -ireplace '\$input \|')
-        $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)
-    }
-
-    return $convertedScriptBlock
-}
-
 function Get-PodeDotSourcedFiles {
     param(
         [Parameter(Mandatory = $true)]
@@ -3017,33 +2787,6 @@ function Find-PodeModuleFile {
     return $path
 }
 
-function Get-PodeScriptblockArguments {
-    param(
-        [Parameter()]
-        [object[]]
-        $ArgumentList,
-
-        [Parameter()]
-        [object[]]
-        $UsingVariables
-    )
-
-    if ($null -eq $ArgumentList) {
-        $ArgumentList = @()
-    }
-
-    if (($null -eq $UsingVariables) -or ($UsingVariables.Length -le 0)) {
-        return $ArgumentList
-    }
-
-    $_vars = @()
-    foreach ($_var in $UsingVariables) {
-        $_vars += , $_var.Value
-    }
-
-    return ($_vars + $ArgumentList)
-}
-
 function Clear-PodeHashtableInnerKeys {
     param(
         [Parameter(ValueFromPipeline = $true)]
@@ -3193,4 +2936,126 @@ function Test-PodePlaceholders {
     }
 
     return ($Path -imatch $Placeholder)
+}
+
+
+<#
+.SYNOPSIS
+Retrieves the PowerShell module manifest object for the specified module.
+
+.DESCRIPTION
+This function constructs the path to a PowerShell module manifest file (.psd1) located in the parent directory of the script root. It then imports the module manifest file to access its properties and returns the manifest object. This can be useful for scripts that need to dynamically discover and utilize module metadata, such as version, dependencies, and exported functions.
+
+.PARAMETERS
+This function does not accept any parameters.
+
+.EXAMPLE
+$manifest = Get-PodeModuleManifest
+This example calls the `Get-PodeModuleManifest` function to retrieve the module manifest object and stores it in the variable `$manifest`.
+
+#>
+function Get-PodeModuleManifest {
+    # Construct the path to the module manifest (.psd1 file)
+    $moduleManifestPath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -ChildPath 'Pode.psd1'
+
+    # Import the module manifest to access its properties
+    $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath
+    return  $moduleManifest
+}
+
+
+<#
+.SYNOPSIS
+Tests if the Pode module is from the development branch.
+
+.DESCRIPTION
+The Test-PodeVersionDev function checks if the Pode module's version matches the placeholder value ('$version$'), which is used to indicate the development branch of the module. It returns $true if the version matches, indicating the module is from the development branch, and $false otherwise.
+
+.PARAMETER None
+This function does not accept any parameters.
+
+.OUTPUTS
+System.Boolean
+Returns $true if the Pode module version is '$version$', indicating the development branch. Returns $false for any other version.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '$version$' }
+PS> Test-PodeVersionDev
+
+Returns $true, indicating the development branch.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
+PS> Test-PodeVersionDev
+
+Returns $false, indicating a specific release version.
+
+.NOTES
+This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
+
+#>
+function Test-PodeVersionDev {
+    return (Get-PodeModuleManifest).ModuleVersion -eq '$version$'
+}
+
+<#
+.SYNOPSIS
+Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.
+
+.DESCRIPTION
+The `Test-PodeVersionPwshEOL` function checks the current PowerShell version against a list of versions that were either supported or EOL at the time of the Pode release. It uses the module manifest to determine which PowerShell versions are considered EOL and which are officially supported. If the current version is EOL or was not tested with the current release of Pode, the function generates a warning. This function aids in maintaining best practices for using supported PowerShell versions with Pode.
+
+.PARAMETER ReportUntested
+If specified, the function will report if the current PowerShell version was not available and thus untested at the time of the Pode release. This is useful for identifying potential compatibility issues with newer versions of PowerShell.
+
+.OUTPUTS
+A hashtable containing two keys:
+- `eol`: A boolean indicating if the current PowerShell version was EOL at the time of the Pode release.
+- `supported`: A boolean indicating if the current PowerShell version was officially supported by Pode at the time of the release.
+
+.EXAMPLE
+Test-PodeVersionPwshEOL
+
+Checks the current PowerShell version against Pode's supported and EOL versions list. Outputs a warning if the version is EOL or untested, and returns a hashtable indicating the compatibility status.
+
+.EXAMPLE
+Test-PodeVersionPwshEOL -ReportUntested
+
+Similar to the basic usage, but also reports if the current PowerShell version was untested because it was not available at the time of the Pode release.
+
+.NOTES
+This function is part of the Pode module's utilities to ensure compatibility and encourage the use of supported PowerShell versions.
+
+#>
+function Test-PodeVersionPwshEOL {
+    param(
+        [switch] $ReportUntested
+    )
+    $moduleManifest = Get-PodeModuleManifest
+    if ($moduleManifest.ModuleVersion -eq '$version$') {
+        return @{
+            eol       = $false
+            supported = $true
+        }
+    }
+
+    $psVersion = $PSVersionTable.PSVersion
+    $eolVersions = $moduleManifest.PrivateData.PwshVersions.Untested -split ','
+    $isEol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
+
+    if ($isEol) {
+        Write-PodeHost "[WARNING] Pode $(Get-PodeVersion) has not been tested on PowerShell $($PSVersionTable.PSVersion), as it is EOL." -ForegroundColor Yellow
+    }
+
+    $SupportedVersions = $moduleManifest.PrivateData.PwshVersions.Supported -split ','
+    $isSupported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
+
+    if ((! $isSupported) -and (! $isEol) -and $ReportUntested) {
+        Write-PodeHost "[WARNING] Pode $(Get-PodeVersion) has not been tested on PowerShell $($PSVersionTable.PSVersion), as it was not available when Pode was released." -ForegroundColor Yellow
+    }
+
+    return @{
+        eol       = $isEol
+        supported = $isSupported
+    }
 }

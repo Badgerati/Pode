@@ -828,11 +828,13 @@ function Invoke-PodeAuthInbuiltScriptBlock {
         $ScriptBlock,
 
         [Parameter()]
-        $UsingVariables
+        $UsingVariables,
+
+        [switch]
+        $NoSplat
     )
 
-    $_args = @(Get-PodeScriptblockArguments -ArgumentList $User -UsingVariables $UsingVariables)
-    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $_args -Return -Splat)
+    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $User -UsingVariables $UsingVariables -Return -Splat:(!$NoSplat))
 }
 
 function Get-PodeAuthWindowsLocalMethod {
@@ -1121,8 +1123,13 @@ function Invoke-PodeAuthValidation {
 
         # if the last auth succeeded, and we need all to pass, merge users/headers and return result
         if ($result.Success -and !$auth.PassOne) {
-            # invoke scriptblock
-            $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables
+            # invoke scriptblock, or use result of merge default
+            if ($null -ne $auth.ScriptBlock.Script) {
+                $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables -NoSplat
+            }
+            else {
+                $result = $results[$auth.MergeDefault]
+            }
 
             # reset default properties and return
             $result.Success = $true
@@ -1167,7 +1174,7 @@ function Test-PodeAuthValidation {
         }
 
         # run auth scheme script to parse request for data
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $auth.Scheme.Arguments -UsingVariables $auth.Scheme.ScriptBlock.UsingVariables)
+        $_args = @(Merge-PodeScriptblockArguments -ArgumentList $auth.Scheme.Arguments -UsingVariables $auth.Scheme.ScriptBlock.UsingVariables)
 
         # call inner schemes first
         if ($null -ne $auth.Scheme.InnerScheme) {
@@ -1180,7 +1187,7 @@ function Test-PodeAuthValidation {
                 })
 
             for ($i = $_inner.Length - 1; $i -ge 0; $i--) {
-                $_tmp_args = @(Get-PodeScriptblockArguments -ArgumentList $_inner[$i].Arguments -UsingVariables $_inner[$i].ScriptBlock.UsingVariables)
+                $_tmp_args = @(Merge-PodeScriptblockArguments -ArgumentList $_inner[$i].Arguments -UsingVariables $_inner[$i].ScriptBlock.UsingVariables)
 
                 $_tmp_args += , $schemes
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $_inner[$i].ScriptBlock.Script -Arguments $_tmp_args -Return -Splat)
@@ -1204,14 +1211,12 @@ function Test-PodeAuthValidation {
             $original = $result
 
             $_args = @($result) + @($auth.Arguments)
-            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $auth.UsingVariables)
-            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -Return -Splat)
+            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -UsingVariables $auth.UsingVariables -Return -Splat)
 
             # if we have user, then run post validator if present
             if ([string]::IsNullOrEmpty($result.Code) -and ($null -ne $auth.Scheme.PostValidator.Script)) {
                 $_args = @($original) + @($result) + @($auth.Scheme.Arguments)
-                $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables)
-                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -Return -Splat)
+                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables -Return -Splat)
             }
         }
 

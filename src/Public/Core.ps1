@@ -53,6 +53,9 @@ Sets the Server's root path to be the current working path - for -FilePath only.
 .PARAMETER EnablePool
 Tells Pode to configure certain RunspacePools when they're being used adhoc, such as Timers or Schedules.
 
+.PARAMETER EnableBreakpoints
+If supplied, any breakpoints created by using Wait-PodeDebugger will be enabled - or disabled if false passed explicitly, or not supplied.
+
 .EXAMPLE
 Start-PodeServer { /* logic */ }
 
@@ -122,7 +125,10 @@ function Start-PodeServer {
 
         [Parameter(ParameterSetName = 'File')]
         [switch]
-        $CurrentPath
+        $CurrentPath,
+
+        [switch]
+        $EnableBreakpoints
     )
 
     # ensure the session is clean
@@ -150,9 +156,6 @@ function Start-PodeServer {
             $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
         }
 
-        # check for scoped vars
-        $ScriptBlock = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -Skip Session, Using
-
         # create main context object
         $PodeContext = New-PodeContext `
             -ScriptBlock $ScriptBlock `
@@ -165,7 +168,8 @@ function Start-PodeServer {
             -EnablePool $EnablePool `
             -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
-            -Quiet:$Quiet
+            -Quiet:$Quiet `
+            -EnableBreakpoints:$EnableBreakpoints
 
         # set it so ctrl-c can terminate, unless serverless/iis, or disabled
         if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {
@@ -309,6 +313,9 @@ An array of default pages to display, such as 'index.html'.
 .PARAMETER DownloadOnly
 When supplied, all static content on this Route will be attached as downloads - rather than rendered.
 
+.PARAMETER FileBrowser
+When supplied, If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .PARAMETER Browse
 Open the web server's default endpoint in your default browser.
 
@@ -372,6 +379,9 @@ function Start-PodeStaticServer {
         $DownloadOnly,
 
         [switch]
+        $FileBrowser,
+
+        [switch]
         $Browse
     )
 
@@ -393,8 +403,26 @@ function Start-PodeStaticServer {
         }
 
         # add the static route
-        Add-PodeStaticRoute -Path $Path -Source (Get-PodeServerPath) -Defaults $Defaults -DownloadOnly:$DownloadOnly
+        Add-PodeStaticRoute -Path $Path -Source (Get-PodeServerPath) -Defaults $Defaults -DownloadOnly:$DownloadOnly -FileBrowser:$FileBrowser
     }
+}
+
+<#
+.SYNOPSIS
+A default server secret that can be for signing values like Session, Cookies, or SSE IDs.
+
+.DESCRIPTION
+A default server secret that can be for signing values like Session, Cookies, or SSE IDs. This secret is regenerated
+on every server start and restart.
+
+.EXAMPLE
+$secret = Get-PodeServerDefaultSecret
+#>
+function Get-PodeServerDefaultSecret {
+    [CmdletBinding()]
+    param()
+
+    return $PodeContext.Server.DefaultSecret
 }
 
 <#
@@ -736,6 +764,10 @@ If supplied, the endpoint created will be returned.
 .PARAMETER LookupHostname
 If supplied, a supplied Hostname will have its IP Address looked up from host file or DNS.
 
+.PARAMETER DualMode
+If supplied, this endpoint will listen on both the IPv4 and IPv6 versions of the supplied -Address.
+For IPv6, this will only work if the IPv6 address can convert to a valid IPv4 address.
+
 .PARAMETER Default
 If supplied, this endpoint will be the default one used for internally generating URLs.
 
@@ -756,6 +788,7 @@ Add-PodeEndpoint -Address live.pode.com -Protocol Https -CertificateThumbprint '
 #>
 function Add-PodeEndpoint {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
+    [OutputType([hashtable])]
     param(
         [Parameter()]
         [string]
@@ -858,6 +891,9 @@ function Add-PodeEndpoint {
         $LookupHostname,
 
         [switch]
+        $DualMode,
+
+        [switch]
         $Default
     )
 
@@ -939,6 +975,7 @@ function Add-PodeEndpoint {
     $obj = @{
         Name         = $Name
         Description  = $Description
+        DualMode     = $DualMode
         Address      = $null
         RawAddress   = $null
         Port         = $null
@@ -974,13 +1011,15 @@ function Add-PodeEndpoint {
     }
 
     # set the ip for the context (force to localhost for IIS)
-    $obj.Address = (Get-PodeIPAddress $_endpoint.Host)
+    $obj.Address = Get-PodeIPAddress $_endpoint.Host -DualMode:$DualMode
     $obj.IsIPAddress = [string]::IsNullOrWhiteSpace($obj.HostName)
 
     if ($obj.IsIPAddress) {
-        $obj.FriendlyName = 'localhost'
         if (!(Test-PodeIPAddressLocalOrAny -IP $obj.Address)) {
             $obj.FriendlyName = "$($obj.Address)"
+        }
+        else {
+            $obj.FriendlyName = 'localhost'
         }
     }
 
@@ -1221,4 +1260,113 @@ function Get-PodeEndpoint {
 
     # return
     return $endpoints
+}
+
+<#
+.SYNOPSIS
+Sets the path for a specified default folder type in the Pode server context.
+
+.DESCRIPTION
+This function configures the path for one of the Pode server's default folder types: Views, Public, or Errors.
+It updates the server's configuration to reflect the new path for the specified folder type.
+The function first checks if the provided path exists and is a directory;
+if so, it updates the `Server.DefaultFolders` dictionary with the new path.
+If the path does not exist or is not a directory, the function throws an error.
+
+The purpose of this function is to allow dynamic configuration of the server's folder paths, which can be useful during server setup or when altering the server's directory structure at runtime.
+
+.PARAMETER Type
+The type of the default folder to set the path for. Must be one of 'Views', 'Public', or 'Errors'.
+This parameter determines which default folder's path is being set.
+
+.PARAMETER Path
+The new file system path for the specified default folder type. This path must exist and be a directory; otherwise, an exception is thrown.
+
+.EXAMPLE
+Set-PodeDefaultFolder -Type 'Views' -Path 'C:\Pode\Views'
+
+This example sets the path for the server's default 'Views' folder to 'C:\Pode\Views', assuming this path exists and is a directory.
+
+.EXAMPLE
+Set-PodeDefaultFolder -Type 'Public' -Path 'C:\Pode\Public'
+
+This example sets the path for the server's default 'Public' folder to 'C:\Pode\Public'.
+
+#>
+function Set-PodeDefaultFolder {
+
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [ValidateSet('Views', 'Public', 'Errors')]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [string]
+        $Path
+    )
+    if (Test-Path -Path $Path -PathType Container) {
+        $PodeContext.Server.DefaultFolders[$Type] = $Path
+    }
+    else {
+        throw "Folder $Path doesn't exist"
+    }
+}
+
+<#
+.SYNOPSIS
+Retrieves the path of a specified default folder type from the Pode server context.
+
+.DESCRIPTION
+This function returns the path for one of the Pode server's default folder types: Views, Public, or Errors. It accesses the server's configuration stored in the `$PodeContext` variable and retrieves the path for the specified folder type from the `DefaultFolders` dictionary. This function is useful for scripts or modules that need to dynamically access server resources based on the server's current configuration.
+
+.PARAMETER Type
+The type of the default folder for which to retrieve the path. The valid options are 'Views', 'Public', or 'Errors'. This parameter determines which folder's path will be returned by the function.
+
+.EXAMPLE
+$path = Get-PodeDefaultFolder -Type 'Views'
+
+This example retrieves the current path configured for the server's 'Views' folder and stores it in the `$path` variable.
+
+.EXAMPLE
+$path = Get-PodeDefaultFolder -Type 'Public'
+
+This example retrieves the current path configured for the server's 'Public' folder.
+
+.OUTPUTS
+String. The file system path of the specified default folder.
+#>
+function Get-PodeDefaultFolder {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param (
+        [Parameter()]
+        [ValidateSet('Views', 'Public', 'Errors')]
+        [string]
+        $Type
+    )
+
+    return $PodeContext.Server.DefaultFolders[$Type]
+}
+
+<#
+.SYNOPSIS
+Attaches a breakpoint which can be used for debugging.
+
+.DESCRIPTION
+Attaches a breakpoint which can be used for debugging.
+
+.EXAMPLE
+Wait-PodeDebugger
+#>
+function Wait-PodeDebugger {
+    [CmdletBinding()]
+    param()
+
+    if (!$PodeContext.Server.Debug.Breakpoints.Enabled) {
+        return
+    }
+
+    Wait-Debugger
 }

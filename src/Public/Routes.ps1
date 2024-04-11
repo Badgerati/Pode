@@ -258,10 +258,6 @@ function Add-PodeRoute {
     $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindEndpoints.Route) {
-        $PodeContext.Server.FindEndpoints.Route = !(Test-PodeIsEmpty $EndpointName)
-    }
-
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
 
     # get default route IfExists state
@@ -476,6 +472,12 @@ One or more optional Scopes that will be authorised to access this Route, when u
 .PARAMETER User
 One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
+.PARAMETER FileBrowser
+If supplied, when the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
+.PARAMETER RedirectToDefault
+If supplied, the user will be redirected to the default page if found instead of the page being rendered as the folder path.
+
 .EXAMPLE
 Add-PodeStaticRoute -Path '/assets' -Source './assets'
 
@@ -484,6 +486,9 @@ Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html')
 
 .EXAMPLE
 Add-PodeStaticRoute -Path '/installers' -Source './exes' -DownloadOnly
+
+.EXAMPLE
+Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html') -RedirectToDefault
 #>
 function Add-PodeStaticRoute {
     [CmdletBinding()]
@@ -558,7 +563,13 @@ function Add-PodeStaticRoute {
         $DownloadOnly,
 
         [switch]
-        $PassThru
+        $FileBrowser,
+
+        [switch]
+        $PassThru,
+
+        [switch]
+        $RedirectToDefault
     )
 
     # check if we have any route group info defined
@@ -611,6 +622,14 @@ function Add-PodeStaticRoute {
             $DownloadOnly = $RouteGroup.DownloadOnly
         }
 
+        if ($RouteGroup.FileBrowser) {
+            $FileBrowser = $RouteGroup.FileBrowser
+        }
+
+        if ($RouteGroup.RedirectToDefault) {
+            $RedirectToDefault = $RouteGroup.RedirectToDefault
+        }
+
         if ($RouteGroup.IfExists -ine 'default') {
             $IfExists = $RouteGroup.IfExists
         }
@@ -654,10 +673,6 @@ function Add-PodeStaticRoute {
     $Path = Resolve-PodePlaceholders -Path $Path
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindEndpoints.Route) {
-        $PodeContext.Server.FindEndpoints.Route = !(Test-PodeIsEmpty $EndpointName)
-    }
-
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
 
     # get default route IfExists state
@@ -698,6 +713,10 @@ function Add-PodeStaticRoute {
     # setup default static files
     if ($null -eq $Defaults) {
         $Defaults = Get-PodeStaticRouteDefaults
+    }
+
+    if (!$RedirectToDefault) {
+        $RedirectToDefault = $PodeContext.Server.Web.Static.RedirectToDefault
     }
 
     # convert any middleware into valid hashtables
@@ -744,30 +763,33 @@ function Add-PodeStaticRoute {
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
             @{
-                Source           = $Source
-                Path             = $Path
-                Method           = $Method
-                Defaults         = $Defaults
-                Middleware       = $Middleware
-                Authentication   = $Authentication
-                Access           = $Access
-                AccessMeta       = @{
+                Source            = $Source
+                Path              = $Path
+                Method            = $Method
+                Defaults          = $Defaults
+                RedirectToDefault = $RedirectToDefault
+                Middleware        = $Middleware
+                Authentication    = $Authentication
+                Access            = $Access
+                AccessMeta        = @{
                     Role   = $Role
                     Group  = $Group
                     Scope  = $Scope
                     User   = $User
                     Custom = $CustomAccess
                 }
-                Endpoint         = @{
+                Endpoint          = @{
                     Protocol = $_endpoint.Protocol
                     Address  = $_endpoint.Address.Trim()
                     Name     = $_endpoint.Name
                 }
-                ContentType      = $ContentType
-                TransferEncoding = $TransferEncoding
-                ErrorType        = $ErrorContentType
-                Download         = $DownloadOnly
-                OpenApi          = @{
+                ContentType       = $ContentType
+                TransferEncoding  = $TransferEncoding
+                ErrorType         = $ErrorContentType
+                Download          = $DownloadOnly
+                IsStatic          = $true
+                FileBrowser       = $FileBrowser.isPresent
+                OpenApi           = @{
                     Path           = $OpenApiPath
                     Responses      = @{
                         '200'     = @{ description = 'OK' }
@@ -777,8 +799,7 @@ function Add-PodeStaticRoute {
                     RequestBody    = @{}
                     Authentication = @()
                 }
-                IsStatic         = $true
-                Metrics          = @{
+                Metrics           = @{
                     Requests = @{
                         Total       = 0
                         StatusCodes = @{}
@@ -883,10 +904,6 @@ function Add-PodeSignalRoute {
     $Path = Update-PodeRouteSlashes -Path $Path
 
     # get endpoints from name
-    if (!$PodeContext.Server.FindEndpoints.Route) {
-        $PodeContext.Server.FindEndpoints.Route = !(Test-PodeIsEmpty $EndpointName)
-    }
-
     $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
 
     # get default route IfExists state
@@ -1170,8 +1187,7 @@ function Add-PodeRouteGroup {
     }
 
     # add routes
-    $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -UsingVariables $usingVars -Splat -NoNewClosure
 }
 
 <#
@@ -1220,6 +1236,9 @@ Specifies what action to take when a Static Route already exists. (Default: Defa
 .PARAMETER AllowAnon
 If supplied, the Static Routes will allow anonymous access for non-authenticated users.
 
+.PARAMETER FileBrowser
+When supplied, If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .PARAMETER DownloadOnly
 When supplied, all static content on the Routes will be attached as downloads - rather than rendered.
 
@@ -1234,6 +1253,9 @@ One or more optional Scopes that will be authorised to access this Route, when u
 
 .PARAMETER User
 One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER RedirectToDefault
+If supplied, the user will be redirected to the default page if found instead of the page being rendered as the folder path.
 
 .EXAMPLE
 Add-PodeStaticRouteGroup -Path '/static' -Routes { Add-PodeStaticRoute -Path '/images' -Etc }
@@ -1312,7 +1334,13 @@ function Add-PodeStaticRouteGroup {
         $AllowAnon,
 
         [switch]
-        $DownloadOnly
+        $FileBrowser,
+
+        [switch]
+        $DownloadOnly,
+
+        [switch]
+        $RedirectToDefault
     )
 
     if (Test-PodeIsEmpty $Routes) {
@@ -1376,6 +1404,14 @@ function Add-PodeStaticRouteGroup {
             $DownloadOnly = $RouteGroup.DownloadOnly
         }
 
+        if ($RouteGroup.FileBrowser) {
+            $FileBrowser = $RouteGroup.FileBrowser
+        }
+
+        if ($RouteGroup.RedirectToDefault) {
+            $RedirectToDefault = $RouteGroup.RedirectToDefault
+        }
+
         if ($RouteGroup.IfExists -ine 'default') {
             $IfExists = $RouteGroup.IfExists
         }
@@ -1402,20 +1438,22 @@ function Add-PodeStaticRouteGroup {
     }
 
     $RouteGroup = @{
-        Path             = $Path
-        Source           = $Source
-        Middleware       = $Middleware
-        EndpointName     = $EndpointName
-        ContentType      = $ContentType
-        TransferEncoding = $TransferEncoding
-        Defaults         = $Defaults
-        ErrorContentType = $ErrorContentType
-        Authentication   = $Authentication
-        Access           = $Access
-        AllowAnon        = $AllowAnon
-        DownloadOnly     = $DownloadOnly
-        IfExists         = $IfExists
-        AccessMeta       = @{
+        Path              = $Path
+        Source            = $Source
+        Middleware        = $Middleware
+        EndpointName      = $EndpointName
+        ContentType       = $ContentType
+        TransferEncoding  = $TransferEncoding
+        Defaults          = $Defaults
+        RedirectToDefault = $RedirectToDefault
+        ErrorContentType  = $ErrorContentType
+        Authentication    = $Authentication
+        Access            = $Access
+        AllowAnon         = $AllowAnon
+        DownloadOnly      = $DownloadOnly
+        FileBrowser       = $FileBrowser
+        IfExists          = $IfExists
+        AccessMeta        = @{
             Role   = $Role
             Group  = $Group
             Scope  = $Scope
@@ -1425,8 +1463,7 @@ function Add-PodeStaticRouteGroup {
     }
 
     # add routes
-    $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -UsingVariables $usingVars -Splat -NoNewClosure
 }
 
 
@@ -1506,8 +1543,7 @@ function Add-PodeSignalRouteGroup {
     }
 
     # add routes
-    $_args = @(Get-PodeScriptblockArguments -UsingVariables $usingVars)
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -Arguments $_args -Splat
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Routes -UsingVariables $usingVars -Splat -NoNewClosure
 }
 
 <#
@@ -2140,10 +2176,10 @@ function Add-PodePage {
 
                 # invoke the function (optional splat data)
                 if (Test-PodeIsEmpty $data) {
-                    $result = (. $script)
+                    $result = Invoke-PodeScriptBlock -ScriptBlock $script -Return
                 }
                 else {
-                    $result = (. $script @data)
+                    $result = Invoke-PodeScriptBlock -ScriptBlock $script -Arguments $data -Return
                 }
 
                 # if we have a result, convert it to html

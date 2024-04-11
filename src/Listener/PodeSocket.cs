@@ -13,17 +13,16 @@ namespace Pode
 {
     public class PodeSocket : PodeProtocol, IDisposable
     {
-        public IPAddress IPAddress { get; private set; }
+        public string Name { get; private set; }
         public List<string> Hostnames { get; private set; }
-        public int Port { get; private set; }
-        public IPEndPoint Endpoint { get; private set; }
+        public IList<PodeEndpoint> Endpoints { get; private set; }
         public X509Certificate Certificate { get; private set; }
         public bool AllowClientCertificate { get; private set; }
         public SslProtocols Protocols { get; private set; }
         public PodeTlsMode TlsMode { get; private set; }
-        public Socket Socket { get; private set; }
         public string AcknowledgeMessage { get; set; }
         public bool CRLFMessageEnd { get; set; }
+        public bool DualMode { get; private set; }
 
         private ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
         private ConcurrentQueue<SocketAsyncEventArgs> ReceiveConnections;
@@ -33,41 +32,50 @@ namespace Pode
 
         public bool IsSsl
         {
-            get => (Certificate != default(X509Certificate));
+            get => Certificate != default(X509Certificate);
         }
 
+        private int _receiveTimeout;
         public int ReceiveTimeout
         {
-            get => Socket.ReceiveTimeout;
-            set => Socket.ReceiveTimeout = value;
+            get => _receiveTimeout;
+            set
+            {
+                _receiveTimeout = value;
+                foreach (var ep in Endpoints)
+                {
+                    ep.ReceiveTimeout = value;
+                }
+            }
         }
 
         public bool HasHostnames => Hostnames.Any();
 
         public string Hostname
         {
-            get => (HasHostnames ? Hostnames[0] : IPAddress.ToString());
+            get => HasHostnames ? Hostnames[0] : Endpoints[0].IPAddress.ToString();
         }
 
-        public PodeSocket(IPAddress ipAddress, int port, SslProtocols protocols, PodeProtocolType type, X509Certificate certificate = null, bool allowClientCertificate = false, PodeTlsMode tlsMode = PodeTlsMode.Implicit)
+        public PodeSocket(string name, IPAddress[] ipAddress, int port, SslProtocols protocols, PodeProtocolType type, X509Certificate certificate = null, bool allowClientCertificate = false, PodeTlsMode tlsMode = PodeTlsMode.Implicit, bool dualMode = false)
             : base(type)
         {
-            IPAddress = ipAddress;
-            Port = port;
+            Name = name;
             Certificate = certificate;
             AllowClientCertificate = allowClientCertificate;
             TlsMode = tlsMode;
             Protocols = protocols;
             Hostnames = new List<string>();
-            Endpoint = new IPEndPoint(ipAddress, port);
+            DualMode = dualMode;
 
             AcceptConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
             ReceiveConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
             PendingSockets = new Dictionary<string, Socket>();
+            Endpoints = new List<PodeEndpoint>();
 
-            Socket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            Socket.ReceiveTimeout = 100;
-            Socket.NoDelay = true;
+            foreach (var addr in ipAddress)
+            {
+                Endpoints.Add(new PodeEndpoint(this, addr, port, dualMode));
+            }
         }
 
         public void BindListener(PodeListener listener)
@@ -77,25 +85,39 @@ namespace Pode
 
         public void Listen()
         {
-            Socket.Bind(Endpoint);
-            Socket.Listen(int.MaxValue);
+            foreach (var ep in Endpoints)
+            {
+                ep.Listen();
+            }
         }
 
         public void Start()
         {
-            var args = default(SocketAsyncEventArgs);
-            if (!AcceptConnections.TryDequeue(out args))
+            foreach (var ep in Endpoints)
+            {
+                StartEndpoint(ep);
+            }
+        }
+
+        private void StartEndpoint(PodeEndpoint endpoint)
+        {
+            if (endpoint.IsDisposed)
+            {
+                return;
+            }
+
+            if (!AcceptConnections.TryDequeue(out SocketAsyncEventArgs args))
             {
                 args = NewAcceptConnection();
             }
 
-            args.AcceptSocket = default(Socket);
-            args.UserToken = this;
-            var raised = false;
+            args.AcceptSocket = default;
+            args.UserToken = endpoint;
+            bool raised;
 
             try
             {
-                raised = Socket.AcceptAsync(args);
+                raised = endpoint.AcceptAsync(args);
             }
             catch (ObjectDisposedException)
             {
@@ -131,7 +153,7 @@ namespace Pode
         private void StartReceive(SocketAsyncEventArgs args)
         {
             args.SetBuffer(new byte[0], 0, 0);
-            var raised = false;
+            bool raised;
 
             try
             {
@@ -158,11 +180,11 @@ namespace Pode
         {
             // get details
             var accepted = args.AcceptSocket;
-            var socket = (PodeSocket)args.UserToken;
+            var endpoint = (PodeEndpoint)args.UserToken;
             var error = args.SocketError;
 
             // start the socket again
-            socket.Start();
+            StartEndpoint(endpoint);
 
             // close socket if not successful, or if listener is stopped - close now!
             if ((accepted == default(Socket)) || (error != SocketError.Success) || (!Listener.IsConnected))
@@ -229,8 +251,8 @@ namespace Pode
                 context.RenewTimeoutToken();
                 Task.Factory.StartNew(() => context.Receive(), context.ContextTimeoutToken.Token);
             }
-            catch (OperationCanceledException) {}
-            catch (IOException) {}
+            catch (OperationCanceledException) { }
+            catch (IOException) { }
             catch (AggregateException aex)
             {
                 PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
@@ -340,9 +362,7 @@ namespace Pode
 
         private SocketAsyncEventArgs GetReceiveConnection()
         {
-            var args = default(SocketAsyncEventArgs);
-
-            if (!ReceiveConnections.TryDequeue(out args))
+            if (!ReceiveConnections.TryDequeue(out SocketAsyncEventArgs args))
             {
                 args = NewReceiveConnection();
             }
@@ -397,7 +417,13 @@ namespace Pode
 
         public void Dispose()
         {
-            CloseSocket(Socket);
+            // close endpoints
+            foreach (var ep in Endpoints)
+            {
+                ep.Dispose();
+            }
+
+            Endpoints.Clear();
 
             // close receiving contexts/sockets
             try
@@ -407,6 +433,8 @@ namespace Pode
                 {
                     CloseSocket(_sockets[i]);
                 }
+
+                PendingSockets.Clear();
             }
             catch (Exception ex)
             {
@@ -436,7 +464,6 @@ namespace Pode
             // dispose
             socket.Close();
             socket.Dispose();
-            socket = default(Socket);
         }
 
         private void ClearSocketAsyncEvent(SocketAsyncEventArgs e)
@@ -448,7 +475,18 @@ namespace Pode
         public new bool Equals(object obj)
         {
             var _socket = (PodeSocket)obj;
-            return (Endpoint.ToString() == _socket.Endpoint.ToString() && Port == _socket.Port);
+            foreach (var ep in Endpoints)
+            {
+                foreach (var _oEp in _socket.Endpoints)
+                {
+                    if (!ep.Equals(_oEp))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }

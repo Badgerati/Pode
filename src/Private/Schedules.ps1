@@ -169,6 +169,7 @@ function Invoke-PodeInternalScheduleLogic {
             Event = @{
                 Lockable = $PodeContext.Threading.Lockables.Global
                 Sender   = $Schedule
+                Metadata = @{}
             }
         }
 
