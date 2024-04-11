@@ -2,7 +2,7 @@
 
 A Task in Pode is a script that you can later invoke either asynchronously, or synchronously. They can be invoked many times, and they also support returning values from them for later use.
 
-Similar to [Schedules](../Schedules), Tasks also run in their own separate runspaces; meaning you can have long or short running tasks. By default up to a maximum of 2 tasks can run concurrently, but this can be changed by using [`Set-PodeTaskConcurrency`](../../Functions/Tasks/Set-PodeTaskConcurrency).
+Similar to [Schedules](../Schedules), Tasks also run in their own separate runspaces; meaning you can have long or short running tasks. By default up to a maximum of 2 tasks can run concurrently, but this can be changed by using [`Set-PodeTaskConcurrency`](../../Functions/Tasks/Set-PodeTaskConcurrency). When more tasks are invoked than can be run concurrently, tasks will be added to the task queue and will run once there is available resource in the thread pool.
 
 Behind the scenes there is a a Timer created that will automatically clean-up any completed tasks. Any task that has been completed for 1+ minutes will be disposed of to free up resources - there are functions which will let you clean-up tasks more quickly.
 
@@ -43,11 +43,23 @@ Start-PodeServer -EnablePool Tasks {
 
 You can supply custom arguments to your tasks by using the `-ArgumentList` parameter. Similar to schedules, for tasks the `-ArgumentList` is a hashtable; this is done because parameters to the `-ScriptBlock` are splatted in, and the parameter names are literal.
 
-For example, the first parameter to a task is always `$Event` - this contains the `.Lockable` object. Other parameters come from any Key/Values contained with the optional `-ArgumentList`:
+There is always a parameter added to each task invocation in the `-Event` argument - this contains the `.Lockable` object. You can safely ignore/leave the parameter unbound if you do not need it. Other parameters come from any Key/Values contained with the optional `-ArgumentList`:
 
 ```powershell
 Add-PodeTask -Name 'Example' -ArgumentList @{ Name = 'Rick'; Environment = 'Multiverse' } -ScriptBlock {
     param($Event, $Name, $Environment)
+}
+```
+
+Tasks parameters **must** be bound in the param block in order to be used, but the values for the paramters can be set through the `-ArgumentList` hashtable parameter in either the Add-PodeTask definition or when invoking the task. The following snippet would populate the parameters to the task with the same values as the above example but the `-ArgumentList` parameter is populated during invocation. Note that Keys in the `-ArgumentList` hashtable parameter set during invocation override the same Keys set during task creation: 
+
+```powershell
+Add-PodeTask -Name 'Example' -ScriptBlock {
+    param($Event, $Name, $Environment)
+}
+
+Add-PodeRoute -Method Get -Path '/invoke-task' -ScriptBlock {
+    Invoke-PodeTask -Name 'example' -ArgumentList @{ Name = 'Rick'; Environment = 'Multiverse' }
 }
 ```
 
