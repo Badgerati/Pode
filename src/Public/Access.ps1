@@ -302,18 +302,23 @@ function Add-PodeAccessCustom {
         $Value
     )
 
-    $routes = @()
-
-    $routes += $Route
-
-    foreach ($r in $routes) {
-        if ($r.AccessMeta.Custom.ContainsKey($Name)) {
-            throw "Route '[$($r.Method)] $($r.Path)' already contains Custom Access with name '$($Name)'"
-        }
-
-        $r.AccessMeta.Custom[$Name] = $Value
+    begin {
+        $routes = @()
     }
 
+    process {
+        $routes += $Route
+    }
+
+    end {
+        foreach ($r in $routes) {
+            if ($r.AccessMeta.Custom.ContainsKey($Name)) {
+                throw "Route '[$($r.Method)] $($r.Path)' already contains Custom Access with name '$($Name)'"
+            }
+
+            $r.AccessMeta.Custom[$Name] = $Value
+        }
+    }
 }
 
 <#

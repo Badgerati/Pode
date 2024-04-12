@@ -269,6 +269,10 @@ function Add-PodeRoute {
         if ($null -ne $RouteGroup.AccessMeta.Custom) {
             $CustomAccess = $RouteGroup.AccessMeta.Custom
         }
+
+        if ($null -ne $RouteGroup.OADefinitionTag ) {
+            $OADefinitionTag = $RouteGroup.OADefinitionTag
+        }
     }
 
     # var for new routes created
@@ -1086,6 +1090,11 @@ One or more optional Users that will be authorised to access this Route, when us
 .PARAMETER AllowAnon
 If supplied, the Routes will allow anonymous access for non-authenticated users.
 
+.PARAMETER OADefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeRouteGroup -Path '/api' -Routes { Add-PodeRoute -Path '/route1' -Etc }
 #>
@@ -1152,7 +1161,10 @@ function Add-PodeRouteGroup {
         $User,
 
         [switch]
-        $AllowAnon
+        $AllowAnon,
+
+        [string[]]
+        $OADefinitionTag
     )
 
     if (Test-PodeIsEmpty $Routes) {
@@ -1228,6 +1240,10 @@ function Add-PodeRouteGroup {
             $CustomAccess = $RouteGroup.AccessMeta.Custom
         }
 
+        if ($null -ne $RouteGroup.OADefinitionTag ) {
+            $OADefinitionTag = $RouteGroup.OADefinitionTag
+        }
+
     }
 
     $RouteGroup = @{
@@ -1241,6 +1257,7 @@ function Add-PodeRouteGroup {
         Access           = $Access
         AllowAnon        = $AllowAnon
         IfExists         = $IfExists
+        OADefinitionTag  = $OADefinitionTag
         AccessMeta       = @{
             Role   = $Role
             Group  = $Group

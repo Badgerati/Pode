@@ -65,26 +65,29 @@
         .tabcontent {
             display: none;
             border-top: none;
+            margin-top: -10px;
         }
 
         .header-container {
-    display: flex;
-    align-items: center; /* This ensures vertical alignment */
-}
+            display: flex;
+            align-items: center;
+            /* This ensures vertical alignment */
+        }
 
-.header-container h3 {
-    margin-right: 20px; /* Adjust as needed for spacing */
-}
+        .header-container h3 {
+            margin-right: 20px;
+            /* Adjust as needed for spacing */
+        }
 
-.header-container button {
-    margin-right: 10px; /* Adjust as needed for spacing between buttons */
-}
+        .header-container button {
+            margin-right: 10px;
+            /* Adjust as needed for spacing between buttons */
+        }
 
-/* Optional: Remove margin from the last button */
-.header-container button:last-child {
-    margin-right: 0;
-}
-
+        /* Optional: Remove margin from the last button */
+        .header-container button:last-child {
+            margin-right: 0;
+        }
     </style>
 </head>
 
@@ -126,15 +129,15 @@
 
     </ul>
 
-<div class="header-container">
-    <h3>OpenAPI Definition</h3>
-    <button id="copyButton" class="copy-button" onclick="copyToClipboard()">Copy</button>
-    <button id="editButton" class="copy-button" style="display: none;">Edit</button>
-</div>
+    <div class="header-container">
+        <h3>OpenAPI Definition</h3>
+        <button id="copyButton" class="copy-button" onclick="copyToClipboard()">Copy</button>
+        <button id="editButton" class="copy-button" style="display: none;">Edit</button>
+    </div>
 
     <div class="tab">
-        <button class="tablinks" onclick="openTab(event, 'JSON')">JSON</button>
-        <button class="tablinks" onclick="openTab(event, 'YAML')">YAML</button>
+        <button class="tablinks active" onclick="openTab(event, 'JSON',true)">JSON</button>
+        <button class="tablinks" onclick="openTab(event, 'YAML',true)">YAML</button>
     </div>
     <!-- Tab content -->
     <div id="JSON" class="tabcontent">
@@ -168,12 +171,12 @@
             document.getElementById("stoplight-link").style.display = enableStopLight ? "list-item" : "none";
             document.getElementById("explorer-link").style.display = enableExplorer ? "list-item" : "none";
             document.getElementById("rapipdf-link").style.display = enableRapiPdf ? "list-item" : "none";
-            if (enableSwaggerEditor){
-                document.getElementById('editButton').style.display= "block";
-            document.getElementById('editButton').addEventListener('click', function() {
-                       window.open("$($data.editor_path)", '_blank');
-             });
-           }
+            if (enableSwaggerEditor) {
+                document.getElementById('editButton').style.display = "block";
+                document.getElementById('editButton').addEventListener('click', function() {
+                    window.open("$($data.editor_path)", '_blank');
+                });
+            }
         }
 
 
@@ -209,13 +212,16 @@
         }
 
 
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
+            // Load JSON content when the page is loaded
+            loadOAContent('json');
             // Add a click event listener to the copy button
             document.getElementById("copyButton").addEventListener("click", copyToClipboard);
+            openTab(event, 'JSON',false)
         })
 
 
-        function openTab(evt, tabName) {
+        function openTab(evt, tabName, reset) {
             // Declare all variables
             var i, tabcontent, tablinks;
 
@@ -224,11 +230,12 @@
             for (i = 0; i < tabcontent.length; i++) {
                 tabcontent[i].style.display = "none";
             }
-
-            // Get all elements with class="tablinks" and remove the class "active"
-            tablinks = document.getElementsByClassName("tablinks");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            if (reset) {
+                // Get all elements with class="tablinks" and remove the class "active"
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
             }
 
             // Show the current tab, and add an "active" class to the button that opened the tab
@@ -262,7 +269,7 @@
                 });
         }
         // Call the functions when the page loads
-        window.onload = function () {
+        window.onload = function() {
             updateLinks();
             loadOAContent('json');
             loadOAContent('yaml');

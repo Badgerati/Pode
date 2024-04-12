@@ -1732,7 +1732,7 @@ function Enable-PodeOAViewer {
             OpenApi           = "$($OpenApiUrl)?format=yaml"
             DarkMode          = $DarkMode
             DefinitionTag     = $DefinitionTag
-            SwaggerEditorDist = "$Path/swagger-editor-dist"
+            SwaggerEditorDist = 'https://unpkg.com/swagger-editor-dist@4'
         }
         Add-PodeRoute -Method Get -Path $Path `
             -Middleware $Middleware -ArgumentList $meta `
@@ -1749,9 +1749,6 @@ function Enable-PodeOAViewer {
             $podeRoot = Get-PodeModuleMiscPath
             Write-PodeFileResponseInternal -Path ([System.IO.Path]::Combine($podeRoot, 'default-swagger-editor.html.pode')) -Data $Data
         }
-
-        $swaggerEditorPath = Join-Path -Path $(Get-PodeModuleMiscPath) -ChildPath 'swagger-editor-dist'
-        Add-PodeStaticRoute -Path  $meta.SwaggerEditorDist -Source $swaggerEditorPath -EndpointName $EndpointName
 
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.viewer['editor'] = $Path
     }

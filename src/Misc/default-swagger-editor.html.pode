@@ -45,7 +45,7 @@
 
 <body>
   <div id="swagger-editor"></div>
-  <script src="$($data.SwaggerEditorDist)/swagger-editor-bundle.js"> </script>
+  <script src="$($data.SwaggerEditorDist)/swagger-editor-bundle.js" crossorigin> </script>
   <script src="$($data.SwaggerEditorDist)/swagger-editor-standalone-preset.js"> </script>
   <script>
   window.onload = function() {
