@@ -192,7 +192,7 @@ function Find-PodeStaticRoute {
             $file = (Protect-PodeValue -Value $Matches['file'] -Default ([string]::Empty))
         }
 
-        $fileInfo = Get-Item -Path ([System.IO.Path]::Combine($found.Source, $file)) -Force -ErrorAction Continue
+        $fileInfo = Get-Item -Path ([System.IO.Path]::Combine($found.Source, $file)) -Force -ErrorAction Ignore
         #if $file doesn't exist return $null
         if ($null -eq $fileInfo) {
             return $null
@@ -201,7 +201,7 @@ function Find-PodeStaticRoute {
         # if there's no file, we need to check defaults
         if (!$found.Download -and $fileInfo.PSIsContainer -and (Get-PodeCount @($found.Defaults)) -gt 0) {
             foreach ($def in $found.Defaults) {
-                $fileInfoDefaultFile = Get-Item -Path ([System.IO.Path]::Combine($fileInfo.FullName, $def)) -Force -ErrorAction Continue
+                $fileInfoDefaultFile = Get-Item -Path ([System.IO.Path]::Combine($fileInfo.FullName, $def)) -Force -ErrorAction Ignore
                 if ($fileInfoDefaultFile) {
                     $file = $fileInfoDefaultFile.FullName
                     $isDefault = $true
@@ -696,8 +696,8 @@ function Get-PodeRouteIfExistsPreference {
     }
 
     # from Use-PodeRoute
-    if (![string]::IsNullOrWhiteSpace($RouteIfExists) -and ($RouteIfExists -ine 'default')) {
-        return $RouteIfExists
+    if (![string]::IsNullOrWhiteSpace($script:RouteIfExists) -and ($script:RouteIfExists -ine 'default')) {
+        return $script:RouteIfExists
     }
 
     # global preference

@@ -30,7 +30,8 @@ function Get-PodeAuthBasicType {
         # decode the auth header
         try {
             $enc = [System.Text.Encoding]::GetEncoding($options.Encoding)
-        } catch {
+        }
+        catch {
             return @{
                 Message = 'Invalid encoding specified for Authorization'
                 Code    = 400
@@ -39,7 +40,8 @@ function Get-PodeAuthBasicType {
 
         try {
             $decoded = $enc.GetString([System.Convert]::FromBase64String($atoms[1]))
-        } catch {
+        }
+        catch {
             return @{
                 Message = 'Invalid Base64 string found in Authorization header'
                 Code    = 400
@@ -135,7 +137,8 @@ function Get-PodeAuthOAuth2Type {
                 # POST the tokenUrl
                 try {
                     $result = Invoke-RestMethod -Method Post -Uri $options.Urls.Token -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
-                } catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
+                }
+                catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
                     $response = Read-PodeWebExceptionDetails -ErrorRecord $_
                     $result = ($response.Body | ConvertFrom-Json)
                 }
@@ -153,7 +156,8 @@ function Get-PodeAuthOAuth2Type {
                 if (![string]::IsNullOrWhiteSpace($options.Urls.User.Url)) {
                     try {
                         $user = Invoke-RestMethod -Method $options.Urls.User.Method -Uri $options.Urls.User.Url -Headers @{ Authorization = "Bearer $($result.access_token)" }
-                    } catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
+                    }
+                    catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
                         $response = Read-PodeWebExceptionDetails -ErrorRecord $_
                         $user = ($response.Body | ConvertFrom-Json)
                     }
@@ -165,19 +169,23 @@ function Get-PodeAuthOAuth2Type {
                             IsErrored = $true
                         }
                     }
-                } elseif (![string]::IsNullOrWhiteSpace($result.id_token)) {
+                }
+                elseif (![string]::IsNullOrWhiteSpace($result.id_token)) {
                     try {
                         $user = ConvertFrom-PodeJwt -Token $result.id_token -IgnoreSignature
-                    } catch {
+                    }
+                    catch {
                         $user = @{ Provider = 'OAuth2' }
                     }
-                } else {
+                }
+                else {
                     $user = @{ Provider = 'OAuth2' }
                 }
 
                 # return the user for the validator
                 return @($user, $result.access_token, $result.refresh_token, $result)
-            } finally {
+            }
+            finally {
                 if ($null -ne $WebEvent.Session.Data) {
                     # clear state
                     $WebEvent.Session.Data.Remove('__pode_oauth_state__')
@@ -228,7 +236,8 @@ function Get-PodeAuthOAuth2Type {
             $url = $options.Urls.Authorise
             if (!$url.Contains('?')) {
                 $url += '?'
-            } else {
+            }
+            else {
                 $url += '&'
             }
 
@@ -261,7 +270,8 @@ function Get-PodeOAuth2RedirectHost {
             }
 
             $domain = "$($protocol)://$($WebEvent.Request.Host)"
-        } else {
+        }
+        else {
             $domain = Get-PodeEndpointUrl
         }
 
@@ -344,7 +354,8 @@ function Get-PodeAuthApiKeyType {
             try {
                 $payload = ConvertFrom-PodeJwt -Token $apiKey -Secret $options.Secret
                 Test-PodeJwt -Payload $payload
-            } catch {
+            }
+            catch {
                 if ($_.Exception.Message -ilike '*jwt*') {
                     return @{
                         Message = $_.Exception.Message
@@ -413,7 +424,8 @@ function Get-PodeAuthBearerType {
             try {
                 $payload = ConvertFrom-PodeJwt -Token $token -Secret $options.Secret
                 Test-PodeJwt -Payload $payload
-            } catch {
+            }
+            catch {
                 if ($_.Exception.Message -ilike '*jwt*') {
                     return @{
                         Message = $_.Exception.Message
@@ -685,7 +697,8 @@ function Get-PodeAuthUserFileMethod {
             $_username = ([pscredential]$username).UserName
             $_password = ([pscredential]$username).GetNetworkCredential().Password
             $_options = [hashtable]$password
-        } else {
+        }
+        else {
             $_username = $username
             $_password = $password
             $_options = $options
@@ -710,7 +723,8 @@ function Get-PodeAuthUserFileMethod {
         # check the user's password
         if (![string]::IsNullOrWhiteSpace($_options.HmacSecret)) {
             $hash = Invoke-PodeHMACSHA256Hash -Value $_password -Secret $_options.HmacSecret
-        } else {
+        }
+        else {
             $hash = Invoke-PodeSHA256Hash -Value $_password
         }
 
@@ -753,7 +767,8 @@ function Get-PodeAuthWindowsADMethod {
             $_username = ([pscredential]$username).UserName
             $_password = ([pscredential]$username).GetNetworkCredential().Password
             $_options = [hashtable]$password
-        } else {
+        }
+        else {
             $_username = $username
             $_password = $password
             $_options = $options
@@ -832,7 +847,8 @@ function Get-PodeAuthWindowsLocalMethod {
             $_username = ([pscredential]$username).UserName
             $_password = ([pscredential]$username).GetNetworkCredential().Password
             $_options = [hashtable]$password
-        } else {
+        }
+        else {
             $_username = $username
             $_password = $password
             $_options = $options
@@ -869,7 +885,8 @@ function Get-PodeAuthWindowsLocalMethod {
                 $cmd = "`$ad = [adsi]'WinNT://$($tmpUsername)'; @(`$ad.Groups() | Foreach-Object { `$_.GetType().InvokeMember('Name', 'GetProperty', `$null, `$_, `$null) })"
                 $user.Groups = [string[]](powershell -c $cmd)
             }
-        } finally {
+        }
+        finally {
             Close-PodeDisposable -Disposable $ad -Close
         }
 
@@ -942,7 +959,8 @@ function Get-PodeAuthWindowsADIISMethod {
                     $user.Name = @($ad.Properties.name)[0]
                     $user.Email = @($ad.Properties.mail)[0]
                     $user.Fqdn = (Get-PodeADServerFromDistinguishedName -DistinguishedName $user.DistinguishedName)
-                } finally {
+                }
+                finally {
                     Close-PodeDisposable -Disposable $searcher
                 }
 
@@ -962,7 +980,8 @@ function Get-PodeAuthWindowsADIISMethod {
                         $directGroups = $options.DirectGroups
                         $user.Groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $user.DistinguishedName -Username $user.Username -Direct:$directGroups -Provider $options.Provider)
                     }
-                } finally {
+                }
+                finally {
                     if ($null -ne $connection) {
                         Close-PodeDisposable -Disposable $connection.Searcher
                         Close-PodeDisposable -Disposable $connection.Entry -Close
@@ -989,14 +1008,17 @@ function Get-PodeAuthWindowsADIISMethod {
                             $user.Groups = [string[]](powershell -c $cmd)
                         }
                     }
-                } finally {
+                }
+                finally {
                     Close-PodeDisposable -Disposable $ad -Close
                 }
             }
-        } catch {
+        }
+        catch {
             $_ | Write-PodeErrorLog
             return @{ Message = 'Failed to retrieve user using Authentication Token' }
-        } finally {
+        }
+        finally {
             $win32Handler::CloseHandle($winAuthToken)
         }
 
@@ -1242,7 +1264,8 @@ function Test-PodeAuthValidation {
             User    = $result.User
             Headers = $result.Headers
         }
-    } catch {
+    }
+    catch {
         $_ | Write-PodeErrorLog
         return @{
             Success    = $false
@@ -1293,7 +1316,8 @@ function Test-PodeAuthInternal {
                 -StatusCode 401 `
                 -Name $Name `
                 -NoSuccessRedirect
-        } else {
+        }
+        else {
             $auth.Failure.Url = (Protect-PodeValue -Value $auth.Failure.Url -Default $WebEvent.Request.Url.AbsolutePath)
             return Set-PodeAuthStatus `
                 -StatusCode 302 `
@@ -1334,7 +1358,8 @@ function Test-PodeAuthInternal {
 
     try {
         $result = Invoke-PodeAuthValidation -Name $Name
-    } catch {
+    }
+    catch {
         $_ | Write-PodeErrorLog
         return Set-PodeAuthStatus `
             -StatusCode 500 `
@@ -1376,7 +1401,8 @@ function Test-PodeAuthInternal {
     $authName = $null
     if ($auth.Merged -and !$auth.PassOne) {
         $authName = $Name
-    } else {
+    }
+    else {
         $authName = @($result.Auth)[0]
     }
 
@@ -1598,7 +1624,8 @@ function Set-PodeAuthStatus {
             }
 
             Move-PodeResponseUrl -Url $failure.Url
-        } else {
+        }
+        else {
             Set-PodeResponseStatus -Code $StatusCode -Description $Description
         }
 
@@ -1710,7 +1737,8 @@ function Get-PodeAuthADResult {
         # check if we want to keep the credentials in the User object
         if ($KeepCredential) {
             $credential = [pscredential]::new($($Domain + '\' + $Username), (ConvertTo-SecureString -String $Password -AsPlainText -Force))
-        } else {
+        }
+        else {
             $credential = $null
         }
 
@@ -1729,7 +1757,8 @@ function Get-PodeAuthADResult {
                 Credential         = $credential
             }
         }
-    } finally {
+    }
+    finally {
         if ($null -ne $connection) {
             switch ($Provider.ToLowerInvariant()) {
                 'openldap' {
@@ -1791,7 +1820,8 @@ function Open-PodeAuthADConnection {
         'openldap' {
             if (![string]::IsNullOrWhiteSpace($SearchBase)) {
                 $baseDn = $SearchBase
-            } else {
+            }
+            else {
                 $baseDn = "DC=$(($Server -split '\.') -join ',DC=')"
             }
 
@@ -1806,7 +1836,8 @@ function Open-PodeAuthADConnection {
             $null = (ldapsearch -x -LLL -H "$($hostname)" -D "$($user)" -w "$($Password)" -b "$($baseDn)" -o ldif-wrap=no "$($query)" dn)
             if (!$? -or ($LASTEXITCODE -ne 0)) {
                 $result = $false
-            } else {
+            }
+            else {
                 $connection = @{
                     Hostname = $hostname
                     Username = $user
@@ -1823,7 +1854,8 @@ function Open-PodeAuthADConnection {
                 $connection = @{
                     Credential = $creds
                 }
-            } catch {
+            }
+            catch {
                 $result = $false
             }
         }
@@ -1831,13 +1863,15 @@ function Open-PodeAuthADConnection {
         'directoryservices' {
             if ([string]::IsNullOrWhiteSpace($Password)) {
                 $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)")
-            } else {
+            }
+            else {
                 $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)", "$($Username)", "$($Password)")
             }
 
             if (Test-PodeIsEmpty $ad.distinguishedName) {
                 $result = $false
-            } else {
+            }
+            else {
                 $connection = @{
                     Entry = $ad
                 }
@@ -2080,7 +2114,8 @@ function Get-PodeAuthDomainName {
         }
 
         return $dn
-    } else {
+    }
+    else {
         $domain = $env:USERDNSDOMAIN
         if ([string]::IsNullOrWhiteSpace($domain)) {
             $domain = (Get-CimInstance -Class Win32_ComputerSystem -Verbose:$false).Domain
@@ -2133,19 +2168,21 @@ function Expand-PodeAuthMerge {
     foreach ($authName in $Names) {
         # Handle the special case of anonymous access
         if ($authName -eq '%_allowanon_%') {
-            $authNames[$authName] = ''
-        } else {
+            $authNames[$authName] = $true
+        }
+        else {
             # Retrieve the authentication method from the Pode context
             $_auth = $PodeContext.Server.Authentications.Methods[$authName]
 
             # Check if the authentication is a merged one and expand it
             if ($_auth.merged) {
                 foreach ($key in (Expand-PodeAuthMerge -Names $_auth.Authentications)) {
-                    $authNames[$key] = ''
+                    $authNames[$key] = $true
                 }
-            } else {
+            }
+            else {
                 # If not merged, add the authentication name to the list
-                $authNames[$_auth.Name] = ''
+                $authNames[$_auth.Name] = $true
             }
         }
     }

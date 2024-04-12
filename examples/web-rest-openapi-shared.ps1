@@ -8,15 +8,17 @@ Start-PodeServer {
 
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes  
-    Enable-PodeOpenApiViewer -Type Swagger    
-    Enable-PodeOpenApiViewer -Type ReDoc   
-    Enable-PodeOpenApiViewer -Type RapiDoc    
-    Enable-PodeOpenApiViewer -Type StopLight  
-    Enable-PodeOpenApiViewer -Type Explorer  
-    Enable-PodeOpenApiViewer -Type RapiPdf    
+    Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
+    Enable-PodeOpenApiViewer -Type Swagger
+    Enable-PodeOpenApiViewer -Type ReDoc
+    Enable-PodeOpenApiViewer -Type RapiDoc
+    Enable-PodeOpenApiViewer -Type StopLight
+    Enable-PodeOpenApiViewer -Type Explorer
+    Enable-PodeOpenApiViewer -Type RapiPdf
 
-    Enable-PodeOpenApiViewer -Type Bookmarks -Path '/docs' 
+
+    Enable-PodeOpenApiViewer -Editor
+    Enable-PodeOpenApiViewer -Bookmarks
 
 
     New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
@@ -48,9 +50,7 @@ Start-PodeServer {
     ConvertTo-PodeOAParameter -In Path |
     Add-PodeOAComponentParameter -Name 'UserId'
 
-
     Add-PodeAuthMiddleware -Name AuthMiddleware -Authentication Validate -Route '/api/*'
-
 
     Add-PodeRoute -Method Get -Path '/api/resources' -EndpointName 'user' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = 123 }

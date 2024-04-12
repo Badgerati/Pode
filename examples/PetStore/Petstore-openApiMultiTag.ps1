@@ -274,7 +274,7 @@ Some useful links:
                 $contentType = Get-PodeHeader -Name 'Content-Type'
                 switch ($contentType) {
                     'application/xml' {
-                        $pet = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
+                        $pet = ConvertFrom-PodeXml -node $WebEvent.data | ConvertTo-Json
                     }
                     'application/json' { $pet = ConvertTo-Json $WebEvent.data }
                     default {
@@ -322,7 +322,7 @@ Some useful links:
                 $contentType = Get-PodeHeader -Name 'Content-Type'
                 switch ($contentType) {
                     'application/xml' {
-                        $pet = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
+                        $pet = ConvertFrom-PodeXml -node $WebEvent.data | ConvertTo-Json
                     }
                     'application/json' { $pet = ConvertTo-Json $WebEvent.data }
                     default {
@@ -538,7 +538,7 @@ Some useful links:
                 $contentType = Get-PodeHeader -Name 'Content-Type'
                 switch ($contentType) {
                     'application/xml' {
-                        $order = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
+                        $order = ConvertFrom-PodeXml -node $WebEvent.data | ConvertTo-Json
                     }
                     'application/json' { $order = ConvertTo-Json $WebEvent.data }
                     'application/x-www-form-urlencoded' { $order = ConvertTo-Json $WebEvent.data }
@@ -631,7 +631,7 @@ Some useful links:
                 $responseMediaType = Get-PodeHeader -Name 'Accept'
                 switch ($contentType) {
                     'application/xml' {
-                        $user = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
+                        $user = ConvertFrom-PodeXml -node $WebEvent.data | ConvertTo-Json
                     }
                     'application/json' { $user = ConvertTo-Json $WebEvent.data }
                     'application/x-www-form-urlencoded' { $user = ConvertTo-Json $WebEvent.data }
@@ -792,7 +792,7 @@ Some useful links:
                 if (Test-User -Username $username) {
                     switch ($contentType) {
                         'application/xml' {
-                            $user = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
+                            $user = ConvertFrom-PodeXml -node $WebEvent.data | ConvertTo-Json
                         }
                         'application/json' { $user = ConvertTo-Json $WebEvent.data }
                         'application/x-www-form-urlencoded' { $user = ConvertTo-Json $WebEvent.data }
@@ -862,7 +862,7 @@ Some useful links:
 
 
 
-    #$r= ConvertFrom-PodeXML -node $xmlDoc
+    #$r= ConvertFrom-PodeXml -node $xmlDoc
 
     #$pet=$r |convertto-json
 

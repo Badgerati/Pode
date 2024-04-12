@@ -5,7 +5,7 @@ Pode has built-in support for converting your routes into OpenAPI 3.0 definition
 
 The OpenApi module has been extended with many more functions, and some old ones have been improved.
 
-For more detailed information regarding OpenAPI and Pode, please refer to [OpenAPI Specification and Pode](../OpenAPI/Specification/v3_0_3.md)
+For more detailed information regarding OpenAPI and Pode, please refer to [OpenAPI Specification and Pode](../Specification/v3_0_3.md)
 
 You can enable OpenAPI in Pode, and a straightforward definition will be generated. However, to get a more complex definition with request bodies, parameters, and response payloads, you'll need to use the relevant OpenAPI functions detailed below.
 
@@ -738,9 +738,9 @@ As JSON, this could look as follows:
 
 OpenAPI 3.x provides several keywords which you can use to combine schemas. You can use these keywords to create a complex schema or validate a value against multiple criteria.
 
-* oneOf – validates the value against exactly one of the sub-schemas
-* allOf – validates the value against all the sub-schemas
-* anyOf – validates the value against any (one or more) of the sub-schemas
+* oneOf - validates the value against exactly one of the sub-schemas
+* allOf - validates the value against all the sub-schemas
+* anyOf - validates the value against any (one or more) of the sub-schemas
 
 You can use the [`Merge-PodeOAProperty`] will instead define a relationship between the properties.
 
@@ -772,7 +772,7 @@ As JSON, this could look as follows:
   "oneOf": [
     {
       "type": "object",
- `     "properties": {
+      "properties": {
         "userId": {
           "type": "integer"
         }
@@ -861,7 +861,7 @@ Add-PodeRoute -PassThru -Method Post -Path '/user' -ScriptBlock {
     $responseMediaType = Get-PodeHeader -Name 'Accept'
     switch ($contentType) {
         'application/xml' {
-            $user = ConvertFrom-PodeXML -node $WebEvent.data | ConvertTo-Json
+            $user = ConvertFrom-PodeXml -node $WebEvent.data | ConvertTo-Json
         }
         'application/json' { $user = ConvertTo-Json $WebEvent.data }
         'application/x-www-form-urlencoded' { $user = ConvertTo-Json $WebEvent.data }

@@ -1244,7 +1244,7 @@ function Get-PodeVersion {
 Converts an XML node to a PowerShell hashtable.
 
 .DESCRIPTION
-The ConvertFrom-PodeXML function converts an XML node, including all its child nodes and attributes, into an ordered hashtable. This is useful for manipulating XML data in a more PowerShell-centric way.
+The ConvertFrom-PodeXml function converts an XML node, including all its child nodes and attributes, into an ordered hashtable. This is useful for manipulating XML data in a more PowerShell-centric way.
 
 .PARAMETER node
 The XML node to convert. This parameter takes an XML node and processes it, along with its child nodes and attributes.
@@ -1260,13 +1260,13 @@ If set, the function keeps the attributes of the XML nodes in the resulting hash
 
 .EXAMPLE
 $node = [xml](Get-Content 'path\to\file.xml').DocumentElement
-ConvertFrom-PodeXML -node $node
+ConvertFrom-PodeXml -node $node
 
 Converts the XML document's root node to a hashtable.
 
 .INPUTS
 System.Xml.XmlNode
-You can pipe a XmlNode to ConvertFrom-PodeXML.
+You can pipe a XmlNode to ConvertFrom-PodeXml.
 
 .OUTPUTS
 System.Collections.Hashtable
@@ -1276,10 +1276,10 @@ Outputs an ordered hashtable representing the XML node structure.
 This cmdlet is useful for transforming XML data into a structure that's easier to manipulate in PowerShell scripts.
 
 .LINK
-https://badgerati.github.io/Pode/Functions/Utility/ConvertFrom-PodeXML
+https://badgerati.github.io/Pode/Functions/Utility/ConvertFrom-PodeXml
 
 #>
-function ConvertFrom-PodeXML {
+function ConvertFrom-PodeXml {
     [CmdletBinding()]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param
@@ -1296,7 +1296,6 @@ function ConvertFrom-PodeXML {
     { $node = $node.DocumentElement }
     $oHash = [ordered] @{ } # start with an ordered hashtable.
     #The order of elements is always significant regardless of what they are
-    write-verbose "calling with $($node.LocalName)"
     if ($null -ne $node.Attributes  ) {
         #if there are elements
         # record all the attributes first in the ordered hash
@@ -1310,21 +1309,17 @@ function ConvertFrom-PodeXML {
         #array for each
         Group-Object -Property LocalName | Where-Object { $_.count -gt 1 } | Select-Object Name |
         ForEach-Object {
-            write-verbose "pseudo-Array $($_.Name)"
             $oHash.($_.Name) = @() <# create an empty array for each one#>
         }
     foreach ($child in $node.ChildNodes) {
         #now we look at each node in turn.
-        write-verbose "processing the '$($child.LocalName)'"
         $childName = $child.LocalName
         if ($child -is [system.xml.xmltext]) {
             # if it is simple XML text
-            write-verbose "simple xml $childname"
             $oHash.$childname += $child.InnerText
         }
         # if it has a #text child we may need to cope with attributes
         elseif ($child.FirstChild.Name -eq '#text' -and $child.ChildNodes.Count -eq 1) {
-            write-verbose 'text'
             if ($null -ne $child.Attributes -and $KeepAttributes ) {
                 #hah, an attribute
                 <#we need to record the text with the #text label and preserve all
@@ -1345,19 +1340,18 @@ function ConvertFrom-PodeXML {
         elseif ($null -ne $child.'#cdata-section' ) {
             # if it is a data section, a block of text that isnt parsed by the parser,
             # but is otherwise recognized as markup
-            write-verbose 'cdata section'
             $oHash.$childname = $child.'#cdata-section'
         }
         elseif ($child.ChildNodes.Count -gt 1 -and
                         ($child | Get-Member -MemberType Property).Count -eq 1) {
             $oHash.$childname = @()
             foreach ($grandchild in $child.ChildNodes) {
-                $oHash.$childname += (ConvertFrom-PodeXML $grandchild)
+                $oHash.$childname += (ConvertFrom-PodeXml $grandchild)
             }
         }
         else {
             # create an array as a value  to the hashtable element
-            $oHash.$childname += (ConvertFrom-PodeXML $child)
+            $oHash.$childname += (ConvertFrom-PodeXml $child)
         }
     }
     return $oHash

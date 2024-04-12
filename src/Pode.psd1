@@ -138,7 +138,7 @@
         'Test-PodeIsHosted',
         'New-PodeCron',
         'Test-PodeInRunspace',
-        'ConvertFrom-PodeXML',
+        'ConvertFrom-PodeXml',
         'Set-PodeDefaultFolder',
         'Get-PodeDefaultFolder',
 
@@ -496,7 +496,7 @@
 
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @('Enable-PodeOpenApiViewer', 'Enable-PodeOA','Get-PodeOpenApiDefinition','New-PodeOASchemaProperty')
+    AliasesToExport   = @('Enable-PodeOpenApiViewer', 'Enable-PodeOA', 'Get-PodeOpenApiDefinition', 'New-PodeOASchemaProperty')
 
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

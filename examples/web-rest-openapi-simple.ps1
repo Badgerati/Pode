@@ -8,7 +8,7 @@ Start-PodeServer {
     Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
     Enable-PodeOpenApiViewer -Type Swagger -DarkMode
     Enable-PodeOpenApiViewer -Type ReDoc
-    Enable-PodeOpenApiViewer -Type Bookmarks -Path '/docs' 
+    Enable-PodeOpenApiViewer -Bookmarks -Path '/docs'
 
     Add-PodeRoute -Method Get -Path '/api/resources' -EndpointName 'user' -ScriptBlock {
         Set-PodeResponseStatus -Code 200

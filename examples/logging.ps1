@@ -8,7 +8,7 @@ else {
 # or just:
 # Import-Module Pode
 
-$LOGGING_TYPE = 'custom' # Terminal, File, Custom
+$LOGGING_TYPE = 'terminal' # Terminal, File, Custom
 
 # create a server, and start listening on port 8085
 Start-PodeServer {

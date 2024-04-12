@@ -178,20 +178,17 @@ function Get-PodeLimitMiddleware {
 
 <#
 .SYNOPSIS
-    Middleware function to validate the route for an incoming web request.
-
+    Retrieves middleware for serving public static content in a Pode web server.
 .DESCRIPTION
-    This function is used as middleware to validate the route for an incoming web request. It checks if the route exists for the requested method and path. If the route does not exist, it sets the appropriate response status code (404 for not found, 405 for method not allowed) and returns false to halt further processing. If the route exists, it sets various properties on the WebEvent object, such as parameters, content type, and transfer encoding, and returns true to continue processing.
-
-.PARAMETER None
-
+    This function retrieves middleware for serving public static content in a Pode web server.
+    It searches for static content based on the requested path and serves it if found.
+.PARAMETER WebEvent
+    The PodeWebEvent object representing the incoming web request.
+.PARAMETER PodeContext
+    The PodeContext object representing the current Pode server context.
 .EXAMPLE
-    $middleware = Get-PodeRouteValidateMiddleware
-    Add-PodeMiddleware -Middleware $middleware
-
-.NOTES
-    This function is part of the internal Pode server logic and is typically not called directly by users.
-
+    Get-PodePublicMiddleware
+    Retrieves middleware for serving public static content.
 #>
 function Get-PodePublicMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_static_content__' -ScriptBlock {

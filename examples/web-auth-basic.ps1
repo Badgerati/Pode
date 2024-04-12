@@ -28,7 +28,7 @@ Invoke-RestMethod -Uri http://localhost:8085/users -Method Post -Headers @{ Auth
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address local -Port 8085 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http
 
     # request logging
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging

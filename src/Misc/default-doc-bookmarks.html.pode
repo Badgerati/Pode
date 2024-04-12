@@ -138,10 +138,10 @@
     </div>
     <!-- Tab content -->
     <div id="JSON" class="tabcontent">
-        <pre><code id="jsonCode" class="json">Loading JSON content...<</code></pre>
+        <pre><code id="jsonCode" class="json">Loading JSON content...</code></pre>
     </div>
     <div id="YAML" class="tabcontent" style="display:none">
-        <pre><code id="yamlCode" class="yaml">Loading YAML content...<</code></pre>
+        <pre><code id="yamlCode" class="yaml">Loading YAML content...</code></pre>
     </div>
     <footer style='text-align: center;
         width: 100%;

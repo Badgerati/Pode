@@ -974,7 +974,7 @@ function Test-PodeOAJsonSchemaCompliance {
     )
     if ($DefinitionTag) {
         if (! ($PodeContext.Server.OpenApi.Definitions.Keys -ccontains $DefinitionTag)) {
-            throw "DefinitionTag $t is not defined"
+            throw "DefinitionTag $DefinitionTag is not defined"
         }
     }
     else {
