@@ -1,5 +1,6 @@
-# Creating an HTML File Browser
+# Creating a Web Page
 
+Serving up web pages via Pode is simple, you can either write your pages in HTML, Pode, another template engine; then place those files within the `/views` directory. You can also use CSS, JavaScript, Images, etc. and place those files within the `/public` directory.
 
 ## Basics
 

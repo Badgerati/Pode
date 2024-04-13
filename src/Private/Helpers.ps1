@@ -3213,44 +3213,54 @@ function ConvertTo-PodeYamlInternal {
                 'string' {
                     $String = "$InputObject"
                     if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
-                        $folded = [System.Text.StringBuilder]::new(">`n") # signal that we are going to use the readable 'newlines-folded' format
-                        foreach ($item in $string.Split("`n")) {
-                            $workingString = $item -replace '\r$'
-                            $length = $item.Length
-                            $IndexIntoString = 0
+                        $multiline = [System.Text.StringBuilder]::new("|`n")
+
+                        $items = $string.Split("`n")
+                        for ($i = 0; $i -lt $items.Length; $i++) {
+                            $workingString = $items[$i] -replace '\r$'
+                            $length = $workingString.Length
+                            $index = 0
                             $wrap = 80
-                            while ($length -gt $IndexIntoString + $Wrap) {
-                                $BreakPoint = $wrap
-                                $earliest = $workingString.Substring($IndexIntoString, $wrap).LastIndexOf(' ')
-                                $latest = $workingString.Substring($IndexIntoString + $wrap).IndexOf(' ')
-                                if (($earliest -eq -1) -or ($latest -eq -1)) {
-                                    $BreakPoint = $wrap
-                                }
-                                elseif ($wrap - $earliest -lt ($latest)) {
-                                    $BreakPoint = $earliest
+
+                            while ($index -lt $length) {
+                                $breakpoint = $wrap
+                                $linebreak = $false
+
+                                if (($length - $index) -gt $wrap) {
+                                    $lastSpaceIndex = $workingString.LastIndexOf(' ', $index + $wrap, $wrap)
+                                    if ($lastSpaceIndex -ne -1) {
+                                        $breakpoint = $lastSpaceIndex - $index
+                                    }
+                                    else {
+                                        $linebreak = $true
+                                        $breakpoint--
+                                    }
                                 }
                                 else {
-                                    $BreakPoint = $wrap + $latest
-                                }
-                                if (($wrap - $earliest) + $latest -gt 30) {
-                                    $BreakPoint = $wrap # in case it is a string without spaces
+                                    $breakpoint = $length - $index
                                 }
 
-                                $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString, $BreakPoint).Trim())
-                                $IndexIntoString += $BreakPoint
+                                $null = $multiline.Append($padding).Append($workingString.Substring($index, $breakpoint).Trim())
+                                if ($linebreak) {
+                                    $null = $multiline.Append('\')
+                                }
+
+                                $index += $breakpoint
+                                if ($index -lt $length) {
+                                    $null = $multiline.Append([System.Environment]::NewLine)
+                                }
                             }
-                            if ($IndexIntoString -lt $length) {
-                                $null = $folded.Append( $padding).AppendLine( $workingString.Substring($IndexIntoString).Trim())
-                            }
-                            else {
-                                $null = $folded.AppendLine()
+
+                            if ($i -lt ($items.Length - 1)) {
+                                $null = $multiline.Append([System.Environment]::NewLine)
                             }
                         }
-                        $folded.ToString()
+
+                        $multiline.ToString().TrimEnd()
                         break
                     }
                     else {
-                        if ($string.StartsWith('#')) {
+                        if ($string -match '^[#\[\]@\{\}\!\*]') {
                             "'$($string -replace '''', '''''')'"
                         }
                         else {
@@ -3267,7 +3277,7 @@ function ConvertTo-PodeYamlInternal {
                         foreach ($item in $InputObject.Keys) {
                             if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
                             if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                            $null = $string.Append( $NewPadding).Append( $item).Append(' : ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                            $null = $string.Append( $NewPadding).Append( $item).Append(': ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
                         }
                         $string.ToString()
                     }

@@ -181,7 +181,7 @@ function Enable-PodeOpenApi {
         if (! $Version) {
             $Version = '0.0.0'
         }
-        Write-PodeHost -ForegroundColor Yellow "WARNING: The parameter Title,Version and Description are deprecated. Please use 'Add-PodeOAInfo' instead."
+        Write-PodeHost -ForegroundColor Yellow "WARNING: Title, Version, and Description on 'Enable-PodeOpenApi' are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
     if ( $DefinitionTag -ine $PodeContext.Server.OpenAPI.DefaultDefinitionTag ) {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag] = Get-PodeOABaseObject
