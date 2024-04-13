@@ -1740,7 +1740,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
                 key2 = 'value2'
             }
             $result = $hashTable | ConvertTo-PodeYamlInternal -NoNewLine
-            $result | Should -Be "key1 : value1`nkey2 : value2"
+            $result | Should -Be "key1: value1`nkey2: value2"
         }
     }
 
@@ -1753,7 +1753,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
             }
             $result = $nestedHash | ConvertTo-PodeYamlInternal -NoNewLine
 
-            $result | Should -Be "parent : `n  child : value"
+            $result | Should -Be "parent: `n  child: value"
         }
     }
 
