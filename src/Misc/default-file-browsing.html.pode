@@ -1,6 +1,6 @@
 <html lang="en" ; style='background-color: #01b0c4' ;>
 
-<head> 
+<head>
     <title>File Browser:$($Data.Path)</title>
     <meta charset='utf-8'>
 

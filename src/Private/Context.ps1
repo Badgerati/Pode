@@ -372,8 +372,8 @@ function New-PodeContext {
     # sessions
     $ctx.Server.Sessions = @{}
 
-    # swagger and openapi
-    $ctx.Server.OpenAPI = Get-PodeOABaseObject
+    #OpenApi Definition Tag
+    $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
 
     # server metrics
     $ctx.Metrics = @{
@@ -473,6 +473,11 @@ function New-PodeContext {
 
     # scoped variables
     $ctx.Server.ScopedVariables = [ordered]@{}
+
+    # Yaml module caching
+    $ctx.Server.Cache = @{
+        YamlModuleImported = $null
+    }
 
     # return the new context
     return $ctx

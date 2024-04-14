@@ -68,6 +68,17 @@ One or more optional Scopes that will be authorised to access this Route, when u
 .PARAMETER User
 One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
+.PARAMETER OAResponses
+An alternative way to associate OpenApi responses unsing New-PodeOAResponse instead of piping multiple Add-PodeOAResponse
+
+.PARAMETER OAReference
+A reference to OpenAPI reusable pathItem component created with Add-PodeOAComponentPathItem
+
+.PARAMETER OADefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ }
 
@@ -88,9 +99,19 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock { /* logic */ } -ArgumentList '
 
 .EXAMPLE
 Add-PodeRoute -Method Get -Path '/' -Role 'Developer', 'QA' -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+$Responses = New-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' |
+            New-PodeOAResponse -StatusCode 404 -Description 'User not found' |
+            New-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
+
+Add-PodeRoute -PassThru -Method Put -Path '/user/:username' -OAResponses $Responses -ScriptBlock {
+            #code is going here
+        }
 #>
 function Add-PodeRoute {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
@@ -109,7 +130,8 @@ function Add-PodeRoute {
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter()]
+        [Parameter( )]
+        [AllowNull()]
         [string[]]
         $EndpointName,
 
@@ -173,8 +195,17 @@ function Add-PodeRoute {
         [switch]
         $Logout,
 
+        [hashtable]
+        $OAResponses,
+
+        [string]
+        $OAReference,
+
         [switch]
-        $PassThru
+        $PassThru,
+
+        [string[]]
+        $OADefinitionTag
     )
 
     # check if we have any route group info defined
@@ -237,6 +268,10 @@ function Add-PodeRoute {
 
         if ($null -ne $RouteGroup.AccessMeta.Custom) {
             $CustomAccess = $RouteGroup.AccessMeta.Custom
+        }
+
+        if ($null -ne $RouteGroup.OADefinitionTag ) {
+            $OADefinitionTag = $RouteGroup.OADefinitionTag
         }
     }
 
@@ -348,6 +383,21 @@ function Add-PodeRoute {
             continue
         }
 
+        #add security header method if autoMethods is enabled
+        if (  $PodeContext.Server.Security.autoMethods ) {
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value $_method.ToUpper() -Append
+        }
+
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
+
+        #add the default OpenApi responses
+        if ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses) {
+            $DefaultResponse = @{}
+            foreach ($tag in $DefinitionTag) {
+                $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
+            }
+        }
+
         # add the route(s)
         Write-Verbose "Adding Route: [$($_method)] $($Path)"
         $methodRoutes = @(foreach ($_endpoint in $endpoints) {
@@ -377,13 +427,13 @@ function Add-PodeRoute {
                     Path             = $Path
                     OpenApi          = @{
                         Path           = $OpenApiPath
-                        Responses      = @{
-                            '200'     = @{ description = 'OK' }
-                            'default' = @{ description = 'Internal server error' }
-                        }
+                        Responses      = $DefaultResponse
                         Parameters     = $null
                         RequestBody    = $null
+                        CallBacks      = @{}
                         Authentication = @()
+                        Servers        = @()
+                        DefinitionTag  = $DefinitionTag
                     }
                     IsStatic         = $false
                     Metrics          = @{
@@ -396,12 +446,27 @@ function Add-PodeRoute {
             })
 
         if (![string]::IsNullOrWhiteSpace($Authentication)) {
-            Set-PodeOAAuth -Route $methodRoutes -Name $Authentication
+            Set-PodeOAAuth -Route $methodRoutes -Name $Authentication -AllowAnon:$AllowAnon
         }
 
         $PodeContext.Server.Routes[$_method][$Path] += @($methodRoutes)
         if ($PassThru) {
             $newRoutes += $methodRoutes
+        }
+    }
+    if ($OAReference) {
+        Test-PodeOAComponentInternal -Field pathItems -DefinitionTag $DefinitionTag -Name $OAReference -PostValidation
+        foreach ($r in @($newRoutes)) {
+            $r.OpenApi = @{
+                '$ref'        = "#/components/paths/$OAReference"
+                DefinitionTag = $DefinitionTag
+                Path          = $OpenApiPath
+            }
+        }
+    }
+    elseif ($OAResponses) {
+        foreach ($r in @($newRoutes)) {
+            $r.OpenApi.Responses = $OAResponses
         }
     }
 
@@ -492,6 +557,7 @@ Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html')
 #>
 function Add-PodeStaticRoute {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -712,7 +778,7 @@ function Add-PodeStaticRoute {
 
     # setup default static files
     if ($null -eq $Defaults) {
-        $Defaults = Get-PodeStaticRouteDefaults
+        $Defaults = Get-PodeStaticRouteDefault
     }
 
     if (!$RedirectToDefault) {
@@ -759,12 +825,16 @@ function Add-PodeStaticRoute {
     # workout a default transfer encoding for the route
     $TransferEncoding = Find-PodeRouteTransferEncoding -Path $Path -TransferEncoding $TransferEncoding
 
+    #The path use KleeneStar(Asterisk)
+    $KleeneStar = $OrigPath.Contains('*')
+
     # add the route(s)
     Write-Verbose "Adding Route: [$($Method)] $($Path)"
     $newRoutes = @(foreach ($_endpoint in $endpoints) {
             @{
                 Source            = $Source
                 Path              = $Path
+                KleeneStar        = $KleeneStar
                 Method            = $Method
                 Defaults          = $Defaults
                 RedirectToDefault = $RedirectToDefault
@@ -791,13 +861,13 @@ function Add-PodeStaticRoute {
                 FileBrowser       = $FileBrowser.isPresent
                 OpenApi           = @{
                     Path           = $OpenApiPath
-                    Responses      = @{
-                        '200'     = @{ description = 'OK' }
-                        'default' = @{ description = 'Internal server error' }
-                    }
-                    Parameters     = @()
-                    RequestBody    = @{}
+                    Responses      = @{}
+                    Parameters     = $null
+                    RequestBody    = $null
+                    CallBacks      = @{}
                     Authentication = @()
+                    Servers        = @()
+                    DefinitionTag  = $DefinitionTag
                 }
                 Metrics           = @{
                     Requests = @{
@@ -807,10 +877,6 @@ function Add-PodeStaticRoute {
                 }
             }
         })
-
-    if (![string]::IsNullOrWhiteSpace($Authentication)) {
-        Set-PodeOAAuth -Route $newRoutes -Name $Authentication
-    }
 
     $PodeContext.Server.Routes[$Method][$Path] += @($newRoutes)
 
@@ -853,6 +919,7 @@ Add-PodeSignalRoute -Path '/message' -ScriptBlock { /* logic */ } -ArgumentList 
 #>
 function Add-PodeSignalRoute {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -1023,6 +1090,11 @@ One or more optional Users that will be authorised to access this Route, when us
 .PARAMETER AllowAnon
 If supplied, the Routes will allow anonymous access for non-authenticated users.
 
+.PARAMETER OADefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeRouteGroup -Path '/api' -Routes { Add-PodeRoute -Path '/route1' -Etc }
 #>
@@ -1089,7 +1161,10 @@ function Add-PodeRouteGroup {
         $User,
 
         [switch]
-        $AllowAnon
+        $AllowAnon,
+
+        [string[]]
+        $OADefinitionTag
     )
 
     if (Test-PodeIsEmpty $Routes) {
@@ -1164,6 +1239,11 @@ function Add-PodeRouteGroup {
         if ($null -ne $RouteGroup.AccessMeta.Custom) {
             $CustomAccess = $RouteGroup.AccessMeta.Custom
         }
+
+        if ($null -ne $RouteGroup.OADefinitionTag ) {
+            $OADefinitionTag = $RouteGroup.OADefinitionTag
+        }
+
     }
 
     $RouteGroup = @{
@@ -1177,6 +1257,7 @@ function Add-PodeRouteGroup {
         Access           = $Access
         AllowAnon        = $AllowAnon
         IfExists         = $IfExists
+        OADefinitionTag  = $OADefinitionTag
         AccessMeta       = @{
             Role   = $Role
             Group  = $Group
@@ -1598,6 +1679,15 @@ function Remove-PodeRoute {
     # ensure route does exist
     if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
         return
+    }
+
+    # remove the operationId from the openapi operationId list
+    if ($PodeContext.Server.Routes[$Method][$Path].OpenAPI) {
+        foreach ( $tag  in  $PodeContext.Server.Routes[$Method][$Path].OpenAPI.DefinitionTag) {
+            if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId)) {
+                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId }
+            }
+        }
     }
 
     # remove the route's logic
@@ -2482,7 +2572,6 @@ function Use-PodeRoutes {
         $IfExists = Get-PodeRouteIfExistsPreference
     }
 
-    $RouteIfExists = $IfExists
     Use-PodeFolder -Path $Path -DefaultPath 'routes'
 }
 

@@ -1714,3 +1714,53 @@ Describe 'New-PodeCron' {
         { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage 'Cannot supply interval value for every year'
     }
 }
+
+
+
+Describe 'ConvertTo-PodeYamlInternal Tests' {
+    Context 'When converting basic types' {
+        It 'Converts strings correctly' {
+            $result = 'hello world' | ConvertTo-PodeYamlInternal
+            $result | Should -Be 'hello world'
+        }
+
+        It 'Converts arrays correctly' {
+            $result =  ConvertTo-PodeYamlInternal -InputObject  @('one', 'two', 'three') -NoNewLine
+            $expected = (@'
+- one
+- two
+- three
+'@)
+            $result | Should -Be ($expected.Trim() -Replace "`r`n","`n")
+        }
+
+        It 'Converts hashtables correctly' {
+            $hashTable = [ordered]@{
+                key1 = 'value1'
+                key2 = 'value2'
+            }
+            $result = $hashTable | ConvertTo-PodeYamlInternal -NoNewLine
+            $result | Should -Be "key1: value1`nkey2: value2"
+        }
+    }
+
+    Context 'When converting complex objects' {
+        It 'Handles nested hashtables' {
+            $nestedHash = @{
+                parent = @{
+                    child = 'value'
+                }
+            }
+            $result = $nestedHash | ConvertTo-PodeYamlInternal -NoNewLine
+
+            $result | Should -Be "parent: `n  child: value"
+        }
+    }
+
+    Context 'Error handling' {
+        It 'Returns empty string for null input' {
+            $result = $null | ConvertTo-PodeYamlInternal
+            $result | Should -Be ''
+        }
+    }
+}

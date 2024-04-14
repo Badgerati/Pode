@@ -8,9 +8,14 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
-    Enable-PodeOpenApiViewer -Type Swagger -DarkMode
-    Enable-PodeOpenApiViewer -Type ReDoc
-
+    Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger'
+    Enable-PodeOpenApiViewer -Type ReDoc  -Path '/docs/redoc'
+    Enable-PodeOpenApiViewer -Type RapiDoc  -Path '/docs/rapidoc'
+    Enable-PodeOpenApiViewer -Type StopLight  -Path '/docs/stoplight'
+    Enable-PodeOpenApiViewer -Type Explorer  -Path '/docs/explorer'
+    Enable-PodeOpenApiViewer -Type RapiPdf  -Path '/docs/rapipdf'
+    Enable-PodeOpenApiViewer -Editor -Path '/docs/editor'
+    Enable-PodeOpenApiViewer -Bookmarks -Path '/docs'
 
     New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         return @{

@@ -953,7 +953,7 @@ The function leverages `$PodeContext` to access the server's configuration and t
 .PARAMETER None
 
 .EXAMPLE
-Add-PodePSInbuiltDrives
+Add-PodePSInbuiltDrive
 
 This example is typically called within the Pode server setup script or internally by the Pode framework to initialize the PowerShell drives for the server's default folders.
 
@@ -962,7 +962,7 @@ This example is typically called within the Pode server setup script or internal
 - It specifically checks for the existence of paths for views, public content, and errors before attempting to create drives for them.
 - This is an internal function and may change in future releases of Pode.
 #>
-function Add-PodePSInbuiltDrives {
+function Add-PodePSInbuiltDrive {
 
     # create drive for views, if path exists
     $path = (Join-PodeServerRoot -Folder $PodeContext.Server.DefaultFolders.Views)
@@ -1022,7 +1022,7 @@ function Remove-PodeEmptyItemsFromArray {
         return @()
     }
 
-    return @(@($Array -ne ([string]::Empty)) -ne $null)
+    return @( @($Array -ne ([string]::Empty)) -ne $null )
 }
 
 function Remove-PodeNullKeysFromHashtable {
@@ -1430,6 +1430,21 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
+        { $_ -ilike '*/yaml' -or $_ -ilike '*/x-yaml' } {
+            if ($InputObject -isnot [string]) {
+                if ($Depth -le 0) {
+                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
+                }
+                else {
+                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
+                }
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return '[]'
+            }
+        }
+
         { $_ -ilike '*/xml' } {
             if ($InputObject -isnot [string]) {
                 $temp = @(foreach ($item in $InputObject) {
@@ -1828,6 +1843,7 @@ function Test-PodePathIsDirectory {
 
         [switch]
         $FailOnWildcard
+
     )
 
     if ($FailOnWildcard -and (Test-PodePathIsWildcard $Path)) {
@@ -3057,5 +3073,247 @@ function Test-PodeVersionPwshEOL {
     return @{
         eol       = $isEol
         supported = $isSupported
+    }
+}
+
+
+<#
+.SYNOPSIS
+creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
+.DESCRIPTION
+This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
+.PARAMETER Object
+the object that you want scripted out
+.PARAMETER Depth
+The depth that you want your object scripted to
+.EXAMPLE
+Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
+#>
+
+function ConvertTo-PodeYaml {
+    [OutputType('System.String')]
+
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
+        $InputObject,
+        [parameter() ]
+        [int]$Depth = 16
+    )
+
+    if ($null -eq $PodeContext.Server.Cache.YamlModuleImported) {
+        $PodeContext.Server.Cache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
+    }
+
+    if ($PodeContext.Server.YamlModuleImported) {
+        return ($InputObject | ConvertTo-Yaml)
+    }
+    else {
+        return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+    }
+}
+
+<#
+.SYNOPSIS
+  Converts PowerShell objects into a YAML-formatted string.
+
+.DESCRIPTION
+  This function takes PowerShell objects and converts them to a YAML string representation.
+  It supports various data types including arrays, hashtables, strings, and more.
+  The depth of conversion can be controlled, allowing for nested objects to be accurately represented.
+
+.PARAMETER InputObject
+  The PowerShell object to convert to YAML. This parameter accepts input via the pipeline.
+
+.PARAMETER Depth
+  Specifies the maximum depth of object nesting to convert. Default is 10 levels deep.
+
+.PARAMETER NestingLevel
+  Used internally to track the current depth of recursion. Generally not specified by the user.
+
+.PARAMETER NoNewLine
+  If specified, suppresses the newline characters in the output to create a single-line string.
+
+.OUTPUTS
+  System.String. Returns a string in YAML format.
+
+.EXAMPLE
+  $object | ConvertTo-PodeYamlInternal
+
+  Converts the object piped to it into a YAML string.
+
+.NOTES
+  This is an internal function and may change in future releases of Pode.
+  It converts only basic PowerShell types, such as strings, integers, booleans, arrays, hashtables, and ordered dictionaries into a YAML format.
+
+#>
+
+function ConvertTo-PodeYamlInternal {
+
+    [OutputType('System.String')]
+
+    [CmdletBinding()]
+    param (
+        [parameter(  Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
+        $InputObject,
+
+        [parameter()]
+        [int]
+        $Depth = 10,
+
+        [parameter()]
+        [int]
+        $NestingLevel = 0,
+
+        [parameter()]
+        [switch]
+        $NoNewLine
+    )
+
+    process {
+        # if it is null return null
+        If ( !($InputObject) ) {
+            if ($InputObject -is [Object[]]) {
+                return '[]'
+            }
+            else {
+                return ''
+            }
+        }
+
+        $padding = [string]::new(' ', $NestingLevel * 2) # lets just create our left-padding for the block
+        try {
+            $Type = $InputObject.GetType().Name # we start by getting the object's type
+            if ($InputObject -is [object[]]) {
+                #what it really is
+                $Type = "$($InputObject.GetType().BaseType.Name)"
+            }
+
+            #report the leaves in terms of object type
+            if ($Depth -ilt $NestingLevel) {
+                $Type = 'OutOfDepth'
+            }
+            # prevent these values being identified as an object
+            if ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
+                $Type = 'HashTable'
+            }
+            elseif ($Type -ieq 'List`1') {
+                $Type = 'Array'
+            }
+            elseif ($InputObject -is [array]) {
+                $Type = 'Array'
+            } # whatever it thinks it is called
+            elseif ($InputObject -is [hashtable]) {
+                $Type = 'HashTable'
+            } # for our purposes it is a hashtable
+
+            $output += switch ($Type.ToLower()) {
+                'string' {
+                    $String = "$InputObject"
+                    if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
+                        $multiline = [System.Text.StringBuilder]::new("|`n")
+
+                        $items = $string.Split("`n")
+                        for ($i = 0; $i -lt $items.Length; $i++) {
+                            $workingString = $items[$i] -replace '\r$'
+                            $length = $workingString.Length
+                            $index = 0
+                            $wrap = 80
+
+                            while ($index -lt $length) {
+                                $breakpoint = $wrap
+                                $linebreak = $false
+
+                                if (($length - $index) -gt $wrap) {
+                                    $lastSpaceIndex = $workingString.LastIndexOf(' ', $index + $wrap, $wrap)
+                                    if ($lastSpaceIndex -ne -1) {
+                                        $breakpoint = $lastSpaceIndex - $index
+                                    }
+                                    else {
+                                        $linebreak = $true
+                                        $breakpoint--
+                                    }
+                                }
+                                else {
+                                    $breakpoint = $length - $index
+                                }
+
+                                $null = $multiline.Append($padding).Append($workingString.Substring($index, $breakpoint).Trim())
+                                if ($linebreak) {
+                                    $null = $multiline.Append('\')
+                                }
+
+                                $index += $breakpoint
+                                if ($index -lt $length) {
+                                    $null = $multiline.Append([System.Environment]::NewLine)
+                                }
+                            }
+
+                            if ($i -lt ($items.Length - 1)) {
+                                $null = $multiline.Append([System.Environment]::NewLine)
+                            }
+                        }
+
+                        $multiline.ToString().TrimEnd()
+                        break
+                    }
+                    else {
+                        if ($string -match '^[#\[\]@\{\}\!\*]') {
+                            "'$($string -replace '''', '''''')'"
+                        }
+                        else {
+                            $string
+                        }
+                        break
+                    }
+                    break
+                }
+                'hashtable' {
+                    if ($InputObject.Count -gt 0 ) {
+                        $index = 0
+                        $string = [System.Text.StringBuilder]::new()
+                        foreach ($item in $InputObject.Keys) {
+                            if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                            if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                            $null = $string.Append( $NewPadding).Append( $item).Append(': ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        }
+                        $string.ToString()
+                    }
+                    else { '{}' }
+                    break
+                }
+                'boolean' {
+                    if ($InputObject -eq $true) { 'true' } else { 'false' }
+                    break
+                }
+                'array' {
+                    $string = [System.Text.StringBuilder]::new()
+                    $index = 0
+                    foreach ($item in $InputObject ) {
+                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                        $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
+                    }
+                    $string.ToString()
+                    break
+                }
+                'int32' {
+                    $InputObject
+                }
+                'double' {
+                    $InputObject
+                }
+                default {
+                    "'$InputObject'"
+                }
+            }
+            return $Output
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            $_.Exception | Write-PodeErrorLog -CheckInnerException
+            throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
+        }
     }
 }

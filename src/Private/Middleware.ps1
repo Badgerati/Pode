@@ -176,6 +176,20 @@ function Get-PodeLimitMiddleware {
         })
 }
 
+<#
+.SYNOPSIS
+    Retrieves middleware for serving public static content in a Pode web server.
+.DESCRIPTION
+    This function retrieves middleware for serving public static content in a Pode web server.
+    It searches for static content based on the requested path and serves it if found.
+.PARAMETER WebEvent
+    The PodeWebEvent object representing the incoming web request.
+.PARAMETER PodeContext
+    The PodeContext object representing the current Pode server context.
+.EXAMPLE
+    Get-PodePublicMiddleware
+    Retrieves middleware for serving public static content.
+#>
 function Get-PodePublicMiddleware {
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_static_content__' -ScriptBlock {
             # only find public static content here

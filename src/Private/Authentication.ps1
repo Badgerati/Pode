@@ -429,7 +429,8 @@ function Get-PodeAuthBearerType {
                 if ($_.Exception.Message -ilike '*jwt*') {
                     return @{
                         Message = $_.Exception.Message
-                        Code    = 400
+                        #https://www.rfc-editor.org/rfc/rfc6750 Bearer token should return 401
+                        Code    = 401
                     }
                 }
 
@@ -1091,7 +1092,6 @@ function Invoke-PodeAuthValidation {
     # if it's a merged auth, re-call this function and check against "succeed" value
     if ($auth.Merged) {
         $results = @{}
-
         foreach ($authName in $auth.Authentications) {
             $result = Invoke-PodeAuthValidation -Name $authName
 
@@ -1115,7 +1115,6 @@ function Invoke-PodeAuthValidation {
                 $results[$authName] = $result
             }
         }
-
         # if the last auth failed, and we only need one auth to pass, set failure and return
         if (!$result.Success -and $auth.PassOne) {
             return $result
@@ -2136,6 +2135,62 @@ function Find-PodeAuth {
 
     return $PodeContext.Server.Authentications.Methods[$Name]
 }
+
+<#
+.SYNOPSIS
+  Expands a list of authentication names, including merged authentication methods.
+
+.DESCRIPTION
+  The Expand-PodeAuthMerge function takes an array of authentication names and expands it by resolving any merged authentication methods
+  into their individual components. It is particularly useful in scenarios where authentication methods are combined or merged, and there
+  is a need to process each individual method separately.
+
+.PARAMETER Names
+  An array of authentication method names. These names can include both discrete authentication methods and merged ones.
+
+.EXAMPLE
+  $expandedAuthNames = Expand-PodeAuthMerge -Names @('BasicAuth', 'CustomMergedAuth')
+
+  Expands the provided authentication names, resolving 'CustomMergedAuth' into its constituent authentication methods if it's a merged one.
+#>
+function Expand-PodeAuthMerge {
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $Names
+    )
+
+    # Initialize a hashtable to store expanded authentication names
+    $authNames = @{}
+
+    # Iterate over each authentication name
+    foreach ($authName in $Names) {
+        # Handle the special case of anonymous access
+        if ($authName -eq '%_allowanon_%') {
+            $authNames[$authName] = $true
+        }
+        else {
+            # Retrieve the authentication method from the Pode context
+            $_auth = $PodeContext.Server.Authentications.Methods[$authName]
+
+            # Check if the authentication is a merged one and expand it
+            if ($_auth.merged) {
+                foreach ($key in (Expand-PodeAuthMerge -Names $_auth.Authentications)) {
+                    $authNames[$key] = $true
+                }
+            }
+            else {
+                # If not merged, add the authentication name to the list
+                $authNames[$_auth.Name] = $true
+            }
+        }
+    }
+
+    # Return the keys of the hashtable, which are the expanded authentication names
+    return $authNames.Keys
+}
+
 
 function Import-PodeAuthADModule {
     if (!(Test-PodeIsWindows)) {

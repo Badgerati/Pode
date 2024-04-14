@@ -13,7 +13,7 @@ function Start-PodeInternalServer {
         $null = Test-PodeVersionPwshEOL -ReportUntested
 
         # setup temp drives for internal dirs
-        Add-PodePSInbuiltDrives
+        Add-PodePSInbuiltDrive
 
         # setup inbuilt scoped vars
         Add-PodeScopedVariablesInbuilt
@@ -35,6 +35,9 @@ function Start-PodeInternalServer {
 
         $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
         $null = Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
+
+        #Validate OpenAPI definitions
+        Test-PodeOADefinitionInternal
 
         # load any modules/snapins
         Import-PodeSnapinsIntoRunspaceState
@@ -162,6 +165,42 @@ function Start-PodeInternalServer {
 
                 Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
             }
+            # state the OpenAPI endpoints for each definition
+            foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
+                $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
+                if ( $bookmarks) {
+                    Write-PodeHost
+                    if (!$OpenAPIHeader) {
+                        Write-PodeHost 'OpenAPI Info:' -ForegroundColor Yellow
+                        $OpenAPIHeader = $true
+                    }
+                    Write-PodeHost " '$key':" -ForegroundColor Yellow
+
+                    if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
+                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor Yellow
+                        }
+                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor Yellow
+                        }
+                    }
+                    else {
+                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        $endpoints | ForEach-Object {
+                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
+                            Write-PodeHost "     . $url" -ForegroundColor Yellow
+                        }
+                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        $endpoints | ForEach-Object {
+                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
+                            Write-PodeHost "     . $url" -ForegroundColor Yellow
+                        }
+                    }
+                }
+            }
+
         }
     }
     catch {
@@ -232,8 +271,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.EndpointsMap.Clear()
 
         # clear openapi
-        $PodeContext.Server.OpenAPI = Get-PodeOABaseObject
-
+        $PodeContext.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $PodeContext.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
         # clear the sockets
         $PodeContext.Server.Signals.Enabled = $false
         $PodeContext.Server.Signals.Listener = $null

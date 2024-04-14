@@ -37,6 +37,7 @@ $custom_access = New-PodeAccessScheme -Custom -Path 'CustomProp'
 #>
 function New-PodeAccessScheme {
     [CmdletBinding(DefaultParameterSetName = 'Type_Path')]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Type_Scriptblock')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Type_Path')]
@@ -113,6 +114,9 @@ Or they can be used independant of Authentication/Routes for custom scenarios.
 .PARAMETER Name
 A unique Name for the Access method.
 
+.PARAMETER Description
+A short description used by OpenAPI.
+
 .PARAMETER Scheme
 The access Scheme to use for retrieving credentials (From New-PodeAccessScheme).
 
@@ -146,6 +150,9 @@ function Add-PodeAccess {
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
+
+        [string]
+        $Description,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
@@ -183,6 +190,7 @@ function Add-PodeAccess {
     # add access object
     $PodeContext.Server.Authorisations.Methods[$Name] = @{
         Name        = $Name
+        Description = $Description
         Scheme      = $Scheme
         ScriptBlock = $scriptObj
         Arguments   = $ArgumentList
@@ -334,6 +342,7 @@ $methods = Get-PodeAccess -Name 'Example1', 'Example2'
 #>
 function Get-PodeAccess {
     [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter()]
         [string[]]
@@ -399,6 +408,7 @@ if (Test-PodeAccess -Name 'Example' -Source 'Developer' -Destination 'Admin') { 
 #>
 function Test-PodeAccess {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]

@@ -795,11 +795,17 @@ An optional foreground colour.
 .PARAMETER NoNewLine
 Whether or not to write a new line.
 
+.PARAMETER Explode
+Show the object content
+
+.PARAMETER ShowType
+Show the Object Type
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
 function Write-PodeHost {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     param(
         [Parameter(Position = 0, ValueFromPipeline = $true)]
         [object]
@@ -810,11 +816,34 @@ function Write-PodeHost {
         $ForegroundColor,
 
         [switch]
-        $NoNewLine
+        $NoNewLine,
+
+        [Parameter( Mandatory = $true, ParameterSetName = 'object')]
+        [switch]
+        $Explode,
+
+        [Parameter( Mandatory = $false, ParameterSetName = 'object')]
+        [switch]
+        $ShowType
     )
 
     if ($PodeContext.Server.Quiet) {
         return
+    }
+
+    if ($Explode.IsPresent ) {
+        if ($null -eq $Object) {
+            if ($ShowType) {
+                $Object = "`tNull Value"
+            }
+        }
+        else {
+            $type = $Object.gettype().FullName
+            $Object = $Object | Out-String
+            if ($ShowType) {
+                $Object = "`tTypeName: $type`n$Object"
+            }
+        }
     }
 
     if ($ForegroundColor) {
@@ -1208,4 +1237,123 @@ function Get-PodeVersion {
     else {
         return '[dev]'
     }
+}
+
+<#
+.SYNOPSIS
+Converts an XML node to a PowerShell hashtable.
+
+.DESCRIPTION
+The ConvertFrom-PodeXml function converts an XML node, including all its child nodes and attributes, into an ordered hashtable. This is useful for manipulating XML data in a more PowerShell-centric way.
+
+.PARAMETER node
+The XML node to convert. This parameter takes an XML node and processes it, along with its child nodes and attributes.
+
+.PARAMETER Prefix
+A string prefix used to indicate an attribute. Default is an empty string.
+
+.PARAMETER ShowDocElement
+Indicates whether to show the document element. Default is false.
+
+.PARAMETER KeepAttributes
+If set, the function keeps the attributes of the XML nodes in the resulting hashtable.
+
+.EXAMPLE
+$node = [xml](Get-Content 'path\to\file.xml').DocumentElement
+ConvertFrom-PodeXml -node $node
+
+Converts the XML document's root node to a hashtable.
+
+.INPUTS
+System.Xml.XmlNode
+You can pipe a XmlNode to ConvertFrom-PodeXml.
+
+.OUTPUTS
+System.Collections.Hashtable
+Outputs an ordered hashtable representing the XML node structure.
+
+.NOTES
+This cmdlet is useful for transforming XML data into a structure that's easier to manipulate in PowerShell scripts.
+
+.LINK
+https://badgerati.github.io/Pode/Functions/Utility/ConvertFrom-PodeXml
+
+#>
+function ConvertFrom-PodeXml {
+    [CmdletBinding()]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
+    param
+    (
+        [Parameter(Mandatory = $true, ValueFromPipeline)]
+        [System.Xml.XmlNode]$node, #we are working through the nodes
+        [string]$Prefix = '', #do we indicate an attribute with a prefix?
+        $ShowDocElement = $false, #Do we show the document element?,
+        [switch]
+        $KeepAttributes
+    )
+    #if option set, we skip the Document element
+    if ($node.DocumentElement -and !($ShowDocElement))
+    { $node = $node.DocumentElement }
+    $oHash = [ordered] @{ } # start with an ordered hashtable.
+    #The order of elements is always significant regardless of what they are
+    if ($null -ne $node.Attributes  ) {
+        #if there are elements
+        # record all the attributes first in the ordered hash
+        $node.Attributes | ForEach-Object {
+            $oHash.$("$Prefix$($_.FirstChild.parentNode.LocalName)") = $_.FirstChild.value
+        }
+    }
+    # check to see if there is a pseudo-array. (more than one
+    # child-node with the same name that must be handled as an array)
+    $node.ChildNodes | #we just group the names and create an empty
+        #array for each
+        Group-Object -Property LocalName | Where-Object { $_.count -gt 1 } | Select-Object Name |
+        ForEach-Object {
+            $oHash.($_.Name) = @() <# create an empty array for each one#>
+        }
+    foreach ($child in $node.ChildNodes) {
+        #now we look at each node in turn.
+        $childName = $child.LocalName
+        if ($child -is [system.xml.xmltext]) {
+            # if it is simple XML text
+            $oHash.$childname += $child.InnerText
+        }
+        # if it has a #text child we may need to cope with attributes
+        elseif ($child.FirstChild.Name -eq '#text' -and $child.ChildNodes.Count -eq 1) {
+            if ($null -ne $child.Attributes -and $KeepAttributes ) {
+                #hah, an attribute
+                <#we need to record the text with the #text label and preserve all
+					the attributes #>
+                $aHash = [ordered]@{ }
+                $child.Attributes | ForEach-Object {
+                    $aHash.$($_.FirstChild.parentNode.LocalName) = $_.FirstChild.value
+                }
+                #now we add the text with an explicit name
+                $aHash.'#text' += $child.'#text'
+                $oHash.$childname += $aHash
+            }
+            else {
+                #phew, just a simple text attribute.
+                $oHash.$childname += $child.FirstChild.InnerText
+            }
+        }
+        elseif ($null -ne $child.'#cdata-section' ) {
+            # if it is a data section, a block of text that isnt parsed by the parser,
+            # but is otherwise recognized as markup
+            $oHash.$childname = $child.'#cdata-section'
+        }
+        elseif ($child.ChildNodes.Count -gt 1 -and
+                        ($child | Get-Member -MemberType Property).Count -eq 1) {
+            $oHash.$childname = @()
+            foreach ($grandchild in $child.ChildNodes) {
+                $oHash.$childname += (ConvertFrom-PodeXml $grandchild)
+            }
+        }
+        else {
+            # create an array as a value  to the hashtable element
+            $oHash.$childname += (ConvertFrom-PodeXml $child)
+        }
+    }
+    return $oHash
+
 }

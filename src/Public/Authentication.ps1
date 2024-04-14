@@ -35,6 +35,9 @@ An array of arguments to supply to the Custom Authentication type's ScriptBlock.
 .PARAMETER Name
 The Name of an Authentication type - such as Basic or NTLM.
 
+.PARAMETER Description
+A short description for security scheme. CommonMark syntax MAY be used for rich text representation
+
 .PARAMETER Realm
 The name of scope of the protected area.
 
@@ -172,6 +175,9 @@ function New-PodeAuthScheme {
         [string]
         $Name,
 
+        [string]
+        $Description,
+
         [Parameter()]
         [string]
         $Realm,
@@ -302,6 +308,7 @@ function New-PodeAuthScheme {
                 InnerScheme   = $InnerScheme
                 Scheme        = 'http'
                 Arguments     = @{
+                    Description  = $Description
                     HeaderTag    = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
                     Encoding     = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
                     AsCredential = $AsCredential
@@ -367,10 +374,11 @@ function New-PodeAuthScheme {
                 Scheme        = 'http'
                 InnerScheme   = $InnerScheme
                 Arguments     = @{
-                    HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
-                    Scopes    = $Scope
-                    AsJWT     = $AsJWT
-                    Secret    = $secretBytes
+                    Description = $Description
+                    HeaderTag   = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
+                    Scopes      = $Scope
+                    AsJWT       = $AsJWT
+                    Secret      = $secretBytes
                 }
             }
         }
@@ -388,6 +396,7 @@ function New-PodeAuthScheme {
                 InnerScheme   = $InnerScheme
                 Scheme        = 'http'
                 Arguments     = @{
+                    Description  = $Description
                     Fields       = @{
                         Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
                         Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
@@ -413,7 +422,6 @@ function New-PodeAuthScheme {
             if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
                 throw 'OAuth2 requires a Client Secret when not using PKCE'
             }
-
             return @{
                 Name          = 'OAuth2'
                 Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
@@ -426,18 +434,19 @@ function New-PodeAuthScheme {
                 Scheme        = 'oauth2'
                 InnerScheme   = $InnerScheme
                 Arguments     = @{
-                    Scopes = $Scope
-                    PKCE   = @{
+                    Description = $Description
+                    Scopes      = $Scope
+                    PKCE        = @{
                         Enabled       = $UsePKCE
                         CodeChallenge = @{
                             Method = $CodeChallengeMethod
                         }
                     }
-                    Client = @{
+                    Client      = @{
                         ID     = $ClientId
                         Secret = $ClientSecret
                     }
-                    Urls   = @{
+                    Urls        = @{
                         Redirect  = $RedirectUrl
                         Authorise = $AuthoriseUrl
                         Token     = $TokenUrl
@@ -477,6 +486,7 @@ function New-PodeAuthScheme {
                 InnerScheme   = $InnerScheme
                 Scheme        = 'apiKey'
                 Arguments     = @{
+                    Description  = $Description
                     Location     = $Location
                     LocationName = $LocationName
                     AsJWT        = $AsJWT
@@ -1514,6 +1524,11 @@ The Name of the Authentication method to use.
 .PARAMETER Route
 A Route path for which Routes this Middleware should only be invoked against.
 
+.PARAMETER OADefinitionTag
+An array of string representing the unique tag for the API specification.
+This tag helps in distinguishing between different versions or types of API specifications within the application.
+Use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeAuthMiddleware -Name 'GlobalAuth' -Authentication AuthName
 
@@ -1534,8 +1549,13 @@ function Add-PodeAuthMiddleware {
 
         [Parameter()]
         [string]
-        $Route
+        $Route,
+
+        [string[]]
+        $OADefinitionTag
     )
+
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
     if (!(Test-PodeAuthExists -Name $Authentication)) {
         throw "Authentication method does not exist: $($Authentication)"
@@ -1545,7 +1565,7 @@ function Add-PodeAuthMiddleware {
         New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
         Add-PodeMiddleware -Name $Name -Route $Route
 
-    Set-PodeOAGlobalAuth -Name $Authentication -Route $Route
+    Set-PodeOAGlobalAuth -DefinitionTag $DefinitionTag -Name $Authentication -Route $Route
 }
 
 <#

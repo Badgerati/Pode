@@ -15,7 +15,7 @@ BeforeAll {
 
 Describe 'Start-PodeInternalServer' {
     BeforeAll {
-        Mock Add-PodePSInbuiltDrives { }
+        Mock Add-PodePSInbuiltDrive { }
         Mock Invoke-PodeScriptBlock { }
         Mock New-PodeRunspaceState { }
         Mock New-PodeRunspacePools { }
@@ -165,7 +165,11 @@ Describe 'Restart-PodeInternalServer' {
                 Http            = @{
                     Listener = $null
                 }
-                OpenAPI         = @{}
+                OpenAPI         = @{
+                    DefaultDefinitionTag  = 'default'
+                    SelectedDefinitionTag = 'default'
+                    Definitions           = @{ 'default' = Get-PodeOABaseObject }
+                }
                 BodyParsers     = @{}
                 AutoImport      = @{
                     Modules      = @{ Exported = @() }

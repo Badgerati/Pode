@@ -1,14 +1,16 @@
 $path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
-
-# or just:
-# Import-Module Pode
+if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
+    Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+}
+else {
+    Import-Module -Name 'Pode'
+}
 
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http
 
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
