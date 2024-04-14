@@ -18,7 +18,7 @@ $Versions = @{
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
     DotNet      = '8.0'
-    MkDocsTheme = '9.4.6'
+    MkDocsTheme = '9.5.17'
     PlatyPS     = '0.14.2'
 }
 
