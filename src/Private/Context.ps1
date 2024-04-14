@@ -474,8 +474,8 @@ function New-PodeContext {
     # scoped variables
     $ctx.Server.ScopedVariables = [ordered]@{}
 
-    # Yaml module caching
-    $ctx.Server.Cache = @{
+    # an internal cache for adhoc values, such as module importing checks
+    $ctx.Server.InternalCache = @{
         YamlModuleImported = $null
     }
 

@@ -1,6 +1,5 @@
 # Overview
 
-
 Pode has built-in support for converting your routes into OpenAPI 3.0 definitions. There is also support for enabling simple Swagger and/or ReDoc viewers and others.
 
 The OpenApi module has been extended with many more functions, and some old ones have been improved.
@@ -11,7 +10,7 @@ You can enable OpenAPI in Pode, and a straightforward definition will be generat
 
 ## Enabling OpenAPI
 
-To enable support for generating OpenAPI definitions you'll need to use the [`Enable-PodeOpenApi`] function. This will allow you to set a title and version for your API. You can also set a default route to retrieve the OpenAPI definition for tools like Swagger or ReDoc, the default is at `/openapi`.
+To enable support for generating OpenAPI definitions you'll need to use the [`Enable-PodeOpenApi`](../../../Functions/OpenApi/Enable-PodeOpenApi) function. This will allow you to set a title and version for your API. You can also set a default route to retrieve the OpenAPI definition for tools like Swagger or ReDoc, the default is at `/openapi`.
 
 You can also set a route filter (such as `/api/*`, the default is `/*` for everything), so only those routes are included in the definition.
 
@@ -38,7 +37,7 @@ When you enable OpenAPI, and don't set any other OpenAPI data, the following is 
 * If you have multiple endpoints, then the servers section will be included
 * Any authentication will be included
 
-This can be changed with [`Enable-PodeOpenApi`]
+This can be changed with [`Enable-PodeOpenApi`](../../../Functions/OpenApi/Enable-PodeOpenApi)
 
 For example to change the default response 404 and 500
 
@@ -62,7 +61,7 @@ Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -DisableMinimal
 
 ### Get Definition
 
-Instead of defining a route to return the definition, you can write the definition to the response whenever you want, and in any route, using the [`Get-PodeOADefinition`] function. This could be useful in certain scenarios like in Azure Functions, where you can enable OpenAPI, and then write the definition to the response of a GET request if some query parameter is set; eg: `?openapi=1`.
+Instead of defining a route to return the definition, you can write the definition to the response whenever you want, and in any route, using the [`Get-PodeOADefinition`](../../../Functions/OpenApi/Get-PodeOADefinition) function. This could be useful in certain scenarios like in Azure Functions, where you can enable OpenAPI, and then write the definition to the response of a GET request if some query parameter is set; eg: `?openapi=1`.
 
 For example:
 
@@ -76,8 +75,8 @@ Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
 
 ## OpenAPI Info object
 
-In previous releases some of the Info object properties like Version and Title were defined by [`Enable-PodeOpenApi`].
-Starting from version 2.10 a new [`Add-PodeOAInfo`] function has been added to create a full OpenAPI Info spec.
+In previous releases some of the Info object properties like Version and Title were defined by [`Enable-PodeOpenApi`](../../../Functions/OpenApi/Enable-PodeOpenApi).
+Starting from version 2.10 a new [`Add-PodeOAInfo`](../../../Functions/OpenApi/Add-PodeOAInfo) function has been added to create a full OpenAPI Info spec.
 
 ```powershell
 Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' `
@@ -128,7 +127,7 @@ Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' `
 
 ## Authentication
 
-Any authentication defined, either by [`Add-PodeAuthMiddleware`], or using the `-Authentication` parameter on Routes, will be automatically added to the `security` section of the OpenAPI definition.
+Any authentication defined, either by [`Add-PodeAuthMiddleware`](../../../Functions/Authentication/Add-PodeAuthMiddleware), or using the `-Authentication` parameter on Routes, will be automatically added to the `security` section of the OpenAPI definition.
 
 
 ## Tags
@@ -152,9 +151,9 @@ Add-PodeRoute -PassThru -Method get -Path '/pet/findByStatus' -Authentication 'L
 
 ## Routes
 
-To extend the definition of a route, you can use the `-PassThru` switch on the [`Add-PodeRoute`] function. This will cause the route that was created to be returned, so you can pass it down the pipe into more OpenAPI functions.
+To extend the definition of a route, you can use the `-PassThru` switch on the [`Add-PodeRoute`](../../../Functions/Routes/Add-PodeRoute) function. This will cause the route that was created to be returned, so you can pass it down the pipe into more OpenAPI functions.
 
-To add metadata to a route's definition you can use the [`Set-PodeOARouteInfo`] function. This will allow you to define a summary/description for the route, as well as tags for grouping:
+To add metadata to a route's definition you can use the [`Set-PodeOARouteInfo`](../../../Functions/OpenApi/Set-PodeOARouteInfo) function. This will allow you to define a summary/description for the route, as well as tags for grouping:
 
 ```powershell
 Add-PodeRoute -Method Get -Path "/api/resources" -ScriptBlock {
@@ -167,7 +166,7 @@ Each of the following OpenAPI functions have a `-PassThru` switch, allowing you 
 
 ### Responses
 
-You can define multiple responses for a route, but only one of each status code, using the [`Add-PodeOAResponse`] function. You can either just define the response and status code, with a custom description, or with a schema defining the payload of the response.
+You can define multiple responses for a route, but only one of each status code, using the [`Add-PodeOAResponse`](../../../Functions/OpenApi/Add-PodeOAResponse) function. You can either just define the response and status code, with a custom description, or with a schema defining the payload of the response.
 
 The following is an example of defining simple 200 and 404 responses on a route:
 
@@ -230,7 +229,7 @@ Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
 ]
 ```
 
-Internally, each route is created with an empty default 200 and 500 response. You can remove these, or other added responses, by using [`Remove-PodeOAResponse`]:
+Internally, each route is created with an empty default 200 and 500 response. You can remove these, or other added responses, by using [`Remove-PodeOAResponse`](../../../Functions/OpenApi/Remove-PodeOAResponse):
 
 ```powershell
 Add-PodeRoute -Method Get -Path "/api/user/:userId" -ScriptBlock {
@@ -243,7 +242,7 @@ Add-PodeRoute -Method Get -Path "/api/user/:userId" -ScriptBlock {
 
 #### Parameters
 
-You can set route parameter definitions, such as parameters passed in the path/query, by using the [`Set-PodeOARequest`] function with the `-Parameters` parameter. The parameter takes an array of properties converted into parameters, using the [`ConvertTo-PodeOAParameter`] function.
+You can set route parameter definitions, such as parameters passed in the path/query, by using the [`Set-PodeOARequest`](../../../Functions/OpenApi/Set-PodeOARequest) function with the `-Parameters` parameter. The parameter takes an array of properties converted into parameters, using the [`ConvertTo-PodeOAParameter`](../../../Functions/OpenApi/ConvertTo-PodeOAParameter) function.
 
 For example, to create some integer `userId` parameter that is supplied in the path of the request, the following will work:
 
@@ -276,7 +275,7 @@ Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
 
 #### Payload
 
-You can set request payload schemas by using the [`Set-PodeOARequest`]function, with the `-RequestBody` parameter. The request body can be defined using the [`New-PodeOARequestBody`] function, and supplying schema definitions for content types - this works in very much a similar way to defining responses above.
+You can set request payload schemas by using the [`Set-PodeOARequest`](../../../Functions/OpenApi/Set-PodeOARequest)function, with the `-RequestBody` parameter. The request body can be defined using the [`New-PodeOARequestBody`](../../../Functions/OpenApi/New-PodeOARequestBody) function, and supplying schema definitions for content types - this works in very much a similar way to defining responses above.
 
 For example, to define a request JSON payload of some `userId` and `name` you could use the following:
 
@@ -317,7 +316,7 @@ You can define reusable OpenAPI components in Pode. Currently supported are Sche
 
 ### Schemas
 
-To define a reusable schema that can be used in request bodies, and responses, you can use the [`Add-PodeOAComponentSchema`] function. You'll need to supply a Name, and a Schema that can be reused.
+To define a reusable schema that can be used in request bodies, and responses, you can use the [`Add-PodeOAComponentSchema`](../../../Functions/OAComponents/Add-PodeOAComponentSchema) function. You'll need to supply a Name, and a Schema that can be reused.
 
 The following is an example of defining a schema which is a object of Name, UserId, and Age:
 
@@ -344,7 +343,7 @@ Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
 
 ### Request Bodies
 
-To define a reusable request bodies you can use the [`Add-PodeOAComponentRequestBody`] function. You'll need to supply a Name, as well as the needed schemas for each content type.
+To define a reusable request bodies you can use the [`Add-PodeOAComponentRequestBody`](../../../Functions/OAComponents/Add-PodeOAComponentRequestBody) function. You'll need to supply a Name, as well as the needed schemas for each content type.
 
 The following is an example of defining a JSON object that a Name, UserId, and an Enable flag:
 
@@ -376,7 +375,7 @@ The JSON payload expected is of the format:
 
 ### Parameters
 
-To define reusable parameters that are used on requests, you can use the [`Add-PodeOAComponentParameter`] function. You'll need to supply a Name and the Parameter definition.
+To define reusable parameters that are used on requests, you can use the [`Add-PodeOAComponentParameter`](../../../Functions/OAComponents/Add-PodeOAComponentParameter) function. You'll need to supply a Name and the Parameter definition.
 
 The following is an example of defining an integer path parameter for a `userId`, and then using that parameter on a route.
 
@@ -396,7 +395,7 @@ Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
 
 ### Responses
 
-To define a reusable response definition you can use the [`Add-PodeOAComponentResponse`] function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
+To define a reusable response definition you can use the [`Add-PodeOAComponentResponse`](../../../Functions/OAComponents/Add-PodeOAComponentResponse) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
 The following is an example of defining a 200 response with a JSON payload of an array of objects for Name/UserId. The Response component can be used by a route referencing the name:
 
@@ -434,7 +433,7 @@ the JSON response payload defined is as follows:
 
 ### Examples
 
-To define a reusable example definition you can use the [`Add-PodeOAComponentExample`] function. You'll need to supply a Name, a Summary and a list of value representing the object.
+To define a reusable example definition you can use the [`Add-PodeOAComponentExample`](../../../Functions/OAComponents/Add-PodeOAComponentExample) function. You'll need to supply a Name, a Summary and a list of value representing the object.
 
 The following is an example that defines three Pet examples request bodies, and how they're used in a Route's OpenAPI definition:
 
@@ -471,7 +470,7 @@ Add-PodeRoute -PassThru -Method Put -Path '/pet/:petId' -ScriptBlock {
 
 ### Headers
 
-To define a reusable header definition you can use the [`Add-PodeOAComponentHeader`] function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
+To define a reusable header definition you can use the [`Add-PodeOAComponentHeader`](../../../Functions/OAComponents/Add-PodeOAComponentHeader) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
 ```powershell
  # define Headers
@@ -494,7 +493,7 @@ Add-PodeRoute -PassThru -Method Get -Path '/user/login' -ScriptBlock {
 
 ### CallBacks
 
-To define a reusable callback definition you can use the [`Add-PodeOAComponentCallBack`] function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
+To define a reusable callback definition you can use the [`Add-PodeOAComponentCallBack`](../../../Functions/OAComponents/Add-PodeOAComponentCallBack) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
 ```powershell
 Add-PodeRoute -PassThru -Method Post -Path '/petcallbackReference'  -Authentication 'Login-OAuth2' `
@@ -516,7 +515,7 @@ Add-PodeRoute -PassThru -Method Post -Path '/petcallbackReference'  -Authenticat
 
 ### Response Links
 
-To define a reusable response link definition you can use the [`Add-PodeOAComponentResponseLink`] function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
+To define a reusable response link definition you can use the [`Add-PodeOAComponentResponseLink`](../../../Functions/OAComponents/Add-PodeOAComponentResponseLink) function. You'll need to supply a Name, and optionally any Content/Header schemas that define the responses payload.
 
 ```powershell
 #Add link reference
@@ -551,12 +550,12 @@ Properties are used to create all Parameters and Schemas in OpenAPI. You can use
 
 There are 5 simple property types: Integers, Numbers, Strings, Booleans, and Schemas. Each of which can be created using the following functions:
 
-* [`New-PodeOAIntProperty`]
-* [`New-PodeOANumberProperty`]
-* [`New-PodeOAStringProperty`]
-* [`New-PodeOABoolProperty`]
-* [`New-PodeOASchemaProperty`]
-* [`New-PodeOAMultiTypeProperty`] (Note: OpenAPI 3.1 only)
+* [`New-PodeOAIntProperty`](../../../Functions/OAProperties/New-PodeOAIntProperty)
+* [`New-PodeOANumberProperty`](../../../Functions/OAProperties/New-PodeOANumberProperty)
+* [`New-PodeOAStringProperty`](../../../Functions/OAProperties/New-PodeOAStringProperty)
+* [`New-PodeOABoolProperty`](../../../Functions/OAProperties/New-PodeOABoolProperty)
+* [`New-PodeOASchemaProperty`](../../../Functions//New-PodeOASchemaProperty)
+* [`New-PodeOAMultiTypeProperty`](../../../Functions/OAProperties/New-PodeOAMultiTypeProperty) (Note: OpenAPI 3.1 only)
 
 These properties can be created with a Name, and other flags such as Required and/or a Description:
 
@@ -611,7 +610,7 @@ An object property is a combination of multiple other properties - both simple, 
 There are two ways to define objects:
 
 1. Similar to arrays, you can use the `-Object` switch on the simple properties.
-2. You can use the [`New-PodeOAObjectProperty`] function to combine multiple properties.
+2. You can use the [`New-PodeOAObjectProperty`](../../../Functions/OAProperties/New-PodeOAObjectProperty) function to combine multiple properties.
 
 #### Simple
 
@@ -647,7 +646,7 @@ This wil result in something like the following JSON:
 
 #### Complex
 
-Unlike the `-Object` switch that simply converts a single property into an object, the [`New-PodeOAObjectProperty`] function can combine and convert multiple properties.
+Unlike the `-Object` switch that simply converts a single property into an object, the [`New-PodeOAObjectProperty`](../../../Functions/OAProperties/New-PodeOAObjectProperty) function can combine and convert multiple properties.
 
 For example, the following will create an object using an Integer, String, and a Boolean:
 
@@ -678,7 +677,7 @@ As JSON, this could look as follows:
 }
 ```
 
-You can also supply the `-Array` switch to the [`New-PodeOAObjectProperty`] function. This will result in an array of objects. For example, if we took the above:
+You can also supply the `-Array` switch to the [`New-PodeOAObjectProperty`](../../../Functions/OAProperties/New-PodeOAObjectProperty) function. This will result in an array of objects. For example, if we took the above:
 
 ```powershell
 New-PodeOAIntProperty -Name 'userId'| New-PodeOAStringProperty -Name 'name'|
@@ -742,9 +741,9 @@ OpenAPI 3.x provides several keywords which you can use to combine schemas. You 
 * allOf - validates the value against all the sub-schemas
 * anyOf - validates the value against any (one or more) of the sub-schemas
 
-You can use the [`Merge-PodeOAProperty`] will instead define a relationship between the properties.
+You can use the [`Merge-PodeOAProperty`](../../../Functions/OAProperties/Merge-PodeOAProperty) will instead define a relationship between the properties.
 
-Unlike [`New-PodeOAObjectProperty`] which combines and converts multiple properties into an Object, [`Merge-PodeOAProperty`] will instead define a relationship between the properties.
+Unlike [`New-PodeOAObjectProperty`](../../../Functions/OAProperties/New-PodeOAObjectProperty) which combines and converts multiple properties into an Object, [`Merge-PodeOAProperty`](../../../Functions/OAProperties/Merge-PodeOAProperty) will instead define a relationship between the properties.
 
 For example, the following will create an something like an C Union object using an Integer, String, and a Boolean:
 
@@ -799,7 +798,7 @@ As JSON, this could look as follows:
 }
 ```
 
-You can also supply a Component Schema created using [`Add-PodeOAComponentSchema`]. For example, if we took the above:
+You can also supply a Component Schema created using [`Add-PodeOAComponentSchema`](../../../Functions/OAComponents/Add-PodeOAComponentSchema). For example, if we took the above:
 
 ```powershell
     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 -ReadOnly |
@@ -909,7 +908,7 @@ If you're not using a custom OpenAPI viewer, then you can use one or more of the
 
 For each you can customise the Route path to access the page on, but by default Swagger is at `/swagger`, ReDoc is at `/redoc`, etc. If you've written your own custom OpenAPI definition then you can also set a custom Route path to fetch the definition on.
 
-To enable a viewer you can use the [`Enable-PodeOAViewer`] function:
+To enable a viewer you can use the [`Enable-PodeOAViewer`](../../../Functions/OpenApi/Enable-PodeOAViewer) function:
 
 ```powershell
 # for swagger at "/docs/swagger"
@@ -966,7 +965,7 @@ Enable-PodeOpenApi -Path '/docs/openapi/v3.1' -OpenApiVersion '3.1.0' -Definitio
 Enable-PodeOpenApi -Path '/docs/openapi/admin' -OpenApiVersion '3.1.0' -DefinitionTag 'admin'
 ```
 
-There is also [`Select-PodeOADefinition`], which simplifies the selection of which OpenAPI definition to use as a wrapper around multiple OpenAPI functions, or Route functions. Meaning you don't have to specify `-DefinitionTag` on embedded OpenAPI/Route calls:
+There is also [`Select-PodeOADefinition`](../../../Functions/OpenApi/Select-PodeOADefinition), which simplifies the selection of which OpenAPI definition to use as a wrapper around multiple OpenAPI functions, or Route functions. Meaning you don't have to specify `-DefinitionTag` on embedded OpenAPI/Route calls:
 
 ```powershell
 Select-PodeOADefinition -Tag 'v3', 'v3.1' -Scriptblock {

@@ -10,8 +10,9 @@ theme:
     - navigation.tabs.sticky
     - navigation.tracking
     - navigation.top
-    - content.copy.code
+    - content.code.copy
     - content.action.edit
+    - content.action.view
   font:
     text: Fira Sans
     code: Fira Code
@@ -40,6 +41,7 @@ markdown_extensions:
 
 repo_name: badgerati/pode
 repo_url: https://github.com/Badgerati/Pode
+edit_uri: edit/master/docs
 
 extra:
   social:
@@ -47,5 +49,7 @@ extra:
       link: https://discord.gg/fRqeGcbF6h
     - icon: fontawesome/brands/github
       link: https://github.com/badgerati/pode
-    - icon: fontawesome/brands/twitter
+    - icon: fontawesome/brands/x-twitter
       link: https://twitter.com/badgerati
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/badgerati/pode
