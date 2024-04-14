@@ -3089,24 +3089,24 @@ The depth that you want your object scripted to
 .EXAMPLE
 Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
 #>
-
 function ConvertTo-PodeYaml {
-    [OutputType('System.String')]
-
     [CmdletBinding()]
+    [OutputType([string])]
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
         [AllowNull()]
         $InputObject,
-        [parameter() ]
-        [int]$Depth = 16
+
+        [parameter()]
+        [int]
+        $Depth = 16
     )
 
-    if ($null -eq $PodeContext.Server.Cache.YamlModuleImported) {
-        $PodeContext.Server.Cache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
+    if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
+        $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
     }
 
-    if ($PodeContext.Server.YamlModuleImported) {
+    if ($PodeContext.Server.InternalCache.YamlModuleImported) {
         return ($InputObject | ConvertTo-Yaml)
     }
     else {
@@ -3150,12 +3150,10 @@ function ConvertTo-PodeYaml {
 #>
 
 function ConvertTo-PodeYamlInternal {
-
-    [OutputType('System.String')]
-
     [CmdletBinding()]
+    [OutputType([string])]
     param (
-        [parameter(  Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [AllowNull()]
         $InputObject,
 

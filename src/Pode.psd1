@@ -313,6 +313,7 @@
         'New-PodeOARequestBody',
         'Test-PodeOADefinitionTag',
         'Test-PodeOADefinition',
+
         # properties
         'New-PodeOAIntProperty',
         'New-PodeOANumberProperty',
@@ -322,7 +323,6 @@
         'New-PodeOAMultiTypeProperty',
         'Merge-PodeOAProperty',
         'New-PodeOAComponentSchemaProperty',
-
         'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
         'Enable-PodeOAViewer',
@@ -342,7 +342,7 @@
         'New-PodeOAServerEndpoint',
         'Test-PodeOAVersion',
 
-        #Components
+        # Components
         'Add-PodeOAComponentResponse',
         'Add-PodeOAComponentSchema',
         'Add-PodeOAComponentRequestBody',
@@ -355,6 +355,7 @@
         'Add-PodeOAWebhook',
         'Test-PodeOAComponent',
         'Remove-PodeOAComponent',
+
         # Metrics
         'Get-PodeServerUptime',
         'Get-PodeServerRestartCount',
@@ -494,15 +495,17 @@
         'Use-PodeScopedVariables'
     )
 
-
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = @('Enable-PodeOpenApiViewer', 'Enable-PodeOA', 'Get-PodeOpenApiDefinition', 'New-PodeOASchemaProperty')
-
+    AliasesToExport   = @(
+        'Enable-PodeOpenApiViewer',
+        'Enable-PodeOA',
+        'Get-PodeOpenApiDefinition',
+        'New-PodeOASchemaProperty'
+    )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData       = @{
         PSData       = @{
-
             # Tags applied to this module. These help with module discovery in online galleries.
             Tags         = @(
                 'powershell', 'web', 'server', 'http', 'https', 'listener', 'rest', 'api', 'tcp',
@@ -523,7 +526,6 @@
 
             # Release notes for this particular version of the module
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
-
         }
         PwshVersions = @{
             Untested  = '$versionsUntested$'
