@@ -43,7 +43,7 @@ Start-PodeServer -Threads 2 {
         # here you'd check a real user storage, this is just for example
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{
-                User = @{ ID ='M0R7Y302' }
+                User = @{ ID = 'M0R7Y302' }
             }
         }
 

@@ -8,8 +8,15 @@ function Start-PodeInternalServer {
     )
 
     try {
+        # Check if the running version of Powershell is EOL
+        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID))" -ForegroundColor Cyan
+        $null = Test-PodeVersionPwshEOL -ReportUntested
+
         # setup temp drives for internal dirs
-        Add-PodePSInbuiltDrives
+        Add-PodePSInbuiltDrive
+
+        # setup inbuilt scoped vars
+        Add-PodeScopedVariablesInbuilt
 
         # create the shared runspace state
         New-PodeRunspaceState
@@ -26,7 +33,11 @@ function Start-PodeInternalServer {
             $_script = Convert-PodeFileToScriptBlock -FilePath $PodeContext.Server.LogicPath
         }
 
-        Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure
+        $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
+        $null = Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
+
+        #Validate OpenAPI definitions
+        Test-PodeOADefinitionInternal
 
         # load any modules/snapins
         Import-PodeSnapinsIntoRunspaceState
@@ -40,6 +51,9 @@ function Start-PodeInternalServer {
 
         # start timer for task housekeeping
         Start-PodeTaskHousekeeper
+
+        # start the cache housekeeper
+        Start-PodeCacheHousekeeper
 
         # create timer/schedules for auto-restarting
         New-PodeAutoRestartServer
@@ -137,8 +151,56 @@ function Start-PodeInternalServer {
         if ($endpoints.Length -gt 0) {
             Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
             $endpoints | ForEach-Object {
-                Write-PodeHost "`t- $($_.Url)" -ForegroundColor Yellow
+                $flags = @()
+                if ($_.DualMode) {
+                    $flags += 'DualMode'
+                }
+
+                if ($flags.Length -eq 0) {
+                    $flags = [string]::Empty
+                }
+                else {
+                    $flags = "[$($flags -join ',')]"
+                }
+
+                Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
             }
+            # state the OpenAPI endpoints for each definition
+            foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
+                $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
+                if ( $bookmarks) {
+                    Write-PodeHost
+                    if (!$OpenAPIHeader) {
+                        Write-PodeHost 'OpenAPI Info:' -ForegroundColor Yellow
+                        $OpenAPIHeader = $true
+                    }
+                    Write-PodeHost " '$key':" -ForegroundColor Yellow
+
+                    if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
+                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor Yellow
+                        }
+                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                            Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor Yellow
+                        }
+                    }
+                    else {
+                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        $endpoints | ForEach-Object {
+                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
+                            Write-PodeHost "     . $url" -ForegroundColor Yellow
+                        }
+                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        $endpoints | ForEach-Object {
+                            $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
+                            Write-PodeHost "     . $url" -ForegroundColor Yellow
+                        }
+                    }
+                }
+            }
+
         }
     }
     catch {
@@ -207,18 +269,13 @@ function Restart-PodeInternalServer {
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
         $PodeContext.Server.EndpointsMap.Clear()
-        $PodeContext.Server.FindEndpoints = @{
-            Route = $false
-            Smtp  = $false
-            Tcp   = $false
-        }
 
         # clear openapi
-        $PodeContext.Server.OpenAPI = Get-PodeOABaseObject
-
+        $PodeContext.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $PodeContext.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
         # clear the sockets
         $PodeContext.Server.Signals.Enabled = $false
         $PodeContext.Server.Signals.Listener = $null
+        $PodeContext.Server.Http.Listener = $null
         $PodeContext.Listeners = @()
         $PodeContext.Receivers = @()
         $PodeContext.Watchers = @()
@@ -241,6 +298,13 @@ function Restart-PodeInternalServer {
 
         # clear up shared state
         $PodeContext.Server.State.Clear()
+
+        # clear scoped variables
+        $PodeContext.Server.ScopedVariables.Clear()
+
+        # clear cache
+        $PodeContext.Server.Cache.Items.Clear()
+        $PodeContext.Server.Cache.Storage.Clear()
 
         # clear up secret vaults/cache
         Unregister-PodeSecretVaults -ThrowError

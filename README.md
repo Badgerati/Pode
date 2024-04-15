@@ -51,8 +51,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Azure Functions, AWS Lambda, and IIS support
 * OpenAPI, Swagger, and ReDoc support
 * Listen on a single or multiple IP address/hostnames
-* Cross-platform support for HTTP(S), SMTP(S), and TCP(S)
-* Cross-platform support for WebSockets, including secure WebSockets
+* Cross-platform support for HTTP(S), WS(S), SSE, SMTP(S), and TCP(S)
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages
 * Request and Response compression using GZip/Deflate
@@ -72,6 +71,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Generate/bind self-signed certificates
 * Secret management support to load secrets from vaults
 * Support for File Watchers
+* In-memory caching, with optional support for external providers (such as Redis)
 * (Windows) Open the hosted server as a desktop application
 
 ## 📦 Install
@@ -106,6 +106,8 @@ To just build Pode, before running any examples, run the following:
 ```powershell
 Invoke-Build Build
 ```
+
+More information on how to build Pode can be [found here](./docs/Getting-Started/build.md)
 
 To work on issues you can fork Pode, and then open a Pull Request for approval. Pull Requests should be made against the `develop` branch. Each Pull Request should also have an appropriate issue created.
 

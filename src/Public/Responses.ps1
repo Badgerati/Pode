@@ -18,6 +18,9 @@ The supplied value must match the valid ContentType format, e.g. application/jso
 .PARAMETER EndpointName
 Optional EndpointName that the static route was creating under.
 
+.PARAMETER FileBrowser
+If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .EXAMPLE
 Set-PodeResponseAttachment -Path 'downloads/installer.exe'
 
@@ -33,9 +36,10 @@ Set-PodeResponseAttachment -Path './data.txt' -ContentType 'application/json'
 .EXAMPLE
 Set-PodeResponseAttachment -Path '/assets/data.txt' -EndpointName 'Example'
 #>
+
 function Set-PodeResponseAttachment {
     [CmdletBinding()]
-    param(
+    param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Path,
@@ -46,7 +50,11 @@ function Set-PodeResponseAttachment {
 
         [Parameter()]
         [string]
-        $EndpointName
+        $EndpointName,
+
+        [switch]
+        $FileBrowser
+
     )
 
     # already sent? skip
@@ -55,70 +63,18 @@ function Set-PodeResponseAttachment {
     }
 
     # only attach files from public/static-route directories when path is relative
-    $_path = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName).Content.Source
+    $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
+    if ($route) {
+        $_path = $route.Content.Source
 
-    # if there's no path, check the original path (in case it's literal/relative)
-    if (!(Test-PodePath $_path -NoStatus)) {
-        $Path = Get-PodeRelativePath -Path $Path -JoinRoot
-
-        if (Test-PodePath $Path -NoStatus) {
-            $_path = $Path
-        }
     }
-
-    # test the file path, and set status accordingly
-    if (!(Test-PodePath $_path)) {
-        return
+    else {
+        $_path = Get-PodeRelativePath -Path $Path -JoinRoot
     }
-
-    $filename = Get-PodeFileName -Path $_path
-    $ext = Get-PodeFileExtension -Path $_path -TrimPeriod
-
-    try {
-        # setup the content type and disposition
-        if (!$ContentType) {
-            $WebEvent.Response.ContentType = (Get-PodeContentType -Extension $ext)
-        }
-        else {
-            $WebEvent.Response.ContentType = $ContentType
-        }
-
-        Set-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=$($filename)"
-
-        # if serverless, get the content raw and return
-        if (!$WebEvent.Streamed) {
-            if (Test-PodeIsPSCore) {
-                $content = (Get-Content -Path $_path -Raw -AsByteStream)
-            }
-            else {
-                $content = (Get-Content -Path $_path -Raw -Encoding byte)
-            }
-
-            $WebEvent.Response.Body = $content
-        }
-
-        # else if normal, stream the content back
-        else {
-            # setup the response details and headers
-            $WebEvent.Response.SendChunked = $false
-
-            # set file as an attachment on the response
-            $buffer = [byte[]]::new(64 * 1024)
-            $read = 0
-
-            # open up the file as a stream
-            $fs = (Get-Item $_path).OpenRead()
-            $WebEvent.Response.ContentLength64 = $fs.Length
-
-            while (($read = $fs.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                $WebEvent.Response.OutputStream.Write($buffer, 0, $read)
-            }
-        }
-    }
-    finally {
-        Close-PodeDisposable -Disposable $fs
-    }
+    #call internal Attachment function
+    Write-PodeAttachmentResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser
 }
+
 
 <#
 .SYNOPSIS
@@ -159,7 +115,7 @@ Write-PodeTextResponse -Value 'Untitled Text Response' -StatusCode 418
 #>
 function Write-PodeTextResponse {
     [CmdletBinding(DefaultParameterSetName = 'String')]
-    param(
+    param (
         [Parameter(ParameterSetName = 'String', ValueFromPipeline = $true, Position = 0)]
         [string]
         $Value,
@@ -364,6 +320,9 @@ The status code to set against the response.
 .PARAMETER Cache
 Should the file's content be cached by browsers, or not?
 
+.PARAMETER FileBrowser
+If the path is a folder, instead of returning 404, will return A browsable content of the directory.
+
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Files/Stuff.txt'
 
@@ -378,10 +337,13 @@ Write-PodeFileResponse -Path 'C:/Views/Index.pode' -Data @{ Counter = 2 }
 
 .EXAMPLE
 Write-PodeFileResponse -Path 'C:/Files/Stuff.txt' -StatusCode 201
+
+.EXAMPLE
+Write-PodeFileResponse -Path 'C:/Files/' -FileBrowser
 #>
 function Write-PodeFileResponse {
     [CmdletBinding()]
-    param(
+    param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNull()]
         [string]
@@ -403,49 +365,56 @@ function Write-PodeFileResponse {
         $StatusCode = 200,
 
         [switch]
-        $Cache
+        $Cache,
+
+        [switch]
+        $FileBrowser
     )
 
     # resolve for relative path
-    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
+    $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
 
-    # test the file path, and set status accordingly
-    if (!(Test-PodePath $Path -FailOnDirectory)) {
-        return
-    }
-
-    # are we dealing with a dynamic file for the view engine? (ignore html)
-    $mainExt = Get-PodeFileExtension -Path $Path -TrimPeriod
-
-    # generate dynamic content
-    if (![string]::IsNullOrWhiteSpace($mainExt) -and (
-            ($mainExt -ieq 'pode') -or
-            ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
-        )) {
-        $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
-
-        # get the sub-file extension, if empty, use original
-        $subExt = Get-PodeFileExtension -Path (Get-PodeFileName -Path $Path -WithoutExtension) -TrimPeriod
-        $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
-
-        $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
-        Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
-    }
-
-    # this is a static file
-    else {
-        if (Test-PodeIsPSCore) {
-            $content = (Get-Content -Path $Path -Raw -AsByteStream)
-        }
-        else {
-            $content = (Get-Content -Path $Path -Raw -Encoding byte)
-        }
-
-        $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt))
-        Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
-    }
+    Write-PodeFileResponseInternal -Path $RelativePath -Data $Data -ContentType $ContentType -MaxAge $MaxAge `
+        -StatusCode $StatusCode -Cache:$Cache -FileBrowser:$FileBrowser
 }
 
+<#
+.SYNOPSIS
+Serves a directory listing as a web page.
+
+.DESCRIPTION
+The Write-PodeDirectoryResponse function generates an HTML response that lists the contents of a specified directory,
+allowing for browsing of files and directories. It supports both Windows and Unix-like environments by adjusting the
+display of file attributes accordingly. If the path is a directory, it generates a browsable HTML view; otherwise, it
+serves the file directly.
+
+.PARAMETER Path
+The path to the directory that should be displayed. This path is resolved and used to generate a list of contents.
+
+.EXAMPLE
+Write-PodeDirectoryResponse -Path './static'
+
+Generates and serves an HTML page that lists the contents of the './static' directory, allowing users to click through files and directories.
+#>
+function Write-PodeDirectoryResponse {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [ValidateNotNull()]
+        [string]
+        $Path
+    )
+
+    # resolve for relative path
+    $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
+
+    if (Test-Path -Path $RelativePath -PathType Container) {
+        Write-PodeDirectoryResponseInternal -Path $RelativePath
+    }
+    else {
+        Set-PodeResponseStatus -Code 404
+    }
+}
 <#
 .SYNOPSIS
 Writes CSV data to the Response.
@@ -473,7 +442,7 @@ Write-PodeCsvResponse -Path 'E:/Files/Names.csv'
 #>
 function Write-PodeCsvResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
-    param(
+    param (
         [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
         $Value,
 
@@ -518,6 +487,7 @@ function Write-PodeCsvResponse {
     Write-PodeTextResponse -Value $Value -ContentType 'text/csv' -StatusCode $StatusCode
 }
 
+
 <#
 .SYNOPSIS
 Writes HTML data to the Response.
@@ -545,7 +515,7 @@ Write-PodeHtmlResponse -Path 'E:/Site/About.html'
 #>
 function Write-PodeHtmlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
-    param(
+    param (
         [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
         $Value,
 
@@ -580,6 +550,7 @@ function Write-PodeHtmlResponse {
     Write-PodeTextResponse -Value $Value -ContentType 'text/html' -StatusCode $StatusCode
 }
 
+
 <#
 .SYNOPSIS
 Writes Markdown data to the Response.
@@ -607,7 +578,7 @@ Write-PodeMarkdownResponse -Path 'E:/Site/About.md'
 #>
 function Write-PodeMarkdownResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
-    param(
+    param (
         [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
         $Value,
 
@@ -666,6 +637,9 @@ The Depth to generate the JSON document - the larger this value the worse perfor
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER NoCompress
+The JSON document is not compressed (Human readable form)
+
 .EXAMPLE
 Write-PodeJsonResponse -Value '{"name": "Rick"}'
 
@@ -677,21 +651,28 @@ Write-PodeJsonResponse -Path 'E:/Files/Names.json'
 #>
 function Write-PodeJsonResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
-    param(
+    param (
         [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
+        [AllowNull()]
         $Value,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $Path,
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'Value')]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
         [Parameter()]
         [int]
-        $StatusCode = 200
+        $StatusCode = 200,
+
+        [Parameter(ParameterSetName = 'Value')]
+        [switch]
+        $NoCompress
+
     )
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -699,15 +680,18 @@ function Write-PodeJsonResponse {
             if (Test-PodePath $Path) {
                 $Value = Get-PodeFileContent -Path $Path
             }
+            if ([string]::IsNullOrWhiteSpace($Value)) {
+                $Value = '{}'
+            }
         }
 
         'value' {
             if ($Value -isnot [string]) {
                 if ($Depth -le 0) {
-                    $Value = (ConvertTo-Json -InputObject $Value -Compress)
+                    $Value = (ConvertTo-Json -InputObject $Value -Compress:(!$NoCompress))
                 }
                 else {
-                    $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress)
+                    $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress:(!$NoCompress))
                 }
             }
         }
@@ -719,6 +703,7 @@ function Write-PodeJsonResponse {
 
     Write-PodeTextResponse -Value $Value -ContentType 'application/json' -StatusCode $StatusCode
 }
+
 
 <#
 .SYNOPSIS
@@ -747,8 +732,9 @@ Write-PodeXmlResponse -Path 'E:/Files/Names.xml'
 #>
 function Write-PodeXmlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
-    param(
+    param (
         [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
+        [AllowNull()]
         $Value,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
@@ -787,6 +773,93 @@ function Write-PodeXmlResponse {
 
 <#
 .SYNOPSIS
+Writes YAML data to the Response.
+
+.DESCRIPTION
+Writes YAML data to the Response, setting the content type accordingly.
+
+.PARAMETER Value
+A String, PSObject, or HashTable value. For non-string values, they will be converted to YAML.
+
+.PARAMETER Path
+The path to a YAML file.
+
+.PARAMETER ContentType
+Because JSON content has not yet an official content type. one custom can be specified here (Default: 'application/x-yaml' )
+
+.PARAMETER Depth
+The Depth to generate the YAML document - the larger this value the worse performance gets.
+
+.PARAMETER StatusCode
+The status code to set against the response.
+
+.EXAMPLE
+Write-PodeYamlResponse -Value '{"name": "Rick"}'
+
+.EXAMPLE
+Write-PodeYamlResponse -Value @{ Name = 'Rick' } -StatusCode 201
+
+.EXAMPLE
+Write-PodeYamlResponse -Path 'E:/Files/Names.json'
+#>
+function Write-PodeYamlResponse {
+    [CmdletBinding(DefaultParameterSetName = 'Value')]
+    param (
+        [Parameter(Mandatory = $true, ParameterSetName = 'Value', ValueFromPipeline = $true, Position = 0)]
+        [AllowNull()]
+        $Value,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')]
+        [string]
+        $Path,
+
+        [Parameter()]
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ContentType = 'application/x-yaml',
+
+
+        [Parameter(ParameterSetName = 'Value')]
+        [ValidateRange(0, 100)]
+        [int]
+        $Depth = 10,
+
+        [Parameter()]
+        [int]
+        $StatusCode = 200
+    )
+
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'file' {
+            if (Test-PodePath $Path) {
+                $Value = Get-PodeFileContent -Path $Path
+            }
+        }
+
+        'value' {
+            if ($Value -isnot [string]) {
+                if ( $Depth -gt 0) {
+                    $Value = ConvertTo-PodeYaml -InputObject $Value -Depth $Depth
+                }
+                else {
+                    $Value = ConvertTo-PodeYaml -InputObject $Value
+                }
+            }
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        $Value = '[]'
+    }
+
+    Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
+
+}
+
+
+
+<#
+.SYNOPSIS
 Renders a dynamic, or static, View on the Response.
 
 .DESCRIPTION
@@ -818,7 +891,7 @@ Write-PodeViewResponse -Path 'login' -FlashMessages
 #>
 function Write-PodeViewResponse {
     [CmdletBinding()]
-    param(
+    param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Path,
@@ -895,6 +968,7 @@ function Write-PodeViewResponse {
     }
 }
 
+
 <#
 .SYNOPSIS
 Sets the Status Code of the Response, and controls rendering error pages.
@@ -928,7 +1002,7 @@ Set-PodeResponseStatus -Code 500 -Exception $_.Exception -ContentType 'applicati
 #>
 function Set-PodeResponseStatus {
     [CmdletBinding()]
-    param(
+    param (
         [Parameter(Mandatory = $true)]
         [int]
         $Code,
@@ -1247,7 +1321,7 @@ function Save-PodeRequestFile {
     foreach ($file in $files) {
         # if the path is a directory, add the filename
         $filePath = $Path
-        if (Test-PodePathIsDirectory -Path $filePath) {
+        if (Test-Path -Path $filePath -PathType Container) {
             $filePath = [System.IO.Path]::Combine($filePath, $file)
         }
 
@@ -1277,6 +1351,7 @@ Test-PodeRequestFile -Key 'avatar' -FileName 'icon.png'
 #>
 function Test-PodeRequestFile {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -1392,7 +1467,7 @@ Use-PodePartialView -Path 'shared/footer'
 function Use-PodePartialView {
     [CmdletBinding()]
     [OutputType([string])]
-    param(
+    param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Path,
@@ -1409,7 +1484,6 @@ function Use-PodePartialView {
     if ($null -eq $Data) {
         $Data = @{}
     }
-
     # add view engine extension
     $ext = Get-PodeFileExtension -Path $Path
     if ([string]::IsNullOrWhiteSpace($ext)) {
@@ -1490,7 +1564,6 @@ function Send-PodeSignal {
         [switch]
         $IgnoreEvent
     )
-
     # error if not configured
     if (!$PodeContext.Server.Signals.Enabled) {
         throw 'WebSockets have not been configured to send signal messages'
@@ -1553,7 +1626,7 @@ Add-PodeViewFolder -Name 'assets' -Source './assets'
 #>
 function Add-PodeViewFolder {
     [CmdletBinding()]
-    param(
+    param (
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
@@ -1580,4 +1653,23 @@ function Add-PodeViewFolder {
     # add the route(s)
     Write-Verbose "Adding View Folder: [$($Name)] $($Source)"
     $PodeContext.Server.Views[$Name] = $Source
+}
+
+<#
+.SYNOPSIS
+Pre-emptively send an HTTP response back to the client. This can be dangerous, so only use this function if you know what you're doing.
+
+.DESCRIPTION
+Pre-emptively send an HTTP response back to the client. This can be dangerous, so only use this function if you know what you're doing.
+
+.EXAMPLE
+Send-PodeResponse
+#>
+function Send-PodeResponse {
+    [CmdletBinding()]
+    param()
+
+    if ($null -ne $WebEvent.Response) {
+        $WebEvent.Response.Send()
+    }
 }

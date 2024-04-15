@@ -80,6 +80,7 @@ function Invoke-PodeInternalTask {
             Event = @{
                 Lockable = $PodeContext.Threading.Lockables.Global
                 Sender   = $Task
+                Metadata = @{}
             }
         }
 

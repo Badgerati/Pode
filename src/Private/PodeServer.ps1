@@ -27,13 +27,20 @@ function Start-PodeWebServer {
     @(Get-PodeEndpoints -Type Http, Ws) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
-        $_ip = (Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1)
-        $_ip = (Get-PodeIPAddress $_ip)
+        $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
+        $_ip = Get-PodeIPAddress -IP $_ip -DualMode:($_.DualMode)
+
+        # dual mode?
+        $addrs = $_ip
+        if ($_.DualMode) {
+            $addrs = Resolve-PodeIPDualMode -IP $_ip
+        }
 
         # the endpoint
         $_endpoint = @{
+            Name                   = $_.Name
             Key                    = "$($_ip):$($_.Port)"
-            Address                = $_ip
+            Address                = $addrs
             Hostname               = $_.HostName
             IsIPAddress            = $_.IsIPAddress
             Port                   = $_.Port
@@ -44,6 +51,7 @@ function Start-PodeWebServer {
             Type                   = $_.Type
             Pool                   = $_.Runspace.PoolName
             SslProtocols           = $_.Ssl.Protocols
+            DualMode               = $_.DualMode
         }
 
         # add endpoint to list
@@ -71,7 +79,7 @@ function Start-PodeWebServer {
     try {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Address `$_.Address -Port `$_.Port -SslProtocols `$_.SslProtocols -Type `$endpointsMap[`$_.Key].Type -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate")))
+            $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Name `$_.Name -Address `$_.Address -Port `$_.Port -SslProtocols `$_.SslProtocols -Type `$endpointsMap[`$_.Key].Type -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate -DualMode:`$_.DualMode")))
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
 
             if (!$_.IsIPAddress) {
@@ -85,6 +93,7 @@ function Start-PodeWebServer {
         $PodeContext.Listeners += $listener
         $PodeContext.Server.Signals.Enabled = $true
         $PodeContext.Server.Signals.Listener = $listener
+        $PodeContext.Server.Http.Listener = $listener
     }
     catch {
         $_ | Write-PodeErrorLog
@@ -129,7 +138,7 @@ function Start-PodeWebServer {
                                 Endpoint         = @{
                                     Protocol = $Request.Url.Scheme
                                     Address  = $Request.Host
-                                    Name     = $null
+                                    Name     = $context.EndpointName
                                 }
                                 ContentType      = $Request.ContentType
                                 ErrorType        = $null
@@ -145,6 +154,8 @@ function Start-PodeWebServer {
                                 TransferEncoding = $null
                                 AcceptEncoding   = $null
                                 Ranges           = $null
+                                Sse              = $null
+                                Metadata         = @{}
                             }
 
                             # if iis, and we have an app path, alter it
@@ -160,15 +171,31 @@ function Start-PodeWebServer {
                             $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
                             $WebEvent.Ranges = (Get-PodeRanges -Range (Get-PodeHeader -Name 'Range') -ThrowError)
 
-                            # endpoint name
-                            $WebEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $WebEvent.Endpoint.Protocol -Address $WebEvent.Endpoint.Address -LocalAddress $WebEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Route))
-
                             # add logging endware for post-request
                             Add-PodeRequestLogEndware -WebEvent $WebEvent
 
                             # stop now if the request has an error
                             if ($Request.IsAborted) {
                                 throw $Request.Error
+                            }
+
+                            # if we have an sse clientId, verify it and then set details in WebEvent
+                            if ($WebEvent.Request.HasSseClientId) {
+                                if (!(Test-PodeSseClientIdValid)) {
+                                    throw [System.Net.Http.HttpRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
+                                }
+
+                                if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
+                                    throw [System.Net.Http.HttpRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)")
+                                }
+
+                                $WebEvent.Sse = @{
+                                    Name        = $WebEvent.Request.SseClientName
+                                    Group       = $WebEvent.Request.SseClientGroup
+                                    ClientId    = $WebEvent.Request.SseClientId
+                                    LastEventId = $null
+                                    IsLocal     = $false
+                                }
                             }
 
                             # invoke global and route middleware
@@ -186,17 +213,23 @@ function Start-PodeWebServer {
 
                                     # invoke the route
                                     if ($null -ne $WebEvent.StaticContent) {
+                                        $fileBrowser = $WebEvent.Route.FileBrowser
                                         if ($WebEvent.StaticContent.IsDownload) {
-                                            Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
+                                            Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
+                                        }
+                                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
+                                            $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
+                                            Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
                                         }
                                         else {
                                             $cachable = $WebEvent.StaticContent.IsCachable
-                                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                                            Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
+                                                -Cache:$cachable -FileBrowser:$fileBrowser
                                         }
                                     }
                                     elseif ($null -ne $WebEvent.Route.Logic) {
-                                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
-                                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
+                                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments `
+                                            -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                                     }
                                 }
                             }
@@ -276,7 +309,6 @@ function Start-PodeWebServer {
                                 $sockets = @(foreach ($socket in $sockets) {
                                         if ($socket.Path -ieq $message.Path) {
                                             $socket
-                                            break
                                         }
                                     })
                             }
@@ -354,23 +386,20 @@ function Start-PodeWebServer {
                             Endpoint  = @{
                                 Protocol = $Request.Url.Scheme
                                 Address  = $Request.Host
-                                Name     = $null
+                                Name     = $context.Signal.Context.EndpointName
                             }
                             Route     = $null
                             ClientId  = $context.Signal.ClientId
                             Timestamp = $context.Timestamp
                             Streamed  = $true
+                            Metadata  = @{}
                         }
-
-                        # endpoint name
-                        $SignalEvent.Endpoint.Name = (Find-PodeEndpointName -Protocol $SignalEvent.Endpoint.Protocol -Address $SignalEvent.Endpoint.Address -LocalAddress $SignalEvent.Request.LocalEndPoint -Enabled:($PodeContext.Server.FindEndpoints.Route))
 
                         # see if we have a route and invoke it, otherwise auto-send
                         $SignalEvent.Route = Find-PodeSignalRoute -Path $SignalEvent.Path -EndpointName $SignalEvent.Endpoint.Name
 
                         if ($null -ne $SignalEvent.Route) {
-                            $_args = @(Get-PodeScriptblockArguments -ArgumentList $SignalEvent.Route.Arguments -UsingVariables $SignalEvent.Route.UsingVariables)
-                            Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $_args -Scoped -Splat
+                            $null = Invoke-PodeScriptBlock -ScriptBlock $SignalEvent.Route.Logic -Arguments $SignalEvent.Route.Arguments -UsingVariables $SignalEvent.Route.UsingVariables -Scoped -Splat
                         }
                         else {
                             Send-PodeSignal -Value $SignalEvent.Data.Message -Path $SignalEvent.Data.Path -ClientId $SignalEvent.Data.ClientId
@@ -439,14 +468,16 @@ function Start-PodeWebServer {
 
     return @(foreach ($endpoint in $endpoints) {
             @{
-                Url  = $endpoint.Url
-                Pool = $endpoint.Pool
+                Url      = $endpoint.Url
+                Pool     = $endpoint.Pool
+                DualMode = $endpoint.DualMode
             }
         })
 }
 
 function New-PodeListener {
     [CmdletBinding()]
+    [OutputType([Pode.PodeListener])]
     param(
         [Parameter(Mandatory = $true)]
         [System.Threading.CancellationToken]
@@ -458,9 +489,14 @@ function New-PodeListener {
 
 function New-PodeListenerSocket {
     [CmdletBinding()]
+    [OutputType([Pode.PodeSocket])]
     param(
         [Parameter(Mandatory = $true)]
-        [ipaddress]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ipaddress[]]
         $Address,
 
         [Parameter(Mandatory = $true)]
@@ -481,8 +517,11 @@ function New-PodeListenerSocket {
 
         [Parameter()]
         [bool]
-        $AllowClientCertificate
+        $AllowClientCertificate,
+
+        [switch]
+        $DualMode
     )
 
-    return [PodeSocket]::new($Address, $Port, $SslProtocols, $Type, $Certificate, $AllowClientCertificate)
+    return [PodeSocket]::new($Name, $Address, $Port, $SslProtocols, $Type, $Certificate, $AllowClientCertificate, 'Implicit', $DualMode.IsPresent)
 }

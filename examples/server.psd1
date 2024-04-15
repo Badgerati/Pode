@@ -1,23 +1,23 @@
 @{
-    Web = @{
-        Static = @{
+    Web    = @{
+        Static      = @{
             Defaults = @(
                 'index.html',
                 'default.html'
             )
-            Cache = @{
-                Enable = $true
-                MaxAge = 15
+            Cache    = @{
+                Enable  = $true
+                MaxAge  = 15
                 Include = @(
                     '*.jpg'
                 )
             }
         }
-        ErrorPages = @{
-            ShowExceptions = $true
+        ErrorPages  = @{
+            ShowExceptions      = $true
             StrictContentTyping = $true
-            Default = 'application/html'
-            Routes = @{
+            Default             = 'application/html'
+            Routes              = @{
                 '/john' = 'application/json'
             }
         }
@@ -27,29 +27,34 @@
     }
     Server = @{
         FileMonitor = @{
-            Enable = $false
+            Enable    = $false
             ShowFiles = $true
         }
-        Logging = @{
+        Logging     = @{
             Masking = @{
                 Patterns = @(
                     '(?<keep_before>Password=)\w+',
                     '(?<keep_before>AppleWebKit\/)\d+\.\d+(?(<keep_after)\s+\(KHTML)'
                 )
-                Mask = '--MASKED--'
+                Mask     = '--MASKED--'
             }
         }
-        AutoImport = @{
+        AutoImport  = @{
             Functions = @{
                 ExportOnly = $true
             }
-            Modules = @{
+            Modules   = @{
                 ExportOnly = $true
             }
         }
-        Request = @{
-            Timeout = 30
+        Request     = @{
+            Timeout  = 30
             BodySize = 100MB
+        }
+        Debug       = @{
+            Breakpoints = @{
+                Enable = $true
+            }
         }
     }
 }

@@ -64,6 +64,7 @@ function Start-PodeWebSocketRunspace {
                             Files     = $null
                             Lockable  = $PodeContext.Threading.Lockables.Global
                             Timestamp = [datetime]::UtcNow
+                            Metadata  = @{}
                         }
 
                         # find the websocket definition
@@ -78,8 +79,7 @@ function Start-PodeWebSocketRunspace {
                         $WsEvent.Files = $result.Files
 
                         # invoke websocket script
-                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $websocket.Arguments -UsingVariables $websocket.UsingVariables)
-                        Invoke-PodeScriptBlock -ScriptBlock $websocket.Logic -Arguments $_args -Scoped -Splat
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $websocket.Logic -Arguments $websocket.Arguments -UsingVariables $websocket.UsingVariables -Scoped -Splat
                     }
                     catch [System.OperationCanceledException] {}
                     catch {

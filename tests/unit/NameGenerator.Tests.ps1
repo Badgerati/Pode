@@ -1,11 +1,14 @@
-$path = $MyInvocation.MyCommand.Path
-$src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+}
 
 Describe 'Get-PodeRandomName' {
-    Mock 'Get-Random' { return 0 }
+
 
     It 'Returns correct name' {
-        Get-PodeRandomName | Should Be 'admiring_almeida'
+        Mock 'Get-Random' { return 0 }
+        Get-PodeRandomName | Should -Be 'admiring_almeida'
     }
 }

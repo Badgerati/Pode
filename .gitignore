@@ -9,8 +9,8 @@ examples/state.json
 examples/issue-*
 examples/issues/
 pkg/
+deliverable/
 .vs/
-
 
 # Code Runner
 tempCodeRunnerFile.ps1
@@ -189,7 +189,6 @@ ClientBin/
 *.publishsettings
 node_modules/
 
-
 # RIA/Silverlight projects
 Generated_Code/
 
@@ -259,3 +258,10 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+.vscode/launch.json
+Pode.sln
+examples/FileBrowser/wwwFiles/
+examples/PetStore/data/PetData.json
+
+packers/choco/pode.nuspec
+packers/choco/tools/ChocolateyInstall.ps1

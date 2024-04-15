@@ -54,6 +54,7 @@ function Start-PodeAzFuncServer {
                 TransferEncoding = $null
                 AcceptEncoding   = $null
                 Ranges           = $null
+                Metadata         = @{}
             }
 
             $WebEvent.Endpoint.Address = ((Get-PodeHeader -Name 'host') -split ':')[0]
@@ -82,17 +83,21 @@ function Start-PodeAzFuncServer {
                 if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
+                        $fileBrowser = $WebEvent.Route.FileBrowser
                         if ($WebEvent.StaticContent.IsDownload) {
-                            Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
+                            Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
+                        }
+                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
+                            $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
+                            Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                            Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable -FileBrowser:$fileBrowser
                         }
                     }
                     else {
-                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
-                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                     }
                 }
             }
@@ -177,6 +182,7 @@ function Start-PodeAwsLambdaServer {
                 TransferEncoding = $null
                 AcceptEncoding   = $null
                 Ranges           = $null
+                Metadata         = @{}
             }
 
             $WebEvent.Endpoint.Protocol = (Get-PodeHeader -Name 'X-Forwarded-Proto')
@@ -191,17 +197,22 @@ function Start-PodeAwsLambdaServer {
                 if ((Invoke-PodeMiddleware -Middleware $WebEvent.Route.Middleware)) {
                     # invoke the route
                     if ($null -ne $WebEvent.StaticContent) {
+                        $fileBrowser = $WebEvent.Route.FileBrowser
                         if ($WebEvent.StaticContent.IsDownload) {
-                            Set-PodeResponseAttachment -Path $WebEvent.Path -EndpointName $WebEvent.Endpoint.Name
+                            Write-PodeAttachmentResponseInternal -Path $WebEvent.StaticContent.Source -FileBrowser:$fileBrowser
+                        }
+                        elseif ($WebEvent.StaticContent.RedirectToDefault) {
+                            $file = [System.IO.Path]::GetFileName($WebEvent.StaticContent.Source)
+                            Move-PodeResponseUrl -Url "$($WebEvent.Path)/$($file)"
                         }
                         else {
                             $cachable = $WebEvent.StaticContent.IsCachable
-                            Write-PodeFileResponse -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge -Cache:$cachable
+                            Write-PodeFileResponseInternal -Path $WebEvent.StaticContent.Source -MaxAge $PodeContext.Server.Web.Static.Cache.MaxAge `
+                                -Cache:$cachable -FileBrowser:$fileBrowser
                         }
                     }
                     else {
-                        $_args = @(Get-PodeScriptblockArguments -ArgumentList $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables)
-                        Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $_args -Scoped -Splat
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $WebEvent.Route.Logic -Arguments $WebEvent.Route.Arguments -UsingVariables $WebEvent.Route.UsingVariables -Scoped -Splat
                     }
                 }
             }

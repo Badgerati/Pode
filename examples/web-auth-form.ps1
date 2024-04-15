@@ -37,7 +37,7 @@ Start-PodeServer -Threads 2 {
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{
                 User = @{
-                    ID ='M0R7Y302'
+                    ID   = 'M0R7Y302'
                     Name = 'Morty'
                     Type = 'Human'
                 }
@@ -55,8 +55,8 @@ Start-PodeServer -Threads 2 {
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
             Username = $WebEvent.Auth.User.Name
-            Views = $session:Views
-            Expiry = Get-PodeSessionExpiry
+            Views    = $session:Views
+            Expiry   = Get-PodeSessionExpiry
         }
     }
 

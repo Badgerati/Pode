@@ -475,6 +475,9 @@ The ScriptBlock to invoke.
 .PARAMETER Arguments
 Any arguments that should be supplied to the ScriptBlock.
 
+.PARAMETER UsingVariables
+Optional array of "using-variable" values, which will be automatically prepended to any supplied Arguments when supplied to the ScriptBlock.
+
 .PARAMETER Scoped
 Run the ScriptBlock in a scoped context.
 
@@ -504,6 +507,10 @@ function Invoke-PodeScriptBlock {
         [Parameter()]
         $Arguments = $null,
 
+        [Parameter()]
+        [object[]]
+        $UsingVariables = $null,
+
         [switch]
         $Scoped,
 
@@ -517,14 +524,22 @@ function Invoke-PodeScriptBlock {
         $NoNewClosure
     )
 
+    # force no new closure if running serverless
     if ($PodeContext.Server.IsServerless) {
         $NoNewClosure = $true
     }
 
+    # if new closure needed, create it
     if (!$NoNewClosure) {
         $ScriptBlock = ($ScriptBlock).GetNewClosure()
     }
 
+    # merge arguments together, if we have using vars supplied
+    if (($null -ne $UsingVariables) -and ($UsingVariables.Length -gt 0)) {
+        $Arguments = @(Merge-PodeScriptblockArguments -ArgumentList $Arguments -UsingVariables $UsingVariables)
+    }
+
+    # invoke the scriptblock
     if ($Scoped) {
         if ($Splat) {
             $result = (& $ScriptBlock @Arguments)
@@ -542,9 +557,57 @@ function Invoke-PodeScriptBlock {
         }
     }
 
+    # if needed, return the result
     if ($Return) {
         return $result
     }
+}
+
+<#
+.SYNOPSIS
+Merges Arguments and Using Variables together.
+
+.DESCRIPTION
+Merges Arguments and Using Variables together to be supplied to a ScriptBlock.
+The Using Variables will be prepended so then are supplied first to a ScriptBlock.
+
+.PARAMETER ArgumentList
+And optional array of Arguments.
+
+.PARAMETER UsingVariables
+And optional array of "using-variable" values to be prepended.
+
+.EXAMPLE
+$Arguments = @(Merge-PodeScriptblockArguments -ArgumentList $Arguments -UsingVariables $UsingVariables)
+
+.EXAMPLE
+$Arguments = @(Merge-PodeScriptblockArguments -UsingVariables $UsingVariables)
+#>
+function Merge-PodeScriptblockArguments {
+    param(
+        [Parameter()]
+        [object[]]
+        $ArgumentList = $null,
+
+        [Parameter()]
+        [object[]]
+        $UsingVariables = $null
+    )
+
+    if ($null -eq $ArgumentList) {
+        $ArgumentList = @()
+    }
+
+    if (($null -eq $UsingVariables) -or ($UsingVariables.Length -le 0)) {
+        return $ArgumentList
+    }
+
+    $_vars = @()
+    foreach ($_var in $UsingVariables) {
+        $_vars += , $_var.Value
+    }
+
+    return ($_vars + $ArgumentList)
 }
 
 <#
@@ -732,11 +795,17 @@ An optional foreground colour.
 .PARAMETER NoNewLine
 Whether or not to write a new line.
 
+.PARAMETER Explode
+Show the object content
+
+.PARAMETER ShowType
+Show the Object Type
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
 function Write-PodeHost {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     param(
         [Parameter(Position = 0, ValueFromPipeline = $true)]
         [object]
@@ -747,11 +816,34 @@ function Write-PodeHost {
         $ForegroundColor,
 
         [switch]
-        $NoNewLine
+        $NoNewLine,
+
+        [Parameter( Mandatory = $true, ParameterSetName = 'object')]
+        [switch]
+        $Explode,
+
+        [Parameter( Mandatory = $false, ParameterSetName = 'object')]
+        [switch]
+        $ShowType
     )
 
     if ($PodeContext.Server.Quiet) {
         return
+    }
+
+    if ($Explode.IsPresent ) {
+        if ($null -eq $Object) {
+            if ($ShowType) {
+                $Object = "`tNull Value"
+            }
+        }
+        else {
+            $type = $Object.gettype().FullName
+            $Object = $Object | Out-String
+            if ($ShowType) {
+                $Object = "`tTypeName: $type`n$Object"
+            }
+        }
     }
 
     if ($ForegroundColor) {
@@ -925,6 +1017,7 @@ New-PodeCron -Every Quarter                                         # every 1st 
 #>
 function New-PodeCron {
     [CmdletBinding()]
+    [OutputType([String])]
     param(
         [Parameter()]
         [ValidateRange(0, 59)]
@@ -1102,4 +1195,165 @@ function New-PodeCron {
 
     # build and return
     return "$($cron.Minute) $($cron.Hour) $($cron.Date) $($cron.Month) $($cron.Day)"
+}
+
+
+
+<#
+.SYNOPSIS
+Gets the version of the Pode module.
+
+.DESCRIPTION
+The Get-PodeVersion function checks the version of the Pode module specified in the module manifest. If the module version is not a placeholder value ('$version$'), it returns the actual version prefixed with 'v.'. If the module version is the placeholder value, indicating the development branch, it returns '[develop branch]'.
+
+.PARAMETER None
+This function does not accept any parameters.
+
+.OUTPUTS
+System.String
+Returns a string indicating the version of the Pode module or '[dev]' if on a development version.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
+PS> Get-PodeVersion
+
+Returns 'v1.2.3'.
+
+.EXAMPLE
+PS> $moduleManifest = @{ ModuleVersion = '$version$' }
+PS> Get-PodeVersion
+
+Returns '[dev]'.
+
+.NOTES
+This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
+
+#>
+function Get-PodeVersion {
+    $moduleManifest = Get-PodeModuleManifest
+    if ($moduleManifest.ModuleVersion -ne '$version$') {
+        return "v$($moduleManifest.ModuleVersion)"
+    }
+    else {
+        return '[dev]'
+    }
+}
+
+<#
+.SYNOPSIS
+Converts an XML node to a PowerShell hashtable.
+
+.DESCRIPTION
+The ConvertFrom-PodeXml function converts an XML node, including all its child nodes and attributes, into an ordered hashtable. This is useful for manipulating XML data in a more PowerShell-centric way.
+
+.PARAMETER node
+The XML node to convert. This parameter takes an XML node and processes it, along with its child nodes and attributes.
+
+.PARAMETER Prefix
+A string prefix used to indicate an attribute. Default is an empty string.
+
+.PARAMETER ShowDocElement
+Indicates whether to show the document element. Default is false.
+
+.PARAMETER KeepAttributes
+If set, the function keeps the attributes of the XML nodes in the resulting hashtable.
+
+.EXAMPLE
+$node = [xml](Get-Content 'path\to\file.xml').DocumentElement
+ConvertFrom-PodeXml -node $node
+
+Converts the XML document's root node to a hashtable.
+
+.INPUTS
+System.Xml.XmlNode
+You can pipe a XmlNode to ConvertFrom-PodeXml.
+
+.OUTPUTS
+System.Collections.Hashtable
+Outputs an ordered hashtable representing the XML node structure.
+
+.NOTES
+This cmdlet is useful for transforming XML data into a structure that's easier to manipulate in PowerShell scripts.
+
+.LINK
+https://badgerati.github.io/Pode/Functions/Utility/ConvertFrom-PodeXml
+
+#>
+function ConvertFrom-PodeXml {
+    [CmdletBinding()]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
+    param
+    (
+        [Parameter(Mandatory = $true, ValueFromPipeline)]
+        [System.Xml.XmlNode]$node, #we are working through the nodes
+        [string]$Prefix = '', #do we indicate an attribute with a prefix?
+        $ShowDocElement = $false, #Do we show the document element?,
+        [switch]
+        $KeepAttributes
+    )
+    #if option set, we skip the Document element
+    if ($node.DocumentElement -and !($ShowDocElement))
+    { $node = $node.DocumentElement }
+    $oHash = [ordered] @{ } # start with an ordered hashtable.
+    #The order of elements is always significant regardless of what they are
+    if ($null -ne $node.Attributes  ) {
+        #if there are elements
+        # record all the attributes first in the ordered hash
+        $node.Attributes | ForEach-Object {
+            $oHash.$("$Prefix$($_.FirstChild.parentNode.LocalName)") = $_.FirstChild.value
+        }
+    }
+    # check to see if there is a pseudo-array. (more than one
+    # child-node with the same name that must be handled as an array)
+    $node.ChildNodes | #we just group the names and create an empty
+        #array for each
+        Group-Object -Property LocalName | Where-Object { $_.count -gt 1 } | Select-Object Name |
+        ForEach-Object {
+            $oHash.($_.Name) = @() <# create an empty array for each one#>
+        }
+    foreach ($child in $node.ChildNodes) {
+        #now we look at each node in turn.
+        $childName = $child.LocalName
+        if ($child -is [system.xml.xmltext]) {
+            # if it is simple XML text
+            $oHash.$childname += $child.InnerText
+        }
+        # if it has a #text child we may need to cope with attributes
+        elseif ($child.FirstChild.Name -eq '#text' -and $child.ChildNodes.Count -eq 1) {
+            if ($null -ne $child.Attributes -and $KeepAttributes ) {
+                #hah, an attribute
+                <#we need to record the text with the #text label and preserve all
+					the attributes #>
+                $aHash = [ordered]@{ }
+                $child.Attributes | ForEach-Object {
+                    $aHash.$($_.FirstChild.parentNode.LocalName) = $_.FirstChild.value
+                }
+                #now we add the text with an explicit name
+                $aHash.'#text' += $child.'#text'
+                $oHash.$childname += $aHash
+            }
+            else {
+                #phew, just a simple text attribute.
+                $oHash.$childname += $child.FirstChild.InnerText
+            }
+        }
+        elseif ($null -ne $child.'#cdata-section' ) {
+            # if it is a data section, a block of text that isnt parsed by the parser,
+            # but is otherwise recognized as markup
+            $oHash.$childname = $child.'#cdata-section'
+        }
+        elseif ($child.ChildNodes.Count -gt 1 -and
+                        ($child | Get-Member -MemberType Property).Count -eq 1) {
+            $oHash.$childname = @()
+            foreach ($grandchild in $child.ChildNodes) {
+                $oHash.$childname += (ConvertFrom-PodeXml $grandchild)
+            }
+        }
+        else {
+            # create an array as a value  to the hashtable element
+            $oHash.$childname += (ConvertFrom-PodeXml $child)
+        }
+    }
+    return $oHash
+
 }

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang='en' style='background-color: #01b0c4; overflow-y: hidden'>
+
+<head>
+    <title>OpenAPI Documentation Bookmarks</title>
+    <link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/styles/monokai-sublime.min.css">
+    <script src="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/highlight.min.js"></script>
+
+    <!-- and it's easy to individually load additional languages -->
+    <script src="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/languages/go.min.js"></script>
+
+    <script>hljs.highlightAll();</script>
+    <style>
+        /* Style for the copy button */
+        .copy-button {
+            position: relative;
+            top: 0px;
+            right: 0px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Style for the responsive code block */
+        .json {
+            position: relative;
+            max-height: 600px;
+        }
+
+        .yaml {
+            position: relative;
+            max-height: 600px;
+        }
+
+        /* Style the tab */
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+
+        /* Style the buttons that are used to open the tab content */
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+            background-color: #ccc;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+            display: none;
+            border-top: none;
+            margin-top: -10px;
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            /* This ensures vertical alignment */
+        }
+
+        .header-container h3 {
+            margin-right: 20px;
+            /* Adjust as needed for spacing */
+        }
+
+        .header-container button {
+            margin-right: 10px;
+            /* Adjust as needed for spacing between buttons */
+        }
+
+        /* Optional: Remove margin from the last button */
+        .header-container button:last-child {
+            margin-right: 0;
+        }
+    </style>
+</head>
+
+<body style='color: white; font-family: Helvetica,Arial,sans-serif;'>
+    <h1> $($data.Title)</h1>
+    <h3>Documentation</h3>
+    <ul>
+        <li id="swagger-link" style="display: none;">
+            <a href="$($data.swagger_path)" target="_blank">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANrSURBVDhPjZXZTxNRFMa/uTPTTlu0pWURl0SxWFATXyyCMXFH3yQiGv8K3F/0xSXGFdf45rvinriCS9SYuKAPRlEUxCWAYAu12m1m2vHeO1OoSBN/L5N+p3PuOed+946AcZg9u9EWKog2wMBawAiKslHG9LQm9ANCO9UuF8XcFzs6Lqj8hRz+SVgaXLVeIEazf1FySmBxAqWzVLi8GR6LDRMMdNrw4ZEDHx8rvUYaWwfaW8/zoEVuQlIarGsuqdCbVjRFUDRDs+TxCX2Wce+EB98/SicHn9duBnbzVUUepZRU1x0vr0411e8dQoEvban5cXoyqFqeQPiLvEDNfPfF+rpvMZ0nZG2W+PUja/YMQbIZTEI8QiAQWvbIkiZ0jtBVAaJsxsprkvj6SqkW7P7OWN+nN6Lfv9quunC9fveQu6DIrOzx2Ym4ud8L71Sdtq5zLUvnQwdathQjQ/86bZ7Kk5ZVqnhzx1UzaW7FGRItzKybWZucljuznmcKVm6OILA0YSmjVC1L8Nj7B05LAXzTdcxcmJwaDaGR9oU1lUvjVsgk+YvA4c4/RzZjLf63QSrZ4oJRT6jXgqzkLGw+qRjhQ8+HiyZMxQm01GhSnkNAkBAJk52F5stqQsCVnT4Ul2twl6XRdsyD32ERHXed6Ghzch+2Nnu4L0v8Kq7u8kGliRkOdwaSZEwmY53Nhi1wke62FWQPw9x8GGlTpIXwbrI6h4ZIWkdfnK7MsDkMNBwI48cnGZFeCSs3Rfi8qlbEMacuDhftZNX2YUQHRPS/s6HxUAh2l9ldIkqga0IfzSS87H9v4yKD+VBWMtSHYwyYA9s0WTEg2UfLYwvQetuJIeBargUYNqfB55WPxE8CZcLfm9b5wAGqXCPuIaGl+6nyLdRDrW8RWJLA/VMefgmM5QM19u1DhWAXR5bwZwldT5RepyPVwifMjl6xXzvfeDg0cvSSv822RCl36uZG6NQu2QrT9PeFHUUY7BY3DjxrO8cHRQ/2WzgrvOEeeYF/YZIfJ5aYjNM1j1mzY+f61sFCfHttPz34vPUw00YmH+vtbtWMgOfLS6VmUkBD1pv5YNfXjX1emkw+NfiidhPwkK9iOW2U0vl1GwQRR//rgoWxjbXJgxb/JGTkfAIaqJXnj/cJmDhMLnV13U7xF0YA/gCa7mvJsf2BXQAAAABJRU5ErkJggg=="
+                    alt="Swagger Icon" width="20" height="20">Swagger</a>
+        </li>
+
+        <li id="redoc-link" style="display: none;">
+            <a href="$($data.redoc_path)" target="_blank">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAPESURBVDhPfZRrbBRVFMf/d2Z2hn0Nu11sd7elpUTaqrS01bQFpLFItREVYxDFR1KD8gVjjIqJkviIpkZCY42kBhL1i4koSBPDO2AxmNbSGlvA9QNQ7JZa+pJut12W3Z0dz8zetlsp/pKzs+d/7pw593Euw/wIWLdrFdScJyHIZWCC11R17RqSsW5c/6sFrW+3kZIw9TT+m5BhXWMl3PmNkJ2ruDY/0VA7hv7Yjl/eaycvmRIBkT8NGNZ/tQ0ZS/dBsi7h2u2RFiyG6nsB/qoJXD7aRYqZdDphKpkr53MwMf0j/w8TRNg8D8N77zh6j3WSoqem/GDDSmSVny7wOeXd9UVYkevAeCSBwMCUGZ5GoNHhqIamY0F09U5wldAScfQer8PZplYjoYSNB85AWViVigJ3qDIan12Goz1j+Lb9GldTZFLs0+cL0NI1ggNnh7hKRMa60PLMWgHVH6xJT2YwMhFD/Z4ANlVlwedSYBEZ7Ipo2tRNDS/uDaC+2oeshTJ/g7B57kPZthoRpVvehOyo4PIMOtk/kwnULs+A363gtbpcrC9dZNrgeAzdwTDuL3SjM33qunBDgKiUcfcWzvWHcafXhh86h6FIAlw2ybRXHsrBn7S+hT4bH8lRnCUCBIuPu7eQTZUZ0y+hTTrSM2omNmzH95fNtRwKxfhIjih52JWT8iXViTwuzUHyNwkPfFEuJJI6ivx2rgIdl0LYsSEPmzMfT8YjgZlD3TcgBiWJxSfcdl3i2izuLdh94RH83nfRdM/3T5pP41hsXZuNl4r3gw13C7BTm3IGRTHCeg6yfcUF+tOmYskDc28F7DUYiJaj+WQ/qLgZVKuEmrvsqFR3AaNksx1n8tOvlkNS5wXpRHFBPJVQG4U+dYqq0JCtuvDRyneo/dPOGrOaH2NKJXQxwxyfTmuH5QzNwOb7++cbbV6PPrd/lbvBsj6BHtxAztxKoCynWAPFniAnFQsOileX1SqPUd/Go9mLlERFiVbHmLlEKbQR2rUMsMz3wZyPgqkbZ81eDSwooRvnN3q9H1oS+ofNjs/azk0dnk7gOb5Hbq5dHdvEfQ6FmcL/z4N+0/jBd0eshze/Jb1OnX5x+maJ7qflrFgh5S9drBVRpWkYd+j8RhumHzxlPfHcG5Z3kwgHSEzOXFUatNA3hyxtVkWJFS7R7rFbddqB2zM8Jl7/eK/jy1cb9J1JTJ4nSTP0ObUQhq96Xa7S7S/HnlpTnlid69fyVWfSYQRDYWHyylWp73SH3LHza+XH8XCELtbIMIX4rgH/AiM7Qyx82cODAAAAAElFTkSuQmCC"
+                    alt="Redoc Icon" width="20" height="20">ReDoc</a>
+        </li>
+        <li id="rapidoc-link" style="display: none;">
+            <a href="$($data.rapidoc_path)" target="_blank">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAAUwAAAFMAWmGvTkAAALxSURBVDhPnVNPSFRBGP9m3tv3Z3XxD4tkLnQogyA6BQm1a7egQyc7RAehRMi8hIFgeCuisD+XtMKKIKFLHbpkXrbSLLIIwjwYhlQXSXddd7e3+/7M18zss3bbV6A/mDfz/Wbm9775zTcENgl2pc0ERRsGxCgwp5P2vUkJflOCeK/dgFUc57vbZYw4S3RMkJ6pNJUrNgjMsEvrYgKEkN1YJHfkWDIbALueaOWScwSI6tg2eB4DwzTkHFJIVAmy6bYWoMoxYKwZgFqcmiOaOkH2vliW89fiF3hGA2JsF21gngdG2BQhV4T71YKv9/dxcsgPJRDB9lz7gV1YGzQ/NT3kgnHB/y2IAF+qPUTcUuoQkDFJEQIaenjCtvADKrhLkkFAjAVdSkF+ueDPbJaf3BelPG/EJlBYVBLBsKsFKZ0THaEUzEgELF9UCYXkFXohTy4LBCHz1YKkOCE8E0NaJiosCGk6uGbpAIFAHK8SpPtmVngmd/2wQlTn5tu1BUClZEM5+A+L4MHNIA+B1JABntCiH/4WLVoW6LUmWI1r/kwFBunZyW8VZfP4ZdfOYtE9mV3NHqpT3dbD0XS4Vv3jmfDSWstyP1WA7zRFl7QGXjZEN41hcmayV1ybFEwmO40Vol3m5dHDQ6VgFSGXzYFBGLTV52BHjQXrR1kX1cPhq4VkYdFxWazx/Gy/Pw3Kk3fd4ZyrPONiR3ks96k8A13XeTUjLORUmM+bkHEVyHkq5JmSaTTwRi6VbrWW3bde3v0xNJ36KPYJUDuPIzxNWfmO44JjO7KJTMywAZG6CHh6DSy49TBjReFVYWvdWGb7YtLdNua0hC5KlTLwcsUGf8yfEZNC5Y3bIjPWdI23ECgKFTcaW/Iiofek+ZylKFOl3SWQsclTDYbnPuelssfn/gv+IIc72kdP+2EV6PH4SLqgqAf5bx/5XCBEnfFS6u9IjPb6VCAqyybZfQAJ6+K08DQGBMWL+YxAnmqU3DoSv/1VLvwnAH4B0C9XMhC+QPUAAAAASUVORK5CYII="
+                    alt="RapiDoc Icon" width="20" height="20">RapiDoc</a>
+        </li>
+        <li id="stoplight-link" style="display: none;">
+            <a href="$($data.stoplight_path)" target="_blank">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIzSURBVDhPnZXPSxRhGMe/78zO7OyuSuYWUaIRphAoHrpEl0IDw44lBdGhQ4c6dk0IOgX+A2kXq0sQlSAFEdRRLBAFwygkzSDFkjJ319md2Z73nXd+vLvubPaBd2fmmff9zvt9nvd9l2Xv/ykjhlOHdIycNLFeAK69KWB5M7Y7NHmtyc1eAy+WHNhOGVe6DBmtTV3BZTLQ36qjc49Gs3NltDaKZUattYFB5zeSjMEwejqJ2XUXIzM23IjjggN8z6kpCAS5xni/hZ4WDb/s+Dz5HEgzjH0o0oeKMhIRNHXg8+UMzk3mMfejvjXOpaMJXD1m4MxEXkYiOeQzZPQTldIi1n2iMapTVR+lKPxdWbrto0LMXUyLZeNzo9vA+6E02hs9Fd63sqrB83XqPP/TxeJvb47ZFBNtbzKcQovFREslvNj0mkP3wEBb+NFAsEQ6zckw8PhTCUcebOHpYklGgDvvbHQ+2sLChvdRg/w2mkyM9QkER+eLOJjRcLgpNJELtQQ8G9u0VHx6sxrW8mW8XgmD4WiCD6jIcSyiiNEqEoEgF/ML8q+8/ebg9rQtnzyUhf180MI+Svoq2ajHEh0Sw1Pb2AzXtEDZehYVqyeri60XZ51bvXvCxD3K+8OPaqIVwd3wZMDCq6+OKGYUpSicZlp3/GT5X6pGXuhI4NZxUz7tnipB7r+BztEk5ZMfGDs1/i5NO4Tv5UqqcthG+/TZ2RT209Ek1HeCXq3mXJx/WcAX5S8B+At5qa4A/a3KYgAAAABJRU5ErkJggg=="
+                    alt="StopLight Icon" width="20" height="20">StopLight</a>
+        </li>
+        <li id="explorer-link" style="display: none;">
+            <a href="$($data.explorer_path)" target="_blank">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJZSURBVDhPrZRNaBNBFMff7GabzK7VihUUQ8WDePHuoSh48VsQaijtpUaQgiBe9FAqSFHUmxR6sL0EFMuSmpiqrYJIrhaveikoAb+QGqVtkm0+ZsY302l04wYT8EeGvPd/L3/mIzMEmrDiRnpNkwybBjmEaRSH4Bw+ARHZagUmtwx6C6qxgb8Mv94Hp4vSKTQb1FIgNSYStOBdJHFY05LC0N+KxXkId9n0+b/MJCGTxL1OOpu9DiEtKXyGuwr0Ji7xoE6BceEyBkc/L7M9eRwVBieYgJQuQ8ggRw7st0d0qqgv+fsDGu10yHsUOmSOPx7dFCvdUsUGijP0hmWSazIWAopLBXN3dGg1L/P6DO2w6N8ww83POW9Ld1QhALvbG8OeLzImBJyttHZWFZD6DCvpzQnc6nMqrsLjvMeuqkITuqkxblnkpIw5g4lIrHRJxr8NM9umgXsDOm0LIcRUuM8blrHvUP4HgYa40TnGxLzgYg5Peg5n8AzlpwLgCdZmcWQwfr3e3QS55EraFnJU0/ZdLTel6NIzG/3lFJ3UcvtLXnXDh1dcOg0GuaIlH4GGVS72/XxI+34kIz1aqmNZ5u1IBxmwQtCrJR+BhngDjjuUPHIM8iaZBFPLCtzTLO4ffoLx3cNGBAFr+zv/A+LEvJHEEIzlMF74BqJnCfjOU8DWq03+h3h/M8sFNlETZDF6fu2jamiRwCVzEB92xMuv2jWTBBqieNpL2W5hxr6gpZYJNMT3cK9JoD9kwL3xYxDWckv8YShqeHRVHPjkAZcnybl4efkFlHVDCwD8Av9E5k5ZmszjAAAAAElFTkSuQmCC"
+                    alt="Explorer Icon" width="20" height="20">OpenAPI-Explorer</a>
+        </li>
+        <li id="rapipdf-link" style="display: none;">
+            <a href="$($data.rapipdf_path)" target="_blank">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAAsUAAALFAYnWf+8AAAOASURBVDhPpZRbaBNZGMf/uUzSpO20adOa9BLt1PVWjahYF6vLspV92BdFWUVEEFatKOKl6otIVcQbgnalsL4I6z7sKlu067K4GgtaV6gBa4mUpqS1aNU0be7NJE4yM54ziVqb+OD6G77M+S75z5zznTn4AubYK/Kd5QXaK2RcmA79f+xr7Wb/xNkGeeDwUrnOYuwmsQKa0NCfzyS/oYbt7NhaV2XUaVCaz6Bxlqny98c+Szwp/fXZglo19rf/VLfBZtLjhssP1qBFTUkeJFleeHcg9Lc6UzcZu0ajaquapu8wF2v/JP5xYsuVDOHbmabtS6qU2eF5MIFoQlTGTcsr1EadaptW8SZBxJp8/9TvLGHTqZdjwrqbXYEjl657u594YmcaOJZTElMwGbVYWVPcmPWGVrOuioqJkowoL6KyTIcday243zZ72eZVbHttaV6mMhtzAWPLEky8EZP0zickbD3pgS+ouMjTq7FpVZFKlBU3J5Iki1mC46FU34hPQKFRg4vNHPacH8JoIAkNw4CzMnD7+ExlNq8igidXU27dfBBQBuUmBhf2cth1bhBjIRHWMgNexGNKbiojoTd4OBy5nUvwIW1AQpAUZ1oJg7YDtdjXOoSwoMPXixjcdgeV3GRa770UkqJ8KZcgej2x080/D79fLSp6fg+HfRdf4IcGMy73jsAfS68tZTQqpAbG+U1k6FGlQwoGtVq9e/4iS9P02mKObB9w6jBONdmgY9JlXr9A1vQZmteX4XDrKyy2sqBdP3pruP11JPkjKZHfCc47eKzxYHkFu4WbZUYqmUIkHMWQ248eRz82rijAmm9KweZrlK7TRjmcoU5/KEV3tZNMpYXcU1SICs5etnJG1/6W78q0zIcvUZZlxGNxxPkEnj7xoq/HC4OcxESQx1N3uHMsmKTdcRGjp42b/oeisnGm7pNtq+sNRgaPuoYx7vu4izK5pJRE9hhpkkqFcCCOjquuOyTlJNZMzE5sgJiCNhxMuEMBnggW4at55aicLmRSuenrfU3n5STPoW/2KzGPkshAp1xYPaPYcejE9/UV1UXp6Cfod43iXIvjetDP0wakT4Up0EUTIqHEH12OQQtZt4XVNSaVTv/xmREYi+Habz3C5db/Tk9EhV0klFOMMnnbUBbr8jTb5i6wNrJFehvxpcA47+l3ef8VRfkX4g8qVZ8EeAsUgVHGRtqu6QAAAABJRU5ErkJggg=="
+                    alt="RapiPdf Icon" width="20" height="20">RapiPdf </a>
+        </li>
+
+    </ul>
+
+    <div class="header-container">
+        <h3>OpenAPI Definition</h3>
+        <button id="copyButton" class="copy-button" onclick="copyToClipboard()">Copy</button>
+        <button id="editButton" class="copy-button" style="display: none;">Edit</button>
+    </div>
+
+    <div class="tab">
+        <button class="tablinks active" onclick="openTab(event, 'JSON',true)">JSON</button>
+        <button class="tablinks" onclick="openTab(event, 'YAML',true)">YAML</button>
+    </div>
+    <!-- Tab content -->
+    <div id="JSON" class="tabcontent">
+        <pre><code id="jsonCode" class="json">Loading JSON content...</code></pre>
+    </div>
+    <div id="YAML" class="tabcontent" style="display:none">
+        <pre><code id="yamlCode" class="yaml">Loading YAML content...</code></pre>
+    </div>
+    <footer style='text-align: center;
+        width: 100%;
+        font-size: 0.9em;
+        position: fixed;
+        bottom: 0px;'>
+        🧡 Powered by <a href='https://badgerati.github.io/Pode/' style='color: wheat; text-decoration: none;'>Pode</a>
+    </footer>
+    <script>
+        // Define boolean variables (you can set these values based on your batch process)
+        var enableSwagger = '$($data.swagger)';
+        var enableSwaggerEditor = '$($data.editor)';
+        var enableRedoc = '$($data.redoc)';
+        var enableRapidoc = '$($data.rapidoc)';
+        var enableStopLight = '$($data.stoplight)';
+        var enableExplorer = '$($data.explorer)';
+        var enableRapiPdf = '$($data.rapipdf)';
+
+        // Function to enable or disable links based on boolean variables
+        function updateLinks() {
+            document.getElementById("swagger-link").style.display = enableSwagger ? "list-item" : "none";
+            document.getElementById("redoc-link").style.display = enableRedoc ? "list-item" : "none";
+            document.getElementById("rapidoc-link").style.display = enableRapidoc ? "list-item" : "none";
+            document.getElementById("stoplight-link").style.display = enableStopLight ? "list-item" : "none";
+            document.getElementById("explorer-link").style.display = enableExplorer ? "list-item" : "none";
+            document.getElementById("rapipdf-link").style.display = enableRapiPdf ? "list-item" : "none";
+            if (enableSwaggerEditor) {
+                document.getElementById('editButton').style.display = "block";
+                document.getElementById('editButton').addEventListener('click', function() {
+                    window.open("$($data.editor_path)", '_blank');
+                });
+            }
+        }
+
+
+
+        // Function to copy text to clipboard
+        function copyToClipboard() {
+            let codeId;
+            if (document.getElementById('JSON').style.display == "none") {
+                codeId = "yamlCode";
+            } else {
+                codeId = "jsonCode";
+            }
+            var textToCopy = document.getElementById(codeId).textContent;
+
+            // Create a textarea element to temporarily hold the text
+            var textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+
+            // Append the textarea to the document
+            document.body.appendChild(textArea);
+
+            // Select the text in the textarea
+            textArea.select();
+
+            // Copy the selected text to the clipboard
+            document.execCommand('copy');
+
+            // Remove the textarea from the document
+            document.body.removeChild(textArea);
+
+            // Provide user feedback (optional)
+            // alert("Copied to clipboard");
+        }
+
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Load JSON content when the page is loaded
+            loadOAContent('json');
+            // Add a click event listener to the copy button
+            document.getElementById("copyButton").addEventListener("click", copyToClipboard);
+            openTab(event, 'JSON',false)
+        })
+
+
+        function openTab(evt, tabName, reset) {
+            // Declare all variables
+            var i, tabcontent, tablinks;
+
+            // Get all elements with class="tabcontent" and hide them
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            if (reset) {
+                // Get all elements with class="tablinks" and remove the class "active"
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+
+
+        // Function to fetch and display JSON and YAML content with syntax highlighting
+        function loadOAContent(type) {
+            // URL of the JSON file
+            var jsonUrl = '$($data.OpenApi)' + '.' + type;
+
+            // Get the <code> element by its ID
+            var jsonCodeElement = document.getElementById(type + 'Code');
+            // Fetch the JSON data
+            fetch(jsonUrl)
+                .then(response => response.text()) // Fetch as text (raw content)
+                .then(data => {
+                    // Set the content of the <code> element to the  content
+                    jsonCodeElement.textContent = data;
+
+                    // Apply syntax highlighting to the <code> element
+                    hljs.highlightElement(jsonCodeElement);
+                })
+                .catch(error => {
+                    console.error('Error fetching ' + type + ' data:', error);
+                    // Display an error message if the fetch fails
+                    jsonCodeElement.textContent = 'Error loading ' + type + ' content';
+                });
+        }
+        // Call the functions when the page loads
+        window.onload = function() {
+            updateLinks();
+            loadOAContent('json');
+            loadOAContent('yaml');
+        };
+    </script>
+</body>
+
+</html>

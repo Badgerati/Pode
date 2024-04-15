@@ -37,6 +37,7 @@ $custom_access = New-PodeAccessScheme -Custom -Path 'CustomProp'
 #>
 function New-PodeAccessScheme {
     [CmdletBinding(DefaultParameterSetName = 'Type_Path')]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Type_Scriptblock')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Type_Path')]
@@ -113,6 +114,9 @@ Or they can be used independant of Authentication/Routes for custom scenarios.
 .PARAMETER Name
 A unique Name for the Access method.
 
+.PARAMETER Description
+A short description used by OpenAPI.
+
 .PARAMETER Scheme
 The access Scheme to use for retrieving credentials (From New-PodeAccessScheme).
 
@@ -146,6 +150,9 @@ function Add-PodeAccess {
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
+
+        [string]
+        $Description,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]
@@ -183,6 +190,7 @@ function Add-PodeAccess {
     # add access object
     $PodeContext.Server.Authorisations.Methods[$Name] = @{
         Name        = $Name
+        Description = $Description
         Scheme      = $Scheme
         ScriptBlock = $scriptObj
         Arguments   = $ArgumentList
@@ -334,6 +342,7 @@ $methods = Get-PodeAccess -Name 'Example1', 'Example2'
 #>
 function Get-PodeAccess {
     [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter()]
         [string[]]
@@ -399,6 +408,7 @@ if (Test-PodeAccess -Name 'Example' -Source 'Developer' -Destination 'Admin') { 
 #>
 function Test-PodeAccess {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -429,16 +439,14 @@ function Test-PodeAccess {
     if (($null -eq $Source) -or ($Source.Length -eq 0)) {
         if ($null -ne $access.Scheme.ScriptBlock) {
             $_args = $ArgumentList + @($access.Scheme.Arguments)
-            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scheme.Scriptblock.UsingVariables)
-            $Source = Invoke-PodeScriptBlock -ScriptBlock $access.Scheme.Scriptblock.Script -Arguments $_args -Return -Splat
+            $Source = Invoke-PodeScriptBlock -ScriptBlock $access.Scheme.Scriptblock.Script -Arguments $_args -UsingVariables $access.Scheme.Scriptblock.UsingVariables -Return -Splat
         }
     }
 
     # check for custom validator, or use default match logic
     if ($null -ne $access.ScriptBlock) {
         $_args = @(, $Source) + @(, $Destination) + @($access.Arguments)
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.ScriptBlock.UsingVariables)
-        return [bool](Invoke-PodeScriptBlock -ScriptBlock $access.ScriptBlock.Script -Arguments $_args -Return -Splat)
+        return [bool](Invoke-PodeScriptBlock -ScriptBlock $access.ScriptBlock.Script -Arguments $_args -UsingVariables $access.ScriptBlock.UsingVariables -Return -Splat)
     }
 
     # not authorised if no source values
@@ -528,8 +536,7 @@ function Test-PodeAccessUser {
     # otherwise, invoke scriptblock
     else {
         $_args = @($user) + @($access.Scheme.Arguments)
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $access.Scheme.Scriptblock.UsingVariables)
-        $userAccess = Invoke-PodeScriptBlock -ScriptBlock $access.Scheme.Scriptblock.Script -Arguments $_args -Return -Splat
+        $userAccess = Invoke-PodeScriptBlock -ScriptBlock $access.Scheme.Scriptblock.Script -Arguments $_args -UsingVariables $access.Scheme.Scriptblock.UsingVariables -Return -Splat
     }
 
     # is the user authorised?

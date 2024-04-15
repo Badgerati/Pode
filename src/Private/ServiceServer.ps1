@@ -14,14 +14,14 @@ function Start-PodeServiceServer {
                 # the event object
                 $ServiceEvent = @{
                     Lockable = $PodeContext.Threading.Lockables.Global
+                    Metadata = @{}
                 }
 
                 # invoke the service handlers
                 $handlers = Get-PodeHandler -Type Service
                 foreach ($name in $handlers.Keys) {
                     $handler = $handlers[$name]
-                    $_args = @(Get-PodeScriptblockArguments -ArgumentList $handler.Arguments -UsingVariables $handler.UsingVariables)
-                    Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $_args -Scoped -Splat
+                    $null = Invoke-PodeScriptBlock -ScriptBlock $handler.Logic -Arguments $handler.Arguments -UsingVariables $handler.UsingVariables -Scoped -Splat
                 }
 
                 # sleep before next run

@@ -20,13 +20,13 @@
     Author            = 'Matthew Kelly (Badgerati)'
 
     # Copyright statement for this module
-    Copyright         = 'Copyright (c) 2017-2023 Matthew Kelly (Badgerati), licensed under the MIT License.'
+    Copyright         = 'Copyright (c) 2017-$buildyear$ Matthew Kelly (Badgerati), licensed under the MIT License.'
 
     # Description of the functionality provided by this module
     Description       = 'A Cross-Platform PowerShell framework for creating web servers to host REST APIs and Websites. Pode also has support for being used in Azure Functions and AWS Lambda.'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '5.0'
+    PowerShellVersion = '5.1'
 
     # Functions to export from this Module
     FunctionsToExport = @(
@@ -75,8 +75,10 @@
         'Write-PodeHtmlResponse',
         'Write-PodeMarkdownResponse',
         'Write-PodeJsonResponse',
+        'Write-PodeYamlResponse',
         'Write-PodeXmlResponse',
         'Write-PodeViewResponse',
+        'Write-PodeDirectoryResponse',
         'Set-PodeResponseStatus',
         'Move-PodeResponseUrl',
         'Write-PodeTcpClient',
@@ -88,6 +90,24 @@
         'Use-PodePartialView',
         'Send-PodeSignal',
         'Add-PodeViewFolder',
+        'Send-PodeResponse',
+
+        # sse
+        'ConvertTo-PodeSseConnection',
+        'Send-PodeSseEvent',
+        'Close-PodeSseConnection',
+        'Test-PodeSseClientIdSigned',
+        'Test-PodeSseClientIdValid',
+        'New-PodeSseClientId',
+        'Enable-PodeSseSigning',
+        'Disable-PodeSseSigning',
+        'Set-PodeSseBroadcastLevel',
+        'Get-PodeSseBroadcastLevel',
+        'Test-PodeSseBroadcastLevel',
+        'Set-PodeSseDefaultScope',
+        'Get-PodeSseDefaultScope',
+        'Test-PodeSseName',
+        'Test-PodeSseClientId',
 
         # utility helpers
         'Close-PodeDisposable',
@@ -103,6 +123,7 @@
         'Protect-PodeValue',
         'Resolve-PodeValue',
         'Invoke-PodeScriptBlock',
+        'Merge-PodeScriptblockArguments',
         'Test-PodeIsUnix',
         'Test-PodeIsWindows',
         'Test-PodeIsMacOS',
@@ -117,6 +138,9 @@
         'Test-PodeIsHosted',
         'New-PodeCron',
         'Test-PodeInRunspace',
+        'ConvertFrom-PodeXml',
+        'Set-PodeDefaultFolder',
+        'Get-PodeDefaultFolder',
 
         # routes
         'Add-PodeRoute',
@@ -159,6 +183,7 @@
         'Get-PodeScheduleNextTrigger',
         'Use-PodeSchedules',
         'Test-PodeSchedule',
+        'Clear-PodeSchedules',
 
         # timers
         'Add-PodeTimer',
@@ -194,6 +219,9 @@
         'Initialize-PodeCsrf',
         'Enable-PodeCsrfMiddleware',
         'Use-PodeMiddleware',
+        'New-PodeMiddleware',
+        'Add-PodeBodyParser',
+        'Remove-PodeBodyParser',
 
         # sessions
         'Enable-PodeSessionMiddleware',
@@ -203,6 +231,10 @@
         'Reset-PodeSessionExpiry',
         'Get-PodeSessionDuration',
         'Get-PodeSessionExpiry',
+        'Test-PodeSessionsEnabled',
+        'Get-PodeSessionTabId',
+        'Get-PodeSessionInfo',
+        'Test-PodeSessionScopeIsBrowser',
 
         # auth
         'New-PodeAuthScheme',
@@ -267,27 +299,62 @@
         'Add-PodeEndpoint',
         'Get-PodeEndpoint',
         'Pode',
+        'Get-PodeServerDefaultSecret',
+        'Wait-PodeDebugger',
+        'Get-PodeVersion',
 
         # openapi
         'Enable-PodeOpenApi',
-        'Get-PodeOpenApiDefinition',
+        'Get-PodeOADefinition',
+        'Select-PodeOADefinition',
         'Add-PodeOAResponse',
         'Remove-PodeOAResponse',
-        'Add-PodeOAComponentResponse',
         'Set-PodeOARequest',
         'New-PodeOARequestBody',
-        'Add-PodeOAComponentSchema',
-        'Add-PodeOAComponentRequestBody',
-        'Add-PodeOAComponentParameter',
+        'Test-PodeOADefinitionTag',
+        'Test-PodeOADefinition',
+
+        # properties
         'New-PodeOAIntProperty',
         'New-PodeOANumberProperty',
         'New-PodeOAStringProperty',
         'New-PodeOABoolProperty',
         'New-PodeOAObjectProperty',
-        'New-PodeOASchemaProperty',
+        'New-PodeOAMultiTypeProperty',
+        'Merge-PodeOAProperty',
+        'New-PodeOAComponentSchemaProperty',
         'ConvertTo-PodeOAParameter',
         'Set-PodeOARouteInfo',
-        'Enable-PodeOpenApiViewer',
+        'Enable-PodeOAViewer',
+        'Test-PodeOAJsonSchemaCompliance',
+        'Add-PodeOAInfo',
+        'Add-PodeOAExternalDoc',
+        'New-PodeOAExternalDoc',
+        'Add-PodeOATag',
+        'Add-PodeOAServerEndpoint',
+        'New-PodeOAExample',
+        'New-PodeOAEncodingObject',
+        'New-PodeOAResponse',
+        'Add-PodeOACallBack',
+        'New-PodeOAResponseLink',
+        'New-PodeOAContentMediaType',
+        'Add-PodeOAExternalRoute',
+        'New-PodeOAServerEndpoint',
+        'Test-PodeOAVersion',
+
+        # Components
+        'Add-PodeOAComponentResponse',
+        'Add-PodeOAComponentSchema',
+        'Add-PodeOAComponentRequestBody',
+        'Add-PodeOAComponentHeader',
+        'Add-PodeOAComponentExample',
+        'Add-PodeOAComponentParameter',
+        'Add-PodeOAComponentResponseLink',
+        'Add-PodeOAComponentCallBack',
+        'Add-PodeOAComponentPathItem',
+        'Add-PodeOAWebhook',
+        'Test-PodeOAComponent',
+        'Remove-PodeOAComponent',
 
         # Metrics
         'Get-PodeServerUptime',
@@ -400,19 +467,53 @@
         'Use-PodeSemaphore',
         'Enter-PodeSemaphore',
         'Exit-PodeSemaphore',
-        'Clear-PodeSemaphores'
+        'Clear-PodeSemaphores',
+
+        # caching
+        'Get-PodeCache',
+        'Set-PodeCache',
+        'Test-PodeCache',
+        'Remove-PodeCache',
+        'Clear-PodeCache',
+        'Add-PodeCacheStorage',
+        'Remove-PodeCacheStorage',
+        'Get-PodeCacheStorage',
+        'Test-PodeCacheStorage',
+        'Set-PodeCacheDefaultStorage',
+        'Get-PodeCacheDefaultStorage',
+        'Set-PodeCacheDefaultTtl',
+        'Get-PodeCacheDefaultTtl',
+
+        # scoped variables
+        'Convert-PodeScopedVariables',
+        'Convert-PodeScopedVariable',
+        'Add-PodeScopedVariable',
+        'Remove-PodeScopedVariable',
+        'Test-PodeScopedVariable',
+        'Clear-PodeScopedVariables',
+        'Get-PodeScopedVariable',
+        'Use-PodeScopedVariables'
+    )
+
+    # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
+    AliasesToExport   = @(
+        'Enable-PodeOpenApiViewer',
+        'Enable-PodeOA',
+        'Get-PodeOpenApiDefinition',
+        'New-PodeOASchemaProperty'
     )
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData       = @{
-        PSData = @{
-
+        PSData       = @{
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags         = @('powershell', 'web', 'server', 'http', 'listener', 'rest', 'api', 'tcp', 'smtp', 'websites',
-                'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core', 'cross-platform',
-                'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
-                'authentication', 'authorisation', 'arm', 'raspberry-pi', 'aws-lambda',
-                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim')
+            Tags         = @(
+                'powershell', 'web', 'server', 'http', 'https', 'listener', 'rest', 'api', 'tcp',
+                'smtp', 'websites', 'powershell-core', 'windows', 'unix', 'linux', 'pode', 'PSEdition_Core',
+                'cross-platform', 'file-monitoring', 'multithreaded', 'schedule', 'middleware', 'session',
+                'authentication', 'authorisation', 'authorization', 'arm', 'raspberry-pi', 'aws-lambda',
+                'azure-functions', 'websockets', 'swagger', 'openapi', 'webserver', 'secrets', 'fim'
+            )
 
             # A URL to the license for this module.
             LicenseUri   = 'https://raw.githubusercontent.com/Badgerati/Pode/master/LICENSE.txt'
@@ -425,7 +526,10 @@
 
             # Release notes for this particular version of the module
             ReleaseNotes = 'https://github.com/Badgerati/Pode/releases/tag/v$version$'
-
+        }
+        PwshVersions = @{
+            Untested  = '$versionsUntested$'
+            Supported = '$versionsSupported$'
         }
     }
 }

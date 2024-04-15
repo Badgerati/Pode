@@ -2,7 +2,7 @@ using System;
 
 namespace Pode
 {
-    public class PodeSignal
+    public class PodeSignal : IDisposable
     {
         public PodeContext Context { get; private set; }
         public string Path { get; private set; }
@@ -15,6 +15,11 @@ namespace Pode
             Path = path;
             ClientId = clientId;
             Timestamp = DateTime.UtcNow;
+        }
+
+        public void Dispose()
+        {
+            Context.Dispose(true);
         }
     }
 }

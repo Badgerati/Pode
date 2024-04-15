@@ -429,7 +429,8 @@ function Get-PodeAuthBearerType {
                 if ($_.Exception.Message -ilike '*jwt*') {
                     return @{
                         Message = $_.Exception.Message
-                        Code    = 400
+                        #https://www.rfc-editor.org/rfc/rfc6750 Bearer token should return 401
+                        Code    = 401
                     }
                 }
 
@@ -828,11 +829,13 @@ function Invoke-PodeAuthInbuiltScriptBlock {
         $ScriptBlock,
 
         [Parameter()]
-        $UsingVariables
+        $UsingVariables,
+
+        [switch]
+        $NoSplat
     )
 
-    $_args = @(Get-PodeScriptblockArguments -ArgumentList $User -UsingVariables $UsingVariables)
-    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $_args -Return -Splat)
+    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $User -UsingVariables $UsingVariables -Return -Splat:(!$NoSplat))
 }
 
 function Get-PodeAuthWindowsLocalMethod {
@@ -1089,7 +1092,6 @@ function Invoke-PodeAuthValidation {
     # if it's a merged auth, re-call this function and check against "succeed" value
     if ($auth.Merged) {
         $results = @{}
-
         foreach ($authName in $auth.Authentications) {
             $result = Invoke-PodeAuthValidation -Name $authName
 
@@ -1113,7 +1115,6 @@ function Invoke-PodeAuthValidation {
                 $results[$authName] = $result
             }
         }
-
         # if the last auth failed, and we only need one auth to pass, set failure and return
         if (!$result.Success -and $auth.PassOne) {
             return $result
@@ -1121,8 +1122,13 @@ function Invoke-PodeAuthValidation {
 
         # if the last auth succeeded, and we need all to pass, merge users/headers and return result
         if ($result.Success -and !$auth.PassOne) {
-            # invoke scriptblock
-            $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables
+            # invoke scriptblock, or use result of merge default
+            if ($null -ne $auth.ScriptBlock.Script) {
+                $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables -NoSplat
+            }
+            else {
+                $result = $results[$auth.MergeDefault]
+            }
 
             # reset default properties and return
             $result.Success = $true
@@ -1167,7 +1173,7 @@ function Test-PodeAuthValidation {
         }
 
         # run auth scheme script to parse request for data
-        $_args = @(Get-PodeScriptblockArguments -ArgumentList $auth.Scheme.Arguments -UsingVariables $auth.Scheme.ScriptBlock.UsingVariables)
+        $_args = @(Merge-PodeScriptblockArguments -ArgumentList $auth.Scheme.Arguments -UsingVariables $auth.Scheme.ScriptBlock.UsingVariables)
 
         # call inner schemes first
         if ($null -ne $auth.Scheme.InnerScheme) {
@@ -1180,7 +1186,7 @@ function Test-PodeAuthValidation {
                 })
 
             for ($i = $_inner.Length - 1; $i -ge 0; $i--) {
-                $_tmp_args = @(Get-PodeScriptblockArguments -ArgumentList $_inner[$i].Arguments -UsingVariables $_inner[$i].ScriptBlock.UsingVariables)
+                $_tmp_args = @(Merge-PodeScriptblockArguments -ArgumentList $_inner[$i].Arguments -UsingVariables $_inner[$i].ScriptBlock.UsingVariables)
 
                 $_tmp_args += , $schemes
                 $result = (Invoke-PodeScriptBlock -ScriptBlock $_inner[$i].ScriptBlock.Script -Arguments $_tmp_args -Return -Splat)
@@ -1204,14 +1210,12 @@ function Test-PodeAuthValidation {
             $original = $result
 
             $_args = @($result) + @($auth.Arguments)
-            $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $auth.UsingVariables)
-            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -Return -Splat)
+            $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.ScriptBlock -Arguments $_args -UsingVariables $auth.UsingVariables -Return -Splat)
 
             # if we have user, then run post validator if present
             if ([string]::IsNullOrEmpty($result.Code) -and ($null -ne $auth.Scheme.PostValidator.Script)) {
                 $_args = @($original) + @($result) + @($auth.Scheme.Arguments)
-                $_args = @(Get-PodeScriptblockArguments -ArgumentList $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables)
-                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -Return -Splat)
+                $result = (Invoke-PodeScriptBlock -ScriptBlock $auth.Scheme.PostValidator.Script -Arguments $_args -UsingVariables $auth.Scheme.PostValidator.UsingVariables -Return -Splat)
             }
         }
 
@@ -2131,6 +2135,62 @@ function Find-PodeAuth {
 
     return $PodeContext.Server.Authentications.Methods[$Name]
 }
+
+<#
+.SYNOPSIS
+  Expands a list of authentication names, including merged authentication methods.
+
+.DESCRIPTION
+  The Expand-PodeAuthMerge function takes an array of authentication names and expands it by resolving any merged authentication methods
+  into their individual components. It is particularly useful in scenarios where authentication methods are combined or merged, and there
+  is a need to process each individual method separately.
+
+.PARAMETER Names
+  An array of authentication method names. These names can include both discrete authentication methods and merged ones.
+
+.EXAMPLE
+  $expandedAuthNames = Expand-PodeAuthMerge -Names @('BasicAuth', 'CustomMergedAuth')
+
+  Expands the provided authentication names, resolving 'CustomMergedAuth' into its constituent authentication methods if it's a merged one.
+#>
+function Expand-PodeAuthMerge {
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $Names
+    )
+
+    # Initialize a hashtable to store expanded authentication names
+    $authNames = @{}
+
+    # Iterate over each authentication name
+    foreach ($authName in $Names) {
+        # Handle the special case of anonymous access
+        if ($authName -eq '%_allowanon_%') {
+            $authNames[$authName] = $true
+        }
+        else {
+            # Retrieve the authentication method from the Pode context
+            $_auth = $PodeContext.Server.Authentications.Methods[$authName]
+
+            # Check if the authentication is a merged one and expand it
+            if ($_auth.merged) {
+                foreach ($key in (Expand-PodeAuthMerge -Names $_auth.Authentications)) {
+                    $authNames[$key] = $true
+                }
+            }
+            else {
+                # If not merged, add the authentication name to the list
+                $authNames[$_auth.Name] = $true
+            }
+        }
+    }
+
+    # Return the keys of the hashtable, which are the expanded authentication names
+    return $authNames.Keys
+}
+
 
 function Import-PodeAuthADModule {
     if (!(Test-PodeIsWindows)) {

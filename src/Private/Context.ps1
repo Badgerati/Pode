@@ -47,7 +47,10 @@ function New-PodeContext {
         $DisableTermination,
 
         [switch]
-        $Quiet
+        $Quiet,
+
+        [switch]
+        $EnableBreakpoints
     )
 
     # set a random server name if one not supplied
@@ -96,6 +99,9 @@ function New-PodeContext {
     $ctx.Listeners = @()
     $ctx.Receivers = @()
     $ctx.Watchers = @()
+
+    # default secret that can used when needed, and a secret isn't supplied
+    $ctx.Server.DefaultSecret = New-PodeGuid -Secure
 
     # list of timers/schedules/tasks/fim
     $ctx.Timers = @{
@@ -151,6 +157,18 @@ function New-PodeContext {
         Listener = $null
     }
 
+    $ctx.Server.Http = @{
+        Listener = $null
+    }
+
+    $ctx.Server.Sse = @{
+        Signed         = $false
+        Secret         = $null
+        Strict         = $false
+        DefaultScope   = 'Global'
+        BroadcastLevel = @{}
+    }
+
     $ctx.Server.WebSockets = @{
         Enabled     = ($EnablePool -icontains 'websockets')
         Receiver    = $null
@@ -161,6 +179,13 @@ function New-PodeContext {
     $ctx.Server.Request = @{
         Timeout  = 30
         BodySize = 100MB
+    }
+
+    # default Folders
+    $ctx.Server.DefaultFolders = @{
+        'Views'  = 'views'
+        'Public' = 'public'
+        'Errors' = 'errors'
     }
 
     # check if there is any global configuration
@@ -179,6 +204,19 @@ function New-PodeContext {
     $ctx.Server.Root = $ServerRoot
     if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
         $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
+    }
+
+    if (Test-PodeIsEmpty $ctx.Server.Root) {
+        $ctx.Server.Root = $PWD.Path
+    }
+
+    # debugging
+    if ($EnableBreakpoints) {
+        if ($null -eq $ctx.Server.Debug) {
+            $ctx.Server.Debug = @{ Breakpoints = @{} }
+        }
+
+        $ctx.Server.Debug.Breakpoints.Enabled = $EnableBreakpoints.IsPresent
     }
 
     # set the server's listener type
@@ -235,11 +273,6 @@ function New-PodeContext {
     # set the IP address details
     $ctx.Server.Endpoints = @{}
     $ctx.Server.EndpointsMap = @{}
-    $ctx.Server.FindEndpoints = @{
-        Route = $false
-        Smtp  = $false
-        Tcp   = $false
-    }
 
     # general encoding for the server
     $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
@@ -253,6 +286,14 @@ function New-PodeContext {
 
     # shared state between runspaces
     $ctx.Server.State = @{}
+
+    # setup caching
+    $ctx.Server.Cache = @{
+        Items          = @{}
+        Storage        = @{}
+        DefaultStorage = $null
+        DefaultTtl     = 3600 # 1hr
+    }
 
     # output details, like variables, to be set once the server stops
     $ctx.Server.Output = @{
@@ -331,8 +372,8 @@ function New-PodeContext {
     # sessions
     $ctx.Server.Sessions = @{}
 
-    # swagger and openapi
-    $ctx.Server.OpenAPI = Get-PodeOABaseObject
+    #OpenApi Definition Tag
+    $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
 
     # server metrics
     $ctx.Metrics = @{
@@ -396,6 +437,7 @@ function New-PodeContext {
     # threading locks, etc.
     $ctx.Threading.Lockables = @{
         Global = [hashtable]::Synchronized(@{})
+        Cache  = [hashtable]::Synchronized(@{})
         Custom = @{}
     }
 
@@ -427,6 +469,14 @@ function New-PodeContext {
             ContentSecurity   = @{}
             PermissionsPolicy = @{}
         }
+    }
+
+    # scoped variables
+    $ctx.Server.ScopedVariables = [ordered]@{}
+
+    # an internal cache for adhoc values, such as module importing checks
+    $ctx.Server.InternalCache = @{
+        YamlModuleImported = $null
     }
 
     # return the new context
@@ -755,10 +805,10 @@ function Set-PodeServerConfiguration {
 
     # file monitoring
     $Context.Server.FileMonitor = @{
-        Enabled   = ([bool]$Configuration.FileMonitor.Enable)
+        Enabled   = [bool]$Configuration.FileMonitor.Enable
         Exclude   = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Exclude))
         Include   = (Convert-PodePathPatternsToRegex -Paths @($Configuration.FileMonitor.Include))
-        ShowFiles = ([bool]$Configuration.FileMonitor.ShowFiles)
+        ShowFiles = [bool]$Configuration.FileMonitor.ShowFiles
         Files     = @()
     }
 
@@ -792,6 +842,26 @@ function Set-PodeServerConfiguration {
     if ([long]$Configuration.Request.BodySize -gt 0) {
         $Context.Server.Request.BodySize = [long]$Configuration.Request.BodySize
     }
+
+    # default folders
+    if ($Configuration.DefaultFolders) {
+        if ($Configuration.DefaultFolders.Public) {
+            $Context.Server.DefaultFolders.Public = $Configuration.DefaultFolders.Public
+        }
+        if ($Configuration.DefaultFolders.Views) {
+            $Context.Server.DefaultFolders.Views = $Configuration.DefaultFolders.Views
+        }
+        if ($Configuration.DefaultFolders.Errors) {
+            $Context.Server.DefaultFolders.Errors = $Configuration.DefaultFolders.Errors
+        }
+    }
+
+    # debug
+    $Context.Server.Debug = @{
+        Breakpoints = @{
+            Enabled = [bool]$Configuration.Debug.Breakpoints.Enable
+        }
+    }
 }
 
 function Set-PodeWebConfiguration {
@@ -807,13 +877,15 @@ function Set-PodeWebConfiguration {
     # setup the main web config
     $Context.Server.Web = @{
         Static           = @{
-            Defaults = $Configuration.Static.Defaults
-            Cache    = @{
+            Defaults          = $Configuration.Static.Defaults
+            RedirectToDefault = [bool]$Configuration.Static.RedirectToDefault
+            Cache             = @{
                 Enabled = [bool]$Configuration.Static.Cache.Enable
                 MaxAge  = [int](Protect-PodeValue -Value $Configuration.Static.Cache.MaxAge -Default 3600)
                 Include = (Convert-PodePathPatternsToRegex -Paths @($Configuration.Static.Cache.Include) -NotSlashes)
                 Exclude = (Convert-PodePathPatternsToRegex -Paths @($Configuration.Static.Cache.Exclude) -NotSlashes)
             }
+            ValidateLast      = [bool]$Configuration.Static.ValidateLast
         }
         ErrorPages       = @{
             ShowExceptions      = [bool]$Configuration.ErrorPages.ShowExceptions
