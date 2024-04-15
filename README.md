@@ -51,8 +51,7 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Azure Functions, AWS Lambda, and IIS support
 * OpenAPI, Swagger, and ReDoc support
 * Listen on a single or multiple IP address/hostnames
-* Cross-platform support for HTTP(S), SMTP(S), and TCP(S)
-* Cross-platform support for WebSockets, including secure WebSockets
+* Cross-platform support for HTTP(S), WS(S), SSE, SMTP(S), and TCP(S)
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages
 * Request and Response compression using GZip/Deflate
