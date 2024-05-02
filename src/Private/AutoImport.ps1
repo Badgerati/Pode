@@ -70,7 +70,7 @@ function Import-PodeModulesIntoRunspaceState {
 
     # work out which order the modules need to be loaded
     $modulesOrder = @(foreach ($module in $modules) {
-            Get-PodeModuleDependencies -Module $module
+            Get-PodeModuleDependency -Module $module
         }) |
         Where-Object {
             ($_.Name -inotin @('pode', 'pode.internal')) -and ($_.Name -inotlike 'microsoft.powershell.*')

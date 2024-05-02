@@ -411,7 +411,7 @@ function Set-PodeSecurityContentSecurityPolicy {
         $values += 'upgrade-insecure-requests'
     }
 
-    $values = ($values -ne $null)
+    $values = ($null -ne $values)
     $value = ($values -join '; ')
 
     # add the header
@@ -581,7 +581,7 @@ function Add-PodeSecurityContentSecurityPolicy {
         $values += 'upgrade-insecure-requests'
     }
 
-    $values = ($values -ne $null)
+    $values = ($null -ne $values)
     $value = ($values -join '; ')
 
     # add the header
@@ -864,7 +864,7 @@ function Set-PodeSecurityPermissionsPolicy {
         Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking
     )
 
-    $values = ($values -ne $null)
+    $values = ($null -ne $values)
     $value = ($values -join ', ')
 
     # add the header
@@ -1129,7 +1129,7 @@ function Add-PodeSecurityPermissionsPolicy {
         Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking -Append
     )
 
-    $values = ($values -ne $null)
+    $values = ($null -ne $values)
     $value = ($values -join ', ')
 
     # add the header

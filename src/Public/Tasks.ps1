@@ -377,6 +377,7 @@ Invoke-PodeTask -Name 'Example1' | Test-PodeTaskCompleted
 #>
 function Test-PodeTaskCompleted {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]

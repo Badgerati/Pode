@@ -180,7 +180,7 @@ function Use-PodeScript {
 
     # we have a path, if it's a directory/wildcard then loop over all files
     if (![string]::IsNullOrWhiteSpace($_path)) {
-        $_paths = Get-PodeWildcardFiles -Path $Path -Wildcard '*.ps1'
+        $_paths = Get-PodeWildcardFile -Path $Path -Wildcard '*.ps1'
         if (!(Test-PodeIsEmpty $_paths)) {
             foreach ($_path in $_paths) {
                 Use-PodeScript -Path $_path
@@ -337,7 +337,7 @@ function Import-PodeModule {
 
         'path' {
             $Path = Get-PodeRelativePath -Path $Path -RootPath $rootPath -JoinRoot -Resolve
-            $paths = Get-PodeWildcardFiles -Path $Path -RootPath $rootPath -Wildcard '*.ps*1'
+            $paths = Get-PodeWildcardFile -Path $Path -RootPath $rootPath -Wildcard '*.ps*1'
             if (!(Test-PodeIsEmpty $paths)) {
                 foreach ($_path in $paths) {
                     Import-PodeModule -Path $_path

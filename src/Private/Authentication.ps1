@@ -139,7 +139,7 @@ function Get-PodeAuthOAuth2Type {
                     $result = Invoke-RestMethod -Method Post -Uri $options.Urls.Token -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
                 }
                 catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
-                    $response = Read-PodeWebExceptionDetails -ErrorRecord $_
+                    $response = Read-PodeWebExceptionDetail -ErrorRecord $_
                     $result = ($response.Body | ConvertFrom-Json)
                 }
 
@@ -158,7 +158,7 @@ function Get-PodeAuthOAuth2Type {
                         $user = Invoke-RestMethod -Method $options.Urls.User.Method -Uri $options.Urls.User.Url -Headers @{ Authorization = "Bearer $($result.access_token)" }
                     }
                     catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
-                        $response = Read-PodeWebExceptionDetails -ErrorRecord $_
+                        $response = Read-PodeWebExceptionDetail -ErrorRecord $_
                         $user = ($response.Body | ConvertFrom-Json)
                     }
 
@@ -688,6 +688,33 @@ function Get-PodeAuthFormType {
     }
 }
 
+<#
+.SYNOPSIS
+    Authenticates a user based on a username and password provided as parameters.
+
+.DESCRIPTION
+    This function finds a user whose username matches the provided username, and checks the user's password.
+    If the password is correct, it converts the user into a hashtable and checks if the user is valid for any users/groups specified by the options parameter. If the user is valid, it returns a hashtable containing the user object. If the user is not valid, it returns a hashtable with a message indicating that the user is not authorized to access the website.
+
+.PARAMETER username
+    The username of the user to authenticate.
+
+.PARAMETER password
+    The password of the user to authenticate.
+
+.PARAMETER options
+    A hashtable containing options for the function. It can include the following keys:
+    - FilePath: The path to the JSON file containing user data.
+    - HmacSecret: The secret key for computing a HMAC-SHA256 hash of the password.
+    - Users: A list of valid users.
+    - Groups: A list of valid groups.
+    - ScriptBlock: A script block for additional validation.
+
+.EXAMPLE
+    Get-PodeAuthUserFileMethod -username "admin" -password "password123" -options @{ FilePath = "C:\Users.json"; HmacSecret = "secret"; Users = @("admin"); Groups = @("Administrators"); ScriptBlock = { param($user) $user.Name -eq "admin" } }
+
+    This example authenticates a user with username "admin" and password "password123". It reads user data from the JSON file at "C:\Users.json", computes a HMAC-SHA256 hash of the password using "secret" as the secret key, and checks if the user is in the "admin" user or "Administrators" group. It also performs additional validation using a script block that checks if the user's name is "admin".
+#>
 function Get-PodeAuthUserFileMethod {
     return {
         param($username, $password, $options)
@@ -742,7 +769,7 @@ function Get-PodeAuthUserFileMethod {
         }
 
         # is the user valid for any users/groups?
-        if (!(Test-PodeAuthUserGroups -User $user -Users $_options.Users -Groups $_options.Groups)) {
+        if (!(Test-PodeAuthUserGroup -User $user -Users $_options.Users -Groups $_options.Groups)) {
             return @{ Message = 'You are not authorised to access this website' }
         }
 
@@ -804,7 +831,7 @@ function Get-PodeAuthWindowsADMethod {
         }
 
         # is the user valid for any users/groups - if not, error!
-        if (!(Test-PodeAuthUserGroups -User $result.User -Users $_options.Users -Groups $_options.Groups)) {
+        if (!(Test-PodeAuthUserGroup -User $result.User -Users $_options.Users -Groups $_options.Groups)) {
             return @{ Message = 'You are not authorised to access this website' }
         }
 
@@ -891,7 +918,7 @@ function Get-PodeAuthWindowsLocalMethod {
         }
 
         # is the user valid for any users/groups - if not, error!
-        if (!(Test-PodeAuthUserGroups -User $user -Users $_options.Users -Groups $_options.Groups)) {
+        if (!(Test-PodeAuthUserGroup -User $user -Users $_options.Users -Groups $_options.Groups)) {
             return @{ Message = 'You are not authorised to access this website' }
         }
 
@@ -978,7 +1005,7 @@ function Get-PodeAuthWindowsADIISMethod {
 
                         # get the users groups
                         $directGroups = $options.DirectGroups
-                        $user.Groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $user.DistinguishedName -Username $user.Username -Direct:$directGroups -Provider $options.Provider)
+                        $user.Groups = (Get-PodeAuthADGroup -Connection $connection -DistinguishedName $user.DistinguishedName -Username $user.Username -Direct:$directGroups -Provider $options.Provider)
                     }
                 }
                 finally {
@@ -1023,7 +1050,7 @@ function Get-PodeAuthWindowsADIISMethod {
         }
 
         # is the user valid for any users/groups - if not, error!
-        if (!(Test-PodeAuthUserGroups -User $user -Users $options.Users -Groups $options.Groups)) {
+        if (!(Test-PodeAuthUserGroup -User $user -Users $options.Users -Groups $options.Groups)) {
             return @{ Message = 'You are not authorised to access this website' }
         }
 
@@ -1039,7 +1066,31 @@ function Get-PodeAuthWindowsADIISMethod {
     }
 }
 
-function Test-PodeAuthUserGroups {
+<#
+    .SYNOPSIS
+    Authenticates a user based on group membership or specific user authorization.
+
+    .DESCRIPTION
+    This function checks if a given user is authorized based on supplied lists of users and groups. The user is considered authorized if their username is directly specified in the list of users, or if they are a member of any of the specified groups.
+
+    .PARAMETER User
+    A hashtable representing the user, expected to contain at least the 'Username' and 'Groups' keys.
+
+    .PARAMETER Users
+    An optional array of usernames. If specified, the function checks if the user's username exists in this list.
+
+    .PARAMETER Groups
+    An optional array of group names. If specified, the function checks if the user belongs to any of these groups.
+
+    .EXAMPLE
+    $user = @{ Username = 'john.doe'; Groups = @('Administrators', 'Users') }
+    $authorizedUsers = @('john.doe', 'jane.doe')
+    $authorizedGroups = @('Administrators')
+
+    Test-PodeAuthUserGroup -User $user -Users $authorizedUsers -Groups $authorizedGroups
+    # Returns true if John Doe is either listed as an authorized user or is a member of an authorized group.
+#>
+function Test-PodeAuthUserGroup {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]
@@ -1289,6 +1340,7 @@ function Get-PodeAuthMiddlewareScript {
 
 function Test-PodeAuthInternal {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -1731,7 +1783,7 @@ function Get-PodeAuthADResult {
         # get the users groups
         $groups = @()
         if (!$NoGroups) {
-            $groups = (Get-PodeAuthADGroups -Connection $connection -DistinguishedName $user.DistinguishedName -Username $Username -Direct:$DirectGroups -Provider $Provider)
+            $groups = (Get-PodeAuthADGroup -Connection $connection -DistinguishedName $user.DistinguishedName -Username $Username -Direct:$DirectGroups -Provider $Provider)
         }
 
         # check if we want to keep the credentials in the User object
@@ -1983,8 +2035,41 @@ function Get-PodeOpenLdapValue {
         }
     }
 }
+<#
+.SYNOPSIS
+    Retrieves Active Directory (AD) group information for a user.
 
-function Get-PodeAuthADGroups {
+.DESCRIPTION
+    This function retrieves AD group information for a specified user. It supports two modes of operation:
+    1. Direct: Retrieves groups directly associated with the user.
+    2. All: Retrieves all groups within the specified distinguished name (DN).
+
+.PARAMETER Connection
+    The AD connection object or credentials for connecting to the AD server.
+
+.PARAMETER DistinguishedName
+    The distinguished name (DN) of the user or group. If not provided, the default DN is used.
+
+.PARAMETER Username
+    The username for which to retrieve group information.
+
+.PARAMETER Provider
+    The AD provider to use (e.g., 'DirectoryServices', 'ActiveDirectory', 'OpenLDAP').
+
+.PARAMETER Direct
+    Switch parameter. If specified, retrieves only direct group memberships for the user.
+
+.OUTPUTS
+    Returns AD group information as needed based on the mode of operation.
+
+.EXAMPLE
+    Get-PodeAuthADGroup -Connection $adConnection -Username "john.doe"
+    # Retrieves all AD groups for the user "john.doe".
+
+    Get-PodeAuthADGroup -Connection $adConnection -Username "jane.smith" -Direct
+    # Retrieves only direct group memberships for the user "jane.smith".
+#>
+function Get-PodeAuthADGroup {
     param(
         [Parameter(Mandatory = $true)]
         $Connection,
@@ -2007,13 +2092,13 @@ function Get-PodeAuthADGroups {
     )
 
     if ($Direct) {
-        return (Get-PodeAuthADGroupsDirect -Connection $Connection -Username $Username -Provider $Provider)
+        return (Get-PodeAuthADGroupDirect -Connection $Connection -Username $Username -Provider $Provider)
     }
 
-    return (Get-PodeAuthADGroupsAll -Connection $Connection -DistinguishedName $DistinguishedName -Provider $Provider)
+    return (Get-PodeAuthADGroupAll -Connection $Connection -DistinguishedName $DistinguishedName -Provider $Provider)
 }
 
-function Get-PodeAuthADGroupsDirect {
+function Get-PodeAuthADGroupDirect {
     param(
         [Parameter(Mandatory = $true)]
         $Connection,
@@ -2062,7 +2147,7 @@ function Get-PodeAuthADGroupsDirect {
     return $groups
 }
 
-function Get-PodeAuthADGroupsAll {
+function Get-PodeAuthADGroupAll {
     param(
         [Parameter(Mandatory = $true)]
         $Connection,

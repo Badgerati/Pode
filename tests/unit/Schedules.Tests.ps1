@@ -35,7 +35,6 @@ Describe 'Find-PodeSchedule' {
 
 Describe 'Add-PodeSchedule' {
     BeforeAll {
-        Mock 'ConvertFrom-PodeCronExpression' { @{} }
         Mock 'Get-PodeCronNextEarliestTrigger' { [datetime]::new(2020, 1, 1) }
     }
     It 'Throws error because schedule already exists' {

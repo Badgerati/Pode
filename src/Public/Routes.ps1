@@ -288,12 +288,12 @@ function Add-PodeRoute {
     }
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
     $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoints from name
-    $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
+    $endpoints = Find-PodeEndpoint -EndpointName $EndpointName
 
     # get default route IfExists state
     if ($IfExists -ieq 'Default') {
@@ -734,12 +734,12 @@ function Add-PodeStaticRoute {
     }
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path -Static
+    $Path = Update-PodeRouteSlash -Path $Path -Static
     $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoints from name
-    $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
+    $endpoints = Find-PodeEndpoint -EndpointName $EndpointName
 
     # get default route IfExists state
     if ($IfExists -ieq 'Default') {
@@ -968,10 +968,10 @@ function Add-PodeSignalRoute {
     $origPath = $Path
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
 
     # get endpoints from name
-    $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
+    $endpoints = Find-PodeEndpoint -EndpointName $EndpointName
 
     # get default route IfExists state
     if ($IfExists -ieq 'Default') {
@@ -1673,8 +1673,8 @@ function Remove-PodeRoute {
     }
 
     # ensure the route has appropriate slashes and replace parameters
-    $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # ensure route does exist
     if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
@@ -1732,7 +1732,7 @@ function Remove-PodeStaticRoute {
     $Method = 'Static'
 
     # ensure the route has appropriate slashes and replace parameters
-    $Path = Update-PodeRouteSlashes -Path $Path -Static
+    $Path = Update-PodeRouteSlash -Path $Path -Static
 
     # ensure route does exist
     if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
@@ -1781,7 +1781,7 @@ function Remove-PodeSignalRoute {
     $Method = 'Signal'
 
     # ensure the route has appropriate slashes and replace parameters
-    $Path = Update-PodeRouteSlashes -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
 
     # ensure route does exist
     if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
@@ -2343,6 +2343,7 @@ Get-PodeRoute -Method Post -Path '/users/:userId' -EndpointName User
 #>
 function Get-PodeRoute {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter()]
         [ValidateSet('', 'Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
@@ -2378,8 +2379,8 @@ function Get-PodeRoute {
     # if we have a path, filter
     if (![string]::IsNullOrWhiteSpace($Path)) {
         $Path = Split-PodeRouteQuery -Path $Path
-        $Path = Update-PodeRouteSlashes -Path $Path
-        $Path = Resolve-PodePlaceholders -Path $Path
+        $Path = Update-PodeRouteSlash -Path $Path
+        $Path = Resolve-PodePlaceholder -Path $Path
 
         $routes = @(foreach ($route in $routes) {
                 if ($route.Path -ine $Path) {
@@ -2428,6 +2429,7 @@ Get-PodeStaticRoute -Path '/assets' -EndpointName User
 #>
 function Get-PodeStaticRoute {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter()]
         [string]
@@ -2446,7 +2448,7 @@ function Get-PodeStaticRoute {
 
     # if we have a path, filter
     if (![string]::IsNullOrWhiteSpace($Path)) {
-        $Path = Update-PodeRouteSlashes -Path $Path -Static
+        $Path = Update-PodeRouteSlash -Path $Path -Static
         $routes = @(foreach ($route in $routes) {
                 if ($route.Path -ine $Path) {
                     continue
@@ -2491,6 +2493,7 @@ Get-PodeSignalRoute -Path '/message'
 #>
 function Get-PodeSignalRoute {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter()]
         [string]
@@ -2509,7 +2512,7 @@ function Get-PodeSignalRoute {
 
     # if we have a path, filter
     if (![string]::IsNullOrWhiteSpace($Path)) {
-        $Path = Update-PodeRouteSlashes -Path $Path
+        $Path = Update-PodeRouteSlash -Path $Path
         $routes = @(foreach ($route in $routes) {
                 if ($route.Path -ine $Path) {
                     continue
@@ -2655,11 +2658,11 @@ function Test-PodeRoute {
     }
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoint from name
-    $endpoint = @(Find-PodeEndpoints -EndpointName $EndpointName)[0]
+    $endpoint = @(Find-PodeEndpoint -EndpointName $EndpointName)[0]
 
     # check for routes
     $found = (Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address)
@@ -2708,11 +2711,11 @@ function Test-PodeStaticRoute {
     }
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path -Static
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path -Static
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoint from name
-    $endpoint = @(Find-PodeEndpoints -EndpointName $EndpointName)[0]
+    $endpoint = @(Find-PodeEndpoint -EndpointName $EndpointName)[0]
 
     # check for routes
     return (Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address)
@@ -2749,10 +2752,10 @@ function Test-PodeSignalRoute {
     $Method = 'Signal'
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
 
     # get endpoint from name
-    $endpoint = @(Find-PodeEndpoints -EndpointName $EndpointName)[0]
+    $endpoint = @(Find-PodeEndpoint -EndpointName $EndpointName)[0]
 
     # check for routes
     return (Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address)

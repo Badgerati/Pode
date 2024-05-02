@@ -10,6 +10,6 @@
         }
     }
     ExcludeRules = @('PSAvoidUsingCmdletAliases' ,'PSAvoidUsingPlainTextForPassword','PSAvoidUsingWriteHost','PSAvoidUsingInvokeExpression','PSUseShouldProcessForStateChangingFunctions',
-    'PSAvoidUsingUsernameAndPasswordParams','PSUseProcessBlockForPipelineCommand','PSAvoidUsingConvertToSecureStringWithPlainText','PSUseSingularNouns','PSReviewUnusedParameter' )
+    'PSAvoidUsingUsernameAndPasswordParams','PSUseProcessBlockForPipelineCommand','PSAvoidUsingConvertToSecureStringWithPlainText','PSReviewUnusedParameter' )
 
 }

@@ -4,7 +4,7 @@ function Start-PodeTcpServer {
     # work out which endpoints to listen on
     $endpoints = @()
 
-    @(Get-PodeEndpoints -Type Tcp) | ForEach-Object {
+    @(Get-PodeEndpointInternal -Type Tcp) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
@@ -44,7 +44,7 @@ function Start-PodeTcpServer {
     # create the listener
     $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
+    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
@@ -169,7 +169,9 @@ function Start-PodeTcpServer {
                             $Request.UpgradeToSSL()
                         }
                     }
-                    catch [System.OperationCanceledException] {}
+                    catch [System.OperationCanceledException] {
+                        $_ | Write-PodeErrorLog -Level Debug
+                    }
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -181,7 +183,9 @@ function Start-PodeTcpServer {
                 }
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -207,7 +211,9 @@ function Start-PodeTcpServer {
                 Start-Sleep -Seconds 1
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException

@@ -26,7 +26,7 @@ function Start-PodeAzFuncServer {
             $response.Headers = @{}
 
             # reset event data
-            $global:WebEvent = @{
+            $WebEvent = @{
                 OnEnd            = @()
                 Auth             = @{}
                 Response         = $response
@@ -108,7 +108,7 @@ function Start-PodeAzFuncServer {
             Set-PodeResponseStatus -Code 500 -Exception $_
         }
         finally {
-            Update-PodeServerRequestMetrics -WebEvent $WebEvent
+            Update-PodeServerRequestMetric -WebEvent $WebEvent
         }
 
         # invoke endware specifc to the current web event
@@ -154,7 +154,7 @@ function Start-PodeAwsLambdaServer {
             }
 
             # reset event data
-            $global:WebEvent = @{
+            $WebEvent = @{
                 OnEnd            = @()
                 Auth             = @{}
                 Response         = $response
@@ -223,7 +223,7 @@ function Start-PodeAwsLambdaServer {
             Set-PodeResponseStatus -Code 500 -Exception $_
         }
         finally {
-            Update-PodeServerRequestMetrics -WebEvent $WebEvent
+            Update-PodeServerRequestMetric -WebEvent $WebEvent
         }
 
         # invoke endware specifc to the current web event

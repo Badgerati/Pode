@@ -12,7 +12,7 @@ function Start-PodeServiceServer {
         try {
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 # the event object
-                $ServiceEvent = @{
+                $script:ServiceEvent = @{
                     Lockable = $PodeContext.Threading.Lockables.Global
                     Metadata = @{}
                 }
@@ -28,7 +28,9 @@ function Start-PodeServiceServer {
                 Start-Sleep -Seconds $PodeContext.Server.Interval
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             throw $_.Exception
