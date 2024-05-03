@@ -1,6 +1,32 @@
 using namespace Pode
 
-# read in the content from a dynamic pode file and invoke its content
+<#
+.SYNOPSIS
+    Dynamically executes content as a Pode file, optionally passing data to it.
+
+.DESCRIPTION
+    This function takes a string of content, which is expected to be PowerShell code, and optionally a hashtable of data. It constructs a script block that optionally includes a parameter declaration,
+    and then executes this script block using the provided data. This is useful for dynamically generating content based on a template or script contained in a file or a string.
+
+.PARAMETER Content
+    The PowerShell code as a string. This content is dynamically executed as a script block. It can include placeholders or logic that utilizes the passed data.
+
+.PARAMETER Data
+    Optional hashtable of data that can be referenced within the content/script. This data is passed to the script block as parameters.
+
+.EXAMPLE
+    $scriptContent = '"Hello, world! Today is $(Get-Date)"'
+    ConvertFrom-PodeFile -Content $scriptContent
+
+    This example will execute the content of the script and output "Hello, world! Today is [current date]".
+
+.EXAMPLE
+    $template = '"Hello, $(Name)! Your balance is $$(Amount)"'
+    $data = @{ Name = 'John Doe'; Amount = '100.50' }
+    ConvertFrom-PodeFile -Content $template -Data $data
+
+    This example demonstrates using the function with a data parameter to replace placeholders within the content.
+#>
 function ConvertFrom-PodeFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -608,29 +634,6 @@ function Add-PodeRunspace {
     catch {
         $_ | Write-PodeErrorLog
         throw $_.Exception
-    }
-}
-
-function Open-PodeRunspace {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Type
-    )
-
-    try {
-        Import-PodeModulesInternal
-        Add-PodePSDrivesInternal
-        $PodeContext.RunspacePools[$Type].State = 'Ready'
-    }
-    catch {
-        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
-            $PodeContext.RunspacePools[$Type].State = 'Error'
-        }
-
-        $_ | Out-Default
-        $_.ScriptStackTrace | Out-Default
-        throw
     }
 }
 
@@ -1897,7 +1900,27 @@ function ConvertFrom-PodeRequestContent {
     $Content = $null
     return $Result
 }
+<#
+.SYNOPSIS
+    Extracts the base MIME type from a Content-Type string that may include additional parameters.
 
+.DESCRIPTION
+    This function takes a Content-Type string as input and returns only the base MIME type by splitting the string at the semicolon (';') and trimming any excess whitespace.
+    It is useful for handling HTTP headers or other contexts where Content-Type strings include parameters like charset, boundary, etc.
+
+.PARAMETER ContentType
+    The Content-Type string from which to extract the base MIME type. This string can include additional parameters separated by semicolons.
+
+.EXAMPLE
+    Split-PodeContentType -ContentType "text/html; charset=UTF-8"
+
+    This example returns 'text/html', stripping away the 'charset=UTF-8' parameter.
+
+.EXAMPLE
+    Split-PodeContentType -ContentType "application/json; charset=utf-8"
+
+    This example returns 'application/json', removing the charset parameter.
+#>
 function Split-PodeContentType {
     param(
         [Parameter()]
@@ -1905,10 +1928,13 @@ function Split-PodeContentType {
         $ContentType
     )
 
+    # Check if the input string is null, empty, or consists only of whitespace.
     if ([string]::IsNullOrWhiteSpace($ContentType)) {
-        return [string]::Empty
+        return [string]::Empty  # Return an empty string if the input is not valid.
     }
 
+    # Split the Content-Type string by the semicolon, which separates the base MIME type from other parameters.
+    # Trim any leading or trailing whitespace from the resulting MIME type to ensure clean output.
     return @($ContentType -isplit ';')[0].Trim()
 }
 
@@ -1936,26 +1962,67 @@ function ConvertFrom-PodeNameValueToHashTable {
     return $ht
 }
 
+<#
+.SYNOPSIS
+    Gets the count of elements in the provided object or the length of a string.
+
+.DESCRIPTION
+    This function returns the count of elements in various types of objects including strings, collections, and arrays.
+    If the object is a string, it returns the length of the string. If the object is null or an empty collection, it returns 0.
+    This function is useful for determining the size or length of data containers in PowerShell scripts.
+
+.PARAMETER Object
+    The object from which the count or length will be determined. This can be a string, array, collection, or any other object that has a Count property.
+
+.OUTPUTS
+    [int]
+    Returns an integer representing the count of elements or length of the string.
+
+.EXAMPLE
+    $array = @(1, 2, 3)
+    Get-PodeCount -Object $array
+
+    This example returns 3, as there are three elements in the array.
+
+.EXAMPLE
+    $string = "hello"
+    Get-PodeCount -Object $string
+
+    This example returns 5, as there are five characters in the string.
+
+.EXAMPLE
+    $nullObject = $null
+    Get-PodeCount -Object $nullObject
+
+    This example returns 0, as the object is null.
+#>
 function Get-PodeCount {
+    [CmdletBinding()]
+    [OutputType([int])]
     param(
         [Parameter()]
-        $Object
+        $Object  # The object to be evaluated for its count.
     )
 
+    # Check if the object is null.
     if ($null -eq $Object) {
-        return 0
+        return 0  # Return 0 if the object is null.
     }
 
+    # Check if the object is a string and return its length.
     if ($Object -is [string]) {
         return $Object.Length
     }
 
+    # Check if the object is a NameValueCollection and is empty.
     if ($Object -is [System.Collections.Specialized.NameValueCollection] -and $Object.Count -eq 0) {
-        return 0
+        return 0  # Return 0 if the collection is empty.
     }
 
+    # For other types of collections, return their Count property.
     return $Object.Count
 }
+
 
 <#
 .SYNOPSIS
@@ -1995,7 +2062,6 @@ function Get-PodeCount {
     This function is used within the Pode framework to validate file system paths for serving static content.
 
 #>
-
 function Test-PodePath {
     param(
         [Parameter()]
@@ -2332,26 +2398,51 @@ function Convert-PodeModuleInfo {
     return $details
 }
 
+<#
+.SYNOPSIS
+    Checks if a PowerShell module is located within the directories specified in the PSModulePath environment variable.
+
+.DESCRIPTION
+    This function determines if the path of a provided PowerShell module starts with any path included in the system's PSModulePath environment variable.
+    This is used to ensure that the module is being loaded from expected locations, which can be important for security and configuration verification.
+
+.PARAMETER Module
+    The module to be checked. This should be a module info object, typically obtained via Get-Module or Import-Module.
+
+.OUTPUTS
+    [bool]
+    Returns $true if the module's path is under a path listed in PSModulePath, otherwise returns $false.
+
+.EXAMPLE
+    $module = Get-Module -Name Pode
+    Test-PodeModuleInPath -Module $module
+
+    This example checks if the 'Pode' module is located within the paths specified by the PSModulePath environment variable.
+#>
 function Test-PodeModuleInPath {
+    [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [psmoduleinfo]
         $Module
     )
 
-    $separator = ';'
-    if (Test-PodeIsUnix) {
-        $separator = ':'
-    }
+    # Determine the path separator based on the operating system.
+    $separator = if (Test-PodeIsUnix) { ':' } else { ';' }
 
+    # Split the PSModulePath environment variable to get individual paths.
     $paths = @($env:PSModulePath -split $separator)
 
+    # Check each path to see if the module's path starts with it.
     foreach ($path in $paths) {
+        # Return true if the module is in one of the paths.
         if ($Module.Path.StartsWith($path)) {
             return $true
         }
     }
 
+    # Return false if no matching path is found.
     return $false
 }
 <#
@@ -3465,41 +3556,6 @@ function Get-PodeModuleManifest {
     return  $moduleManifest
 }
 
-
-<#
-.SYNOPSIS
-Tests if the Pode module is from the development branch.
-
-.DESCRIPTION
-The Test-PodeVersionDev function checks if the Pode module's version matches the placeholder value ('$version$'), which is used to indicate the development branch of the module. It returns $true if the version matches, indicating the module is from the development branch, and $false otherwise.
-
-.PARAMETER None
-This function does not accept any parameters.
-
-.OUTPUTS
-System.Boolean
-Returns $true if the Pode module version is '$version$', indicating the development branch. Returns $false for any other version.
-
-.EXAMPLE
-PS> $moduleManifest = @{ ModuleVersion = '$version$' }
-PS> Test-PodeVersionDev
-
-Returns $true, indicating the development branch.
-
-.EXAMPLE
-PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
-PS> Test-PodeVersionDev
-
-Returns $false, indicating a specific release version.
-
-.NOTES
-This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
-
-#>
-function Test-PodeVersionDev {
-    return (Get-PodeModuleManifest).ModuleVersion -eq '$version$'
-}
-
 <#
 .SYNOPSIS
 Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.
@@ -3566,14 +3622,19 @@ function Test-PodeVersionPwshEOL {
 <#
 .SYNOPSIS
 creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
+
 .DESCRIPTION
 This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
+
 .PARAMETER Object
 the object that you want scripted out
+
 .PARAMETER Depth
 The depth that you want your object scripted to
+
 .EXAMPLE
 Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
+
 #>
 function ConvertTo-PodeYaml {
     [CmdletBinding()]
@@ -3634,7 +3695,6 @@ function ConvertTo-PodeYaml {
   It converts only basic PowerShell types, such as strings, integers, booleans, arrays, hashtables, and ordered dictionaries into a YAML format.
 
 #>
-
 function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]

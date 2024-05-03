@@ -26,6 +26,7 @@ function Invoke-PodePackageScript {
     This is an internal function and may change in future releases of Pode.
 #>
 function Install-PodeLocalModule {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter()]
         $Module = $null

@@ -805,6 +805,7 @@ Show the Object Type
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
 function Write-PodeHost {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     param(
         [Parameter(Position = 0, ValueFromPipeline = $true)]
