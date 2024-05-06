@@ -1,5 +1,48 @@
 # Release Notes
 
+## v2.10.0
+
+Date: 15th April 2024
+
+```plain
+### Features
+* #1197: Adds support for inbuilt caching of values
+* #1238: Adds support for creating custom scoped variables
+* #1256: Adds support for converting HTTP connections into SSE connections
+* #1266: Adds support for a File Browsing page on static routes (thanks @mdaneri!)
+
+### Enhancements
+* #1136: Adds full support for OpenAPI v3.0.3 and v3.1 (**huge** thanks to @mdaneri! 🎉)
+* #1239: Adds the missing HTTP 425 response status code
+* #1242: Adds support for enabling "session per browser Tab"
+* #1265: Adds support for customising the default folder paths, such as `/views` (thanks @mdaneri!)
+* #1267: Adds support for `-DualMode` on `Add-PodeEndpoint`, allowing endpoints to listen on IPv4 and IPv6
+* #1276: Adds supported and EOL PowerShell checks during server start (thanks @mdaneri!)
+
+### Bugs
+* #1246: Fixes static route ordering, and redirecting to default file
+* #1258: Fixes a script modification issue when using scriptblocks with `Add-PodePage` (thanks @mdaneri!)
+* #1279: Fixes a scoping issue when using `Add-PodeRouteGroup`
+* #1281: Removes an erroneous `break` command when broadcasting messages to websockets
+* #1138: Fixes the status code for expired JWT, from 400 to 401 (thanks @mdaneri!)
+
+### Documentation
+* #1232: Updates Sessions page to fix Redis example (thanks @Szeraax!)
+* #1234: Updates Tasks page to explain Task concurrency and Argument passing (thanks @Szeraax!)
+* #1276: Adds supported PowerShell documentation (thanks @mdaneri!)
+* #1277: Fix for missing merged authentication documentation
+* #1282: Adds documentation describing how to debug Pode
+
+### Packaging
+* #1261: Add support to the build script for Linux and Mac (thanks @mdaneri!)
+* #1262: Migrates tests to Pester 5.5.0 (thanks @mdaneri!)
+* #1269: Adds PSScriptAnalyzerSettings to run during CI pipelines (thanks @mdaneri!)
+* #1264, #1273: Adds CI pipelines per supported PowerShell version (thanks @mdaneri!)
+* #1276: Adds .NET8 support (thanks @mdaneri!)
+* #1284: Adds additional unit tests to verify PowerShell syntax and structure
+* #1286: General tidy-up and release prep
+```
+
 ## v2.9.0
 
 Date: 30th October 2023
