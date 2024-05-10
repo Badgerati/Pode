@@ -371,7 +371,7 @@ function Add-PodeOAComponentParameter {
         [string[]]
         $DefinitionTag
     )
- 
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     foreach ($tag in $DefinitionTag) {

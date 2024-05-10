@@ -16,6 +16,7 @@ $totalUptime = Get-PodeServerUptime -Total
 #>
 function Get-PodeServerUptime {
     [CmdletBinding()]
+    [OutputType([long])]
     param(
         [switch]
         $Total
@@ -70,6 +71,7 @@ $404Reqs = Get-PodeServerRequestMetric -StatusCode 404
 #>
 function Get-PodeServerRequestMetric {
     [CmdletBinding(DefaultParameterSetName = 'StatusCode')]
+    [OutputType([int])]
     param(
         [Parameter(ParameterSetName = 'StatusCode')]
         [int]

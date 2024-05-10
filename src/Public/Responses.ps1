@@ -192,7 +192,7 @@ function Write-PodeTextResponse {
     else {
         # convert string to bytes
         if ($isStringValue) {
-            $Bytes = ConvertFrom-PodeValueToBytes -Value $Value
+            $Bytes = ConvertFrom-PodeValueToByte -Value $Value
         }
 
         # check if we only need a range of the bytes

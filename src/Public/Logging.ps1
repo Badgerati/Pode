@@ -550,7 +550,7 @@ function Write-PodeErrorLog {
     }
 
     # do nothing if the error level isn't present
-    $levels = @(Get-PodeErrorLoggingLevels)
+    $levels = @(Get-PodeErrorLoggingLevel)
     if ($levels -inotcontains $Level) {
         return
     }
@@ -648,6 +648,7 @@ $value = Protect-PodeLogItem -Item 'Username=Morty, Password=Hunter2'
 #>
 function Protect-PodeLogItem {
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(ValueFromPipeline = $true)]
         [string]

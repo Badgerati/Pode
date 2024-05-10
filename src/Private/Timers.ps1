@@ -72,7 +72,7 @@ function Invoke-PodeInternalTimer {
     )
 
     try {
-        $global:TimerEvent = @{
+        $script:TimerEvent = @{
             Lockable = $PodeContext.Threading.Lockables.Global
             Sender   = $Timer
             Metadata = @{}

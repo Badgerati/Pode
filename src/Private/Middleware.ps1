@@ -58,6 +58,7 @@ function Invoke-PodeMiddleware {
 }
 
 function New-PodeMiddlewareInternal {
+    [CmdletBinding()]
     [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
