@@ -122,43 +122,52 @@ function Convert-PodeScopedVariable {
     # get the scoped var metadata
     $scopedVar = $PodeContext.Server.ScopedVariables[$Name]
 
-    # scriptblock or replace?
-    if ($null -ne $scopedVar.ScriptBlock) {
-        return Invoke-PodeScriptBlock `
-            -ScriptBlock $scopedVar.ScriptBlock `
-            -Arguments $ScriptBlock, $PSSession, $scopedVar.Get.Pattern, $scopedVar.Set.Pattern `
-            -Splat `
-            -Return `
-            -NoNewClosure
-    }
-
-    # replace style
-    else {
-        # convert scriptblock to string
-        $strScriptBlock = "$($ScriptBlock)"
-
-        # see if the script contains any form of the scoped variable, and if not just return
-        $found = $strScriptBlock -imatch "\`$$($Name)\:"
-        if (!$found) {
-            return $ScriptBlock
-        }
-
-        # loop and replace "set" syntax if replace template supplied
-        if (![string]::IsNullOrEmpty($scopedVar.Set.Replace)) {
-            while ($strScriptBlock -imatch $scopedVar.Set.Pattern) {
-                $setReplace = $scopedVar.Set.Replace.Replace('{{name}}', $Matches['name'])
-                $strScriptBlock = $strScriptBlock.Replace($Matches['full'], $setReplace)
+    # invoke the logic for the appropriate conversion type required - internal function map, custom scriptblock, or simple replace
+    switch ($scopedVar.Type) {
+        'internal' {
+            switch ($scopedVar.Name) {
+                'using' {
+                    return Convert-PodeScopedVariableInbuiltUsing -ScriptBlock $ScriptBlock -PSSession $PSSession
+                }
             }
         }
 
-        # loop and replace "get" syntax
-        while ($strScriptBlock -imatch $scopedVar.Get.Pattern) {
-            $getReplace = $scopedVar.Get.Replace.Replace('{{name}}', $Matches['name'])
-            $strScriptBlock = $strScriptBlock.Replace($Matches['full'], "($($getReplace))")
+        'scriptblock' {
+            return Invoke-PodeScriptBlock `
+                -ScriptBlock $scopedVar.ScriptBlock `
+                -Arguments $ScriptBlock, $PSSession, $scopedVar.Get.Pattern, $scopedVar.Set.Pattern `
+                -Splat `
+                -Return `
+                -NoNewClosure
         }
 
-        # convert update scriptblock back
-        return [scriptblock]::Create($strScriptBlock)
+        'replace' {
+            # convert scriptblock to string
+            $strScriptBlock = "$($ScriptBlock)"
+
+            # see if the script contains any form of the scoped variable, and if not just return
+            $found = $strScriptBlock -imatch "\`$$($Name)\:"
+            if (!$found) {
+                return $ScriptBlock
+            }
+
+            # loop and replace "set" syntax if replace template supplied
+            if (![string]::IsNullOrEmpty($scopedVar.Set.Replace)) {
+                while ($strScriptBlock -imatch $scopedVar.Set.Pattern) {
+                    $setReplace = $scopedVar.Set.Replace.Replace('{{name}}', $Matches['name'])
+                    $strScriptBlock = $strScriptBlock.Replace($Matches['full'], $setReplace)
+                }
+            }
+
+            # loop and replace "get" syntax
+            while ($strScriptBlock -imatch $scopedVar.Get.Pattern) {
+                $getReplace = $scopedVar.Get.Replace.Replace('{{name}}', $Matches['name'])
+                $strScriptBlock = $strScriptBlock.Replace($Matches['full'], "($($getReplace))")
+            }
+
+            # convert update scriptblock back
+            return [scriptblock]::Create($strScriptBlock)
+        }
     }
 }
 
@@ -226,22 +235,13 @@ function Add-PodeScopedVariable {
         $ScriptBlock
     )
 
-    # check if var already defined
-    if (Test-PodeScopedVariable -Name $Name) {
-        throw "Scoped Variable already defined: $($Name)"
-    }
-
-    # add scoped var definition
-    $PodeContext.Server.ScopedVariables[$Name] = @{
-        $Name       = $Name
-        ScriptBlock = $ScriptBlock
-        Get         = @{
-            Pattern = "(?<full>\`$$($Name)\:(?<name>[a-z0-9_\?]+))"
-            Replace = $GetReplace
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'replace' {
+            Add-PodeScopedVariableInternal -Name $Name -GetReplace $GetReplace -SetReplace $SetReplace
         }
-        Set         = @{
-            Pattern = "(?<full>\`$$($Name)\:(?<name>[a-z0-9_\?]+)\s*=)"
-            Replace = $SetReplace
+
+        'scriptblock' {
+            Add-PodeScopedVariableInternal -Name $Name -ScriptBlock $ScriptBlock
         }
     }
 }
