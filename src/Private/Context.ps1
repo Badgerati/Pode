@@ -549,7 +549,7 @@ function New-PodeRunspacePool {
     }
 
     # web runspace - if we have any http/s endpoints
-    if (Test-PodeEndpoint -Type Http) {
+    if (Test-PodeEndpointByProtocolType -Type Http) {
         $PodeContext.RunspacePools.Web = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -557,7 +557,7 @@ function New-PodeRunspacePool {
     }
 
     # smtp runspace - if we have any smtp endpoints
-    if (Test-PodeEndpoint -Type Smtp) {
+    if (Test-PodeEndpointByProtocolType -Type Smtp) {
         $PodeContext.RunspacePools.Smtp = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -565,7 +565,7 @@ function New-PodeRunspacePool {
     }
 
     # tcp runspace - if we have any tcp endpoints
-    if (Test-PodeEndpoint -Type Tcp) {
+    if (Test-PodeEndpointByProtocolType -Type Tcp) {
         $PodeContext.RunspacePools.Tcp = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -573,7 +573,7 @@ function New-PodeRunspacePool {
     }
 
     # signals runspace - if we have any ws/s endpoints
-    if (Test-PodeEndpoint -Type Ws) {
+    if (Test-PodeEndpointByProtocolType -Type Ws) {
         $PodeContext.RunspacePools.Signals = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -641,7 +641,7 @@ function Open-PodeRunspacePool {
     }
 
     $start = [datetime]::Now
-    Write-Verbose 'Opening RunspacePool'
+    Write-Verbose 'Opening RunspacePools'
 
     # open pools async
     foreach ($key in $PodeContext.RunspacePools.Keys) {
@@ -690,7 +690,7 @@ function Open-PodeRunspacePool {
         }
     }
 
-    Write-Verbose "RunspacePool opened [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+    Write-Verbose "RunspacePools opened [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
 }
 
 <#
@@ -709,7 +709,7 @@ function Close-PodeRunspacePool {
     }
 
     $start = [datetime]::Now
-    Write-Verbose 'Closing RunspacePool'
+    Write-Verbose 'Closing RunspacePools'
 
     # close pools async
     foreach ($key in $PodeContext.RunspacePools.Keys) {
@@ -766,7 +766,7 @@ function Close-PodeRunspacePool {
         Close-PodeDisposable -Disposable $item.Pool
     }
 
-    Write-Verbose "RunspacePool closed [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+    Write-Verbose "RunspacePools closed [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
 }
 
 function New-PodeStateContext {

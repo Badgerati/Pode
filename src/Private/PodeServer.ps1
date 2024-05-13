@@ -24,7 +24,7 @@ function Start-PodeWebServer {
     $endpoints = @()
     $endpointsMap = @{}
 
-    @(Get-PodeEndpointInternal -Type Http, Ws) | ForEach-Object {
+    @(Get-PodeEndpointByProtocolType -Type Http, Ws) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
@@ -103,7 +103,7 @@ function Start-PodeWebServer {
     }
 
     # only if HTTP endpoint
-    if (Test-PodeEndpoint -Type Http) {
+    if (Test-PodeEndpointByProtocolType -Type Http) {
         # script for listening out for incoming requests
         $listenScript = {
             param(
@@ -285,7 +285,7 @@ function Start-PodeWebServer {
     }
 
     # only if WS endpoint
-    if (Test-PodeEndpoint -Type Ws) {
+    if (Test-PodeEndpointByProtocolType -Type Ws) {
         # script to write messages back to the client(s)
         $signalScript = {
             param(
@@ -359,7 +359,7 @@ function Start-PodeWebServer {
     }
 
     # only if WS endpoint
-    if (Test-PodeEndpoint -Type Ws) {
+    if (Test-PodeEndpointByProtocolType -Type Ws) {
         # script to queue messages from clients to send back to other clients from the server
         $clientScript = {
             param(
@@ -469,7 +469,7 @@ function Start-PodeWebServer {
     }
 
     $waitType = 'Web'
-    if (!(Test-PodeEndpoint -Type Http)) {
+    if (!(Test-PodeEndpointByProtocolType -Type Http)) {
         $waitType = 'Signals'
     }
 

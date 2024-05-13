@@ -167,7 +167,7 @@ function Get-PodeLimitMiddleware {
             }
 
             # check the endpoint
-            if (!(Test-PodeEndpointLimit -EndpointName $WebEvent.Endpoint.Name)) {
+            if (!(Test-PodeEndpointByProtocolTypeLimit -EndpointName $WebEvent.Endpoint.Name)) {
                 Set-PodeResponseStatus -Code 429
                 return $false
             }

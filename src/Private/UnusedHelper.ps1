@@ -62,33 +62,6 @@ function Convert-PodePathSeparator {
         })
 }
 
-
-
-function Open-PodeRunspace {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Type
-    )
-
-    try {
-        Import-PodeModulesInternal
-        Add-PodePSDrivesInternal
-        $PodeContext.RunspacePools[$Type].State = 'Ready'
-    }
-    catch {
-        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
-            $PodeContext.RunspacePools[$Type].State = 'Error'
-        }
-
-        $_ | Out-Default
-        $_.ScriptStackTrace | Out-Default
-        throw
-    }
-}
-
-
-
 <#
 .SYNOPSIS
 Tests if the Pode module is from the development branch.

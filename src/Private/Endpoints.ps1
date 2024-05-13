@@ -82,7 +82,7 @@ function Find-PodeEndpoint {
     Retrieves internal endpoints based on the specified types.
 
 .DESCRIPTION
-    The `Get-PodeEndpointInternal` function returns internal endpoints from the PodeContext
+    The `Get-PodeEndpointByProtocolType` function returns internal endpoints from the PodeContext
     based on the specified types (HTTP, WebSocket, SMTP, or TCP).
 
 .PARAMETER Type
@@ -94,14 +94,14 @@ function Find-PodeEndpoint {
 
 .EXAMPLE
     # Example usage:
-    $httpEndpoints = Get-PodeEndpointInternal -Type 'Http'
-    $wsEndpoints = Get-PodeEndpointInternal -Type 'Ws'
+    $httpEndpoints = Get-PodeEndpointByProtocolType -Type 'Http'
+    $wsEndpoints = Get-PodeEndpointByProtocolType -Type 'Ws'
     # Retrieve HTTP and WebSocket endpoints from the PodeContext.
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Get-PodeEndpointInternal {
+function Get-PodeEndpointByProtocolType {
     [CmdletBinding()]
     [OutputType([object[]])]
     param(
@@ -136,7 +136,7 @@ function Get-PodeEndpointInternal {
     return $endpoints
 }
 
-function Test-PodeEndpointProtocol {
+function Test-PodeEndpointByProtocolTypeProtocol {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Http', 'Https', 'Ws', 'Wss', 'Smtp', 'Smtps', 'Tcp', 'Tcps')]
@@ -226,7 +226,7 @@ A boolean value (True if endpoints exist, False otherwise).
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Test-PodeEndpoint {
+function Test-PodeEndpointByProtocolType {
     [CmdletBinding()]
     [OutputType([bool])]
     param(
@@ -236,7 +236,7 @@ function Test-PodeEndpoint {
         $Type
     )
 
-    $endpoints = (Get-PodeEndpointInternal -Type $Type)
+    $endpoints = (Get-PodeEndpointByProtocolType -Type $Type)
     return (($null -ne $endpoints) -and ($endpoints.Length -gt 0))
 
 }

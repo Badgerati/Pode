@@ -2459,7 +2459,7 @@ function Test-PodeModuleInPath {
 
 .EXAMPLE
     $module = Get-Module -Name SomeModuleName
-    $dependencies = Get-PodeModuleDependency -Module $module
+    $dependencies = Get-PodeModuleDependencyList -Module $module
     This example retrieves all dependencies for "SomeModuleName".
 
 .OUTPUTS
@@ -2467,7 +2467,7 @@ function Test-PodeModuleInPath {
     Returns an array of psmoduleinfo objects, each representing a module in the dependency tree.
 #>
 
-function Get-PodeModuleDependency {
+function Get-PodeModuleDependencyList {
     param(
         [Parameter(Mandatory = $true)]
         [psmoduleinfo]
@@ -2476,7 +2476,7 @@ function Get-PodeModuleDependency {
 
     # Check if the module has any required modules (dependencies).
     if (!$Module.RequiredModules) {
-        return $Module  #
+        return $Module
     }
     # Initialize an array to hold all dependencies.
     $mods = @()
@@ -2484,7 +2484,7 @@ function Get-PodeModuleDependency {
     # Iterate through each required module and recursively retrieve their dependencies.
     foreach ($mod in $Module.RequiredModules) {
         # Recursive call for each dependency.
-        $mods += (Get-PodeModuleDependency -Module $mod)
+        $mods += (Get-PodeModuleDependencyList -Module $mod)
     }
 
     # Return the list of all dependencies plus the original module.
@@ -3115,7 +3115,7 @@ function Get-PodeFunctionsFromScriptBlock {
     Reads details from a web exception and returns relevant information.
 
 .DESCRIPTION
-    The `Read-PodeWebExceptionDetail` function processes a web exception (either `WebException` or `HttpRequestException`)
+    The `Read-PodeWebExceptionInfo` function processes a web exception (either `WebException` or `HttpRequestException`)
     and extracts relevant details such as status code, status description, and response body.
 
 .PARAMETER ErrorRecord
@@ -3129,13 +3129,13 @@ function Get-PodeFunctionsFromScriptBlock {
 .EXAMPLE
     # Example usage:
     $errorRecord = Get-ErrorRecordFromWebException
-    $details = Read-PodeWebExceptionDetail -ErrorRecord $errorRecord
+    $details = Read-PodeWebExceptionInfo -ErrorRecord $errorRecord
     # Returns a hashtable with status code, description, and response body.
 
 .NOTES
     This is an internal function and may change in future releases of Pode
 #>
-function Read-PodeWebExceptionDetail {
+function Read-PodeWebExceptionInfo {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param(
@@ -3859,5 +3859,62 @@ function ConvertTo-PodeYamlInternal {
             $_.Exception | Write-PodeErrorLog -CheckInnerException
             throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
         }
+    }
+}
+<#
+.SYNOPSIS
+    Opens a runspace for Pode server operations based on the specified type.
+
+.DESCRIPTION
+    This function initializes a runspace for Pode server tasks by importing necessary
+    modules, adding PowerShell drives, and setting the state of the runspace pool to 'Ready'.
+    If an error occurs during the initialization, the state is adjusted to 'Error' if it
+    was previously set to 'waiting', and the error details are outputted.
+
+.PARAMETER Type
+    The type of the runspace pool to open. This parameter only accepts predefined values,
+    ensuring the runspace pool corresponds to a supported server operation type. The valid
+    types are: Main, Signals, Schedules, Gui, Web, Smtp, Tcp, Tasks, WebSockets, Files.
+
+.EXAMPLE
+    Open-PodeRunspace -Type "Web"
+
+    Opens a runspace for the 'Web' type, setting it ready for handling web server tasks.
+
+.NOTES
+    This function is not invoked directly but indirectly by `Add-PodeRunspace` function using
+    $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
+#>
+
+function Open-PodeRunspace {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
+        [string]
+        $Type
+    )
+
+    try {
+        # Importing internal Pode modules necessary for the runspace operations.
+        Import-PodeModulesInternal
+
+        # Adding PowerShell drives required by the runspace.
+        Add-PodePSDrivesInternal
+
+        # Setting the state of the runspace pool to 'Ready', indicating it is ready to process requests.
+        $PodeContext.RunspacePools[$Type].State = 'Ready'
+    }
+    catch {
+        # If an error occurs and the current state is 'waiting', set it to 'Error'.
+        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
+            $PodeContext.RunspacePools[$Type].State = 'Error'
+        }
+
+        # Outputting the error to the default output stream, including the stack trace.
+        $_ | Out-Default
+        $_.ScriptStackTrace | Out-Default
+
+        # Rethrowing the error to be handled further up the call stack.
+        throw
     }
 }

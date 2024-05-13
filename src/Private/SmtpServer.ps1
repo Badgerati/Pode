@@ -9,7 +9,7 @@ function Start-PodeSmtpServer {
     # work out which endpoints to listen on
     $endpoints = @()
 
-    @(Get-PodeEndpointInternal -Type Smtp) | ForEach-Object {
+    @(Get-PodeEndpointByProtocolType -Type Smtp) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1

@@ -4,7 +4,7 @@ function Start-PodeTcpServer {
     # work out which endpoints to listen on
     $endpoints = @()
 
-    @(Get-PodeEndpointInternal -Type Tcp) | ForEach-Object {
+    @(Get-PodeEndpointByProtocolType -Type Tcp) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1

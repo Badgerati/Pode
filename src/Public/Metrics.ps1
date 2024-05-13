@@ -71,7 +71,7 @@ $404Reqs = Get-PodeServerRequestMetric -StatusCode 404
 #>
 function Get-PodeServerRequestMetric {
     [CmdletBinding(DefaultParameterSetName = 'StatusCode')]
-    [OutputType([int])]
+    [OutputType([long])]
     param(
         [Parameter(ParameterSetName = 'StatusCode')]
         [int]
@@ -92,7 +92,7 @@ function Get-PodeServerRequestMetric {
 
     $strCode = "$($StatusCode)"
     if (!$PodeContext.Metrics.Requests.StatusCodes.ContainsKey($strCode)) {
-        return 0
+        return 0L
     }
 
     return $PodeContext.Metrics.Requests.StatusCodes[$strCode]

@@ -180,7 +180,7 @@ function Test-PodeRouteLimit {
     }
 }
 
-function Test-PodeEndpointLimit {
+function Test-PodeEndpointByProtocolTypeLimit {
     param(
         [Parameter()]
         [string]
@@ -1094,4 +1094,201 @@ function Protect-PodePermissionsPolicyKeyword {
         })
 
     return "$($Name)=($($values -join ' '))"
+}
+
+
+<#
+.SYNOPSIS
+Sets the Content Security Policy (CSP) header for a Pode web server.
+
+.DESCRIPTION
+The `Set-PodeSecurityContentSecurityPolicyInternal` function constructs and sets the Content Security Policy (CSP) header based on the provided parameters. The function supports an optional switch to append the header value and explicitly disables XSS auditors in modern browsers to prevent vulnerabilities.
+
+.PARAMETER Params
+A hashtable containing the various CSP directives to be set.
+
+.PARAMETER Append
+A switch indicating whether to append the header value.
+
+.EXAMPLE
+$policyParams = @{
+    Default = "'self'"
+    ScriptSrc = "'self' 'unsafe-inline'"
+    StyleSrc = "'self' 'unsafe-inline'"
+}
+Set-PodeSecurityContentSecurityPolicyInternal -Params $policyParams
+
+.EXAMPLE
+$policyParams = @{
+    Default = "'self'"
+    ImgSrc = "'self' data:"
+    ConnectSrc = "'self' https://api.example.com"
+    UpgradeInsecureRequests = $true
+}
+Set-PodeSecurityContentSecurityPolicyInternal -Params $policyParams -Append
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
+
+function Set-PodeSecurityContentSecurityPolicyInternal {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $Params,
+
+        [Parameter()]
+        [switch]
+        $Append
+    )
+
+    # build the header's value
+    $values = @(
+        Protect-PodeContentSecurityKeyword -Name 'default-src' -Value $Params.Default
+        Protect-PodeContentSecurityKeyword -Name 'child-src' -Value $Params.Child
+        Protect-PodeContentSecurityKeyword -Name 'connect-src' -Value $Params.Connect
+        Protect-PodeContentSecurityKeyword -Name 'font-src' -Value $Params.Font
+        Protect-PodeContentSecurityKeyword -Name 'frame-src' -Value $Params.Frame
+        Protect-PodeContentSecurityKeyword -Name 'img-src' -Value $Params.Image
+        Protect-PodeContentSecurityKeyword -Name 'manifest-src' -Value $Params.Manifest
+        Protect-PodeContentSecurityKeyword -Name 'media-src' -Value $Params.Media
+        Protect-PodeContentSecurityKeyword -Name 'object-src' -Value $Params.Object
+        Protect-PodeContentSecurityKeyword -Name 'script-src' -Value $Params.Scripts
+        Protect-PodeContentSecurityKeyword -Name 'style-src' -Value $Params.Style
+        Protect-PodeContentSecurityKeyword -Name 'base-uri' -Value $Params.BaseUri
+        Protect-PodeContentSecurityKeyword -Name 'form-action' -Value $Params.FormAction
+        Protect-PodeContentSecurityKeyword -Name 'frame-ancestors' -Value $Params.FrameAncestor
+    )
+
+    if ($Params.Sandbox -ine 'None') {
+        $values += "sandbox $($Params.Sandbox.ToLowerInvariant())".Trim()
+    }
+
+    if ($Params.UpgradeInsecureRequests) {
+        $values += 'upgrade-insecure-requests'
+    }
+
+    # Filter out $null values from the $values array using the array filter `-ne $null`. This approach
+    # is equivalent to using `$values | Where-Object { $_ -ne $null }` but is more efficient. The `-ne $null`
+    # operator is faster because it is a direct array operation that internally skips the overhead of
+    # piping through a cmdlet and processing each item individually.
+    $values = ($values -ne $null)
+    # Filter out $null values from the $values array using the array filter `-ne $null`. This approach
+    # is equivalent to using `$values | Where-Object { $_ -ne $null }` but is more efficient. The `-ne $null`
+    # operator is faster because it is a direct array operation that internally skips the overhead of
+    # piping through a cmdlet and processing each item individually.
+    $value = ($values -join '; ')
+
+    # Add the Content Security Policy header to the response or relevant context. This cmdlet
+    # sets the HTTP header with the name 'Content-Security-Policy' and the constructed value.
+
+    Add-PodeSecurityHeader -Name 'Content-Security-Policy' -Value $value -Append $Append
+
+    # this is done to explicitly disable XSS auditors in modern browsers
+    # as having it enabled has now been found to cause more vulnerabilities
+    if ($Params.XssBlock) {
+        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '1; mode=block'
+    }
+    else {
+        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '0'
+    }
+}
+
+
+<#
+.SYNOPSIS
+Sets the Permissions Policy header for a Pode web server.
+
+.DESCRIPTION
+The `Set-PodeSecurityPermissionsPolicy` function constructs and sets the Permissions Policy header based on the provided parameters. The function supports an optional switch to append the header value.
+
+.PARAMETER Params
+A hashtable containing the various permissions policies to be set.
+
+.PARAMETER Append
+A switch indicating whether to append the header value.
+
+.EXAMPLE
+$policyParams = @{
+    Accelerometer = 'none'
+    Camera = 'self'
+    Microphone = '*'
+}
+Set-PodeSecurityPermissionsPolicy -Params $policyParams
+
+.EXAMPLE
+$policyParams = @{
+    Autoplay = 'self'
+    Geolocation = 'none'
+}
+Set-PodeSecurityPermissionsPolicy -Params $policyParams -Append
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
+
+function Set-PodeSecurityPermissionsPolicy {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $Params,
+
+        [Parameter()]
+        [switch]
+        $Append
+    )
+
+    # build the header's value
+    $values = @(
+        Protect-PodePermissionsPolicyKeyword -Name 'accelerometer' -Value $Params.Accelerometer
+        Protect-PodePermissionsPolicyKeyword -Name 'ambient-light-sensor' -Value $Params.AmbientLightSensor
+        Protect-PodePermissionsPolicyKeyword -Name 'autoplay' -Value $Params.Autoplay
+        Protect-PodePermissionsPolicyKeyword -Name 'battery' -Value $Params.Battery
+        Protect-PodePermissionsPolicyKeyword -Name 'camera' -Value $Params.Camera
+        Protect-PodePermissionsPolicyKeyword -Name 'display-capture' -Value $Params.DisplayCapture
+        Protect-PodePermissionsPolicyKeyword -Name 'document-domain' -Value $Params.DocumentDomain
+        Protect-PodePermissionsPolicyKeyword -Name 'encrypted-media' -Value $Params.EncryptedMedia
+        Protect-PodePermissionsPolicyKeyword -Name 'fullscreen' -Value $Params.Fullscreen
+        Protect-PodePermissionsPolicyKeyword -Name 'gamepad' -Value $Params.Gamepad
+        Protect-PodePermissionsPolicyKeyword -Name 'geolocation' -Value $Params.Geolocation
+        Protect-PodePermissionsPolicyKeyword -Name 'gyroscope' -Value $Params.Gyroscope
+        Protect-PodePermissionsPolicyKeyword -Name 'interest-cohort' -Value $Params.InterestCohort
+        Protect-PodePermissionsPolicyKeyword -Name 'layout-animations' -Value $Params.LayoutAnimations
+        Protect-PodePermissionsPolicyKeyword -Name 'legacy-image-formats' -Value $Params.LegacyImageFormats
+        Protect-PodePermissionsPolicyKeyword -Name 'magnetometer' -Value $Params.Magnetometer
+        Protect-PodePermissionsPolicyKeyword -Name 'microphone' -Value $Params.Microphone
+        Protect-PodePermissionsPolicyKeyword -Name 'midi' -Value $Params.Midi
+        Protect-PodePermissionsPolicyKeyword -Name 'oversized-images' -Value $Params.OversizedImages
+        Protect-PodePermissionsPolicyKeyword -Name 'payment' -Value $Params.Payment
+        Protect-PodePermissionsPolicyKeyword -Name 'picture-in-picture' -Value $Params.PictureInPicture
+        Protect-PodePermissionsPolicyKeyword -Name 'publickey-credentials-get' -Value $Params.PublicKeyCredentials
+        Protect-PodePermissionsPolicyKeyword -Name 'speaker-selection' -Value $Params.Speakers
+        Protect-PodePermissionsPolicyKeyword -Name 'sync-xhr' -Value $Params.SyncXhr
+        Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $Params.UnoptimisedImages
+        Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $Params.UnsizedMedia
+        Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Params.Usb
+        Protect-PodePermissionsPolicyKeyword -Name 'screen-wake-lock' -Value $Params.ScreenWakeLake
+        Protect-PodePermissionsPolicyKeyword -Name 'web-share' -Value $Params.WebShare
+        Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $Params.XrSpatialTracking
+    )
+
+    # Filter out $null values from the $values array using the array filter `-ne $null`. This approach
+    # is equivalent to using `$values | Where-Object { $_ -ne $null }` but is more efficient. The `-ne $null`
+    # operator is faster because it is a direct array operation that internally skips the overhead of
+    # piping through a cmdlet and processing each item individually.
+    $values = ($values -ne $null)
+
+    # Filter out $null values from the $values array using the array filter `-ne $null`. This approach
+    # is equivalent to using `$values | Where-Object { $_ -ne $null }` but is more efficient. The `-ne $null`
+    # operator is faster because it is a direct array operation that internally skips the overhead of
+    # piping through a cmdlet and processing each item individually.
+    $value = ($values -join ', ')
+
+    # Add the constructed Permissions Policy header to the response or relevant context. This cmdlet
+    # sets the HTTP header with the name 'Permissions-Policy' and the constructed value.
+    Add-PodeSecurityHeader -Name 'Permissions-Policy' -Value $value -Append $Append
 }

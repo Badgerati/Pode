@@ -1542,11 +1542,11 @@ function Resolve-PodeOAReference {
                     }
                     'oneof' {
                         # Throw an error for unsupported schema constructs to notify the user
-                        throw "Validation of schema with `$key is not supported"
+                        throw "Validation of schema with $key is not supported"
                     }
                     'anyof' {
                         # Throw an error for unsupported schema constructs to notify the user
-                        throw "Validation of schema with `$key is not supported"
+                        throw "Validation of schema with $key is not supported"
                     }
                 }
             }

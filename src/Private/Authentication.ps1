@@ -139,7 +139,7 @@ function Get-PodeAuthOAuth2Type {
                     $result = Invoke-RestMethod -Method Post -Uri $options.Urls.Token -Body $body -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
                 }
                 catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
-                    $response = Read-PodeWebExceptionDetail -ErrorRecord $_
+                    $response = Read-PodeWebExceptionInfo -ErrorRecord $_
                     $result = ($response.Body | ConvertFrom-Json)
                 }
 
@@ -158,7 +158,7 @@ function Get-PodeAuthOAuth2Type {
                         $user = Invoke-RestMethod -Method $options.Urls.User.Method -Uri $options.Urls.User.Url -Headers @{ Authorization = "Bearer $($result.access_token)" }
                     }
                     catch [System.Net.WebException], [System.Net.Http.HttpRequestException] {
-                        $response = Read-PodeWebExceptionDetail -ErrorRecord $_
+                        $response = Read-PodeWebExceptionInfo -ErrorRecord $_
                         $user = ($response.Body | ConvertFrom-Json)
                     }
 
