@@ -999,7 +999,9 @@ function Add-PodePSDrivesInternal {
 function Import-PodeModulesInternal {
     # import other modules in the session
     foreach ($path in $PodeContext.Server.Modules.Values) {
-        $null = Import-Module $path -DisableNameChecking -Scope Global -ErrorAction Stop
+        if (Test-Path $path) {
+            $null = Import-Module $path -DisableNameChecking -Scope Global -ErrorAction Stop
+        }
     }
 }
 

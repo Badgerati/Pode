@@ -1,3 +1,52 @@
+function Add-PodeScopedVariableInternal {
+    [CmdletBinding(DefaultParameterSetName = 'Replace')]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Replace')]
+        [string]
+        $GetReplace,
+
+        [Parameter(ParameterSetName = 'Replace')]
+        [string]
+        $SetReplace = $null,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptBlock')]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(ParameterSetName = 'Internal')]
+        [switch]
+        $InternalFunction
+    )
+
+    # lowercase the name
+    $Name = $Name.ToLowerInvariant()
+
+    # check if var already defined
+    if (Test-PodeScopedVariable -Name $Name) {
+        throw "Scoped Variable already defined: $($Name)"
+    }
+
+    # add scoped var definition
+    $PodeContext.Server.ScopedVariables[$Name] = @{
+        Name             = $Name
+        Type             = $PSCmdlet.ParameterSetName.ToLowerInvariant()
+        ScriptBlock      = $ScriptBlock
+        Get              = @{
+            Pattern = "(?<full>\`$$($Name)\:(?<name>[a-z0-9_\?]+))"
+            Replace = $GetReplace
+        }
+        Set              = @{
+            Pattern = "(?<full>\`$$($Name)\:(?<name>[a-z0-9_\?]+)\s*=)"
+            Replace = $SetReplace
+        }
+        InternalFunction = $InternalFunction.IsPresent
+    }
+}
+
 function Add-PodeScopedVariablesInbuilt {
     Add-PodeScopedVariableInbuiltUsing
     Add-PodeScopedVariableInbuiltCache
@@ -31,32 +80,43 @@ function Add-PodeScopedVariableInbuiltState {
 }
 
 function Add-PodeScopedVariableInbuiltUsing {
-    Add-PodeScopedVariable -Name 'using' -ScriptBlock {
-        param($ScriptBlock, $PSSession)
+    Add-PodeScopedVariableInternal -Name 'using' -InternalFunction
+}
 
-        # do nothing if no script or session
-        if (($null -eq $ScriptBlock) -or ($null -eq $PSSession)) {
-            return $ScriptBlock, $null
-        }
+function Convert-PodeScopedVariableInbuiltUsing {
+    param(
+        [Parameter(ValueFromPipeline = $true)]
+        [scriptblock]
+        $ScriptBlock,
 
-        # rename any __using_ vars for inner timers, etcs
-        $strScriptBlock = "$($ScriptBlock)"
-        $foundInnerUsing = $false
+        [Parameter()]
+        [System.Management.Automation.SessionState]
+        $PSSession
+    )
 
-        while ($strScriptBlock -imatch '(?<full>\$__using_(?<name>[a-z0-9_\?]+))') {
-            $foundInnerUsing = $true
-            $strScriptBlock = $strScriptBlock.Replace($Matches['full'], "`$using:$($Matches['name'])")
-        }
+    # do nothing if no script or session
+    if (($null -eq $ScriptBlock) -or ($null -eq $PSSession)) {
+        return $ScriptBlock, $null
+    }
 
-        # just return if there are no $using:
-        if ($strScriptBlock -inotmatch '\$using:') {
-            return $ScriptBlock, $null
-        }
+    # rename any __using_ vars for inner timers, etcs
+    $strScriptBlock = "$($ScriptBlock)"
+    $foundInnerUsing = $false
 
-        # if we found any inner usings, recreate the scriptblock
-        if ($foundInnerUsing) {
-            $ScriptBlock = [scriptblock]::Create($strScriptBlock)
-        }
+    while ($strScriptBlock -imatch '(?<full>\$__using_(?<name>[a-z0-9_\?]+))') {
+        $foundInnerUsing = $true
+        $strScriptBlock = $strScriptBlock.Replace($Matches['full'], "`$using:$($Matches['name'])")
+    }
+
+    # just return if there are no $using:
+    if ($strScriptBlock -inotmatch '\$using:') {
+        return $ScriptBlock, $null
+    }
+
+    # if we found any inner usings, recreate the scriptblock
+    if ($foundInnerUsing) {
+        $ScriptBlock = [scriptblock]::Create($strScriptBlock)
+    }
 
         # get any using variables
         $usingVars = Get-PodeScopedVariableUsingVariable -ScriptBlock $ScriptBlock
@@ -72,7 +132,6 @@ function Add-PodeScopedVariableInbuiltUsing {
 
         # return converted script
         return $newScriptBlock, $usingVars
-    }
 }
 
 <#
