@@ -62,6 +62,8 @@ function Start-PodeTimerRunspace {
 }
 
 function Invoke-PodeInternalTimer {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
     param(
         [Parameter(Mandatory = $true)]
         $Timer,
@@ -72,7 +74,7 @@ function Invoke-PodeInternalTimer {
     )
 
     try {
-        $script:TimerEvent = @{
+        $global:TimerEvent = @{
             Lockable = $PodeContext.Threading.Lockables.Global
             Sender   = $Timer
             Metadata = @{}

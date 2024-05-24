@@ -1,4 +1,5 @@
 function Start-PodeAzFuncServer {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
     param(
         [Parameter(Mandatory = $true)]
         $Data
@@ -26,7 +27,7 @@ function Start-PodeAzFuncServer {
             $response.Headers = @{}
 
             # reset event data
-            $WebEvent = @{
+            $global:WebEvent = @{
                 OnEnd            = @()
                 Auth             = @{}
                 Response         = $response
@@ -125,6 +126,7 @@ function Start-PodeAzFuncServer {
 }
 
 function Start-PodeAwsLambdaServer {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
     param(
         [Parameter(Mandatory = $true)]
         $Data
@@ -154,7 +156,7 @@ function Start-PodeAwsLambdaServer {
             }
 
             # reset event data
-            $WebEvent = @{
+            $global:WebEvent = @{
                 OnEnd            = @()
                 Auth             = @{}
                 Response         = $response
