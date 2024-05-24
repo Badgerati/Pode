@@ -235,15 +235,7 @@ function Add-PodeScopedVariable {
         $ScriptBlock
     )
 
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'replace' {
-            Add-PodeScopedVariableInternal -Name $Name -GetReplace $GetReplace -SetReplace $SetReplace
-        }
-
-        'scriptblock' {
-            Add-PodeScopedVariableInternal -Name $Name -ScriptBlock $ScriptBlock
-        }
-    }
+    Add-PodeScopedVariableInternal @PSBoundParameters
 }
 
 <#
