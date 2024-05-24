@@ -56,10 +56,13 @@ Start-PodeServer {
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # some logic to get accounts
         $query = $WebEvent.Query['query']
-        $accounts = Find-Account -Query $query
+        $accounts = Get-LocalUser -Name $query
 
         # render the file
-        Write-PodeViewResponse -Path 'search' -Data @{ 'query' = $query; 'accounts' = $accounts; }
+        Write-PodeViewResponse -Path 'search' -Data @{
+            query    = $query
+            accounts = $accounts
+        }
     }
 }
 ```
