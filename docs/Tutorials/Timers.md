@@ -15,7 +15,7 @@ Add-PodeTimer -Name 'date' -Interval 5 -ScriptBlock {
 }
 ```
 
-Usually all timers are created within the main `Start-PodeServer` scope, however it is possible to create adhoc timers with routes/etc. If you create adhoc timers in this manor, you might notice that they don't run; this is because the Runspace that timers use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
+Usually all timers are created within the main `Start-PodeServer` scope, however it is possible to create adhoc timers with routes/etc. If you create adhoc timers in this manner, you might notice that they don't run; this is because the Runspace that timers use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
 
 ```powershell
 Start-PodeServer -EnablePool Timers {
@@ -136,16 +136,16 @@ Invoke-PodeTimer -Name 'date' -ArgumentList 'Arg1', 'Arg2'
 
 The following is the structure of the Timer object internally, as well as the object that is returned from [`Get-PodeTimer`](../../Functions/Timers/Get-PodeTimer):
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| Name | string | The name of the Timer |
-| Interval | int | How often the Timer runs, defined in seconds |
-| Limit | int | The number of times the Timer should run - 0 if running forever |
-| Skip | int | The number of times the Timer should skip being triggered |
-| Count | int | The number of times the Timer has run |
-| LastTriggerTime | datetime | The datetime the Timer was last triggered |
-| NextTriggerTime | datetime | The datetime the Timer will next be triggered |
-| Script | scriptblock | The scriptblock of the Timer |
-| Arguments | object[] | The arguments supplied from ArgumentList |
-| OnStart | bool | Should the Timer run once when the server is starting, or once the server has fully loaded |
-| Completed | bool | Has the Timer completed all of its runs |
+| Name            | Type        | Description                                                                                |
+| --------------- | ----------- | ------------------------------------------------------------------------------------------ |
+| Name            | string      | The name of the Timer                                                                      |
+| Interval        | int         | How often the Timer runs, defined in seconds                                               |
+| Limit           | int         | The number of times the Timer should run - 0 if running forever                            |
+| Skip            | int         | The number of times the Timer should skip being triggered                                  |
+| Count           | int         | The number of times the Timer has run                                                      |
+| LastTriggerTime | datetime    | The datetime the Timer was last triggered                                                  |
+| NextTriggerTime | datetime    | The datetime the Timer will next be triggered                                              |
+| Script          | scriptblock | The scriptblock of the Timer                                                               |
+| Arguments       | object[]    | The arguments supplied from ArgumentList                                                   |
+| OnStart         | bool        | Should the Timer run once when the server is starting, or once the server has fully loaded |
+| Completed       | bool        | Has the Timer completed all of its runs                                                    |
