@@ -5,16 +5,25 @@ on:
     branches:
     - 'master'
     - 'develop'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-coverage.yml'
   pull_request:
     branches:
     - '*'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-coverage.yml'
 
 env:
   INVOKE_BUILD_VERSION: '5.11.1'
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:

@@ -67,7 +67,7 @@ function Invoke-PodeBuildInstall($name, $version) {
 
     if (Test-PodeBuildIsWindows) {
         if (Test-PodeBuildCommand 'choco') {
-            choco install $name --version $version -y
+            choco install $name --version $version -y --no-progress
         }
     }
     else {
@@ -275,6 +275,7 @@ Task BuildDeps {
     else {
         $dotnet = "dotnet-sdk-$($Versions.DotNet)"
     }
+
     if (!(Test-PodeBuildCommand 'dotnet')) {
         Invoke-PodeBuildInstall $dotnet $Versions.DotNet
     }
@@ -300,7 +301,7 @@ Task DocsDeps ChocoDeps, {
 
     $_installed = (pip list --format json --disable-pip-version-check | ConvertFrom-Json)
     if (($_installed | Where-Object { $_.name -ieq 'mkdocs-material' -and $_.version -ieq $Versions.MkDocsTheme } | Measure-Object).Count -eq 0) {
-        pip install "mkdocs-material==$($Versions.MkDocsTheme)" --force-reinstall --disable-pip-version-check
+        pip install "mkdocs-material==$($Versions.MkDocsTheme)" --force-reinstall --disable-pip-version-check --quiet
     }
 
     # install platyps
@@ -317,11 +318,9 @@ Task Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
-    Write-Host 'Powershell Version:'
-    $PSVersionTable.PSVersion
-    Push-Location ./src/Listener
 
     try {
+        Push-Location ./src/Listener
         Invoke-PodeBuildDotnetBuild -target 'netstandard2.0'
         Invoke-PodeBuildDotnetBuild -target 'net6.0'
         Invoke-PodeBuildDotnetBuild -target 'net7.0'
@@ -489,7 +488,7 @@ Task Docs DocsDeps, DocsHelpBuild, {
 }
 
 # Synopsis: Build the function help documentation
-Task DocsHelpBuild DocsDeps, {
+Task DocsHelpBuild DocsDeps, Build, {
     # import the local module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
     Import-Module ./src/Pode.psm1 -Force | Out-Null
@@ -534,7 +533,7 @@ Task DocsHelpBuild DocsDeps, {
 
 # Synopsis: Build the documentation
 Task DocsBuild DocsDeps, DocsHelpBuild, {
-    mkdocs build
+    mkdocs build --quiet
 }
 
 

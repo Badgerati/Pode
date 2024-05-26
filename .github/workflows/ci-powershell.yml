@@ -5,16 +5,25 @@ on:
     branches:
     - '*'
     - '!gh-pages'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-powershell.yml'
   pull_request:
     branches:
     - '*'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-powershell.yml'
 
 env:
   INVOKE_BUILD_VERSION: '5.11.1'
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     strategy:
