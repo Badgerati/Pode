@@ -301,7 +301,7 @@ Task DocsDeps ChocoDeps, {
 
     $_installed = (pip list --format json --disable-pip-version-check | ConvertFrom-Json)
     if (($_installed | Where-Object { $_.name -ieq 'mkdocs-material' -and $_.version -ieq $Versions.MkDocsTheme } | Measure-Object).Count -eq 0) {
-        pip install "mkdocs-material==$($Versions.MkDocsTheme)" --force-reinstall --disable-pip-version-check
+        pip install "mkdocs-material==$($Versions.MkDocsTheme)" --force-reinstall --disable-pip-version-check --quiet
     }
 
     # install platyps
@@ -533,7 +533,7 @@ Task DocsHelpBuild DocsDeps, Build, {
 
 # Synopsis: Build the documentation
 Task DocsBuild DocsDeps, DocsHelpBuild, {
-    mkdocs build
+    mkdocs build --quiet
 }
 
 
