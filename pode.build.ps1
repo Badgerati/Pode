@@ -678,7 +678,7 @@ Task SetupPowerShell {
 
     # is the version valid?
     $tags = @('preview', 'lts', 'daily', 'stable')
-    if (($PowerShellVersion -inotin $tags) -or ($PowerShellVersion -inotmatch '^\d+\.\d+\.\d+(-\w+(\.\d+)?)?$')) {
+    if (($PowerShellVersion -inotin $tags) -and ($PowerShellVersion -inotmatch '^\d+\.\d+\.\d+(-\w+(\.\d+)?)?$')) {
         throw "Invalid PowerShell version supplied: $($PowerShellVersion)"
     }
 
