@@ -222,6 +222,10 @@ function Install-PodeBuildPwshUnix($target) {
     & $sudo ln -fs $targetFullPath $symlink
 }
 
+function Get-PodeBuildCurrentPwshVersion {
+    return ("$(pwsh -v)" -split ' ')[1].Trim()
+}
+
 
 <#
 # Helper Tasks
@@ -702,8 +706,10 @@ Task SetupPowerShell {
     $baseVersion = $atoms[0]
 
     # do nothing if the current version is the version we're trying to set up
-    Write-Host "Current PowerShell version: $($PSVersionTable.PSVersion)"
-    if ($baseVersion -ieq $PSVersionTable.PSVersion.ToString()) {
+    $currentVersion = Get-PodeBuildCurrentPwshVersion
+    Write-Host "Current PowerShell version: $($currentVersion)"
+
+    if ($baseVersion -ieq $currentVersion) {
         Write-Host "PowerShell version $($PowerShellVersion) is already installed"
         return
     }
