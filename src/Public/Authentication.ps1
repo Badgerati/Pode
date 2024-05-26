@@ -1303,6 +1303,7 @@ function Add-PodeAuthWindowsAd {
 
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications.Methods[$Name] = @{
+        Name        = $Name
         Scheme      = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsADMethod)
         Arguments   = @{
@@ -1880,6 +1881,7 @@ function Add-PodeAuthUserFile {
 
     # add Windows AD auth method to server
     $PodeContext.Server.Authentications.Methods[$Name] = @{
+        Name        = $Name
         Scheme      = $Scheme
         ScriptBlock = (Get-PodeAuthUserFileMethod)
         Arguments   = @{
@@ -2029,6 +2031,7 @@ function Add-PodeAuthWindowsLocal {
 
     # add Windows Local auth method to server
     $PodeContext.Server.Authentications.Methods[$Name] = @{
+        Name        = $Name
         Scheme      = $Scheme
         ScriptBlock = (Get-PodeAuthWindowsLocalMethod)
         Arguments   = @{
