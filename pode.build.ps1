@@ -421,7 +421,13 @@ Task TestNoBuild TestDeps, {
         Import-Module Pester -Force -RequiredVersion $Versions.Pester
     }
 
+    # for windows, output current netsh excluded ports
+    if (Test-PodeBuildIsWindows) {
+        netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
+    }
+
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
+
     # get default from static property
     $configuration = [PesterConfiguration]::Default
     $configuration.run.path = @('./tests/unit', './tests/integration')
@@ -429,15 +435,16 @@ Task TestNoBuild TestDeps, {
     $configuration.TestResult.OutputFormat = 'NUnitXml'
     $configuration.Output.Verbosity = $PesterVerbosity
     $configuration.TestResult.OutputPath = $Script:TestResultFile
+
     # if run code coverage if enabled
     if (Test-PodeBuildCanCodeCoverage) {
         $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
         $configuration.CodeCoverage.Enabled = $true
         $configuration.CodeCoverage.Path = $srcFiles
-        $Script:TestStatus = Invoke-Pester   -Configuration $configuration
+        $Script:TestStatus = Invoke-Pester -Configuration $configuration
     }
     else {
-        $Script:TestStatus = Invoke-Pester  -Configuration $configuration
+        $Script:TestStatus = Invoke-Pester -Configuration $configuration
     }
 }, PushCodeCoverage, CheckFailedTests
 
