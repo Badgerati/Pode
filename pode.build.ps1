@@ -167,9 +167,6 @@ function Get-PodeBuildOSPwshArchitecture {
     # unix
     if ($IsLinux -or $IsMacOS) {
         $arch = uname -m
-        switch -Wildcard ($uname) {
-            default { throw "Unsupported architecture: $uname" }
-        }
     }
 
     # convert to pwsh arch
@@ -691,7 +688,7 @@ Task SetupPowerShell {
     Write-Host "Release version: $($PowerShellVersion)"
 
     # base/prefix versions
-    $atoms = $PowerShellVersion -split '\.'
+    $atoms = $PowerShellVersion -split '\-'
     $baseVersion = $atoms[0]
     $prefixVersion = $atoms[1]
 
@@ -724,6 +721,9 @@ Task SetupPowerShell {
         OutFile     = $outputFile
         ErrorAction = 'Stop'
     }
+
+    # https://pscoretestdata.blob.core.windows.net/v7-5-0-preview-2/PowerShell-7.5.0-preview.2-win-arm64.zip
+    # https://pscoretestdata.blob.core.windows.net/7-5/PowerShell-7.5.0-preview.2-win-x64.zip
 
     Write-Host "Downloading $($packageName) from $($downloadParams.Uri)"
     Write-Host "Output file: $($outputFile)"
