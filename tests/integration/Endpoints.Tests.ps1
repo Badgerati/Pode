@@ -4,10 +4,10 @@ param()
 Describe 'Endpoint Requests' {
 
     BeforeAll {
-        $Port1 = 60000
+        $Port1 = 8080
         $Endpoint1 = "http://127.0.0.1:$($Port1)"
 
-        $Port2 = 60001
+        $Port2 = 8081
         $Endpoint2 = "http://127.0.0.1:$($Port2)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {

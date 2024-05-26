@@ -871,7 +871,7 @@ SECTION 2: BSD-STYLE, MIT-STYLE, OR SIMILAR STYLE LICENSES
 
         ADDITIONAL LICENSE INFORMATION
         name: swagger-ui
-        version: 5.10.5
+        version: 5.11.1
         contributors (in alphabetical order) :
             Anna Bodnia <anna.bodnia@gmail.com>
             Buu Nguyen <buunguyen@gmail.com>
