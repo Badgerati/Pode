@@ -45,7 +45,7 @@ public bool CheckValidationResult(
         }
 
 
-        $Port = 60010
+        $Port = 8080
         $Endpoint = "https://127.0.0.1:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {
