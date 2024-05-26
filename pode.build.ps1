@@ -172,6 +172,8 @@ function Get-PodeBuildOSPwshArchitecture {
         $arch = uname -m
     }
 
+    Write-Host "OS Architecture: $($arch)"
+
     # convert to pwsh arch
     switch ($arch.ToLowerInvariant()) {
         'amd64' { return 'x64' }
@@ -227,6 +229,18 @@ function Install-PodeBuildPwshUnix($target) {
 
 function Get-PodeBuildCurrentPwshVersion {
     return ("$(pwsh -v)" -split ' ')[1].Trim()
+}
+
+function Invoke-PodeBuildDockerBuild($tag, $file) {
+    docker build -t badgerati/pode:$tag -f $file .
+    if (!$?) {
+        throw "docker build failed for $($tag)"
+    }
+
+    docker tag badgerati/pode:$tag docker.pkg.github.com/badgerati/pode/pode:$tag
+    if (!$?) {
+        throw "docker tag failed for $($tag)"
+    }
 }
 
 
@@ -379,19 +393,18 @@ Task DockerPack {
         return
     }
 
-    docker build -t badgerati/pode:$Version -f ./Dockerfile .
-    docker build -t badgerati/pode:latest -f ./Dockerfile .
-    docker build -t badgerati/pode:$Version-alpine -f ./alpine.dockerfile .
-    docker build -t badgerati/pode:latest-alpine -f ./alpine.dockerfile .
-    docker build -t badgerati/pode:$Version-arm32 -f ./arm32.dockerfile .
-    docker build -t badgerati/pode:latest-arm32 -f ./arm32.dockerfile .
+    Invoke-PodeBuildDockerBuild -Tag $Version -File './Dockerfile'
+    Invoke-PodeBuildDockerBuild -Tag 'latest' -File './Dockerfile'
+    Invoke-PodeBuildDockerBuild -Tag "$Version-alpine" -File './alpine.dockerfile'
+    Invoke-PodeBuildDockerBuild -Tag 'latest-alpine' -File './alpine.dockerfile'
 
-    docker tag badgerati/pode:latest docker.pkg.github.com/badgerati/pode/pode:latest
-    docker tag badgerati/pode:$Version docker.pkg.github.com/badgerati/pode/pode:$Version
-    docker tag badgerati/pode:latest-alpine docker.pkg.github.com/badgerati/pode/pode:latest-alpine
-    docker tag badgerati/pode:$Version-alpine docker.pkg.github.com/badgerati/pode/pode:$Version-alpine
-    docker tag badgerati/pode:latest-arm32 docker.pkg.github.com/badgerati/pode/pode:latest-arm32
-    docker tag badgerati/pode:$Version-arm32 docker.pkg.github.com/badgerati/pode/pode:$Version-arm32
+    if (!(Test-PodeBuildIsGitHub)) {
+        Invoke-PodeBuildDockerBuild -Tag "$Version-arm32" -File './arm32.dockerfile'
+        Invoke-PodeBuildDockerBuild -Tag 'latest-arm32' -File './arm32.dockerfile'
+    }
+    else {
+        Write-Warning 'Docker images for ARM32 are not built on GitHub runners due to having the wrong OS architecture. Skipping.'
+    }
 }
 
 # Synopsis: Package up the Module
