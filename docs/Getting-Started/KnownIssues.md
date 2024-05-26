@@ -102,6 +102,20 @@ Start-PodeServer {
 }
 ```
 
+## CIM Modules
+
+Similar to the Active Directory module above, various other internal Windows modules have a dependency on WMI or CIM - such as SmbShare or NetAdapter. These modules also suffer issues when not imported before `Start-PodeServer`, such as missing properties or incorrect values.
+
+To resolve this you just need to import the modules beforehand. For example, if using SmbShare functions:
+
+```powershell
+Import-Module SmbShare
+
+Start-PodeServer {
+    # ...
+}
+```
+
 ## Loader Errors / Pode Types
 
 If on importing the module you receive Loader Exceptions, or when starting your server you get an error similar to `[PodeListener] not found`, then you will need to update to .NET 4.7.2.
