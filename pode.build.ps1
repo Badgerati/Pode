@@ -695,6 +695,7 @@ Task SetupPowerShell {
     $baseVersion = $atoms[0]
 
     # do nothing if the current version is the version we're trying to set up
+    Write-Host "Current PowerShell version: $($PSVersionTable.PSVersion)"
     if ($baseVersion -ieq $PSVersionTable.PSVersion.ToString()) {
         Write-Host "PowerShell version $($PowerShellVersion) is already installed"
         return
