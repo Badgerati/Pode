@@ -3,15 +3,18 @@
 param(
     [string]
     $Version = '0.0.0',
+
     [string]
-    [ValidateSet(  'None', 'Normal' , 'Detailed', 'Diagnostic')]
-    $PesterVerbosity = 'Normal'
+    [ValidateSet('None', 'Normal' , 'Detailed', 'Diagnostic')]
+    $PesterVerbosity = 'Normal',
+
+    [string]
+    $PowerShellVersion = 'lts'
 )
 
 <#
 # Dependency Versions
 #>
-
 $Versions = @{
     Pester      = '5.5.0'
     MkDocs      = '1.5.3'
@@ -90,8 +93,7 @@ function Install-PodeBuildModule($name) {
     Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
 }
 
-function Invoke-PodeBuildDotnetBuild($target ) {
-
+function Invoke-PodeBuildDotnetBuild($target) {
     # Retrieve the highest installed SDK version
     $majorVersion = ([version](dotnet --version)).Major
 
@@ -104,7 +106,7 @@ function Invoke-PodeBuildDotnetBuild($target ) {
     }
 
     # Skip build if not compatible
-    if (  $isCompatible) {
+    if ($isCompatible) {
         Write-Host "SDK for target framework $target is compatible with the installed SDKs"
     }
     else {
@@ -127,12 +129,99 @@ function Invoke-PodeBuildDotnetBuild($target ) {
 }
 
 function Get-PodeBuildPwshEOL {
-    $eol = invoke-restmethod  -Uri 'https://endoflife.date/api/powershell.json' -Headers @{Accept = 'application/json' }
+    $eol = Invoke-RestMethod -Uri 'https://endoflife.date/api/powershell.json' -Headers @{ Accept = 'application/json' }
     return @{
         eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
         supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
     }
 }
+
+function Test-PodeBuildOSWindows {
+    return ($IsWindows -or
+        ![string]::IsNullOrEmpty($env:ProgramFiles) -or
+        (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop')))
+}
+
+function Get-PodeBuildOSPwshName {
+    if (Test-PodeBuildOSWindows) {
+        return 'win'
+    }
+
+    if ($IsLinux) {
+        return 'linux'
+    }
+
+    if ($IsMacOS) {
+        return 'osx'
+    }
+}
+
+function Get-PodeBuildOSPwshArchitecture {
+    $arch = [string]::Empty
+
+    # windows
+    if (Test-PodeBuildOSWindows) {
+        $arch = $env:PROCESSOR_ARCHITECTURE
+    }
+
+    # unix
+    if ($IsLinux -or $IsMacOS) {
+        $arch = uname -m
+        switch -Wildcard ($uname) {
+            default { throw "Unsupported architecture: $uname" }
+        }
+    }
+
+    # convert to pwsh arch
+    switch ($arch.ToLowerInvariant()) {
+        'amd64' { return 'x64' }
+        'x86' { return 'x86' }
+        'x86_64' { return 'x64' }
+        'armv7*' { return 'arm32' }
+        'aarch64*' { return 'arm64' }
+        'arm64*' { return 'arm64' }
+        'armv8*' { return 'arm64' }
+        default { throw "Unsupported architecture: $($arch)" }
+    }
+}
+
+function Convert-PodeBuildOSPwshTagToVersion {
+    $result = Invoke-RestMethod -Uri "https://aka.ms/pwsh-buildinfo-$($PowerShellVersion)"
+    return $result.ReleaseTag -ireplace '^v'
+}
+
+function Install-PodeBuildPwshWindows($target) {
+    $installFolder = "$($env:ProgramFiles)\PowerShell\7"
+
+    if (Test-Path $installFolder) {
+        Remove-Item $installFolder -Recurse -Force -ErrorAction Stop
+    }
+
+    Copy-Item -Path "$($target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
+}
+
+function Install-PodeBuildPwshUnix($target) {
+    $targetFullPath = Join-Path -Path $target -ChildPath 'pwsh'
+    $null = chmod 755 $targetFullPath
+
+    $symlink = $null
+    if ($IsMacOS) {
+        $symlink = '/usr/local/bin/pwsh'
+    }
+    else {
+        $symlink = '/usr/bin/pwsh'
+    }
+
+    $uid = id -u
+    $sudo = (@{
+            '0'     = ''
+            default = 'sudo'
+        })[$uid]
+
+    # Make symbolic link point to installed path
+    & $sudo ln -fs $targetFullPath $symlink
+}
+
 
 <#
 # Helper Tasks
@@ -437,6 +526,11 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
     mkdocs build
 }
 
+
+<#
+# Clean-up
+#>
+
 # Synopsis: Clean the build enviroment
 Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener
 
@@ -462,10 +556,12 @@ Task CleanPkg {
         Write-Host 'Removing .\packers\choco\tools\ChocolateyInstall.ps1'
         Remove-Item -Path .\packers\choco\tools\ChocolateyInstall.ps1
     }
+
     if ((Test-Path -Path .\packers\choco\pode.nuspec -PathType Leaf )) {
         Write-Host 'Removing .\packers\choco\pode.nuspec'
         Remove-Item -Path .\packers\choco\pode.nuspec
     }
+
     Write-Host "Cleanup $path done"
 }
 
@@ -476,6 +572,7 @@ Task CleanLibs {
         Write-Host "Removing $path  contents"
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
+
     Write-Host "Cleanup $path done"
 }
 
@@ -486,23 +583,30 @@ Task CleanListener {
         Write-Host "Removing $path contents"
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
+
     Write-Host "Cleanup $path done"
 }
+
+
+<#
+# Local module management
+#>
 
 # Synopsis: Install Pode Module locally
 Task Install-Module {
     $path = './pkg'
     if ($Version) {
-
         if (! (Test-Path $path)) {
             Invoke-Build Pack -Version $Version
         }
-        if ($IsWindows -or (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
+
+        if (Test-PodeBuildOSWindows) {
             $PSPaths = $ENV:PSModulePath -split ';'
         }
         else {
             $PSPaths = $ENV:PSModulePath -split ':'
         }
+
         $dest = join-path -Path  $PSPaths[0]  -ChildPath 'Pode' -AdditionalChildPath "$Version"
 
         if (Test-Path $dest) {
@@ -529,19 +633,18 @@ Task Install-Module {
     else {
         Write-Error 'Parameter -Version is required'
     }
-
 }
 
 # Synopsis: Remove the Pode Module from the local registry
 Task Remove-Module {
-
     if ($Version) {
-        if ($IsWindows -or (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop'))) {
+        if (Test-PodeBuildOSWindows) {
             $PSPaths = $ENV:PSModulePath -split ';'
         }
         else {
             $PSPaths = $ENV:PSModulePath -split ':'
         }
+
         $dest = join-path -Path  $PSPaths[0]  -ChildPath 'Pode' -AdditionalChildPath "$Version"
 
         if (Test-Path $dest) {
@@ -551,10 +654,127 @@ Task Remove-Module {
         else {
             Write-Error "Directory $dest doesn't exist"
         }
-
     }
     else {
         Write-Error 'Parameter -Version is required'
     }
+}
 
+
+<#
+# PowerShell setup
+#>
+
+# Synopsis: Setup the PowerShell environment
+Task SetupPowerShell {
+    # code for this step is altered versions of the code found here:
+    # - https://github.com/bjompen/UpdatePWSHAction/blob/main/UpgradePwsh.ps1
+    # - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1
+
+    # fail if no version supplied
+    if ([string]::IsNullOrWhiteSpace($PowerShellVersion)) {
+        throw 'No PowerShell version supplied to set up'
+    }
+
+    # is the version valid?
+    $tags = @('preview', 'lts', 'daily', 'stable')
+    if (($PowerShellVersion -inotin $tags) -or ($PowerShellVersion -inotmatch '^\d+\.\d+\.\d+(-\w+(\.\d+)?)?$')) {
+        throw "Invalid PowerShell version supplied: $($PowerShellVersion)"
+    }
+
+    # tag version or literal version?
+    $isTagVersion = $PowerShellVersion -iin $tags
+    if ($isTagVersion) {
+        Write-Host "Release tag: $($PowerShellVersion)"
+        $PowerShellVersion = Convert-PodeBuildOSPwshTagToVersion
+    }
+    Write-Host "Release version: $($PowerShellVersion)"
+
+    # base/prefix versions
+    $atoms = $PowerShellVersion -split '\.'
+    $baseVersion = $atoms[0]
+    $prefixVersion = $atoms[1]
+
+    # do nothing if the current version is the version we're trying to set up
+    if ($baseVersion -ieq $PSVersionTable.PSVersion.ToString()) {
+        Write-Host "PowerShell version $($PowerShellVersion) is already installed"
+        return
+    }
+
+    # build the package name
+    $arch = Get-PodeBuildOSPwshArchitecture
+    $os = Get-PodeBuildOSPwshName
+
+    $packageName = (@{
+            win   = "PowerShell-$($PowerShellVersion)-$($os)-$($arch).zip"
+            linux = "powershell-$($PowerShellVersion)-$($os)-$($arch).tar.gz"
+            osx   = "powershell-$($PowerShellVersion)-$($os)-$($arch).tar.gz"
+        })[$os]
+
+    # build the blob name
+    $blobName = $baseVersion -replace '\.', '-'
+    if (![string]::IsNullOrEmpty($prefixVersion)) {
+        $blobName += "-$($prefixVersion)"
+    }
+
+    # download the package to a temp location
+    $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
+    $downloadParams = @{
+        Uri         = "https://pscoretestdata.blob.core.windows.net/$($blobName)/$($packageName)"
+        OutFile     = $outputFile
+        ErrorAction = 'Stop'
+    }
+
+    Write-Host "Downloading $($packageName) from $($downloadParams.Uri)"
+    Write-Host "Output file: $($outputFile)"
+
+    # retry the download 3 times, with a sleep of 10s between each attempt
+    $counter = 0
+    $success = $false
+
+    do {
+        try {
+            $counter++
+            Write-Host "Attempt $($counter) of 3"
+
+            Invoke-WebRequest @downloadParams
+
+            $success = $true
+            Write-Host "Downloaded $($packageName) successfully"
+        }
+        catch {
+            $success = $false
+            if ($counter -ge 3) {
+                throw "Failed to download PowerShell package after 3 attempts. Error: $($_.Exception.Message)"
+            }
+
+            Start-Sleep -Seconds 10
+        }
+    } while (!$success)
+
+    # create target folder for package
+    $targetFolder = Join-Path -Path (Resolve-Path ~).Path -ChildPath ($packageName -ireplace '\.tar$')
+    if (!(Test-Path $targetFolder)) {
+        $null = New-Item -Path $targetFolder -ItemType Directory -Force
+    }
+
+    # extract the package
+    switch ($os) {
+        'win' {
+            Expand-Archive -Path $outputFile -DestinationPath $targetFolder -Force
+        }
+
+        { $_ -iin 'linux', 'osx' } {
+            $null = tar -xzf $outputFile -C $targetFolder
+        }
+    }
+
+    # install the package
+    Write-Host "Installing PowerShell $($PowerShellVersion) to $($targetFolder)"
+    if (Test-PodeBuildOSWindows) {
+        Install-PodeBuildPwshWindows -Target $targetFolder
+    }
+    else {
+        Install-PodeBuildPwshUnix -Target $targetFolder
+    }
 }

@@ -39,8 +39,8 @@ jobs:
 
     - name: Install Invoke-Build
       shell: pwsh
-      run: | 
-        Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
+      run: |
+        Install-Module -Name InvokeBuild -RequiredVersion '5.11.1' -Force
 
     - name: Run Pester Tests
       shell: pwsh
