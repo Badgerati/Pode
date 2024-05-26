@@ -17,11 +17,11 @@ param(
 #>
 $Versions = @{
     Pester      = '5.5.0'
-    MkDocs      = '1.5.3'
+    MkDocs      = '1.6.0'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
     DotNet      = '8.0'
-    MkDocsTheme = '9.5.17'
+    MkDocsTheme = '9.5.23'
     PlatyPS     = '0.14.2'
 }
 
