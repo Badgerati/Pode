@@ -18,12 +18,12 @@ When registering a new secret vault using `Microsoft.PowerShell.SecretStore`, vi
 
 There are also some default values set for some parameters to make life a little easier, however, these can be overwritten if needed by directly supplying the parameter:
 
-| Parameter                            | Default    | Description                                                                                                                       |
-| ------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `UnlockInterval`                     | 1 minute   | Used to assign an unlock period, as well as the PasswordTimeout to auto-lock the vault                                            |
-| `VaultParameters['Authentication']`  | Password   | Used to tell the vault to to be locked/unlocked                                                                                   |
-| `VaultParameters['Interaction']`     | None       | Used to tell the vault where it should be interactive or not                                                                      |
-| `VaultParameters['PasswordTimeout']` | 70 seconds | Used to auto-lock the vault after being unlocked. The vault if not supplied is based on the `-UnlockInterval` values + 10 seconds |
+| Parameter                            | Default    | Description                                                                                                                      |
+| ------------------------------------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `UnlockInterval`                     | 1 minute   | Used to assign an unlock period, as well as the PasswordTimeout to auto-lock the vault                                           |
+| `VaultParameters['Authentication']`  | Password   | Used to tell the vault to to be locked/unlocked                                                                                  |
+| `VaultParameters['Interaction']`     | None       | Used to tell the vault where it should be interactive or not                                                                     |
+| `VaultParameters['PasswordTimeout']` | 70 seconds | Used to auto-lock the vault after being unlocked. The value if not supplied is based on the `-UnlockInterval` value + 10 seconds |
 
 For example:
 
