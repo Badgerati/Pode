@@ -9,7 +9,7 @@ The older [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) and
 
 ## Modules
 
-Modules in Pode can be imported in the normal manor using `Import-Module`. The [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) function can now be used inside and outside of [`Start-PodeServer`](../../Functions/Core/Start-PodeServer), and should be used if you're using local modules via `ps_modules`.
+Modules in Pode can be imported in the normal manner using `Import-Module`. The [`Import-PodeModule`](../../Functions/Utilities/Import-PodeModule) function can now be used inside and outside of [`Start-PodeServer`](../../Functions/Core/Start-PodeServer), and should be used if you're using local modules via `ps_modules`.
 
 ### Import via Path
 

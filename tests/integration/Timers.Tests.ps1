@@ -4,7 +4,7 @@ param()
 Describe 'Timers' {
 
     BeforeAll {
-        $Port = 50000
+        $Port = 60000
         $Endpoint = "http://127.0.0.1:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {

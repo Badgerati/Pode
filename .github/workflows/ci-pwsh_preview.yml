@@ -44,7 +44,7 @@ jobs:
 
     - name: Run Pester Tests
       shell: pwsh
-      run: | 
+      run: |
         Invoke-Build Test
 
     - name: Test docker builds

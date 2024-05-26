@@ -2,13 +2,13 @@
 
 You can register and mount secret values from secret vaults, like Azure KeyVault or HashiCorp Vault, into Pode for use in Routes, Middleware, etc.
 
-Secrets can also be referenced from a vault in an adhoc manor, without needing to mount them first. You can also create, update and remove secrets in vaults.
+Secrets can also be referenced from a vault in an adhoc manner, without needing to mount them first. You can also create, update, and remove secrets in vaults.
 
-The values of mounted secrets may also be cached for a period of time, to reduce load on the vault.
+The values of mounted secrets may also be cached for a period of time, to reduce load on the vault as well as speed up lookups.
 
 ## Registering
 
-In order to reference Secrets from a vault you first need to register that vault using [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault). Registering a vault registers the vault within Pode, but will also call any logic needed by the registration type being used. For example, if using Secret Management then Pode will call `Register-SecretVault` for you.
+To reference Secrets from a vault you first need to register that vault using [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault). Registering a vault registers the vault within Pode, but will also call any logic needed by the registration type being used. For example, if using Secret Management then Pode will call `Register-SecretVault` for you.
 
 A further example, as follows, will use the Secret Management PowerShell module to register an Azure KeyVault within Pode:
 
@@ -21,23 +21,30 @@ Register-PodeSecretVault -Name 'FriendlyVaultName' -ModuleName 'Az.KeyVault' -Va
 
 You can find more information on the [Secret Management](../Types/SecretManagement) page. The general parameters for all types are:
 
-| Parameter | Description |
-| --------- | ----------- |
-| Name | This is a friendly name for the vault within Pode that you can reference |
+| Parameter       | Description                                                                      |
+| --------------- | -------------------------------------------------------------------------------- |
+| Name            | This is a friendly name for the vault within Pode that you can reference         |
 | VaultParameters | This is a hashtable of options, for the vault, that is supplied to vault scripts |
 
 !!! note
-    You can unregister a vault via [`Unregister-PodeSecretVault`](../../../Functions/Secrets/Unregister-PodeSecretVault). All vaults are automatically unregistered at when the server stops - unless it was auto-imported.
+    You can unregister a vault via [`Unregister-PodeSecretVault`](../../../Functions/Secrets/Unregister-PodeSecretVault). All vaults are automatically unregistered when the server stops - unless it was auto-imported.
 
 ### Types
 
-At present there are just two registration types implemented for registering secret vaults:
+At present, there are just two registration types implemented for registering secret vaults:
 
-* [Secret Management](../Types/SecretManagement) (powershell module)
+* [Secret Management](../Types/SecretManagement) (PowerShell module)
 * [Custom](../Types/Custom)
 
 !!! tip
-    For the SecretManagement module you can read a "getting started" [guide for it here](https://learn.microsoft.com/en-us/powershell/utility-modules/secretmanagement/how-to/using-secrets-in-automation?view=ps-modules) when using the module in automated scenarios.
+    For the SecretManagement module you can read a "getting started" [guide here](https://learn.microsoft.com/en-us/powershell/utility-modules/secretmanagement/how-to/using-secrets-in-automation?view=ps-modules) when using the module in automated scenarios.
+
+### Vault Examples
+
+You can find some quick examples for some vault providers below:
+
+* [SecretStore](../Examples/SecretStore)
+
 
 ### Initialise
 
@@ -59,11 +66,11 @@ Register-PodeSecretVault -Name 'VaultName' -ModuleName 'Az.KeyVault' `
 
 ### Auto-Import
 
-Similar to modules and functions, Pode will auto-import any secret vaults registered outside of vault. You can find more [information here](../../Scoping#secret-vaults)
+Similar to modules and functions, Pode will auto-import any secret vaults registered outside of Pode. You can find more [information here](../../Scoping#secret-vaults)
 
 ### Unlock
 
-Some vaults require unlocking first, or an authorization token to be be acquired to access the vault. Unlocking applies to all registration types, and to configure unlocking for use you'll first need to supply either an `-UnlockSecret` or an `-UnlockSecureSecret` to [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault).
+Some vaults require unlocking first, or an authorization token to be acquired to access the vault. Unlocking applies to all registration types, and to configure unlocking for use you'll first need to supply either an `-UnlockSecret` or an `-UnlockSecureSecret` to [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault).
 
 !!! important
     If you're using a custom registration type, you'll also need to supply an `-UnlockScriptBlock`.
@@ -86,7 +93,7 @@ Pode will automatically call the unlock logic after registration, but you can st
 Unlock-PodeSecretVault -Name 'VaultName'
 ```
 
-If you need to periodically check/unlock your vault, then Pode can do this automatically for you. To achieve this you can supply a number of minutes for the `-UnlockInterval` parameter on [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault), this will tell Pode to automatically check/unlock the vault after the first unlock as occurred.
+If you need to periodically check/unlock your vault, then Pode can do this automatically for you. To achieve this you can supply a number of minutes for the `-UnlockInterval` parameter on [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault), this will tell Pode to automatically check/unlock the vault after the first unlock has occurred.
 
 ## Mounting
 
@@ -98,7 +105,7 @@ Mount-PodeSecret -Name 'SecretName' -Vault 'VaultName' -Key 'SecretKeyNameInVaul
 
 The `-Name` is the name of the secret you'll be using to reference the secret throughout Pode. The `-Vault` parameter is the name of the vault from [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault), and the `-Key` is the path/name of the secret within the vault itself.
 
-Some secrets will be returned as hashtables - such as from HashiCorp Vault. In some cases you might only want certain properties to be returned from this secret, and you can limit the properties returned by using the `-Property` parameter. For example, if a secret has 5 keys named key1 to key5, you can limit this to just key2 and key4:
+Some secrets will be returned as hashtables - such as from HashiCorp Vault. In some cases, you might only want certain properties to be returned from this secret, and you can limit the properties returned by using the `-Property` parameter. For example, if a secret has 5 keys named key1 to key5, you can limit this to just key2 and key4:
 
 ```powershell
 Mount-PodeSecret -Name 'SecretName' -Vault 'VaultName' -Key 'SecretKeyNameInVault' -Property key2, key4
@@ -149,11 +156,11 @@ Add-PodeRoute -Method Post -Path '/secret' -ScriptBlock {
 ### Caching
 
 !!! important
-    The cache is an in-memory in-application cache, and is unencrypted. It is never stored to disk, and cached values are wiped once their expiry is up; the cache is also wiped when the server is stopped.
+    The cache is an in-memory in-application cache, and is unencrypted. It is never stored on disk, and cached values are wiped once their expiry is up; the cache is also wiped when the server is stopped.
 
 To reduce round-trip time by constantly going to a vault, as well as to reduce stress on a vault, you can optionally enable caching on secrets - the cache by default is disabled.
 
-You can either supply a `-CacheTtl` as a number of minutes to [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault), and all secrets mounted will be cached. Or you can supply a `-CacheTtl` only to specific mounted secrets - you can also use this option to disable caching for a secret, by supplying a value of 0, even if the vault itself is registered with a cache TTL.
+You can either supply a `-CacheTtl` as a number of minutes to [`Register-PodeSecretVault`](../../../Functions/Secrets/Register-PodeSecretVault) and all secrets mounted will be cached. Or you can supply a `-CacheTtl` only to specific mounted secrets - you can also use this option to disable caching for a secret, by supplying a value of 0, even if the vault itself is registered with a cache TTL.
 
 To enable caching for all mounted secrets from a vault - but with one disabled, and one overriding:
 
@@ -192,11 +199,11 @@ Mount-PodeSecret -Name 'SecretName2' -Vault 'VaultName' -Key 'SecretKeyNameInVau
 
 ## Adhoc
 
-There is also support for creating/updating, retrieving, and removing secrets in an adhoc manor from registered vaults - without having to mount them.
+There is also support for creating/updating, retrieving, and removing secrets in an adhoc manner from registered vaults - without having to mount them.
 
 ### Create
 
-To create a new secret, and well as update an existing ones value, you can use [`Set-PodeSecret`](../../../Functions/Secrets/Set-PodeSecret):
+To create a new secret, as well as update an existing value, you can use [`Set-PodeSecret`](../../../Functions/Secrets/Set-PodeSecret):
 
 ```powershell
 Add-PodeRoute -Method Post -Path '/adhoc/:key' -ScriptBlock {
@@ -220,7 +227,7 @@ Add-PodeRoute -Method Get -Path '/adhoc/:key' -ScriptBlock {
 
 ### Remove
 
-And to then remove the secret from the vault you can use [`Remove-PodeSecret`](../../../Functions/Secrets/Remove-PodeSecret):
+To remove the secret from the vault you can use [`Remove-PodeSecret`](../../../Functions/Secrets/Remove-PodeSecret):
 
 ```powershell
 Add-PodeRoute -Method Delete -Path '/adhoc/:key' -ScriptBlock {

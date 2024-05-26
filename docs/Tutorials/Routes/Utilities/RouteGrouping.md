@@ -60,7 +60,7 @@ Add-PodeRouteGroup -Path '/api' -Authentication Basic -Middleware $mid -Routes {
 
 ## Static Routes
 
-The Groups for Static Routes work in the same manor as normal Routes, but you'll need to use [`Add-PodeStaticRouteGroup`](../../../../Functions/Routes/Add-PodeStaticRouteGroup) instead:
+The Groups for Static Routes work in the same manner as normal Routes, but you'll need to use [`Add-PodeStaticRouteGroup`](../../../../Functions/Routes/Add-PodeStaticRouteGroup) instead:
 
 ```powershell
 Add-PodeStaticRouteGroup -Path '/assets' -Source './content/assets' -Routes {
@@ -73,7 +73,7 @@ This will create 2 Static Routes at `/assets/images` and `/assets/videos`, refer
 
 ## Signal Routes
 
-Groupings for Signal Routes also work in the same manor as normal Routes, but you'll need to use [`Add-PodeSignalRouteGroup`](../../../../Functions/Routes/Add-PodeSignalRouteGroup) instead:
+Groupings for Signal Routes also work in the same manner as normal Routes, but you'll need to use [`Add-PodeSignalRouteGroup`](../../../../Functions/Routes/Add-PodeSignalRouteGroup) instead:
 
 ```powershell
 Add-PodeSignalRoute -Path '/ws' -Routes {
