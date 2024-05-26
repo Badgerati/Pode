@@ -73,8 +73,7 @@ jobs:
       run: |
         Invoke-Build Test
 
-    - name: Test docker builds
+    - name: Build Packages
       shell: pwsh
       run: |
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-Build DockerPack -Version '0.0.0'
+        Invoke-Build Pack

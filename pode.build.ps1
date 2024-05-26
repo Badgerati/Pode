@@ -103,8 +103,8 @@ function Invoke-PodeBuildDotnetBuild($target) {
     # Determine if the target framework is compatible
     $isCompatible = $False
     switch ($majorVersion) {
-        8 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0', 'net8.0')) { $isCompatible = $True } }
-        7 { if ($target -in @('net6.0', 'net7.0', 'netstandard2.0')) { $isCompatible = $True } }
+        8 { if ($target -in @('net6.0', 'netstandard2.0', 'net8.0')) { $isCompatible = $True } }
+        7 { if ($target -in @('net6.0', 'netstandard2.0')) { $isCompatible = $True } }
         6 { if ($target -in @('net6.0', 'netstandard2.0')) { $isCompatible = $True } }
     }
 
@@ -326,7 +326,6 @@ Task Build BuildDeps, {
         Push-Location ./src/Listener
         Invoke-PodeBuildDotnetBuild -target 'netstandard2.0'
         Invoke-PodeBuildDotnetBuild -target 'net6.0'
-        Invoke-PodeBuildDotnetBuild -target 'net7.0'
         Invoke-PodeBuildDotnetBuild -target 'net8.0'
     }
     finally {
@@ -363,7 +362,13 @@ Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
 }
 
 # Synopsis: Create docker tags
-Task DockerPack -If (((Test-PodeBuildIsWindows) -or $IsLinux) ) {
+Task DockerPack {
+    # check if github and windows, and output warning
+    if ((Test-PodeBuildIsGitHub) -and (Test-PodeBuildIsWindows)) {
+        Write-Warning 'Docker images are not built on GitHub Windows runners, and Docker is in Windows container only mode. Exiting task.'
+        return
+    }
+
     try {
         # Try to get the Docker version to check if Docker is installed
         docker --version
@@ -373,6 +378,7 @@ Task DockerPack -If (((Test-PodeBuildIsWindows) -or $IsLinux) ) {
         Write-Warning 'Docker is not installed or not available in the PATH. Exiting task.'
         return
     }
+
     docker build -t badgerati/pode:$Version -f ./Dockerfile .
     docker build -t badgerati/pode:latest -f ./Dockerfile .
     docker build -t badgerati/pode:$Version-alpine -f ./alpine.dockerfile .
@@ -394,6 +400,7 @@ Task Pack Build, {
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
     }
+
     # create the pkg dir
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
