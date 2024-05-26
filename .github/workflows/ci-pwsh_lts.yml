@@ -5,9 +5,23 @@ on:
     branches:
     - '*'
     - '!gh-pages'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-pwsh_lts.yml'
+    - 'Dockerfile'
+    - '*.dockerfile'
   pull_request:
     branches:
     - '*'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-pwsh_lts.yml'
+    - 'Dockerfile'
+    - '*.dockerfile'
 
 env:
   INVOKE_BUILD_VERSION: '5.11.1'
@@ -15,7 +29,6 @@ env:
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
 
     strategy:
