@@ -9,6 +9,9 @@ on:
     branches:
     - '*'
 
+env:
+  INVOKE_BUILD_VERSION: '5.11.1'
+
 jobs:
   build:
 
@@ -30,7 +33,7 @@ jobs:
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion '5.11.1' -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
 
     - name: Run Pester Tests
       shell: pwsh

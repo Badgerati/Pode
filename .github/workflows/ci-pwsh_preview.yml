@@ -9,6 +9,10 @@ on:
     branches:
     - '*'
 
+env:
+  INVOKE_BUILD_VERSION: '5.11.1'
+  POWERSHELL_VERSION: 'Preview'
+
 jobs:
   build:
 
@@ -22,16 +26,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # - name: Setup Powershell
-    #   uses: bjompen/UpdatePWSHAction@v1.0.0
-    #   with:
-    #     ReleaseVersion: 'Preview'
-
-    # - name: Check PowerShell version
-    #   shell: pwsh
-    #   run: |
-    #     $PSVersionTable.PSVersion
-
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -41,15 +35,15 @@ jobs:
       shell: pwsh
       if: runner.os == 'Linux' || runner.os == 'macOS'
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion '5.11.1' -Force
-        Invoke-Build SetupPowerShell -PowerShellVersion 'Preview'
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
 
     - name: Setup Powershell - Windows
       shell: PowerShell
       if: runner.os == 'Windows'
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion '5.11.1' -Force
-        Invoke-Build SetupPowerShell -PowerShellVersion 'Preview'
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
 
     - name: Output PowerShell version
       shell: pwsh
@@ -59,7 +53,7 @@ jobs:
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion '5.11.1' -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
 
     - name: Run Pester Tests
       shell: pwsh
