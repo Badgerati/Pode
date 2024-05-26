@@ -211,10 +211,12 @@ function Install-PodeBuildPwshUnix($target) {
     }
 
     $uid = id -u
-    $sudo = (@{
-            '0'     = ''
-            default = 'sudo'
-        })[$uid]
+    if ($uid -ne '0') {
+        $sudo = 'sudo'
+    }
+    else {
+        $sudo = ''
+    }
 
     # Make symbolic link point to installed path
     & $sudo ln -fs $targetFullPath $symlink
@@ -691,7 +693,6 @@ Task SetupPowerShell {
     # base/prefix versions
     $atoms = $PowerShellVersion -split '\-'
     $baseVersion = $atoms[0]
-    # $prefixVersion = $atoms[1]
 
     # do nothing if the current version is the version we're trying to set up
     if ($baseVersion -ieq $PSVersionTable.PSVersion.ToString()) {
@@ -711,9 +712,6 @@ Task SetupPowerShell {
 
     # build the blob name
     $blobName = "v$($PowerShellVersion -replace '\.', '-')"
-    # if (![string]::IsNullOrEmpty($prefixVersion)) {
-    #     $blobName += "-$($prefixVersion)"
-    # }
 
     # download the package to a temp location
     $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
@@ -722,13 +720,6 @@ Task SetupPowerShell {
         OutFile     = $outputFile
         ErrorAction = 'Stop'
     }
-
-    # https://pscoretestdata.blob.core.windows.net/v7-5-0-preview-2/PowerShell-7.5.0-preview.2-win-arm64.zip
-
-    # https://pscoretestdata.blob.core.windows.net/7-5-0-preview.2/powershell-7.5.0-preview.2-linux-x64.tar.gz
-    # https://pscoretestdata.blob.core.windows.net/7-5-0-preview.2/PowerShell-7.5.0-preview.2-win-x64.zip
-
-    # https://pscoretestdata.blob.core.windows.net/7-5/PowerShell-7.5.0-preview.2-win-x64.zip
 
     Write-Host "Downloading $($packageName) from $($downloadParams.Uri)"
     Write-Host "Output file: $($outputFile)"
