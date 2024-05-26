@@ -9,7 +9,10 @@ param(
     $PesterVerbosity = 'Normal',
 
     [string]
-    $PowerShellVersion = 'lts'
+    $PowerShellVersion = 'lts',
+
+    [string]
+    $ReleaseNoteVersion
 )
 
 <#
@@ -785,5 +788,129 @@ Task SetupPowerShell {
     }
     else {
         Install-PodeBuildPwshUnix -Target $targetFolder
+    }
+}
+
+
+<#
+# Release Notes
+#>
+
+# Synopsis: Build the Release Notes
+task ReleaseNotes {
+    if ([string]::IsNullOrWhiteSpace($ReleaseNoteVersion)) {
+        Write-Host 'Please provide a ReleaseNoteVersion' -ForegroundColor Red
+        return
+    }
+
+    # get the PRs for the ReleaseNoteVersion
+    $prs = gh search prs --milestone $ReleaseNoteVersion --repo badgerati/pode --merged --limit 200 --json 'number,title,labels,author' | ConvertFrom-Json
+
+    # group PRs into categories, filtering out some internal PRs
+    $categories = [ordered]@{
+        Features      = @()
+        Enhancements  = @()
+        Bugs          = @()
+        Documentation = @()
+    }
+
+    $dependabot = @{}
+
+    foreach ($pr in $prs) {
+        $label = ($pr.labels[0].name -split ' ')[0]
+        if ($label -iin @('new-release', 'internal-code')) {
+            continue
+        }
+
+        if ([string]::IsNullOrWhiteSpace($label)) {
+            $label = 'misc'
+        }
+
+        switch ($label.ToLowerInvariant()) {
+            'feature' { $label = 'Features' }
+            'enhancement' { $label = 'Enhancements' }
+            'bug' { $label = 'Bugs' }
+        }
+
+        if (!$categories.Contains($label)) {
+            $categories[$label] = @()
+        }
+
+        if ($pr.author.login -ilike '*dependabot*') {
+            if ($pr.title -imatch 'Bump (?<name>\S+) from (?<from>[0-9\.]+) to (?<to>[0-9\.]+)') {
+                if (!$dependabot.ContainsKey($Matches['name'])) {
+                    $dependabot[$Matches['name']] = @{
+                        Name   = $Matches['name']
+                        Number = $pr.number
+                        From   = [version]$Matches['from']
+                        To     = [version]$Matches['to']
+                    }
+                }
+                else {
+                    $item = $dependabot[$Matches['name']]
+                    if ([int]$pr.number -gt [int]$item.Number) {
+                        $item.Number = $pr.number
+                    }
+                    if ([version]$Matches['from'] -lt $item.From) {
+                        $item.From = [version]$Matches['from']
+                    }
+                    if ([version]$Matches['to'] -gt $item.To) {
+                        $item.To = [version]$Matches['to']
+                    }
+                }
+
+                continue
+            }
+        }
+
+        $titles = @($pr.title)
+        if ($pr.title.Contains(';')) {
+            $titles = ($pr.title -split ';').Trim()
+        }
+
+        $author = $null
+        if (($pr.author.login -ine 'badgerati') -and ($pr.author.login -inotlike '*dependabot*')) {
+            $author = $pr.author.login
+        }
+
+        foreach ($title in $titles) {
+            $str = "* #$($pr.number): $($title)"
+            if (![string]::IsNullOrWhiteSpace($author)) {
+                $str += " (thanks @$($author)!)"
+            }
+
+            if ($str -imatch '\s+(docs|documentation)\s+') {
+                $categories['Documentation'] += $str
+            }
+            else {
+                $categories[$label] += $str
+            }
+        }
+    }
+
+    # add dependabot aggregated PRs
+    if ($dependabot.Count -gt 0) {
+        $label = 'dependencies'
+        if (!$categories.Contains($label)) {
+            $categories[$label] = @()
+        }
+
+        foreach ($dep in $dependabot.Values) {
+            $categories[$label] += "* #$($dep.Number) Bump $($dep.Name) from $($dep.From) to $($dep.To)"
+        }
+    }
+
+    # output the release notes
+    Write-Host "# v$($ReleaseNoteVersion)`n"
+
+    $culture = (Get-Culture).TextInfo
+    foreach ($category in $categories.Keys) {
+        if ($categories[$category].Length -eq 0) {
+            continue
+        }
+
+        Write-Host "### $($culture.ToTitleCase($category))"
+        $categories[$category] | Sort-Object | ForEach-Object { Write-Host $_ }
+        Write-Host ''
     }
 }
