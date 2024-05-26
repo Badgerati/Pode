@@ -14,7 +14,7 @@ Install-Module Microsoft.PowerShell.SecretManagement, Microsoft.PowerShell.Secre
 
 ## Register
 
-When registering a new secret vault using `Microsoft.PowerShell.SecretStore`, via [`Register-PodeSecretVault`], the `-UnlockSecret` parameter is **mandatory**. This will be used to assign the required default password for the secret vault and to periodically unlock the vault.
+When registering a new secret vault using `Microsoft.PowerShell.SecretStore`, via [`Register-PodeSecretVault`](../../../../Functions/Secrets/Register-PodeSecretVault), the `-UnlockSecret` parameter is **mandatory**. This will be used to assign the required default password for the secret vault and to periodically unlock the vault.
 
 There are also some default values set for some parameters to make life a little easier, however, these can be overwritten if needed by directly supplying the parameter:
 
