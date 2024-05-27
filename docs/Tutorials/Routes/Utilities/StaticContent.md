@@ -224,7 +224,7 @@ For example, you have to hide or make some computation to a file or a folder bef
 Start-PodeServer -ScriptBlock {
     Add-PodeRoute -Method Get -Path '/LICENSE.txt' -ScriptBlock {
         $value = @'
-Don't kidding me. Nobody will believe that you want to read this legalise nonsense.
+Don't kid me. Nobody will believe that you want to read this legal nonsense.
 I want to be kind; this is a summary of the content:
 
 Nothing to report :D

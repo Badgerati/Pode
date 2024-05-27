@@ -243,6 +243,15 @@ function Invoke-PodeBuildDockerBuild($tag, $file) {
     }
 }
 
+function Split-PodeBuildPwshPath {
+    if (Test-PodeBuildOSWindows) {
+        return $env:PSModulePath -split ';'
+    }
+    else {
+        return $env:PSModulePath -split ':'
+    }
+}
+
 
 <#
 # Helper Tasks
@@ -417,21 +426,25 @@ Task Pack Build, {
     # create the pkg dir
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
-    # which folders do we need?
+    # which source folders do we need? create them and copy their contents
     $folders = @('Private', 'Public', 'Misc', 'Libs')
-
-    # create the directories, then copy the source
     $folders | ForEach-Object {
         New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
         Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
     }
 
+    # which route folders to we need? create them and copy their contents
+    $folders = @('licenses')
+    $folders | ForEach-Object {
+        New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
+        Copy-Item -Path "./$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
+    }
+
     # copy general files
-    Copy-Item -Path ./src/Pode.psm1 -Destination $path -Force | Out-Null
-    Copy-Item -Path ./src/Pode.psd1 -Destination $path -Force | Out-Null
-    Copy-Item -Path ./src/Pode.Internal.psm1 -Destination $path -Force | Out-Null
-    Copy-Item -Path ./src/Pode.Internal.psd1 -Destination $path -Force | Out-Null
-    Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
+    $files = @('src/Pode.psm1', 'src/Pode.psd1', 'src/Pode.Internal.psm1', 'src/Pode.Internal.psd1', 'LICENSE.txt')
+    $files | ForEach-Object {
+        Copy-Item -Path "./$($_)" -Destination $path -Force | Out-Null
+    }
 }, StampVersion, Compress, ChocoPack, DockerPack
 
 
@@ -507,7 +520,7 @@ Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
 
 # Synopsis: Run the documentation locally
 Task Docs DocsDeps, DocsHelpBuild, {
-    mkdocs serve
+    mkdocs serve --open
 }
 
 # Synopsis: Build the function help documentation
@@ -626,71 +639,48 @@ Task CleanListener {
 #>
 
 # Synopsis: Install Pode Module locally
-Task Install-Module {
+Task Install-Module -If ($Version) Pack, {
+    $PSPaths = Split-PodeBuildPwshPath
+
+    $dest = Join-Path -Path $PSPaths[0] -ChildPath 'Pode' -AdditionalChildPath "$Version"
+    if (Test-Path $dest) {
+        Remove-Item -Path $dest -Recurse -Force | Out-Null
+    }
+
+    # create the dest dir
+    New-Item -Path $dest -ItemType Directory -Force | Out-Null
     $path = './pkg'
-    if ($Version) {
-        if (! (Test-Path $path)) {
-            Invoke-Build Pack -Version $Version
-        }
 
-        if (Test-PodeBuildOSWindows) {
-            $PSPaths = $ENV:PSModulePath -split ';'
-        }
-        else {
-            $PSPaths = $ENV:PSModulePath -split ':'
-        }
-
-        $dest = join-path -Path  $PSPaths[0]  -ChildPath 'Pode' -AdditionalChildPath "$Version"
-
-        if (Test-Path $dest) {
-            Remove-Item -Path $dest -Recurse -Force | Out-Null
-        }
-
-        # create the dest dir
-        New-Item -Path $dest -ItemType Directory -Force | Out-Null
-
-        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Private'  ) -Destination  $dest -Force -Recurse | Out-Null
-        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Public'  ) -Destination  $dest -Force -Recurse | Out-Null
-        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Misc'  ) -Destination  $dest -Force -Recurse | Out-Null
-        Copy-Item -Path  (Join-Path -Path $path -ChildPath 'Libs'  ) -Destination  $dest -Force -Recurse | Out-Null
-
-        # copy general files
-        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.psm1') -Destination $dest -Force | Out-Null
-        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.psd1') -Destination $dest -Force | Out-Null
-        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.Internal.psm1') -Destination $dest -Force | Out-Null
-        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'Pode.Internal.psd1') -Destination $dest -Force | Out-Null
-        Copy-Item -Path $(Join-Path -Path $path -ChildPath 'LICENSE.txt') -Destination $dest -Force | Out-Null
-
-        Write-Host "Deployed to $dest"
+    # copy over folders
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses')
+    $folders | ForEach-Object {
+        Copy-Item -Path (Join-Path -Path $path -ChildPath $_) -Destination $dest -Force -Recurse | Out-Null
     }
-    else {
-        Write-Error 'Parameter -Version is required'
+
+    # copy over general files
+    $files = @('Pode.psm1', 'Pode.psd1', 'Pode.Internal.psm1', 'Pode.Internal.psd1', 'LICENSE.txt')
+    $files | ForEach-Object {
+        Copy-Item -Path (Join-Path -Path $path -ChildPath $_) -Destination $dest -Force | Out-Null
     }
+
+    Write-Host "Deployed to $dest"
 }
 
 # Synopsis: Remove the Pode Module from the local registry
 Task Remove-Module {
-    if ($Version) {
-        if (Test-PodeBuildOSWindows) {
-            $PSPaths = $ENV:PSModulePath -split ';'
-        }
-        else {
-            $PSPaths = $ENV:PSModulePath -split ':'
-        }
-
-        $dest = join-path -Path  $PSPaths[0]  -ChildPath 'Pode' -AdditionalChildPath "$Version"
-
-        if (Test-Path $dest) {
-            Write-Host "Deleting module from $dest"
-            Remove-Item -Path $dest -Recurse -Force | Out-Null
-        }
-        else {
-            Write-Error "Directory $dest doesn't exist"
-        }
+    if (!$Version) {
+        throw 'Parameter -Version is required'
     }
-    else {
-        Write-Error 'Parameter -Version is required'
+
+    $PSPaths = Split-PodeBuildPwshPath
+
+    $dest = Join-Path -Path $PSPaths[0] -ChildPath 'Pode' -AdditionalChildPath "$Version"
+    if (!(Test-Path $dest)) {
+        Write-Warning "Directory $dest doesn't exist"
     }
+
+    Write-Host "Deleting module from $dest"
+    Remove-Item -Path $dest -Recurse -Force | Out-Null
 }
 
 
