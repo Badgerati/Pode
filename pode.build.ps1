@@ -520,7 +520,7 @@ Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
 
 # Synopsis: Run the documentation locally
 Task Docs DocsDeps, DocsHelpBuild, {
-    mkdocs serve
+    mkdocs serve --open
 }
 
 # Synopsis: Build the function help documentation
