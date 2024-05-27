@@ -906,7 +906,7 @@ task ReleaseNotes {
         }
 
         foreach ($dep in $dependabot.Values) {
-            $categories[$label] += "* #$($dep.Number) Bump $($dep.Name) from $($dep.From) to $($dep.To)"
+            $categories[$label] += "* #$($dep.Number): Bump $($dep.Name) from $($dep.From) to $($dep.To)"
         }
     }
 
