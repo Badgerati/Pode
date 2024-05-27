@@ -1,16 +1,16 @@
 # PowerShell Support Policy
 
 ## Overview
-This document details the support policy for PowerShell versions as they relate to Pode releases. Our aim is to provide clarity on which versions of PowerShell are supported by each release of Pode, ensuring a secure, efficient, and compatible development environment.
+This document details the support policy for PowerShell versions as they relate to Pode releases. We aim to provide clarity on which versions of PowerShell are supported by each release of Pode, ensuring a secure, efficient, and compatible development environment.
 
 ## Policy Statement
-Pode commits to supporting PowerShell versions that are not end of life (EOL) at the moment of each Pode release. This dynamic approach allows Pode to adapt to the evolving PowerShell ecosystem, ensuring compatibility with recent and supported PowerShell versions while maintaining a high security standard.
+Pode commits to supporting PowerShell versions that are not end-of-life (EOL) at the moment of each Pode release. This dynamic approach allows Pode to adapt to the evolving PowerShell ecosystem, ensuring compatibility with recent and supported PowerShell versions while maintaining a high-security standard.
 
 ### Support Lifecycle
 - For each Pode release, support is extended to versions of PowerShell that are not EOL at the time of release.
 - Subsequent Pode releases may not support previously compatible PowerShell versions if those versions have reached EOL in the interim.
-- This policy applies to all versions of PowerShell, including PowerShell (version 7.x), PowerShell Core (versions 6.x) and Windows PowerShell 5.1.
-- Windows Powershell 5.1 will be supported by any Pode version released prior the Jan 7 2027
+- This policy applies to all versions of PowerShell, including PowerShell (version 7.x), PowerShell Core (version 6.x), and Windows PowerShell 5.1.
+- Windows Powershell 5.1 will be supported by any Pode version released prior to January 7th 2027
 
 ### Example
 - **Pode 2.10 Release (April 2024)**: Supports PowerShell 7.2, 7.3, 7.4, and Windows PowerShell 5.1, assuming none are EOL at the time of release.

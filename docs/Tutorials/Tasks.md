@@ -25,7 +25,7 @@ Add-PodeTask -Name 'Example' -ScriptBlock {
 }
 ```
 
-Usually all tasks are created within the main `Start-PodeServer` scope, however it is possible to create adhoc tasks with routes/etc. If you create adhoc tasks in this manor, you might notice that they don't run when invoked; this is because the Runspace that tasks use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
+Usually all tasks are created within the main `Start-PodeServer` scope, however it is possible to create adhoc tasks with routes/etc. If you create adhoc tasks in this manner, you might notice that they don't run when invoked; this is because the Runspace that tasks use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
 
 ```powershell
 Start-PodeServer -EnablePool Tasks {

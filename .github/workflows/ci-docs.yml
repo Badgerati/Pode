@@ -1,0 +1,47 @@
+name: Pode CI - Docs
+
+on:
+  push:
+    branches:
+    - '*'
+    - '!gh-pages'
+    paths:
+    - 'mkdocs.yml'
+    - 'mkdocs-overrides/**'
+    - 'docs/**'
+    - '.github/workflows/ci-docs.yml'
+    - 'pode.build.ps1'
+    - 'src/Pode.psd1'
+  pull_request:
+    branches:
+    - '*'
+    paths:
+    - 'mkdocs.yml'
+    - 'mkdocs-overrides/**'
+    - 'docs/**'
+    - '.github/workflows/ci-docs.yml'
+    - 'pode.build.ps1'
+    - 'src/Pode.psd1'
+
+env:
+  INVOKE_BUILD_VERSION: '5.11.1'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Invoke-Build
+      shell: pwsh
+      run: |
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+
+    - name: Build Documentation
+      shell: pwsh
+      run: |
+        Invoke-Build DocsBuild

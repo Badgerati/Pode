@@ -11,7 +11,7 @@ BeforeAll {
 Describe 'Authentication Requests' {
 
     BeforeAll {
-        $Port = 50000
+        $Port = 8080
         $Endpoint = "http://127.0.0.1:$($Port)"
 
         Start-Job -Name 'Pode' -ErrorAction Stop -ScriptBlock {

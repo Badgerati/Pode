@@ -1,5 +1,40 @@
 # Release Notes
 
+## v2.10.1
+
+Data: 27th May 2024
+
+```plain
+### Bugs
+* #1300: Adds a Test-Path check when loading modules
+* #1300: Fixes a stack overflow exception when using: scoped variables are remapped
+* #1301: Adds missing Name property to WindowsAd, WindowsLocal, and UserFile authentications
+* #1303: Handle SecretStore vaults better with inbuilt defaults
+* #1303: Resolve a threading issue with secrets
+
+### Documentation
+* #1290: Fixes a typo in Tasks.md (thanks @fatherofinvention!)
+* #1302: Alter Pode views documentation page to use Get-LocalUser instead of dummy function
+* #1303: Write documentation for SecretStore vaults
+* #1313: Adds documentation for CIM modules, and needing to import them first
+
+### Packaging
+* #1304: Bumps InvokeBuild to 5.11.1
+* #1304: Ported a more concise and stable version of the PowerShell installer for workflows
+* #1305: Only run CI workflows when required
+* #1312: Adds auto release notes generator to build file
+* #1315: Fixes docker builds on GitHub runners
+* #1315: Removes support for PS7.3 GitHub runners, and NET7 now that they are EOL
+* #1316: Split the license file up, add missing ones, and add the dependency licenses to be released with Pode
+
+### Dependencies
+* #1309: Bump the version of mkdocs to 1.6.0
+* #1309: Bump the version of mkdocs-material theme to 9.5.23
+* #1310: Have Dependabot ensure that GitHub actions are up-to-date
+* #1311: Bump actions/add-to-project from 0.3.0 to 1.0.1
+* #1314: Bump Dockerfiles to PowerShell 7.4
+```
+
 ## v2.10.0
 
 Date: 15th April 2024

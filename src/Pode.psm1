@@ -25,9 +25,6 @@ else {
     if ($PSVersionTable.PSVersion -ge [version]'7.4.0') {
         Add-Type -LiteralPath "$($root)/Libs/net8.0/Pode.dll" -ErrorAction Stop
     }
-    elseif ($PSVersionTable.PSVersion -ge [version]'7.3.0') {
-        Add-Type -LiteralPath "$($root)/Libs/net7.0/Pode.dll" -ErrorAction Stop
-    }
     elseif ($PSVersionTable.PSVersion -ge [version]'7.2.0') {
         Add-Type -LiteralPath "$($root)/Libs/net6.0/Pode.dll" -ErrorAction Stop
     }

@@ -5,13 +5,25 @@ on:
     branches:
     - '*'
     - '!gh-pages'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-powershell.yml'
   pull_request:
     branches:
     - '*'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-powershell.yml'
+
+env:
+  INVOKE_BUILD_VERSION: '5.11.1'
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     strategy:
@@ -34,10 +46,16 @@ jobs:
       shell: powershell
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
 
     - name: Run Pester Tests
       shell: powershell
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-Build Test
+
+    - name: Build Packages
+      shell: powershell
+      run: |
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-Build Pack
