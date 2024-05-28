@@ -40,11 +40,16 @@
             }
         }
         AutoImport  = @{
-            Functions = @{
+            Functions    = @{
                 ExportOnly = $true
             }
-            Modules   = @{
+            Modules      = @{
                 ExportOnly = $true
+            }
+            SecretVaults = @{
+                SecretManagement = @{
+                    ExportOnly = $true
+                }
             }
         }
         Request     = @{

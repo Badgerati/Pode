@@ -1,6 +1,8 @@
+Project URL: https://github.com/Redocly/redoc
+
 The MIT License (MIT)
 
-Copyright (c) [2017-2024] [Matthew Kelly (Badgerati)]
+Copyright (c) 2015-present, Rebilly, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

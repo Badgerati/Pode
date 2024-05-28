@@ -36,13 +36,83 @@ function Register-PodeSecretManagementVault {
     $null = Import-Module -Name Microsoft.PowerShell.SecretManagement -Force -DisableNameChecking -Scope Global -ErrorAction Stop -Verbose:$false
     $null = Import-Module -Name $ModuleName -Force -DisableNameChecking -Scope Global -ErrorAction Stop -Verbose:$false
 
+    # export the modules for pode
+    Export-PodeModule -Name @('Microsoft.PowerShell.SecretManagement', $ModuleName)
+
+    # is this the local SecretStore provider?
+    $isSecretStore = ($ModuleName -ieq 'Microsoft.PowerShell.SecretStore')
+
+    # check if we have an unlock password for local secret store
+    if ($isSecretStore) {
+        if ([string]::IsNullOrEmpty($VaultConfig.Unlock.Secret)) {
+            throw 'An "-UnlockSecret" is required when using Microsoft.PowerShell.SecretStore'
+        }
+    }
+
+    # does the local secret store already exist?
+    $secretStoreExists = ($isSecretStore -and (Test-PodeSecretVaultInternal -Name $VaultName))
+
+    # do we have vault params?
+    $hasVaultParams = ($null -ne $VaultConfig.Parameters)
+
     # attempt to register the vault
-    $null = Register-SecretVault -Name $VaultName -ModuleName $ModuleName -VaultParameters $VaultConfig.Parameters -Confirm:$false -AllowClobber -ErrorAction Stop
+    $registerParams = @{
+        Name         = $VaultName
+        ModuleName   = $ModuleName
+        Confirm      = $false
+        AllowClobber = $true
+        ErrorAction  = 'Stop'
+    }
+
+    if (!$isSecretStore -and $hasVaultParams) {
+        $registerParams['VaultParameters'] = $VaultConfig.Parameters
+    }
+
+    $null = Register-SecretVault @registerParams
 
     # all is good, so set the config
     $VaultConfig['SecretManagement'] = @{
         VaultName  = $VaultName
         ModuleName = $ModuleName
+    }
+
+    # set local secret store config
+    if ($isSecretStore) {
+        if (!$hasVaultParams) {
+            $VaultConfig.Parameters = @{}
+        }
+
+        $vaultParams = $VaultConfig.Parameters
+
+        # remove the password
+        $vaultParams.Remove('Password')
+
+        # set default authentication and interaction flags
+        if ([string]::IsNullOrEmpty($vaultParams.Authentication)) {
+            $vaultParams['Authentication'] = 'Password'
+        }
+
+        if ([string]::IsNullOrEmpty($vaultParams.Interaction)) {
+            $vaultParams['Interaction'] = 'None'
+        }
+
+        # set default password timeout and unlock interval to 1 minute
+        if ($VaultConfig.Unlock.Interval -le 0) {
+            $VaultConfig.Unlock.Interval = 1
+        }
+
+        # unlock the vault, and set password
+        $VaultConfig | Unlock-PodeSecretManagementVault
+
+        # set the password timeout for the vault
+        if (!$secretStoreExists) {
+            if ($VaultConfig.Parameters.PasswordTimeout -le 0) {
+                $vaultParams['PasswordTimeout'] = ($VaultConfig.Unlock.Interval * 60) + 10
+            }
+        }
+
+        # set config
+        $null = Set-SecretStoreConfiguration @vaultParams -Confirm:$false -ErrorAction Stop
     }
 }
 
@@ -129,10 +199,10 @@ function Unlock-PodeSecretCustomVault {
     }
 
     # unlock the vault, and get back an expiry
-    $expiry = (Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unlock -Splat -Return -Arguments @(
-            $VaultConfig.Parameters,
+    $expiry = Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unlock -Splat -Return -Arguments @(
+        $VaultConfig.Parameters,
         (ConvertFrom-SecureString -SecureString $VaultConfig.Unlock.Secret -AsPlainText)
-        ))
+    )
 
     # return expiry if given, otherwise check interval
     if ($null -ne $expiry) {
@@ -222,10 +292,10 @@ function Get-PodeSecretCustomKey {
     $_vault = $PodeContext.Server.Secrets.Vaults[$Vault]
 
     # fetch the secret
-    return (Invoke-PodeScriptBlock -ScriptBlock $_vault.Custom.Read -Splat -Return -Arguments (@(
-                $_vault.Parameters,
-                $Key
-            ) + $ArgumentList))
+    return Invoke-PodeScriptBlock -ScriptBlock $_vault.Custom.Read -Splat -Return -Arguments (@(
+            $_vault.Parameters,
+            $Key
+        ) + $ArgumentList)
 }
 
 function Set-PodeSecretManagementKey {
@@ -469,4 +539,14 @@ function Protect-PodeSecretValueType {
     }
 
     return $Value
+}
+
+function Test-PodeSecretVaultInternal {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    return ($null -ne (Get-SecretVault -Name $Name -ErrorAction Ignore))
 }

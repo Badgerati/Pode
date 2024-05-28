@@ -144,6 +144,7 @@ function Register-PodeSecretVault {
         Type         = $PSCmdlet.ParameterSetName.ToLowerInvariant()
         Parameters   = $VaultParameters
         AutoImported = $false
+        LockableName = "__Pode_SecretVault_$($Name)__"
         Unlock       = @{
             Secret   = $UnlockSecureSecret
             Expiry   = $null
@@ -181,6 +182,9 @@ function Register-PodeSecretVault {
 
     # create timer to clear cached secrets every minute
     Start-PodeSecretCacheHousekeeper
+
+    # create a lockable so secrets are thread safe
+    New-PodeLockable -Name $vault.LockableName
 
     # add vault config to context
     $PodeContext.Server.Secrets.Vaults[$Name] = $vault
@@ -270,13 +274,15 @@ function Unlock-PodeSecretVault {
     }
 
     # unlock depending on vault type, and set expiry
-    switch ($vault.Type) {
-        'custom' {
-            $expiry = $vault | Unlock-PodeSecretCustomVault
-        }
+    $expiry = Lock-PodeObject -Name $vault.LockableName -Return -ScriptBlock {
+        switch ($vault.Type) {
+            'custom' {
+                return ($vault | Unlock-PodeSecretCustomVault)
+            }
 
-        'secretmanagement' {
-            $expiry = $vault | Unlock-PodeSecretManagementVault
+            'secretmanagement' {
+                return ($vault | Unlock-PodeSecretManagementVault)
+            }
         }
     }
 
@@ -556,13 +562,16 @@ function Get-PodeSecret {
     }
 
     # fetch the secret depending on vault type
-    switch ($PodeContext.Server.Secrets.Vaults[$secret.Vault].Type) {
-        'custom' {
-            $value = Get-PodeSecretCustomKey -Vault $secret.Vault -Key $secret.Key -ArgumentList $secret.Arguments
-        }
+    $vault = $PodeContext.Server.Secrets.Vaults[$secret.Vault]
+    $value = Lock-PodeObject -Name $vault.LockableName -Return -ScriptBlock {
+        switch ($vault.Type) {
+            'custom' {
+                return Get-PodeSecretCustomKey -Vault $secret.Vault -Key $secret.Key -ArgumentList $secret.Arguments
+            }
 
-        'secretmanagement' {
-            $value = Get-PodeSecretManagementKey -Vault $secret.Vault -Key $secret.Key
+            'secretmanagement' {
+                return Get-PodeSecretManagementKey -Vault $secret.Vault -Key $secret.Key
+            }
         }
     }
 
@@ -678,13 +687,16 @@ function Update-PodeSecret {
     }
 
     # set the secret depending on vault type
-    switch ($PodeContext.Server.Secrets.Vaults[$secret.Vault].Type) {
-        'custom' {
-            Set-PodeSecretCustomKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata -ArgumentList $secret.Arguments
-        }
+    $vault = $PodeContext.Server.Secrets.Vaults[$secret.Vault]
+    Lock-PodeObject -Name $vault.LockableName -ScriptBlock {
+        switch ($vault.Type) {
+            'custom' {
+                Set-PodeSecretCustomKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata -ArgumentList $secret.Arguments
+            }
 
-        'secretmanagement' {
-            Set-PodeSecretManagementKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata
+            'secretmanagement' {
+                Set-PodeSecretManagementKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata
+            }
         }
     }
 }
@@ -730,13 +742,16 @@ function Remove-PodeSecret {
     }
 
     # remove the secret depending on vault type
-    switch ($PodeContext.Server.Secrets.Vaults[$Vault].Type) {
-        'custom' {
-            Remove-PodeSecretCustomKey -Vault $Vault -Key $Key -ArgumentList $ArgumentList
-        }
+    $_vault = $PodeContext.Server.Secrets.Vaults[$Vault]
+    Lock-PodeObject -Name $_vault.LockableName -ScriptBlock {
+        switch ($_vault.Type) {
+            'custom' {
+                Remove-PodeSecretCustomKey -Vault $Vault -Key $Key -ArgumentList $ArgumentList
+            }
 
-        'secretmanagement' {
-            Remove-PodeSecretManagementKey -Vault $Vault -Key $Key
+            'secretmanagement' {
+                Remove-PodeSecretManagementKey -Vault $Vault -Key $Key
+            }
         }
     }
 }
@@ -799,13 +814,16 @@ function Read-PodeSecret {
     }
 
     # fetch the secret depending on vault type
-    switch ($PodeContext.Server.Secrets.Vaults[$Vault].Type) {
-        'custom' {
-            $value = Get-PodeSecretCustomKey -Vault $Vault -Key $Key -ArgumentList $ArgumentList
-        }
+    $_vault = $PodeContext.Server.Secrets.Vaults[$Vault]
+    $value = Lock-PodeObject -Name $_vault.LockableName -Return -ScriptBlock {
+        switch ($_vault.Type) {
+            'custom' {
+                return Get-PodeSecretCustomKey -Vault $Vault -Key $Key -ArgumentList $ArgumentList
+            }
 
-        'secretmanagement' {
-            $value = Get-PodeSecretManagementKey -Vault $Vault -Key $Key
+            'secretmanagement' {
+                return Get-PodeSecretManagementKey -Vault $Vault -Key $Key
+            }
         }
     }
 
@@ -884,13 +902,16 @@ function Set-PodeSecret {
     $InputObject = Protect-PodeSecretValueType -Value $InputObject
 
     # set the secret depending on vault type
-    switch ($PodeContext.Server.Secrets.Vaults[$Vault].Type) {
-        'custom' {
-            Set-PodeSecretCustomKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata -ArgumentList $ArgumentList
-        }
+    $_vault = $PodeContext.Server.Secrets.Vaults[$Vault]
+    Lock-PodeObject -Name $_vault.LockableName -ScriptBlock {
+        switch ($_vault.Type) {
+            'custom' {
+                Set-PodeSecretCustomKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata -ArgumentList $ArgumentList
+            }
 
-        'secretmanagement' {
-            Set-PodeSecretManagementKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata
+            'secretmanagement' {
+                Set-PodeSecretManagementKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata
+            }
         }
     }
 }

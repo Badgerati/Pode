@@ -1,5 +1,5 @@
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]
     $AzureSubscriptionId
 )
@@ -12,7 +12,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 Start-PodeServer -Threads 2 {
     # listen
-    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     # logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -20,27 +20,23 @@ Start-PodeServer -Threads 2 {
 
     # secret manage azure keyvault - need to run "Connect-AzAccount" first!
     Register-PodeSecretVault -Name 'PodeTest_SMAZVault' -ModuleName 'Az.KeyVault' -VaultParameters @{
-        AZKVaultName = 'pode-test-kv'
+        AZKVaultName   = 'pode-test-kv'
         SubscriptionId = $AzureSubscriptionId
     }
 
     # custom vault cli
-    Register-PodeSecretVault -Name 'PodeTest_CustomVault' -CacheTtl 1 `
-        -VaultParameters @{
-            Address = 'http://127.0.0.1:8200'
-        } `
-        -ScriptBlock {
-            param($config, $key)
-            return (vault kv get -format json -address $config.Address -mount secret $key | ConvertFrom-Json -AsHashtable).data.data
-        } `
-        -SetScriptBlock {
-            param($config, $key, $value)
-            vault kv put -address $config.Address -mount secret $key "$($value.Keys[0])=$($value.Values[0])"
-        } `
-        -RemoveScriptBlock {
-            param($config, $key)
-            vault kv destroy -address $config.Address -versions 1 -mount secret $key
-        }
+    Register-PodeSecretVault -Name 'PodeTest_CustomVault' -CacheTtl 1 -VaultParameters @{
+        Address = 'http://127.0.0.1:8200'
+    } -ScriptBlock {
+        param($config, $key)
+        return (vault kv get -format json -address $config.Address -mount secret $key | ConvertFrom-Json -AsHashtable).data.data
+    } -SetScriptBlock {
+        param($config, $key, $value)
+        vault kv put -address $config.Address -mount secret $key "$($value.Keys[0])=$($value.Values[0])"
+    } -RemoveScriptBlock {
+        param($config, $key)
+        vault kv destroy -address $config.Address -versions 1 -mount secret $key
+    }
 
 
     # mount a secret from vault cli
@@ -92,6 +88,6 @@ Start-PodeServer -Threads 2 {
 
     Add-PodeRoute -Method Delete -Path '/adhoc/:key' -ScriptBlock {
         Remove-PodeSecret -Key $WebEvent.Parameters['key'] -Vault 'PodeTest_CustomVault'
-        Dismount-PodeSecret -Name $WebEvent.Parameters['key'] 
+        Dismount-PodeSecret -Name $WebEvent.Parameters['key']
     }
 }

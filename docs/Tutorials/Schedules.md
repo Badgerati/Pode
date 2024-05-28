@@ -37,7 +37,7 @@ Add-PodeSchedule -Name 'date' -Cron @('@minutely', '@hourly') -ScriptBlock {
 }
 ```
 
-Usually all schedules are created within the main `Start-PodeServer` scope, however it is possible to create adhoc schedules with routes/etc. If you create adhoc schedules in this manor, you might notice that they don't run; this is because the Runspace that schedules use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
+Usually all schedules are created within the main `Start-PodeServer` scope, however it is possible to create adhoc schedules with routes/etc. If you create adhoc schedules in this manner, you might notice that they don't run; this is because the Runspace that schedules use to run won't have been configured. You can configure by using `-EnablePool` on [`Start-PodeServer`](../../Functions/Core/Start-PodeServer):
 
 ```powershell
 Start-PodeServer -EnablePool Schedules {
@@ -169,18 +169,18 @@ Invoke-PodeSchedule -Name 'date' -ArgumentList @{ Date = [DateTime]::Now }
 
 The following is the structure of the Schedule object internally, as well as the object that is returned from [`Get-PodeSchedule`](../../Functions/Schedules/Get-PodeSchedule):
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| Name | string | The name of the Schedule |
-| StartTime | datetime | The delayed start time of the Schedule |
-| EndTime | datetime | The end time of the Schedule |
-| Crons | hashtable[] | The cron expressions of the Schedule, but parsed into an internal format |
-| CronsRaw | string[] | The raw cron expressions that were supplied |
-| Limit | int | The number of times the Schedule should run - 0 if running infinitely |
-| Count | int | The number of times the Schedule has run |
-| LastTriggerTime | datetime | The datetime the Schedule was last triggered |
-| NextTriggerTime | datetime | The datetime the Schedule will next be triggered |
-| Script | scriptblock | The scriptblock of the Schedule |
-| Arguments | hashtable | The arguments supplied from ArgumentList |
-| OnStart | bool | Should the Schedule run once when the server is starting, or once the server has fully loaded |
-| Completed | bool | Has the Schedule completed all of its runs |
+| Name            | Type        | Description                                                                                   |
+| --------------- | ----------- | --------------------------------------------------------------------------------------------- |
+| Name            | string      | The name of the Schedule                                                                      |
+| StartTime       | datetime    | The delayed start time of the Schedule                                                        |
+| EndTime         | datetime    | The end time of the Schedule                                                                  |
+| Crons           | hashtable[] | The cron expressions of the Schedule, but parsed into an internal format                      |
+| CronsRaw        | string[]    | The raw cron expressions that were supplied                                                   |
+| Limit           | int         | The number of times the Schedule should run - 0 if running infinitely                         |
+| Count           | int         | The number of times the Schedule has run                                                      |
+| LastTriggerTime | datetime    | The datetime the Schedule was last triggered                                                  |
+| NextTriggerTime | datetime    | The datetime the Schedule will next be triggered                                              |
+| Script          | scriptblock | The scriptblock of the Schedule                                                               |
+| Arguments       | hashtable   | The arguments supplied from ArgumentList                                                      |
+| OnStart         | bool        | Should the Schedule run once when the server is starting, or once the server has fully loaded |
+| Completed       | bool        | Has the Schedule completed all of its runs                                                    |

@@ -5,13 +5,30 @@ on:
     branches:
     - '*'
     - '!gh-pages'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-pwsh_lts.yml'
+    - 'Dockerfile'
+    - '*.dockerfile'
   pull_request:
     branches:
     - '*'
+    paths:
+    - 'src/**'
+    - 'tests/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/ci-pwsh_lts.yml'
+    - 'Dockerfile'
+    - '*.dockerfile'
+
+env:
+  INVOKE_BUILD_VERSION: '5.11.1'
+  POWERSHELL_VERSION: 'lts'
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -22,32 +39,41 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup Powershell
-      uses: bjompen/UpdatePWSHAction@v1.0.0
-      with:
-        ReleaseVersion: 'lts'
-
-    - name: Check PowerShell version
-      shell: pwsh
-      run: |
-        $PSVersionTable.PSVersion
-
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
+    - name: Setup Powershell - Unix
+      shell: pwsh
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+      run: |
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
+
+    - name: Setup Powershell - Windows
+      shell: PowerShell
+      if: runner.os == 'Windows'
+      run: |
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
+
+    - name: Output PowerShell version
+      shell: pwsh
+      run: |
+        $PSVersionTable.PSVersion
+
     - name: Install Invoke-Build
       shell: pwsh
       run: |
-        Install-Module -Name InvokeBuild -RequiredVersion '5.10.5' -Force
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
 
     - name: Run Pester Tests
       shell: pwsh
       run: |
         Invoke-Build Test
 
-    - name: Test docker builds
+    - name: Build Packages
       shell: pwsh
-      run: | 
-        Invoke-Build DockerPack -Version '0.0.0'
+      run: |
+        Invoke-Build Pack

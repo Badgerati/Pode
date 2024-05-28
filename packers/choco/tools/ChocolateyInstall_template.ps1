@@ -2,16 +2,14 @@ $ErrorActionPreference = 'Stop'
 
 
 # create the module directory, and copy files over
-function Install-PodeModule($path, $version)
-{
+function Install-PodeModule($path, $version) {
     # Create module
     $path = Join-Path $path 'Pode'
     if (![string]::IsNullOrWhiteSpace($version)) {
         $path = Join-Path $path $version
     }
 
-    if (!(Test-Path $path))
-    {
+    if (!(Test-Path $path)) {
         Write-Host "Creating module directory: $($path)"
         New-Item -ItemType Directory -Path $path -Force | Out-Null
         if (!$?) {
@@ -22,25 +20,21 @@ function Install-PodeModule($path, $version)
     # Copy contents to module
     Write-Host 'Copying scripts to module path'
 
-    try
-    {
+    try {
         Push-Location (Join-Path $toolsDir 'src')
 
         # which folders do we need?
-        $folders = @('Private', 'Public', 'Misc', 'Libs')
-
-        # create the directories, then copy the source
+        $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses')
         $folders | ForEach-Object {
             New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
             Copy-Item -Path "./$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
         }
 
         # copy general files
-        Copy-Item -Path ./Pode.psm1 -Destination $path -Force | Out-Null
-        Copy-Item -Path ./Pode.psd1 -Destination $path -Force | Out-Null
-        Copy-Item -Path ./Pode.Internal.psm1 -Destination $path -Force | Out-Null
-        Copy-Item -Path ./Pode.Internal.psd1 -Destination $path -Force | Out-Null
-        Copy-Item -Path ./LICENSE.txt -Destination $path -Force | Out-Null
+        $files = @('Pode.psm1', 'Pode.psd1', 'Pode.Internal.psm1', 'Pode.Internal.psd1', 'LICENSE.txt')
+        $files | ForEach-Object {
+            Copy-Item -Path "./$($_)" -Destination $path -Force | Out-Null
+        }
     }
     finally {
         Pop-Location
@@ -61,8 +55,7 @@ $modulePath = Join-Path $progFiles (Join-Path 'WindowsPowerShell' 'Modules')
 
 # Check to see if Modules path is in PSModulePaths
 $psModules = $env:PSModulePath
-if (!$psModules.Contains($modulePath))
-{
+if (!$psModules.Contains($modulePath)) {
     Write-Host 'Adding module path to PSModulePaths'
     $psModules += ";$modulePath"
     Install-ChocolateyEnvironmentVariable -VariableName 'PSModulePath' -VariableValue $psModules -VariableType Machine
@@ -81,8 +74,7 @@ else {
 # Install PS-Core Module
 $def = (Get-Command pwsh -ErrorAction SilentlyContinue).Definition
 
-if (![string]::IsNullOrWhiteSpace($def))
-{
+if (![string]::IsNullOrWhiteSpace($def)) {
     # Set the module path
     $modulePath = Join-Path $progFiles (Join-Path 'PowerShell' 'Modules')
 

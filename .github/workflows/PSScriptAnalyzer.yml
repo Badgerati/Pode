@@ -11,9 +11,23 @@ name: PSScriptAnalyzer
 
 on:
   push:
-    branches: [ "develop" ]
+    branches:
+    - 'develop'
+    paths:
+    - 'src/**.ps1'
+    - 'src/*.psm1'
+    - 'src/*.psd1'
+    - 'PSScriptAnalyzerSettings.psd1'
+    - '.github/workflows/PSScriptAnalyzer.yml'
   pull_request:
-    branches: [ "develop" ]
+    branches:
+    - 'develop'
+    paths:
+    - 'src/**.ps1'
+    - 'src/*.psm1'
+    - 'src/*.psd1'
+    - 'PSScriptAnalyzerSettings.psd1'
+    - '.github/workflows/PSScriptAnalyzer.yml'
   schedule:
     - cron: '20 16 * * 6'
 

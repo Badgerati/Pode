@@ -1,0 +1,53 @@
+name: Pode CI - No Build Needed
+
+on:
+  push:
+    branches:
+    - '*'
+    - '!gh-pages'
+    paths-ignore:
+    - 'mkdocs.yml'
+    - 'mkdocs-overrides/**'
+    - 'docs/**'
+    - 'src/**'
+    - 'tests/**'
+    - '.github/workflows/ci-docs.yml'
+    - '.github/workflows/ci-pwsh*.yml'
+    - '.github/workflows/ci-powershell.yml'
+    - '.github/workflows/ci-coverage.yml'
+    - '.github/workflows/PSScriptAnalyzer.yml'
+    - 'pode.build.ps1'
+    - 'Dockerfile'
+    - '*.dockerfile'
+    - 'PSScriptAnalyzerSettings.psd1'
+  pull_request:
+    branches:
+    - '*'
+    paths-ignore:
+    - 'mkdocs.yml'
+    - 'mkdocs-overrides/**'
+    - 'docs/**'
+    - 'src/**'
+    - 'tests/**'
+    - '.github/workflows/ci-docs.yml'
+    - '.github/workflows/ci-pwsh*.yml'
+    - '.github/workflows/ci-powershell.yml'
+    - '.github/workflows/ci-coverage.yml'
+    - '.github/workflows/PSScriptAnalyzer.yml'
+    - 'pode.build.ps1'
+    - 'Dockerfile'
+    - '*.dockerfile'
+    - 'PSScriptAnalyzerSettings.psd1'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    - name: Install Invoke-Build
+      shell: pwsh
+      run: |
+        Write-Host "No build needed for this commit"
