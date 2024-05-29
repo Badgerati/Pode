@@ -115,6 +115,12 @@ If supplied, the token/key supplied for Bearer/API key authentication will be pa
 .PARAMETER Secret
 An optional Secret, used to sign/verify JWT signatures.
 
+.PARAMETER Negotiate
+If supplied, will use the inbuilt Negotiate Authentication scheme (Kerberos/NTLM).
+
+.PARAMETER KeytabPath
+The path to the Keytab file for Negotiate authentication.
+
 .EXAMPLE
 $basic_auth = New-PodeAuthScheme -Basic
 
@@ -301,7 +307,7 @@ function New-PodeAuthScheme {
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Negotiate')]
         [string]
-        $KeyTabPath
+        $KeytabPath
     )
 
     # default realm
@@ -524,7 +530,7 @@ function New-PodeAuthScheme {
                 InnerScheme   = $InnerScheme
                 Scheme        = 'http'
                 Arguments     = @{
-                    Authenticator = [PodeKerberosAuth]::new($KeyTabPath)
+                    Authenticator = [PodeKerberosAuth]::new($KeytabPath)
                 }
             }
         }

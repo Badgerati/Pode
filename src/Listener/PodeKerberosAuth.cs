@@ -8,18 +8,18 @@ namespace Pode
 {
     public class PodeKerberosAuth
     {
-        private string KeyTabPath { get; set; }
-        private KeyTable KeyTab { get; set; }
+        private string KeytabPath { get; set; }
+        private KeyTable Keytab { get; set; }
         private KerberosAuthenticator Authenticator { get; set; }
         private KerberosValidator Validator { get; set; }
 
-        public PodeKerberosAuth(string keyTabPath)
+        public PodeKerberosAuth(string keytabPath)
         {
-            KeyTabPath = keyTabPath;
-            KeyTab = new KeyTable(File.ReadAllBytes(keyTabPath));
-            Authenticator = new KerberosAuthenticator(KeyTab);
+            KeytabPath = keytabPath;
+            Keytab = new KeyTable(File.ReadAllBytes(keytabPath));
+            Authenticator = new KerberosAuthenticator(Keytab);
 
-            Validator = new KerberosValidator(KeyTab);
+            Validator = new KerberosValidator(Keytab);
             Validator.ValidateAfterDecrypt = ValidationActions.Pac;
         }
 
