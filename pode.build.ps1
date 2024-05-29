@@ -116,6 +116,7 @@ function Invoke-PodeBuildDotnetBuild($target) {
         Write-Host "SDK for target framework $target is not compatible with the installed SDKs. Skipping build."
         return
     }
+
     if ($Version) {
         Write-Host "Assembly Version $Version"
         $AssemblyVersion = "-p:Version=$Version"
@@ -124,6 +125,10 @@ function Invoke-PodeBuildDotnetBuild($target) {
         $AssemblyVersion = ''
     }
 
+    # restore dependencies
+    dotnet restore
+
+    # publish binaries
     dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
     if (!$?) {
         throw "dotnet publish failed for $($target)"
