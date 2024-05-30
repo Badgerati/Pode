@@ -3317,3 +3317,31 @@ function ConvertTo-PodeYamlInternal {
         }
     }
 }
+
+
+
+function Resolve-PodeObjectArray {
+    param (
+        [AllowNull()]
+        $Property
+    )
+    if ($Property -is [hashtable]) {
+        if ($Property.Count -eq 1) {
+            return   New-Object psobject -Property $Property
+        }
+        else {
+            return @(foreach ($v in $Property) {
+                Resolve-PodeObjectArray -Property $v
+                })
+        }
+    }
+    elseif ($Property -is [object[]]) {
+        return @(foreach ($v in $Property) {
+            Resolve-PodeObjectArray -Property $v
+
+            })
+    }
+    else {
+        return   New-Object psobject -Property $Property
+    }
+}

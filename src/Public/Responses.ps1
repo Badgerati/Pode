@@ -431,6 +431,9 @@ The path to a CSV file.
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER UsePropertyName
+The elements name is equal to the key value
+
 .EXAMPLE
 Write-PodeCsvResponse -Value "Name`nRick"
 
@@ -452,7 +455,10 @@ function Write-PodeCsvResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200
+        $StatusCode = 200,
+
+        [switch]
+        $UsePropertyName
     )
     begin {
         $pipelineValue = @()
@@ -473,7 +479,12 @@ function Write-PodeCsvResponse {
                 if ($pipelineValue) {
                     $Value = $pipelineValue
                 }
+
                 if ($Value -isnot [string]) {
+                    if ($UsePropertyName.IsPresent) {
+                        $Value = Resolve-PodeObjectArray -Property $Value
+                    }
+
                     if (Test-PodeIsPSCore) {
                         $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
                     }
@@ -754,11 +765,14 @@ The Depth to generate the XML document - the larger this value the worse perform
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER UsePropertyName
+The elements name is equal to the key value
+
 .EXAMPLE
 Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
 
 .EXAMPLE
-Write-PodeXmlResponse -Value @{ Name = 'Rick' } -StatusCode 201
+Write-PodeXmlResponse -Value @{ Name = 'Rick' } -StatusCode 201 -UsePropertyName
 
 .EXAMPLE
 Write-PodeXmlResponse -Path 'E:/Files/Names.xml'
@@ -781,14 +795,17 @@ function Write-PodeXmlResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200
+        $StatusCode = 200,
+
+        [switch]
+        $UsePropertyName
     )
     begin {
         $pipelineValue = @()
     }
 
     process {
-        if ($PSCmdlet.ParameterSetName -eq 'Value') {
+        if ($PSCmdlet.ParameterSetName -eq 'Value' -and $_) {
             $pipelineValue += $_
         }
     }
@@ -806,7 +823,11 @@ function Write-PodeXmlResponse {
                 if ($pipelineValue) {
                     $Value = $pipelineValue
                 }
+
                 if ($Value -isnot [string]) {
+                    if ($UsePropertyName.IsPresent) {
+                        $Value = Resolve-PodeObjectArray -Property $Value
+                    }
                     $Value = ($Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
                 }
             }
@@ -902,6 +923,13 @@ function Write-PodeYamlResponse {
                 if ($pipelineValue) {
                     $Value = $pipelineValue
                 }
+
+                if ($Value -is [hashtable]) {
+                    $Value = @(foreach ($v in $Value) {
+                            New-Object psobject -Property $v
+                        })
+                }
+
                 if ($Value -isnot [string]) {
                     $Value = ConvertTo-PodeYaml -InputObject $Value -Depth $Depth
 

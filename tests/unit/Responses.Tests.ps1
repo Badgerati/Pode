@@ -274,11 +274,35 @@ Describe 'Write-PodeXmlResponse' {
     }
 
     It 'Converts and returns a value from a hashtable' {
-        $r = Write-PodeXmlResponse -Value @{ 'name' = 'john' }
+        $r = Write-PodeXmlResponse -Value @{ 'name' = 'john' } -UsePropertyName
         ($r.Value -ireplace '[\r\n ]', '') | Should -Be '<?xmlversion="1.0"encoding="utf-8"?><Objects><Object><PropertyName="name">john</Property></Object></Objects>'
         $r.ContentType | Should -Be $_ContentType
     }
 
+    It 'Converts and returns a value from a array of hashtable by pipe' {
+        $r = @(@{ Name = 'Rick' }, @{ Name = 'Don' }) | Write-PodeXmlResponse -UsePropertyName
+        ($r.Value -ireplace '[\r\n ]', '') | Should -Be '<?xmlversion="1.0"encoding="utf-8"?><Objects><Object><PropertyName="Name">Rick</Property></Object><Object><PropertyName="Name">Don</Property></Object></Objects>'
+        $r.ContentType | Should -Be $_ContentType
+    }
+
+    It 'Converts and returns a value from a array of hashtable' {
+        $r = Write-PodeXmlResponse -Value @(@{ Name = 'Rick' }, @{ Name = 'Don' }) -UsePropertyName
+        ($r.Value -ireplace '[\r\n ]', '') | Should -Be '<?xmlversion="1.0"encoding="utf-8"?><Objects><Object><PropertyName="Name">Rick</Property></Object><Object><PropertyName="Name">Don</Property></Object></Objects>'
+        $r.ContentType | Should -Be $_ContentType
+    }
+    It 'Converts and returns a value from a array of process' {
+    $myProcess = Get-Process | .{ process { if ($_.WS -gt 100mb) { $_ } } } |
+    Select-Object Name, @{e = { [int]($_.WS / 1mb) }; n = 'WS' } |
+    Sort-Object WS -Descending
+    Write-PodeXmlResponse  -StatusCode 200 -Value $myProcess
+}
+
+It 'Converts and returns a value from a array of process pipe' {
+    $myProcess = Get-Process | .{ process { if ($_.WS -gt 100mb) { $_ } } } |
+    Select-Object Name, @{e = { [int]($_.WS / 1mb) }; n = 'WS' } |
+    Sort-Object WS -Descending|
+    Write-PodeXmlResponse  -StatusCode 200
+}
     It 'Does nothing for an invalid file path' {
         Mock Test-PodePath { return $false }
         Write-PodeXmlResponse -Path 'fake-file' | Out-Null
