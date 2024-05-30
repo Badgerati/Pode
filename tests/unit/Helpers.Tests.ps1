@@ -4,6 +4,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
 }
 
 Describe 'Get-PodeType' {
@@ -1725,13 +1726,13 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
         }
 
         It 'Converts arrays correctly' {
-            $result =  ConvertTo-PodeYamlInternal -InputObject  @('one', 'two', 'three') -NoNewLine
+            $result = ConvertTo-PodeYamlInternal -InputObject  @('one', 'two', 'three') -NoNewLine
             $expected = (@'
 - one
 - two
 - three
 '@)
-            $result | Should -Be ($expected.Trim() -Replace "`r`n","`n")
+            $result | Should -Be ($expected.Trim() -Replace "`r`n", "`n")
         }
 
         It 'Converts hashtables correctly' {

@@ -4,6 +4,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
 }
 
 $now = [datetime]::UtcNow
@@ -148,15 +149,15 @@ Describe 'Test-PodeJwt' {
 }
 
 
-Describe "Expand-PodeAuthMerge Tests" {
+Describe 'Expand-PodeAuthMerge Tests' {
     BeforeAll {
         # Mock the $PodeContext variable
         $PodeContext = @{
             Server = @{
                 Authentications = @{
                     Methods = @{
-                        BasicAuth = @{ Name = 'BasicAuth'; merged = $false }
-                        ApiKeyAuth = @{ Name = 'ApiKeyAuth'; merged = $false }
+                        BasicAuth        = @{ Name = 'BasicAuth'; merged = $false }
+                        ApiKeyAuth       = @{ Name = 'ApiKeyAuth'; merged = $false }
                         CustomMergedAuth = @{ Name = 'CustomMergedAuth'; merged = $true; Authentications = @('BasicAuth', 'ApiKeyAuth') }
                     }
                 }
@@ -164,27 +165,27 @@ Describe "Expand-PodeAuthMerge Tests" {
         }
     }
 
-    It "Expands discrete authentication methods correctly" {
+    It 'Expands discrete authentication methods correctly' {
         $expandedAuthNames = Expand-PodeAuthMerge -Names @('BasicAuth', 'ApiKeyAuth')
         $expandedAuthNames | Should -Contain 'BasicAuth'
         $expandedAuthNames | Should -Contain 'ApiKeyAuth'
         $expandedAuthNames.Count | Should -Be 2
     }
 
-    It "Expands merged authentication methods into individual components" {
+    It 'Expands merged authentication methods into individual components' {
         $expandedAuthNames = Expand-PodeAuthMerge -Names @('CustomMergedAuth')
         $expandedAuthNames | Should -Contain 'BasicAuth'
         $expandedAuthNames | Should -Contain 'ApiKeyAuth'
         $expandedAuthNames.Count | Should -Be 2
     }
 
-    It "Handles anonymous access special case" {
+    It 'Handles anonymous access special case' {
         $expandedAuthNames = Expand-PodeAuthMerge -Names @('%_allowanon_%')
         $expandedAuthNames | Should -Contain '%_allowanon_%'
         $expandedAuthNames.Count | Should -Be 1
     }
 
-    It "Handles empty and invalid inputs" {
+    It 'Handles empty and invalid inputs' {
         { Expand-PodeAuthMerge -Names @() } | Should -Throw
         { Expand-PodeAuthMerge -Names @('NonExistentAuth') } | Should -Throw
     }
