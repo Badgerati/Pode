@@ -2194,11 +2194,11 @@ function Expand-PodeAuthMerge {
 
 function Import-PodeAuthADModule {
     if (!(Test-PodeIsWindows)) {
-        throw 'Active Directory module only available on Windows'
+        throw $msgTable.adModuleWindowsOnlyMessage #'Active Directory module only available on Windows'
     }
 
     if (!(Test-PodeModuleInstalled -Name ActiveDirectory)) {
-        throw 'Active Directory module is not installed'
+        throw $msgTable.adModuleNotInstalledMessage #'Active Directory module is not installed'
     }
 
     Import-Module -Name ActiveDirectory -Force -ErrorAction Stop

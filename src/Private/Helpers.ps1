@@ -190,7 +190,7 @@ function Get-PodeEndpointInfo {
 
     # validate that we have a valid ip/host:port address
     if (!(($Address -imatch "^$($cmbdRgx)$") -or ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or ($Address -imatch "[\:]{0,1}$($portRgx)$"))) {
-        throw "Failed to parse '$($Address)' as a valid IP/Host:Port address"
+        throw ($msgTable.failedToParseAddressMessage -f $Address)#"Failed to parse '$($Address)' as a valid IP/Host:Port address"
     }
 
     # grab the ip address/hostname
@@ -201,7 +201,7 @@ function Get-PodeEndpointInfo {
 
     # ensure we have a valid ip address/hostname
     if (!(Test-PodeIPAddress -IP $_host)) {
-        throw "The IP address supplied is invalid: $($_host)"
+        throw ($msgTable.invalidIpAddressMessage -f $_host) #"The IP address supplied is invalid: $($_host)"
     }
 
     # grab the port
@@ -212,7 +212,7 @@ function Get-PodeEndpointInfo {
 
     # ensure the port is valid
     if ($_port -lt 0) {
-        throw "The port cannot be negative: $($_port)"
+        throw ($msgTable.invalidPortMessage -f $_port)#"The port cannot be negative: $($_port)"
     }
 
     # return the info
@@ -873,7 +873,7 @@ function New-PodePSDrive {
 
     # if the path supplied doesn't exist, error
     if (!(Test-Path $Path)) {
-        throw "Path does not exist: $($Path)"
+        throw ($msgTable.pathNotExistMessage -f $Path)#"Path does not exist: $($Path)"
     }
 
     # resolve the path

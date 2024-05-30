@@ -1,6 +1,9 @@
 # root path
 $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 
+# Import localized messages
+Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $root -ChildPath 'Locales')
+
 # load assemblies
 Add-Type -AssemblyName System.Web
 Add-Type -AssemblyName System.Net.Http
@@ -17,7 +20,7 @@ if ($podeDll) {
     if ( $moduleManifest.ModuleVersion -ne '$version$') {
         $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
         if ($podeDll.GetName().Version -ne $moduleVersion) {
-            throw "An existing incompatible Pode.DLL version $($podeDll.GetName().Version) is loaded. Version $moduleVersion is required. Open a new Powershell/pwsh session and retry."
+            throw ($msgTable.incompatiblePodeDllMessage -f $podeDll.GetName().Version, $moduleVersion) #"An existing incompatible Pode.DLL version $($podeDll.GetName().Version) is loaded. Version $moduleVersion is required. Open a new Powershell/pwsh session and retry."
         }
     }
 }
@@ -32,6 +35,7 @@ else {
         Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
     }
 }
+
 
 # load private functions
 Get-ChildItem "$($root)/Private/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }

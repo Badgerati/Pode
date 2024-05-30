@@ -41,7 +41,7 @@ function Start-PodeGuiRunspace {
                         Start-Sleep -Milliseconds 200
                     }
                     else {
-                        throw "Failed to connect to URL: $($uri)"
+                        throw ($msgTable.failedToConnectToUrlMessage -f $uri) #"Failed to connect to URL: $($uri)"
                     }
                 }
             }
