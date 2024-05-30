@@ -431,9 +431,6 @@ The path to a CSV file.
 .PARAMETER StatusCode
 The status code to set against the response.
 
-.PARAMETER UsePropertyName
-The elements name is equal to the key value
-
 .EXAMPLE
 Write-PodeCsvResponse -Value "Name`nRick"
 
@@ -455,19 +452,20 @@ function Write-PodeCsvResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200,
-
-        [switch]
-        $UsePropertyName
+        $StatusCode = 200
     )
+
     begin {
         $pipelineValue = @()
     }
+
     process {
         if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
         }
-    }    end {
+    }
+
+    end {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
@@ -481,9 +479,7 @@ function Write-PodeCsvResponse {
                 }
 
                 if ($Value -isnot [string]) {
-                    if ($UsePropertyName.IsPresent) {
-                        $Value = Resolve-PodeObjectArray -Property $Value
-                    }
+                    $Value = Resolve-PodeObjectArray -Property $Value
 
                     if (Test-PodeIsPSCore) {
                         $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
@@ -765,17 +761,35 @@ The Depth to generate the XML document - the larger this value the worse perform
 .PARAMETER StatusCode
 The status code to set against the response.
 
-.PARAMETER UsePropertyName
-The elements name is equal to the key value
-
 .EXAMPLE
 Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
 
 .EXAMPLE
-Write-PodeXmlResponse -Value @{ Name = 'Rick' } -StatusCode 201 -UsePropertyName
+Write-PodeXmlResponse -Value @{ Name = 'Rick' } -StatusCode 201
+
+.EXAMPLE
+@(@{ Name = 'Rick' }, @{ Name = 'Don' }) | Write-PodeXmlResponse
+
+.EXAMPLE
+$users = @([PSCustomObject]@{
+                Name = 'Rick'
+            }, [PSCustomObject]@{
+                Name = 'Don'
+            }
+        )
+Write-PodeXmlResponse -Value $users
+
+.EXAMPLE
+@([PSCustomObject]@{
+        Name = 'Rick'
+    }, [PSCustomObject]@{
+        Name = 'Don'
+    }
+) | Write-PodeXmlResponse
 
 .EXAMPLE
 Write-PodeXmlResponse -Path 'E:/Files/Names.xml'
+
 #>
 function Write-PodeXmlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
@@ -795,10 +809,7 @@ function Write-PodeXmlResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200,
-
-        [switch]
-        $UsePropertyName
+        $StatusCode = 200
     )
     begin {
         $pipelineValue = @()
@@ -825,10 +836,7 @@ function Write-PodeXmlResponse {
                 }
 
                 if ($Value -isnot [string]) {
-                    if ($UsePropertyName.IsPresent) {
-                        $Value = Resolve-PodeObjectArray -Property $Value
-                    }
-                    $Value = ($Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
+                    $Value = Resolve-PodeObjectArray -Property $Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
                 }
             }
         }

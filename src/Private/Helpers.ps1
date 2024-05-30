@@ -3018,31 +3018,31 @@ function Test-PodeVersionDev {
 
 <#
 .SYNOPSIS
-Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.
+    Tests the running PowerShell version for compatibility with Pode, identifying end-of-life (EOL) and untested versions.
 
 .DESCRIPTION
-The `Test-PodeVersionPwshEOL` function checks the current PowerShell version against a list of versions that were either supported or EOL at the time of the Pode release. It uses the module manifest to determine which PowerShell versions are considered EOL and which are officially supported. If the current version is EOL or was not tested with the current release of Pode, the function generates a warning. This function aids in maintaining best practices for using supported PowerShell versions with Pode.
+    The `Test-PodeVersionPwshEOL` function checks the current PowerShell version against a list of versions that were either supported or EOL at the time of the Pode release. It uses the module manifest to determine which PowerShell versions are considered EOL and which are officially supported. If the current version is EOL or was not tested with the current release of Pode, the function generates a warning. This function aids in maintaining best practices for using supported PowerShell versions with Pode.
 
 .PARAMETER ReportUntested
-If specified, the function will report if the current PowerShell version was not available and thus untested at the time of the Pode release. This is useful for identifying potential compatibility issues with newer versions of PowerShell.
+    If specified, the function will report if the current PowerShell version was not available and thus untested at the time of the Pode release. This is useful for identifying potential compatibility issues with newer versions of PowerShell.
 
 .OUTPUTS
-A hashtable containing two keys:
-- `eol`: A boolean indicating if the current PowerShell version was EOL at the time of the Pode release.
-- `supported`: A boolean indicating if the current PowerShell version was officially supported by Pode at the time of the release.
+    A hashtable containing two keys:
+    - `eol`: A boolean indicating if the current PowerShell version was EOL at the time of the Pode release.
+    - `supported`: A boolean indicating if the current PowerShell version was officially supported by Pode at the time of the release.
 
 .EXAMPLE
-Test-PodeVersionPwshEOL
+    Test-PodeVersionPwshEOL
 
-Checks the current PowerShell version against Pode's supported and EOL versions list. Outputs a warning if the version is EOL or untested, and returns a hashtable indicating the compatibility status.
+    Checks the current PowerShell version against Pode's supported and EOL versions list. Outputs a warning if the version is EOL or untested, and returns a hashtable indicating the compatibility status.
 
 .EXAMPLE
-Test-PodeVersionPwshEOL -ReportUntested
+    Test-PodeVersionPwshEOL -ReportUntested
 
-Similar to the basic usage, but also reports if the current PowerShell version was untested because it was not available at the time of the Pode release.
+    Similar to the basic usage, but also reports if the current PowerShell version was untested because it was not available at the time of the Pode release.
 
 .NOTES
-This function is part of the Pode module's utilities to ensure compatibility and encourage the use of supported PowerShell versions.
+    This function is part of the Pode module's utilities to ensure compatibility and encourage the use of supported PowerShell versions.
 
 #>
 function Test-PodeVersionPwshEOL {
@@ -3081,15 +3081,19 @@ function Test-PodeVersionPwshEOL {
 
 <#
 .SYNOPSIS
-creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
+    creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
+
 .DESCRIPTION
-This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
-.PARAMETER Object
-the object that you want scripted out
+    This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
+
+    .PARAMETER Object
+    The object that you want scripted out
+
 .PARAMETER Depth
-The depth that you want your object scripted to
+    The depth that you want your object scripted to
+
 .EXAMPLE
-Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
+    Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
 #>
 function ConvertTo-PodeYaml {
     [CmdletBinding()]
@@ -3118,36 +3122,36 @@ function ConvertTo-PodeYaml {
 
 <#
 .SYNOPSIS
-  Converts PowerShell objects into a YAML-formatted string.
+    Converts PowerShell objects into a YAML-formatted string.
 
 .DESCRIPTION
-  This function takes PowerShell objects and converts them to a YAML string representation.
-  It supports various data types including arrays, hashtables, strings, and more.
-  The depth of conversion can be controlled, allowing for nested objects to be accurately represented.
+    This function takes PowerShell objects and converts them to a YAML string representation.
+    It supports various data types including arrays, hashtables, strings, and more.
+    The depth of conversion can be controlled, allowing for nested objects to be accurately represented.
 
 .PARAMETER InputObject
-  The PowerShell object to convert to YAML. This parameter accepts input via the pipeline.
+    The PowerShell object to convert to YAML. This parameter accepts input via the pipeline.
 
 .PARAMETER Depth
-  Specifies the maximum depth of object nesting to convert. Default is 10 levels deep.
+    Specifies the maximum depth of object nesting to convert. Default is 10 levels deep.
 
 .PARAMETER NestingLevel
-  Used internally to track the current depth of recursion. Generally not specified by the user.
+    Used internally to track the current depth of recursion. Generally not specified by the user.
 
 .PARAMETER NoNewLine
-  If specified, suppresses the newline characters in the output to create a single-line string.
+    If specified, suppresses the newline characters in the output to create a single-line string.
 
 .OUTPUTS
-  System.String. Returns a string in YAML format.
+    System.String. Returns a string in YAML format.
 
 .EXAMPLE
-  $object | ConvertTo-PodeYamlInternal
+    $object | ConvertTo-PodeYamlInternal
 
-  Converts the object piped to it into a YAML string.
+    Converts the object piped to it into a YAML string.
 
 .NOTES
-  This is an internal function and may change in future releases of Pode.
-  It converts only basic PowerShell types, such as strings, integers, booleans, arrays, hashtables, and ordered dictionaries into a YAML format.
+    This is an internal function and may change in future releases of Pode.
+    It converts only basic PowerShell types, such as strings, integers, booleans, arrays, hashtables, and ordered dictionaries into a YAML format.
 
 #>
 
@@ -3319,29 +3323,64 @@ function ConvertTo-PodeYamlInternal {
 }
 
 
+<#
+.SYNOPSIS
+    Resolves various types of object arrays into PowerShell objects.
 
+.DESCRIPTION
+    This function takes an input property and determines its type.
+    It then resolves the property into a PowerShell object or an array of objects,
+    depending on whether the property is a hashtable, array, or single object.
+
+.PARAMETER Property
+    The property to be resolved. It can be a hashtable, an object array, or a single object.
+
+.RETURNS
+    Returns a PowerShell object or an array of PowerShell objects, depending on the input property type.
+
+.EXAMPLE
+    $result = Resolve-PodeObjectArray -Property $myProperty
+    This example resolves the $myProperty into a PowerShell object or an array of objects.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Resolve-PodeObjectArray {
+    [CmdletBinding()]
+    [OutputType([object[]])]
+    [OutputType([psobject])]
     param (
         [AllowNull()]
+        [object]
         $Property
     )
+
+    # Check if the property is a hashtable
     if ($Property -is [hashtable]) {
+        # If the hashtable has only one item, convert it to a PowerShell object
         if ($Property.Count -eq 1) {
-            return   New-Object psobject -Property $Property
+            return New-Object psobject -Property $Property
         }
         else {
-            return @(foreach ($v in $Property) {
-                Resolve-PodeObjectArray -Property $v
-                })
+            # If the hashtable has more than one item, recursively resolve each item
+            return @(foreach ($p in $Property) {
+                Resolve-PodeObjectArray -Property $p
+            })
         }
     }
+    # Check if the property is an array of objects
     elseif ($Property -is [object[]]) {
-        return @(foreach ($v in $Property) {
-            Resolve-PodeObjectArray -Property $v
-
-            })
+        # Recursively resolve each item in the array
+        return @(foreach ($p in $Property) {
+            Resolve-PodeObjectArray -Property $p
+        })
+    }
+    # Check if the property is already a PowerShell object
+    elseif ($Property -is [psobject]) {
+        return $Property
     }
     else {
-        return   New-Object psobject -Property $Property
+        # For any other type, convert it to a PowerShell object
+        return New-Object psobject -Property $Property
     }
 }

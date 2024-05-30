@@ -91,7 +91,7 @@ Start-PodeServer {
 
 
     Add-PodeRoute -Path '/xml/hash'  -Method Get -ScriptBlock {
-        Write-PodeXmlResponse -Value @(@{ Name = 'Rick' }, @{ Name = 'Don' }) -UsePropertyName
+        Write-PodeXmlResponse -Value @(@{ Name = 'Rick' }, @{ Name = 'Don' })
     }
 
     #   nopipe
@@ -110,7 +110,7 @@ Start-PodeServer {
     }
     Start-Job -ScriptBlock {
         Start-Sleep -Seconds 5
-   <#      Start-Process http://localhost:8081/html/processesPiped
+        Start-Process http://localhost:8081/html/processesPiped
         Start-Process http://localhost:8081/html/processes
         Start-Process http://localhost:8081/text/processesPiped
         Start-Process http://localhost:8081/text/processes
@@ -120,7 +120,7 @@ Start-PodeServer {
         Start-Process http://localhost:8081/csv/hash
         Start-Process http://localhost:8081/json/processesPiped
         Start-Process http://localhost:8081/json/processes
-      #>  Start-Process http://localhost:8081/xml/processesPiped
+        Start-Process http://localhost:8081/xml/processesPiped
         Start-Process http://localhost:8081/xml/processes
         Start-Process http://localhost:8081/xml/hash
         Start-Process http://localhost:8081/yaml/processesPiped
