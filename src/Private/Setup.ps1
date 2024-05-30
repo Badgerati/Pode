@@ -60,7 +60,7 @@ function Install-PodeLocalModules {
         }
         catch {
             Write-Host 'Failed' -ForegroundColor Red
-            throw "Module or version not found on $($_repository): $($_name)@$($_version)"
+            throw ($msgTable.moduleOrVersionNotFoundExceptionMessage -f $_repository, $_name, $_version) #"Module or version not found on $($_repository): $($_name)@$($_version)"
         }
     }
 }

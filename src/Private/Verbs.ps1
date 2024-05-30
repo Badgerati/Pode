@@ -117,9 +117,9 @@ function Test-PodeVerbAndError {
     }
 
     if ([string]::IsNullOrEmpty($_url)) {
-        throw "[Verb] $($Verb): Already defined"
+        throw ($msgTable.verbAlreadyDefinedExceptionMessage -f $Verb) #"[Verb] $($Verb): Already defined"
     }
     else {
-        throw "[Verb] $($Verb): Already defined for $($_url)"
+        throw ($msgTable.verbAlreadyDefinedForUrlExceptionMessage -f $Verb, $_url) # "[Verb] $($Verb): Already defined for $($_url)"
     }
 }

@@ -619,7 +619,7 @@ Describe 'Add-PodePage' {
 
     It 'Throws error for invalid FilePath' {
         $PodeContext.Server = @{ 'Root' = $pwd }
-        { Add-PodePage -Name 'RickMorty' -FilePath './fake/path' } | Should -Throw -ExpectedMessage '*the path does not exist*'
+        { Add-PodePage -Name 'RickMorty' -FilePath './fake/path' } | Should -Throw -ExpectedMessage ($msgTable.pathNotExistExceptionMessage -f '*/fake/path') #'*the path does not exist*'
     }
 
     It 'Call Add-PodeRoute once for ScriptBlock page' {

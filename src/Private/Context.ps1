@@ -666,7 +666,7 @@ function Open-PodeRunspacePools {
 
         if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
             $item.Pool.EndOpen($item.Result) | Out-Default
-            throw ($msgTable.failedToOpenRunspacePoolMessage -f $key) #"Failed to open RunspacePool: $($key)"
+            throw ($msgTable.failedToOpenRunspacePoolExceptionMessage -f $key) #"Failed to open RunspacePool: $($key)"
         }
     }
 
@@ -722,7 +722,7 @@ function Close-PodeRunspacePools {
 
         if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
             $item.Pool.EndClose($item.Result) | Out-Default
-            throw ($msgTable.failedToOpenRunspacePoolMessage -f $key) #"Failed to open RunspacePool: $($key)"
+            throw ($msgTable.failedToOpenRunspacePoolExceptionMessage -f $key) #"Failed to open RunspacePool: $($key)"
         }
     }
 

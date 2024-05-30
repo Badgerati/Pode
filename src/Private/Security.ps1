@@ -348,11 +348,11 @@ function Add-PodeIPLimit {
 
     # ensure limit and seconds are non-zero and negative
     if ($Limit -le 0) {
-        throw "Limit value cannot be 0 or less for $($IP)"
+        throw ($msgTable.limitValueCannotBeZeroOrLessExceptionMessage -f $IP) #"Limit value cannot be 0 or less for $($IP)"
     }
 
     if ($Seconds -le 0) {
-        throw "Seconds value cannot be 0 or less for $($IP)"
+        throw ($msgTable.secondsValueCannotBeZeroOrLessExceptionMessage -f $IP) #"Seconds value cannot be 0 or less for $($IP)"
     }
 
     # get current rules
@@ -426,11 +426,11 @@ function Add-PodeRouteLimit {
 
     # ensure limit and seconds are non-zero and negative
     if ($Limit -le 0) {
-        throw "Limit value cannot be 0 or less for $($IP)"
+        throw ($msgTable.limitValueCannotBeZeroOrLessExceptionMessage -f $IP) #"Limit value cannot be 0 or less for $($IP)"
     }
 
     if ($Seconds -le 0) {
-        throw "Seconds value cannot be 0 or less for $($IP)"
+        throw ($msgTable.secondsValueCannotBeZeroOrLessExceptionMessage -f $IP) #"Seconds value cannot be 0 or less for $($IP)"
     }
 
     # get current rules
@@ -482,16 +482,16 @@ function Add-PodeEndpointLimit {
     # does the endpoint exist?
     $endpoint = Get-PodeEndpointByName -Name $EndpointName
     if ($null -eq $endpoint) {
-        throw "Endpoint not found: $($EndpointName)"
+        throw ($msgTable.endpointNameNotExistExceptionMessage -f $EndpointName) #"Endpoint not found: $($EndpointName)"
     }
 
     # ensure limit and seconds are non-zero and negative
     if ($Limit -le 0) {
-        throw "Limit value cannot be 0 or less for $($IP)"
+        throw ($msgTable.limitValueCannotBeZeroOrLessExceptionMessage -f $IP) #"Limit value cannot be 0 or less for $($IP)"
     }
 
     if ($Seconds -le 0) {
-        throw "Seconds value cannot be 0 or less for $($IP)"
+        throw ($msgTable.secondsValueCannotBeZeroOrLessExceptionMessage -f $IP) #"Seconds value cannot be 0 or less for $($IP)"
     }
 
     # get current rules
@@ -816,7 +816,7 @@ function Get-PodeCertificateByPemFile {
 
             $result = openssl pkcs12 -inkey $keyPath -in $certPath -export -passin pass:$Password -password pass:$Password -out $tempFile
             if (!$?) {
-                throw "Failed to create openssl cert: $($result)"
+                throw ($msgTable.failedToCreateOpenSslCertExceptionMessage -f $result) #"Failed to create openssl cert: $($result)"
             }
 
             $cert = [X509Certificates.X509Certificate2]::new($tempFile, $Password)
@@ -850,7 +850,7 @@ function Find-PodeCertificateInCertStore {
 
     # fail if not windows
     if (!(Test-PodeIsWindows)) {
-        throw 'Certificate Thumbprints/Name are only supported on Windows'
+        throw $msgTable.certificateThumbprintsNameSupportedOnWindowsExceptionMessage #'Certificate Thumbprints/Name are only supported on Windows'
     }
 
     # open the currentuser\my store
@@ -870,7 +870,7 @@ function Find-PodeCertificateInCertStore {
 
     # fail if no cert found for query
     if (($null -eq $x509certs) -or ($x509certs.Count -eq 0)) {
-        throw "No certificate could be found in $($StoreLocation)\$($StoreName) for '$($Query)'"
+        throw ($msgTable.noCertificateFoundExceptionMessage -f $StoreLocation, $StoreName, $Query) # "No certificate could be found in $($StoreLocation)\$($StoreName) for '$($Query)'"
     }
 
     return ([X509Certificates.X509Certificate2]($x509certs[0]))

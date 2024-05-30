@@ -109,7 +109,7 @@ function ConvertFrom-PodeCronExpression {
     # split and check atoms length
     $atoms = @($Expression -isplit '\s+')
     if ($atoms.Length -ne 5) {
-        throw ($msgTable.cronExpressionInvalidMessage -f $Expression) #"Cron expression should only consist of 5 parts: $($Expression)"
+        throw ($msgTable.cronExpressionInvalidExceptionMessage -f $Expression) #"Cron expression should only consist of 5 parts: $($Expression)"
     }
 
     # basic variables
@@ -140,7 +140,7 @@ function ConvertFrom-PodeCronExpression {
             while ($_atom -imatch $aliasRgx) {
                 $_alias = $_aliases[$Matches['tag']]
                 if ($null -eq $_alias) {
-                    throw ($msgTable.invalidAliasFoundMessage -f $_field, $Matches['tag']) #"Invalid $($_field) alias found: $($Matches['tag'])"
+                    throw ($msgTable.invalidAliasFoundExceptionMessage -f $_field, $Matches['tag']) #"Invalid $($_field) alias found: $($Matches['tag'])"
                 }
 
                 $_atom = $_atom -ireplace $Matches['tag'], $_alias
@@ -150,7 +150,7 @@ function ConvertFrom-PodeCronExpression {
 
         # ensure atom is a valid value
         if (!($_atom -imatch '^[\d|/|*|\-|,r]+$')) {
-            throw ($msgTable.invalidAtomCharacterMessage -f $_atom)#"Invalid atom character: $($_atom)"
+            throw ($msgTable.invalidAtomCharacterExceptionMessage -f $_atom)#"Invalid atom character: $($_atom)"
         }
 
         # replace * with min/max constraint
@@ -214,28 +214,28 @@ function ConvertFrom-PodeCronExpression {
 
         # error
         else {
-            throw ($msgTable.invalidAtomCharacterMessage -f $_atom)#"Invalid cron atom format found: $($_atom)"
+            throw ($msgTable.invalidAtomCharacterExceptionMessage -f $_atom)#"Invalid cron atom format found: $($_atom)"
         }
 
         # ensure cron expression values are valid
         if ($null -ne $_cronExp.Range) {
             if ($_cronExp.Range.Min -gt $_cronExp.Range.Max) {
-                throw ($msgTable.minValueGreaterThanMaxMessage -f $_field) #"Min value for $($_field) should not be greater than the max value"
+                throw ($msgTable.minValueGreaterThanMaxExceptionMessage -f $_field) #"Min value for $($_field) should not be greater than the max value"
             }
 
             if ($_cronExp.Range.Min -lt $_constraint[0]) {
-                throw ($msgTable.minValueInvalidMessage -f $_cronExp.Range.Min, $_field, $_constraint[0]) #"Min value '$($_cronExp.Range.Min)' for $($_field) is invalid, should be greater than/equal to $($_constraint[0])"
+                throw ($msgTable.minValueInvalidExceptionMessage -f $_cronExp.Range.Min, $_field, $_constraint[0]) #"Min value '$($_cronExp.Range.Min)' for $($_field) is invalid, should be greater than/equal to $($_constraint[0])"
             }
 
             if ($_cronExp.Range.Max -gt $_constraint[1]) {
-                throw ($msgTable.maxValueInvalidMessage -f $_cronExp.Range.Max, $_field, $_constraint[1]) #"Max value '$($_cronExp.Range.Max)' for $($_field) is invalid, should be less than/equal to $($_constraint[1])"
+                throw ($msgTable.maxValueInvalidExceptionMessage -f $_cronExp.Range.Max, $_field, $_constraint[1]) #"Max value '$($_cronExp.Range.Max)' for $($_field) is invalid, should be less than/equal to $($_constraint[1])"
             }
         }
 
         if ($null -ne $_cronExp.Values) {
             $_cronExp.Values | ForEach-Object {
                 if ($_ -lt $_constraint[0] -or $_ -gt $_constraint[1]) {
-                    throw ($msgTable.valueOutOfRangeMessage -f $value, $_field, $_constraint[0], $_constraint[1]) #"Value '$($_)' for $($_field) is invalid, should be between $($_constraint[0]) and $($_constraint[1])"
+                    throw ($msgTable.valueOutOfRangeExceptionMessage -f $value, $_field, $_constraint[0], $_constraint[1]) #"Value '$($_)' for $($_field) is invalid, should be between $($_constraint[0]) and $($_constraint[1])"
                 }
             }
         }
@@ -250,7 +250,7 @@ function ConvertFrom-PodeCronExpression {
         foreach ($mon in $cron['Month'].Values) {
             foreach ($day in $cron['DayOfMonth'].Values) {
                 if ($day -gt $constraints.DaysInMonths[$mon - 1]) {
-                    throw ($msgTable.daysInMonthExceededMessage -f $constraints.Months[$mon - 1], $constraints.DaysInMonths[$mon - 1], $day) #"$($constraints.Months[$mon - 1]) only has $($constraints.DaysInMonths[$mon - 1]) days, but $($day) was supplied"
+                    throw ($msgTable.daysInMonthExceededExceptionMessage -f $constraints.Months[$mon - 1], $constraints.DaysInMonths[$mon - 1], $day) #"$($constraints.Months[$mon - 1]) only has $($constraints.DaysInMonths[$mon - 1]) days, but $($day) was supplied"
                 }
             }
         }
@@ -518,7 +518,7 @@ function Get-PodeCronNextTrigger {
 
     # before we return, make sure the time is valid
     if (!(Test-PodeCronExpression -Expression $Expression -DateTime $NextTime)) {
-        throw ($msgTable.nextTriggerCalculationErrorMessage -f $NextTime) #"Looks like something went wrong trying to calculate the next trigger datetime: $($NextTime)"
+        throw ($msgTable.nextTriggerCalculationErrorExceptionMessage -f $NextTime) #"Looks like something went wrong trying to calculate the next trigger datetime: $($NextTime)"
     }
 
     # if before the start or after end then return null

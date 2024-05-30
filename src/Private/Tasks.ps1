@@ -168,7 +168,7 @@ function Wait-PodeNetTaskInternal {
 
     # if the main task isnt complete, it timed out
     if (($null -ne $timeoutTask) -and (!$Task.IsCompleted)) {
-        throw [System.TimeoutException]::new("Task has timed out after $($Timeout)ms")
+        throw [System.TimeoutException]::new($msgTable.taskTimedOutExceptionMessage -f $Timeout) #"Task has timed out after $($Timeout)ms")
     }
 
     # only return a value if the result has one

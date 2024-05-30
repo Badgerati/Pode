@@ -1075,7 +1075,7 @@ Describe 'Get-PodeRelativePath' {
 
     It 'Throws error for path ot existing' {
         Mock Test-PodePath { return $false }
-        { Get-PodeRelativePath -Path './path' -TestPath } | Should -Throw -ExpectedMessage '*The path does not exist*'
+        { Get-PodeRelativePath -Path './path' -TestPath } | Should -Throw -ExpectedMessage ($msgTable.pathNotExistExceptionMessage -f './path') # '*The path does not exist*'
     }
 }
 

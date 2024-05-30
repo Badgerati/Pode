@@ -19,7 +19,7 @@ function Invoke-PodeHMACSHA256Hash {
     }
 
     if ($SecretBytes.Length -eq 0) {
-        throw 'No secret supplied for HMAC256 hash'
+        throw $msgTable.noSecretForHmac256ExceptionMessage #'No secret supplied for HMAC256 hash'
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA256]::new($SecretBytes)
@@ -47,7 +47,7 @@ function Invoke-PodeHMACSHA384Hash {
     }
 
     if ($SecretBytes.Length -eq 0) {
-        throw 'No secret supplied for HMAC384 hash'
+        throw $msgTable.noSecretForHmac384ExceptionMessage #'No secret supplied for HMAC384 hash'
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA384]::new($SecretBytes)
@@ -75,7 +75,7 @@ function Invoke-PodeHMACSHA512Hash {
     }
 
     if ($SecretBytes.Length -eq 0) {
-        throw 'No secret supplied for HMAC512 hash'
+        throw $msgTable.noSecretForHmac512ExceptionMessage #'No secret supplied for HMAC512 hash'
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA512]::new($SecretBytes)
@@ -304,11 +304,11 @@ function New-PodeJwtSignature {
     )
 
     if (($Algorithm -ine 'none') -and (($null -eq $SecretBytes) -or ($SecretBytes.Length -eq 0))) {
-        throw 'No Secret supplied for JWT signature'
+        throw $msgTable.noSecretForJwtSignatureExceptionMessage #'No Secret supplied for JWT signature'
     }
 
     if (($Algorithm -ieq 'none') -and (($null -ne $secretBytes) -and ($SecretBytes.Length -gt 0))) {
-        throw 'Expected no secret to be supplied for no signature'
+        throw $msgTable.noSecretExpectedForNoSignatureExceptionMessage #'Expected no secret to be supplied for no signature'
     }
 
     $sig = $null
@@ -334,7 +334,7 @@ function New-PodeJwtSignature {
         }
 
         default {
-            throw "The JWT algorithm is not currently supported: $($Algorithm)"
+            throw ($msgTable.unsupportedJwtAlgorithmExceptionMessage -f $Algorithm) #"The JWT algorithm is not currently supported: $($Algorithm)"
         }
     }
 
@@ -393,7 +393,7 @@ function ConvertFrom-PodeJwtBase64Value {
         $Value = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Value))
     }
     catch {
-        throw 'Invalid Base64 encoded value found in JWT'
+        throw $msgTable.invalidBase64JwtExceptionMessage #'Invalid Base64 encoded value found in JWT'
     }
 
     # return json
@@ -401,6 +401,6 @@ function ConvertFrom-PodeJwtBase64Value {
         return ($Value | ConvertFrom-Json)
     }
     catch {
-        throw 'Invalid JSON value found in JWT'
+        throw $msgTable.invalidJsonJwtExceptionMessage #'Invalid JSON value found in JWT'
     }
 }

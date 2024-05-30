@@ -136,7 +136,7 @@ function Start-PodeInternalServer {
 
                 # errored?
                 if ($PodeContext.RunspacePools[$pool].State -ieq 'error') {
-                    throw "$($pool) RunspacePool failed to load"
+                    throw ($msgTable.runspacePoolFailedToLoadExceptionMessage -f $pool) #"$($pool) RunspacePool failed to load"
                 }
             }
         }

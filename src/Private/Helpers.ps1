@@ -190,7 +190,7 @@ function Get-PodeEndpointInfo {
 
     # validate that we have a valid ip/host:port address
     if (!(($Address -imatch "^$($cmbdRgx)$") -or ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or ($Address -imatch "[\:]{0,1}$($portRgx)$"))) {
-        throw ($msgTable.failedToParseAddressMessage -f $Address)#"Failed to parse '$($Address)' as a valid IP/Host:Port address"
+        throw ($msgTable.failedToParseAddressExceptionMessage -f $Address)#"Failed to parse '$($Address)' as a valid IP/Host:Port address"
     }
 
     # grab the ip address/hostname
@@ -201,7 +201,7 @@ function Get-PodeEndpointInfo {
 
     # ensure we have a valid ip address/hostname
     if (!(Test-PodeIPAddress -IP $_host)) {
-        throw ($msgTable.invalidIpAddressMessage -f $_host) #"The IP address supplied is invalid: $($_host)"
+        throw ($msgTable.invalidIpAddressExceptionMessage -f $_host) #"The IP address supplied is invalid: $($_host)"
     }
 
     # grab the port
@@ -212,7 +212,7 @@ function Get-PodeEndpointInfo {
 
     # ensure the port is valid
     if ($_port -lt 0) {
-        throw ($msgTable.invalidPortMessage -f $_port)#"The port cannot be negative: $($_port)"
+        throw ($msgTable.invalidPortExceptionMessage -f $_port)#"The port cannot be negative: $($_port)"
     }
 
     # return the info
@@ -873,7 +873,7 @@ function New-PodePSDrive {
 
     # if the path supplied doesn't exist, error
     if (!(Test-Path $Path)) {
-        throw ($msgTable.pathNotExistMessage -f $Path)#"Path does not exist: $($Path)"
+        throw ($msgTable.pathNotExistExceptionMessage -f $Path)#"Path does not exist: $($Path)"
     }
 
     # resolve the path
@@ -2333,7 +2333,7 @@ function Get-PodeRelativePath {
 
     # if flagged, test the path and throw error if it doesn't exist
     if ($TestPath -and !(Test-PodePath $Path -NoStatus)) {
-        throw "The path does not exist: $(Protect-PodeValue -Value $Path -Default $_rawPath)"
+        throw ($msgTable.pathNotExistExceptionMessage -f (Protect-PodeValue -Value $Path -Default $_rawPath))#"The path does not exist: $(Protect-PodeValue -Value $Path -Default $_rawPath)"
     }
 
     return $Path
@@ -2379,7 +2379,7 @@ function Test-PodeIsServerless {
     )
 
     if ($PodeContext.Server.IsServerless -and $ThrowError) {
-        throw "The $($FunctionName) function is not supported in a serverless context"
+        throw ($msgTable.unsupportedFunctionInServerlessContextExceptionMessage -f $FunctionName) #"The $($FunctionName) function is not supported in a serverless context"
     }
 
     if (!$ThrowError) {
@@ -2502,24 +2502,25 @@ function Get-PodeHandler {
 function Convert-PodeFileToScriptBlock {
     param(
         [Parameter(Mandatory = $true)]
+        [Alias("FilePath")]
         [string]
-        $FilePath
+        $Path
     )
 
     # resolve for relative path
-    $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot
+    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
-    # if file doesn't exist, error
-    if (!(Test-PodePath -Path $FilePath -NoStatus)) {
-        throw "The FilePath supplied does not exist: $($FilePath)"
+    # if Path doesn't exist, error
+    if (!(Test-PodePath -Path $Path -NoStatus)) {
+        throw ($msgTable.pathNotExistExceptionMessage -f $Path) #  "The Path supplied does not exist: $($Path)"
     }
 
     # if the path is a wildcard or directory, error
-    if (!(Test-PodePathIsFile -Path $FilePath -FailOnWildcard)) {
-        throw "The FilePath supplied cannot be a wildcard or a directory: $($FilePath)"
+    if (!(Test-PodePathIsFile -Path $Path -FailOnWildcard)) {
+        throw ($msgTable.invalidPathWildcardOrDirectoryExceptionMessage -f $Path) # "The Path supplied cannot be a wildcard or a directory: $($Path)"
     }
 
-    return ([scriptblock](Use-PodeScript -Path $FilePath))
+    return ([scriptblock](Use-PodeScript -Path $Path))
 }
 
 function Convert-PodeQueryStringToHashTable {
@@ -2597,15 +2598,16 @@ function Get-PodeDotSourcedFiles {
 function Get-PodeAstFromFile {
     param(
         [Parameter(Mandatory = $true)]
+        [Alias("FilePath")]
         [string]
-        $FilePath
+        $Path
     )
 
-    if (!(Test-Path $FilePath)) {
-        throw "Path to script file does not exist: $($FilePath)"
+    if (!(Test-Path $Path)) {
+        throw ($msgTable.pathNotExistExceptionMessage -f $Path) #  "The Path supplied does not exist: $($Path)"
     }
 
-    return [System.Management.Automation.Language.Parser]::ParseFile($FilePath, [ref]$null, [ref]$null)
+    return [System.Management.Automation.Language.Parser]::ParseFile($Path, [ref]$null, [ref]$null)
 }
 
 function Get-PodeFunctionsFromFile {
@@ -2741,7 +2743,7 @@ function Use-PodeFolder {
 
     # fail if path not found
     if (!(Test-PodePath -Path $Path -NoStatus)) {
-        throw "Path to load $($DefaultPath) not found: $($Path)"
+        throw ($msgTable.pathToLoadNotFoundExceptionMessage -f $DefaultPath, $Path) #"Path to load $($DefaultPath) not found: $($Path)"
     }
 
     # get .ps1 files and load them
@@ -2845,7 +2847,7 @@ function Set-PodeCronInterval {
     }
 
     if ($Value.Length -gt 1) {
-        throw "You can only supply a single $($Type) value when using intervals"
+        throw ($msgTable.singleValueForIntervalExceptionMessage -f $Type) #"You can only supply a single $($Type) value when using intervals"
     }
 
     if ($Value.Length -eq 1) {
@@ -3313,7 +3315,8 @@ function ConvertTo-PodeYamlInternal {
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
+            throw ($msgTable.scriptErrorExceptionMessage -f $_, $_.InvocationInfo.ScriptName, $_.InvocationInfo.Line.Trim(), $_.InvocationInfo.ScriptLineNumber, $_.InvocationInfo.OffsetInLine, $_.InvocationInfo.MyCommand, $type, $InputObject, $InputObject.GetType().Name, $InputObject.GetType().BaseType.Name)
+            #"Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
         }
     }
 }

@@ -1,8 +1,9 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
+param()
 # root path
 $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
-
 # Import localized messages
-Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $root -ChildPath 'Locales')
+$global:msgTable = Import-LocalizedData -BaseDirectory (Join-Path -Path $root -ChildPath 'Locales')
 
 # load assemblies
 Add-Type -AssemblyName System.Web
@@ -20,7 +21,7 @@ if ($podeDll) {
     if ( $moduleManifest.ModuleVersion -ne '$version$') {
         $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
         if ($podeDll.GetName().Version -ne $moduleVersion) {
-            throw ($msgTable.incompatiblePodeDllMessage -f $podeDll.GetName().Version, $moduleVersion) #"An existing incompatible Pode.DLL version $($podeDll.GetName().Version) is loaded. Version $moduleVersion is required. Open a new Powershell/pwsh session and retry."
+            throw ($msgTable.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion) #"An existing incompatible Pode.DLL version $($podeDll.GetName().Version) is loaded. Version $moduleVersion is required. Open a new Powershell/pwsh session and retry."
         }
     }
 }

@@ -427,7 +427,7 @@ Task Pack Build, {
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
     # which source folders do we need? create them and copy their contents
-    $folders = @('Private', 'Public', 'Misc', 'Libs')
+    $folders = @('Private', 'Public', 'Misc', 'Libs','Locales')
     $folders | ForEach-Object {
         New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
         Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
@@ -652,7 +652,7 @@ Task Install-Module -If ($Version) Pack, {
     $path = './pkg'
 
     # copy over folders
-    $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses')
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses','Locales')
     $folders | ForEach-Object {
         Copy-Item -Path (Join-Path -Path $path -ChildPath $_) -Destination $dest -Force -Recurse | Out-Null
     }
