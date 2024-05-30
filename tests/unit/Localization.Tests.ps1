@@ -17,21 +17,19 @@ Describe 'Localization Files Key Check' {
     # Discover all language directories
     $languageDirs = Get-ChildItem -Path $localizationDir -Directory | Where-Object { $_.Name -ne 'en' }
 
-    $languageDirs.foreach({
-            Describe  "Language $($_.Name) Test" {
-                # describe "Checking localization $($_.Name)" {
-                $filePath = "$($_.FullName)/Pode.psd1"
-                it 'Language resource file exist' {
-                    Test-Path $filePath | Should -BeTrue
-                }
-                $podeFileContent = Get-Content -Path $filePath -Raw
-                $global:content = Invoke-Expression $podeFileContent
-                It -ForEach ($global:localizationKeys) -Name 'Resource File contain <_>' {
-                    foreach ($key in $global:localizationKeys) {
-                        #$global:content.Keys | Should -Contain $_ #-contains $_ | Should -BeTrue
-                        $global:content.Keys -contains $_ | Should -BeTrue
-                    }
-                }
+    Describe  "Language [<_.Name>]" -ForEach  ($languageDirs) {
+        it 'Language resource file exist' {
+            Test-Path -Path "$($_.FullName)/Pode.psd1" | Should -BeTrue
+        }
+        $podeFileContent = Get-Content -Path "$($_.FullName)/Pode.psd1" -Raw
+        $global:content = Invoke-Expression $podeFileContent
+        it 'Total number of keys equal to the [en]'{
+            $global:content.Keys.Count | Should -be $global:localizationKeys.Count
+        }
+        It -ForEach ($global:localizationKeys) -Name 'Resource File contain <_>' {
+            foreach ($key in $global:localizationKeys) {
+                $global:content.Keys -contains $_ | Should -BeTrue
             }
-        })
+        }
+    }
 }
