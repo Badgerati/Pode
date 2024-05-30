@@ -932,12 +932,6 @@ function Write-PodeYamlResponse {
                     $Value = $pipelineValue
                 }
 
-                if ($Value -is [hashtable]) {
-                    $Value = @(foreach ($v in $Value) {
-                            New-Object psobject -Property $v
-                        })
-                }
-
                 if ($Value -isnot [string]) {
                     $Value = ConvertTo-PodeYaml -InputObject $Value -Depth $Depth
 
