@@ -965,8 +965,8 @@ Some useful links:
     }
 
 
-    $yaml = PodeOADefinition -Format Yaml -DefinitionTag 'v3.1'
-    $json = PodeOADefinition -Format Json -DefinitionTag 'v3'
+    $yaml = Get-PodeOADefinition -Format Yaml -DefinitionTag 'v3.1'
+    $json = Get-PodeOADefinition -Format Json -DefinitionTag 'v3'
 
     Write-PodeHost "`rYAML Tag: v3.1  Output:`r $yaml"
 

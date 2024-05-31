@@ -1109,13 +1109,31 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
                 $pm = Set-PodeOpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
                 # add path's http method to defintition
-                $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pmF
+                $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pm
             }
         }
     }
     return $def
 }
 
+<#
+.SYNOPSIS
+    Converts a cmdlet parameter to a Pode OpenAPI property.
+
+.DESCRIPTION
+    This internal function takes a cmdlet parameter and converts it into an appropriate Pode OpenAPI property based on its type.
+    The function supports boolean, integer, float, and string parameter types.
+
+.PARAMETER Parameter
+    The cmdlet parameter metadata that needs to be converted. This parameter is mandatory and accepts values from the pipeline.
+
+.EXAMPLE
+    $metadata = Get-Command -Name Get-Process | Select-Object -ExpandProperty Parameters
+    $metadata.Values | ConvertTo-PodeOAPropertyFromCmdletParameter
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function ConvertTo-PodeOAPropertyFromCmdletParameter {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -1411,6 +1429,33 @@ function Set-PodeOAGlobalAuth {
     }
 }
 
+<#
+.SYNOPSIS
+    Resolves references in a Pode OpenAPI component schema.
+
+.DESCRIPTION
+    This internal function resolves `$ref` references in a Pode OpenAPI component schema, replacing them with the actual schema definitions.
+    It supports `allOf` references and ensures that nested objects and references are resolved appropriately.
+
+.PARAMETER ComponentSchema
+    The hashtable representing the component schema with potential references to be resolved. This parameter is mandatory and accepts values from the pipeline.
+
+.PARAMETER DefinitionTag
+    The tag used to identify the OpenAPI definition in the Pode context. This parameter is mandatory.
+
+.EXAMPLE
+    $schema = @{
+        properties = @{
+            prop1 = @{
+                '$ref' = '#/components/schemas/ReferencedSchema'
+            }
+        }
+    }
+    Resolve-PodeOAReference -ComponentSchema $schema -DefinitionTag 'MyDefinition'
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Resolve-PodeOAReference {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -1423,27 +1468,36 @@ function Resolve-PodeOAReference {
     )
 
     begin {
+        # Retrieve the schema definitions from the Pode context
         $Schemas = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaJson
+        # Initialize an array to store the keys of the properties to process
         $Keys = @()
     }
 
     process {
+        # If the schema has properties, add their keys to the $Keys array
         if ($ComponentSchema.properties) {
             foreach ($item in $ComponentSchema.properties.Keys) {
                 $Keys += $item
             }
         }
+
+        # Add keys for any 'allOf', 'oneOf', or 'anyOf' properties to the $Keys array
         foreach ($item in $ComponentSchema.Keys) {
             if ( @('allof', 'oneof', 'anyof') -icontains $item ) {
                 $Keys += $item
             }
         }
 
+        # Process each key in the $Keys array
         foreach ($key in $Keys) {
             if ( @('allof', 'oneof', 'anyof') -icontains $key ) {
                 if ($key -ieq 'allof') {
+                    # Initialize an array to hold temporary properties
                     $tmpProp = @()
+                    # Process each component in the 'allOf' array
                     foreach ( $comp in $ComponentSchema[$key] ) {
+                        # If the component is a reference, resolve it
                         if ($comp.'$ref') {
                             if (($comp.'$ref').StartsWith('#/components/schemas/')) {
                                 $refName = ($comp.'$ref') -replace '#/components/schemas/', ''
@@ -1453,6 +1507,7 @@ function Resolve-PodeOAReference {
                             }
                         }
                         elseif ( $comp.properties) {
+                            # If the component has properties, resolve them recursively
                             if ($comp.type -eq 'object') {
                                 $tmpProp += Resolve-PodeOAReference -DefinitionTag $DefinitionTag -ComponentSchema$comp
                             }
@@ -1462,8 +1517,10 @@ function Resolve-PodeOAReference {
                         }
                     }
 
+                    # Set the schema type to 'object' and remove the 'allOf' key
                     $ComponentSchema.type = 'object'
                     $ComponentSchema.remove('allOf')
+                    # Add the properties from the resolved components
                     if ($tmpProp.count -gt 0) {
                         foreach ($t in $tmpProp) {
                             $ComponentSchema.properties += $t.properties
@@ -1478,9 +1535,11 @@ function Resolve-PodeOAReference {
                     throw 'Validation of schema with anyof is not supported'
                 }
             }
+            # If the property type is 'object', resolve its properties recursively
             elseif ($ComponentSchema.properties[$key].type -eq 'object') {
                 $ComponentSchema.properties[$key].properties = Resolve-PodeOAReference -DefinitionTag $DefinitionTag -ComponentSchema $ComponentSchema.properties[$key].properties
             }
+            # If the property is a reference, resolve it
             elseif ($ComponentSchema.properties[$key].'$ref') {
                 if (($ComponentSchema.properties[$key].'$ref').StartsWith('#/components/schemas/')) {
                     $refName = ($ComponentSchema.properties[$key].'$ref') -replace '#/components/schemas/', ''
@@ -1489,6 +1548,7 @@ function Resolve-PodeOAReference {
                     }
                 }
             }
+            # If the property has items and the items are references, resolve them
             elseif ($ComponentSchema.properties[$key].items -and $ComponentSchema.properties[$key].items.'$ref' ) {
                 if (($ComponentSchema.properties[$key].items.'$ref').StartsWith('#/components/schemas/')) {
                     $refName = ($ComponentSchema.properties[$key].items.'$ref') -replace '#/components/schemas/', ''
@@ -1501,6 +1561,7 @@ function Resolve-PodeOAReference {
     }
 
     end {
+        # Return the resolved component schema
         return $ComponentSchema
     }
 }
