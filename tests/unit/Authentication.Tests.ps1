@@ -139,12 +139,12 @@ Describe 'Test-PodeJwt' {
 
     It 'Throws exception - the JWT has expired' {
         # "exp" (Expiration Time) Claim
-        { Test-PodeJwt @{exp = 1 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage 'The JWT has expired'
+        { Test-PodeJwt @{exp = 1 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage $msgTable.jwtExpiredExceptionMessage
     }
 
     It 'Throws exception - the JWT is not yet valid for use' {
         # "nbf" (Not Before) Claim
-        { Test-PodeJwt @{nbf = 99999999999 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage 'The JWT is not yet valid for use'
+        { Test-PodeJwt @{nbf = 99999999999 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage $msgTable.jwtNotYetValidExceptionMessage
     }
 }
 

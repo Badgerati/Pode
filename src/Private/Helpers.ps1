@@ -2709,7 +2709,7 @@ function Read-PodeWebExceptionDetails {
         }
 
         default {
-            throw "Exception is of an invalid type, should be either WebException or HttpRequestException, but got: $($_.Exception.GetType().Name)"
+            throw ($msgTable.invalidExceptionTypeExceptionMessage -f ($_.Exception.GetType().Name))#"Exception is of an invalid type, should be either WebException or HttpRequestException, but got: $($_.Exception.GetType().Name)"
         }
     }
 
