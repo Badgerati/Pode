@@ -15,6 +15,9 @@ param(
     $ReleaseNoteVersion
 )
 
+# Fix for PS7.5 Preview - https://github.com/PowerShell/PowerShell/issues/23868
+$ProgressPreference = 'SilentlyContinue'
+
 <#
 # Dependency Versions
 #>
