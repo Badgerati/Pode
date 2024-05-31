@@ -474,7 +474,7 @@ function Write-PodeCsvResponse {
             }
 
             'value' {
-                if ($pipelineValue -and $pipelineValue.Count -gt 1) {
+                if ($pipelineValue.Count -gt 1) {
                     $Value = $pipelineValue
                 }
 
@@ -560,7 +560,7 @@ function Write-PodeHtmlResponse {
             }
 
             'value' {
-                if ($pipelineValue -and $pipelineValue.Count -gt 1) {
+                if ($pipelineValue.Count -gt 1) {
                     $Value = $pipelineValue
                 }
                 if ($Value -isnot [string]) {
@@ -724,7 +724,7 @@ function Write-PodeJsonResponse {
             }
 
             'value' {
-                if ($pipelineValue -and $pipelineValue.Count -gt 1) {
+                if ($pipelineValue.Count -gt 1) {
                     $Value = $pipelineValue
                 }
                 if ($Value -isnot [string]) {
@@ -831,7 +831,7 @@ function Write-PodeXmlResponse {
             }
 
             'value' {
-                if ($pipelineValue -and $pipelineValue.Count -gt 1) {
+                if ($pipelineValue.Count -gt 1) {
                     $Value = $pipelineValue
                 }
 
@@ -928,7 +928,7 @@ function Write-PodeYamlResponse {
             }
 
             'value' {
-                if ($pipelineValue -and $pipelineValue.Count -gt 1) {
+                if ($pipelineValue.Count -gt 1) {
                     $Value = $pipelineValue
                 }
 
