@@ -511,7 +511,7 @@ function ConvertTo-PodeBase64UrlValue {
 
 function ConvertFrom-PodeJwtBase64Value {
     [CmdletBinding()]
-    [OutputType([string])]
+    [OutputType([pscustomobject])]
     param(
         [Parameter(Mandatory = $true)]
         [string]

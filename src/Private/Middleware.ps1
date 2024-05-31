@@ -166,7 +166,7 @@ This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeLimitMiddleware {
     [CmdletBinding()]
-    [OutputType([ScriptBlock])]
+    [OutputType([hashtable])]
     param()
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
             # are there any rules?
@@ -213,7 +213,7 @@ function Get-PodeLimitMiddleware {
 #>
 function Get-PodePublicMiddleware {
     [CmdletBinding()]
-    [OutputType([bool])]
+    [OutputType([hashtable])]
     param()
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_static_content__' -ScriptBlock {
             # only find public static content here

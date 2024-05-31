@@ -1374,7 +1374,6 @@ Add-PodeAuthSession -Name 'SessionAuth' -FailureUrl '/login'
 #>
 function Add-PodeAuthSession {
     [CmdletBinding(DefaultParameterSetName = 'Groups')]
-    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2150,7 +2149,7 @@ ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI
 #>
 function ConvertFrom-PodeJwt {
     [CmdletBinding(DefaultParameterSetName = 'Secret')]
-    [OutputType([string])]
+    [OutputType([pscustomobject])]
     param(
         [Parameter(Mandatory = $true)]
         [string]

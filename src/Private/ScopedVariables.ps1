@@ -118,20 +118,20 @@ function Convert-PodeScopedVariableInbuiltUsing {
         $ScriptBlock = [scriptblock]::Create($strScriptBlock)
     }
 
-        # get any using variables
-        $usingVars = Get-PodeScopedVariableUsingVariable -ScriptBlock $ScriptBlock
-        if (($null -eq $usingVars) -or ($usingVars.Count -eq 0)) {
-            return $ScriptBlock, $null
-        }
+    # get any using variables
+    $usingVars = Get-PodeScopedVariableUsingVariable -ScriptBlock $ScriptBlock
+    if (($null -eq $usingVars) -or ($usingVars.Count -eq 0)) {
+        return $ScriptBlock, $null
+    }
 
-        # convert any using vars to use new names
-        $usingVars = Find-PodeScopedVariableUsingVariableValue -UsingVariable $usingVars -PSSession $PSSession
+    # convert any using vars to use new names
+    $usingVars = Find-PodeScopedVariableUsingVariableValue -UsingVariable $usingVars -PSSession $PSSession
 
-        # now convert the script
-        $newScriptBlock = Convert-PodeScopedVariableUsingVariable -ScriptBlock $ScriptBlock -UsingVariables $usingVars
+    # now convert the script
+    $newScriptBlock = Convert-PodeScopedVariableUsingVariable -ScriptBlock $ScriptBlock -UsingVariables $usingVars
 
-        # return converted script
-        return $newScriptBlock, $usingVars
+    # return converted script
+    return $newScriptBlock, $usingVars
 }
 
 <#
