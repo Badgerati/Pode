@@ -3120,7 +3120,7 @@ function ConvertTo-PodeYaml {
         if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
             $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
         }
-        if ($pipelineObject) {
+        if ($pipelineObject -and $pipelineObject.Count -gt 1) {
             $InputObject = $pipelineObject
         }
 
