@@ -3084,10 +3084,10 @@ function Test-PodeVersionPwshEOL {
     creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
 
 .DESCRIPTION
-    This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
+    This produces YAML from any object you pass to it.
 
-    .PARAMETER Object
-    The object that you want scripted out
+.PARAMETER Object
+    The object that you want scripted out. This parameter accepts input via the pipeline.
 
 .PARAMETER Depth
     The depth that you want your object scripted to
@@ -3108,15 +3108,28 @@ function ConvertTo-PodeYaml {
         $Depth = 16
     )
 
-    if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
-        $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
+    begin {
+        $pipelineObject = @()
     }
 
-    if ($PodeContext.Server.InternalCache.YamlModuleImported) {
-        return ($InputObject | ConvertTo-Yaml)
+    process {
+        $pipelineObject += $_
     }
-    else {
-        return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+
+    end {
+        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
+            $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
+        }
+        if ($pipelineObject) {
+            $InputObject = $pipelineObject
+        }
+
+        if ($PodeContext.Server.InternalCache.YamlModuleImported) {
+            return ($InputObject | ConvertTo-Yaml)
+        }
+        else {
+            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+        }
     }
 }
 
@@ -3130,7 +3143,7 @@ function ConvertTo-PodeYaml {
     The depth of conversion can be controlled, allowing for nested objects to be accurately represented.
 
 .PARAMETER InputObject
-    The PowerShell object to convert to YAML. This parameter accepts input via the pipeline.
+    The PowerShell object to convert to YAML.
 
 .PARAMETER Depth
     Specifies the maximum depth of object nesting to convert. Default is 10 levels deep.
@@ -3145,9 +3158,9 @@ function ConvertTo-PodeYaml {
     System.String. Returns a string in YAML format.
 
 .EXAMPLE
-    $object | ConvertTo-PodeYamlInternal
+    ConvertTo-PodeYamlInternal -InputObject $object
 
-    Converts the object piped to it into a YAML string.
+    Converts the object into a YAML string.
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
@@ -3159,7 +3172,7 @@ function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $false)]
         [AllowNull()]
         $InputObject,
 
@@ -3176,149 +3189,167 @@ function ConvertTo-PodeYamlInternal {
         $NoNewLine
     )
 
-    process {
-        # if it is null return null
-        If ( !($InputObject) ) {
-            if ($InputObject -is [Object[]]) {
-                return '[]'
-            }
-            else {
-                return ''
-            }
+    #report the leaves in terms of object type
+    if ($Depth -ilt $NestingLevel) {
+        return ''
+    }
+    # if it is null return null
+    If ( !($InputObject) ) {
+        if ($InputObject -is [Object[]]) {
+            return '[]'
+        }
+        else {
+            return ''
+        }
+    }
+
+    $padding = [string]::new(' ', $NestingLevel * 2) # lets just create our left-padding for the block
+    try {
+        $Type = $InputObject.GetType().Name # we start by getting the object's type
+        if ($InputObject -is [object[]]) {
+            #what it really is
+            $Type = "$($InputObject.GetType().BaseType.Name)"
         }
 
-        $padding = [string]::new(' ', $NestingLevel * 2) # lets just create our left-padding for the block
-        try {
-            $Type = $InputObject.GetType().Name # we start by getting the object's type
-            if ($InputObject -is [object[]]) {
-                #what it really is
-                $Type = "$($InputObject.GetType().BaseType.Name)"
-            }
-
-            #report the leaves in terms of object type
-            if ($Depth -ilt $NestingLevel) {
-                $Type = 'OutOfDepth'
-            }
+        # Check for specific value types (int, bool, float, double, string, etc.)
+        if ($Type -notin @('Int32', 'Boolean', 'Single', 'Double', 'String')) {
             # prevent these values being identified as an object
             if ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
-                $Type = 'HashTable'
+                $Type = 'hashTable'
             }
             elseif ($Type -ieq 'List`1') {
-                $Type = 'Array'
+                $Type = 'array'
             }
             elseif ($InputObject -is [array]) {
-                $Type = 'Array'
+                $Type = 'array'
             } # whatever it thinks it is called
-            elseif ($InputObject -is [hashtable]) {
-                $Type = 'HashTable'
+            elseif ($InputObject -is [hashtable] ) {
+                $Type = 'hashTable'
             } # for our purposes it is a hashtable
+        }
 
-            $output += switch ($Type.ToLower()) {
-                'string' {
-                    $String = "$InputObject"
-                    if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
-                        $multiline = [System.Text.StringBuilder]::new("|`n")
+        $output += switch ($Type.ToLower()) {
+            'string' {
+                $String = "$InputObject"
+                if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
+                    $multiline = [System.Text.StringBuilder]::new("|`n")
 
-                        $items = $string.Split("`n")
-                        for ($i = 0; $i -lt $items.Length; $i++) {
-                            $workingString = $items[$i] -replace '\r$'
-                            $length = $workingString.Length
-                            $index = 0
-                            $wrap = 80
+                    $items = $string.Split("`n")
+                    for ($i = 0; $i -lt $items.Length; $i++) {
+                        $workingString = $items[$i] -replace '\r$'
+                        $length = $workingString.Length
+                        $index = 0
+                        $wrap = 80
 
-                            while ($index -lt $length) {
-                                $breakpoint = $wrap
-                                $linebreak = $false
+                        while ($index -lt $length) {
+                            $breakpoint = $wrap
+                            $linebreak = $false
 
-                                if (($length - $index) -gt $wrap) {
-                                    $lastSpaceIndex = $workingString.LastIndexOf(' ', $index + $wrap, $wrap)
-                                    if ($lastSpaceIndex -ne -1) {
-                                        $breakpoint = $lastSpaceIndex - $index
-                                    }
-                                    else {
-                                        $linebreak = $true
-                                        $breakpoint--
-                                    }
+                            if (($length - $index) -gt $wrap) {
+                                $lastSpaceIndex = $workingString.LastIndexOf(' ', $index + $wrap, $wrap)
+                                if ($lastSpaceIndex -ne -1) {
+                                    $breakpoint = $lastSpaceIndex - $index
                                 }
                                 else {
-                                    $breakpoint = $length - $index
-                                }
-
-                                $null = $multiline.Append($padding).Append($workingString.Substring($index, $breakpoint).Trim())
-                                if ($linebreak) {
-                                    $null = $multiline.Append('\')
-                                }
-
-                                $index += $breakpoint
-                                if ($index -lt $length) {
-                                    $null = $multiline.Append([System.Environment]::NewLine)
+                                    $linebreak = $true
+                                    $breakpoint--
                                 }
                             }
+                            else {
+                                $breakpoint = $length - $index
+                            }
 
-                            if ($i -lt ($items.Length - 1)) {
+                            $null = $multiline.Append($padding).Append($workingString.Substring($index, $breakpoint).Trim())
+                            if ($linebreak) {
+                                $null = $multiline.Append('\')
+                            }
+
+                            $index += $breakpoint
+                            if ($index -lt $length) {
                                 $null = $multiline.Append([System.Environment]::NewLine)
                             }
                         }
 
-                        $multiline.ToString().TrimEnd()
-                        break
+                        if ($i -lt ($items.Length - 1)) {
+                            $null = $multiline.Append([System.Environment]::NewLine)
+                        }
+                    }
+
+                    $multiline.ToString().TrimEnd()
+                    break
+                }
+                else {
+                    if ($string -match '^[#\[\]@\{\}\!\*]') {
+                        "'$($string -replace '''', '''''')'"
                     }
                     else {
-                        if ($string -match '^[#\[\]@\{\}\!\*]') {
-                            "'$($string -replace '''', '''''')'"
-                        }
-                        else {
-                            $string
-                        }
-                        break
+                        $string
                     }
                     break
                 }
-                'hashtable' {
-                    if ($InputObject.Count -gt 0 ) {
-                        $index = 0
-                        $string = [System.Text.StringBuilder]::new()
-                        foreach ($item in $InputObject.Keys) {
-                            if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
-                            if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                            $null = $string.Append( $NewPadding).Append( $item).Append(': ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
-                        }
-                        $string.ToString()
-                    }
-                    else { '{}' }
-                    break
-                }
-                'boolean' {
-                    if ($InputObject -eq $true) { 'true' } else { 'false' }
-                    break
-                }
-                'array' {
-                    $string = [System.Text.StringBuilder]::new()
+                break
+            }
+            'hashtable' {
+                if ($InputObject.Count -gt 0 ) {
                     $index = 0
-                    foreach ($item in $InputObject ) {
+                    $string = [System.Text.StringBuilder]::new()
+                    foreach ($item in $InputObject.Keys) {
+                        if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
                         if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                        $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
+                        $null = $string.Append( $NewPadding).Append( $item).Append(': ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
                     }
                     $string.ToString()
-                    break
                 }
-                'int32' {
-                    $InputObject
-                }
-                'double' {
-                    $InputObject
-                }
-                default {
-                    "'$InputObject'"
-                }
+                else { '{}' }
+                break
             }
-            return $Output
+            'pscustomobject' {
+                if ($InputObject.Count -gt 0 ) {
+                    $index = 0
+                    $string = [System.Text.StringBuilder]::new()
+                    foreach ($item in ($InputObject | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name)) {
+                        if ($InputObject.$item -is [string]) { $increment = 2 } else { $increment = 1 }
+                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                        $null = $string.Append( $NewPadding).Append( $item).Append(': ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject.$item -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                    }
+                    $string.ToString()
+                }
+                else { '{}' }
+                break
+            }
+            'boolean' {
+                if ($InputObject -eq $true) { 'true' } else { 'false' }
+                break
+            }
+            'array' {
+                $string = [System.Text.StringBuilder]::new()
+                $index = 0
+                foreach ($item in $InputObject ) {
+                    if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                    $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
+                }
+                $string.ToString()
+                break
+            }
+            'int32' {
+                $InputObject
+            }
+            'double' {
+                $InputObject
+            }
+            'single' {
+                $InputObject
+            }
+            default {
+                "'$InputObject'"
+            }
         }
-        catch {
-            $_ | Write-PodeErrorLog
-            $_.Exception | Write-PodeErrorLog -CheckInnerException
-            throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
-        }
+        return $Output
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+        $_.Exception | Write-PodeErrorLog -CheckInnerException
+        throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
     }
 }
 
@@ -3364,16 +3395,16 @@ function Resolve-PodeObjectArray {
         else {
             # If the hashtable has more than one item, recursively resolve each item
             return @(foreach ($p in $Property) {
-                Resolve-PodeObjectArray -Property $p
-            })
+                    Resolve-PodeObjectArray -Property $p
+                })
         }
     }
     # Check if the property is an array of objects
     elseif ($Property -is [object[]]) {
         # Recursively resolve each item in the array
         return @(foreach ($p in $Property) {
-            Resolve-PodeObjectArray -Property $p
-        })
+                Resolve-PodeObjectArray -Property $p
+            })
     }
     # Check if the property is already a PowerShell object
     elseif ($Property -is [psobject]) {
