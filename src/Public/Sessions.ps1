@@ -108,7 +108,8 @@ function Enable-PodeSessionMiddleware {
 
     # check that session logic hasn't already been initialised
     if (Test-PodeSessionsEnabled) {
-        throw 'Session Middleware has already been intialised'
+        # Session Middleware has already been initialized
+        throw $msgTable.sessionMiddlewareAlreadyInitializedExceptionMessage
     }
 
     # ensure the override store has the required methods
@@ -116,7 +117,8 @@ function Enable-PodeSessionMiddleware {
         $members = @($Storage | Get-Member | Select-Object -ExpandProperty Name)
         @('delete', 'get', 'set') | ForEach-Object {
             if ($members -inotcontains $_) {
-                throw "Custom session storage does not implement the required '$($_)()' method"
+                # The custom session storage does not implement the required '{0}()' method
+                throw ($msgTable.customSessionStorageMethodNotImplementedExceptionMessage -f $_)
             }
         }
     }
@@ -124,7 +126,8 @@ function Enable-PodeSessionMiddleware {
     # verify the secret, set to guid if not supplied, or error if none and we have a storage
     if ([string]::IsNullOrEmpty($Secret)) {
         if (!(Test-PodeIsEmpty $Storage)) {
-            throw 'A Secret is required when using custom session storage'
+            # A Secret is required when using custom session storage
+            throw $msgTable.secretRequiredForCustomSessionStorageExceptionMessage
         }
 
         $Secret = Get-PodeServerDefaultSecret
@@ -178,7 +181,8 @@ function Remove-PodeSession {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions have not been configured'
+        # The sessions have not been configured
+        throw $msgTable.sessionsNotConfiguredExceptionMessage
     }
 
     # do nothing if session is null
@@ -212,12 +216,14 @@ function Save-PodeSession {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions have not been configured'
+        # The sessions have not been configured
+        throw $msgTable.sessionsNotConfiguredExceptionMessage
     }
 
     # error if session is null
     if ($null -eq $WebEvent.Session) {
-        throw 'There is no session available to save'
+        # There is no session available to save
+        throw $msgTable.noSessionAvailableToSaveExceptionMessage
     }
 
     # if auth is in use, then assign to session store
@@ -306,12 +312,14 @@ function Reset-PodeSessionExpiry {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions have not been configured'
+        # The sessions have not been configured
+        throw $msgTable.sessionsNotConfiguredExceptionMessage
     }
 
     # error if session is null
     if ($null -eq $WebEvent.Session) {
-        throw 'There is no session available to save'
+        # There is no session available to save
+        throw $msgTable.noSessionAvailableToSaveExceptionMessage
     }
 
     # temporarily set this session to auto-extend
@@ -354,7 +362,8 @@ function Get-PodeSessionExpiry {
 
     # error if session is null
     if ($null -eq $WebEvent.Session) {
-        throw 'There is no session available to save'
+        # There is no session available to save
+        throw $msgTable.noSessionAvailableToSaveExceptionMessage
     }
 
     # default min date

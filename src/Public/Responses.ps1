@@ -1566,7 +1566,8 @@ function Send-PodeSignal {
     )
     # error if not configured
     if (!$PodeContext.Server.Signals.Enabled) {
-        throw 'WebSockets have not been configured to send signal messages'
+        # WebSockets have not been configured to send signal messages
+        throw $msgTable.websocketsNotConfiguredForSignalMessagesExceptionMessage
     }
 
     # do nothing if no value

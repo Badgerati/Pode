@@ -177,7 +177,8 @@ function Import-PodeSecretManagementVaultsIntoRegistry {
 
     # error if SecretManagement module not installed
     if (!(Test-PodeModuleInstalled -Name Microsoft.PowerShell.SecretManagement)) {
-        throw $msgTable.secretManagementModuleNotInstalledExceptionMessage #'Microsoft.PowerShell.SecretManagement module not installed'
+        # Microsoft.PowerShell.SecretManagement module not installed
+        throw $msgTable.secretManagementModuleNotInstalledExceptionMessage
     }
 
     # import the module

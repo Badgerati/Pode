@@ -658,11 +658,13 @@ function ConvertTo-PodeMiddleware {
         # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
         if ($mid -is [hashtable]) {
             if ($null -eq $mid.Logic) {
-                throw $msgTable.hashtableMiddlewareNoLogicExceptionMessage#'A Hashtable Middleware supplied has no Logic defined'
+                # A Hashtable Middleware supplied has no Logic defined
+                throw $msgTable.hashtableMiddlewareNoLogicExceptionMessage
             }
 
             if ($mid.Logic -isnot [scriptblock]) {
-                throw ($msgTable.invalidLogicTypeInHashtableMiddlewareExceptionMessage -f $mid.Logic.GetType().Name)#"A Hashtable Middleware supplied has an invalid Logic type. Expected ScriptBlock, but got: $($mid.Logic.GetType().Name)"
+                # A Hashtable Middleware supplied has an invalid Logic type. Expected ScriptBlock, but got: {0}
+                throw ($msgTable.invalidLogicTypeInHashtableMiddlewareExceptionMessage -f $mid.Logic.GetType().Name)
             }
         }
     }

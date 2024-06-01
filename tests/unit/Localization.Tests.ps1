@@ -17,13 +17,13 @@ Describe 'Localization Files Key Check' {
     # Discover all language directories
     $languageDirs = Get-ChildItem -Path $localizationDir -Directory | Where-Object { $_.Name -ne 'en' }
 
-    Describe  "Language [<_.Name>]" -ForEach  ($languageDirs) {
+    Describe  'Language [<_.Name>]' -ForEach  ($languageDirs) {
         it 'Language resource file exist' {
             Test-Path -Path "$($_.FullName)/Pode.psd1" | Should -BeTrue
         }
         $podeFileContent = Get-Content -Path "$($_.FullName)/Pode.psd1" -Raw
         $global:content = Invoke-Expression $podeFileContent
-        it 'Total number of keys equal to the [en]'{
+        it 'Total number of keys equal to the [en]' {
             $global:content.Keys.Count | Should -be $global:localizationKeys.Count
         }
         It -ForEach ($global:localizationKeys) -Name 'Resource File contain <_>' {

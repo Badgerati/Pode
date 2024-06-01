@@ -585,7 +585,7 @@ Describe 'ConvertTo-PodeRoute' {
     }
 
     It 'Throws error for no commands' {
-        { ConvertTo-PodeRoute } | Should -Throw -ExpectedMessage 'No commands supplied to convert to Routes'
+        { ConvertTo-PodeRoute } | Should -Throw -ExpectedMessage $msgTable.noCommandsSuppliedToConvertToRoutesExceptionMessage # No commands supplied to convert to Routes.
     }
 
     It 'Calls Add-PodeRoute twice for commands' {

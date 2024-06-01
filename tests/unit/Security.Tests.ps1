@@ -581,7 +581,7 @@ Describe 'New-PodeCsrfToken' {
             }
         }
 
-        { New-PodeCsrfToken } | Should -Throw -ExpectedMessage '*not been initialised*'
+        { New-PodeCsrfToken } | Should -Throw -ExpectedMessage $msgTable.csrfMiddlewareNotInitializedExceptionMessage #CSRF Middleware has not been initialized.
     }
 
 

@@ -2086,7 +2086,7 @@ Describe 'OpenApi' {
                 {
                     Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                 (New-PodeOAObjectProperty  -Properties  @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')))
-                    ) } | Should -Throw -ExpectedMessage 'Discriminator parameter is not compatible with allOf'
+                    ) } | Should -Throw -ExpectedMessage $msgTable.discriminatorIncompatibleWithAllOfExceptionMessage #'Discriminator parameter is not compatible with allOf'
             }
             #Should  -Throw  -ExpectedMessage 'Discriminator parameter is not compatible with allOf'
 
@@ -2277,7 +2277,7 @@ Describe 'OpenApi' {
         it 'throw error' {
             {
                 Add-PodeOAComponentParameter   -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' | New-PodeOAObjectProperty ) } |
-                Should -Throw -ExpectedMessage 'The Parameter has no name. Please provide a name to this component using -Name property'
+                Should -Throw -ExpectedMessage $msgTable.parameterHasNoNameExceptionMessage # The Parameter has no name. Please give this component a name using the 'Name' parameter.
         }
     }
     Context 'ConvertTo-PodeOAParameter' {

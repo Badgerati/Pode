@@ -69,7 +69,8 @@ function New-PodeAccessScheme {
     # for custom access a validator is mandatory
     if ($Custom) {
         if ([string]::IsNullOrWhiteSpace($Path) -and (Test-PodeIsEmpty $ScriptBlock)) {
-            throw $msgTable.pathOrScriptBlockRequiredExceptionMessage #'A Path or ScriptBlock is required for sourcing the Custom access values'
+            # A Path or ScriptBlock is required for sourcing the Custom access values
+            throw $msgTable.pathOrScriptBlockRequiredExceptionMessage
         }
     }
 

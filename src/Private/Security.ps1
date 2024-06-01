@@ -850,7 +850,8 @@ function Find-PodeCertificateInCertStore {
 
     # fail if not windows
     if (!(Test-PodeIsWindows)) {
-        throw $msgTable.certificateThumbprintsNameSupportedOnWindowsExceptionMessage #'Certificate Thumbprints/Name are only supported on Windows'
+        # Certificate Thumbprints/Name are only supported on Windows
+        throw $msgTable.certificateThumbprintsNameSupportedOnWindowsExceptionMessage
     }
 
     # open the currentuser\my store

@@ -1,7 +1,8 @@
 function Start-PodeServiceServer {
     # ensure we have service handlers
     if (Test-PodeIsEmpty (Get-PodeHandler -Type Service)) {
-        throw $msgTable.noServiceHandlersDefinedExceptionMessage #'No Service handlers have been defined'
+        # No Service handlers have been defined
+        throw $msgTable.noServiceHandlersDefinedExceptionMessage
     }
 
     # state we're running

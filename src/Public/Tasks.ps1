@@ -425,5 +425,6 @@ function Wait-PodeTask {
         return (Wait-PodeTaskInternal -Task $Task -Timeout $Timeout)
     }
 
-    throw 'Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]'
+    # Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]
+    throw $msgTable.invalidTaskTypeExceptionMessage
 }

@@ -45,7 +45,8 @@ function Register-PodeSecretManagementVault {
     # check if we have an unlock password for local secret store
     if ($isSecretStore) {
         if ([string]::IsNullOrEmpty($VaultConfig.Unlock.Secret)) {
-            throw $msgTable.unlockSecretRequiredExceptionMessage#'An "-UnlockSecret" is required when using Microsoft.PowerShell.SecretStore'
+            # An 'UnlockSecret' is required when using Microsoft.PowerShell.SecretStore
+            throw $msgTable.unlockSecretRequiredExceptionMessage
         }
     }
 
@@ -145,7 +146,8 @@ function Register-PodeSecretCustomVault {
 
     # unlock secret with no script?
     if ($VaultConfig.Unlock.Enabled -and (Test-PodeIsEmpty $UnlockScriptBlock)) {
-        throw $msgTable.unlockSecretButNoScriptBlockExceptionMessage #'Unlock secret supplied for custom Secret Vault type, but not Unlock ScriptBlock supplied'
+        # Unlock secret supplied for custom Secret Vault type, but not Unlock ScriptBlock supplied
+        throw $msgTable.unlockSecretButNoScriptBlockExceptionMessage
     }
 
     # all is good, so set the config

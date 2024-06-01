@@ -3,7 +3,8 @@ using namespace Pode
 function Start-PodeSmtpServer {
     # ensure we have smtp handlers
     if (Test-PodeIsEmpty (Get-PodeHandler -Type Smtp)) {
-        throw $msgTable.noSmtpHandlersDefinedExceptionMessage #'No SMTP handlers have been defined'
+        # No SMTP handlers have been defined
+        throw $msgTable.noSmtpHandlersDefinedExceptionMessage
     }
 
     # work out which endpoints to listen on

@@ -1704,15 +1704,15 @@ Describe 'New-PodeCron' {
     }
 
     It 'Throws an error when using Interval without Every' {
-        { New-PodeCron -Interval 3 } | Should -Throw -ExpectedMessage '*Cannot supply an interval*'
+        { New-PodeCron -Interval 3 } | Should -Throw -ExpectedMessage $msgTable.cannotSupplyIntervalWhenEveryIsNoneExceptionMessage #'*Cannot supply an interval*'
     }
 
     It 'Throws an error when using Interval for Every Quarter' {
-        { New-PodeCron -Every Quarter -Interval 3 } | Should -Throw -ExpectedMessage 'Cannot supply interval value for every quarter'
+        { New-PodeCron -Every Quarter -Interval 3 } | Should -Throw -ExpectedMessage $msgTable.cannotSupplyIntervalForQuarterExceptionMessage #Cannot supply interval value for every quarter.
     }
 
     It 'Throws an error when using Interval for Every Year' {
-        { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage 'Cannot supply interval value for every year'
+        { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage  $msgTable.cannotSupplyIntervalForYearExceptionMessage #'Cannot supply interval value for every year'
     }
 }
 

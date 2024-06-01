@@ -384,7 +384,8 @@ function Import-PodeSnapin {
 
     # if non-windows or core, fail
     if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
-        throw 'Snapins are only supported on Windows PowerShell'
+        # Snapins are only supported on Windows PowerShell
+        throw $msgTable.snapinsSupportedOnWindowsPowershellOnlyExceptionMessage
     }
 
     # import the snap-in
@@ -1056,7 +1057,8 @@ function New-PodeCron {
 
     # cant have None and Interval
     if (($Every -ieq 'none') -and ($Interval -gt 0)) {
-        throw 'Cannot supply an interval when -Every is set to None'
+        # Cannot supply an interval when the parameter `Every` is set to None
+        throw $msgTable.cannotSupplyIntervalWhenEveryIsNoneExceptionMessage
     }
 
     # base cron
@@ -1156,7 +1158,8 @@ function New-PodeCron {
             $cron.Month = '1,4,7,10'
 
             if ($Interval -gt 0) {
-                throw 'Cannot supply interval value for every quarter'
+                # Cannot supply interval value for every quarter
+                throw $msgTable.cannotSupplyIntervalForQuarterExceptionMessage
             }
         }
 
@@ -1167,7 +1170,8 @@ function New-PodeCron {
             $cron.Month = '1'
 
             if ($Interval -gt 0) {
-                throw 'Cannot supply interval value for every year'
+                # Cannot supply interval value for every year
+                throw $msgTable.cannotSupplyIntervalForYearExceptionMessage
             }
         }
     }

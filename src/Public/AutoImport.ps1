@@ -46,7 +46,8 @@ function Export-PodeSnapin {
 
     # if non-windows or core, fail
     if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
-        throw $msgTable.snapinsSupportedOnWindowsPowershellOnlyExceptionMessage # 'Snapins are only supported on Windows PowerShell'
+        # Snapins are only supported on Windows PowerShell
+        throw $msgTable.snapinsSupportedOnWindowsPowershellOnlyExceptionMessage
     }
 
     $PodeContext.Server.AutoImport.Snapins.ExportList += @($Name)
