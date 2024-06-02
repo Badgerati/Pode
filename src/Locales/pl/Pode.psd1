@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = Moduł Active Directory jest dostępny tylko w systemie Windows.
 adModuleNotInstalledExceptionMessage = Moduł Active Directory nie jest zainstalowany.
 secretManagementModuleNotInstalledExceptionMessage = Moduł Microsoft.PowerShell.SecretManagement nie jest zainstalowany.
-secretVaultAlreadyRegisteredExceptionMessage = Skarbiec z nazwą '{0}' został już zarejestrowany podczas automatycznego importowania skarbców.
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = Skarbiec z nazwą '{0}' został już zarejestrowany podczas automatycznego importowania skarbców.
 failedToOpenRunspacePoolExceptionMessage = Nie udało się otworzyć RunspacePool: {0}
 cronExpressionInvalidExceptionMessage = Wyrażenie Cron powinno składać się tylko z 5 części: {0}
 invalidAliasFoundExceptionMessage = Znaleziono nieprawidłowy alias {0}: {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = Brak dostępnej sesji do zapisania.
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = Nie można dostarczyć interwału, gdy parametr 'Every' jest ustawiony na None.
 cannotSupplyIntervalForQuarterExceptionMessage = Nie można dostarczyć wartości interwału dla każdego kwartału.
 cannotSupplyIntervalForYearExceptionMessage = Nie można dostarczyć wartości interwału dla każdego roku.
+secretVaultAlreadyRegisteredExceptionMessage = Skarbiec tajemnic o nazwie '{0}' został już zarejestrowany{1}.
+secretVaultUnlockExpiryDateInPastExceptionMessage = Data wygaśnięcia odblokowania Skarbca tajemnic jest w przeszłości (UTC): {0}
+secretAlreadyMountedExceptionMessage = Tajemnica o nazwie '{0}' została już zamontowana.
+noSecretVaultRegisteredExceptionMessage = Skarbiec tajemnic o nazwie '{0}' nie został zarejestrowany.
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = Parametry 'NoAdditionalProperties' i 'AdditionalProperties' wykluczają się wzajemnie.
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = Gdy przekazywane są dane uwierzytelniające, symbol wieloznaczny * dla nagłówków będzie traktowany jako dosłowny ciąg znaków, a nie symbol wieloznaczny.
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = Symbol wieloznaczny * dla nagłówków jest niezgodny z przełącznikiem AutoHeaders.
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = Symbol wieloznaczny * dla metod jest niezgodny z przełącznikiem AutoMethods.
+invalidAccessControlMaxAgeDurationExceptionMessage = Podano nieprawidłowy czas trwania Access-Control-Max-Age: {0}. Powinien być większy niż 0.
+noNameForWebSocketDisconnectExceptionMessage = Nie podano nazwy dla rozłączenia WebSocket.
+noNameForWebSocketRemoveExceptionMessage = Nie podano nazwy dla usunięcia WebSocket.
+noNameForWebSocketSendMessageExceptionMessage = Nie podano nazwy dla wysłania wiadomości do WebSocket.
+noSecretNamedMountedExceptionMessage = Nie zamontowano tajemnicy o nazwie '{0}'.
+noNameForWebSocketResetExceptionMessage = Nie podano nazwy dla resetowania WebSocket.
 '@

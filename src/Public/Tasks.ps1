@@ -426,5 +426,5 @@ function Wait-PodeTask {
     }
 
     # Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]
-    throw $msgTable.invalidTaskTypeExceptionMessage
+    throw $PodeLocale.invalidTaskTypeExceptionMessage
 }

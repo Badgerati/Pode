@@ -282,7 +282,7 @@ function Find-PodeEndpointName {
 
     # error?
     if ($ThrowError) {
-        throw ($msgTable.endpointNotExistExceptionMessage -f $Protocol, $Address, $_localAddress) #"Endpoint with protocol '$($Protocol)' and address '$($Address)' or local address '$($_localAddress)' does not exist"
+        throw ($PodeLocale.endpointNotExistExceptionMessage -f $Protocol, $Address, $_localAddress) #"Endpoint with protocol '$($Protocol)' and address '$($Address)' or local address '$($_localAddress)' does not exist"
     }
 
     return $null
@@ -310,7 +310,7 @@ function Get-PodeEndpointByName {
 
     # error?
     if ($ThrowError) {
-        throw ($msgTable.endpointNameNotExistExceptionMessage -f $Name) #"Endpoint with name '$($Name)' does not exist"
+        throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $Name) #"Endpoint with name '$($Name)' does not exist"
     }
 
     return $null

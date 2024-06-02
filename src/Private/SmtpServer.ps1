@@ -4,7 +4,7 @@ function Start-PodeSmtpServer {
     # ensure we have smtp handlers
     if (Test-PodeIsEmpty (Get-PodeHandler -Type Smtp)) {
         # No SMTP handlers have been defined
-        throw $msgTable.noSmtpHandlersDefinedExceptionMessage
+        throw $PodeLocale.noSmtpHandlersDefinedExceptionMessage
     }
 
     # work out which endpoints to listen on

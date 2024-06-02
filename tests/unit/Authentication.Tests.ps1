@@ -4,7 +4,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
 }
 
 $now = [datetime]::UtcNow
@@ -139,12 +139,12 @@ Describe 'Test-PodeJwt' {
 
     It 'Throws exception - the JWT has expired' {
         # "exp" (Expiration Time) Claim
-        { Test-PodeJwt @{exp = 1 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage $msgTable.jwtExpiredExceptionMessage
+        { Test-PodeJwt @{exp = 1 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage $PodeLocale.jwtExpiredExceptionMessage
     }
 
     It 'Throws exception - the JWT is not yet valid for use' {
         # "nbf" (Not Before) Claim
-        { Test-PodeJwt @{nbf = 99999999999 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage $msgTable.jwtNotYetValidExceptionMessage
+        { Test-PodeJwt @{nbf = 99999999999 } } | Should -Throw -ExceptionType ([System.Exception]) -ExpectedMessage $PodeLocale.jwtNotYetValidExceptionMessage
     }
 }
 

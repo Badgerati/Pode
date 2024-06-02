@@ -20,7 +20,7 @@ function Invoke-PodeHMACSHA256Hash {
 
     if ($SecretBytes.Length -eq 0) {
         # No secret supplied for HMAC256 hash
-        throw $msgTable.noSecretForHmac256ExceptionMessage
+        throw $PodeLocale.noSecretForHmac256ExceptionMessage
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA256]::new($SecretBytes)
@@ -49,7 +49,7 @@ function Invoke-PodeHMACSHA384Hash {
 
     if ($SecretBytes.Length -eq 0) {
         # No secret supplied for HMAC384 hash
-        throw $msgTable.noSecretForHmac384ExceptionMessage
+        throw $PodeLocale.noSecretForHmac384ExceptionMessage
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA384]::new($SecretBytes)
@@ -78,7 +78,7 @@ function Invoke-PodeHMACSHA512Hash {
 
     if ($SecretBytes.Length -eq 0) {
         # No secret supplied for HMAC512 hash
-        throw $msgTable.noSecretForHmac512ExceptionMessage
+        throw $PodeLocale.noSecretForHmac512ExceptionMessage
     }
 
     $crypto = [System.Security.Cryptography.HMACSHA512]::new($SecretBytes)
@@ -308,12 +308,12 @@ function New-PodeJwtSignature {
 
     if (($Algorithm -ine 'none') -and (($null -eq $SecretBytes) -or ($SecretBytes.Length -eq 0))) {
         # No secret supplied for JWT signature
-        throw $msgTable.noSecretForJwtSignatureExceptionMessage
+        throw $PodeLocale.noSecretForJwtSignatureExceptionMessage
     }
 
     if (($Algorithm -ieq 'none') -and (($null -ne $secretBytes) -and ($SecretBytes.Length -gt 0))) {
         # Expected no secret to be supplied for no signature
-        throw $msgTable.noSecretExpectedForNoSignatureExceptionMessage
+        throw $PodeLocale.noSecretExpectedForNoSignatureExceptionMessage
     }
 
     $sig = $null
@@ -339,7 +339,7 @@ function New-PodeJwtSignature {
         }
 
         default {
-            throw ($msgTable.unsupportedJwtAlgorithmExceptionMessage -f $Algorithm) #"The JWT algorithm is not currently supported: $($Algorithm)"
+            throw ($PodeLocale.unsupportedJwtAlgorithmExceptionMessage -f $Algorithm) #"The JWT algorithm is not currently supported: $($Algorithm)"
         }
     }
 
@@ -399,7 +399,7 @@ function ConvertFrom-PodeJwtBase64Value {
     }
     catch {
         # Invalid Base64 encoded value found in JWT
-        throw $msgTable.invalidBase64JwtExceptionMessage
+        throw $PodeLocale.invalidBase64JwtExceptionMessage
     }
 
     # return json
@@ -408,6 +408,6 @@ function ConvertFrom-PodeJwtBase64Value {
     }
     catch {
         # Invalid JSON value found in JWT
-        throw $msgTable.invalidJsonJwtExceptionMessage
+        throw $PodeLocale.invalidJsonJwtExceptionMessage
     }
 }

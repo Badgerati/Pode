@@ -643,7 +643,7 @@ function Show-PodeGui {
     # only valid for Windows PowerShell
     if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
         # Show-PodeGui is currently only available for Windows PowerShell and PowerShell 7+ on Windows
-        throw $msgTable.showPodeGuiOnlyAvailableOnWindowsExceptionMessage
+        throw $PodeLocale.showPodeGuiOnlyAvailableOnWindowsExceptionMessage
     }
 
     # enable the gui and set general settings
@@ -904,7 +904,7 @@ function Add-PodeEndpoint {
     # if RedirectTo is supplied, then a Name is mandatory
     if (![string]::IsNullOrWhiteSpace($RedirectTo) -and [string]::IsNullOrWhiteSpace($Name)) {
         # A Name is required for the endpoint if the RedirectTo parameter is supplied
-        throw $msgTable.nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage
+        throw $PodeLocale.nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage
     }
 
     # get the type of endpoint
@@ -956,25 +956,25 @@ function Add-PodeEndpoint {
     # protocol must be https for client certs, or hosted behind a proxy like iis
     if (($Protocol -ine 'https') -and !(Test-PodeIsHosted) -and $AllowClientCertificate) {
         # Client certificates are only supported on HTTPS endpoints
-        throw $msgTable.clientCertificatesOnlySupportedOnHttpsEndpointsExceptionMessage
+        throw $PodeLocale.clientCertificatesOnlySupportedOnHttpsEndpointsExceptionMessage
     }
 
     # explicit tls is only supported for smtp/tcp
     if (($type -inotin @('smtp', 'tcp')) -and ($TlsMode -ieq 'explicit')) {
         # The Explicit TLS mode is only supported on SMTPS and TCPS endpoints
-        throw $msgTable.explicitTlsModeOnlySupportedOnSmtpsTcpsEndpointsExceptionMessage
+        throw $PodeLocale.explicitTlsModeOnlySupportedOnSmtpsTcpsEndpointsExceptionMessage
     }
 
     # ack message is only for smtp/tcp
     if (($type -inotin @('smtp', 'tcp')) -and ![string]::IsNullOrEmpty($Acknowledge)) {
         # The Acknowledge message is only supported on SMTP and TCP endpoints
-        throw $msgTable.acknowledgeMessageOnlySupportedOnSmtpTcpEndpointsExceptionMessage
+        throw $PodeLocale.acknowledgeMessageOnlySupportedOnSmtpTcpEndpointsExceptionMessage
     }
 
     # crlf message end is only for tcp
     if (($type -ine 'tcp') -and $CRLFMessageEnd) {
         # The CRLF message end check is only supported on TCP endpoints
-        throw $msgTable.crlfMessageEndCheckOnlySupportedOnTcpEndpointsExceptionMessage
+        throw $PodeLocale.crlfMessageEndCheckOnlySupportedOnTcpEndpointsExceptionMessage
     }
 
     # new endpoint object
@@ -1048,7 +1048,7 @@ function Add-PodeEndpoint {
     # if the address is non-local, then check admin privileges
     if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeIsAdminUser)) {
         # Must be running with administrator privileges to listen on non-localhost addresses
-        throw $msgTable.mustBeRunningWithAdminPrivilegesExceptionMessage
+        throw $PodeLocale.mustBeRunningWithAdminPrivilegesExceptionMessage
     }
 
     # has this endpoint been added before? (for http/https we can just not add it again)
@@ -1061,7 +1061,7 @@ function Add-PodeEndpoint {
         # fail if protocol is not https
         if (@('https', 'wss', 'smtps', 'tcps') -inotcontains $Protocol) {
             # Certificate supplied for non-HTTPS/WSS endpoint
-            throw $msgTable.certificateSuppliedForNonHttpsWssEndpointExceptionMessage
+            throw $PodeLocale.certificateSuppliedForNonHttpsWssEndpointExceptionMessage
         }
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {

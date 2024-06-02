@@ -247,13 +247,13 @@ function Enter-PodeLockable {
     # check if value type and throw
     if ($Object -is [valuetype]) {
         # Cannot lock a [ValueTypes]
-        throw $msgTable.cannotLockValueTypeExceptionMessage
+        throw $PodeLocale.cannotLockValueTypeExceptionMessage
     }
 
     # check if null and throw
     if ($null -eq $Object) {
         # Cannot lock an object that is null
-        throw $msgTable.cannotLockNullObjectExceptionMessage
+        throw $PodeLocale.cannotLockNullObjectExceptionMessage
     }
 
     # check if the global lockable is locked
@@ -266,7 +266,7 @@ function Enter-PodeLockable {
     [System.Threading.Monitor]::TryEnter($Object.SyncRoot, $Timeout, [ref]$locked)
     if (!$locked) {
         # Failed to acquire a lock on the object
-        throw $msgTable.failedToAcquireLockExceptionMessage
+        throw $PodeLocale.failedToAcquireLockExceptionMessage
     }
 }
 
@@ -314,13 +314,13 @@ function Exit-PodeLockable {
     # check if value type and throw
     if ($Object -is [valuetype]) {
         # Cannot unlock a [ValueTypes]
-        throw $msgTable.cannotUnlockValueTypeExceptionMessage
+        throw $PodeLocale.cannotUnlockValueTypeExceptionMessage
     }
 
     # check if null and throw
     if ($null -eq $Object) {
         # Cannot unlock an object that is null
-        throw $msgTable.cannotUnlockNullObjectExceptionMessage
+        throw $PodeLocale.cannotUnlockNullObjectExceptionMessage
     }
 
     if ([System.Threading.Monitor]::IsEntered($Object.SyncRoot)) {

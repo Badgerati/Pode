@@ -3293,7 +3293,8 @@ function Add-PodeOAWebhook {
     }
     foreach ($tag in $DefinitionTag) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $tag ) {
-            throw 'The feature reusable component webhook is not available in OpenAPI v3.0.x'
+            # The Webhooks feature is not supported in OpenAPI v3.0.x
+            throw $PodeLocal.webhooksFeatureNotSupportedInOpenApi30ExceptionMessage
         }
         $PodeContext.Server.OpenAPI.Definitions[$tag].webhooks[$Name] = $refRoute
     }
@@ -3350,7 +3351,8 @@ function Select-PodeOADefinition {
     )
 
     if (Test-PodeIsEmpty $Scriptblock) {
-        throw 'No scriptblock for -Scriptblock passed'
+        # No ScriptBlock supplied
+        throw $PodeLocal.noScriptBlockSuppliedExceptionMessage
     }
     if (Test-PodeIsEmpty -Value $Tag) {
         $Tag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag

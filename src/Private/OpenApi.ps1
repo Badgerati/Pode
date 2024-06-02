@@ -43,7 +43,7 @@ function ConvertTo-PodeOAObjectSchema {
     # Ensure all content types are valid MIME types
     foreach ($type in $Content.Keys) {
         if ($type -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$|^"\*\/\*"$') {
-            throw ($msgTable.invalidContentTypeForSchemaExceptionMessage -f $type) #"Invalid content-type found for schema: $($type)"
+            throw ($PodeLocale.invalidContentTypeForSchemaExceptionMessage -f $type) #"Invalid content-type found for schema: $($type)"
         }
     }
     # manage generic schema json conversion issue
@@ -182,7 +182,7 @@ function ConvertTo-PodeOAObjectSchema {
                 }
                 else {
                     # The Properties parameters cannot be used if the Property has no name
-                    Throw $msgTable.propertiesParameterWithoutNameExceptionMessage
+                    Throw $PodeLocale.propertiesParameterWithoutNameExceptionMessage
                 }
             }
             else {
@@ -375,7 +375,7 @@ function ConvertTo-PodeOASchemaProperty {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
             if ($Property.type -is [string[]]) {
                 # Multi type properties requeired OpenApi Version 3.1 or above
-                throw $msgTable.multiTypePropertiesRequireOpenApi31ExceptionMessage
+                throw $PodeLocale.multiTypePropertiesRequireOpenApi31ExceptionMessage
             }
             $schema['type'] = $Property.type.ToLower()
         }
@@ -809,7 +809,7 @@ function Get-PodeOpenApiDefinitionInternal {
 
     if (!$Definition.Version) {
         # OpenApi Version property is mandatory
-        throw $msgTable.openApiVersionPropertyMandatoryExceptionMessage
+        throw $PodeLocale.openApiVersionPropertyMandatoryExceptionMessage
     }
     $localEndpoint = $null
     # set the openapi version
@@ -866,7 +866,7 @@ function Get-PodeOpenApiDefinitionInternal {
     if ($Definition.webhooks.count -gt 0) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag) {
             # Webhooks feature is unsupported in OpenAPI v3.0.x
-            throw $msgTable.webhooksFeatureNotSupportedInOpenApi30ExceptionMessage
+            throw $PodeLocale.webhooksFeatureNotSupportedInOpenApi30ExceptionMessage
         }
         else {
             $keys = [string[]]$Definition.webhooks.Keys
@@ -914,7 +914,7 @@ function Get-PodeOpenApiDefinitionInternal {
     if ($components.pathItems.count -gt 0) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag) {
             # Feature pathItems is unsupported in OpenAPI v3.0.x
-            throw $msgTable.pathItemsFeatureNotSupportedInOpenApi30ExceptionMessage
+            throw $PodeLocale.pathItemsFeatureNotSupportedInOpenApi30ExceptionMessage
         }
         else {
             $keys = [string[]]$components.pathItems.Keys
@@ -1318,7 +1318,7 @@ function Set-PodeOAAuth {
         # Validate the existence of specified authentication methods
         foreach ($n in @($Name)) {
             if (!(Test-PodeAuthExists -Name $n)) {
-                throw ($msgTable.authenticationMethodDoesNotExistExceptionMessage -f $n) #"Authentication method does not exist: $($n)"
+                throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $n) #"Authentication method does not exist: $($n)"
             }
         }
     }
@@ -1385,7 +1385,7 @@ function Set-PodeOAGlobalAuth {
 
     # Check if the specified authentication method exists
     if (!(Test-PodeAuthExists -Name $Name)) {
-        throw ($msgTable.authenticationMethodDoesNotExistExceptionMessage -f $Name) #"Authentication method does not exist: $($Name)"
+        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Name) #"Authentication method does not exist: $($Name)"
     }
 
     # Iterate over each definition tag to apply the authentication method
@@ -1463,7 +1463,7 @@ function Resolve-PodeOAReference {
                             }
                             else {
                                 # Unsupported object
-                                throw $msgTable.unsupportedObjectExceptionMessage
+                                throw $PodeLocale.unsupportedObjectExceptionMessage
                             }
                         }
                     }
@@ -1479,11 +1479,11 @@ function Resolve-PodeOAReference {
                 }
                 elseif ($key -ieq 'oneof') {
                     # Validation of schema with oneof is not supported
-                    throw $msgTable.validationOfOneOfSchemaNotSupportedExceptionMessage
+                    throw $PodeLocale.validationOfOneOfSchemaNotSupportedExceptionMessage
                 }
                 elseif ($key -ieq 'anyof') {
                     # Validation of schema with anyof is not supported
-                    throw $msgTable.validationOfAnyOfSchemaNotSupportedExceptionMessage
+                    throw $PodeLocale.validationOfAnyOfSchemaNotSupportedExceptionMessage
                 }
             }
             elseif ($ComponentSchema.properties[$key].type -eq 'object') {
@@ -1566,7 +1566,7 @@ function New-PodeOAPropertyInternal {
         }
         else {
             # Cannot create the property no type is defined
-            throw $msgTable.cannotCreatePropertyWithoutTypeExceptionMessage
+            throw $PodeLocale.cannotCreatePropertyWithoutTypeExceptionMessage
         }
     }
 
@@ -1649,7 +1649,7 @@ function New-PodeOAPropertyInternal {
 
     if ($Params.NoAdditionalProperties.IsPresent -and $Params.AdditionalProperties) {
         # Params -NoAdditionalProperties and -AdditionalProperties are mutually exclusive
-        throw $msgTable.paramsNoAdditionalPropertiesExclusiveExceptionMessage
+        throw $PodeLocale.paramsNoAdditionalPropertiesExclusiveExceptionMessage
     }
     else {
         if ($Params.NoAdditionalProperties.IsPresent) { $param.additionalProperties = $false }
@@ -1710,7 +1710,7 @@ function ConvertTo-PodeOAHeaderProperty {
         }
         else {
             # Header requires a name when used in an encoding context
-            throw $msgTable.headerMustHaveNameInEncodingContextExceptionMessage
+            throw $PodeLocale.headerMustHaveNameInEncodingContextExceptionMessage
         }
     }
 
@@ -1826,7 +1826,7 @@ function New-PodeOResponseInternal {
         }
         else {
             # A Description is required
-            throw $msgTable.descriptionRequiredExceptionMessage
+            throw $PodeLocale.descriptionRequiredExceptionMessage
         }
     }
     else {
@@ -1997,7 +1997,7 @@ function Test-PodeOADefinitionInternal {
 
         # Throw an error indicating non-compliance with OpenAPI standards
         # OpenAPI document compliance issues
-        throw $msgTable.openApiDocumentNotCompliantExceptionMessage
+        throw $PodeLocale.openApiDocumentNotCompliantExceptionMessage
     }
 }
 
@@ -2069,7 +2069,7 @@ function Test-PodeOAComponentInternal {
             if (!($PodeContext.Server.OpenAPI.Definitions[$tag].components[$field].keys -ccontains $Name)) {
                 # If $Name is not found in the current $tag, return $false or throw an exception
                 if ($ThrowException.IsPresent ) {
-                    throw ($msgTable.noComponentInDefinitionExceptionMessage -f $field, $Name, $tag) #"No component of type $field named $Name is available in the $tag definition."
+                    throw ($PodeLocale.noComponentInDefinitionExceptionMessage -f $field, $Name, $tag) #"No component of type $field named $Name is available in the $tag definition."
                 }
                 else {
                     return $false

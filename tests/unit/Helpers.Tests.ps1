@@ -4,7 +4,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
 }
 
 Describe 'Get-PodeType' {
@@ -1075,7 +1075,7 @@ Describe 'Get-PodeRelativePath' {
 
     It 'Throws error for path ot existing' {
         Mock Test-PodePath { return $false }
-        { Get-PodeRelativePath -Path './path' -TestPath } | Should -Throw -ExpectedMessage ($msgTable.pathNotExistExceptionMessage -f './path') # '*The path does not exist*'
+        { Get-PodeRelativePath -Path './path' -TestPath } | Should -Throw -ExpectedMessage ($PodeLocale.pathNotExistExceptionMessage -f './path') # '*The path does not exist*'
     }
 }
 
@@ -1704,15 +1704,15 @@ Describe 'New-PodeCron' {
     }
 
     It 'Throws an error when using Interval without Every' {
-        { New-PodeCron -Interval 3 } | Should -Throw -ExpectedMessage $msgTable.cannotSupplyIntervalWhenEveryIsNoneExceptionMessage #'*Cannot supply an interval*'
+        { New-PodeCron -Interval 3 } | Should -Throw -ExpectedMessage $PodeLocale.cannotSupplyIntervalWhenEveryIsNoneExceptionMessage #'*Cannot supply an interval*'
     }
 
     It 'Throws an error when using Interval for Every Quarter' {
-        { New-PodeCron -Every Quarter -Interval 3 } | Should -Throw -ExpectedMessage $msgTable.cannotSupplyIntervalForQuarterExceptionMessage #Cannot supply interval value for every quarter.
+        { New-PodeCron -Every Quarter -Interval 3 } | Should -Throw -ExpectedMessage $PodeLocale.cannotSupplyIntervalForQuarterExceptionMessage #Cannot supply interval value for every quarter.
     }
 
     It 'Throws an error when using Interval for Every Year' {
-        { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage  $msgTable.cannotSupplyIntervalForYearExceptionMessage #'Cannot supply interval value for every year'
+        { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage  $PodeLocale.cannotSupplyIntervalForYearExceptionMessage #'Cannot supply interval value for every year'
     }
 }
 

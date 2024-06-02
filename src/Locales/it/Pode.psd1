@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = Il modulo Active Directory è disponibile solo su Windows.
 adModuleNotInstalledExceptionMessage = Il modulo Active Directory non è installato.
 secretManagementModuleNotInstalledExceptionMessage = Il modulo Microsoft.PowerShell.SecretManagement non è installato.
-secretVaultAlreadyRegisteredExceptionMessage = Una cassaforte segreta con il nome '{0}' è già stata registrata durante l'importazione automatica delle cassaforti segrete.
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = Una cassaforte segreta con il nome '{0}' è già stata registrata durante l'importazione automatica delle cassaforti segrete.
 failedToOpenRunspacePoolExceptionMessage = Impossibile aprire RunspacePool: {0}
 cronExpressionInvalidExceptionMessage = L'espressione Cron dovrebbe essere composta solo da 5 parti: {0}
 invalidAliasFoundExceptionMessage = Alias {0} non valido trovato: {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = Nessuna sessione disponibile per il s
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = Impossibile fornire un intervallo quando il parametro 'Every' è impostato su None.
 cannotSupplyIntervalForQuarterExceptionMessage = Impossibile fornire un valore di intervallo per ogni trimestre.
 cannotSupplyIntervalForYearExceptionMessage = Impossibile fornire un valore di intervallo per ogni anno.
+secretVaultAlreadyRegisteredExceptionMessage = Un Vault dei Segreti con il nome '{0}' è già stato registrato{1}.
+secretVaultUnlockExpiryDateInPastExceptionMessage = La data di scadenza per sbloccare il Vault dei Segreti è nel passato (UTC): {0}
+secretAlreadyMountedExceptionMessage = Un Segreto con il nome '{0}' è già stato montato.
+noSecretVaultRegisteredExceptionMessage = Nessun Vault dei Segreti con il nome '{0}' è stato registrato.
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = I parametri 'NoAdditionalProperties' e 'AdditionalProperties' sono mutuamente esclusivi.
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = Quando vengono passate le Credenziali, il carattere jolly * per le Intestazioni sarà considerato come una stringa letterale e non come un carattere jolly.
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = Il carattere jolly * per le Intestazioni è incompatibile con l'opzione AutoHeaders.
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = Il carattere jolly * per i Metodi è incompatibile con l'opzione AutoMethods.
+invalidAccessControlMaxAgeDurationExceptionMessage = Durata non valida fornita per Access-Control-Max-Age: {0}. Deve essere maggiore di 0.
+noNameForWebSocketDisconnectExceptionMessage = Nessun nome fornito per disconnettere il WebSocket.
+noNameForWebSocketRemoveExceptionMessage = Nessun nome fornito per rimuovere il WebSocket.
+noNameForWebSocketSendMessageExceptionMessage = Nessun nome fornito per inviare un messaggio al WebSocket.
+noSecretNamedMountedExceptionMessage = Nessun Segreto con il nome '{0}' è stato montato.
+noNameForWebSocketResetExceptionMessage = Nessun nome fornito per reimpostare il WebSocket.
 '@

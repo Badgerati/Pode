@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = El módulo de Active Directory solo está disponible en Windows.
 adModuleNotInstalledExceptionMessage = El módulo de Active Directory no está instalado.
 secretManagementModuleNotInstalledExceptionMessage = El módulo Microsoft.PowerShell.SecretManagement no está instalado.
-secretVaultAlreadyRegisteredExceptionMessage = Ya se ha registrado un Bóveda Secreta con el nombre '{0}' al importar automáticamente Bóvedas Secretas.
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = Ya se ha registrado un Bóveda Secreta con el nombre '{0}' al importar automáticamente Bóvedas Secretas.
 failedToOpenRunspacePoolExceptionMessage = Error al abrir RunspacePool: {0}
 cronExpressionInvalidExceptionMessage = La expresión Cron solo debe consistir en 5 partes: {0}
 invalidAliasFoundExceptionMessage = Se encontró un alias {0} no válido: {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = No hay sesión disponible para guarda
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = No se puede proporcionar un intervalo cuando el parámetro 'Every' está configurado en None.
 cannotSupplyIntervalForQuarterExceptionMessage = No se puede proporcionar un valor de intervalo para cada trimestre.
 cannotSupplyIntervalForYearExceptionMessage = No se puede proporcionar un valor de intervalo para cada año.
+secretVaultAlreadyRegisteredExceptionMessage = Un Cofre de Secretos con el nombre '{0}' ya ha sido registrado{1}.
+secretVaultUnlockExpiryDateInPastExceptionMessage = La fecha de expiración para desbloquear el Cofre de Secretos está en el pasado (UTC): {0}
+secretAlreadyMountedExceptionMessage = Un Secreto con el nombre '{0}' ya ha sido montado.
+noSecretVaultRegisteredExceptionMessage = No se ha registrado ningún Cofre de Secretos con el nombre '{0}'.
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = Los parámetros 'NoAdditionalProperties' y 'AdditionalProperties' son mutuamente excluyentes.
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = Cuando se pasan las Credenciales, el comodín * para los Encabezados se tomará como una cadena literal y no como un comodín.
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = El comodín * para los Encabezados es incompatible con el interruptor AutoHeaders.
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = El comodín * para los Métodos es incompatible con el interruptor AutoMethods.
+invalidAccessControlMaxAgeDurationExceptionMessage = Duración inválida para Access-Control-Max-Age proporcionada: {0}. Debe ser mayor que 0.
+noNameForWebSocketDisconnectExceptionMessage = No se proporcionó ningún nombre para desconectar el WebSocket.
+noNameForWebSocketRemoveExceptionMessage = No se proporcionó ningún nombre para eliminar el WebSocket.
+noNameForWebSocketSendMessageExceptionMessage = No se proporcionó ningún nombre para enviar un mensaje al WebSocket.
+noSecretNamedMountedExceptionMessage = No se ha montado ningún Secreto con el nombre '{0}'.
+noNameForWebSocketResetExceptionMessage = No se proporcionó ningún nombre para restablecer el WebSocket.
 '@

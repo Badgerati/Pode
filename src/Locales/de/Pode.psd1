@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = Active Directory-Modul nur unter Windows verfügbar.
 adModuleNotInstalledExceptionMessage = Das Active Directory-Modul ist nicht installiert.
 secretManagementModuleNotInstalledExceptionMessage = Das Modul Microsoft.PowerShell.SecretManagement ist nicht installiert.
-secretVaultAlreadyRegisteredExceptionMessage = Ein Geheimtresor mit dem Namen '{0}' wurde bereits beim automatischen Importieren von Geheimtresoren registriert.
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = Ein Geheimtresor mit dem Namen '{0}' wurde bereits beim automatischen Importieren von Geheimtresoren registriert.
 failedToOpenRunspacePoolExceptionMessage = Fehler beim Öffnen des Runspace-Pools: {0}
 cronExpressionInvalidExceptionMessage = Die Cron-Ausdruck sollte nur aus 5 Teilen bestehen: {0}
 invalidAliasFoundExceptionMessage = Ungültiges {0}-Alias gefunden: {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = Keine Sitzung verfügbar zum Speicher
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = Ein Intervall kann nicht angegeben werden, wenn der Parameter 'Every' auf None gesetzt ist.
 cannotSupplyIntervalForQuarterExceptionMessage = Ein Intervallwert kann nicht für jedes Quartal angegeben werden.
 cannotSupplyIntervalForYearExceptionMessage = Ein Intervallwert kann nicht für jedes Jahr angegeben werden.
+secretVaultAlreadyRegisteredExceptionMessage = Ein Geheimnis-Tresor mit dem Namen '{0}' wurde bereits registriert{1}.
+secretVaultUnlockExpiryDateInPastExceptionMessage = Das Ablaufdatum zum Entsperren des Geheimnis-Tresors liegt in der Vergangenheit (UTC): {0}
+secretAlreadyMountedExceptionMessage = Ein Geheimnis mit dem Namen '{0}' wurde bereits eingebunden.
+noSecretVaultRegisteredExceptionMessage = Kein Geheimnis-Tresor mit dem Namen '{0}' wurde registriert.
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = Die Parameter 'NoAdditionalProperties' und 'AdditionalProperties' schließen sich gegenseitig aus.
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = Wenn Anmeldeinformationen übergeben werden, wird das *-Wildcard für Header als Literalzeichenfolge und nicht als Platzhalter verwendet.
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = Das *-Wildcard für Header ist nicht mit dem AutoHeaders-Schalter kompatibel.
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = Das *-Wildcard für Methoden ist nicht mit dem AutoMethods-Schalter kompatibel.
+invalidAccessControlMaxAgeDurationExceptionMessage = Ungültige Access-Control-Max-Age-Dauer angegeben: {0}. Sollte größer als 0 sein.
+noNameForWebSocketDisconnectExceptionMessage = Kein Name für die Trennung vom WebSocket angegeben.
+noNameForWebSocketRemoveExceptionMessage = Kein Name für das Entfernen des WebSocket angegeben.
+noNameForWebSocketSendMessageExceptionMessage = Kein Name für das Senden einer Nachricht an den WebSocket angegeben.
+noSecretNamedMountedExceptionMessage = Kein Geheimnis mit dem Namen '{0}' wurde eingebunden.
+noNameForWebSocketResetExceptionMessage = Kein Name für das Zurücksetzen des WebSocket angegeben.
 '@

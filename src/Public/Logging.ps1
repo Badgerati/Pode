@@ -133,7 +133,7 @@ function New-PodeLoggingMethod {
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the Custom logging output method
-                    throw $msgTable.nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage
+                    throw $PodeLocale.nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage
                 }
 
                 return $true
@@ -189,7 +189,7 @@ function New-PodeLoggingMethod {
             # only windows
             if (!(Test-PodeIsWindows)) {
                 # Event Viewer logging only supported on Windows
-                throw $msgTable.eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage
+                throw $PodeLocale.eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage
             }
 
             # create source
@@ -263,13 +263,13 @@ function Enable-PodeRequestLogging {
     # error if it's already enabled
     if ($PodeContext.Server.Logging.Types.Contains($name)) {
         # Request Logging has already been enabled
-        throw $msgTable.requestLoggingAlreadyEnabledExceptionMessage
+        throw $PodeLocale.requestLoggingAlreadyEnabledExceptionMessage
     }
 
     # ensure the Method contains a scriptblock
     if (Test-PodeIsEmpty $Method.ScriptBlock) {
         # The supplied output Method for Request Logging requires a valid ScriptBlock
-        throw $msgTable.outputMethodRequiresValidScriptBlockForRequestLoggingExceptionMessage
+        throw $PodeLocale.outputMethodRequiresValidScriptBlockForRequestLoggingExceptionMessage
     }
 
     # username property
@@ -348,13 +348,13 @@ function Enable-PodeErrorLogging {
     # error if it's already enabled
     if ($PodeContext.Server.Logging.Types.Contains($name)) {
         # Error Logging has already been enabled
-        throw $msgTable.requestLoggingAlreadyEnabledExceptionMessage
+        throw $PodeLocale.requestLoggingAlreadyEnabledExceptionMessage
     }
 
     # ensure the Method contains a scriptblock
     if (Test-PodeIsEmpty $Method.ScriptBlock) {
         # The supplied output Method for Error Logging requires a valid ScriptBlock
-        throw $msgTable.outputMethodRequiresValidScriptBlockForRequestLoggingExceptionMessage
+        throw $PodeLocale.outputMethodRequiresValidScriptBlockForRequestLoggingExceptionMessage
     }
 
     # all errors?
@@ -427,7 +427,7 @@ function Add-PodeLogger {
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the logging method
-                    throw $msgTable.nonEmptyScriptBlockRequiredForLoggingMethodExceptionMessage
+                    throw $PodeLocale.nonEmptyScriptBlockRequiredForLoggingMethodExceptionMessage
                 }
 
                 return $true

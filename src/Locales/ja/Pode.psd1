@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = Active DirectoryモジュールはWindowsでのみ利用可能です。
 adModuleNotInstalledExceptionMessage = Active Directoryモジュールがインストールされていません。
 secretManagementModuleNotInstalledExceptionMessage = Microsoft.PowerShell.SecretManagementモジュールがインストールされていません。
-secretVaultAlreadyRegisteredExceptionMessage = シークレットボールト'{0}'は既に登録されています（シークレットボールトの自動インポート中）。
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = シークレットボールト'{0}'は既に登録されています（シークレットボールトの自動インポート中）。
 failedToOpenRunspacePoolExceptionMessage = RunspacePoolのオープンに失敗しました: {0}
 cronExpressionInvalidExceptionMessage = Cron式は5つの部分で構成される必要があります: {0}
 invalidAliasFoundExceptionMessage = 無効な{0}エイリアスが見つかりました: {1}
@@ -164,4 +164,19 @@ noSessionAvailableToSaveExceptionMessage = 保存するためのセッション�
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = パラメーター'Every'がNoneに設定されている場合、間隔を提供できません。
 cannotSupplyIntervalForQuarterExceptionMessage = 四半期ごとの間隔値を提供できません。
 cannotSupplyIntervalForYearExceptionMessage = 毎年の間隔値を提供できません。
+secretVaultAlreadyRegisteredExceptionMessage = 名前 '{0}' のシークレットボールトは既に登録されています{1}。
+secretVaultUnlockExpiryDateInPastExceptionMessage = シークレットボールトのアンロック有効期限が過去に設定されています (UTC) :{0}
+secretAlreadyMountedExceptionMessage = 名前 '{0}' のシークレットは既にマウントされています。
+noSecretVaultRegisteredExceptionMessage = 名前 '{0}' のシークレットボールトは登録されていません。
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = パラメータ 'NoAdditionalProperties' と 'AdditionalProperties' は相互に排他的です。
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = 資格情報が渡されると、ヘッダーのワイルドカード * はワイルドカードとしてではなく、リテラル文字列として解釈されます。
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = ヘッダーのワイルドカード * は AutoHeaders スイッチと互換性がありません。
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = メソッドのワイルドカード * は AutoMethods スイッチと互換性がありません。
+invalidAccessControlMaxAgeDurationExceptionMessage = 無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。
+noNameForWebSocketDisconnectExceptionMessage = 切断する WebSocket の名前が指定されていません。
+noNameForWebSocketRemoveExceptionMessage = 削除する WebSocket の名前が指定されていません。
+noNameForWebSocketSendMessageExceptionMessage = メッセージを送信する WebSocket の名前が指定されていません。
+noSecretNamedMountedExceptionMessage = 名前 '{0}' のシークレットはマウントされていません。
+noNameForWebSocketResetExceptionMessage = リセットする WebSocket の名前が指定されていません。
 '@
+

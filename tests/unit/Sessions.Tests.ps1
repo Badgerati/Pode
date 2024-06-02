@@ -5,7 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
 
     $now = [datetime]::UtcNow
 }
@@ -259,7 +259,7 @@ Describe 'Set-PodeSession' {
 Describe 'Remove-PodeSession' {
     It 'Throws an error if sessions are not configured' {
         Mock Test-PodeSessionsEnabled { return $false }
-        { Remove-PodeSession } | Should -Throw $msgTable.sessionsNotConfiguredExceptionMessage # Sessions have not been configured.
+        { Remove-PodeSession } | Should -Throw $PodeLocale.sessionsNotConfiguredExceptionMessage # Sessions have not been configured.
     }
 
     It 'Does nothing if there is no session' {
@@ -286,13 +286,13 @@ Describe 'Remove-PodeSession' {
 Describe 'Save-PodeSession' {
     It 'Throws an error if sessions are not configured' {
         Mock Test-PodeSessionsEnabled { return $false }
-        { Save-PodeSession } | Should -Throw $msgTable.sessionsNotConfiguredExceptionMessage # Sessions have not been configured.
+        { Save-PodeSession } | Should -Throw $PodeLocale.sessionsNotConfiguredExceptionMessage # Sessions have not been configured.
     }
 
     It 'Throws error if there is no session' {
         Mock Test-PodeSessionsEnabled { return $true }
         $WebEvent = @{}
-        { Save-PodeSession } | Should -Throw -ExpectedMessage $msgTable.noSessionAvailableToSaveExceptionMessage # There is no session available to save.
+        { Save-PodeSession } | Should -Throw -ExpectedMessage $PodeLocale.noSessionAvailableToSaveExceptionMessage # There is no session available to save.
     }
 
     It 'Call saves the session' {

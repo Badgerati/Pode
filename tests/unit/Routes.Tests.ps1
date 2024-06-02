@@ -5,7 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
     $PodeContext = @{ 'Server' = $null; }
 }
 
@@ -585,7 +585,7 @@ Describe 'ConvertTo-PodeRoute' {
     }
 
     It 'Throws error for no commands' {
-        { ConvertTo-PodeRoute } | Should -Throw -ExpectedMessage $msgTable.noCommandsSuppliedToConvertToRoutesExceptionMessage # No commands supplied to convert to Routes.
+        { ConvertTo-PodeRoute } | Should -Throw -ExpectedMessage $PodeLocale.noCommandsSuppliedToConvertToRoutesExceptionMessage # No commands supplied to convert to Routes.
     }
 
     It 'Calls Add-PodeRoute twice for commands' {
@@ -619,7 +619,7 @@ Describe 'Add-PodePage' {
 
     It 'Throws error for invalid FilePath' {
         $PodeContext.Server = @{ 'Root' = $pwd }
-        { Add-PodePage -Name 'RickMorty' -FilePath './fake/path' } | Should -Throw -ExpectedMessage ($msgTable.pathNotExistExceptionMessage -f '*/fake/path') #'*the path does not exist*'
+        { Add-PodePage -Name 'RickMorty' -FilePath './fake/path' } | Should -Throw -ExpectedMessage ($PodeLocale.pathNotExistExceptionMessage -f '*/fake/path') #'*the path does not exist*'
     }
 
     It 'Call Add-PodeRoute once for ScriptBlock page' {

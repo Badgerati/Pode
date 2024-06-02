@@ -160,7 +160,7 @@ function New-PodeAuthScheme {
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the Custom authentication scheme
-                    throw $msgTable.nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage
+                    throw $PodeLocale.nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage
                 }
 
                 return $true
@@ -410,22 +410,22 @@ function New-PodeAuthScheme {
         'oauth2' {
             if (($null -ne $InnerScheme) -and ($InnerScheme.Name -inotin @('basic', 'form'))) {
                 # OAuth2 InnerScheme can only be one of either Basic or Form authentication, but got: {0}
-                throw ($msgTable.oauth2InnerSchemeInvalidExceptionMessage -f $InnerScheme.Name)
+                throw ($PodeLocale.oauth2InnerSchemeInvalidExceptionMessage -f $InnerScheme.Name)
             }
 
             if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
                 #OAuth2 requires an Authorise URL to be supplied
-                throw $msgTable.oauth2RequiresAuthorizeUrlExceptionMessage
+                throw $PodeLocale.oauth2RequiresAuthorizeUrlExceptionMessage
             }
 
             if ($UsePKCE -and !(Test-PodeSessionsEnabled)) {
                 # Sessions are required to use OAuth2 with PKCE
-                throw $msgTable.sessionsRequiredForOAuth2WithPKCEExceptionMessage
+                throw $PodeLocale.sessionsRequiredForOAuth2WithPKCEExceptionMessage
             }
 
             if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
                 # OAuth2 requires a Client Secret when not using PKCE
-                throw $msgTable.oauth2ClientSecretRequiredExceptionMessage
+                throw $PodeLocale.oauth2ClientSecretRequiredExceptionMessage
             }
             return @{
                 Name          = 'OAuth2'
@@ -723,7 +723,7 @@ function Add-PodeAuth {
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the authentication method
-                    throw $msgTable.nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage
+                    throw $PodeLocale.nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage
                 }
 
                 return $true
@@ -757,19 +757,19 @@ function Add-PodeAuth {
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         # Authentication method already defined: {0}
-        throw ($msgTable.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # ensure the Scheme contains a scriptblock
     if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
         # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock
-        throw ($msgTable.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
     }
 
     # if we're using sessions, ensure sessions have been setup
     if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         # Sessions are required to use session persistent authentication
-        throw $msgTable.sessionsRequiredForSessionPersistentAuthExceptionMessage
+        throw $PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage
     }
 
     # check for scoped vars
@@ -912,24 +912,24 @@ function Merge-PodeAuth {
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         # Authentication method already defined: { 0 }
-        throw ($msgTable.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # ensure all the auth methods exist
     foreach ($authName in $Authentication) {
         if (!(Test-PodeAuthExists -Name $authName)) {
-            throw ($msgTable.authMethodNotExistForMergingExceptionMessage -f $authName) #"Authentication method does not exist for merging: $($authName)"
+            throw ($PodeLocale.authMethodNotExistForMergingExceptionMessage -f $authName) #"Authentication method does not exist for merging: $($authName)"
         }
     }
 
     # ensure the merge default is in the auth list
     if (![string]::IsNullOrEmpty($MergeDefault) -and ($MergeDefault -inotin @($Authentication))) {
-        throw ($msgTable.mergeDefaultAuthNotInListExceptionMessage -f $MergeDefault) # "the MergeDefault Authentication '$($MergeDefault)' is not in the Authentication list supplied"
+        throw ($PodeLocale.mergeDefaultAuthNotInListExceptionMessage -f $MergeDefault) # "the MergeDefault Authentication '$($MergeDefault)' is not in the Authentication list supplied"
     }
 
     # ensure the default is in the auth list
     if (![string]::IsNullOrEmpty($Default) -and ($Default -inotin @($Authentication))) {
-        throw ($msgTable.defaultAuthNotInListExceptionMessage -f $Default) # "the Default Authentication '$($Default)' is not in the Authentication list supplied"
+        throw ($PodeLocale.defaultAuthNotInListExceptionMessage -f $Default) # "the Default Authentication '$($Default)' is not in the Authentication list supplied"
     }
 
     # set default
@@ -948,7 +948,7 @@ function Merge-PodeAuth {
     # if we're using sessions, ensure sessions have been setup
     if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         # Sessions are required to use session persistent authentication
-        throw $msgTable.sessionsRequiredForSessionPersistentAuthExceptionMessage
+        throw $PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage
     }
 
     # check failure url from default
@@ -975,7 +975,7 @@ function Merge-PodeAuth {
     if (($Valid -ieq 'all') -and [string]::IsNullOrEmpty($MergeDefault)) {
         if ($null -eq $ScriptBlock) {
             # A Scriptblock for merging multiple authenticated users into 1 object is required When Valid is All
-            throw $msgTable.scriptBlockRequiredForMergingUsersExceptionMessage
+            throw $PodeLocale.scriptBlockRequiredForMergingUsersExceptionMessage
         }
 
         $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
@@ -1040,7 +1040,7 @@ function Get-PodeAuth {
 
     # ensure the name exists
     if (!(Test-PodeAuthExists -Name $Name)) {
-        throw ($msgTable.authenticationMethodDoesNotExistExceptionMessage -f $Name) # "Authentication method not defined: $($Name)"
+        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Name) # "Authentication method not defined: $($Name)"
     }
 
     # get auth method
@@ -1277,19 +1277,19 @@ function Add-PodeAuthWindowsAd {
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         # Authentication method already defined: {0}
-        throw ($msgTable.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # ensure the Scheme contains a scriptblock
     if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
         # The supplied Scheme for the '$($Name)' Windows AD authentication validator requires a valid ScriptBlock
-        throw ($msgTable.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
     }
 
     # if we're using sessions, ensure sessions have been setup
     if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         # Sessions are required to use session persistent authentication
-        throw $msgTable.sessionsRequiredForSessionPersistentAuthExceptionMessage
+        throw $PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage
     }
 
     # if AD module set, ensure we're on windows and the module is available, then import/export it
@@ -1303,7 +1303,7 @@ function Add-PodeAuthWindowsAd {
 
         if ([string]::IsNullOrWhiteSpace($Fqdn)) {
             # No domain server name has been supplied for Windows AD authentication
-            throw $msgTable.noDomainServerNameForWindowsAdAuthExceptionMessage
+            throw $PodeLocale.noDomainServerNameForWindowsAdAuthExceptionMessage
         }
     }
 
@@ -1417,13 +1417,13 @@ function Add-PodeAuthSession {
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
         # Sessions have not been configured
-        throw $msgTable.sessionsNotConfiguredExceptionMessage
+        throw $PodeLocale.sessionsNotConfiguredExceptionMessage
     }
 
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         # Authentication method already defined: { 0 }
-        throw ($msgTable.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # if we have a scriptblock, deal with using vars
@@ -1577,7 +1577,7 @@ function Add-PodeAuthMiddleware {
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
     if (!(Test-PodeAuthExists -Name $Authentication)) {
-        throw ($msgTable.authenticationMethodDoesNotExistExceptionMessage -f $Authentication) # "Authentication method does not exist: $($Authentication)"
+        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Authentication) # "Authentication method does not exist: $($Authentication)"
     }
 
     Get-PodeAuthMiddlewareScript |
@@ -1704,13 +1704,13 @@ function Add-PodeAuthIIS {
     # ensure we're on Windows!
     if (!(Test-PodeIsWindows)) {
         # IIS Authentication support is for Windows only
-        throw $msgTable.iisAuthSupportIsForWindowsOnlyExceptionMessage
+        throw $PodeLocale.iisAuthSupportIsForWindowsOnlyExceptionMessage
     }
 
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         # Authentication method already defined: {0}
-        throw ($msgTable.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # if AD module set, ensure we're on windows and the module is available, then import/export it
@@ -1869,19 +1869,19 @@ function Add-PodeAuthUserFile {
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         # Authentication method already defined: {0}
-        throw ($msgTable.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # ensure the Scheme contains a scriptblock
     if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
         # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock.
-        throw ($msgTable.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
     }
 
     # if we're using sessions, ensure sessions have been setup
     if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         # Sessions are required to use session persistent authentication
-        throw $msgTable.sessionsRequiredForSessionPersistentAuthExceptionMessage
+        throw $PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage
     }
 
     # set the file path if not passed
@@ -1895,7 +1895,7 @@ function Add-PodeAuthUserFile {
     # ensure the user file exists
     if (!(Test-PodePath -Path $FilePath -NoStatus -FailOnDirectory)) {
         # The user file does not exist: {0}
-        throw ($msgTable.userFileDoesNotExistExceptionMessage -f $FilePath)
+        throw ($PodeLocale.userFileDoesNotExistExceptionMessage -f $FilePath)
     }
 
     # if we have a scriptblock, deal with using vars
@@ -2031,25 +2031,25 @@ function Add-PodeAuthWindowsLocal {
     # ensure we're on Windows!
     if (!(Test-PodeIsWindows)) {
         # Windows Local Authentication support is for Windows only
-        throw $msgTable.windowsLocalAuthSupportIsForWindowsOnlyExceptionMessage
+        throw $PodeLocale.windowsLocalAuthSupportIsForWindowsOnlyExceptionMessage
     }
 
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         # Authentication method already defined: {0}
-        throw ($msgTable.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # ensure the Scheme contains a scriptblock
     if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
         # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock.
-        throw ($msgTable.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
     }
 
     # if we're using sessions, ensure sessions have been setup
     if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
         # Sessions are required to use session persistent authentication
-        throw $msgTable.sessionsRequiredForSessionPersistentAuthExceptionMessage
+        throw $PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage
     }
 
     # if we have a scriptblock, deal with using vars
@@ -2126,7 +2126,7 @@ function ConvertTo-PodeJwt {
     # validate header
     if ([string]::IsNullOrWhiteSpace($Header.alg)) {
         # No algorithm supplied in JWT Header
-        throw $msgTable.noAlgorithmInJwtHeaderExceptionMessage
+        throw $PodeLocale.noAlgorithmInJwtHeaderExceptionMessage
     }
 
     # convert the header
@@ -2191,14 +2191,14 @@ function ConvertFrom-PodeJwt {
     # check number of parts (should be 3)
     if ($parts.Length -ne 3) {
         # Invalid JWT supplied
-        throw $msgTable.invalidJwtSuppliedExceptionMessage
+        throw $PodeLocale.invalidJwtSuppliedExceptionMessage
     }
 
     # convert to header
     $header = ConvertFrom-PodeJwtBase64Value -Value $parts[0]
     if ([string]::IsNullOrWhiteSpace($header.alg)) {
         # Invalid JWT header algorithm supplied
-        throw $msgTable.invalidJwtHeaderAlgorithmSuppliedExceptionMessage
+        throw $PodeLocale.invalidJwtHeaderAlgorithmSuppliedExceptionMessage
     }
 
     # convert to payload
@@ -2216,17 +2216,17 @@ function ConvertFrom-PodeJwt {
 
     if ([string]::IsNullOrWhiteSpace($signature) -and !$isNoneAlg) {
         # No JWT signature supplied for {0}
-        throw  ($msgTable.noJwtSignatureForAlgorithmExceptionMessage -f $header.alg)
+        throw  ($PodeLocale.noJwtSignatureForAlgorithmExceptionMessage -f $header.alg)
     }
 
     if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
         # Expected no JWT signature to be supplied
-        throw $msgTable.expectedNoJwtSignatureSuppliedExceptionMessage
+        throw $PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage
     }
 
     if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
         # Expected no JWT signature to be supplied
-        throw $msgTable.expectedNoJwtSignatureSuppliedExceptionMessage
+        throw $PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage
     }
 
     if ($isNoneAlg) {
@@ -2243,7 +2243,7 @@ function ConvertFrom-PodeJwt {
 
     if ($sig -ne $parts[2]) {
         # Invalid JWT signature supplied
-        throw $msgTable.invalidJwtSignatureSuppliedExceptionMessage
+        throw $PodeLocale.invalidJwtSignatureSuppliedExceptionMessage
     }
 
     # it's valid return the payload!
@@ -2283,7 +2283,7 @@ function Test-PodeJwt {
     if (![string]::IsNullOrWhiteSpace($Payload.exp)) {
         if ($now -gt $unixStart.AddSeconds($Payload.exp)) {
             # The JWT has expired
-            throw $msgTable.jwtExpiredExceptionMessage
+            throw $PodeLocale.jwtExpiredExceptionMessage
         }
     }
 
@@ -2291,7 +2291,7 @@ function Test-PodeJwt {
     if (![string]::IsNullOrWhiteSpace($Payload.nbf)) {
         if ($now -lt $unixStart.AddSeconds($Payload.nbf)) {
             # The JWT is not yet valid for use
-            throw $msgTable.jwtNotYetValidExceptionMessage
+            throw $PodeLocale.jwtNotYetValidExceptionMessage
         }
     }
 }
@@ -2405,13 +2405,13 @@ function ConvertFrom-PodeOIDCDiscovery {
     # check it supports the code response_type
     if ($config.response_types_supported -inotcontains 'code') {
         # The OAuth2 provider does not support the 'code' response_type
-        throw $msgTable.oauth2ProviderDoesNotSupportCodeResponseTypeExceptionMessage
+        throw $PodeLocale.oauth2ProviderDoesNotSupportCodeResponseTypeExceptionMessage
     }
 
     # can we have an InnerScheme?
     if (($null -ne $InnerScheme) -and ($config.grant_types_supported -inotcontains 'password')) {
         # The OAuth2 provider does not support the 'password' grant_type required by using an InnerScheme
-        throw $msgTable.oauth2ProviderDoesNotSupportPasswordGrantTypeExceptionMessage
+        throw $PodeLocale.oauth2ProviderDoesNotSupportPasswordGrantTypeExceptionMessage
     }
 
     # scopes

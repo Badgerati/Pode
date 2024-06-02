@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = O módulo Active Directory está disponível apenas no Windows.
 adModuleNotInstalledExceptionMessage = O módulo Active Directory não está instalado.
 secretManagementModuleNotInstalledExceptionMessage = O módulo Microsoft.PowerShell.SecretManagement não está instalado.
-secretVaultAlreadyRegisteredExceptionMessage = Um Cofre de Segredos com o nome '{0}' já foi registrado durante a importação automática de Cofres de Segredos.
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = Um Cofre de Segredos com o nome '{0}' já foi registrado durante a importação automática de Cofres de Segredos.
 failedToOpenRunspacePoolExceptionMessage = Falha ao abrir o RunspacePool: {0}
 cronExpressionInvalidExceptionMessage = A expressão Cron deve consistir apenas em 5 partes: {0}
 invalidAliasFoundExceptionMessage = Alias {0} inválido encontrado: {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = Não há sessão disponível para sal
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = Não é possível fornecer um intervalo quando o parâmetro 'Every' está definido como None.
 cannotSupplyIntervalForQuarterExceptionMessage = Não é possível fornecer um valor de intervalo para cada trimestre.
 cannotSupplyIntervalForYearExceptionMessage = Não é possível fornecer um valor de intervalo para cada ano.
+secretVaultAlreadyRegisteredExceptionMessage = Um Cofre de Segredos com o nome '{0}' já foi registrado{1}.
+secretVaultUnlockExpiryDateInPastExceptionMessage = A data de expiração de desbloqueio do Cofre de Segredos está no passado (UTC): {0}
+secretAlreadyMountedExceptionMessage = Um Segredo com o nome '{0}' já foi montado.
+noSecretVaultRegisteredExceptionMessage = Nenhum Cofre de Segredos com o nome '{0}' foi registrado.
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = Os parâmetros 'NoAdditionalProperties' e 'AdditionalProperties' são mutuamente exclusivos.
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = Quando as Credenciais são passadas, o caractere curinga * para os Cabeçalhos será interpretado como uma string literal e não como um caractere curinga.
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = O caractere curinga * para os Cabeçalhos é incompatível com a chave AutoHeaders.
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = O caractere curinga * para os Métodos é incompatível com a chave AutoMethods.
+invalidAccessControlMaxAgeDurationExceptionMessage = Duração inválida fornecida para Access-Control-Max-Age: {0}. Deve ser maior que 0.
+noNameForWebSocketDisconnectExceptionMessage = Nenhum nome fornecido para desconectar do WebSocket.
+noNameForWebSocketRemoveExceptionMessage = Nenhum nome fornecido para remover o WebSocket.
+noNameForWebSocketSendMessageExceptionMessage = Nenhum nome fornecido para enviar mensagem ao WebSocket.
+noSecretNamedMountedExceptionMessage = Nenhum Segredo com o nome '{0}' foi montado.
+noNameForWebSocketResetExceptionMessage = Nenhum nome fornecido para redefinir o WebSocket.
 '@

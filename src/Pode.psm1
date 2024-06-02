@@ -37,10 +37,10 @@ if ([string]::IsNullOrEmpty($UICulture)) {
 }
 
 #Culture list available here https://azuliadesigns.com/c-sharp-tutorials/list-net-culture-country-codes/
-Import-LocalizedData -BindingVariable tmpMsgtable -BaseDirectory (Join-Path -Path $root -ChildPath 'Locales') -UICulture $UICulture -ErrorAction:SilentlyContinue
-if ($null -eq $tmpMsgtable) {
+Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory (Join-Path -Path $root -ChildPath 'Locales') -UICulture $UICulture -ErrorAction:SilentlyContinue
+if ($null -eq $tmpPodeLocale) {
     try {
-        Import-LocalizedData -BindingVariable tmpMsgtable -BaseDirectory (Join-Path -Path $root -ChildPath 'Locales') -UICulture 'en' -ErrorAction:Stop
+        Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory (Join-Path -Path $root -ChildPath 'Locales') -UICulture 'en' -ErrorAction:Stop
     }
     catch {
         throw
@@ -49,7 +49,7 @@ if ($null -eq $tmpMsgtable) {
 
 try {
     # Create the global msgTable read-only variable
-    New-Variable -Name 'msgTable' -Value $tmpMsgtable -Scope Global -Option ReadOnly -Force
+    New-Variable -Name 'PodeLocale' -Value $tmpMsgtable -Scope Global -Option ReadOnly -Force
 
     # load assemblies
     Add-Type -AssemblyName System.Web -ErrorAction Stop
@@ -71,7 +71,8 @@ if ($podeDll) {
     if ( $moduleManifest.ModuleVersion -ne '$version$') {
         $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
         if ($podeDll.GetName().Version -ne $moduleVersion) {
-            throw ($msgTable.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion) #"An existing incompatible Pode.DLL version $($podeDll.GetName().Version) is loaded. Version $moduleVersion is required. Open a new Powershell/pwsh session and retry."
+            # An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new Powershell/pwsh session and retry.
+            throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion)
         }
     }
 }

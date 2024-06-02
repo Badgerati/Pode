@@ -5,7 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture "en-us" -FileName "Pode"
+Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture "en-us" -FileName "Pode"
 }
 
 Describe 'OpenApi' {
@@ -2086,7 +2086,7 @@ Describe 'OpenApi' {
                 {
                     Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                 (New-PodeOAObjectProperty  -Properties  @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')))
-                    ) } | Should -Throw -ExpectedMessage $msgTable.discriminatorIncompatibleWithAllOfExceptionMessage #'Discriminator parameter is not compatible with allOf'
+                    ) } | Should -Throw -ExpectedMessage $PodeLocale.discriminatorIncompatibleWithAllOfExceptionMessage #'Discriminator parameter is not compatible with allOf'
             }
             #Should  -Throw  -ExpectedMessage 'Discriminator parameter is not compatible with allOf'
 
@@ -2277,7 +2277,7 @@ Describe 'OpenApi' {
         it 'throw error' {
             {
                 Add-PodeOAComponentParameter   -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' | New-PodeOAObjectProperty ) } |
-                Should -Throw -ExpectedMessage $msgTable.parameterHasNoNameExceptionMessage # The Parameter has no name. Please give this component a name using the 'Name' parameter.
+                Should -Throw -ExpectedMessage $PodeLocale.parameterHasNoNameExceptionMessage # The Parameter has no name. Please give this component a name using the 'Name' parameter.
         }
     }
     Context 'ConvertTo-PodeOAParameter' {

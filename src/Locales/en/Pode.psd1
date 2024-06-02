@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = Active Directory module only available on Windows.
 adModuleNotInstalledExceptionMessage = Active Directory module is not installed.
 secretManagementModuleNotInstalledExceptionMessage = Microsoft.PowerShell.SecretManagement module not installed.
-secretVaultAlreadyRegisteredExceptionMessage = A Secret Vault with the name '{0}' has already been registered while auto-importing Secret Vaults.
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = A Secret Vault with the name '{0}' has already been registered while auto-importing Secret Vaults.
 failedToOpenRunspacePoolExceptionMessage = Failed to open RunspacePool: {0}
 cronExpressionInvalidExceptionMessage = Cron expression should only consist of 5 parts: {0}
 invalidAliasFoundExceptionMessage = Invalid {0} alias found: {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = There is no session available to save
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = Cannot supply an interval when the parameter 'Every' is set to None.
 cannotSupplyIntervalForQuarterExceptionMessage = Cannot supply interval value for every quarter.
 cannotSupplyIntervalForYearExceptionMessage = Cannot supply interval value for every year.
+secretVaultAlreadyRegisteredExceptionMessage = A Secret Vault with the name '{0}' has already been registered{1}.
+secretVaultUnlockExpiryDateInPastExceptionMessage = Secret Vault unlock expiry date is in the past (UTC): {0}
+secretAlreadyMountedExceptionMessage = A Secret with the name '{0}' has already been mounted
+noSecretVaultRegisteredExceptionMessage = No Secret Vault with the name '{0}' has been registered
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = Parameters 'NoAdditionalProperties' and 'AdditionalProperties' are mutually exclusive.
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = When Credentials is passed, The * wildcard for Headers will be taken as a literal string and not a wildcard.
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = The * wildcard for Headers is incompatible with the AutoHeaders switch.
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = The * wildcard for Methods is incompatible with the AutoMethods switch.
+invalidAccessControlMaxAgeDurationExceptionMessage = Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.
+noNameForWebSocketDisconnectExceptionMessage = No Name for a WebSocket to disconnect from supplied.
+noNameForWebSocketRemoveExceptionMessage = No Name for a WebSocket to remove supplied.
+noNameForWebSocketSendMessageExceptionMessage = No Name for a WebSocket to send message to supplied.
+noSecretNamedMountedExceptionMessage = No Secret named '{0}' has been mounted.
+noNameForWebSocketResetExceptionMessage = No Name for a WebSocket to reset supplied.
 '@

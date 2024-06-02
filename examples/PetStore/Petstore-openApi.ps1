@@ -4,12 +4,14 @@ param (
 )
 $petStorePath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $petStorePath)
+try{
 if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
     Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
 }
 else {
     Import-Module -Name 'Pode'
 }
+}catch {throw }
 function Write-ObjectContent {
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]

@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = Le module Active Directory est uniquement disponible sur Windows.
 adModuleNotInstalledExceptionMessage = Le module Active Directory n'est pas installé.
 secretManagementModuleNotInstalledExceptionMessage = Le module Microsoft.PowerShell.SecretManagement n'est pas installé.
-secretVaultAlreadyRegisteredExceptionMessage = Un coffre-fort secret avec le nom '{0}' a déjà été enregistré lors de l'importation automatique des coffres-forts secrets.
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = Un coffre-fort secret avec le nom '{0}' a déjà été enregistré lors de l'importation automatique des coffres-forts secrets.
 failedToOpenRunspacePoolExceptionMessage = Échec de l'ouverture de RunspacePool : {0}
 cronExpressionInvalidExceptionMessage = L'expression Cron doit uniquement comporter 5 parties : {0}
 invalidAliasFoundExceptionMessage = Alias {0} non valide trouvé : {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = Aucune session disponible pour sauveg
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = Impossible de fournir un intervalle lorsque le paramètre 'Every' est défini sur None.
 cannotSupplyIntervalForQuarterExceptionMessage = Impossible de fournir une valeur d'intervalle pour chaque trimestre.
 cannotSupplyIntervalForYearExceptionMessage = Impossible de fournir une valeur d'intervalle pour chaque année.
+secretVaultAlreadyRegisteredExceptionMessage = Un Coffre-Fort de Secrets avec le nom '{0}' a déjà été enregistré{1}.
+secretVaultUnlockExpiryDateInPastExceptionMessage = La date d'expiration du déverrouillage du Coffre-Fort de Secrets est dans le passé (UTC) : {0}
+secretAlreadyMountedExceptionMessage = Un Secret avec le nom '{0}' a déjà été monté.
+noSecretVaultRegisteredExceptionMessage = Aucun Coffre-Fort de Secrets avec le nom '{0}' n'a été enregistré.
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = Les paramètres 'NoAdditionalProperties' et 'AdditionalProperties' sont mutuellement exclusifs.
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = Lorsque des Identifiants sont passés, le caractère générique * pour les En-têtes sera pris comme une chaîne littérale et non comme un caractère générique.
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = Le caractère générique * pour les En-têtes est incompatible avec le commutateur AutoHeaders.
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = Le caractère générique * pour les Méthodes est incompatible avec le commutateur AutoMethods.
+invalidAccessControlMaxAgeDurationExceptionMessage = Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.
+noNameForWebSocketDisconnectExceptionMessage = Aucun Nom fourni pour déconnecter le WebSocket.
+noNameForWebSocketRemoveExceptionMessage = Aucun Nom fourni pour supprimer le WebSocket.
+noNameForWebSocketSendMessageExceptionMessage = Aucun Nom fourni pour envoyer un message au WebSocket.
+noSecretNamedMountedExceptionMessage = Aucun Secret nommé '{0}' n'a été monté.
+noNameForWebSocketResetExceptionMessage = Aucun Nom fourni pour réinitialiser le WebSocket.
 '@

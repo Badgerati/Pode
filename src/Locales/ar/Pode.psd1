@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = وحدة Active Directory متاحة فقط على نظام Windows.
 adModuleNotInstalledExceptionMessage = وحدة Active Directory غير مثبتة.
 secretManagementModuleNotInstalledExceptionMessage = وحدة Microsoft.PowerShell.SecretManagement غير مثبتة.
-secretVaultAlreadyRegisteredExceptionMessage = تم تسجيل خزنة سرية باسم '{0}' بالفعل أثناء استيراد الخزن السرية تلقائيًا.
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = تم تسجيل خزنة سرية باسم '{0}' بالفعل أثناء استيراد الخزن السرية تلقائيًا.
 failedToOpenRunspacePoolExceptionMessage = فشل في فتح RunspacePool: {0}
 cronExpressionInvalidExceptionMessage = يجب أن تتكون تعبير Cron من 5 أجزاء فقط: {0}
 invalidAliasFoundExceptionMessage = تم العثور على اسم مستعار غير صالح {0}: {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = لا توجد جلسة متاحة ل�
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = لا يمكن توفير فترة زمنية عندما يكون المعامل 'Every' مضبوطًا على None.
 cannotSupplyIntervalForQuarterExceptionMessage = لا يمكن توفير قيمة الفاصل الزمني لكل ربع.
 cannotSupplyIntervalForYearExceptionMessage = لا يمكن توفير قيمة الفاصل الزمني لكل سنة.
+secretVaultAlreadyRegisteredExceptionMessage = تم تسجيل مخزن الأسرار بالاسم '{0}' بالفعل{1}.
+secretVaultUnlockExpiryDateInPastExceptionMessage = تاريخ انتهاء صلاحية فتح مخزن الأسرار في الماضي (UTC): {0}
+secretAlreadyMountedExceptionMessage = تم تثبيت سر بالاسم '{0}' بالفعل.
+noSecretVaultRegisteredExceptionMessage = لم يتم تسجيل مخزن أسرار بالاسم '{0}'.
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = المعاملات 'NoAdditionalProperties' و 'AdditionalProperties' متعارضة.
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = عند تمرير بيانات الاعتماد، سيتم اعتبار العلامة * للعنوان كـ سلسلة نصية حرفية وليس كعلامة.
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = العلامة * للعنوان غير متوافقة مع مفتاح AutoHeaders.
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = العلامة * للطرق غير متوافقة مع مفتاح AutoMethods.
+invalidAccessControlMaxAgeDurationExceptionMessage = مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.
+noNameForWebSocketDisconnectExceptionMessage = لا يوجد اسم لفصل WebSocket من المزود.
+noNameForWebSocketRemoveExceptionMessage = لا يوجد اسم لإزالة WebSocket من المزود.
+noNameForWebSocketSendMessageExceptionMessage = لا يوجد اسم لإرسال رسالة إلى WebSocket المزود.
+noSecretNamedMountedExceptionMessage = لم يتم تثبيت أي سر بالاسم '{0}'.
+noNameForWebSocketResetExceptionMessage = لا يوجد اسم لإعادة تعيين WebSocket من المزود.
 '@

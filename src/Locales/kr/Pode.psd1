@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = Active Directory 모듈은 Windows에서만 사용할 수 있습니다.
 adModuleNotInstalledExceptionMessage = Active Directory 모듈이 설치되지 않았습니다.
 secretManagementModuleNotInstalledExceptionMessage = Microsoft.PowerShell.SecretManagement 모듈이 설치되지 않았습니다.
-secretVaultAlreadyRegisteredExceptionMessage = 이름이 '{0}'인 비밀 금고가 이미 자동으로 가져오는 동안 등록되었습니다.
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = 이름이 '{0}'인 비밀 금고가 이미 자동으로 가져오는 동안 등록되었습니다.
 failedToOpenRunspacePoolExceptionMessage = RunspacePool을 여는 데 실패했습니다: {0}
 cronExpressionInvalidExceptionMessage = Cron 표현식은 5개의 부분으로만 구성되어야 합니다: {0}
 invalidAliasFoundExceptionMessage = 잘못된 {0} 별칭이 발견되었습니다: {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = 저장할 수 있는 세션이 없습
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = 매개변수 'Every'가 None으로 설정된 경우 간격을 제공할 수 없습니다.
 cannotSupplyIntervalForQuarterExceptionMessage = 분기별 간격 값을 제공할 수 없습니다.
 cannotSupplyIntervalForYearExceptionMessage = 매년 간격 값을 제공할 수 없습니다.
+secretVaultAlreadyRegisteredExceptionMessage = 이름이 '{0}'인 시크릿 금고가 이미 등록되었습니다{1}.
+secretVaultUnlockExpiryDateInPastExceptionMessage = 시크릿 금고의 잠금 해제 만료 날짜가 과거입니다 (UTC): {0}
+secretAlreadyMountedExceptionMessage = 이름이 '{0}'인 시크릿이 이미 마운트되었습니다.
+noSecretVaultRegisteredExceptionMessage = 이름이 '{0}'인 시크릿 금고가 등록되지 않았습니다.
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = 'NoAdditionalProperties' 및 'AdditionalProperties' 매개변수는 상호 배타적입니다.
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = 자격 증명이 전달되면, 헤더에 대한 * 와일드카드는 와일드카드가 아닌 리터럴 문자열로 취급됩니다.
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = 헤더에 대한 * 와일드카드는 AutoHeaders 스위치와 호환되지 않습니다.
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = 메서드에 대한 * 와일드카드는 AutoMethods 스위치와 호환되지 않습니다.
+invalidAccessControlMaxAgeDurationExceptionMessage = 잘못된 Access-Control-Max-Age 기간이 제공되었습니다: {0}. 0보다 커야 합니다.
+noNameForWebSocketDisconnectExceptionMessage = 연결을 끊을 WebSocket의 이름이 제공되지 않았습니다.
+noNameForWebSocketRemoveExceptionMessage = 제거할 WebSocket의 이름이 제공되지 않았습니다.
+noNameForWebSocketSendMessageExceptionMessage = 메시지를 보낼 WebSocket의 이름이 제공되지 않았습니다.
+noSecretNamedMountedExceptionMessage = 이름이 '{0}'인 시크릿이 마운트되지 않았습니다.
+noNameForWebSocketResetExceptionMessage = 재설정할 WebSocket의 이름이 제공되지 않았습니다.
 '@

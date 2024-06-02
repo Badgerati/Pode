@@ -5,7 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable msgTable -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
 
     $PodeContext = @{ 'Server' = $null; }
 }
@@ -581,7 +581,7 @@ Describe 'New-PodeCsrfToken' {
             }
         }
 
-        { New-PodeCsrfToken } | Should -Throw -ExpectedMessage $msgTable.csrfMiddlewareNotInitializedExceptionMessage #CSRF Middleware has not been initialized.
+        { New-PodeCsrfToken } | Should -Throw -ExpectedMessage $PodeLocale.csrfMiddlewareNotInitializedExceptionMessage #CSRF Middleware has not been initialized.
     }
 
 

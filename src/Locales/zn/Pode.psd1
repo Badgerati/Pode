@@ -2,7 +2,7 @@ ConvertFrom-StringData -StringData @'
 adModuleWindowsOnlyExceptionMessage = 仅支持 Windows 的 Active Directory 模块。
 adModuleNotInstalledExceptionMessage = 未安装 Active Directory 模块。
 secretManagementModuleNotInstalledExceptionMessage = 未安装 Microsoft.PowerShell.SecretManagement 模块。
-secretVaultAlreadyRegisteredExceptionMessage = 已经注册了名称为 '{0}' 的秘密保险库，同时正在自动导入秘密保险库。
+secretVaultAlreadyRegisteredAutoImportExceptionMessage = 已经注册了名称为 '{0}' 的秘密保险库，同时正在自动导入秘密保险库。
 failedToOpenRunspacePoolExceptionMessage = 打开 RunspacePool 失败: {0}
 cronExpressionInvalidExceptionMessage = Cron 表达式应仅包含 5 个部分: {0}
 invalidAliasFoundExceptionMessage = 找到了无效的 {0} 别名: {1}
@@ -164,4 +164,18 @@ noSessionAvailableToSaveExceptionMessage = 没有可保存的会话。
 cannotSupplyIntervalWhenEveryIsNoneExceptionMessage = 当参数'Every'设置为None时, 无法提供间隔。
 cannotSupplyIntervalForQuarterExceptionMessage = 无法为每季度提供间隔值。
 cannotSupplyIntervalForYearExceptionMessage = 无法为每年提供间隔值。
+secretVaultAlreadyRegisteredExceptionMessage = 名为“{0}”的秘密保险库已注册{1}。
+secretVaultUnlockExpiryDateInPastExceptionMessage = 秘密保险库的解锁到期日期已过 (UTC) :{0}
+secretAlreadyMountedExceptionMessage = 名为“{0}”的秘密已挂载。
+noSecretVaultRegisteredExceptionMessage = 没有注册名为“{0}”的秘密保险库。
+noAdditionalPropertiesMutuallyExclusiveExceptionMessage = 参数 'NoAdditionalProperties' 和 'AdditionalProperties' 是互斥的。
+credentialsPassedWildcardForHeadersLiteralExceptionMessage = 传递凭据时，标头的通配符 * 将被视为文字字符串，而不是通配符。
+wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage = 标头的通配符 * 与 AutoHeaders 开关不兼容。
+wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage = 方法的通配符 * 与 AutoMethods 开关不兼容。
+invalidAccessControlMaxAgeDurationExceptionMessage = 提供的 Access-Control-Max-Age 时长无效：{0}。应大于 0。
+noNameForWebSocketDisconnectExceptionMessage = 没有提供断开连接的 WebSocket 的名称。
+noNameForWebSocketRemoveExceptionMessage = 没有提供要删除的 WebSocket 的名称。
+noNameForWebSocketSendMessageExceptionMessage = 没有提供要发送消息的 WebSocket 的名称。
+noSecretNamedMountedExceptionMessage = 没有挂载名为“{0}”的秘密。
+noNameForWebSocketResetExceptionMessage = 没有提供要重置的 WebSocket 的名称。
 '@
