@@ -2150,36 +2150,3 @@ function Test-PodeOAComponentInternal {
         }
     }
 }
-
-
-
-<#
-.SYNOPSIS
-    Resolves references in an OpenAPI schema component based on definitions within a specified definition tag context.
-
-.DESCRIPTION
-    This function navigates through a schema's properties and resolves `$ref` references to actual schemas defined within the specified definition context.
-    It handles complex constructs such as 'allOf', 'oneOf', and 'anyOf', merging properties and ensuring the schema is fully resolved without unresolved references.
-
-.PARAMETER ComponentSchema
-    A hashtable representing the schema of a component where references need to be resolved.
-
-.PARAMETER DefinitionTag
-    A string identifier for the specific set of schema definitions under which references should be resolved.
-
-.EXAMPLE
-    $schema = @{
-        type = 'object';
-        properties = @{
-            name = @{
-                type = 'string'
-            };
-            details = @{
-                '$ref' = '#/components/schemas/UserDetails'
-            }
-        };
-    }
-    Resolve-PodeOAReference -ComponentSchema $schema -DefinitionTag 'v1'
-
-    This example demonstrates resolving a reference to 'UserDetails' within a given component schema.
-#>
