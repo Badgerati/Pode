@@ -62,8 +62,6 @@ function Start-PodeTimerRunspace {
 }
 
 function Invoke-PodeInternalTimer {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
     param(
         [Parameter(Mandatory = $true)]
         $Timer,

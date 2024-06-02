@@ -1,5 +1,4 @@
 function Start-PodeAzFuncServer {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
     param(
         [Parameter(Mandatory = $true)]
         $Data
@@ -126,7 +125,6 @@ function Start-PodeAzFuncServer {
 }
 
 function Start-PodeAwsLambdaServer {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
     param(
         [Parameter(Mandatory = $true)]
         $Data
