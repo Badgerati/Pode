@@ -1,13 +1,19 @@
 using namespace Pode
 
 function Test-PodeFileWatchersExist {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
     return (($null -ne $PodeContext.Fim) -and (($PodeContext.Fim.Enabled) -or ($PodeContext.Fim.Items.Count -gt 0)))
 }
 
 function New-PodeFileWatcher {
+    [CmdletBinding()]
+    [OutputType([PodeWatcher])]
+    param()
     $watcher = [PodeWatcher]::new($PodeContext.Tokens.Cancellation.Token)
     $watcher.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-    $watcher.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
+    $watcher.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     return $watcher
 }
 
@@ -103,6 +109,7 @@ function Start-PodeFileWatcherRunspace {
                         $null = Invoke-PodeScriptBlock -ScriptBlock $fileWatcher.Script -Arguments $fileWatcher.Arguments -UsingVariables $fileWatcher.UsingVariables -Scoped -Splat
                     }
                     catch [System.OperationCanceledException] {
+                        $_ | Write-PodeErrorLog -Level Debug
                     }
                     catch {
                         $_ | Write-PodeErrorLog
@@ -116,6 +123,7 @@ function Start-PodeFileWatcherRunspace {
             }
         }
         catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
         }
         catch {
             $_ | Write-PodeErrorLog
@@ -140,7 +148,9 @@ function Start-PodeFileWatcherRunspace {
                 Start-Sleep -Seconds 1
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException

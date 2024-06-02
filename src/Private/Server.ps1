@@ -59,8 +59,8 @@ function Start-PodeInternalServer {
         New-PodeAutoRestartServer
 
         # start the runspace pools for web, schedules, etc
-        New-PodeRunspacePools
-        Open-PodeRunspacePools
+        New-PodeRunspacePool
+        Open-PodeRunspacePool
 
         if (!$PodeContext.Server.IsServerless) {
             # start runspace for loggers
@@ -220,18 +220,18 @@ function Restart-PodeInternalServer {
         $PodeContext.Tokens.Cancellation.Cancel()
 
         # close all current runspaces
-        Close-PodeRunspaces -ClosePool
+        Close-PodeRunspace -ClosePool
 
         # remove all of the pode temp drives
-        Remove-PodePSDrives
+        Remove-PodePSDrive
 
         # clear-up modules
         $PodeContext.Server.Modules.Clear()
 
         # clear up timers, schedules and loggers
-        $PodeContext.Server.Routes | Clear-PodeHashtableInnerKeys
-        $PodeContext.Server.Handlers | Clear-PodeHashtableInnerKeys
-        $PodeContext.Server.Events | Clear-PodeHashtableInnerKeys
+        $PodeContext.Server.Routes | Clear-PodeHashtableInnerKey
+        $PodeContext.Server.Handlers | Clear-PodeHashtableInnerKey
+        $PodeContext.Server.Events | Clear-PodeHashtableInnerKey
 
         if ($null -ne $PodeContext.Server.Verbs) {
             $PodeContext.Server.Verbs.Clear()
@@ -264,7 +264,7 @@ function Restart-PodeInternalServer {
 
         # clear security headers
         $PodeContext.Server.Security.Headers.Clear()
-        $PodeContext.Server.Security.Cache | Clear-PodeHashtableInnerKeys
+        $PodeContext.Server.Security.Cache | Clear-PodeHashtableInnerKey
 
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
@@ -307,7 +307,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Cache.Storage.Clear()
 
         # clear up secret vaults/cache
-        Unregister-PodeSecretVaults -ThrowError
+        Unregister-PodeSecretVaultsInternal -ThrowError
         $PodeContext.Server.Secrets.Vaults.Clear()
         $PodeContext.Server.Secrets.Keys.Clear()
 

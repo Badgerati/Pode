@@ -88,7 +88,7 @@ Get-PodeFlashMessage -Name 'error'
 #>
 function Get-PodeFlashMessage {
     [CmdletBinding()]
-    [OutputType([string[]])]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -128,7 +128,7 @@ Get-PodeFlashMessageNames
 #>
 function Get-PodeFlashMessageNames {
     [CmdletBinding()]
-    [OutputType([string[]])]
+    [OutputType([System.Object[]])]
     param()
 
     # if sessions haven't been setup, error

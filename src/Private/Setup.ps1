@@ -1,4 +1,5 @@
 function Invoke-PodePackageScript {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
     param(
         [Parameter()]
         [string]
@@ -12,30 +13,44 @@ function Invoke-PodePackageScript {
     Invoke-Expression -Command $ActionScript
 }
 
-function Install-PodeLocalModules {
+<#
+.SYNOPSIS
+    Installs a local Pode module.
+
+.DESCRIPTION
+    This function installs a local Pode module by downloading it from the specified repository. It checks the module version and retrieves the latest version if 'latest' is specified. The module is saved to the specified path.
+
+.PARAMETER Module
+    The Pode module to install. It should include the module name, version, and repository information.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Install-PodeLocalModule {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter()]
-        $Modules = $null
+        $Module = $null
     )
 
-    if ($null -eq $Modules) {
+    if ($null -eq $Module) {
         return
     }
 
     $psModules = './ps_modules'
 
     # download modules to ps_modules
-    $Modules.psobject.properties.name | ForEach-Object {
+    $Module.psobject.properties.name | ForEach-Object {
         $_name = $_
 
         # get the module version
-        $_version = $Modules.$_name.version
+        $_version = $Module.$_name.version
         if ([string]::IsNullOrWhiteSpace($_version)) {
-            $_version = $Modules.$_name
+            $_version = $Module.$_name
         }
 
         # get the module repository
-        $_repository = Protect-PodeValue -Value $Modules.$_name.repository -Default 'PSGallery'
+        $_repository = Protect-PodeValue -Value $Module.$_name.repository -Default 'PSGallery'
 
         try {
             # if version is latest, retrieve current

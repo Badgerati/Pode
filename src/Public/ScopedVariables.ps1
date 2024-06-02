@@ -24,6 +24,8 @@ $ScriptBlock = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -Exclude Se
 #>
 function Convert-PodeScopedVariables {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
+    [OutputType([scriptblock])]
     param(
         [Parameter(ValueFromPipeline = $true)]
         [scriptblock]
@@ -95,6 +97,7 @@ $ScriptBlock, $otherResults = Convert-PodeScopedVariable -Name Using -ScriptBloc
 #>
 function Convert-PodeScopedVariable {
     [CmdletBinding()]
+    [OutputType([scriptblock])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -319,6 +322,7 @@ Get-PodeScopedVariable -Name State, Using
 #>
 function Get-PodeScopedVariable {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter()]
         [string[]]

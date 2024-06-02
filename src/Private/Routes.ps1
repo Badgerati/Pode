@@ -376,10 +376,34 @@ function ConvertTo-PodeOpenApiRoutePath {
         $Path
     )
 
-    return (Resolve-PodePlaceholders -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')
+    return (Resolve-PodePlaceholder -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')
 }
 
-function Update-PodeRouteSlashes {
+<#
+.SYNOPSIS
+    Updates a Pode route path to ensure proper formatting.
+
+.DESCRIPTION
+    This function takes a Pode route path and ensures that it starts with a leading slash ('/') and follows the correct format for static routes. It also replaces '*' with '.*' for proper regex matching.
+
+.PARAMETER Path
+    The Pode route path to update.
+
+.PARAMETER Static
+    Indicates whether the route is a static route (default is false).
+
+.PARAMETER NoLeadingSlash
+    Indicates whether the route should not have a leading slash (default is false).
+
+.OUTPUTS
+    The updated Pode route path.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Update-PodeRouteSlash {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -432,8 +456,8 @@ function ConvertTo-PodeRouteRegex {
     $Path = Protect-PodeValue -Value $Path -Default '/'
     $Path = Split-PodeRouteQuery -Path $Path
     $Path = Protect-PodeValue -Value $Path -Default '/'
-    $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     return $Path
 }

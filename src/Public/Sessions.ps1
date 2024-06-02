@@ -342,6 +342,7 @@ $duration = Get-PodeSessionDuration
 #>
 function Get-PodeSessionDuration {
     [CmdletBinding()]
+    [OutputType([int])]
     param()
 
     return [int]$PodeContext.Server.Sessions.Info.Duration
@@ -359,6 +360,7 @@ $expiry = Get-PodeSessionExpiry
 #>
 function Get-PodeSessionExpiry {
     [CmdletBinding()]
+    [OutputType([datetime])]
     param()
 
     # error if session is null

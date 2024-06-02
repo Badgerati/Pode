@@ -118,20 +118,20 @@ function Add-PodeFileWatcher {
 
     # resolve path if relative
     if (!(Test-PodeIsPSCore)) {
-        $Path = Convert-PodePlaceholders -Path $Path -Prepend '%' -Append '%'
+        $Path = Convert-PodePlaceholder -Path $Path -Prepend '%' -Append '%'
     }
 
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
 
     if (!(Test-PodeIsPSCore)) {
-        $Path = Convert-PodePlaceholders -Path $Path -Pattern '\%(?<tag>[\w]+)\%' -Prepend ':' -Append ([string]::Empty)
+        $Path = Convert-PodePlaceholder -Path $Path -Pattern '\%(?<tag>[\w]+)\%' -Prepend ':' -Append ([string]::Empty)
     }
 
     # resolve path, and test it
-    $hasPlaceholders = Test-PodePlaceholders -Path $Path
+    $hasPlaceholders = Test-PodePlaceholder -Path $Path
     if ($hasPlaceholders) {
-        $rgxPath = Update-PodeRouteSlashes -Path $Path -NoLeadingSlash
-        $rgxPath = Resolve-PodePlaceholders -Path $rgxPath -Slashes
+        $rgxPath = Update-PodeRouteSlash -Path $Path -NoLeadingSlash
+        $rgxPath = Resolve-PodePlaceholder -Path $rgxPath -Slashes
         $Path = $Path -ireplace (Get-PodePlaceholderRegex), '*'
     }
 

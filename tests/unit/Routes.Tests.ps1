@@ -639,121 +639,121 @@ Describe 'Add-PodePage' {
     }
 }
 
-Describe 'Update-PodeRouteSlashes' {
+Describe 'Update-PodeRouteSlash' {
     Context 'Static' {
         It 'Update route slashes' {
             $in = '/route'
-            Update-PodeRouteSlashes -Path $in -Static | Should -Be '/route[/]{0,1}(?<file>.*)'
+            Update-PodeRouteSlash -Path $in -Static | Should -Be '/route[/]{0,1}(?<file>.*)'
         }
 
         It 'Update route slashes, no slash' {
             $in = 'route'
-            Update-PodeRouteSlashes -Path $in -Static | Should -Be '/route[/]{0,1}(?<file>.*)'
+            Update-PodeRouteSlash -Path $in -Static | Should -Be '/route[/]{0,1}(?<file>.*)'
         }
 
         It 'Update route slashes, ending with wildcard' {
             $in = '/route/*'
-            Update-PodeRouteSlashes -Path $in -Static | Should -Be '/route[/]{0,1}(?<file>.*)'
+            Update-PodeRouteSlash -Path $in -Static | Should -Be '/route[/]{0,1}(?<file>.*)'
         }
 
         It 'Update route slashes, ending with wildcard, no slash' {
             $in = 'route/*'
-            Update-PodeRouteSlashes -Path $in -Static | Should -Be '/route[/]{0,1}(?<file>.*)'
+            Update-PodeRouteSlash -Path $in -Static | Should -Be '/route[/]{0,1}(?<file>.*)'
         }
 
         It 'Update route slashes, with midpoint wildcard' {
             $in = '/route/*/ending'
-            Update-PodeRouteSlashes -Path $in -Static | Should -Be '/route/.*/ending[/]{0,1}(?<file>.*)'
+            Update-PodeRouteSlash -Path $in -Static | Should -Be '/route/.*/ending[/]{0,1}(?<file>.*)'
         }
 
         It 'Update route slashes, with midpoint wildcard, no slash' {
             $in = 'route/*/ending'
-            Update-PodeRouteSlashes -Path $in -Static | Should -Be '/route/.*/ending[/]{0,1}(?<file>.*)'
+            Update-PodeRouteSlash -Path $in -Static | Should -Be '/route/.*/ending[/]{0,1}(?<file>.*)'
         }
 
         It 'Update route slashes, with midpoint wildcard, ending with wildcard' {
             $in = '/route/*/ending/*'
-            Update-PodeRouteSlashes -Path $in -Static | Should -Be '/route/.*/ending[/]{0,1}(?<file>.*)'
+            Update-PodeRouteSlash -Path $in -Static | Should -Be '/route/.*/ending[/]{0,1}(?<file>.*)'
         }
 
         It 'Update route slashes, with midpoint wildcard, ending with wildcard, no slash' {
             $in = 'route/*/ending/*'
-            Update-PodeRouteSlashes -Path $in -Static | Should -Be '/route/.*/ending[/]{0,1}(?<file>.*)'
+            Update-PodeRouteSlash -Path $in -Static | Should -Be '/route/.*/ending[/]{0,1}(?<file>.*)'
         }
     }
 
     Context 'Non Static' {
         It 'Update route slashes' {
             $in = '/route'
-            Update-PodeRouteSlashes -Path $in | Should -Be '/route'
+            Update-PodeRouteSlash -Path $in | Should -Be '/route'
         }
 
         It 'Update route slashes, no slash' {
             $in = 'route'
-            Update-PodeRouteSlashes -Path $in | Should -Be '/route'
+            Update-PodeRouteSlash -Path $in | Should -Be '/route'
         }
 
         It 'Update route slashes, ending with wildcard' {
             $in = '/route/*'
-            Update-PodeRouteSlashes -Path $in | Should -Be '/route/.*'
+            Update-PodeRouteSlash -Path $in | Should -Be '/route/.*'
         }
 
         It 'Update route slashes, ending with wildcard, no slash' {
             $in = 'route/*'
-            Update-PodeRouteSlashes -Path $in | Should -Be '/route/.*'
+            Update-PodeRouteSlash -Path $in | Should -Be '/route/.*'
         }
 
         It 'Update route slashes, with midpoint wildcard' {
             $in = '/route/*/ending'
-            Update-PodeRouteSlashes -Path $in | Should -Be '/route/.*/ending'
+            Update-PodeRouteSlash -Path $in | Should -Be '/route/.*/ending'
         }
 
         It 'Update route slashes, with midpoint wildcard, no slash' {
             $in = 'route/*/ending'
-            Update-PodeRouteSlashes -Path $in | Should -Be '/route/.*/ending'
+            Update-PodeRouteSlash -Path $in | Should -Be '/route/.*/ending'
         }
 
         It 'Update route slashes, with midpoint wildcard, ending with wildcard' {
             $in = '/route/*/ending/*'
-            Update-PodeRouteSlashes -Path $in | Should -Be '/route/.*/ending/.*'
+            Update-PodeRouteSlash -Path $in | Should -Be '/route/.*/ending/.*'
         }
 
         It 'Update route slashes, with midpoint wildcard, ending with wildcard, no slash' {
             $in = 'route/*/ending/*'
-            Update-PodeRouteSlashes -Path $in | Should -Be '/route/.*/ending/.*'
+            Update-PodeRouteSlash -Path $in | Should -Be '/route/.*/ending/.*'
         }
     }
 }
 
-Describe 'Resolve-PodePlaceholders' {
+Describe 'Resolve-PodePlaceholder' {
     It 'Update route placeholders, basic' {
         $in = 'route'
-        Resolve-PodePlaceholders -Path $in | Should -Be 'route'
+        Resolve-PodePlaceholder -Path $in | Should -Be 'route'
     }
 
     It 'Update route placeholders' {
         $in = ':route'
-        Resolve-PodePlaceholders -Path $in | Should -Be '(?<route>[^\/]+?)'
+        Resolve-PodePlaceholder -Path $in | Should -Be '(?<route>[^\/]+?)'
     }
 
     It 'Update route placeholders, double with no spacing' {
         $in = ':route:placeholder'
-        Resolve-PodePlaceholders -Path $in | Should -Be '(?<route>[^\/]+?)(?<placeholder>[^\/]+?)'
+        Resolve-PodePlaceholder -Path $in | Should -Be '(?<route>[^\/]+?)(?<placeholder>[^\/]+?)'
     }
 
     It 'Update route placeholders, double with double ::' {
         $in = '::route:placeholder'
-        Resolve-PodePlaceholders -Path $in | Should -Be ':(?<route>[^\/]+?)(?<placeholder>[^\/]+?)'
+        Resolve-PodePlaceholder -Path $in | Should -Be ':(?<route>[^\/]+?)(?<placeholder>[^\/]+?)'
     }
 
     It 'Update route placeholders, double with slash' {
         $in = ':route/:placeholder'
-        Resolve-PodePlaceholders -Path $in | Should -Be '(?<route>[^\/]+?)/(?<placeholder>[^\/]+?)'
+        Resolve-PodePlaceholder -Path $in | Should -Be '(?<route>[^\/]+?)/(?<placeholder>[^\/]+?)'
     }
 
     It 'Update route placeholders, no update' {
         $in = ': route'
-        Resolve-PodePlaceholders -Path $in | Should -Be ': route'
+        Resolve-PodePlaceholder -Path $in | Should -Be ': route'
     }
 }
 

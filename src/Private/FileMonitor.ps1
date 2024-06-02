@@ -68,10 +68,10 @@ function Start-PodeFileMonitor {
         # if enabled, show the files that triggered the restart
         if ($Event.MessageData.FileSettings.ShowFiles) {
             if (!$Event.MessageData.Quiet) {
-                Write-Host 'The following files have changed:' -ForegroundColor Magenta
+                Write-PodeHost 'The following files have changed:'  -ForegroundColor Magenta
 
                 foreach ($file in $Event.MessageData.FileSettings.Files) {
-                    Write-Host "> $($file)" -ForegroundColor Magenta
+                    Write-PodeHost "> $($file)" -ForegroundColor Magenta
                 }
             }
 

@@ -223,10 +223,10 @@ function Start-PodeServer {
         Invoke-PodeEvent -Type Stop
 
         # set output values
-        Set-PodeOutputVariables
+        Set-PodeOutputVariable
 
         # unregister secret vaults
-        Unregister-PodeSecretVaults
+        Unregister-PodeSecretVaultsInternal
 
         # clean the runspaces and tokens
         Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
@@ -545,10 +545,10 @@ function Pode {
 
         'install' {
             if ($Dev) {
-                Install-PodeLocalModules -Modules $data.devModules
+                Install-PodeLocalModule -Module $data.devModules
             }
 
-            Install-PodeLocalModules -Modules $data.modules
+            Install-PodeLocalModule -Module $data.modules
             Invoke-PodePackageScript -ActionScript $actionScript
         }
 
@@ -1014,7 +1014,7 @@ function Add-PodeEndpoint {
 
     # set ssl protocols
     if (!(Test-PodeIsEmpty $SslProtocol)) {
-        $obj.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $SslProtocol)
+        $obj.Ssl.Protocols = (ConvertTo-PodeSslProtocol -Protocol $SslProtocol)
     }
 
     # set the ip for the context (force to localhost for IIS)

@@ -451,16 +451,46 @@ function Start-PodeSecretVaultUnlocker {
     }
 }
 
-function Unregister-PodeSecretVaults {
+<#
+.SYNOPSIS
+    Unregisters multiple secret vaults within Pode.
+
+.DESCRIPTION
+    The `Unregister-PodeSecretVaultsInternal` function iterates through the list of secret vaults
+    stored in the PodeContext and unregisters each one. If an error occurs during unregistration,
+    it can either throw an exception or log the error.
+
+.PARAMETER ThrowError
+    If specified, the function will throw an exception when an error occurs during unregistration.
+    Otherwise, it will log the error and continue processing.
+
+.INPUTS
+    None. You cannot pipe objects to Unregister-PodeSecretVaultsInternal.
+
+.OUTPUTS
+    None. The function modifies the state of secret vaults in the PodeContext.
+
+.EXAMPLE
+    # Example usage:
+    Unregister-PodeSecretVaultsInternal -ThrowError
+    # All registered secret vaults are unregistered, and any errors are thrown as exceptions.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Unregister-PodeSecretVaultsInternal {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     param(
         [switch]
         $ThrowError
     )
 
+    # Check if there are any secret vaults to unregister
     if (Test-PodeIsEmpty $PodeContext.Server.Secrets.Vaults) {
         return
     }
 
+    # Iterate through each vault and attempt unregistration
     foreach ($vault in $PodeContext.Server.Secrets.Vaults.Values.Name) {
         if ([string]::IsNullOrEmpty($vault)) {
             continue

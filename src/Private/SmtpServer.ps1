@@ -10,7 +10,7 @@ function Start-PodeSmtpServer {
     # work out which endpoints to listen on
     $endpoints = @()
 
-    @(Get-PodeEndpoints -Type Smtp) | ForEach-Object {
+    @(Get-PodeEndpointByProtocolType -Type Smtp) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
@@ -49,7 +49,7 @@ function Start-PodeSmtpServer {
     # create the listener
     $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
+    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
@@ -99,7 +99,7 @@ function Start-PodeSmtpServer {
                         $Request = $context.Request
                         $Response = $context.Response
 
-                        $SmtpEvent = @{
+                        $script:SmtpEvent = @{
                             Response  = $Response
                             Request   = $Request
                             Lockable  = $PodeContext.Threading.Lockables.Global
@@ -151,19 +151,23 @@ function Start-PodeSmtpServer {
                             }
                         }
                     }
-                    catch [System.OperationCanceledException] {}
+                    catch [System.OperationCanceledException] {
+                        $_ | Write-PodeErrorLog -Level Debug
+                    }
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
                     }
                 }
                 finally {
-                    $SmtpEvent = $null
+                    $script:SmtpEvent = $null
                     Close-PodeDisposable -Disposable $context
                 }
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -189,7 +193,9 @@ function Start-PodeSmtpServer {
                 Start-Sleep -Seconds 1
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException

@@ -351,7 +351,32 @@ function ConvertTo-PodeOAOfProperty {
     return $schema
 }
 
+<#
+.SYNOPSIS
+    Converts a hashtable representing a property into a schema property format compliant with the OpenAPI Specification (OAS).
 
+.DESCRIPTION
+    This function takes a hashtable input representing a property and converts it into a schema property format based on the OpenAPI Specification.
+    It handles various property types including primitives, arrays, and complex types with allOf, oneOf, anyOf constructs.
+
+.PARAMETER Property
+    A hashtable containing property details that need to be converted to an OAS schema property.
+
+.PARAMETER NoDescription
+    A switch parameter. If set, the description of the property will not be included in the output schema.
+
+.PARAMETER DefinitionTag
+    A mandatory string parameter specifying the definition context used for schema validation and compatibility checks with OpenAPI versions.
+
+.EXAMPLE
+    $propertyDetails = @{
+        type = 'string';
+        description = 'A sample property';
+    }
+    ConvertTo-PodeOASchemaProperty -Property $propertyDetails -DefinitionTag 'v1'
+
+    This example will convert a simple string property into an OpenAPI schema property.
+#>
 function ConvertTo-PodeOASchemaProperty {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -931,9 +956,6 @@ function Get-PodeOpenApiDefinitionInternal {
 
     # auth/security components
     if ($PodeContext.Server.Authentications.Methods.Count -gt 0) {
-        #if ($null -eq $def.components.securitySchemes) {
-        # $def.components.securitySchemes = @{}
-        # }
         $authNames = (Expand-PodeAuthMerge -Names $PodeContext.Server.Authentications.Methods.Keys)
 
         foreach ($authName in $authNames) {
@@ -1121,6 +1143,16 @@ function Get-PodeOpenApiDefinitionInternal {
     return $def
 }
 
+<#
+.SYNOPSIS
+    Converts a Cmdlet parameter into an OpenAPI-compliant property definition based on its type.
+
+.DESCRIPTION
+    This function analyzes the metadata of a Cmdlet parameter and generates an OpenAPI schema property. It supports Boolean, Integer, Number, and defaults to String type properties.
+
+.PARAMETER Parameter
+    The metadata of the Cmdlet parameter that is being converted to an OpenAPI property.
+#>
 function ConvertTo-PodeOAPropertyFromCmdletParameter {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -1416,6 +1448,36 @@ function Set-PodeOAGlobalAuth {
     }
 }
 
+<#
+.SYNOPSIS
+    Resolves references in an OpenAPI schema component based on definitions within a specified definition tag context.
+
+.DESCRIPTION
+    This function navigates through a schema's properties and resolves `$ref` references to actual schemas defined within the specified definition context.
+    It handles complex constructs such as 'allOf', 'oneOf', and 'anyOf', merging properties and ensuring the schema is fully resolved without unresolved references.
+
+.PARAMETER ComponentSchema
+    A hashtable representing the schema of a component where references need to be resolved.
+
+.PARAMETER DefinitionTag
+    A string identifier for the specific set of schema definitions under which references should be resolved.
+
+.EXAMPLE
+    $schema = @{
+        type = 'object';
+        properties = @{
+            name = @{
+                type = 'string'
+            };
+            details = @{
+                '$ref' = '#/components/schemas/UserDetails'
+            }
+        };
+    }
+    Resolve-PodeOAReference -ComponentSchema $schema -DefinitionTag 'v1'
+
+    This example demonstrates resolving a reference to 'UserDetails' within a given component schema.
+#>
 function Resolve-PodeOAReference {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -1428,11 +1490,13 @@ function Resolve-PodeOAReference {
     )
 
     begin {
+        # Initialize schema storage and a list to track keys that need resolution
         $Schemas = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaJson
         $Keys = @()
     }
 
     process {
+        # Gather all keys from properties and directly from the schema that might have references
         if ($ComponentSchema.properties) {
             foreach ($item in $ComponentSchema.properties.Keys) {
                 $Keys += $item
@@ -1444,52 +1508,62 @@ function Resolve-PodeOAReference {
             }
         }
 
+        # Process each key to resolve references or merge schema definitions
         foreach ($key in $Keys) {
             if ( @('allof', 'oneof', 'anyof') -icontains $key ) {
-                if ($key -ieq 'allof') {
-                    $tmpProp = @()
-                    foreach ( $comp in $ComponentSchema[$key] ) {
-                        if ($comp.'$ref') {
-                            if (($comp.'$ref').StartsWith('#/components/schemas/')) {
-                                $refName = ($comp.'$ref') -replace '#/components/schemas/', ''
-                                if ($Schemas.ContainsKey($refName)) {
-                                    $tmpProp += $Schemas[$refName].schema
+                # Handle complex schema constructs like allOf, oneOf, and anyOf
+                switch ($key.ToLower()) {
+                    'allof' {
+                        $tmpProp = @()
+                        foreach ( $comp in $ComponentSchema[$key] ) {
+                            if ($comp.'$ref') {
+                                # Resolve $ref to a schema if it starts with the expected path
+                                if (($comp.'$ref').StartsWith('#/components/schemas/')) {
+                                    $refName = ($comp.'$ref') -replace '#/components/schemas/', ''
+                                    if ($Schemas.ContainsKey($refName)) {
+                                        $tmpProp += $Schemas[$refName].schema
+                                    }
+                                }
+                            }
+                            elseif ( $comp.properties) {
+                                # Recursively resolve nested schemas
+                                if ($comp.type -eq 'object') {
+                                    $tmpProp += Resolve-PodeOAReference -DefinitionTag $DefinitionTag -ComponentSchema$comp
+                                }
+                                else {
+                                    # Unsupported object
+                                    throw $PodeLocale.unsupportedObjectExceptionMessage
                                 }
                             }
                         }
-                        elseif ( $comp.properties) {
-                            if ($comp.type -eq 'object') {
-                                $tmpProp += Resolve-PodeOAReference -DefinitionTag $DefinitionTag -ComponentSchema$comp
-                            }
-                            else {
-                                # Unsupported object
-                                throw $PodeLocale.unsupportedObjectExceptionMessage
+                        # Update the main schema to be an object and add resolved properties
+                        $ComponentSchema.type = 'object'
+                        $ComponentSchema.remove('allOf')
+                        if ($tmpProp.count -gt 0) {
+                            foreach ($t in $tmpProp) {
+                                $ComponentSchema.properties += $t.properties
                             }
                         }
-                    }
 
-                    $ComponentSchema.type = 'object'
-                    $ComponentSchema.remove('allOf')
-                    if ($tmpProp.count -gt 0) {
-                        foreach ($t in $tmpProp) {
-                            $ComponentSchema.properties += $t.properties
-                        }
                     }
-
-                }
-                elseif ($key -ieq 'oneof') {
-                    # Validation of schema with oneof is not supported
-                    throw $PodeLocale.validationOfOneOfSchemaNotSupportedExceptionMessage
-                }
-                elseif ($key -ieq 'anyof') {
-                    # Validation of schema with anyof is not supported
-                    throw $PodeLocale.validationOfAnyOfSchemaNotSupportedExceptionMessage
+                    'oneof' {
+                        # Throw an error for unsupported schema constructs to notify the user
+                        # Validation of schema with oneof is not supported
+                        throw $PodeLocale.validationOfOneOfSchemaNotSupportedExceptionMessage
+                    }
+                    'anyof' {
+                        # Throw an error for unsupported schema constructs to notify the user
+                        # Validation of schema with anyof is not supported
+                        throw $PodeLocale.validationOfAnyOfSchemaNotSupportedExceptionMessage
+                    }
                 }
             }
             elseif ($ComponentSchema.properties[$key].type -eq 'object') {
+                # Recursively resolve object-type properties
                 $ComponentSchema.properties[$key].properties = Resolve-PodeOAReference -DefinitionTag $DefinitionTag -ComponentSchema $ComponentSchema.properties[$key].properties
             }
             elseif ($ComponentSchema.properties[$key].'$ref') {
+                # Resolve property references within the main properties of the schema
                 if (($ComponentSchema.properties[$key].'$ref').StartsWith('#/components/schemas/')) {
                     $refName = ($ComponentSchema.properties[$key].'$ref') -replace '#/components/schemas/', ''
                     if ($Schemas.ContainsKey($refName)) {
@@ -1509,6 +1583,7 @@ function Resolve-PodeOAReference {
     }
 
     end {
+        # Return the fully resolved component schema
         return $ComponentSchema
     }
 }

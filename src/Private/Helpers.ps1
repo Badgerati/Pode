@@ -1,6 +1,32 @@
 using namespace Pode
 
-# read in the content from a dynamic pode file and invoke its content
+<#
+.SYNOPSIS
+    Dynamically executes content as a Pode file, optionally passing data to it.
+
+.DESCRIPTION
+    This function takes a string of content, which is expected to be PowerShell code, and optionally a hashtable of data. It constructs a script block that optionally includes a parameter declaration,
+    and then executes this script block using the provided data. This is useful for dynamically generating content based on a template or script contained in a file or a string.
+
+.PARAMETER Content
+    The PowerShell code as a string. This content is dynamically executed as a script block. It can include placeholders or logic that utilizes the passed data.
+
+.PARAMETER Data
+    Optional hashtable of data that can be referenced within the content/script. This data is passed to the script block as parameters.
+
+.EXAMPLE
+    $scriptContent = '"Hello, world! Today is $(Get-Date)"'
+    ConvertFrom-PodeFile -Content $scriptContent
+
+    This example will execute the content of the script and output "Hello, world! Today is [current date]".
+
+.EXAMPLE
+    $template = '"Hello, $(Name)! Your balance is $$(Amount)"'
+    $data = @{ Name = 'John Doe'; Amount = '100.50' }
+    ConvertFrom-PodeFile -Content $template -Data $data
+
+    This example demonstrates using the function with a data parameter to replace placeholders within the content.
+#>
 function ConvertFrom-PodeFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -611,50 +637,57 @@ function Add-PodeRunspace {
     }
 }
 
-function Open-PodeRunspace {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Type
-    )
+<#
+.SYNOPSIS
+    Closes and disposes of the Pode runspaces, listeners, receivers, watchers, and optionally runspace pools.
 
-    try {
-        Import-PodeModules
-        Add-PodePSDrives
-        $PodeContext.RunspacePools[$Type].State = 'Ready'
-    }
-    catch {
-        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
-            $PodeContext.RunspacePools[$Type].State = 'Error'
-        }
+.DESCRIPTION
+    This function checks and waits for all Listeners, Receivers, and Watchers to be disposed of
+    before proceeding to close and dispose of the runspaces and optionally the runspace pools.
+    It ensures a clean shutdown by managing the disposal of resources in a specified order.
+    The function handles serverless and regular server environments differently, skipping
+    disposal actions in serverless contexts.
 
-        $_ | Out-Default
-        $_.ScriptStackTrace | Out-Default
-        throw
-    }
-}
+.PARAMETER ClosePool
+    Specifies whether to close and dispose of the runspace pools along with the runspaces.
+    This is optional and should be specified if the pools need to be explicitly closed.
 
-function Close-PodeRunspaces {
+.EXAMPLE
+    Close-PodeRunspace -ClosePool
+    This example closes all runspaces and their associated pools, ensuring that all resources are properly disposed of.
+
+.OUTPUTS
+    None
+    Outputs from this function are primarily internal state changes and verbose logging.
+
+.NOTES
+    It is recommended to use verbose logging to monitor the steps and understand the closing sequence during execution.
+#>
+function Close-PodeRunspace {
     param(
         [switch]
         $ClosePool
     )
 
+    # Early return if server is serverless, as disposal is not required.
     if ($PodeContext.Server.IsServerless) {
         return
     }
 
     try {
+        # Only proceed if there are runspaces to dispose of.
         if (!(Test-PodeIsEmpty $PodeContext.Runspaces)) {
             Write-Verbose 'Waiting until all Listeners are disposed'
 
             $count = 0
             $continue = $false
+            # Attempts to dispose of resources for up to 10 seconds.
             while ($count -le 10) {
                 Start-Sleep -Seconds 1
                 $count++
 
                 $continue = $false
+                # Check each listener, receiver, and watcher; if any are not disposed, continue waiting.
                 foreach ($listener in $PodeContext.Listeners) {
                     if (!$listener.IsDisposed) {
                         $continue = $true
@@ -675,7 +708,7 @@ function Close-PodeRunspaces {
                         break
                     }
                 }
-
+                # If undisposed resources exist, continue waiting.
                 if ($continue) {
                     continue
                 }
@@ -726,10 +759,10 @@ function Close-PodeRunspaces {
 
         # close/dispose the runspace pools
         if ($ClosePool) {
-            Close-PodeRunspacePools
+            Close-PodeRunspacePool
         }
 
-        # check for runspace errors
+        # Check for and throw runspace errors if any occurred during disposal.
         if (($null -ne $runspaceErrors) -and ($runspaceErrors.Length -gt 0)) {
             foreach ($err in $runspaceErrors) {
                 if ($null -eq $err) {
@@ -820,7 +853,7 @@ function Close-PodeServerInternal {
 
     # stop all current runspaces
     Write-Verbose 'Closing runspaces'
-    Close-PodeRunspaces -ClosePool
+    Close-PodeRunspace -ClosePool
 
     # stop the file monitor if it's running
     Write-Verbose 'Stopping file monitor'
@@ -843,7 +876,7 @@ function Close-PodeServerInternal {
 
     # remove all of the pode temp drives
     Write-Verbose 'Removing internal PSDrives'
-    Remove-PodePSDrives
+    Remove-PodePSDrive
 
     if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
         Write-PodeHost ' Done' -ForegroundColor Green
@@ -928,13 +961,42 @@ function Test-PodePSDrive {
     return $true
 }
 
-function Add-PodePSDrives {
+<#
+.SYNOPSIS
+    Adds Pode PS drives to the session.
+
+.DESCRIPTION
+    This function iterates through the keys of Pode drives stored in the `$PodeContext.Server.Drives` collection and creates corresponding PS drives using `New-PodePSDrive`. The drive paths are specified by the values associated with each key.
+
+.EXAMPLE
+    Add-PodePSDrivesInternal
+    # Creates Pode PS drives in the session based on the configured drive paths.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Add-PodePSDrivesInternal {
     foreach ($key in $PodeContext.Server.Drives.Keys) {
         $null = New-PodePSDrive -Path $PodeContext.Server.Drives[$key] -Name $key
     }
 }
 
-function Import-PodeModules {
+<#
+.SYNOPSIS
+    Imports other Pode modules into the session.
+
+.DESCRIPTION
+    This function iterates through the paths of other Pode modules stored in the `$PodeContext.Server.Modules.Values` collection and imports them into the session.
+    It uses the `-DisableNameChecking` switch to suppress name checking during module import.
+
+.EXAMPLE
+    Import-PodeModulesInternal
+    # Imports other Pode modules into the session.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Import-PodeModulesInternal {
     # import other modules in the session
     foreach ($path in $PodeContext.Server.Modules.Values) {
         if (Test-Path $path) {
@@ -960,9 +1022,7 @@ Add-PodePSInbuiltDrive
 This example is typically called within the Pode server setup script or internally by the Pode framework to initialize the PowerShell drives for the server's default folders.
 
 .NOTES
-- The function is designed to be used within the Pode framework and relies on the global `$PodeContext` variable for configuration.
-- It specifically checks for the existence of paths for views, public content, and errors before attempting to create drives for them.
-- This is an internal function and may change in future releases of Pode.
+This is an internal function and may change in future releases of Pode.
 #>
 function Add-PodePSInbuiltDrive {
 
@@ -985,11 +1045,66 @@ function Add-PodePSInbuiltDrive {
     }
 }
 
-function Remove-PodePSDrives {
-    $null = Get-PSDrive PodeDir* | Remove-PSDrive
+<#
+.SYNOPSIS
+    Removes Pode PS drives from the session.
+
+.DESCRIPTION
+    This function removes Pode PS drives from the session based on the specified drive name or pattern.
+    If no specific name or pattern is provided, it removes all Pode PS drives by default.
+    It uses `Get-PSDrive` to retrieve the drives and `Remove-PSDrive` to remove them.
+
+.PARAMETER Name
+    The name or pattern of the Pode PS drives to remove. Defaults to 'PodeDir*'.
+
+.EXAMPLE
+    Remove-PodePSDrive -Name 'myDir*'
+    # Removes all PS drives with names matching the pattern 'myDir*'.
+
+.EXAMPLE
+    Remove-PodePSDrive
+    # Removes all Pode PS drives.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Remove-PodePSDrive {
+    [CmdletBinding()]
+    param(
+        $Name = 'PodeDir*'
+    )
+    $null = Get-PSDrive -Name $Name | Remove-PSDrive
 }
 
+<#
+.SYNOPSIS
+    Joins a folder and file path to the root path of the server.
+
+.DESCRIPTION
+    This function combines a folder path, file path (optional), and the root path of the server to create a complete path. If the root path is not explicitly provided, it uses the default root path from the Pode context.
+
+.PARAMETER Folder
+    The folder path to join.
+
+.PARAMETER FilePath
+    The file path (optional) to join. If not provided, only the folder path is used.
+
+.PARAMETER Root
+    The root path of the server. If not provided, the default root path from the Pode context is used.
+
+.OUTPUTS
+    Returns the combined path as a string.
+
+.EXAMPLE
+    Join-PodeServerRoot -Folder "uploads" -FilePath "document.txt"
+    # Output: "/uploads/document.txt"
+
+    This example combines the folder path "uploads" and the file path "document.txt" with the default root path from the Pode context.
+
+#>
 function Join-PodeServerRoot {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -1014,7 +1129,30 @@ function Join-PodeServerRoot {
     return [System.IO.Path]::Combine($Root, $Folder, $FilePath)
 }
 
+<#
+.SYNOPSIS
+    Removes empty items (empty strings) from an array.
+
+.DESCRIPTION
+    This function filters out empty items (empty strings) from an array. It returns a new array containing only non-empty items.
+
+.PARAMETER Array
+    The array from which to remove empty items.
+
+.OUTPUTS
+    Returns an array containing non-empty items.
+
+.EXAMPLE
+    $myArray = "apple", "", "banana", "", "cherry"
+    $filteredArray = Remove-PodeEmptyItemsFromArray -Array $myArray
+    Write-Host "Filtered array: $filteredArray"
+
+    This example removes empty items from the array and displays the filtered array.
+#>
 function Remove-PodeEmptyItemsFromArray {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
+    [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(ValueFromPipeline = $true)]
         $Array
@@ -1067,7 +1205,34 @@ function Remove-PodeNullKeysFromHashtable {
     }
 }
 
+<#
+.SYNOPSIS
+    Retrieves the file extension from a given path.
+
+.DESCRIPTION
+    This function extracts the file extension (including the period) from a specified path. Optionally, it can trim the period from the extension.
+
+.PARAMETER Path
+    The path from which to extract the file extension.
+
+.PARAMETER TrimPeriod
+    Switch parameter. If specified, trims the period from the file extension.
+
+.OUTPUTS
+    Returns the file extension (with or without the period) as a string.
+
+.EXAMPLE
+    Get-PodeFileExtension -Path "C:\MyFiles\document.txt"
+    # Output: ".txt"
+
+    Get-PodeFileExtension -Path "C:\MyFiles\document.txt" -TrimPeriod
+    # Output: "txt"
+
+    This example demonstrates how to retrieve the file extension with and without the period from a given path.
+#>
 function Get-PodeFileExtension {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter()]
         [string]
@@ -1077,7 +1242,10 @@ function Get-PodeFileExtension {
         $TrimPeriod
     )
 
+    # Get the file extension
     $ext = [System.IO.Path]::GetExtension($Path)
+
+    # Trim the period if requested
     if ($TrimPeriod) {
         $ext = $ext.Trim('.')
     }
@@ -1085,7 +1253,39 @@ function Get-PodeFileExtension {
     return $ext
 }
 
+
+<#
+.SYNOPSIS
+    Retrieves the file name from a given path.
+
+.DESCRIPTION
+    This function extracts the file name (including the extension) or the file name without the extension from a specified path.
+
+.PARAMETER Path
+    The path from which to extract the file name.
+
+.PARAMETER WithoutExtension
+    Switch parameter. If specified, returns the file name without the extension.
+
+.OUTPUTS
+    Returns the file name (with or without extension) as a string.
+
+.EXAMPLE
+    Get-PodeFileName -Path "C:\MyFiles\document.txt"
+    # Output: "document.txt"
+
+    Get-PodeFileName -Path "C:\MyFiles\document.txt" -WithoutExtension
+    # Output: "document"
+
+    This example demonstrates how to retrieve the file name with and without the extension from a given path.
+
+.NOTES
+    - If the path is a directory, the function returns the directory name.
+    - Use this function to extract file names for further processing or display.
+#>
 function Get-PodeFileName {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter()]
         [string]
@@ -1102,7 +1302,29 @@ function Get-PodeFileName {
     return [System.IO.Path]::GetFileName($Path)
 }
 
+<#
+.SYNOPSIS
+    Tests whether an exception message indicates a valid network failure.
+
+.DESCRIPTION
+    This function checks if an exception message contains specific phrases that commonly indicate network-related failures. It returns a boolean value indicating whether the exception message matches any of these network failure patterns.
+
+.PARAMETER Exception
+    The exception object whose message needs to be tested.
+
+.OUTPUTS
+    Returns $true if the exception message indicates a valid network failure, otherwise returns $false.
+
+.EXAMPLE
+    $exception = [System.Exception]::new("The network name is no longer available.")
+    $isNetworkFailure = Test-PodeValidNetworkFailure -Exception $exception
+    Write-Host "Is network failure: $isNetworkFailure"
+
+    This example tests whether the exception message "The network name is no longer available." indicates a network failure.
+#>
 function Test-PodeValidNetworkFailure {
+    [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter()]
         $Exception
@@ -1243,7 +1465,42 @@ function Get-PodeAcceptEncoding {
     return $found.Name
 }
 
-function Get-PodeRanges {
+<#
+.SYNOPSIS
+    Parses a range string and converts it into a hashtable array of start and end values.
+
+.DESCRIPTION
+    This function takes a range string (typically used in HTTP headers) and extracts the relevant start and end values. It supports the 'bytes' unit and handles multiple ranges separated by commas.
+
+.PARAMETER Range
+    The range string to parse.
+
+.PARAMETER ThrowError
+    A switch parameter. If specified, the function throws an exception (HTTP status code 416) when encountering invalid range formats.
+
+.OUTPUTS
+    An array of hashtables, each containing 'Start' and 'End' properties representing the parsed ranges.
+
+.EXAMPLE
+    Get-PodeRange -Range 'bytes=100-200,300-400'
+    # Returns an array of hashtables:
+    # [
+    #     @{
+    #         Start = 100
+    #         End   = 200
+    #     },
+    #     @{
+    #         Start = 300
+    #         End   = 400
+    #     }
+    # ]
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeRange {
+    [CmdletBinding()]
+    [OutputType([hashtable[]])]
     param(
         [Parameter()]
         [string]
@@ -1645,7 +1902,27 @@ function ConvertFrom-PodeRequestContent {
     $Content = $null
     return $Result
 }
+<#
+.SYNOPSIS
+    Extracts the base MIME type from a Content-Type string that may include additional parameters.
 
+.DESCRIPTION
+    This function takes a Content-Type string as input and returns only the base MIME type by splitting the string at the semicolon (';') and trimming any excess whitespace.
+    It is useful for handling HTTP headers or other contexts where Content-Type strings include parameters like charset, boundary, etc.
+
+.PARAMETER ContentType
+    The Content-Type string from which to extract the base MIME type. This string can include additional parameters separated by semicolons.
+
+.EXAMPLE
+    Split-PodeContentType -ContentType "text/html; charset=UTF-8"
+
+    This example returns 'text/html', stripping away the 'charset=UTF-8' parameter.
+
+.EXAMPLE
+    Split-PodeContentType -ContentType "application/json; charset=utf-8"
+
+    This example returns 'application/json', removing the charset parameter.
+#>
 function Split-PodeContentType {
     param(
         [Parameter()]
@@ -1653,10 +1930,13 @@ function Split-PodeContentType {
         $ContentType
     )
 
+    # Check if the input string is null, empty, or consists only of whitespace.
     if ([string]::IsNullOrWhiteSpace($ContentType)) {
-        return [string]::Empty
+        return [string]::Empty  # Return an empty string if the input is not valid.
     }
 
+    # Split the Content-Type string by the semicolon, which separates the base MIME type from other parameters.
+    # Trim any leading or trailing whitespace from the resulting MIME type to ensure clean output.
     return @($ContentType -isplit ';')[0].Trim()
 }
 
@@ -1684,26 +1964,67 @@ function ConvertFrom-PodeNameValueToHashTable {
     return $ht
 }
 
+<#
+.SYNOPSIS
+    Gets the count of elements in the provided object or the length of a string.
+
+.DESCRIPTION
+    This function returns the count of elements in various types of objects including strings, collections, and arrays.
+    If the object is a string, it returns the length of the string. If the object is null or an empty collection, it returns 0.
+    This function is useful for determining the size or length of data containers in PowerShell scripts.
+
+.PARAMETER Object
+    The object from which the count or length will be determined. This can be a string, array, collection, or any other object that has a Count property.
+
+.OUTPUTS
+    [int]
+    Returns an integer representing the count of elements or length of the string.
+
+.EXAMPLE
+    $array = @(1, 2, 3)
+    Get-PodeCount -Object $array
+
+    This example returns 3, as there are three elements in the array.
+
+.EXAMPLE
+    $string = "hello"
+    Get-PodeCount -Object $string
+
+    This example returns 5, as there are five characters in the string.
+
+.EXAMPLE
+    $nullObject = $null
+    Get-PodeCount -Object $nullObject
+
+    This example returns 0, as the object is null.
+#>
 function Get-PodeCount {
+    [CmdletBinding()]
+    [OutputType([int])]
     param(
         [Parameter()]
-        $Object
+        $Object  # The object to be evaluated for its count.
     )
 
+    # Check if the object is null.
     if ($null -eq $Object) {
-        return 0
+        return 0  # Return 0 if the object is null.
     }
 
+    # Check if the object is a string and return its length.
     if ($Object -is [string]) {
         return $Object.Length
     }
 
+    # Check if the object is a NameValueCollection and is empty.
     if ($Object -is [System.Collections.Specialized.NameValueCollection] -and $Object.Count -eq 0) {
-        return 0
+        return 0  # Return 0 if the collection is empty.
     }
 
+    # For other types of collections, return their Count property.
     return $Object.Count
 }
+
 
 <#
 .SYNOPSIS
@@ -1743,7 +2064,6 @@ function Get-PodeCount {
     This function is used within the Pode framework to validate file system paths for serving static content.
 
 #>
-
 function Test-PodePath {
     param(
         [Parameter()]
@@ -1855,18 +2175,7 @@ function Test-PodePathIsDirectory {
     return ([string]::IsNullOrWhiteSpace([System.IO.Path]::GetExtension($Path)))
 }
 
-function Convert-PodePathSeparators {
-    param(
-        [Parameter()]
-        $Paths
-    )
 
-    return @($Paths | ForEach-Object {
-            if (![string]::IsNullOrWhiteSpace($_)) {
-                $_ -ireplace '[\\/]', [System.IO.Path]::DirectorySeparatorChar
-            }
-        })
-}
 
 function Convert-PodePathPatternToRegex {
     param(
@@ -1934,57 +2243,144 @@ function Convert-PodePathPatternsToRegex {
     return "^$($joined)$"
 }
 
-function Get-PodeDefaultSslProtocols {
+<#
+.SYNOPSIS
+    Gets the default SSL protocol(s) based on the operating system.
+
+.DESCRIPTION
+    This function determines the appropriate default SSL protocol(s) based on the operating system. On macOS, it returns TLS 1.2. On other platforms, it combines SSL 3.0 and TLS 1.2.
+
+.OUTPUTS
+    A [System.Security.Authentication.SslProtocols] enum value representing the default SSL protocol(s).
+
+.EXAMPLE
+    Get-PodeDefaultSslProtocol
+    # Returns [System.Security.Authentication.SslProtocols]::Ssl3, [System.Security.Authentication.SslProtocols]::Tls12 (on non-macOS systems)
+    # Returns [System.Security.Authentication.SslProtocols]::Tls12 (on macOS)
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeDefaultSslProtocol {
+    [CmdletBinding()]
+    [OutputType([System.Security.Authentication.SslProtocols])]
+    param()
     if (Test-PodeIsMacOS) {
-        return (ConvertTo-PodeSslProtocols -Protocols Tls12)
+        return (ConvertTo-PodeSslProtocol -Protocol Tls12)
     }
 
-    return (ConvertTo-PodeSslProtocols -Protocols Ssl3, Tls12)
+    return (ConvertTo-PodeSslProtocol -Protocol Ssl3, Tls12)
 }
 
-function ConvertTo-PodeSslProtocols {
+<#
+.SYNOPSIS
+    Converts a string representation of SSL protocols to the corresponding SslProtocols enum value.
+
+.DESCRIPTION
+    This function takes an array of SSL protocol strings (such as 'Tls', 'Tls12', etc.) and combines them into a single SslProtocols enum value. It's useful for configuring SSL/TLS settings in Pode or other PowerShell scripts.
+
+.PARAMETER Protocol
+    An array of SSL protocol strings. Valid values are 'Ssl2', 'Ssl3', 'Tls', 'Tls11', 'Tls12', and 'Tls13'.
+
+.OUTPUTS
+    A [System.Security.Authentication.SslProtocols] enum value representing the combined protocols.
+
+.EXAMPLE
+    ConvertTo-PodeSslProtocol -Protocol 'Tls', 'Tls12'
+    # Returns [System.Security.Authentication.SslProtocols]::Tls12
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertTo-PodeSslProtocol {
+    [CmdletBinding()]
+    [OutputType([System.Security.Authentication.SslProtocols])]
     param(
         [Parameter()]
         [ValidateSet('Ssl2', 'Ssl3', 'Tls', 'Tls11', 'Tls12', 'Tls13')]
         [string[]]
-        $Protocols
+        $Protocol
     )
 
     $protos = 0
-    foreach ($protocol in $Protocols) {
-        $protos = [int]($protos -bor [System.Security.Authentication.SslProtocols]::$protocol)
+    foreach ($item in $Protocol) {
+        $protos = [int]($protos -bor [System.Security.Authentication.SslProtocols]::$item)
     }
 
     return [System.Security.Authentication.SslProtocols]($protos)
 }
 
-function Get-PodeModuleDetails {
+<#
+.SYNOPSIS
+    Retrieves details about the Pode module.
+
+.DESCRIPTION
+    This function determines the relevant details of the Pode module. It first checks if the module is already imported.
+    If so, it uses that module. Otherwise, it attempts to identify the module used for the 'engine' and retrieves its details.
+    If there are multiple versions of the module, it selects the newest version. If no module is imported, it uses the latest installed version.
+
+.OUTPUTS
+    A hashtable containing the module details.
+
+.EXAMPLE
+    Get-PodeModuleInfo
+    # Returns a hashtable with module details such as name, path, base path, data path, internal path, and whether it's in the system path.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeModuleInfo {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
     # if there's 1 module imported already, use that
     $importedModule = @(Get-Module -Name Pode)
     if (($importedModule | Measure-Object).Count -eq 1) {
-        return (Convert-PodeModuleDetails -Module @($importedModule)[0])
+        return (Convert-PodeModuleInfo -Module @($importedModule)[0])
     }
 
     # if there's none or more, attempt to get the module used for 'engine'
     try {
         $usedModule = (Get-Command -Name 'Set-PodeViewEngine').Module
         if (($usedModule | Measure-Object).Count -eq 1) {
-            return (Convert-PodeModuleDetails -Module $usedModule)
+            return (Convert-PodeModuleInfo -Module $usedModule)
         }
     }
     catch {
+        $_ | Write-PodeErrorLog -Level Debug
     }
 
     # if there were multiple to begin with, use the newest version
     if (($importedModule | Measure-Object).Count -gt 1) {
-        return (Convert-PodeModuleDetails -Module @($importedModule | Sort-Object -Property Version)[-1])
+        return (Convert-PodeModuleInfo -Module @($importedModule | Sort-Object -Property Version)[-1])
     }
 
     # otherwise there were none, use the latest installed
-    return (Convert-PodeModuleDetails -Module @(Get-Module -ListAvailable -Name Pode | Sort-Object -Property Version)[-1])
+    return (Convert-PodeModuleInfo -Module @(Get-Module -ListAvailable -Name Pode | Sort-Object -Property Version)[-1])
 }
 
-function Convert-PodeModuleDetails {
+<#
+.SYNOPSIS
+    Converts Pode module details to a hashtable.
+
+.DESCRIPTION
+    This function takes a Pode module and extracts relevant details such as name, path, base path, data path, internal path, and whether it's in the system path.
+
+.PARAMETER Module
+    The Pode module to convert.
+
+.OUTPUTS
+    A hashtable containing the module details.
+
+.EXAMPLE
+    Convert-PodeModuleInfo -Module (Get-Module Pode)
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Convert-PodeModuleInfo {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [psmoduleinfo]
@@ -2004,45 +2400,96 @@ function Convert-PodeModuleDetails {
     return $details
 }
 
+<#
+.SYNOPSIS
+    Checks if a PowerShell module is located within the directories specified in the PSModulePath environment variable.
+
+.DESCRIPTION
+    This function determines if the path of a provided PowerShell module starts with any path included in the system's PSModulePath environment variable.
+    This is used to ensure that the module is being loaded from expected locations, which can be important for security and configuration verification.
+
+.PARAMETER Module
+    The module to be checked. This should be a module info object, typically obtained via Get-Module or Import-Module.
+
+.OUTPUTS
+    [bool]
+    Returns $true if the module's path is under a path listed in PSModulePath, otherwise returns $false.
+
+.EXAMPLE
+    $module = Get-Module -Name Pode
+    Test-PodeModuleInPath -Module $module
+
+    This example checks if the 'Pode' module is located within the paths specified by the PSModulePath environment variable.
+#>
 function Test-PodeModuleInPath {
+    [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [psmoduleinfo]
         $Module
     )
 
-    $separator = ';'
-    if (Test-PodeIsUnix) {
-        $separator = ':'
-    }
+    # Determine the path separator based on the operating system.
+    $separator = if (Test-PodeIsUnix) { ':' } else { ';' }
 
+    # Split the PSModulePath environment variable to get individual paths.
     $paths = @($env:PSModulePath -split $separator)
 
+    # Check each path to see if the module's path starts with it.
     foreach ($path in $paths) {
+        # Return true if the module is in one of the paths.
         if ($Module.Path.StartsWith($path)) {
             return $true
         }
     }
 
+    # Return false if no matching path is found.
     return $false
 }
+<#
+.SYNOPSIS
+    Retrieves a module and all of its recursive dependencies.
 
-function Get-PodeModuleDependencies {
+.DESCRIPTION
+    This function takes a PowerShell module as input and returns an array containing
+    the module and all of its required dependencies, retrieved recursively. This is
+    useful for understanding the full set of dependencies a module has.
+
+.PARAMETER Module
+    The module for which to retrieve dependencies. This must be a valid PowerShell module object.
+
+.EXAMPLE
+    $module = Get-Module -Name SomeModuleName
+    $dependencies = Get-PodeModuleDependencyList -Module $module
+    This example retrieves all dependencies for "SomeModuleName".
+
+.OUTPUTS
+    Array[psmoduleinfo]
+    Returns an array of psmoduleinfo objects, each representing a module in the dependency tree.
+#>
+
+function Get-PodeModuleDependencyList {
     param(
         [Parameter(Mandatory = $true)]
         [psmoduleinfo]
         $Module
     )
 
+    # Check if the module has any required modules (dependencies).
     if (!$Module.RequiredModules) {
         return $Module
     }
-
+    # Initialize an array to hold all dependencies.
     $mods = @()
+
+    # Iterate through each required module and recursively retrieve their dependencies.
     foreach ($mod in $Module.RequiredModules) {
-        $mods += (Get-PodeModuleDependencies -Module $mod)
+        # Recursive call for each dependency.
+        $mods += (Get-PodeModuleDependencyList -Module $mod)
     }
 
+    # Return the list of all dependencies plus the original module.
     return ($mods + $module)
 }
 
@@ -2339,7 +2786,37 @@ function Get-PodeRelativePath {
     return $Path
 }
 
-function Get-PodeWildcardFiles {
+<#
+.SYNOPSIS
+    Retrieves files based on a wildcard pattern in a given path.
+
+.DESCRIPTION
+    The `Get-PodeWildcardFile` function returns files from the specified path based on a wildcard pattern.
+    You can customize the wildcard and provide an optional root path for relative paths.
+
+.PARAMETER Path
+    Specifies the path to search for files. This parameter is mandatory.
+
+.PARAMETER Wildcard
+    Specifies the wildcard pattern for file matching. Default is '*.*'.
+
+.PARAMETER RootPath
+    Specifies an optional root path for relative paths. If provided, the function will join the root path with the specified path.
+
+.OUTPUTS
+    Returns an array of file paths matching the wildcard pattern.
+
+.EXAMPLE
+    # Example usage:
+    $files = Get-PodeWildcardFile -Path '/path/to/files' -Wildcard '*.txt'
+    # Returns an array of .txt files in the specified path.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeWildcardFile {
+    [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2547,54 +3024,6 @@ function Convert-PodeQueryStringToHashTable {
     return (ConvertFrom-PodeNameValueToHashTable -Collection $tmpQuery)
 }
 
-function Get-PodeDotSourcedFiles {
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.Management.Automation.Language.Ast]
-        $Ast,
-
-        [Parameter()]
-        [string]
-        $RootPath
-    )
-
-    # set default root path
-    if ([string]::IsNullOrWhiteSpace($RootPath)) {
-        $RootPath = $PodeContext.Server.Root
-    }
-
-    # get all dot-sourced files
-    $cmdTypes = @('dot', 'ampersand')
-    $files = ($Ast.FindAll({
-        ($args[0] -is [System.Management.Automation.Language.CommandAst]) -and
-        ($args[0].InvocationOperator -iin $cmdTypes) -and
-        ($args[0].CommandElements.StaticType.Name -ieq 'string')
-            }, $false)).CommandElements.Value
-
-    $fileOrder = @()
-
-    # no files found
-    if (($null -eq $files) -or ($files.Length -eq 0)) {
-        return $fileOrder
-    }
-
-    # get any sub sourced files
-    foreach ($file in $files) {
-        $file = Get-PodeRelativePath -Path $file -RootPath $RootPath -JoinRoot
-        $fileOrder += $file
-
-        $ast = Get-PodeAstFromFile -FilePath $file
-
-        $result = Get-PodeDotSourcedFiles -Ast $ast -RootPath (Split-Path -Parent -Path $file)
-        if (($null -ne $result) -and ($result.Length -gt 0)) {
-            $fileOrder += $result
-        }
-    }
-
-    # return all found files
-    return $fileOrder
-}
-
 function Get-PodeAstFromFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -2685,7 +3114,34 @@ function Get-PodeFunctionsFromScriptBlock {
     return $foundFuncs
 }
 
-function Read-PodeWebExceptionDetails {
+<#
+.SYNOPSIS
+    Reads details from a web exception and returns relevant information.
+
+.DESCRIPTION
+    The `Read-PodeWebExceptionInfo` function processes a web exception (either `WebException` or `HttpRequestException`)
+    and extracts relevant details such as status code, status description, and response body.
+
+.PARAMETER ErrorRecord
+    Specifies the error record containing the web exception. This parameter is mandatory.
+
+.OUTPUTS
+    Returns a hashtable with the following keys:
+    - `Status`: A nested hashtable with `Code` (status code) and `Description` (status description).
+    - `Body`: The response body from the web exception.
+
+.EXAMPLE
+    # Example usage:
+    $errorRecord = Get-ErrorRecordFromWebException
+    $details = Read-PodeWebExceptionInfo -ErrorRecord $errorRecord
+    # Returns a hashtable with status code, description, and response body.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode
+#>
+function Read-PodeWebExceptionInfo {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [System.Management.Automation.ErrorRecord]
@@ -2807,7 +3263,28 @@ function Find-PodeModuleFile {
     return $path
 }
 
-function Clear-PodeHashtableInnerKeys {
+<#
+.SYNOPSIS
+    Clears the inner keys of a hashtable.
+
+.DESCRIPTION
+    This function takes a hashtable as input and clears the values associated with each inner key. If the input hashtable is empty or null, no action is taken.
+
+.PARAMETER InputObject
+    The hashtable to process.
+
+.EXAMPLE
+    $myHashtable = @{
+        'Key1' = 'Value1'
+        'Key2' = 'Value2'
+    }
+    Clear-PodeHashtableInnerKey -InputObject $myHashtable
+    # Clears the values associated with 'Key1' and 'Key2' in the hashtable.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Clear-PodeHashtableInnerKey {
     param(
         [Parameter(ValueFromPipeline = $true)]
         [hashtable]
@@ -2872,7 +3349,45 @@ function Get-PodePlaceholderRegex {
     return '\:(?<tag>[\w]+)'
 }
 
-function Resolve-PodePlaceholders {
+<#
+.SYNOPSIS
+    Resolves placeholders in a given path using a specified regex pattern.
+
+.DESCRIPTION
+    The `Resolve-PodePlaceholder` function replaces placeholders in the provided path
+    with custom placeholders based on the specified regex pattern. You can customize
+    the prepend and append strings for the new placeholders. Additionally, you can
+    choose to escape slashes in the path.
+
+.PARAMETER Path
+    Specifies the path to resolve. This parameter is mandatory.
+
+.PARAMETER Pattern
+    Specifies the regex pattern for identifying placeholders. If not provided, the default
+    placeholder regex pattern from `Get-PodePlaceholderRegex` is used.
+
+.PARAMETER Prepend
+    Specifies the string to prepend to the new placeholders. Default is '(?<'.
+
+.PARAMETER Append
+    Specifies the string to append to the new placeholders. Default is '>[^\/]+?)'.
+
+.PARAMETER Slashes
+    If specified, escapes slashes in the path.
+
+.OUTPUTS
+    Returns the resolved path with replaced placeholders.
+
+.EXAMPLE
+    # Example usage:
+    $originalPath = '/api/users/{id}'
+    $resolvedPath = Resolve-PodePlaceholder -Path $originalPath
+    # Returns '/api/users/(?<id>[^\/]+?)' with custom placeholders.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Resolve-PodePlaceholder {
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2907,10 +3422,46 @@ function Resolve-PodePlaceholders {
         $Path = "$($Path)[\\\/]"
     }
 
-    return (Convert-PodePlaceholders -Path $Path -Pattern $Pattern -Prepend $Prepend -Append $Append)
+    return (Convert-PodePlaceholder -Path $Path -Pattern $Pattern -Prepend $Prepend -Append $Append)
 }
 
-function Convert-PodePlaceholders {
+<#
+.SYNOPSIS
+    Converts placeholders in a given path using a specified regex pattern.
+
+.DESCRIPTION
+    The `Convert-PodePlaceholder` function replaces placeholders in the provided path
+    with custom placeholders based on the specified regex pattern. You can customize
+    the prepend and append strings for the new placeholders.
+
+.PARAMETER Path
+    Specifies the path to convert. This parameter is mandatory.
+
+.PARAMETER Pattern
+    Specifies the regex pattern for identifying placeholders. If not provided, the default
+    placeholder regex pattern from `Get-PodePlaceholderRegex` is used.
+
+.PARAMETER Prepend
+    Specifies the string to prepend to the new placeholders. Default is '(?<'.
+
+.PARAMETER Append
+    Specifies the string to append to the new placeholders. Default is '>[^\/]+?)'.
+
+.OUTPUTS
+    Returns the path with replaced placeholders.
+
+.EXAMPLE
+    # Example usage:
+    $originalPath = '/api/users/{id}'
+    $convertedPath = Convert-PodePlaceholder -Path $originalPath
+    # Returns '/api/users/(?<id>[^\/]+?)' with custom placeholders.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Convert-PodePlaceholder {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2940,7 +3491,33 @@ function Convert-PodePlaceholders {
     return $Path
 }
 
-function Test-PodePlaceholders {
+<#
+.SYNOPSIS
+    Tests whether a given path contains a placeholder based on a specified regex pattern.
+
+.DESCRIPTION
+    The `Test-PodePlaceholder` function checks if the provided path contains a placeholder
+    by matching it against a regex pattern. Placeholders are typically used for dynamic values.
+
+.PARAMETER Path
+    Specifies the path to test. This parameter is mandatory.
+
+.PARAMETER Placeholder
+    Specifies the regex pattern for identifying placeholders. If not provided, the default
+    placeholder regex pattern from `Get-PodePlaceholderRegex` is used.
+
+.OUTPUTS
+    Returns `$true` if the path contains a placeholder; otherwise, returns `$false`.
+
+.EXAMPLE
+    # Example usage:
+    $isPlaceholder = Test-PodePlaceholder -Path '/api/users/{id}'
+    # Returns $true because the path contains a placeholder.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodePlaceholder {
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2981,41 +3558,6 @@ function Get-PodeModuleManifest {
     # Import the module manifest to access its properties
     $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath
     return  $moduleManifest
-}
-
-
-<#
-.SYNOPSIS
-Tests if the Pode module is from the development branch.
-
-.DESCRIPTION
-The Test-PodeVersionDev function checks if the Pode module's version matches the placeholder value ('$version$'), which is used to indicate the development branch of the module. It returns $true if the version matches, indicating the module is from the development branch, and $false otherwise.
-
-.PARAMETER None
-This function does not accept any parameters.
-
-.OUTPUTS
-System.Boolean
-Returns $true if the Pode module version is '$version$', indicating the development branch. Returns $false for any other version.
-
-.EXAMPLE
-PS> $moduleManifest = @{ ModuleVersion = '$version$' }
-PS> Test-PodeVersionDev
-
-Returns $true, indicating the development branch.
-
-.EXAMPLE
-PS> $moduleManifest = @{ ModuleVersion = '1.2.3' }
-PS> Test-PodeVersionDev
-
-Returns $false, indicating a specific release version.
-
-.NOTES
-This function assumes that $moduleManifest is a hashtable representing the loaded module manifest, with a key of ModuleVersion.
-
-#>
-function Test-PodeVersionDev {
-    return (Get-PodeModuleManifest).ModuleVersion -eq '$version$'
 }
 
 <#
@@ -3084,14 +3626,19 @@ function Test-PodeVersionPwshEOL {
 <#
 .SYNOPSIS
 creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
+
 .DESCRIPTION
 This produces YAML from any object you pass to it. It isn't suitable for the huge objects produced by some of the cmdlets such as Get-Process, but fine for simple objects
+
 .PARAMETER Object
 the object that you want scripted out
+
 .PARAMETER Depth
 The depth that you want your object scripted to
+
 .EXAMPLE
 Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
+
 #>
 function ConvertTo-PodeYaml {
     [CmdletBinding()]
@@ -3152,7 +3699,6 @@ function ConvertTo-PodeYaml {
   It converts only basic PowerShell types, such as strings, integers, booleans, arrays, hashtables, and ordered dictionaries into a YAML format.
 
 #>
-
 function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]
@@ -3318,5 +3864,62 @@ function ConvertTo-PodeYamlInternal {
             throw ($PodeLocale.scriptErrorExceptionMessage -f $_, $_.InvocationInfo.ScriptName, $_.InvocationInfo.Line.Trim(), $_.InvocationInfo.ScriptLineNumber, $_.InvocationInfo.OffsetInLine, $_.InvocationInfo.MyCommand, $type, $InputObject, $InputObject.GetType().Name, $InputObject.GetType().BaseType.Name)
             #"Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
         }
+    }
+}
+<#
+.SYNOPSIS
+    Opens a runspace for Pode server operations based on the specified type.
+
+.DESCRIPTION
+    This function initializes a runspace for Pode server tasks by importing necessary
+    modules, adding PowerShell drives, and setting the state of the runspace pool to 'Ready'.
+    If an error occurs during the initialization, the state is adjusted to 'Error' if it
+    was previously set to 'waiting', and the error details are outputted.
+
+.PARAMETER Type
+    The type of the runspace pool to open. This parameter only accepts predefined values,
+    ensuring the runspace pool corresponds to a supported server operation type. The valid
+    types are: Main, Signals, Schedules, Gui, Web, Smtp, Tcp, Tasks, WebSockets, Files.
+
+.EXAMPLE
+    Open-PodeRunspace -Type "Web"
+
+    Opens a runspace for the 'Web' type, setting it ready for handling web server tasks.
+
+.NOTES
+    This function is not invoked directly but indirectly by `Add-PodeRunspace` function using
+    $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
+#>
+
+function Open-PodeRunspace {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
+        [string]
+        $Type
+    )
+
+    try {
+        # Importing internal Pode modules necessary for the runspace operations.
+        Import-PodeModulesInternal
+
+        # Adding PowerShell drives required by the runspace.
+        Add-PodePSDrivesInternal
+
+        # Setting the state of the runspace pool to 'Ready', indicating it is ready to process requests.
+        $PodeContext.RunspacePools[$Type].State = 'Ready'
+    }
+    catch {
+        # If an error occurs and the current state is 'waiting', set it to 'Error'.
+        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
+            $PodeContext.RunspacePools[$Type].State = 'Error'
+        }
+
+        # Outputting the error to the default output stream, including the stack trace.
+        $_ | Out-Default
+        $_.ScriptStackTrace | Out-Default
+
+        # Rethrowing the error to be handled further up the call stack.
+        throw
     }
 }
