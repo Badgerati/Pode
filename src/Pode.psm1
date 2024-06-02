@@ -49,7 +49,7 @@ if ($null -eq $tmpPodeLocale) {
 
 try {
     # Create the global msgTable read-only variable
-    New-Variable -Name 'PodeLocale' -Value $tmpMsgtable -Scope Global -Option ReadOnly -Force
+    New-Variable -Name 'PodeLocale' -Value $tmpPodeLocale -Scope Global -Option ReadOnly -Force
 
     # load assemblies
     Add-Type -AssemblyName System.Web -ErrorAction Stop
