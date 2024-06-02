@@ -3951,3 +3951,65 @@ function Open-PodeRunspace {
         throw
     }
 }
+
+<#
+.SYNOPSIS
+    Resolves various types of object arrays into PowerShell objects.
+
+.DESCRIPTION
+    This function takes an input property and determines its type.
+    It then resolves the property into a PowerShell object or an array of objects,
+    depending on whether the property is a hashtable, array, or single object.
+
+.PARAMETER Property
+    The property to be resolved. It can be a hashtable, an object array, or a single object.
+
+.RETURNS
+    Returns a PowerShell object or an array of PowerShell objects, depending on the input property type.
+
+.EXAMPLE
+    $result = Resolve-PodeObjectArray -Property $myProperty
+    This example resolves the $myProperty into a PowerShell object or an array of objects.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Resolve-PodeObjectArray {
+    [CmdletBinding()]
+    [OutputType([object[]])]
+    [OutputType([psobject])]
+    param (
+        [AllowNull()]
+        [object]
+        $Property
+    )
+
+    # Check if the property is a hashtable
+    if ($Property -is [hashtable]) {
+        # If the hashtable has only one item, convert it to a PowerShell object
+        if ($Property.Count -eq 1) {
+            return New-Object psobject -Property $Property
+        }
+        else {
+            # If the hashtable has more than one item, recursively resolve each item
+            return @(foreach ($p in $Property) {
+                    Resolve-PodeObjectArray -Property $p
+                })
+        }
+    }
+    # Check if the property is an array of objects
+    elseif ($Property -is [object[]]) {
+        # Recursively resolve each item in the array
+        return @(foreach ($p in $Property) {
+                Resolve-PodeObjectArray -Property $p
+            })
+    }
+    # Check if the property is already a PowerShell object
+    elseif ($Property -is [psobject]) {
+        return $Property
+    }
+    else {
+        # For any other type, convert it to a PowerShell object
+        return New-Object psobject -Property $Property
+    }
+}
