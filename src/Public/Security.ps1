@@ -1258,7 +1258,8 @@ function Set-PodeSecurityStrictTransportSecurity {
     )
 
     if ($Duration -le 0) {
-        throw "Invalid Strict-Transport-Security duration supplied: $($Duration). Should be greater than 0"
+        # Invalid Strict-Transport-Security duration supplied
+        throw ($PodeLocale.invalidStrictTransportSecurityDurationExceptionMessage -f $Duration)
     }
 
     $value = "max-age=$($Duration)"
@@ -1454,7 +1455,7 @@ function Set-PodeSecurityAccessControl {
         if ($Headers -icontains '*') {
             if ($Credentials) {
                 # When Credentials is passed, The * wildcard for Headers will be taken as a literal string and not a wildcard
-                throw $PodeLocal.credentialsPassedWildcardForHeadersLiteralExceptionMessage
+                throw $PodeLocale.credentialsPassedWildcardForHeadersLiteralExceptionMessage
             }
 
             $Headers = @('*')
@@ -1480,7 +1481,7 @@ function Set-PodeSecurityAccessControl {
     if ($AutoHeaders) {
         if ($Headers -icontains '*') {
             # The * wildcard for Headers is incompatible with the AutoHeaders switch
-            throw $PodeLocal.wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage
+            throw $PodeLocale.wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage
         }
 
         Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value 'content-type' -Append
@@ -1490,7 +1491,7 @@ function Set-PodeSecurityAccessControl {
     if ($AutoMethods) {
         if ($Methods -icontains '*') {
             # The * wildcard for Methods is incompatible with the AutoMethods switch
-            throw $PodeLocal.wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage
+            throw $PodeLocale.wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage
         }
         if ($WithOptions) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value 'Options' -Append
@@ -1501,7 +1502,7 @@ function Set-PodeSecurityAccessControl {
     # duration
     if ($Duration -le 0) {
         # Invalid Access-Control-Max-Age duration supplied
-        throw ($PodeLocal.invalidAccessControlMaxAgeDurationExceptionMessage -f $Duration)
+        throw ($PodeLocale.invalidAccessControlMaxAgeDurationExceptionMessage -f $Duration)
     }
 
     Add-PodeSecurityHeader -Name 'Access-Control-Max-Age' -Value $Duration

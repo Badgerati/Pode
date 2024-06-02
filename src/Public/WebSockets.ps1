@@ -23,7 +23,9 @@ function Set-PodeWebSocketConcurrency {
 
     # error if <=0
     if ($Maximum -le 0) {
-        throw "Maximum concurrent WebSocket threads must be >=1 but got: $($Maximum)"
+        # Maximum concurrent WebSocket threads must be >=1 but got
+        throw ($PodeLocale.maximumConcurrentWebSocketThreadsInvalidExceptionMessage -f $Maximum)
+
     }
 
     # add 1, for the waiting script
@@ -36,7 +38,8 @@ function Set-PodeWebSocketConcurrency {
     }
 
     if ($_min -gt $Maximum) {
-        throw "Maximum concurrent WebSocket threads cannot be less than the minimum of $($_min) but got: $($Maximum)"
+        # Maximum concurrent WebSocket threads cannot be less than the minimum of $_min but got $Maximum
+        throw ($PodeLocale.maximumConcurrentWebSocketThreadsLessThanMinimumExceptionMessage -f $_min, $Maximum)
     }
 
     # set the max tasks
@@ -116,7 +119,8 @@ function Connect-PodeWebSocket {
 
     # fail if already exists
     if (Test-PodeWebSocket -Name $Name) {
-        throw "Already connected to websocket with name '$($Name)'"
+        # Already connected to websocket with name
+        throw ($PodeLocale.alreadyConnectedToWebSocketExceptionMessage -f $Name)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -132,7 +136,8 @@ function Connect-PodeWebSocket {
         $PodeContext.Server.WebSockets.Receiver.ConnectWebSocket($Name, $Url, $ContentType)
     }
     catch {
-        throw "Failed to connect to websocket: $($_.Exception.Message)"
+        # Failed to connect to websocket
+        throw ($PodeLocale.failedToConnectToWebSocketExceptionMessage -f $ErrorMessage)
     }
 
     $PodeContext.Server.WebSockets.Connections[$Name] = @{
@@ -171,7 +176,7 @@ function Disconnect-PodeWebSocket {
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
         # No Name for a WebSocket to disconnect from supplied
-        throw $PodeLocal.noNameForWebSocketDisconnectExceptionMessage
+        throw $PodeLocale.noNameForWebSocketDisconnectExceptionMessage
     }
 
     if (Test-PodeWebSocket -Name $Name) {
@@ -206,7 +211,7 @@ function Remove-PodeWebSocket {
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
         # No Name for a WebSocket to remove supplied
-        throw $PodeLocal.noNameForWebSocketRemoveExceptionMessage
+        throw $PodeLocale.noNameForWebSocketRemoveExceptionMessage
 
     }
 
@@ -264,7 +269,7 @@ function Send-PodeWebSocket {
     # do we have a name?
     if ([string]::IsNullOrWhiteSpace($Name)) {
         # No Name for a WebSocket to send message to supplied
-        throw $PodeLocal.noNameForWebSocketSendMessageExceptionMessage
+        throw $PodeLocale.noNameForWebSocketSendMessageExceptionMessage
     }
 
     # do the socket exist?
@@ -320,7 +325,7 @@ function Reset-PodeWebSocket {
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
         # No Name for a WebSocket to reset supplied
-        throw $PodeLocal.noNameForWebSocketResetExceptionMessage
+        throw $PodeLocale.noNameForWebSocketResetExceptionMessage
     }
 
     if (Test-PodeWebSocket -Name $Name) {

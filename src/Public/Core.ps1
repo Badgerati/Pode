@@ -679,7 +679,8 @@ function Show-PodeGui {
 
     if (![string]::IsNullOrWhiteSpace($EndpointName)) {
         if (!$PodeContext.Server.Endpoints.ContainsKey($EndpointName)) {
-            throw "Endpoint with name '$($EndpointName)' does not exist"
+            # Endpoint with name '$EndpointName' does not exist.
+            throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $EndpointName)
         }
 
         $PodeContext.Server.Gui.Endpoint = $PodeContext.Server.Endpoints[$EndpointName]

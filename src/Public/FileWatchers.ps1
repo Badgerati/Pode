@@ -137,7 +137,8 @@ function Add-PodeFileWatcher {
 
     # test path to make sure it exists
     if (!(Test-PodePath $Path -NoStatus)) {
-        throw "The path does not exist: $($Path)"
+        # Path does not exist
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
     }
 
     # test if we have the file watcher already

@@ -1648,8 +1648,8 @@ function New-PodeOAPropertyInternal {
     if ($Params.ExternalDocs) { $param.externalDocs = $Params.ExternalDocs }
 
     if ($Params.NoAdditionalProperties.IsPresent -and $Params.AdditionalProperties) {
-        # Params -NoAdditionalProperties and -AdditionalProperties are mutually exclusive
-        throw $PodeLocale.paramsNoAdditionalPropertiesExclusiveExceptionMessage
+        # Parameters 'NoAdditionalProperties' and 'AdditionalProperties' are mutually exclusive
+        throw ($PodeLocale.parametersMutuallyExclusiveExceptionMessage -f 'NoAdditionalProperties', 'AdditionalProperties')
     }
     else {
         if ($Params.NoAdditionalProperties.IsPresent) { $param.additionalProperties = $false }

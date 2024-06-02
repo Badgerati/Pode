@@ -192,7 +192,8 @@ function Use-PodeScript {
 
     # check if the path exists
     if (!(Test-PodePath $_path -NoStatus)) {
-        throw "The script path does not exist: $(Protect-PodeValue -Value $_path -Default $Path)"
+        # The script path does not exist
+        throw ($PodeLocale.scriptPathDoesNotExistExceptionMessage -f (Protect-PodeValue -Value $_path -Default 'DefaultPath'))
     }
 
     # dot-source the script
@@ -350,12 +351,14 @@ function Import-PodeModule {
 
     # if it's still empty, error
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw "Failed to import module: $(Protect-PodeValue -Value $Path -Default $Name)"
+        # Failed to import module
+        throw ($PodeLocale.failedToImportModuleExceptionMessage -f (Protect-PodeValue -Value $Path -Default $Name))
     }
 
     # check if the path exists
     if (!(Test-PodePath $Path -NoStatus)) {
-        throw "The module path does not exist: $(Protect-PodeValue -Value $Path -Default $Name)"
+        # The module path does not exist
+        throw ($PodeLocale.modulePathDoesNotExistExceptionMessage -f (Protect-PodeValue -Value $Path -Default $Name))
     }
 
     $null = Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop

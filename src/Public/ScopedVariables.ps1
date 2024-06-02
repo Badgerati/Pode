@@ -116,7 +116,8 @@ function Convert-PodeScopedVariable {
 
     # check if scoped var defined
     if (!(Test-PodeScopedVariable -Name $Name)) {
-        throw "Scoped Variable not found: $($Name)"
+        # Scoped Variable not found
+        throw ($PodeLocale.scopedVariableNotFoundExceptionMessage -f $Name)
     }
 
     # get the scoped var metadata

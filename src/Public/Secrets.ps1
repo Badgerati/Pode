@@ -131,7 +131,7 @@ function Register-PodeSecretVault {
             $autoImported = ' from auto-importing'
         }
         # A Secret Vault with the name {0} has already been registered{1}
-        throw ($PodeLocal.secretVaultAlreadyRegisteredAutoImportExceptionMessage -f $Name, $autoImported)
+        throw ($PodeLocale.secretVaultAlreadyRegisteredAutoImportExceptionMessage -f $Name, $autoImported)
     }
 
     # base vault config
@@ -262,7 +262,7 @@ function Unlock-PodeSecretVault {
     # has the vault been registered?
     if (!(Test-PodeSecretVault -Name $Name)) {
         # No Secret Vault with the name has been registered
-        throw ($PodeLocal.noSecretVaultRegisteredExceptionMessage -f $Vault)
+        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
     }
 
     # get vault
@@ -292,7 +292,7 @@ function Unlock-PodeSecretVault {
         $expiry = ([datetime]$expiry).ToUniversalTime()
         if ($expiry -le [datetime]::UtcNow) {
             # Secret Vault unlock expiry date is in the past (UTC)
-            throw ($PodeLocal.secretVaultUnlockExpiryDateInPastExceptionMessage -f $expiry)
+            throw ($PodeLocale.secretVaultUnlockExpiryDateInPastExceptionMessage -f $expiry)
         }
 
         $vault.Unlock.Expiry = $expiry
@@ -438,18 +438,19 @@ function Mount-PodeSecret {
     # has the secret been mounted already?
     if (Test-PodeSecret -Name $Name) {
         # A Secret with the name has already been mounted
-        throw ($PodeLocal.secretAlreadyMountedExceptionMessage -f $Name)
+        throw ($PodeLocale.secretAlreadyMountedExceptionMessage -f $Name)
     }
 
     # does the vault exist?
     if (!(Test-PodeSecretVault -Name $Vault)) {
         # No Secret Vault with the name has been registered
-        throw ($PodeLocal.noSecretVaultRegisteredExceptionMessage -f $Vault)
+        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
     }
 
     # check properties
     if (!(Test-PodeIsEmpty $Property) -and !(Test-PodeIsEmpty $ExpandProperty)) {
-        throw 'You can only provide one of either Property or ExpandPropery, but not both'
+        # Parameters 'Property' and 'ExpandPropery' are mutually exclusive
+        throw ($PodeLocale.parametersMutuallyExclusiveExceptionMessage -f 'Property' , 'ExpandPropery')
     }
 
     # which cache value?
@@ -513,7 +514,7 @@ function Dismount-PodeSecret {
     if (!(Test-PodeSecret -Name $Name)) {
         if ($Remove) {
             # No Secret named has been mounted
-            throw ($PodeLocal.noSecretNamedMountedExceptionMessage -f $Name)
+            throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
         }
 
         return
@@ -556,7 +557,7 @@ function Get-PodeSecret {
     # has the secret been mounted?
     if (!(Test-PodeSecret -Name $Name)) {
         # No Secret named has been mounted
-        throw ($PodeLocal.noSecretNamedMountedExceptionMessage -f $Name)
+        throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
     }
 
     # get the secret and vault
@@ -671,7 +672,7 @@ function Update-PodeSecret {
     # has the secret been mounted?
     if (!(Test-PodeSecret -Name $Name)) {
         # No Secret named has been mounted
-        throw ($PodeLocal.noSecretNamedMountedExceptionMessage -f $Name)
+        throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
     }
 
     # make sure the value type is correct
@@ -745,7 +746,8 @@ function Remove-PodeSecret {
 
     # has the vault been registered?
     if (!(Test-PodeSecretVault -Name $Vault)) {
-        throw "No Secret Vault with the name '$($Vault)' has been registered"
+        # No Secret Vault with the name has been registered
+        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
     }
 
     # remove the secret depending on vault type
@@ -817,7 +819,8 @@ function Read-PodeSecret {
 
     # has the vault been registered?
     if (!(Test-PodeSecretVault -Name $Vault)) {
-        throw "No Secret Vault with the name '$($Vault)' has been registered"
+        # No Secret Vault with the name has been registered
+        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
     }
 
     # fetch the secret depending on vault type
@@ -902,7 +905,8 @@ function Set-PodeSecret {
 
     # has the vault been registered?
     if (!(Test-PodeSecretVault -Name $Vault)) {
-        throw "No Secret Vault with the name '$($Vault)' has been registered"
+        # No Secret Vault with the name has been registered
+        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
     }
 
     # make sure the value type is correct

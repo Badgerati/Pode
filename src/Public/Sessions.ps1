@@ -66,7 +66,8 @@ function Enable-PodeSessionMiddleware {
         [Parameter()]
         [ValidateScript({
                 if ($_ -lt 0) {
-                    throw "Duration must be 0 or greater, but got: $($_)s"
+                    # Duration must be 0 or greater, but got
+                    throw ($PodeLocale.durationMustBeZeroOrGreaterExceptionMessage -f $_)
                 }
 
                 return $true

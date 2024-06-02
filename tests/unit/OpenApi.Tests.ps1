@@ -5,7 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture "en-us" -FileName "Pode"
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
 }
 
 Describe 'OpenApi' {
@@ -2094,7 +2094,7 @@ Describe 'OpenApi' {
             It 'AllOf and ObjectDefinitions not an object' {
                 { Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                     ((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name'))
-                    ) } | Should  -Throw  -ExpectedMessage   'Only properties of type Object can be associated with allof'
+                    ) } | Should  -Throw  -ExpectedMessage ($PodeLocale.propertiesTypeObjectAssociationExceptionMessage -f 'allOf')  # Only properties of type Object can be associated with allOf
             }
 
         }
@@ -2409,7 +2409,8 @@ Describe 'OpenApi' {
                 }
 
                 It 'Path - ContentSchema - Exception -Required' {
-                    { ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema 'Cat' } | Should -Throw  -ExpectedMessage '*the switch parameter `-Required*'
+                    { ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema 'Cat' } |
+                        Should -Throw  -ExpectedMessage $PodeLocale.pathParameterRequiresRequiredSwitchExceptionMessage   # If the parameter location is 'Path', the switch parameter 'Required' is mandatory
                 }
             }
         }

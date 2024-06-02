@@ -379,7 +379,8 @@ function New-PodeOAMultiTypeProperty {
                     $param.default = $Default
                 }
                 else {
-                    throw "The default value is not a boolean and it's not part of the enum"
+                    # The default value is not a boolean and is not part of the enum
+                    throw $PodeLocale.defaultValueNotBooleanOrEnumExceptionMessage
                 }
             }
         }
@@ -1398,7 +1399,8 @@ function New-PodeOABoolProperty {
                 $param.default = $Default
             }
             else {
-                throw "The default value is not a boolean and it's not part of the enum"
+                # The default value is not a boolean and is not part of the enum
+                throw $PodeLocale.defaultValueNotBooleanOrEnumExceptionMessage
             }
         }
 
@@ -1791,7 +1793,8 @@ function Merge-PodeOAProperty {
             foreach ($schema in $ObjectDefinitions) {
                 if ($schema -is [System.Object[]] -or ($schema -is [hashtable] -and
                 (($schema.type -ine 'object') -and !$schema.object))) {
-                    throw "Only properties of type Object can be associated with $($param.type)"
+                    # Only properties of type Object can be associated with $param.type
+                    throw ($PodeLocale.propertiesTypeObjectAssociationExceptionMessage -f $param.type)
                 }
                 $param.schemas += $schema
             }
