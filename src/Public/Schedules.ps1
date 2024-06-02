@@ -114,7 +114,7 @@ function Add-PodeSchedule {
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add the schedule
-    $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
+    $parsedCrons = ConvertFrom-PodeCronExpression -Expression @($Cron)
     $nextTrigger = Get-PodeCronNextEarliestTrigger -Expressions $parsedCrons -StartTime $StartTime -EndTime $EndTime
 
     $PodeContext.Schedules.Enabled = $true
@@ -311,7 +311,7 @@ function Edit-PodeSchedule {
 
     # edit cron if supplied
     if (!(Test-PodeIsEmpty $Cron)) {
-        $_schedule.Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        $_schedule.Crons = (ConvertFrom-PodeCronExpression -Expression @($Cron))
         $_schedule.CronsRaw = $Cron
         $_schedule.NextTriggerTime = Get-PodeCronNextEarliestTrigger -Expressions $_schedule.Crons -StartTime $_schedule.StartTime -EndTime $_schedule.EndTime
     }

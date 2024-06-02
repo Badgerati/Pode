@@ -119,35 +119,98 @@ function Convert-PodeScopedVariableInbuiltUsing {
     }
 
     # get any using variables
-    $usingVars = Get-PodeScopedVariableUsingVariables -ScriptBlock $ScriptBlock
+    $usingVars = Get-PodeScopedVariableUsingVariable -ScriptBlock $ScriptBlock
     if (($null -eq $usingVars) -or ($usingVars.Count -eq 0)) {
         return $ScriptBlock, $null
     }
 
     # convert any using vars to use new names
-    $usingVars = Find-PodeScopedVariableUsingVariableValues -UsingVariables $usingVars -PSSession $PSSession
+    $usingVars = Find-PodeScopedVariableUsingVariableValue -UsingVariable $usingVars -PSSession $PSSession
 
     # now convert the script
-    $newScriptBlock = Convert-PodeScopedVariableUsingVariables -ScriptBlock $ScriptBlock -UsingVariables $usingVars
+    $newScriptBlock = Convert-PodeScopedVariableUsingVariable -ScriptBlock $ScriptBlock -UsingVariables $usingVars
 
     # return converted script
     return $newScriptBlock, $usingVars
 }
 
-function Get-PodeScopedVariableUsingVariables {
+<#
+.SYNOPSIS
+    Retrieves all occurrences of using variables within a given script block.
+
+.DESCRIPTION
+    The `Get-PodeScopedVariableUsingVariable` function analyzes a script block and identifies all instances of using variables.
+    It returns an array of `UsingExpressionAst` objects representing these occurrences.
+
+.PARAMETER ScriptBlock
+    Specifies the script block to analyze. This parameter is mandatory.
+
+.OUTPUTS
+    Returns an array of `UsingExpressionAst` objects representing using variables found in the script block.
+
+.EXAMPLE
+    # Example usage:
+    $scriptBlock = {
+        $usingVar1 = "Hello"
+        $usingVar2 = "World"
+        Write-Host "Using variables: $usingVar1, $usingVar2"
+    }
+
+    $usingVariables = Get-PodeScopedVariableUsingVariable -ScriptBlock $scriptBlock
+    # Process the identified using variables as needed.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeScopedVariableUsingVariable {
     param(
         [Parameter(Mandatory = $true)]
         [scriptblock]
         $ScriptBlock
     )
 
+    # Analyze the script block AST to find using variables
     return $ScriptBlock.Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $true)
 }
 
-function Find-PodeScopedVariableUsingVariableValues {
+<#
+.SYNOPSIS
+    Finds and maps using variables within a given script block to their corresponding values.
+
+.DESCRIPTION
+    The `Find-PodeScopedVariableUsingVariableValue` function analyzes a collection of using variables
+    (represented as `UsingExpressionAst` objects) within a script block. It retrieves the values of these
+    variables from the specified session state (`$PSSession`) and maps them for further processing.
+
+.PARAMETER UsingVariable
+    Specifies an array of `UsingExpressionAst` objects representing using variables found in the script block.
+    This parameter is mandatory.
+
+.PARAMETER PSSession
+    Specifies the session state from which to retrieve variable values. This parameter is mandatory.
+
+.OUTPUTS
+    Returns an array of custom objects, each containing the following properties:
+    - `OldName`: The original expression text for the using variable.
+    - `NewName`: The modified name for the using variable (prefixed with "__using_").
+    - `NewNameWithDollar`: The modified name with a dollar sign prefix (e.g., `$__using_VariableName`).
+    - `SubExpressions`: An array of sub-expressions associated with the using variable.
+    - `Value`: The value of the using variable retrieved from the session state.
+
+.EXAMPLE
+    # Example usage:
+    $usingVariables = Get-PodeScopedVariableUsingVariable -ScriptBlock $scriptBlock
+    $mappedVariables = Find-PodeScopedVariableUsingVariableValue -UsingVariable $usingVariables -PSSession $sessionState
+    # Process the mapped variables as needed.
+
+.NOTES
+    - The function handles both direct using variables and child script using variables (prefixed with "__using_").
+    - This is an internal function and may change in future releases of Pode.
+#>
+function Find-PodeScopedVariableUsingVariableValue {
     param(
         [Parameter(Mandatory = $true)]
-        $UsingVariables,
+        $UsingVariable,
 
         [Parameter(Mandatory = $true)]
         [System.Management.Automation.SessionState]
@@ -156,8 +219,8 @@ function Find-PodeScopedVariableUsingVariableValues {
 
     $mapped = @{}
 
-    foreach ($usingVar in $UsingVariables) {
-        # var name
+    foreach ($usingVar in $UsingVariable) {
+        # Extract variable name
         $varName = $usingVar.SubExpression.VariablePath.UserPath
 
         # only retrieve value if new var
@@ -172,7 +235,7 @@ function Find-PodeScopedVariableUsingVariableValues {
                 throw "Value for `$using:$($varName) could not be found"
             }
 
-            # add to mapped
+            # Add to mapped variables
             $mapped[$varName] = @{
                 OldName           = $usingVar.SubExpression.Extent.Text
                 NewName           = "__using_$($varName)"
@@ -182,14 +245,56 @@ function Find-PodeScopedVariableUsingVariableValues {
             }
         }
 
-        # add the vars sub-expression for replacing later
+        # Add the variable's sub-expression for later replacement
         $mapped[$varName].SubExpressions += $usingVar.SubExpression
     }
 
     return @($mapped.Values)
 }
 
-function Convert-PodeScopedVariableUsingVariables {
+<#
+.SYNOPSIS
+    Converts a script block by replacing using variables with their corresponding values.
+
+.DESCRIPTION
+    The `Convert-PodeScopedVariableUsingVariable` function takes a script block and a collection of using variables.
+    It replaces the using variables within the script block with their associated values.
+
+.PARAMETER ScriptBlock
+    Specifies the script block to convert. This parameter is mandatory.
+
+.PARAMETER UsingVariables
+    Specifies an array of custom objects representing using variables and their values.
+    Each object should have the following properties:
+    - `OldName`: The original expression text for the using variable.
+    - `NewNameWithDollar`: The modified name with a dollar sign prefix (e.g., `$__using_VariableName`).
+    - `SubExpressions`: An array of sub-expressions associated with the using variable.
+    - `Value`: The value of the using variable.
+
+.OUTPUTS
+    Returns a new script block with replaced using variables.
+
+.EXAMPLE
+    # Example usage:
+    $usingVariables = @(
+        @{
+            OldName           = '$usingVar1'
+            NewNameWithDollar = '$__using_usingVar1'
+            SubExpressions    = @($usingVar1.SubExpression1, $usingVar1.SubExpression2)
+            Value             = 'SomeValue1'
+        },
+        # Add other using variables here...
+    )
+
+    $convertedScriptBlock = Convert-PodeScopedVariableUsingVariable -ScriptBlock $originalScriptBlock -UsingVariables $usingVariables
+    # Use the converted script block as needed.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Convert-PodeScopedVariableUsingVariable {
+    [CmdletBinding()]
+    [OutputType([scriptblock])]
     param(
         [Parameter(Mandatory = $true)]
         [scriptblock]
@@ -199,7 +304,7 @@ function Convert-PodeScopedVariableUsingVariables {
         [hashtable[]]
         $UsingVariables
     )
-
+    # Create a list of variable expressions for replacement
     $varsList = New-Object 'System.Collections.Generic.List`1[System.Management.Automation.Language.VariableExpressionAst]'
     $newParams = New-Object System.Collections.ArrayList
 
@@ -209,10 +314,12 @@ function Convert-PodeScopedVariableUsingVariables {
         }
     }
 
+    # Create a comma-separated list of new parameters
     $null = $newParams.AddRange(@($UsingVariables.NewNameWithDollar))
     $newParams = ($newParams -join ', ')
     $tupleParams = [tuple]::Create($varsList, $newParams)
 
+    # Invoke the internal method to replace variables in the script block
     $bindingFlags = [System.Reflection.BindingFlags]'Default, NonPublic, Instance'
     $_varReplacerMethod = $ScriptBlock.Ast.GetType().GetMethod('GetWithInputHandlingForInvokeCommandImpl', $bindingFlags)
     $convertedScriptBlockStr = $_varReplacerMethod.Invoke($ScriptBlock.Ast, @($tupleParams))
@@ -223,6 +330,7 @@ function Convert-PodeScopedVariableUsingVariables {
 
     $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)
 
+    # Handle cases where the script block starts with '$input |'
     if ($convertedScriptBlock.Ast.EndBlock[0].Statements.Extent.Text.StartsWith('$input |')) {
         $convertedScriptBlockStr = ($convertedScriptBlockStr -ireplace '\$input \|')
         $convertedScriptBlock = [scriptblock]::Create($convertedScriptBlockStr)

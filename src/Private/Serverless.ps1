@@ -1,4 +1,5 @@
 function Start-PodeAzFuncServer {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
     param(
         [Parameter(Mandatory = $true)]
         $Data
@@ -108,7 +109,7 @@ function Start-PodeAzFuncServer {
             Set-PodeResponseStatus -Code 500 -Exception $_
         }
         finally {
-            Update-PodeServerRequestMetrics -WebEvent $WebEvent
+            Update-PodeServerRequestMetric -WebEvent $WebEvent
         }
 
         # invoke endware specifc to the current web event
@@ -125,6 +126,7 @@ function Start-PodeAzFuncServer {
 }
 
 function Start-PodeAwsLambdaServer {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
     param(
         [Parameter(Mandatory = $true)]
         $Data
@@ -223,7 +225,7 @@ function Start-PodeAwsLambdaServer {
             Set-PodeResponseStatus -Code 500 -Exception $_
         }
         finally {
-            Update-PodeServerRequestMetrics -WebEvent $WebEvent
+            Update-PodeServerRequestMetric -WebEvent $WebEvent
         }
 
         # invoke endware specifc to the current web event

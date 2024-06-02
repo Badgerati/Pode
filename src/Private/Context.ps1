@@ -90,7 +90,7 @@ function New-PodeContext {
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
-    $ctx.Server.PodeModule = (Get-PodeModuleDetails)
+    $ctx.Server.PodeModule = (Get-PodeModuleInfo)
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
@@ -147,7 +147,7 @@ function New-PodeContext {
     # set socket details for pode server
     $ctx.Server.Sockets = @{
         Ssl            = @{
-            Protocols = Get-PodeDefaultSslProtocols
+            Protocols = Get-PodeDefaultSslProtocol
         }
         ReceiveTimeout = 100
     }
@@ -505,7 +505,17 @@ function New-PodeRunspaceState {
     $PodeContext.RunspaceState = $state
 }
 
-function New-PodeRunspacePools {
+<#
+.SYNOPSIS
+    Creates and initializes runspace pools for various Pode components.
+
+.DESCRIPTION
+    This function sets up runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It dynamically adjusts the thread counts based on the presence of specific components and their configuration.
+
+.OUTPUTS
+    Initializes and configures runspace pools for various Pode components.
+#>
+function New-PodeRunspacePool {
     if ($PodeContext.Server.IsServerless) {
         return
     }
@@ -539,7 +549,7 @@ function New-PodeRunspacePools {
     }
 
     # web runspace - if we have any http/s endpoints
-    if (Test-PodeEndpoints -Type Http) {
+    if (Test-PodeEndpointByProtocolType -Type Http) {
         $PodeContext.RunspacePools.Web = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -547,7 +557,7 @@ function New-PodeRunspacePools {
     }
 
     # smtp runspace - if we have any smtp endpoints
-    if (Test-PodeEndpoints -Type Smtp) {
+    if (Test-PodeEndpointByProtocolType -Type Smtp) {
         $PodeContext.RunspacePools.Smtp = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -555,7 +565,7 @@ function New-PodeRunspacePools {
     }
 
     # tcp runspace - if we have any tcp endpoints
-    if (Test-PodeEndpoints -Type Tcp) {
+    if (Test-PodeEndpointByProtocolType -Type Tcp) {
         $PodeContext.RunspacePools.Tcp = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -563,7 +573,7 @@ function New-PodeRunspacePools {
     }
 
     # signals runspace - if we have any ws/s endpoints
-    if (Test-PodeEndpoints -Type Ws) {
+    if (Test-PodeEndpointByProtocolType -Type Ws) {
         $PodeContext.RunspacePools.Signals = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -615,7 +625,17 @@ function New-PodeRunspacePools {
     }
 }
 
-function Open-PodeRunspacePools {
+<#
+.SYNOPSIS
+    Opens and initializes runspace pools for various Pode components.
+
+.DESCRIPTION
+    This function opens and initializes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It asynchronously opens the pools and waits for them to be in the 'Opened' state. If any pool fails to open, it reports an error.
+
+.OUTPUTS
+    Opens and initializes runspace pools for various Pode components.
+#>
+function Open-PodeRunspacePool {
     if ($PodeContext.Server.IsServerless) {
         return
     }
@@ -673,7 +693,17 @@ function Open-PodeRunspacePools {
     Write-Verbose "RunspacePools opened [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
 }
 
-function Close-PodeRunspacePools {
+<#
+.SYNOPSIS
+    Closes and disposes runspace pools for various Pode components.
+
+.DESCRIPTION
+    This function closes and disposes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It asynchronously closes the pools and waits for them to be in the 'Closed' state. If any pool fails to close, it reports an error.
+
+.OUTPUTS
+    Closes and disposes runspace pools for various Pode components.
+#>
+function Close-PodeRunspacePool {
     if ($PodeContext.Server.IsServerless -or ($null -eq $PodeContext.RunspacePools)) {
         return
     }
@@ -824,7 +854,7 @@ function Set-PodeServerConfiguration {
 
     # sockets
     if (!(Test-PodeIsEmpty $Configuration.Ssl.Protocols)) {
-        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Ssl.Protocols)
+        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocol -Protocol $Configuration.Ssl.Protocols)
     }
 
     if ([int]$Configuration.ReceiveTimeout -gt 0) {
@@ -929,6 +959,9 @@ function Set-PodeWebConfiguration {
 }
 
 function New-PodeAutoRestartServer {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
+    [CmdletBinding()]
+    param()
     # don't configure if not supplied, or running as serverless
     $config = (Get-PodeConfig)
     if (($null -eq $config) -or ($null -eq $config.Server.Restart) -or $PodeContext.Server.IsServerless) {
@@ -969,7 +1002,18 @@ function New-PodeAutoRestartServer {
     }
 }
 
-function Set-PodeOutputVariables {
+<#
+.SYNOPSIS
+    Sets global output variables based on the Pode server context.
+
+.DESCRIPTION
+    This function sets global output variables based on the Pode server context. It retrieves output variables from the server context and assigns them as global variables. These output variables can be accessed and used in other parts of your code.
+
+.OUTPUTS
+    Sets global output variables based on the Pode server context.
+
+#>
+function Set-PodeOutputVariable {
     if (Test-PodeIsEmpty $PodeContext.Server.Output.Variables) {
         return
     }

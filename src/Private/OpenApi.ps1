@@ -350,7 +350,32 @@ function ConvertTo-PodeOAOfProperty {
     return $schema
 }
 
+<#
+.SYNOPSIS
+    Converts a hashtable representing a property into a schema property format compliant with the OpenAPI Specification (OAS).
 
+.DESCRIPTION
+    This function takes a hashtable input representing a property and converts it into a schema property format based on the OpenAPI Specification.
+    It handles various property types including primitives, arrays, and complex types with allOf, oneOf, anyOf constructs.
+
+.PARAMETER Property
+    A hashtable containing property details that need to be converted to an OAS schema property.
+
+.PARAMETER NoDescription
+    A switch parameter. If set, the description of the property will not be included in the output schema.
+
+.PARAMETER DefinitionTag
+    A mandatory string parameter specifying the definition context used for schema validation and compatibility checks with OpenAPI versions.
+
+.EXAMPLE
+    $propertyDetails = @{
+        type = 'string';
+        description = 'A sample property';
+    }
+    ConvertTo-PodeOASchemaProperty -Property $propertyDetails -DefinitionTag 'v1'
+
+    This example will convert a simple string property into an OpenAPI schema property.
+#>
 function ConvertTo-PodeOASchemaProperty {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -926,9 +951,6 @@ function Get-PodeOpenApiDefinitionInternal {
 
     # auth/security components
     if ($PodeContext.Server.Authentications.Methods.Count -gt 0) {
-        #if ($null -eq $def.components.securitySchemes) {
-        # $def.components.securitySchemes = @{}
-        # }
         $authNames = (Expand-PodeAuthMerge -Names $PodeContext.Server.Authentications.Methods.Keys)
 
         foreach ($authName in $authNames) {

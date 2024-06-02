@@ -33,7 +33,7 @@ function Read-PodeByteLineFromByteArray {
         $IncludeNewLine
     )
 
-    $nlBytes = Get-PodeNewLineBytes -Encoding $Encoding
+    $nlBytes = Get-PodeNewLineByte -Encoding $Encoding
 
     # attempt to find \n
     $index = [array]::IndexOf($Bytes, $nlBytes.NewLine, $StartIndex)
@@ -71,7 +71,7 @@ function Get-PodeByteLinesFromByteArray {
 
     # lines
     $lines = @()
-    $nlBytes = Get-PodeNewLineBytes -Encoding $Encoding
+    $nlBytes = Get-PodeNewLineByte -Encoding $Encoding
 
     # attempt to find \n
     $index = 0
@@ -93,26 +93,78 @@ function Get-PodeByteLinesFromByteArray {
 
     return $lines
 }
+<#
+.SYNOPSIS
+    Converts a stream to a byte array.
 
-function ConvertFrom-PodeStreamToBytes {
+.DESCRIPTION
+    The `ConvertFrom-PodeValueToByteArray` function reads data from a stream and converts it to a byte array.
+    It's useful for scenarios where you need to work with binary data from a stream.
+
+.PARAMETER Stream
+    Specifies the input stream to convert. This parameter is mandatory.
+
+.OUTPUTS
+    Returns a byte array containing the data read from the input stream.
+
+.EXAMPLE
+    # Example usage:
+    # Read data from a file stream and convert it to a byte array
+    $stream = [System.IO.File]::OpenRead("C:\path\to\file.bin")
+    $byteArray = ConvertFrom-PodeValueToByteArray -Stream $stream
+    $stream.Close()
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertFrom-PodeValueToByteArray {
     param(
         [Parameter(Mandatory = $true)]
         $Stream
     )
 
+    # Initialize a buffer to read data in chunks
     $buffer = [byte[]]::new(64 * 1024)
     $ms = New-Object -TypeName System.IO.MemoryStream
     $read = 0
 
+    # Read data from the stream and write it to the memory stream
     while (($read = $Stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
         $ms.Write($buffer, 0, $read)
     }
 
+    # Close the memory stream and return the byte array
     $ms.Close()
     return $ms.ToArray()
 }
+<#
+.SYNOPSIS
+    Converts a string value to a byte array using the specified encoding.
 
-function ConvertFrom-PodeValueToBytes {
+.DESCRIPTION
+    The `ConvertFrom-PodeValueToByteArray` function takes a string value and converts it to a byte array.
+    You can specify the desired encoding (default is UTF-8).
+
+.PARAMETER Value
+    Specifies the input string value to convert.
+
+.PARAMETER Encoding
+    Specifies the encoding to use when converting the string to bytes.
+    Default value is UTF-8.
+
+.OUTPUTS
+    Returns a byte array containing the encoded representation of the input string.
+
+.EXAMPLE
+    # Example usage:
+    $inputString = "Hello, world!"
+    $byteArray = ConvertFrom-PodeValueToByteArray -Value $inputString
+    # Now you can work with the byte array as needed.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertFrom-PodeValueToByteArray {
     param(
         [Parameter()]
         [string]
@@ -150,7 +202,33 @@ function ConvertFrom-PodeBytesToString {
     return $value
 }
 
-function Get-PodeNewLineBytes {
+<#
+.SYNOPSIS
+    Retrieves information about newline characters in different encodings.
+
+.DESCRIPTION
+    The `Get-PodeNewLineByte` function returns a hashtable containing information about newline characters.
+    It calculates the byte values for newline (`n`) and carriage return (`r`) based on the specified encoding (default is UTF-8).
+
+.PARAMETER Encoding
+    Specifies the encoding to use when calculating newline and carriage return byte values.
+    Default value is UTF-8.
+
+.OUTPUTS
+    Returns a hashtable with the following keys:
+    - `NewLine`: Byte value for newline character (`n`).
+    - `Return`: Byte value for carriage return character (`r`).
+
+.EXAMPLE
+    Get-PodeNewLineByte -Encoding [System.Text.Encoding]::ASCII
+    # Returns the byte values for newline and carriage return in ASCII encoding.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeNewLineByte {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter()]
         $Encoding = [System.Text.Encoding]::UTF8
@@ -199,7 +277,7 @@ function Remove-PodeNewLineBytesFromArray {
         $Encoding = [System.Text.Encoding]::UTF8
     )
 
-    $nlBytes = Get-PodeNewLineBytes -Encoding $Encoding
+    $nlBytes = Get-PodeNewLineByte -Encoding $Encoding
     $length = $Bytes.Length - 1
 
     if ($Bytes[$length] -eq $nlBytes.NewLine) {

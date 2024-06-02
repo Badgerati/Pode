@@ -18,7 +18,7 @@ Describe 'Start-PodeInternalServer' {
         Mock Add-PodePSInbuiltDrive { }
         Mock Invoke-PodeScriptBlock { }
         Mock New-PodeRunspaceState { }
-        Mock New-PodeRunspacePools { }
+        Mock New-PodeRunspacePool { }
         Mock Start-PodeLoggingRunspace { }
         Mock Start-PodeTimerRunspace { }
         Mock Start-PodeScheduleRunspace { }
@@ -43,7 +43,7 @@ Describe 'Start-PodeInternalServer' {
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
@@ -57,7 +57,7 @@ Describe 'Start-PodeInternalServer' {
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
@@ -71,7 +71,7 @@ Describe 'Start-PodeInternalServer' {
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
@@ -85,7 +85,7 @@ Describe 'Start-PodeInternalServer' {
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
@@ -98,8 +98,8 @@ Describe 'Start-PodeInternalServer' {
 Describe 'Restart-PodeInternalServer' {
     BeforeAll {
         Mock Write-Host { }
-        Mock Close-PodeRunspaces { }
-        Mock Remove-PodePSDrives { }
+        Mock Close-PodeRunspace { }
+        Mock Remove-PodePSDrive { }
         Mock Open-PodeConfiguration { return $null }
         Mock Start-PodeInternalServer { }
         Mock Write-PodeErrorLog { }
