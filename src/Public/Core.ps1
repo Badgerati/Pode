@@ -176,6 +176,12 @@ function Start-PodeServer {
             [Console]::TreatControlCAsInput = $true
         }
 
+        # create TimerEvent  object
+        $script:TimerEvent = @{}
+
+        # create WebEvent  object
+        $script:WebEvent = @{}
+
         # start the file monitor for interally restarting
         Start-PodeFileMonitor
 

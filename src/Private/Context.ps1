@@ -495,6 +495,8 @@ function New-PodeRunspaceState {
     $variables = @(
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $session, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'TimerEvent', $TimerEvent, $null),
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'WebEvent', $WebEvent, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PODE_SCOPE_RUNSPACE', $true, $null)
     )
 

@@ -26,7 +26,7 @@ function Start-PodeAzFuncServer {
             $response.Headers = @{}
 
             # reset event data
-            $global:WebEvent = @{
+            $WebEvent += @{
                 OnEnd            = @()
                 Auth             = @{}
                 Response         = $response
@@ -154,7 +154,7 @@ function Start-PodeAwsLambdaServer {
             }
 
             # reset event data
-            $global:WebEvent = @{
+            $WebEvent += @{
                 OnEnd            = @()
                 Auth             = @{}
                 Response         = $response
