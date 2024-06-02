@@ -373,6 +373,7 @@ if (Test-PodeSseClientIdValid -ClientId 'my-client-id') { ... }
 #>
 function Test-PodeSseClientIdValid {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter()]
         [string]
@@ -614,6 +615,7 @@ $level = Get-PodeSseBroadcastLevel -Name 'Actions'
 #>
 function Get-PodeSseBroadcastLevel {
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -666,6 +668,7 @@ if (Test-PodeSseBroadcastLevel -Name 'Actions' -ClientId 'my-client-id') { ... }
 #>
 function Test-PodeSseBroadcastLevel {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]

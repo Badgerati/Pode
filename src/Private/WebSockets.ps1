@@ -22,7 +22,7 @@ function New-PodeWebSocketReceiver {
     try {
         $receiver = [PodeReceiver]::new($PodeContext.Tokens.Cancellation.Token)
         $receiver.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-        $receiver.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
+        $receiver.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
         $PodeContext.Server.WebSockets.Receiver = $receiver
         $PodeContext.Receivers += $receiver
     }
@@ -81,7 +81,9 @@ function Start-PodeWebSocketRunspace {
                         # invoke websocket script
                         $null = Invoke-PodeScriptBlock -ScriptBlock $websocket.Logic -Arguments $websocket.Arguments -UsingVariables $websocket.UsingVariables -Scoped -Splat
                     }
-                    catch [System.OperationCanceledException] {}
+                    catch [System.OperationCanceledException] {
+                        $_ | Write-PodeErrorLog -Level Debug
+                    }
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -93,7 +95,9 @@ function Start-PodeWebSocketRunspace {
                 }
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -119,7 +123,9 @@ function Start-PodeWebSocketRunspace {
                 Start-Sleep -Seconds 1
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException

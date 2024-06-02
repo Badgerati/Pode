@@ -558,6 +558,7 @@ New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId some_id -UsePKCE
 #>
 function New-PodeAuthAzureADScheme {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -631,6 +632,7 @@ New-PodeAuthTwitterScheme -ClientId some_id -UsePKCE
 #>
 function New-PodeAuthTwitterScheme {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -1020,6 +1022,7 @@ Get-PodeAuth -Name 'Main'
 #>
 function Get-PodeAuth {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -1050,6 +1053,7 @@ if (Test-PodeAuthExists -Name BasicAuth) { ... }
 #>
 function Test-PodeAuthExists {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -1081,6 +1085,7 @@ if (Test-PodeAuth -Name 'FormAuth' -IgnoreSession) { ... }
 #>
 function Test-PodeAuth {
     [CmdletBinding()]
+    [OutputType([boolean])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2082,6 +2087,7 @@ ConvertTo-PodeJwt -Header @{ alg = 'hs256' } -Payload @{ sub = '123'; name = 'Jo
 #>
 function ConvertTo-PodeJwt {
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]
@@ -2143,6 +2149,7 @@ ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI
 #>
 function ConvertFrom-PodeJwt {
     [CmdletBinding(DefaultParameterSetName = 'Secret')]
+    [OutputType([pscustomobject])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2422,6 +2429,7 @@ if (Test-PodeAuthUser) { ... }
 #>
 function Test-PodeAuthUser {
     [CmdletBinding()]
+    [OutputType([boolean])]
     param(
         [switch]
         $IgnoreSession

@@ -58,6 +58,7 @@ function Invoke-PodeMiddleware {
 }
 
 function New-PodeMiddlewareInternal {
+    [CmdletBinding()]
     [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
@@ -146,7 +147,27 @@ function Get-PodeAccessMiddleware {
         })
 }
 
+<#
+.SYNOPSIS
+Retrieves the rate limit middleware for Pode.
+
+.DESCRIPTION
+This function returns the inbuilt rate limit middleware for Pode. It checks if the request IP address, route, and endpoint have hit their respective rate limits. If any of these checks fail, a 429 status code is set, and the request is denied.
+
+.EXAMPLE
+Get-PodeLimitMiddleware
+Retrieves the rate limit middleware and adds it to the middleware pipeline.
+
+.RETURNS
+[ScriptBlock] - Returns a script block that represents the rate limit middleware.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
 function Get-PodeLimitMiddleware {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_rate_limit__' -ScriptBlock {
             # are there any rules?
             if ($PodeContext.Server.Limits.Rules.Count -eq 0) {
@@ -191,6 +212,9 @@ function Get-PodeLimitMiddleware {
     Retrieves middleware for serving public static content.
 #>
 function Get-PodePublicMiddleware {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
     return (Get-PodeInbuiltMiddleware -Name '__pode_mw_static_content__' -ScriptBlock {
             # only find public static content here
             $path = Find-PodePublicRoute -Path $WebEvent.Path

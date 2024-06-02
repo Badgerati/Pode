@@ -7,7 +7,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # create a basic server
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address * -Port 8081 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # runs forever, looping every 5secs
     $message = 'Hello, world'
@@ -30,12 +30,14 @@ Start-PodeServer {
     # runs forever, but skips the first 3 "loops" - is paused for 15secs then loops every 5secs
     Add-PodeTimer -Name 'pause-first-3' -Interval 5 -ScriptBlock {
         'Skip 3 then run' | Out-PodeHost
+      Write-PodeHost $TimerEvent -Explode -ShowType
     } -Skip 3
 
     # runs every 5secs, but only runs for 3 "loops" (ie, 15secs)
     Add-PodeTimer -Name 'run-3-times' -Interval 5 -ScriptBlock {
         'Only run 3 times' | Out-PodeHost
         Get-PodeTimer -Name 'run-3-times' | Out-Default
+        Write-PodeHost $TimerEvent -Explode -ShowType
     } -Limit 3
 
     # skip the first 2 loops, then run for 15 loops
@@ -46,6 +48,7 @@ Start-PodeServer {
     # run once after 2mins
     Add-PodeTimer -Name 'run-once' -Interval 20 -ScriptBlock {
         'Ran once' | Out-PodeHost
+        Write-PodeHost $TimerEvent -Explode -ShowType
     } -Skip 1 -Limit 1
 
     # create a new timer via a route
