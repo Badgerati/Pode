@@ -3114,9 +3114,9 @@ function Add-PodeOAExternalRoute {
         'builtin' {
 
             # ensure the route has appropriate slashes
-            $Path = Update-PodeRouteSlashes -Path $Path
+            $Path = Update-PodeRouteSlash -Path $Path
             $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-            $Path = Resolve-PodePlaceholders -Path $Path
+            $Path = Resolve-PodePlaceholder -Path $Path
             $extRoute = @{
                 Method  = $Method.ToLower()
                 Path    = $Path

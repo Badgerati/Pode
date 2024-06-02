@@ -9,7 +9,7 @@
             )
         }
     }
-    ExcludeRules = @('PSAvoidUsingCmdletAliases' ,'PSAvoidUsingPlainTextForPassword','PSAvoidUsingWriteHost','PSAvoidUsingInvokeExpression','PSUseShouldProcessForStateChangingFunctions',
-    'PSAvoidUsingUsernameAndPasswordParams','PSUseProcessBlockForPipelineCommand','PSAvoidUsingConvertToSecureStringWithPlainText','PSUseSingularNouns','PSReviewUnusedParameter' )
+    ExcludeRules = @( 'PSAvoidUsingPlainTextForPassword','PSUseShouldProcessForStateChangingFunctions',
+    'PSAvoidUsingUsernameAndPasswordParams','PSUseProcessBlockForPipelineCommand','PSAvoidUsingConvertToSecureStringWithPlainText','PSReviewUnusedParameter' )
 
 }

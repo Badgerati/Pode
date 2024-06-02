@@ -36,14 +36,14 @@ Describe 'New-PodeGuid' {
     }
 
     It 'Returns a secure guid' {
-        Mock Get-PodeRandomBytes { return @(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10) }
+        Mock Get-PodeRandomByte { return @(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10) }
         New-PodeGuid -Secure -Length 16 | Should -Be '0a0a0a0a-0a0a-0a0a-0a0a-0a0a0a0a0a0a'
     }
 }
 
-Describe 'Get-PodeRandomBytes' {
+Describe 'Get-PodeRandomByte' {
     It 'Returns an array of bytes' {
-        $b = (Get-PodeRandomBytes -Length 16)
+        $b = (Get-PodeRandomByte -Length 16)
         $b | Should -Not -Be $null
         $b.Length | Should -Be 16
     }
@@ -51,7 +51,7 @@ Describe 'Get-PodeRandomBytes' {
 
 Describe 'New-PodeSalt' {
     It 'Returns a salt' {
-        Mock Get-PodeRandomBytes { return @(10, 10, 10) }
+        Mock Get-PodeRandomByte { return @(10, 10, 10) }
         New-PodeSalt -Length 3 | Should -Be 'CgoK'
     }
 }

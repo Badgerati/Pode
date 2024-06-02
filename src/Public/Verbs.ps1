@@ -70,10 +70,10 @@ function Add-PodeVerb {
     )
 
     # find placeholder parameters in verb (ie: COMMAND :parameter)
-    $Verb = Resolve-PodePlaceholders -Path $Verb
+    $Verb = Resolve-PodePlaceholder -Path $Verb
 
     # get endpoints from name
-    $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
+    $endpoints = Find-PodeEndpoint -EndpointName $EndpointName
 
     # ensure the verb doesn't already exist for each endpoint
     foreach ($_endpoint in $endpoints) {
@@ -146,7 +146,7 @@ function Remove-PodeVerb {
     )
 
     # ensure the verb placeholders are replaced
-    $Verb = Resolve-PodePlaceholders -Path $Verb
+    $Verb = Resolve-PodePlaceholder -Path $Verb
 
     # ensure verb does exist
     if (!$PodeContext.Server.Verbs.Contains($Verb)) {
@@ -217,7 +217,7 @@ function Get-PodeVerb {
 
     # if we have a verb, filter
     if (![string]::IsNullOrWhiteSpace($Verb)) {
-        $Verb = Resolve-PodePlaceholders -Path $Verb
+        $Verb = Resolve-PodePlaceholder -Path $Verb
         $verbs = $PodeContext.Server.Verbs[$Verb]
     }
     else {
