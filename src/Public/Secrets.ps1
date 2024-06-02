@@ -449,8 +449,7 @@ function Mount-PodeSecret {
 
     # check properties
     if (!(Test-PodeIsEmpty $Property) -and !(Test-PodeIsEmpty $ExpandProperty)) {
-        # Parameters 'NoAdditionalProperties' and 'AdditionalProperties' are mutually exclusive
-        throw $PodeLocal.noAdditionalPropertiesMutuallyExclusiveExceptionMessage
+        throw 'You can only provide one of either Property or ExpandPropery, but not both'
     }
 
     # which cache value?
