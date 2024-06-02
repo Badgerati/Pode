@@ -50,7 +50,7 @@ function Start-PodeScheduleRunspace {
             }
 
         # complete any schedules
-        Complete-PodeInternalSchedules -Now $_now
+        Complete-PodeInternalSchedule -Now $_now
 
         # first, sleep for a period of time to get to 00 seconds (start of minute)
         Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
@@ -70,7 +70,7 @@ function Start-PodeScheduleRunspace {
                 }
 
             # complete any schedules
-            Complete-PodeInternalSchedules -Now $_now
+            Complete-PodeInternalSchedule -Now $_now
 
             # cron expression only goes down to the minute, so sleep for 1min
             Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
@@ -95,7 +95,33 @@ function Close-PodeScheduleInternal {
     $null = $PodeContext.Schedules.Processes.Remove($Process.ID)
 }
 
-function Complete-PodeInternalSchedules {
+<#
+.SYNOPSIS
+    Completes schedules that have exceeded their end time.
+
+.DESCRIPTION
+    The `Complete-PodeInternalSchedule` function checks for schedules that have an end time
+    and marks them as completed if their end time is earlier than the current time.
+
+.PARAMETER Now
+    Specifies the current date and time. This parameter is mandatory.
+
+.INPUTS
+    None. You cannot pipe objects to Complete-PodeInternalSchedule.
+
+.OUTPUTS
+    None. The function modifies the state of schedules in the PodeContext.
+
+.EXAMPLE
+    # Example usage:
+    $now = Get-Date
+    Complete-PodeInternalSchedule -Now $now
+    # Schedules that have ended are marked as completed.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Complete-PodeInternalSchedule {
     param(
         [Parameter(Mandatory = $true)]
         [datetime]

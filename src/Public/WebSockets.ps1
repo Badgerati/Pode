@@ -338,6 +338,7 @@ Test-PodeWebSocket -Name 'Example'
 #>
 function Test-PodeWebSocket {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]

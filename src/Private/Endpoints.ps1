@@ -1,4 +1,31 @@
-function Find-PodeEndpoints {
+<#
+.SYNOPSIS
+    Finds Pode endpoints based on protocol, address, or endpoint name.
+
+.DESCRIPTION
+    This function allows you to search for Pode endpoints based on different criteria. You can specify the protocol (HTTP or HTTPS), the address, or the endpoint name. It returns an array of hashtable objects representing the matching endpoints.
+
+.PARAMETER Protocol
+    The protocol of the endpoint (HTTP or HTTPS).
+
+.PARAMETER Address
+    The address of the endpoint.
+
+.PARAMETER EndpointName
+    The name of the endpoint.
+
+.OUTPUTS
+    An array of hashtables representing the matching endpoints, with the following keys:
+    - 'Protocol'
+    - 'Address'
+    - 'Name'
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Find-PodeEndpoint {
+    [CmdletBinding()]
+    [OutputType([hashtable[]])]
     param(
         [Parameter()]
         [ValidateSet('', 'Http', 'Https')]
@@ -50,7 +77,33 @@ function Find-PodeEndpoints {
     return $endpoints
 }
 
-function Get-PodeEndpoints {
+<#
+.SYNOPSIS
+    Retrieves internal endpoints based on the specified types.
+
+.DESCRIPTION
+    The `Get-PodeEndpointByProtocolType` function returns internal endpoints from the PodeContext
+    based on the specified types (HTTP, WebSocket, SMTP, or TCP).
+
+.PARAMETER Type
+    Specifies the type of endpoints to retrieve. Valid values are 'Http', 'Ws', 'Smtp', and 'Tcp'.
+    This parameter is mandatory.
+
+.OUTPUTS
+    Returns an array of internal endpoints matching the specified types.
+
+.EXAMPLE
+    # Example usage:
+    $httpEndpoints = Get-PodeEndpointByProtocolType -Type 'Http'
+    $wsEndpoints = Get-PodeEndpointByProtocolType -Type 'Ws'
+    # Retrieve HTTP and WebSocket endpoints from the PodeContext.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeEndpointByProtocolType {
+    [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp')]
@@ -83,7 +136,7 @@ function Get-PodeEndpoints {
     return $endpoints
 }
 
-function Test-PodeEndpointProtocol {
+function Test-PodeEndpointByProtocolTypeProtocol {
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Http', 'Https', 'Ws', 'Wss', 'Smtp', 'Smtps', 'Tcp', 'Tcps')]
@@ -157,7 +210,25 @@ function Get-PodeEndpointRunspacePoolName {
     }
 }
 
-function Test-PodeEndpoints {
+<#
+.SYNOPSIS
+Tests whether Pode endpoints of a specified type exist.
+
+.DESCRIPTION
+This function checks if there are any Pode endpoints of the specified type (HTTP, WebSocket, SMTP, or TCP). It returns a boolean value indicating whether endpoints of that type are available.
+
+.PARAMETER Type
+The type of Pode endpoint to test (HTTP, WebSocket, SMTP, or TCP).
+
+.OUTPUTS
+A boolean value (True if endpoints exist, False otherwise).
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeEndpointByProtocolType {
+    [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Http', 'Ws', 'Smtp', 'Tcp')]
@@ -165,7 +236,7 @@ function Test-PodeEndpoints {
         $Type
     )
 
-    $endpoints = (Get-PodeEndpoints -Type $Type)
+    $endpoints = (Get-PodeEndpointByProtocolType -Type $Type)
     return (($null -ne $endpoints) -and ($endpoints.Length -gt 0))
 
 }
