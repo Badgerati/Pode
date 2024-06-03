@@ -1131,7 +1131,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
                 $pm = Set-PodeOpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
                 # add path's http method to defintition
-                $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pmF
+                $def.paths[$_route.OpenAPI.Path][$method.ToLower()] = $pm
             }
         }
     }
@@ -1140,13 +1140,21 @@ function Get-PodeOpenApiDefinitionInternal {
 
 <#
 .SYNOPSIS
-    Converts a Cmdlet parameter into an OpenAPI-compliant property definition based on its type.
+    Converts a cmdlet parameter to a Pode OpenAPI property.
 
 .DESCRIPTION
-    This function analyzes the metadata of a Cmdlet parameter and generates an OpenAPI schema property. It supports Boolean, Integer, Number, and defaults to String type properties.
+    This internal function takes a cmdlet parameter and converts it into an appropriate Pode OpenAPI property based on its type.
+    The function supports boolean, integer, float, and string parameter types.
 
 .PARAMETER Parameter
-    The metadata of the Cmdlet parameter that is being converted to an OpenAPI property.
+    The cmdlet parameter metadata that needs to be converted. This parameter is mandatory and accepts values from the pipeline.
+
+.EXAMPLE
+    $metadata = Get-Command -Name Get-Process | Select-Object -ExpandProperty Parameters
+    $metadata.Values | ConvertTo-PodeOAPropertyFromCmdletParameter
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
 #>
 function ConvertTo-PodeOAPropertyFromCmdletParameter {
     param(
@@ -1579,7 +1587,6 @@ function Resolve-PodeOAReference {
         return $ComponentSchema
     }
 }
-
 
 <#
 .SYNOPSIS
