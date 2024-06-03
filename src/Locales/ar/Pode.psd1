@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [المهمة] {0}: المهمة معرفة
 maximumConcurrentTasksInvalidExceptionMessage = يجب أن يكون الحد الأقصى للمهام المتزامنة >=1، ولكن تم الحصول عليه: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = لا يمكن أن يكون الحد الأقصى للمهام المتزامنة أقل من الحد الأدنى {0}، ولكن تم الحصول عليه: {1}
 taskDoesNotExistExceptionMessage = المهمة '{0}' غير موجودة.
+cacheStorageNotFoundForRetrieveExceptionMessage = لم يتم العثور على مخزن ذاكرة التخزين المؤقت بالاسم '{0}' عند محاولة استرجاع العنصر المخزن مؤقتًا '{1}'
+cacheStorageNotFoundForSetExceptionMessage = لم يتم العثور على مخزن ذاكرة التخزين المؤقت بالاسم '{0}' عند محاولة تعيين العنصر المخزن مؤقتًا '{1}'
+cacheStorageNotFoundForExistsExceptionMessage = لم يتم العثور على مخزن ذاكرة التخزين المؤقت بالاسم '{0}' عند محاولة التحقق مما إذا كان العنصر المخزن مؤقتًا '{1}' موجودًا.
+cacheStorageNotFoundForRemoveExceptionMessage = لم يتم العثور على مخزن ذاكرة التخزين المؤقت بالاسم '{0}' عند محاولة إزالة العنصر المخزن مؤقتًا '{1}'
+cacheStorageNotFoundForClearExceptionMessage = لم يتم العثور على مخزن ذاكرة التخزين المؤقت بالاسم '{0}' عند محاولة مسح الذاكرة المؤقتة.
+cacheStorageAlreadyExistsExceptionMessage = مخزن ذاكرة التخزين المؤقت بالاسم '{0}' موجود بالفعل.
+pathToIconForGuiDoesNotExistExceptionMessage = المسار إلى الأيقونة للواجهة الرسومية غير موجود: {0}
+invalidHostnameSuppliedExceptionMessage = اسم المضيف المقدم غير صالح: {0}
+endpointAlreadyDefinedExceptionMessage = تم تعريف نقطة نهاية باسم '{0}' بالفعل.
+certificateExpiredExceptionMessage = الشهادة '{0}' منتهية الصلاحية: {1}
+endpointNotDefinedForRedirectingExceptionMessage = لم يتم تعريف نقطة نهاية باسم '{0}' لإعادة التوجيه.
 '@

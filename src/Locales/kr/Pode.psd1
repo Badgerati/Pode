@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [작업] {0}: 작업이 이미 정의되었
 maximumConcurrentTasksInvalidExceptionMessage = 최대 동시 작업 수는 >=1이어야 하지만 받은 값: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = 최대 동시 작업 수는 최소값 {0}보다 작을 수 없지만 받은 값: {1}
 taskDoesNotExistExceptionMessage = 작업 '{0}'이(가) 존재하지 않습니다.
+cacheStorageNotFoundForRetrieveExceptionMessage = 캐시된 항목 '{1}'을(를) 검색하려고 할 때 이름이 '{0}'인 캐시 스토리지를 찾을 수 없습니다.
+cacheStorageNotFoundForSetExceptionMessage = 캐시된 항목 '{1}'을(를) 설정하려고 할 때 이름이 '{0}'인 캐시 스토리지를 찾을 수 없습니다.
+cacheStorageNotFoundForExistsExceptionMessage = 캐시된 항목 '{1}'이(가) 존재하는지 확인하려고 할 때 이름이 '{0}'인 캐시 스토리지를 찾을 수 없습니다.
+cacheStorageNotFoundForRemoveExceptionMessage = 캐시된 항목 '{1}'을(를) 제거하려고 할 때 이름이 '{0}'인 캐시 스토리지를 찾을 수 없습니다.
+cacheStorageNotFoundForClearExceptionMessage = 캐시를 지우려고 할 때 이름이 '{0}'인 캐시 스토리지를 찾을 수 없습니다.
+cacheStorageAlreadyExistsExceptionMessage = 이름이 '{0}'인 캐시 스토리지가 이미 존재합니다.
+pathToIconForGuiDoesNotExistExceptionMessage = GUI용 아이콘의 경로가 존재하지 않습니다: {0}
+invalidHostnameSuppliedExceptionMessage = 제공된 호스트 이름이 잘못되었습니다: {0}
+endpointAlreadyDefinedExceptionMessage = 이름이 '{0}'인 엔드포인트가 이미 정의되어 있습니다.
+certificateExpiredExceptionMessage = 인증서 '{0}'이(가) 만료되었습니다: {1}
+endpointNotDefinedForRedirectingExceptionMessage = 리디렉션을 위해 이름이 '{0}'인 엔드포인트가 정의되지 않았습니다.
 '@

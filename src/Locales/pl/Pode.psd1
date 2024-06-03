@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [Zadanie] {0}: Zadanie już zdefiniowane.
 maximumConcurrentTasksInvalidExceptionMessage = Maksymalna liczba jednoczesnych zadań musi wynosić >=1, ale otrzymano: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = Maksymalna liczba jednoczesnych zadań nie może być mniejsza niż minimum {0}, ale otrzymano: {1}
 taskDoesNotExistExceptionMessage = Zadanie '{0}' nie istnieje.
+cacheStorageNotFoundForRetrieveExceptionMessage = Nie znaleziono magazynu pamięci podręcznej o nazwie '{0}' podczas próby pobrania elementu z pamięci podręcznej '{1}'.
+cacheStorageNotFoundForSetExceptionMessage = Nie znaleziono magazynu pamięci podręcznej o nazwie '{0}' podczas próby ustawienia elementu w pamięci podręcznej '{1}'.
+cacheStorageNotFoundForExistsExceptionMessage = Nie znaleziono magazynu pamięci podręcznej o nazwie '{0}' podczas próby sprawdzenia, czy element w pamięci podręcznej '{1}' istnieje.
+cacheStorageNotFoundForRemoveExceptionMessage = Nie znaleziono magazynu pamięci podręcznej o nazwie '{0}' podczas próby usunięcia elementu z pamięci podręcznej '{1}'.
+cacheStorageNotFoundForClearExceptionMessage = Nie znaleziono magazynu pamięci podręcznej o nazwie '{0}' podczas próby wyczyszczenia pamięci podręcznej.
+cacheStorageAlreadyExistsExceptionMessage = Magazyn pamięci podręcznej o nazwie '{0}' już istnieje.
+pathToIconForGuiDoesNotExistExceptionMessage = Ścieżka do ikony dla GUI nie istnieje: {0}
+invalidHostnameSuppliedExceptionMessage = Podano nieprawidłową nazwę hosta: {0}
+endpointAlreadyDefinedExceptionMessage = Punkt końcowy o nazwie '{0}' został już zdefiniowany.
+certificateExpiredExceptionMessage = Certyfikat '{0}' wygasł: {1}
+endpointNotDefinedForRedirectingExceptionMessage = Nie zdefiniowano punktu końcowego o nazwie '{0}' do przekierowania.
 '@

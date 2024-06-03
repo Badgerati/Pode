@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [Tâche] {0} : Tâche déjà définie.
 maximumConcurrentTasksInvalidExceptionMessage = Le nombre maximum de tâches simultanées doit être >=1, mais a obtenu : {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = Le nombre maximum de tâches simultanées ne peut pas être inférieur au minimum de {0}, mais a obtenu : {1}
 taskDoesNotExistExceptionMessage = La tâche '{0}' n'existe pas.
+cacheStorageNotFoundForRetrieveExceptionMessage = Le stockage de cache nommé '{0}' est introuvable lors de la tentative de récupération de l'élément mis en cache '{1}'.
+cacheStorageNotFoundForSetExceptionMessage = Le stockage de cache nommé '{0}' est introuvable lors de la tentative de définition de l'élément mis en cache '{1}'.
+cacheStorageNotFoundForExistsExceptionMessage = Le stockage de cache nommé '{0}' est introuvable lors de la tentative de vérification de l'existence de l'élément mis en cache '{1}'.
+cacheStorageNotFoundForRemoveExceptionMessage = Le stockage de cache nommé '{0}' est introuvable lors de la tentative de suppression de l'élément mis en cache '{1}'.
+cacheStorageNotFoundForClearExceptionMessage = Le stockage de cache nommé '{0}' est introuvable lors de la tentative de vider le cache.
+cacheStorageAlreadyExistsExceptionMessage = Un stockage de cache nommé '{0}' existe déjà.
+pathToIconForGuiDoesNotExistExceptionMessage = Le chemin vers l'icône pour l'interface graphique n'existe pas: {0}
+invalidHostnameSuppliedExceptionMessage = Nom d'hôte fourni invalide: {0}
+endpointAlreadyDefinedExceptionMessage = Un point de terminaison nommé '{0}' a déjà été défini.
+certificateExpiredExceptionMessage = Le certificat '{0}' a expiré: {1}
+endpointNotDefinedForRedirectingExceptionMessage = Un point de terminaison nommé '{0}' n'a pas été défini pour la redirection.
 '@

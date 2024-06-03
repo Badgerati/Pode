@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [Task] {0}: Task already defined.
 maximumConcurrentTasksInvalidExceptionMessage = Maximum concurrent tasks must be >=1 but got: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = Maximum concurrent tasks cannot be less than the minimum of {0} but got: {1}
 taskDoesNotExistExceptionMessage = Task '{0}' does not exist.
+cacheStorageNotFoundForRetrieveExceptionMessage = Cache storage with name '{0}' not found when attempting to retrieve cached item '{1}'
+cacheStorageNotFoundForSetExceptionMessage = Cache storage with name '{0}' not found when attempting to set cached item '{1}'
+cacheStorageNotFoundForExistsExceptionMessage = Cache storage with name '{0}' not found when attempting to check if cached item '{1}' exists.
+cacheStorageNotFoundForRemoveExceptionMessage = Cache storage with name '{0}' not found when attempting to remove cached item '{1}'
+cacheStorageNotFoundForClearExceptionMessage = Cache storage with name '{0}' not found when attempting to clear the cache.
+cacheStorageAlreadyExistsExceptionMessage = Cache Storage with name '{0}' already exists.
+pathToIconForGuiDoesNotExistExceptionMessage = Path to the icon for GUI does not exist: {0}
+invalidHostnameSuppliedExceptionMessage = Invalid hostname supplied: {0}
+endpointAlreadyDefinedExceptionMessage = An endpoint named '{0}' has already been defined.
+certificateExpiredExceptionMessage = The certificate '{0}' has expired: {1}
+endpointNotDefinedForRedirectingExceptionMessage = An endpoint named '{0}' has not been defined for redirecting.
 '@

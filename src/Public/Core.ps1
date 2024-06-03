@@ -658,7 +658,8 @@ function Show-PodeGui {
     if (![string]::IsNullOrWhiteSpace($Icon)) {
         $PodeContext.Server.Gui.Icon = Get-PodeRelativePath -Path $Icon -JoinRoot -Resolve
         if (!(Test-Path $PodeContext.Server.Gui.Icon)) {
-            throw "Path to icon for GUI does not exist: $($PodeContext.Server.Gui.Icon)"
+            # Path to icon for GUI does not exist
+            throw ($PodeLocale.pathToIconForGuiDoesNotExistExceptionMessage -f $PodeContext.Server.Gui.Icon)
         }
     }
 
@@ -931,7 +932,8 @@ function Add-PodeEndpoint {
 
     # parse the endpoint for host/port info
     if (![string]::IsNullOrWhiteSpace($Hostname) -and !(Test-PodeHostname -Hostname $Hostname)) {
-        throw "Invalid hostname supplied: $($Hostname)"
+        # Invalid hostname supplied
+        throw ($PodeLocale.invalidHostnameSuppliedExceptionMessage -f $Hostname)
     }
 
     if ((Test-PodeHostname -Hostname $Address) -and ($Address -inotin @('localhost', 'all'))) {
@@ -951,7 +953,8 @@ function Add-PodeEndpoint {
     }
 
     if ($PodeContext.Server.Endpoints.ContainsKey($Name)) {
-        throw "An endpoint with the name '$($Name)' has already been defined"
+        # An endpoint named has already been defined
+        throw ($PodeLocale.endpointAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # protocol must be https for client certs, or hosted behind a proxy like iis
@@ -1085,7 +1088,8 @@ function Add-PodeEndpoint {
 
         # fail if the cert is expired
         if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
-            throw "The certificate '$($obj.Certificate.Raw.Subject)' has expired: $($obj.Certificate.Raw.NotAfter)"
+            # The certificate has expired
+            throw ($PodeLocale.certificateExpiredExceptionMessage -f $obj.Certificate.Raw.Subject, $obj.Certificate.Raw.NotAfter)
         }
     }
 
@@ -1111,7 +1115,8 @@ function Add-PodeEndpoint {
 
         # ensure the name exists
         if (Test-PodeIsEmpty $redir_endpoint) {
-            throw "An endpoint with the name '$($RedirectTo)' has not been defined for redirecting"
+            # An endpoint named has not been defined for redirecting
+            throw ($PodeLocale.endpointNotDefinedForRedirectingExceptionMessage -f $RedirectTo)
         }
 
         # build the redirect route
@@ -1319,7 +1324,8 @@ function Set-PodeDefaultFolder {
         $PodeContext.Server.DefaultFolders[$Type] = $Path
     }
     else {
-        throw "Folder $Path doesn't exist"
+        # Path does not exist
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
     }
 }
 

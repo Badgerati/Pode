@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [Tarea] {0}: Tarea ya definida.
 maximumConcurrentTasksInvalidExceptionMessage = El número máximo de tareas concurrentes debe ser >=1, pero se obtuvo: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = El número máximo de tareas concurrentes no puede ser menor que el mínimo de {0}, pero se obtuvo: {1}
 taskDoesNotExistExceptionMessage = La tarea '{0}' no existe.
+cacheStorageNotFoundForRetrieveExceptionMessage = No se encontró el almacenamiento en caché con el nombre '{0}' al intentar recuperar el elemento en caché '{1}'.
+cacheStorageNotFoundForSetExceptionMessage = No se encontró el almacenamiento en caché con el nombre '{0}' al intentar establecer el elemento en caché '{1}'.
+cacheStorageNotFoundForExistsExceptionMessage = No se encontró el almacenamiento en caché con el nombre '{0}' al intentar comprobar si el elemento en caché '{1}' existe.
+cacheStorageNotFoundForRemoveExceptionMessage = No se encontró el almacenamiento en caché con el nombre '{0}' al intentar eliminar el elemento en caché '{1}'.
+cacheStorageNotFoundForClearExceptionMessage = No se encontró el almacenamiento en caché con el nombre '{0}' al intentar vaciar la caché.
+cacheStorageAlreadyExistsExceptionMessage = Ya existe un almacenamiento en caché con el nombre '{0}'.
+pathToIconForGuiDoesNotExistExceptionMessage = La ruta del icono para la GUI no existe: {0}
+invalidHostnameSuppliedExceptionMessage = Nombre de host no válido proporcionado: {0}
+endpointAlreadyDefinedExceptionMessage = Ya se ha definido un punto de conexión llamado '{0}'.
+certificateExpiredExceptionMessage = El certificado '{0}' ha expirado: {1}
+endpointNotDefinedForRedirectingExceptionMessage = No se ha definido un punto de conexión llamado '{0}' para la redirección.
 '@

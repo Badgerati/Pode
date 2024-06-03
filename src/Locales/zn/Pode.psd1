@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [任务] {0}: 任务已定义。
 maximumConcurrentTasksInvalidExceptionMessage = 最大并发任务数必须 >=1，但获得: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = 最大并发任务数不能小于最小值 {0}，但获得: {1}
 taskDoesNotExistExceptionMessage = 任务 '{0}' 不存在。
+cacheStorageNotFoundForRetrieveExceptionMessage = 尝试检索缓存项 '{1}' 时，找不到名为 '{0}' 的缓存存储。
+cacheStorageNotFoundForSetExceptionMessage = 尝试设置缓存项 '{1}' 时，找不到名为 '{0}' 的缓存存储。
+cacheStorageNotFoundForExistsExceptionMessage = 尝试检查缓存项 '{1}' 是否存在时，找不到名为 '{0}' 的缓存存储。
+cacheStorageNotFoundForRemoveExceptionMessage = 尝试删除缓存项 '{1}' 时，找不到名为 '{0}' 的缓存存储。
+cacheStorageNotFoundForClearExceptionMessage = 尝试清除缓存时，找不到名为 '{0}' 的缓存存储。
+cacheStorageAlreadyExistsExceptionMessage = 名为 '{0}' 的缓存存储已存在。
+pathToIconForGuiDoesNotExistExceptionMessage = GUI 图标的路径不存在: {0}
+invalidHostnameSuppliedExceptionMessage = 提供的主机名无效: {0}
+endpointAlreadyDefinedExceptionMessage = 名为 '{0}' 的端点已定义。
+certificateExpiredExceptionMessage = 证书 '{0}' 已过期: {1}
+endpointNotDefinedForRedirectingExceptionMessage = 未定义用于重定向的名为 '{0}' 的端点。
 '@

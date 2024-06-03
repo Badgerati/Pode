@@ -1,5 +1,5 @@
-# Save this script as Check-LocalizationKeys.Tests.ps1
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
 param()
 
 Describe 'Localization Check' {

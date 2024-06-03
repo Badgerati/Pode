@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [Tarefa] {0}: Tarefa já definida.
 maximumConcurrentTasksInvalidExceptionMessage = O número máximo de tarefas concorrentes deve ser >=1, mas foi obtido: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = O número máximo de tarefas concorrentes não pode ser menor que o mínimo de {0}, mas foi obtido: {1}
 taskDoesNotExistExceptionMessage = A tarefa '{0}' não existe.
+cacheStorageNotFoundForRetrieveExceptionMessage = Armazenamento em cache com o nome '{0}' não encontrado ao tentar recuperar o item em cache '{1}'.
+cacheStorageNotFoundForSetExceptionMessage = Armazenamento em cache com o nome '{0}' não encontrado ao tentar definir o item em cache '{1}'.
+cacheStorageNotFoundForExistsExceptionMessage = Armazenamento em cache com o nome '{0}' não encontrado ao tentar verificar se o item em cache '{1}' existe.
+cacheStorageNotFoundForRemoveExceptionMessage = Armazenamento em cache com o nome '{0}' não encontrado ao tentar remover o item em cache '{1}'.
+cacheStorageNotFoundForClearExceptionMessage = Armazenamento em cache com o nome '{0}' não encontrado ao tentar limpar o cache.
+cacheStorageAlreadyExistsExceptionMessage = Armazenamento em cache com o nome '{0}' já existe.
+pathToIconForGuiDoesNotExistExceptionMessage = O caminho para o ícone da interface gráfica não existe: {0}
+invalidHostnameSuppliedExceptionMessage = Nome de host fornecido inválido: {0}
+endpointAlreadyDefinedExceptionMessage = Um ponto de extremidade chamado '{0}' já foi definido.
+certificateExpiredExceptionMessage = O certificado '{0}' expirou: {1}
+endpointNotDefinedForRedirectingExceptionMessage = Não foi definido um ponto de extremidade chamado '{0}' para redirecionamento.
 '@

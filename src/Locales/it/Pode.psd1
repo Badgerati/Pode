@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [Attività] {0}: Attività già definita.
 maximumConcurrentTasksInvalidExceptionMessage = Il numero massimo di attività simultanee deve essere >=1, ma è stato ottenuto: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = Il numero massimo di attività simultanee non può essere inferiore al minimo di {0}, ma è stato ottenuto: {1}
 taskDoesNotExistExceptionMessage = L'attività '{0}' non esiste.
+cacheStorageNotFoundForRetrieveExceptionMessage = Memoria cache con nome '{0}' non trovata durante il tentativo di recuperare l'elemento memorizzato nella cache '{1}'.
+cacheStorageNotFoundForSetExceptionMessage = Memoria cache con nome '{0}' non trovata durante il tentativo di impostare l'elemento memorizzato nella cache '{1}'.
+cacheStorageNotFoundForExistsExceptionMessage = Memoria cache con nome '{0}' non trovata durante il tentativo di verificare se l'elemento memorizzato nella cache '{1}' esiste.
+cacheStorageNotFoundForRemoveExceptionMessage = Memoria cache con nome '{0}' non trovata durante il tentativo di rimuovere l'elemento memorizzato nella cache '{1}'.
+cacheStorageNotFoundForClearExceptionMessage = Memoria cache con nome '{0}' non trovata durante il tentativo di cancellare la cache.
+cacheStorageAlreadyExistsExceptionMessage = Memoria cache con nome '{0}' esiste già.
+pathToIconForGuiDoesNotExistExceptionMessage = Il percorso dell'icona per la GUI non esiste: {0}
+invalidHostnameSuppliedExceptionMessage = Nome host fornito non valido: {0}
+endpointAlreadyDefinedExceptionMessage = Un endpoint denominato '{0}' è già stato definito.
+certificateExpiredExceptionMessage = Il certificato '{0}' è scaduto: {1}
+endpointNotDefinedForRedirectingExceptionMessage = Non è stato definito un endpoint denominato '{0}' per il reindirizzamento.
 '@

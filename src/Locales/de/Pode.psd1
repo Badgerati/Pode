@@ -212,6 +212,15 @@ taskAlreadyDefinedExceptionMessage = [Aufgabe] {0}: Aufgabe bereits definiert.
 maximumConcurrentTasksInvalidExceptionMessage = Die maximale Anzahl gleichzeitiger Aufgaben muss >=1 sein, aber erhalten: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = Die maximale Anzahl gleichzeitiger Aufgaben darf nicht kleiner als das Minimum von {0} sein, aber erhalten: {1}
 taskDoesNotExistExceptionMessage = Aufgabe '{0}' existiert nicht.
+cacheStorageNotFoundForRetrieveExceptionMessage = Der Cache-Speicher mit dem Namen '{0}' wurde nicht gefunden, als versucht wurde, das zwischengespeicherte Element '{1}' abzurufen.
+cacheStorageNotFoundForSetExceptionMessage = Der Cache-Speicher mit dem Namen '{0}' wurde nicht gefunden, als versucht wurde, das zwischengespeicherte Element '{1}' zu setzen.
+cacheStorageNotFoundForExistsExceptionMessage = Der Cache-Speicher mit dem Namen '{0}' wurde nicht gefunden, als versucht wurde zu überprüfen, ob das zwischengespeicherte Element '{1}' existiert.
+cacheStorageNotFoundForRemoveExceptionMessage = Der Cache-Speicher mit dem Namen '{0}' wurde nicht gefunden, als versucht wurde, das zwischengespeicherte Element '{1}' zu entfernen.
+cacheStorageNotFoundForClearExceptionMessage = Der Cache-Speicher mit dem Namen '{0}' wurde nicht gefunden, als versucht wurde, den Cache zu leeren.
+cacheStorageAlreadyExistsExceptionMessage = Ein Cache-Speicher mit dem Namen '{0}' existiert bereits.
+pathToIconForGuiDoesNotExistExceptionMessage = Der Pfad zum Symbol für die GUI existiert nicht: {0}
+invalidHostnameSuppliedExceptionMessage = Der angegebene Hostname ist ungültig: {0}
+endpointAlreadyDefinedExceptionMessage = Ein Endpunkt mit dem Namen '{0}' wurde bereits definiert.
+certificateExpiredExceptionMessage = Das Zertifikat '{0}' ist abgelaufen: {1}
+endpointNotDefinedForRedirectingExceptionMessage = Ein Endpunkt mit dem Namen '{0}' wurde nicht für die Weiterleitung definiert.
 '@
-
-

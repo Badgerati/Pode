@@ -212,4 +212,15 @@ taskAlreadyDefinedExceptionMessage = [タスク] {0}: タスクは既に定義�
 maximumConcurrentTasksInvalidExceptionMessage = 最大同時タスク数は >=1 でなければなりませんが、取得した値は: {0}
 maximumConcurrentTasksLessThanMinimumExceptionMessage = 最大同時タスク数は最小値 {0} より少なくてはいけませんが、取得した値は: {1}
 taskDoesNotExistExceptionMessage = タスク '{0}' は存在しません。
+cacheStorageNotFoundForRetrieveExceptionMessage = キャッシュされたアイテム '{1}' を取得しようとしたときに、名前 '{0}' のキャッシュストレージが見つかりません。
+cacheStorageNotFoundForSetExceptionMessage = キャッシュされたアイテム '{1}' を設定しようとしたときに、名前 '{0}' のキャッシュストレージが見つかりません。
+cacheStorageNotFoundForExistsExceptionMessage = キャッシュされたアイテム '{1}' が存在するかどうかを確認しようとしたときに、名前 '{0}' のキャッシュストレージが見つかりません。
+cacheStorageNotFoundForRemoveExceptionMessage = キャッシュされたアイテム '{1}' を削除しようとしたときに、名前 '{0}' のキャッシュストレージが見つかりません。
+cacheStorageNotFoundForClearExceptionMessage = キャッシュをクリアしようとしたときに、名前 '{0}' のキャッシュストレージが見つかりません。
+cacheStorageAlreadyExistsExceptionMessage = 名前 '{0}' のキャッシュストレージは既に存在します。
+pathToIconForGuiDoesNotExistExceptionMessage = GUI用アイコンのパスが存在しません: {0}
+invalidHostnameSuppliedExceptionMessage = 無効なホスト名が指定されました: {0}
+endpointAlreadyDefinedExceptionMessage = 名前 '{0}' のエンドポイントは既に定義されています。
+certificateExpiredExceptionMessage = 証明書 '{0}' の有効期限が切れています: {1}
+endpointNotDefinedForRedirectingExceptionMessage = リダイレクトのために名前 '{0}' のエンドポイントが定義されていません。
 '@
