@@ -902,7 +902,7 @@ Describe 'Add-PodeBodyParser' {
     It 'Fails because a script is already defined' {
         $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{} } }
         { Add-PodeBodyParser -ContentType 'text/xml' -ScriptBlock {} } | Should -Not -Throw
-        { Add-PodeBodyParser -ContentType 'text/xml' -ScriptBlock {} } | Should -Throw -ExpectedMessage '*already a body parser*'
+        { Add-PodeBodyParser -ContentType 'text/xml' -ScriptBlock {} } | Should -Throw -ExpectedMessage ($PodeLocale.bodyParserAlreadyDefinedForContentTypeExceptionMessage -f 'text/xml') # A body-parser is already defined for the {0} content-type.
     }
 
     It 'Fails on an invalid content-type' {

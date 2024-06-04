@@ -223,4 +223,17 @@ invalidHostnameSuppliedExceptionMessage = Nombre de host no válido proporcionad
 endpointAlreadyDefinedExceptionMessage = Ya se ha definido un punto de conexión llamado '{0}'.
 certificateExpiredExceptionMessage = El certificado '{0}' ha expirado: {1}
 endpointNotDefinedForRedirectingExceptionMessage = No se ha definido un punto de conexión llamado '{0}' para la redirección.
+fileWatcherAlreadyDefinedExceptionMessage = Un Observador de Archivos llamado '{0}' ya ha sido definido.
+handlerAlreadyDefinedExceptionMessage = [{0}] {1}: Manejador ya definido.
+maxDaysInvalidExceptionMessage = MaxDays debe ser igual o mayor que 0, pero se obtuvo: {0}
+maxSizeInvalidExceptionMessage = MaxSize debe ser igual o mayor que 0, pero se obtuvo: {0}
+loggingMethodAlreadyDefinedExceptionMessage = Método de registro ya definido: {0}
+loggingMethodRequiresValidScriptBlockExceptionMessage = El método de salida proporcionado para el método de registro '{0}' requiere un ScriptBlock válido.
+csrfCookieRequiresSecretExceptionMessage = Al usar cookies para CSRF, se requiere un Secreto. Puedes proporcionar un Secreto o establecer el secreto global de la Cookie - (Set-PodeCookieSecret '<value>' -Global)
+bodyParserAlreadyDefinedForContentTypeExceptionMessage = Un analizador de cuerpo ya está definido para el tipo de contenido {0}.
+middlewareAlreadyDefinedExceptionMessage = [Middleware] {0}: Middleware ya definido.
+parameterNotSuppliedInRequestExceptionMessage = No se ha proporcionado un parámetro llamado '{0}' en la solicitud o no hay datos disponibles.
+noDataForFileUploadedExceptionMessage = No se han subido datos para el archivo '{0}' en la solicitud.
+viewsFolderNameAlreadyExistsExceptionMessage = El nombre de la carpeta Views ya existe: {0}
+viewsPathDoesNotExistExceptionMessage = La ruta de las Views no existe: {0}
 '@

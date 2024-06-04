@@ -223,4 +223,17 @@ invalidHostnameSuppliedExceptionMessage = 提供的主机名无效: {0}
 endpointAlreadyDefinedExceptionMessage = 名为 '{0}' 的端点已定义。
 certificateExpiredExceptionMessage = 证书 '{0}' 已过期: {1}
 endpointNotDefinedForRedirectingExceptionMessage = 未定义用于重定向的名为 '{0}' 的端点。
+fileWatcherAlreadyDefinedExceptionMessage = 名为 '{0}' 的文件监视器已定义。
+handlerAlreadyDefinedExceptionMessage = [{0}] {1}: 处理程序已定义。
+maxDaysInvalidExceptionMessage = MaxDays 必须大于或等于 0，但得到: {0}
+maxSizeInvalidExceptionMessage = MaxSize 必须大于或等于 0，但得到: {0}
+loggingMethodAlreadyDefinedExceptionMessage = 日志记录方法已定义: {0}
+loggingMethodRequiresValidScriptBlockExceptionMessage = 为 '{0}' 日志记录方法提供的输出方法需要有效的 ScriptBlock。
+csrfCookieRequiresSecretExceptionMessage = 使用 CSRF 的 Cookie 时，需要一个密钥。您可以提供一个密钥或设置全局 Cookie 密钥 - (Set-PodeCookieSecret '<value>' -Global)
+bodyParserAlreadyDefinedForContentTypeExceptionMessage = 已为 {0} 内容类型定义了一个 body-parser。
+middlewareAlreadyDefinedExceptionMessage = [Middleware] {0}: 中间件已定义。
+parameterNotSuppliedInRequestExceptionMessage = 请求中未提供名为 '{0}' 的参数或没有可用数据。
+noDataForFileUploadedExceptionMessage = 请求中未上传文件 '{0}' 的数据。
+viewsFolderNameAlreadyExistsExceptionMessage = 视图文件夹名称已存在: {0}
+viewsPathDoesNotExistExceptionMessage = 视图路径不存在: {0}
 '@

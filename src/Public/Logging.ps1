@@ -106,7 +106,8 @@ function New-PodeLoggingMethod {
         [Parameter(ParameterSetName = 'File')]
         [ValidateScript({
                 if ($_ -lt 0) {
-                    throw "MaxDays must be 0 or greater, but got: $($_)s"
+                    # MaxDays must be 0 or greater, but got
+                    throw ($PodeLocale.maxDaysInvalidExceptionMessage -f $MaxDays)
                 }
 
                 return $true
@@ -117,7 +118,8 @@ function New-PodeLoggingMethod {
         [Parameter(ParameterSetName = 'File')]
         [ValidateScript({
                 if ($_ -lt 0) {
-                    throw "MaxSize must be 0 or greater, but got: $($_)s"
+                    # MaxSize must be 0 or greater, but got
+                    throw ($PodeLocale.maxSizeInvalidExceptionMessage -f $MaxSize)
                 }
 
                 return $true
@@ -442,12 +444,14 @@ function Add-PodeLogger {
 
     # ensure the name doesn't already exist
     if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
-        throw "Logging method already defined: $($Name)"
+        # Logging method already defined
+        throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # ensure the Method contains a scriptblock
     if (Test-PodeIsEmpty $Method.ScriptBlock) {
-        throw "The supplied output Method for the '$($Name)' Logging method requires a valid ScriptBlock"
+        # The supplied output Method for the Logging method requires a valid ScriptBlock 
+        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
     }
 
     # check for scoped vars

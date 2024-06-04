@@ -223,4 +223,17 @@ invalidHostnameSuppliedExceptionMessage = 제공된 호스트 이름이 잘못�
 endpointAlreadyDefinedExceptionMessage = 이름이 '{0}'인 엔드포인트가 이미 정의되어 있습니다.
 certificateExpiredExceptionMessage = 인증서 '{0}'이(가) 만료되었습니다: {1}
 endpointNotDefinedForRedirectingExceptionMessage = 리디렉션을 위해 이름이 '{0}'인 엔드포인트가 정의되지 않았습니다.
+fileWatcherAlreadyDefinedExceptionMessage = '{0}'라는 이름의 파일 감시자가 이미 정의되었습니다.
+handlerAlreadyDefinedExceptionMessage = [{0}] {1}: 핸들러가 이미 정의되었습니다.
+maxDaysInvalidExceptionMessage = MaxDays는 0 이상이어야 하지만, 받은 값: {0}
+maxSizeInvalidExceptionMessage = MaxSize는 0 이상이어야 하지만, 받은 값: {0}
+loggingMethodAlreadyDefinedExceptionMessage = 로깅 방법이 이미 정의되었습니다: {0}
+loggingMethodRequiresValidScriptBlockExceptionMessage = '{0}' 로깅 방법에 대한 제공된 출력 방법은 유효한 ScriptBlock이 필요합니다.
+csrfCookieRequiresSecretExceptionMessage = CSRF에 대해 쿠키를 사용할 때, 비밀이 필요합니다. 비밀을 제공하거나 전역 비밀 쿠키를 설정하십시오 - (Set-PodeCookieSecret '<value>' -Global)
+bodyParserAlreadyDefinedForContentTypeExceptionMessage = {0} 콘텐츠 유형에 대한 바디 파서가 이미 정의되어 있습니다.
+middlewareAlreadyDefinedExceptionMessage = [Middleware] {0}: 미들웨어가 이미 정의되었습니다.
+parameterNotSuppliedInRequestExceptionMessage = 요청에 '{0}'라는 이름의 매개변수가 제공되지 않았거나 데이터가 없습니다.
+noDataForFileUploadedExceptionMessage = 요청에서 업로드된 파일 '{0}'에 대한 데이터가 없습니다.
+viewsFolderNameAlreadyExistsExceptionMessage = 뷰 폴더 이름이 이미 존재합니다: {0}
+viewsPathDoesNotExistExceptionMessage = 뷰 경로가 존재하지 않습니다: {0}
 '@

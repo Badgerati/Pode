@@ -223,4 +223,17 @@ invalidHostnameSuppliedExceptionMessage = اسم المضيف المقدم غي�
 endpointAlreadyDefinedExceptionMessage = تم تعريف نقطة نهاية باسم '{0}' بالفعل.
 certificateExpiredExceptionMessage = الشهادة '{0}' منتهية الصلاحية: {1}
 endpointNotDefinedForRedirectingExceptionMessage = لم يتم تعريف نقطة نهاية باسم '{0}' لإعادة التوجيه.
+fileWatcherAlreadyDefinedExceptionMessage = تم تعريف مراقب الملفات باسم '{0}' بالفعل.
+handlerAlreadyDefinedExceptionMessage = [{0}] {1}: تم تعريف المعالج بالفعل.
+maxDaysInvalidExceptionMessage = يجب أن يكون MaxDays 0 أو أكبر، ولكن تم الحصول على: {0}
+maxSizeInvalidExceptionMessage = يجب أن يكون MaxSize 0 أو أكبر، ولكن تم الحصول على: {0}
+loggingMethodAlreadyDefinedExceptionMessage = تم تعريف طريقة التسجيل بالفعل: {0}
+loggingMethodRequiresValidScriptBlockExceptionMessage = تتطلب طريقة الإخراج المقدمة لطريقة التسجيل '{0}' ScriptBlock صالح.
+csrfCookieRequiresSecretExceptionMessage = عند استخدام ملفات تعريف الارتباط لـ CSRF، يكون السر مطلوبًا. يمكنك تقديم سر أو تعيين السر العالمي لملف تعريف الارتباط - (Set-PodeCookieSecret '<value>' -Global)
+bodyParserAlreadyDefinedForContentTypeExceptionMessage = تم تعريف محلل الجسم لنوع المحتوى {0} بالفعل.
+middlewareAlreadyDefinedExceptionMessage = [Middleware] {0}: تم تعريف الوسيط بالفعل.
+parameterNotSuppliedInRequestExceptionMessage = لم يتم توفير معلمة باسم '{0}' في الطلب أو لا توجد بيانات متاحة.
+noDataForFileUploadedExceptionMessage = لا توجد بيانات للملف '{0}' الذي تم تحميله في الطلب.
+viewsFolderNameAlreadyExistsExceptionMessage = اسم مجلد العرض موجود بالفعل: {0}
+viewsPathDoesNotExistExceptionMessage = مسار العرض غير موجود: {0}
 '@

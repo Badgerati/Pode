@@ -250,7 +250,8 @@ function Initialize-PodeCsrf {
         $Secret = (Protect-PodeValue -Value $Secret -Default (Get-PodeCookieSecret -Global))
 
         if (Test-PodeIsEmpty $Secret) {
-            throw "When using cookies for CSRF, a Secret is required. You can either supply a Secret, or set the Cookie global secret - (Set-PodeCookieSecret '<value>' -Global)"
+            # When using cookies for CSRF, a Secret is required
+            throw $PodeLocale.csrfCookieRequiresSecretExceptionMessage
         }
     }
 
@@ -361,7 +362,8 @@ function Add-PodeBodyParser {
 
     # if a parser for the type already exists, fail
     if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
-        throw "There is already a body parser defined for the $($ContentType) content-type"
+        # A body-parser is already defined for the content-type
+        throw ($PodeLocale.bodyParserAlreadyDefinedForContentTypeExceptionMessage -f $ContentType)
     }
 
     # check for scoped vars
@@ -460,7 +462,9 @@ function Add-PodeMiddleware {
 
     # ensure name doesn't already exist
     if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
-        throw "[Middleware] $($Name): Middleware already defined"
+        # [Middleware] Name: Middleware already defined
+        throw ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f $Name)
+
     }
 
     # if it's a script - call New-PodeMiddleware

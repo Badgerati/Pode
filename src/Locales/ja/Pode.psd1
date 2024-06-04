@@ -223,4 +223,17 @@ invalidHostnameSuppliedExceptionMessage = 無効なホスト名が指定され�
 endpointAlreadyDefinedExceptionMessage = 名前 '{0}' のエンドポイントは既に定義されています。
 certificateExpiredExceptionMessage = 証明書 '{0}' の有効期限が切れています: {1}
 endpointNotDefinedForRedirectingExceptionMessage = リダイレクトのために名前 '{0}' のエンドポイントが定義されていません。
+fileWatcherAlreadyDefinedExceptionMessage = 名前 '{0}' のファイルウォッチャーは既に定義されています。
+handlerAlreadyDefinedExceptionMessage = [{0}] {1}: ハンドラは既に定義されています。
+maxDaysInvalidExceptionMessage = MaxDaysは0以上でなければなりませんが、受け取った値は: {0}
+maxSizeInvalidExceptionMessage = MaxSizeは0以上でなければなりませんが、受け取った値は: {0}
+loggingMethodAlreadyDefinedExceptionMessage = ログ記録方法は既に定義されています: {0}
+loggingMethodRequiresValidScriptBlockExceptionMessage = '{0}' ログ記録方法のために提供された出力方法は、有効なScriptBlockが必要です。
+csrfCookieRequiresSecretExceptionMessage = CSRFのためにクッキーを使用する場合、秘密が必要です。秘密を提供するか、クッキーのグローバル秘密を設定してください - (Set-PodeCookieSecret '<value>' -Global)
+bodyParserAlreadyDefinedForContentTypeExceptionMessage = {0} コンテンツタイプ用のボディパーサーは既に定義されています。
+middlewareAlreadyDefinedExceptionMessage = [Middleware] {0}: ミドルウェアは既に定義されています。
+parameterNotSuppliedInRequestExceptionMessage = リクエストに '{0}' という名前のパラメータが提供されていないか、データがありません。
+noDataForFileUploadedExceptionMessage = リクエストでアップロードされたファイル '{0}' のデータがありません。
+viewsFolderNameAlreadyExistsExceptionMessage = ビューのフォルダ名は既に存在します: {0}
+viewsPathDoesNotExistExceptionMessage = ビューのパスが存在しません: {0}
 '@

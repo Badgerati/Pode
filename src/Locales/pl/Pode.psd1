@@ -223,4 +223,17 @@ invalidHostnameSuppliedExceptionMessage = Podano nieprawidłową nazwę hosta: {
 endpointAlreadyDefinedExceptionMessage = Punkt końcowy o nazwie '{0}' został już zdefiniowany.
 certificateExpiredExceptionMessage = Certyfikat '{0}' wygasł: {1}
 endpointNotDefinedForRedirectingExceptionMessage = Nie zdefiniowano punktu końcowego o nazwie '{0}' do przekierowania.
+fileWatcherAlreadyDefinedExceptionMessage = Obserwator plików o nazwie '{0}' został już zdefiniowany.
+handlerAlreadyDefinedExceptionMessage = [{0}] {1}: Handler już zdefiniowany.
+maxDaysInvalidExceptionMessage = MaxDays musi wynosić 0 lub więcej, ale otrzymano: {0}
+maxSizeInvalidExceptionMessage = MaxSize musi wynosić 0 lub więcej, ale otrzymano: {0}
+loggingMethodAlreadyDefinedExceptionMessage = Metoda logowania już zdefiniowana: {0}
+loggingMethodRequiresValidScriptBlockExceptionMessage = Dostarczona metoda wyjściowa dla metody logowania '{0}' wymaga poprawnego ScriptBlock.
+csrfCookieRequiresSecretExceptionMessage = Podczas używania ciasteczek do CSRF, wymagany jest Sekret. Możesz dostarczyć Sekret lub ustawić globalny sekret dla ciasteczek - (Set-PodeCookieSecret '<value>' -Global)
+bodyParserAlreadyDefinedForContentTypeExceptionMessage = Parser treści dla typu zawartości {0} jest już zdefiniowany.
+middlewareAlreadyDefinedExceptionMessage = [Middleware] {0}: Middleware już zdefiniowany.
+parameterNotSuppliedInRequestExceptionMessage = Parametr o nazwie '{0}' nie został dostarczony w żądaniu lub nie ma dostępnych danych.
+noDataForFileUploadedExceptionMessage = Brak danych dla pliku '{0}' przesłanego w żądaniu.
+viewsFolderNameAlreadyExistsExceptionMessage = Nazwa folderu Widoków już istnieje: {0}
+viewsPathDoesNotExistExceptionMessage = Ścieżka do Widoków nie istnieje: {0}
 '@

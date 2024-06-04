@@ -223,4 +223,17 @@ invalidHostnameSuppliedExceptionMessage = Invalid hostname supplied: {0}
 endpointAlreadyDefinedExceptionMessage = An endpoint named '{0}' has already been defined.
 certificateExpiredExceptionMessage = The certificate '{0}' has expired: {1}
 endpointNotDefinedForRedirectingExceptionMessage = An endpoint named '{0}' has not been defined for redirecting.
+fileWatcherAlreadyDefinedExceptionMessage = A File Watcher named '{0}' has already been defined.
+handlerAlreadyDefinedExceptionMessage = [{0}] {1}: Handler already defined.
+maxDaysInvalidExceptionMessage = MaxDays must be 0 or greater, but got: {0}
+maxSizeInvalidExceptionMessage = MaxSize must be 0 or greater, but got: {0}
+loggingMethodAlreadyDefinedExceptionMessage = Logging method already defined: {0}
+loggingMethodRequiresValidScriptBlockExceptionMessage = The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock.
+csrfCookieRequiresSecretExceptionMessage = When using cookies for CSRF, a Secret is required. You can either supply a Secret or set the Cookie global secret - (Set-PodeCookieSecret '<value>' -Global)
+bodyParserAlreadyDefinedForContentTypeExceptionMessage = A body-parser is already defined for the {0} content-type.
+middlewareAlreadyDefinedExceptionMessage = [Middleware] {0}: Middleware already defined.
+parameterNotSuppliedInRequestExceptionMessage = A parameter called '{0}' was not supplied in the request or has no data available.
+noDataForFileUploadedExceptionMessage = No data for file '{0}' was uploaded in the request.
+viewsFolderNameAlreadyExistsExceptionMessage = The Views folder name already exists: {0}
+viewsPathDoesNotExistExceptionMessage = The Views path does not exist: {0}
 '@
