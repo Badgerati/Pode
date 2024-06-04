@@ -1,13 +1,23 @@
 # Basics
+<sub><b>!!! Warning</b>
+It’s important to note that you can initiate only one server per PowerShell instance. This means that within a single PowerShell or pwsh session, you can only run one server at a time. If you need to run multiple servers, you’ll need to start additional PowerShell or pwsh instances. Each instance of PowerShell or pwsh can then run its own server. This is a fundamental aspect of how Pode operates. Please keep this in mind when designing your scripts and infrastructure.</sub>
 
-!!! warning
-    You can only start one server in your script
 
-
-Although not required, it is recommended to import the Pode module using a maximum version, to avoid any breaking changes from new major versions:
+While it’s not mandatory, we strongly recommend importing the Pode module with a specified maximum version. This practice helps to prevent potential issues arising from breaking changes introduced in new major versions:
 
 ```powershell
 Import-Module -Name Pode -MaximumVersion 2.99.99
+```
+
+To further enhance the robustness of your code, consider wrapping the import statement within a try/catch block. This way, if the module fails to load, your script won’t proceed, preventing possible errors or unexpected behavior:
+
+```powershell
+try {
+    Import-Module -Name Pode -MaximumVersion 2.99.99
+} catch {
+    Write-Error "Failed to load the Pode module"
+    throw
+}
 ```
 
 The script for your server should be set in the [`Start-PodeServer`](../../Functions/Core/Start-PodeServer) function, via the `-ScriptBlock` parameter. The following example will listen over HTTP on port 8080, and expose a simple HTML page of running processes at `http://localhost:8080/processes`:
@@ -72,3 +82,29 @@ PS> Start-PodeServer -FilePath './File.ps1'
 
 !!! tip
     Normally when you restart your Pode server any changes to the main scriptblock don't reflect. However, if you reference a file instead, then restarting the server will reload the scriptblock from that file - so any changes will reflect.
+
+## Localization
+
+Pode has built-in support for internationalization (i18n).
+
+You can enforce a specific localization when importing the Pode module by using the UICulture argument. This argument accepts a culture code, which specifies the language and regional settings to use.
+
+Here’s an example of how to enforce Korean localization:
+
+```powershell
+Import-Module -Name Pode -ArgumentList @{ UICulture = 'ko-KR' }
+```
+
+In this example, 'ko-KR' is the culture code for Korean as used in South Korea. You can replace 'ko-KR' with the culture code for any other language or region.
+
+As an alternative to specifying the UICulture when importing the Pode module, you can also change the UICulture within the PowerShell environment itself.
+
+This can be done using the following command:
+
+```powershell
+[System.Threading.Thread]::CurrentThread.CurrentUICulture = 'ko-KR'
+```
+
+This command changes the UICulture for the current PowerShell session to Korean as used in South Korea. 
+
+Please note that this change is temporary and will only affect the current session. If you open a new PowerShell session, it will use the default UICulture.

@@ -21,8 +21,19 @@
     Import-Module -Name "Pode" -ArgumentList 'it-SM'
     Uses the Italian San Marino region culture.
 
-.NOTES
+.EXAMPLE
+    try {
+        Import-Module -Name Pode -MaximumVersion 2.99.99
+    } catch {
+        Write-Error "Failed to load the Pode module"
+        throw
+    }
+    The import statement is within a try/catch block.
+    This way, if the module fails to load, your script won’t proceed, preventing possible errors or unexpected behavior.
+
+    .NOTES
     This is the entry point for the Pode module.
+
 #>
 
 param(
@@ -31,25 +42,30 @@ param(
 
 # root path
 $root = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
+$localesPath = (Join-Path -Path $root -ChildPath 'Locales')
+
 # Import localized messages
 if ([string]::IsNullOrEmpty($UICulture)) {
     $UICulture = $PsUICulture
 }
 
-#Culture list available here https://azuliadesigns.com/c-sharp-tutorials/list-net-culture-country-codes/
-Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory (Join-Path -Path $root -ChildPath 'Locales') -UICulture $UICulture -ErrorAction:SilentlyContinue
-if ($null -eq $tmpPodeLocale) {
+try {
     try {
-        Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory (Join-Path -Path $root -ChildPath 'Locales') -UICulture 'en' -ErrorAction:Stop
+        #The list of all available supported culture is available here https://azuliadesigns.com/c-sharp-tutorials/list-net-culture-country-codes/
+
+        # ErrorAction:SilentlyContinue is not sufficient to avoid Import-LocalizedData to generate an exception when the Culture file is not the right format
+        Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory $localesPath -UICulture $UICulture -ErrorAction:SilentlyContinue
+        if ($null -eq $tmpPodeLocale) {
+            $UICulture = 'en'
+            Import-LocalizedData -BindingVariable tmpPodeLocale -BaseDirectory $localesPath -UICulture $UICulture -ErrorAction:Stop
+        }
     }
     catch {
-        throw
+        throw "Failed to Import Localized Data $(Join-Path -Path $localesPath -ChildPath  $UICulture -AdditionalChildPath 'Pode.psd1') $_"
     }
-}
 
-try {
     # Create the global msgTable read-only variable
-    New-Variable -Name 'PodeLocale' -Value $tmpPodeLocale -Scope script -Option ReadOnly -Force -Description "Localization HashTable"
+    New-Variable -Name 'PodeLocale' -Value $tmpPodeLocale -Scope script -Option ReadOnly -Force -Description 'Localization HashTable'
 
     # load assemblies
     Add-Type -AssemblyName System.Web -ErrorAction Stop
@@ -60,24 +76,20 @@ try {
 
     # Import the module manifest to access its properties
     $moduleManifest = Import-PowerShellDataFile -Path $moduleManifestPath -ErrorAction Stop
-}
-catch {
-    throw
-}
 
-$podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
 
-if ($podeDll) {
-    if ( $moduleManifest.ModuleVersion -ne '$version$') {
-        $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
-        if ($podeDll.GetName().Version -ne $moduleVersion) {
-            # An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new Powershell/pwsh session and retry.
-            throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion)
+    $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
+
+    if ($podeDll) {
+        if ( $moduleManifest.ModuleVersion -ne '$version$') {
+            $moduleVersion = ([version]::new($moduleManifest.ModuleVersion + '.0'))
+            if ($podeDll.GetName().Version -ne $moduleVersion) {
+                # An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new Powershell/pwsh session and retry.
+                throw ($PodeLocale.incompatiblePodeDllExceptionMessage -f $podeDll.GetName().Version, $moduleVersion)
+            }
         }
     }
-}
-else {
-    try {
+    else {
         if ($PSVersionTable.PSVersion -ge [version]'7.4.0') {
             Add-Type -LiteralPath "$($root)/Libs/net8.0/Pode.dll" -ErrorAction Stop
         }
@@ -88,33 +100,33 @@ else {
             Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
         }
     }
-    catch {
-        throw
+
+    # load private functions
+    Get-ChildItem "$($root)/Private/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
+
+    # only import public functions
+    $sysfuncs = Get-ChildItem Function:
+
+    # only import public alias
+    $sysaliases = Get-ChildItem Alias:
+
+    # load public functions
+    Get-ChildItem "$($root)/Public/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
+
+    # get functions from memory and compare to existing to find new functions added
+    $funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
+    $aliases = Get-ChildItem Alias: | Where-Object { $sysaliases -notcontains $_ }
+    # export the module's public functions
+    if ($funcs) {
+        if ($aliases) {
+            Export-ModuleMember -Function ($funcs.Name) -Alias $aliases.Name
+        }
+        else {
+            Export-ModuleMember -Function ($funcs.Name)
+        }
     }
 }
-
-
-# load private functions
-Get-ChildItem "$($root)/Private/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
-
-# only import public functions
-$sysfuncs = Get-ChildItem Function:
-
-# only import public alias
-$sysaliases = Get-ChildItem Alias:
-
-# load public functions
-Get-ChildItem "$($root)/Public/*.ps1" | ForEach-Object { . ([System.IO.Path]::GetFullPath($_)) }
-
-# get functions from memory and compare to existing to find new functions added
-$funcs = Get-ChildItem Function: | Where-Object { $sysfuncs -notcontains $_ }
-$aliases = Get-ChildItem Alias: | Where-Object { $sysaliases -notcontains $_ }
-# export the module's public functions
-if ($funcs) {
-    if ($aliases) {
-        Export-ModuleMember -Function ($funcs.Name) -Alias $aliases.Name
-    }
-    else {
-        Export-ModuleMember -Function ($funcs.Name)
-    }
+catch {
+    throw "Failed to load the Pode module. $_"
 }
+
