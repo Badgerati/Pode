@@ -240,6 +240,41 @@ Describe 'Write-PodeCsvResponse' {
         $r.ContentType | Should -Be $_ContentType
     }
 
+    It 'Converts and returns a value from a array of hashtable' {
+        $r = Write-PodeCsvResponse -Value @(@{ Name = 'Rick' }, @{ Name = 'Don' })
+        $r.Value | Should -Be "`"Name`"$([environment]::NewLine)`"Rick`"$([environment]::NewLine)`"Don`""
+        $r.ContentType | Should -Be $_ContentType
+    }
+
+    It 'Converts and returns a value from a array of hashtable by Pipe' {
+        $r = @(@{ Name = 'Rick' }, @{ Name = 'Don' }) | Write-PodeCsvResponse
+        $r.Value | Should -Be "`"Name`"$([environment]::NewLine)`"Rick`"$([environment]::NewLine)`"Don`""
+        $r.ContentType | Should -Be $_ContentType
+    }
+
+    It 'Converts and returns a value from a array of PSCustomObject' {
+        $users = @([PSCustomObject]@{
+                Name = 'Rick'
+            }, [PSCustomObject]@{
+                Name = 'Don'
+            }
+        )
+        $r = Write-PodeCsvResponse -Value $users
+        $r.Value | Should -Be "`"Name`"$([environment]::NewLine)`"Rick`"$([environment]::NewLine)`"Don`""
+        $r.ContentType | Should -Be $_ContentType
+    }
+
+    It 'Converts and returns a value from a array of PSCustomObject by Pipe' {
+        $r = @([PSCustomObject]@{
+                Name = 'Rick'
+            }, [PSCustomObject]@{
+                Name = 'Don'
+            }
+        ) | Write-PodeCsvResponse
+        $r.Value | Should -Be "`"Name`"$([environment]::NewLine)`"Rick`"$([environment]::NewLine)`"Don`""
+        $r.ContentType | Should -Be $_ContentType
+    }
+
     It 'Does nothing for an invalid file path' {
         Mock Test-PodePath { return $false }
         Write-PodeCsvResponse -Path 'fake-file' | Out-Null
@@ -279,6 +314,42 @@ Describe 'Write-PodeXmlResponse' {
         ($r.Value -ireplace '[\r\n ]', '') | Should -Be '<?xmlversion="1.0"encoding="utf-8"?><Objects><Object><PropertyName="name">john</Property></Object></Objects>'
         $r.ContentType | Should -Be $_ContentType
     }
+
+    It 'Converts and returns a value from a array of hashtable by pipe' {
+        $r = @(@{ Name = 'Rick' }, @{ Name = 'Don' }) | Write-PodeXmlResponse
+        ($r.Value -ireplace '[\r\n ]', '') | Should -Be '<?xmlversion="1.0"encoding="utf-8"?><Objects><Object><PropertyName="Name">Rick</Property></Object><Object><PropertyName="Name">Don</Property></Object></Objects>'
+        $r.ContentType | Should -Be $_ContentType
+    }
+
+    It 'Converts and returns a value from a array of hashtable' {
+        $r = Write-PodeXmlResponse -Value @(@{ Name = 'Rick' }, @{ Name = 'Don' })
+        ($r.Value -ireplace '[\r\n ]', '') | Should -Be '<?xmlversion="1.0"encoding="utf-8"?><Objects><Object><PropertyName="Name">Rick</Property></Object><Object><PropertyName="Name">Don</Property></Object></Objects>'
+        $r.ContentType | Should -Be $_ContentType
+    }
+
+    It 'Converts and returns a value from a array of PSCustomObject' {
+        $users = @([PSCustomObject]@{
+                Name = 'Rick'
+            }, [PSCustomObject]@{
+                Name = 'Don'
+            }
+        )
+        $r = Write-PodeXmlResponse -Value $users
+        ($r.Value -ireplace '[\r\n ]', '') | Should -Be '<?xmlversion="1.0"encoding="utf-8"?><Objects><Object><PropertyName="Name">Rick</Property></Object><Object><PropertyName="Name">Don</Property></Object></Objects>'
+        $r.ContentType | Should -Be $_ContentType
+    }
+
+    It 'Converts and returns a value from a array of PSCustomObject passed by pipe' {
+        $r = @([PSCustomObject]@{
+                Name = 'Rick'
+            }, [PSCustomObject]@{
+                Name = 'Don'
+            }
+        ) | Write-PodeXmlResponse
+        ($r.Value -ireplace '[\r\n ]', '') | Should -Be '<?xmlversion="1.0"encoding="utf-8"?><Objects><Object><PropertyName="Name">Rick</Property></Object><Object><PropertyName="Name">Don</Property></Object></Objects>'
+        $r.ContentType | Should -Be $_ContentType
+    }
+
 
     It 'Does nothing for an invalid file path' {
         Mock Test-PodePath { return $false }
