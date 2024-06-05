@@ -455,38 +455,51 @@ function Write-PodeCsvResponse {
         $StatusCode = 200
     )
 
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'file' {
-            if (Test-PodePath $Path) {
-                $Value = Get-PodeFileContent -Path $Path
-            }
-        }
+    begin {
+        $pipelineValue = @()
+    }
 
-        'value' {
-            if ($Value -isnot [string]) {
-                $Value = @(foreach ($v in $Value) {
-                        New-Object psobject -Property $v
-                    })
-
-                if (Test-PodeIsPSCore) {
-                    $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
-                }
-                else {
-                    $Value = ($Value | ConvertTo-Csv -Delimiter ',' -NoTypeInformation)
-                }
-
-                $Value = ($Value -join ([environment]::NewLine))
-            }
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Value') {
+            $pipelineValue += $_
         }
     }
 
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        $Value = [string]::Empty
-    }
+    end {
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'file' {
+                if (Test-PodePath $Path) {
+                    $Value = Get-PodeFileContent -Path $Path
+                }
+            }
 
-    Write-PodeTextResponse -Value $Value -ContentType 'text/csv' -StatusCode $StatusCode
+            'value' {
+                if ($pipelineValue.Count -gt 1) {
+                    $Value = $pipelineValue
+                }
+
+                if ($Value -isnot [string]) {
+                    $Value = Resolve-PodeObjectArray -Property $Value
+
+                    if (Test-PodeIsPSCore) {
+                        $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
+                    }
+                    else {
+                        $Value = ($Value | ConvertTo-Csv -Delimiter ',' -NoTypeInformation)
+                    }
+
+                    $Value = ($Value -join ([environment]::NewLine))
+                }
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            $Value = [string]::Empty
+        }
+
+        Write-PodeTextResponse -Value $Value -ContentType 'text/csv' -StatusCode $StatusCode
+    }
 }
-
 
 <#
 .SYNOPSIS
@@ -528,26 +541,41 @@ function Write-PodeHtmlResponse {
         $StatusCode = 200
     )
 
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'file' {
-            if (Test-PodePath $Path) {
-                $Value = Get-PodeFileContent -Path $Path
-            }
-        }
+    begin {
+        $pipelineValue = @()
+    }
 
-        'value' {
-            if ($Value -isnot [string]) {
-                $Value = ($Value | ConvertTo-Html)
-                $Value = ($Value -join ([environment]::NewLine))
-            }
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Value') {
+            $pipelineValue += $_
         }
     }
 
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        $Value = [string]::Empty
-    }
+    end {
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'file' {
+                if (Test-PodePath $Path) {
+                    $Value = Get-PodeFileContent -Path $Path
+                }
+            }
 
-    Write-PodeTextResponse -Value $Value -ContentType 'text/html' -StatusCode $StatusCode
+            'value' {
+                if ($pipelineValue.Count -gt 1) {
+                    $Value = $pipelineValue
+                }
+                if ($Value -isnot [string]) {
+                    $Value = ($Value | ConvertTo-Html)
+                    $Value = ($Value -join ([environment]::NewLine))
+                }
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            $Value = [string]::Empty
+        }
+
+        Write-PodeTextResponse -Value $Value -ContentType 'text/html' -StatusCode $StatusCode
+    }
 }
 
 
@@ -674,34 +702,43 @@ function Write-PodeJsonResponse {
         $NoCompress
 
     )
+    begin {
+        $pipelineValue = @()
+    }
 
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'file' {
-            if (Test-PodePath $Path) {
-                $Value = Get-PodeFileContent -Path $Path
-            }
-            if ([string]::IsNullOrWhiteSpace($Value)) {
-                $Value = '{}'
-            }
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Value') {
+            $pipelineValue += $_
         }
+    }
 
-        'value' {
-            if ($Value -isnot [string]) {
-                if ($Depth -le 0) {
-                    $Value = (ConvertTo-Json -InputObject $Value -Compress:(!$NoCompress))
+    end {
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'file' {
+                if (Test-PodePath $Path) {
+                    $Value = Get-PodeFileContent -Path $Path
                 }
-                else {
+                if ([string]::IsNullOrWhiteSpace($Value)) {
+                    $Value = '{}'
+                }
+            }
+
+            'value' {
+                if ($pipelineValue.Count -gt 1) {
+                    $Value = $pipelineValue
+                }
+                if ($Value -isnot [string]) {
                     $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress:(!$NoCompress))
                 }
             }
         }
-    }
 
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        $Value = '{}'
-    }
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            $Value = '{}'
+        }
 
-    Write-PodeTextResponse -Value $Value -ContentType 'application/json' -StatusCode $StatusCode
+        Write-PodeTextResponse -Value $Value -ContentType 'application/json' -StatusCode $StatusCode
+    }
 }
 
 
@@ -718,6 +755,9 @@ A String, PSObject, or HashTable value.
 .PARAMETER Path
 The path to an XML file.
 
+.PARAMETER Depth
+The Depth to generate the XML document - the larger this value the worse performance gets.
+
 .PARAMETER StatusCode
 The status code to set against the response.
 
@@ -728,7 +768,28 @@ Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
 Write-PodeXmlResponse -Value @{ Name = 'Rick' } -StatusCode 201
 
 .EXAMPLE
+@(@{ Name = 'Rick' }, @{ Name = 'Don' }) | Write-PodeXmlResponse
+
+.EXAMPLE
+$users = @([PSCustomObject]@{
+                Name = 'Rick'
+            }, [PSCustomObject]@{
+                Name = 'Don'
+            }
+        )
+Write-PodeXmlResponse -Value $users
+
+.EXAMPLE
+@([PSCustomObject]@{
+        Name = 'Rick'
+    }, [PSCustomObject]@{
+        Name = 'Don'
+    }
+) | Write-PodeXmlResponse
+
+.EXAMPLE
 Write-PodeXmlResponse -Path 'E:/Files/Names.xml'
+
 #>
 function Write-PodeXmlResponse {
     [CmdletBinding(DefaultParameterSetName = 'Value')]
@@ -741,34 +802,51 @@ function Write-PodeXmlResponse {
         [string]
         $Path,
 
+        [Parameter(ParameterSetName = 'Value')]
+        [ValidateRange(0, 100)]
+        [int]
+        $Depth = 10,
+
         [Parameter()]
         [int]
         $StatusCode = 200
     )
+    begin {
+        $pipelineValue = @()
+    }
 
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'file' {
-            if (Test-PodePath $Path) {
-                $Value = Get-PodeFileContent -Path $Path
-            }
-        }
-
-        'value' {
-            if ($Value -isnot [string]) {
-                $Value = @(foreach ($v in $Value) {
-                        New-Object psobject -Property $v
-                    })
-
-                $Value = ($Value | ConvertTo-Xml -Depth 10 -As String -NoTypeInformation)
-            }
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Value' -and $_) {
+            $pipelineValue += $_
         }
     }
 
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        $Value = [string]::Empty
-    }
+    end {
 
-    Write-PodeTextResponse -Value $Value -ContentType 'text/xml' -StatusCode $StatusCode
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'file' {
+                if (Test-PodePath $Path) {
+                    $Value = Get-PodeFileContent -Path $Path
+                }
+            }
+
+            'value' {
+                if ($pipelineValue.Count -gt 1) {
+                    $Value = $pipelineValue
+                }
+
+                if ($Value -isnot [string]) {
+                    $Value = Resolve-PodeObjectArray -Property $Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
+                }
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            $Value = [string]::Empty
+        }
+
+        Write-PodeTextResponse -Value $Value -ContentType 'text/xml' -StatusCode $StatusCode
+    }
 }
 
 <#
@@ -830,30 +908,42 @@ function Write-PodeYamlResponse {
         $StatusCode = 200
     )
 
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'file' {
-            if (Test-PodePath $Path) {
-                $Value = Get-PodeFileContent -Path $Path
-            }
-        }
+    begin {
+        $pipelineValue = @()
+    }
 
-        'value' {
-            if ($Value -isnot [string]) {
-                if ( $Depth -gt 0) {
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Value') {
+            $pipelineValue += $_
+        }
+    }
+
+    end {
+
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'file' {
+                if (Test-PodePath $Path) {
+                    $Value = Get-PodeFileContent -Path $Path
+                }
+            }
+
+            'value' {
+                if ($pipelineValue.Count -gt 1) {
+                    $Value = $pipelineValue
+                }
+
+                if ($Value -isnot [string]) {
                     $Value = ConvertTo-PodeYaml -InputObject $Value -Depth $Depth
-                }
-                else {
-                    $Value = ConvertTo-PodeYaml -InputObject $Value
+
                 }
             }
         }
-    }
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        $Value = '[]'
-    }
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            $Value = '[]'
+        }
 
-    Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
-
+        Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
+    }
 }
 
 
