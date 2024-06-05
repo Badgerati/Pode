@@ -236,4 +236,22 @@ parameterNotSuppliedInRequestExceptionMessage = No se ha proporcionado un parám
 noDataForFileUploadedExceptionMessage = No se han subido datos para el archivo '{0}' en la solicitud.
 viewsFolderNameAlreadyExistsExceptionMessage = El nombre de la carpeta Views ya existe: {0}
 viewsPathDoesNotExistExceptionMessage = La ruta de las Views no existe: {0}
+timerAlreadyDefinedExceptionMessage = [Temporizador] {0}: Temporizador ya definido.
+timerParameterMustBeGreaterThanZeroExceptionMessage = [Temporizador] {0}: {1} debe ser mayor que 0.
+timerDoesNotExistExceptionMessage = El temporizador '{0}' no existe.
+mutexAlreadyExistsExceptionMessage = Ya existe un mutex con el siguiente nombre: {0}
+noMutexFoundExceptionMessage = No se encontró ningún mutex llamado '{0}'
+failedToAcquireMutexOwnershipExceptionMessage = No se pudo adquirir la propiedad del mutex. Nombre del mutex: {0}
+semaphoreAlreadyExistsExceptionMessage = Ya existe un semáforo con el siguiente nombre: {0}
+failedToAcquireSemaphoreOwnershipExceptionMessage = No se pudo adquirir la propiedad del semáforo. Nombre del semáforo: {0}
+scheduleAlreadyDefinedExceptionMessage = [Horario] {0}: Horario ya definido.
+scheduleCannotHaveNegativeLimitExceptionMessage = [Horario] {0}: No puede tener un límite negativo.
+scheduleEndTimeMustBeInFutureExceptionMessage = [Horario] {0}: El valor de EndTime debe estar en el futuro.
+scheduleStartTimeAfterEndTimeExceptionMessage = [Horario] {0}: No puede tener un 'StartTime' después del 'EndTime'
+maximumConcurrentSchedulesInvalidExceptionMessage = Los horarios simultáneos máximos deben ser >=1 pero se obtuvo: {0}
+maximumConcurrentSchedulesLessThanMinimumExceptionMessage = Los horarios simultáneos máximos no pueden ser inferiores al mínimo de {0} pero se obtuvo: {1}
+scheduleDoesNotExistExceptionMessage = El horario '{0}' no existe.
+suppliedDateBeforeScheduleStartTimeExceptionMessage = La fecha proporcionada es anterior a la hora de inicio del horario en {0}
+suppliedDateAfterScheduleEndTimeExceptionMessage = La fecha proporcionada es posterior a la hora de finalización del horario en {0}
+noSemaphoreFoundExceptionMessage = No se encontró ningún semáforo llamado '{0}'
 '@

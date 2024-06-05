@@ -398,7 +398,7 @@ Describe 'Use-PodePartialView' {
 
     It 'Throws an error for a path that does not exist' {
         Mock Test-PodePath { return $false }
-        { Use-PodePartialView -Path 'sub-view.pode' } | Should -Throw -ExpectedMessage '*File not found*'
+        { Use-PodePartialView -Path 'sub-view.pode' } | Should -Throw -ExpectedMessage ($PodeLocale.viewsPathDoesNotExistExceptionMessage -f '*' ) # The Views path does not exist: sub-view.pode'
     }
 
 

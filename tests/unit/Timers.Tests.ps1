@@ -55,12 +55,14 @@ Describe 'Add-PodeTimer' {
 
     It 'Throws error because limit is negative' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Limit -1 } | Should -Throw -ExpectedMessage '*negative limit*'
+        $expectedMessage =   ($PodeLocale.timerParameterMustBeGreaterThanZeroExceptionMessage -f 'test', 'Limit') -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Limit -1 } | Should -Throw -ExpectedMessage  $expectedMessage #[Timer] {0}: {1} must be greater than 0.
     }
 
     It 'Throws error because skip is negative' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Skip -1 } | Should -Throw -ExpectedMessage '*negative skip*'
+        $expectedMessage =   ($PodeLocale.timerParameterMustBeGreaterThanZeroExceptionMessage -f 'test', 'skip') -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Skip -1 } | Should -Throw -ExpectedMessage  $expectedMessage #[Timer] {0}: {1} must be greater than 0.
     }
 
     It 'Adds new timer to session with no limit' {

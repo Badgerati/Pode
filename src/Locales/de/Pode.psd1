@@ -236,4 +236,22 @@ parameterNotSuppliedInRequestExceptionMessage = Ein Parameter namens '{0}' wurde
 noDataForFileUploadedExceptionMessage = Keine Daten für die Datei '{0}' wurden in der Anfrage hochgeladen.
 viewsFolderNameAlreadyExistsExceptionMessage = Der Name des Ansichtsordners existiert bereits: {0}
 viewsPathDoesNotExistExceptionMessage = Der Ansichtsordnerpfad existiert nicht: {0}
+timerAlreadyDefinedExceptionMessage = [Timer] {0}: Timer bereits definiert.
+timerParameterMustBeGreaterThanZeroExceptionMessage = [Timer] {0}: {1} muss größer als 0 sein.
+timerDoesNotExistExceptionMessage = Timer '{0}' existiert nicht.
+mutexAlreadyExistsExceptionMessage = Ein Mutex mit folgendem Namen existiert bereits: {0}
+noMutexFoundExceptionMessage = Kein Mutex mit dem Namen '{0}' gefunden.
+failedToAcquireMutexOwnershipExceptionMessage = Fehler beim Erwerb des Mutex-Besitzes. Mutex-Name: {0}
+semaphoreAlreadyExistsExceptionMessage = Ein Semaphor mit folgendem Namen existiert bereits: {0}
+failedToAcquireSemaphoreOwnershipExceptionMessage = Fehler beim Erwerb des Semaphor-Besitzes. Semaphor-Name: {0}
+scheduleAlreadyDefinedExceptionMessage = [Zeitplan] {0}: Zeitplan bereits definiert.
+scheduleCannotHaveNegativeLimitExceptionMessage = [Zeitplan] {0}: Kann kein negatives Limit haben.
+scheduleEndTimeMustBeInFutureExceptionMessage = [Zeitplan] {0}: Der Wert für EndTime muss in der Zukunft liegen.
+scheduleStartTimeAfterEndTimeExceptionMessage = [Zeitplan] {0}: StartTime kann nicht nach EndTime liegen.
+maximumConcurrentSchedulesInvalidExceptionMessage = Maximale gleichzeitige Zeitpläne müssen >=1 sein, aber erhalten: {0}
+maximumConcurrentSchedulesLessThanMinimumExceptionMessage = Maximale gleichzeitige Zeitpläne dürfen nicht kleiner als das Minimum von {0} sein, aber erhalten: {1}
+scheduleDoesNotExistExceptionMessage = Zeitplan '{0}' existiert nicht.
+suppliedDateBeforeScheduleStartTimeExceptionMessage = Das angegebene Datum liegt vor der Startzeit des Zeitplans bei {0}
+suppliedDateAfterScheduleEndTimeExceptionMessage = Das angegebene Datum liegt nach der Endzeit des Zeitplans bei {0}
+noSemaphoreFoundExceptionMessage = Kein Semaphor mit dem Namen '{0}' gefunden.
 '@

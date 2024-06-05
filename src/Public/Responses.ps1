@@ -1502,7 +1502,8 @@ function Use-PodePartialView {
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -NoStatus)) {
-        throw "File not found at path: $($Path)"
+         # The Views path does not exist
+         throw ($PodeLocale.viewsPathDoesNotExistExceptionMessage -f $Path)
     }
 
     # run any engine logic

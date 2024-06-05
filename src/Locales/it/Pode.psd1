@@ -236,4 +236,22 @@ parameterNotSuppliedInRequestExceptionMessage = Un parametro chiamato '{0}' non 
 noDataForFileUploadedExceptionMessage = Nessun dato per il file '{0}' è stato caricato nella richiesta.
 viewsFolderNameAlreadyExistsExceptionMessage = Il nome della cartella Views esiste già: {0}
 viewsPathDoesNotExistExceptionMessage = Il percorso delle Views non esiste: {0}
+timerAlreadyDefinedExceptionMessage = [Timer] {0}: Timer già definito.
+timerParameterMustBeGreaterThanZeroExceptionMessage = [Timer] {0}: {1} deve essere maggiore di 0.
+timerDoesNotExistExceptionMessage = Timer '{0}' non esiste.
+mutexAlreadyExistsExceptionMessage = Un mutex con il seguente nome esiste già: {0}
+noMutexFoundExceptionMessage = Nessun mutex trovato chiamato '{0}'
+failedToAcquireMutexOwnershipExceptionMessage = Impossibile acquisire la proprietà del mutex. Nome del mutex: {0}
+semaphoreAlreadyExistsExceptionMessage = Un semaforo con il seguente nome esiste già: {0}
+failedToAcquireSemaphoreOwnershipExceptionMessage = Impossibile acquisire la proprietà del semaforo. Nome del semaforo: {0}
+scheduleAlreadyDefinedExceptionMessage = [Pianificazione] {0}: Pianificazione già definita.
+scheduleCannotHaveNegativeLimitExceptionMessage = [Pianificazione] {0}: Non può avere un limite negativo.
+scheduleEndTimeMustBeInFutureExceptionMessage = [Pianificazione] {0}: Il valore di EndTime deve essere nel futuro.
+scheduleStartTimeAfterEndTimeExceptionMessage = [Pianificazione] {0}: Non può avere un 'StartTime' dopo 'EndTime'
+maximumConcurrentSchedulesInvalidExceptionMessage = I programmi concorrenti massimi devono essere >=1 ma ottenuto: {0}
+maximumConcurrentSchedulesLessThanMinimumExceptionMessage = I programmi concorrenti massimi non possono essere inferiori al minimo di {0} ma ottenuto: {1}
+scheduleDoesNotExistExceptionMessage = Il programma '{0}' non esiste.
+suppliedDateBeforeScheduleStartTimeExceptionMessage = La data fornita è precedente all'ora di inizio del programma a {0}
+suppliedDateAfterScheduleEndTimeExceptionMessage = La data fornita è successiva all'ora di fine del programma a {0}
+noSemaphoreFoundExceptionMessage = Nessun semaforo trovato chiamato '{0}'
 '@

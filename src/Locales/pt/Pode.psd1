@@ -236,4 +236,22 @@ parameterNotSuppliedInRequestExceptionMessage = Um parâmetro chamado '{0}' não
 noDataForFileUploadedExceptionMessage = Nenhum dado para o arquivo '{0}' foi enviado na solicitação.
 viewsFolderNameAlreadyExistsExceptionMessage = O nome da pasta Views já existe: {0}
 viewsPathDoesNotExistExceptionMessage = O caminho das Views não existe: {0}
+timerAlreadyDefinedExceptionMessage = [Temporizador] {0}: Temporizador já definido.
+timerParameterMustBeGreaterThanZeroExceptionMessage = [Temporizador] {0}: {1} deve ser maior que 0.
+timerDoesNotExistExceptionMessage = O temporizador '{0}' não existe.
+mutexAlreadyExistsExceptionMessage = Já existe um mutex com o seguinte nome: {0}
+noMutexFoundExceptionMessage = Nenhum mutex encontrado chamado '{0}'
+failedToAcquireMutexOwnershipExceptionMessage = Falha ao adquirir a propriedade do mutex. Nome do mutex: {0}
+semaphoreAlreadyExistsExceptionMessage = Já existe um semáforo com o seguinte nome: {0}
+failedToAcquireSemaphoreOwnershipExceptionMessage = Falha ao adquirir a propriedade do semáforo. Nome do semáforo: {0}
+scheduleAlreadyDefinedExceptionMessage = [Agenda] {0}: Agenda já definida.
+scheduleCannotHaveNegativeLimitExceptionMessage = [Agenda] {0}: Não pode ter um limite negativo.
+scheduleEndTimeMustBeInFutureExceptionMessage = [Agenda] {0}: O valor de EndTime deve estar no futuro.
+scheduleStartTimeAfterEndTimeExceptionMessage = [Agenda] {0}: Não pode ter um 'StartTime' após o 'EndTime'
+maximumConcurrentSchedulesInvalidExceptionMessage = As agendas simultâneas máximas devem ser >=1, mas obtidas: {0}
+maximumConcurrentSchedulesLessThanMinimumExceptionMessage = As agendas simultâneas máximas não podem ser inferiores ao mínimo de {0}, mas obtidas: {1}
+scheduleDoesNotExistExceptionMessage = A agenda '{0}' não existe.
+suppliedDateBeforeScheduleStartTimeExceptionMessage = A data fornecida é anterior ao horário de início da agenda em {0}
+suppliedDateAfterScheduleEndTimeExceptionMessage = A data fornecida é posterior ao horário de término da agenda em {0}
+noSemaphoreFoundExceptionMessage = Nenhum semáforo encontrado chamado '{0}'
 '@

@@ -236,4 +236,22 @@ parameterNotSuppliedInRequestExceptionMessage = 请求中未提供名为 '{0}' �
 noDataForFileUploadedExceptionMessage = 请求中未上传文件 '{0}' 的数据。
 viewsFolderNameAlreadyExistsExceptionMessage = 视图文件夹名称已存在: {0}
 viewsPathDoesNotExistExceptionMessage = 视图路径不存在: {0}
+timerAlreadyDefinedExceptionMessage = [计时器] {0}: 计时器已定义。
+timerParameterMustBeGreaterThanZeroExceptionMessage = [计时器] {0}: {1} 必须大于 0。
+timerDoesNotExistExceptionMessage = 计时器 '{0}' 不存在。
+mutexAlreadyExistsExceptionMessage = 名为 '{0}' 的互斥量已存在。
+noMutexFoundExceptionMessage = 找不到名为 '{0}' 的互斥量
+failedToAcquireMutexOwnershipExceptionMessage = 未能获得互斥量的所有权。互斥量名称: {0}
+semaphoreAlreadyExistsExceptionMessage = 名为 '{0}' 的信号量已存在。
+failedToAcquireSemaphoreOwnershipExceptionMessage = 未能获得信号量的所有权。信号量名称: {0}
+scheduleAlreadyDefinedExceptionMessage = [计划] {0}: 计划已定义。
+scheduleCannotHaveNegativeLimitExceptionMessage = [计划] {0}: 不能有负数限制。
+scheduleEndTimeMustBeInFutureExceptionMessage = [计划] {0}: EndTime 值必须在将来。
+scheduleStartTimeAfterEndTimeExceptionMessage = [计划] {0}: 'StartTime' 不能在 'EndTime' 之后
+maximumConcurrentSchedulesInvalidExceptionMessage = 最大并发计划数必须 >=1，但得到: {0}
+maximumConcurrentSchedulesLessThanMinimumExceptionMessage = 最大并发计划数不能小于最小值 {0}，但得到: {1}
+scheduleDoesNotExistExceptionMessage = 计划 '{0}' 不存在。
+suppliedDateBeforeScheduleStartTimeExceptionMessage = 提供的日期早于计划的开始时间 {0}
+suppliedDateAfterScheduleEndTimeExceptionMessage = 提供的日期晚于计划的结束时间 {0}
+noSemaphoreFoundExceptionMessage = 找不到名为 '{0}' 的信号量
 '@

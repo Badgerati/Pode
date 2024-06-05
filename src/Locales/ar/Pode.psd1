@@ -236,4 +236,22 @@ parameterNotSuppliedInRequestExceptionMessage = لم يتم توفير معلم�
 noDataForFileUploadedExceptionMessage = لا توجد بيانات للملف '{0}' الذي تم تحميله في الطلب.
 viewsFolderNameAlreadyExistsExceptionMessage = اسم مجلد العرض موجود بالفعل: {0}
 viewsPathDoesNotExistExceptionMessage = مسار العرض غير موجود: {0}
+timerAlreadyDefinedExceptionMessage = [المؤقت] {0}: المؤقت معرف بالفعل.
+timerParameterMustBeGreaterThanZeroExceptionMessage = [المؤقت] {0}: {1} يجب أن يكون أكبر من 0.
+timerDoesNotExistExceptionMessage = المؤقت '{0}' غير موجود.
+mutexAlreadyExistsExceptionMessage = يوجد بالفعل Mutex بالاسم التالي: {0}
+noMutexFoundExceptionMessage = لم يتم العثور على Mutex باسم '{0}'
+failedToAcquireMutexOwnershipExceptionMessage = فشل في الحصول على ملكية Mutex. اسم Mutex: {0}
+semaphoreAlreadyExistsExceptionMessage = يوجد بالفعل Semaphore بالاسم التالي: {0}
+failedToAcquireSemaphoreOwnershipExceptionMessage = فشل في الحصول على ملكية Semaphore. اسم Semaphore: {0}
+scheduleAlreadyDefinedExceptionMessage = [الجدول الزمني] {0}: الجدول الزمني معرف بالفعل.
+scheduleCannotHaveNegativeLimitExceptionMessage = [الجدول الزمني] {0}: لا يمكن أن يكون له حد سلبي.
+scheduleEndTimeMustBeInFutureExceptionMessage = [الجدول الزمني] {0}: يجب أن تكون قيمة EndTime في المستقبل.
+scheduleStartTimeAfterEndTimeExceptionMessage = [الجدول الزمني] {0}: لا يمكن أن يكون 'StartTime' بعد 'EndTime'
+maximumConcurrentSchedulesInvalidExceptionMessage = يجب أن تكون الجداول الزمنية المتزامنة القصوى >=1 ولكن تم الحصول على: {0}
+maximumConcurrentSchedulesLessThanMinimumExceptionMessage = لا يمكن أن تكون الجداول الزمنية المتزامنة القصوى أقل من الحد الأدنى {0} ولكن تم الحصول على: {1}
+scheduleDoesNotExistExceptionMessage = الجدول الزمني '{0}' غير موجود.
+suppliedDateBeforeScheduleStartTimeExceptionMessage = التاريخ المقدم قبل وقت بدء الجدول الزمني في {0}
+suppliedDateAfterScheduleEndTimeExceptionMessage = التاريخ المقدم بعد وقت انتهاء الجدول الزمني في {0}
+noSemaphoreFoundExceptionMessage = لم يتم العثور على Semaphore باسم '{0}'
 '@

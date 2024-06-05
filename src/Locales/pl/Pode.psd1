@@ -236,4 +236,22 @@ parameterNotSuppliedInRequestExceptionMessage = Parametr o nazwie '{0}' nie zost
 noDataForFileUploadedExceptionMessage = Brak danych dla pliku '{0}' przesłanego w żądaniu.
 viewsFolderNameAlreadyExistsExceptionMessage = Nazwa folderu Widoków już istnieje: {0}
 viewsPathDoesNotExistExceptionMessage = Ścieżka do Widoków nie istnieje: {0}
+timerAlreadyDefinedExceptionMessage = [Timer] {0}: Timer już zdefiniowany.
+timerParameterMustBeGreaterThanZeroExceptionMessage = [Timer] {0}: {1} musi być większy od 0.
+timerDoesNotExistExceptionMessage = Timer '{0}' nie istnieje.
+mutexAlreadyExistsExceptionMessage = Muteks o nazwie '{0}' już istnieje.
+noMutexFoundExceptionMessage = Nie znaleziono muteksu o nazwie '{0}'.
+failedToAcquireMutexOwnershipExceptionMessage = Nie udało się przejąć własności muteksu. Nazwa muteksu: {0}
+semaphoreAlreadyExistsExceptionMessage = Semafor o nazwie '{0}' już istnieje.
+failedToAcquireSemaphoreOwnershipExceptionMessage = Nie udało się przejąć własności semaforu. Nazwa semaforu: {0}
+scheduleAlreadyDefinedExceptionMessage = [Harmonogram] {0}: Harmonogram już zdefiniowany.
+scheduleCannotHaveNegativeLimitExceptionMessage = [Harmonogram] {0}: Nie może mieć ujemnego limitu.
+scheduleEndTimeMustBeInFutureExceptionMessage = [Harmonogram] {0}: Wartość EndTime musi być w przyszłości.
+scheduleStartTimeAfterEndTimeExceptionMessage = [Harmonogram] {0}: Nie może mieć 'StartTime' po 'EndTime'.
+maximumConcurrentSchedulesInvalidExceptionMessage = Maksymalna liczba równoczesnych harmonogramów musi wynosić >=1, ale otrzymano: {0}
+maximumConcurrentSchedulesLessThanMinimumExceptionMessage = Maksymalna liczba równoczesnych harmonogramów nie może być mniejsza niż minimalna liczba {0}, ale otrzymano: {1}
+scheduleDoesNotExistExceptionMessage = Harmonogram '{0}' nie istnieje.
+suppliedDateBeforeScheduleStartTimeExceptionMessage = Podana data jest wcześniejsza niż czas rozpoczęcia harmonogramu o {0}
+suppliedDateAfterScheduleEndTimeExceptionMessage = Podana data jest późniejsza niż czas zakończenia harmonogramu o {0}
+noSemaphoreFoundExceptionMessage = Nie znaleziono semaforu o nazwie '{0}'
 '@

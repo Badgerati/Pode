@@ -236,4 +236,22 @@ parameterNotSuppliedInRequestExceptionMessage = A parameter called '{0}' was not
 noDataForFileUploadedExceptionMessage = No data for file '{0}' was uploaded in the request.
 viewsFolderNameAlreadyExistsExceptionMessage = The Views folder name already exists: {0}
 viewsPathDoesNotExistExceptionMessage = The Views path does not exist: {0}
+timerAlreadyDefinedExceptionMessage = [Timer] {0}: Timer already defined.
+timerParameterMustBeGreaterThanZeroExceptionMessage = [Timer] {0}: {1} must be greater than 0.
+timerDoesNotExistExceptionMessage = Timer '{0}' does not exist.
+mutexAlreadyExistsExceptionMessage = A mutex with the following name already exists: {0}
+noMutexFoundExceptionMessage = No mutex found called '{0}'
+failedToAcquireMutexOwnershipExceptionMessage = Failed to acquire mutex ownership. Mutex name: {0}
+semaphoreAlreadyExistsExceptionMessage = A semaphore with the following name already exists: {0}
+failedToAcquireSemaphoreOwnershipExceptionMessage = Failed to acquire semaphore ownership. Semaphore name: {0}
+scheduleAlreadyDefinedExceptionMessage = [Schedule] {0}: Schedule already defined.
+scheduleCannotHaveNegativeLimitExceptionMessage = [Schedule] {0}: Cannot have a negative limit.
+scheduleEndTimeMustBeInFutureExceptionMessage = [Schedule] {0}: The EndTime value must be in the future.
+scheduleStartTimeAfterEndTimeExceptionMessage = [Schedule] {0}: Cannot have a StartTime after the EndTime
+maximumConcurrentSchedulesInvalidExceptionMessage = Maximum concurrent schedules must be >=1 but got: {0}
+maximumConcurrentSchedulesLessThanMinimumExceptionMessage = Maximum concurrent schedules cannot be less than the minimum of {0} but got: {1}
+scheduleDoesNotExistExceptionMessage = Schedule '{0}' does not exist.
+suppliedDateBeforeScheduleStartTimeExceptionMessage = Supplied date is before the start time of the schedule at {0}
+suppliedDateAfterScheduleEndTimeExceptionMessage = Supplied date is after the end time of the schedule at {0}
+noSemaphoreFoundExceptionMessage = No semaphore found called '{0}'
 '@

@@ -236,4 +236,22 @@ parameterNotSuppliedInRequestExceptionMessage = Un paramètre nommé '{0}' n'a p
 noDataForFileUploadedExceptionMessage = Aucune donnée pour le fichier '{0}' n'a été téléchargée dans la demande.
 viewsFolderNameAlreadyExistsExceptionMessage = Le nom du dossier Views existe déjà: {0}
 viewsPathDoesNotExistExceptionMessage = Le chemin des Views n'existe pas: {0}
+timerAlreadyDefinedExceptionMessage = [Minuteur] {0}: Minuteur déjà défini.
+timerParameterMustBeGreaterThanZeroExceptionMessage = [Minuteur] {0}: {1} doit être supérieur à 0.
+timerDoesNotExistExceptionMessage = Minuteur '{0}' n'existe pas.
+mutexAlreadyExistsExceptionMessage = Un mutex avec le nom suivant existe déjà: {0}
+noMutexFoundExceptionMessage = Aucun mutex trouvé appelé '{0}'
+failedToAcquireMutexOwnershipExceptionMessage = Échec de l'acquisition de la propriété du mutex. Nom du mutex: {0}
+semaphoreAlreadyExistsExceptionMessage = Un sémaphore avec le nom suivant existe déjà: {0}
+failedToAcquireSemaphoreOwnershipExceptionMessage = Échec de l'acquisition de la propriété du sémaphore. Nom du sémaphore: {0}
+scheduleAlreadyDefinedExceptionMessage = [Calendrier] {0}: Calendrier déjà défini.
+scheduleCannotHaveNegativeLimitExceptionMessage = [Calendrier] {0}: Ne peut pas avoir de limite négative.
+scheduleEndTimeMustBeInFutureExceptionMessage = [Calendrier] {0}: La valeur de EndTime doit être dans le futur.
+scheduleStartTimeAfterEndTimeExceptionMessage = [Calendrier] {0}: Ne peut pas avoir un 'StartTime' après 'EndTime'
+maximumConcurrentSchedulesInvalidExceptionMessage = Les calendriers simultanés maximum doivent être >=1 mais obtenu: {0}
+maximumConcurrentSchedulesLessThanMinimumExceptionMessage = Les calendriers simultanés maximum ne peuvent pas être inférieurs au minimum de {0} mais obtenu: {1}
+scheduleDoesNotExistExceptionMessage = Le calendrier '{0}' n'existe pas.
+suppliedDateBeforeScheduleStartTimeExceptionMessage = La date fournie est antérieure à l'heure de début du calendrier à {0}
+suppliedDateAfterScheduleEndTimeExceptionMessage = La date fournie est postérieure à l'heure de fin du calendrier à {0}
+noSemaphoreFoundExceptionMessage = Aucun sémaphore trouvé appelé '{0}'
 '@
