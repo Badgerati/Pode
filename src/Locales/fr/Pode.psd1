@@ -254,4 +254,10 @@ scheduleDoesNotExistExceptionMessage = Le calendrier '{0}' n'existe pas.
 suppliedDateBeforeScheduleStartTimeExceptionMessage = La date fournie est antérieure à l'heure de début du calendrier à {0}
 suppliedDateAfterScheduleEndTimeExceptionMessage = La date fournie est postérieure à l'heure de fin du calendrier à {0}
 noSemaphoreFoundExceptionMessage = Aucun sémaphore trouvé appelé '{0}'
+noLogicPassedForRouteExceptionMessage = Aucune logique passée pour la Route: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: Aucun chemin fourni pour la Route statique.
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: Le chemin source fourni pour la Route statique n'existe pas: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: Aucune logique passée.
+moduleDoesNotContainFunctionExceptionMessage = Le module {0} ne contient pas la fonction {1} à convertir en une Route.
+pageNameShouldBeAlphaNumericExceptionMessage = Le nom de la page doit être une valeur alphanumérique valide: {0}
 '@

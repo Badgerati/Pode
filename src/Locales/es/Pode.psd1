@@ -253,5 +253,11 @@ maximumConcurrentSchedulesLessThanMinimumExceptionMessage = Los horarios simult�
 scheduleDoesNotExistExceptionMessage = El horario '{0}' no existe.
 suppliedDateBeforeScheduleStartTimeExceptionMessage = La fecha proporcionada es anterior a la hora de inicio del horario en {0}
 suppliedDateAfterScheduleEndTimeExceptionMessage = La fecha proporcionada es posterior a la hora de finalización del horario en {0}
-noSemaphoreFoundExceptionMessage = No se encontró ningún semáforo llamado '{0}'
+noSemaphoreFoundExceptionMessage = No se encontró ningún semáforo llamado '{0}' 
+noLogicPassedForRouteExceptionMessage = No se pasó lógica para la Ruta: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: No se proporcionó una ruta para la Ruta estática.
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: La ruta de origen proporcionada para la Ruta estática no existe: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: No se pasó lógica.
+moduleDoesNotContainFunctionExceptionMessage = El módulo {0} no contiene la función {1} para convertir en una Ruta.
+pageNameShouldBeAlphaNumericExceptionMessage = El nombre de la página debe ser un valor alfanumérico válido: {0}
 '@

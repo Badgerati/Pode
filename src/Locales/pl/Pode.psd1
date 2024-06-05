@@ -254,4 +254,10 @@ scheduleDoesNotExistExceptionMessage = Harmonogram '{0}' nie istnieje.
 suppliedDateBeforeScheduleStartTimeExceptionMessage = Podana data jest wcześniejsza niż czas rozpoczęcia harmonogramu o {0}
 suppliedDateAfterScheduleEndTimeExceptionMessage = Podana data jest późniejsza niż czas zakończenia harmonogramu o {0}
 noSemaphoreFoundExceptionMessage = Nie znaleziono semaforu o nazwie '{0}'
+noLogicPassedForRouteExceptionMessage = Brak logiki przekazanej dla trasy: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: Brak dostarczonej ścieżki dla trasy statycznej.
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: Dostarczona ścieżka źródłowa dla trasy statycznej nie istnieje: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: Brak logiki przekazanej.
+moduleDoesNotContainFunctionExceptionMessage = Moduł {0} nie zawiera funkcji {1} do konwersji na trasę.
+pageNameShouldBeAlphaNumericExceptionMessage = Nazwa strony powinna być poprawną wartością alfanumeryczną: {0}
 '@

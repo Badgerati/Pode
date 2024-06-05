@@ -254,4 +254,10 @@ scheduleDoesNotExistExceptionMessage = 计划 '{0}' 不存在。
 suppliedDateBeforeScheduleStartTimeExceptionMessage = 提供的日期早于计划的开始时间 {0}
 suppliedDateAfterScheduleEndTimeExceptionMessage = 提供的日期晚于计划的结束时间 {0}
 noSemaphoreFoundExceptionMessage = 找不到名为 '{0}' 的信号量
+noLogicPassedForRouteExceptionMessage = 没有为路径传递逻辑: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: 没有为静态路径提供路径。
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: 为静态路径提供的源路径不存在: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: 没有传递逻辑。
+moduleDoesNotContainFunctionExceptionMessage = 模块 {0} 不包含要转换为路径的函数 {1}。
+pageNameShouldBeAlphaNumericExceptionMessage = 页面名称应为有效的字母数字值: {0}
 '@

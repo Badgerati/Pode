@@ -254,4 +254,10 @@ scheduleDoesNotExistExceptionMessage = Zeitplan '{0}' existiert nicht.
 suppliedDateBeforeScheduleStartTimeExceptionMessage = Das angegebene Datum liegt vor der Startzeit des Zeitplans bei {0}
 suppliedDateAfterScheduleEndTimeExceptionMessage = Das angegebene Datum liegt nach der Endzeit des Zeitplans bei {0}
 noSemaphoreFoundExceptionMessage = Kein Semaphor mit dem Namen '{0}' gefunden.
+noLogicPassedForRouteExceptionMessage = Keine Logik für Route übergeben: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: Kein Pfad für statische Route angegeben.
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: Der angegebene Quellpfad für die statische Route existiert nicht: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: Keine Logik übergeben.
+moduleDoesNotContainFunctionExceptionMessage = Modul {0} enthält keine Funktion {1} zur Umwandlung in eine Route.
+pageNameShouldBeAlphaNumericExceptionMessage = Der Seitenname sollte einen gültigen alphanumerischen Wert haben: {0}
 '@

@@ -254,4 +254,10 @@ scheduleDoesNotExistExceptionMessage = الجدول الزمني '{0}' غير م
 suppliedDateBeforeScheduleStartTimeExceptionMessage = التاريخ المقدم قبل وقت بدء الجدول الزمني في {0}
 suppliedDateAfterScheduleEndTimeExceptionMessage = التاريخ المقدم بعد وقت انتهاء الجدول الزمني في {0}
 noSemaphoreFoundExceptionMessage = لم يتم العثور على Semaphore باسم '{0}'
+noLogicPassedForRouteExceptionMessage = لم يتم تمرير منطق للمسار: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: لم يتم توفير مسار للمسار الثابت.
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: مسار المصدر المقدم للمسار الثابت غير موجود: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: لم يتم تمرير منطق.
+moduleDoesNotContainFunctionExceptionMessage = الوحدة {0} لا تحتوي على الوظيفة {1} لتحويلها إلى مسار.
+pageNameShouldBeAlphaNumericExceptionMessage = يجب أن يكون اسم الصفحة قيمة أبجدية رقمية صالحة: {0}
 '@

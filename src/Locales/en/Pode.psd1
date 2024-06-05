@@ -254,4 +254,10 @@ scheduleDoesNotExistExceptionMessage = Schedule '{0}' does not exist.
 suppliedDateBeforeScheduleStartTimeExceptionMessage = Supplied date is before the start time of the schedule at {0}
 suppliedDateAfterScheduleEndTimeExceptionMessage = Supplied date is after the end time of the schedule at {0}
 noSemaphoreFoundExceptionMessage = No semaphore found called '{0}'
+noLogicPassedForRouteExceptionMessage = No logic passed for Route: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: No Path supplied for Static Route.
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: The Source path supplied for Static Route does not exist: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: No logic passed.
+moduleDoesNotContainFunctionExceptionMessage = Module {0} does not contain function {1} to convert to a Route.
+pageNameShouldBeAlphaNumericExceptionMessage = The Page name should be a valid AlphaNumeric value: {0}
 '@

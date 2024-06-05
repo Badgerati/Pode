@@ -254,4 +254,10 @@ scheduleDoesNotExistExceptionMessage = 스케줄 '{0}'이(가) 존재하지 않�
 suppliedDateBeforeScheduleStartTimeExceptionMessage = 제공된 날짜가 스케줄 시작 시간 {0} 이전입니다.
 suppliedDateAfterScheduleEndTimeExceptionMessage = 제공된 날짜가 스케줄 종료 시간 {0} 이후입니다.
 noSemaphoreFoundExceptionMessage = 이름이 '{0}'인 세마포어를 찾을 수 없습니다.
+noLogicPassedForRouteExceptionMessage = 경로에 대한 논리가 전달되지 않았습니다: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: 정적 경로에 대한 경로가 제공되지 않았습니다.
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: 정적 경로에 대한 제공된 소스 경로가 존재하지 않습니다: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: 논리가 전달되지 않았습니다.
+moduleDoesNotContainFunctionExceptionMessage = 모듈 {0}에 경로로 변환할 함수 {1}이(가) 포함되어 있지 않습니다.
+pageNameShouldBeAlphaNumericExceptionMessage = 페이지 이름은 유효한 알파벳 숫자 값이어야 합니다: {0}
 '@

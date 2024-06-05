@@ -254,4 +254,10 @@ scheduleDoesNotExistExceptionMessage = Il programma '{0}' non esiste.
 suppliedDateBeforeScheduleStartTimeExceptionMessage = La data fornita è precedente all'ora di inizio del programma a {0}
 suppliedDateAfterScheduleEndTimeExceptionMessage = La data fornita è successiva all'ora di fine del programma a {0}
 noSemaphoreFoundExceptionMessage = Nessun semaforo trovato chiamato '{0}'
+noLogicPassedForRouteExceptionMessage = Nessuna logica passata per la rotta: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: Nessun percorso fornito per la rotta statica.
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: Il percorso sorgente fornito per la rotta statica non esiste: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: Nessuna logica passata.
+moduleDoesNotContainFunctionExceptionMessage = Il modulo {0} non contiene la funzione {1} da convertire in una rotta.
+pageNameShouldBeAlphaNumericExceptionMessage = Il nome della pagina dovrebbe essere un valore alfanumerico valido: {0}
 '@

@@ -254,4 +254,10 @@ scheduleDoesNotExistExceptionMessage = A agenda '{0}' não existe.
 suppliedDateBeforeScheduleStartTimeExceptionMessage = A data fornecida é anterior ao horário de início da agenda em {0}
 suppliedDateAfterScheduleEndTimeExceptionMessage = A data fornecida é posterior ao horário de término da agenda em {0}
 noSemaphoreFoundExceptionMessage = Nenhum semáforo encontrado chamado '{0}'
+noLogicPassedForRouteExceptionMessage = Nenhuma lógica passada para a Rota: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: Nenhum caminho fornecido para a Rota Estática.
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: O caminho de origem fornecido para a Rota Estática não existe: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: Nenhuma lógica passada.
+moduleDoesNotContainFunctionExceptionMessage = O módulo {0} não contém a função {1} para converter em uma Rota.
+pageNameShouldBeAlphaNumericExceptionMessage = O nome da página deve ser um valor alfanumérico válido: {0}
 '@

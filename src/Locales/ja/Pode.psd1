@@ -253,5 +253,11 @@ maximumConcurrentSchedulesLessThanMinimumExceptionMessage = 最大同時スケ�
 scheduleDoesNotExistExceptionMessage = スケジュール '{0}' は存在しません。
 suppliedDateBeforeScheduleStartTimeExceptionMessage = 提供された日付はスケジュールの開始時間 {0} より前です
 suppliedDateAfterScheduleEndTimeExceptionMessage = 提供された日付はスケジュールの終了時間 {0} の後です
-noSemaphoreFoundExceptionMessage = 名前 '{0}' のセマフォが見つかりません
+noSemaphoreFoundExceptionMessage = 名前 '{0}' のセマフォが見つかりません 
+noLogicPassedForRouteExceptionMessage = ルートに対してロジックが渡されませんでした: {0}
+noPathSuppliedForStaticRouteExceptionMessage = [{0}]: 静的ルートに対して提供されたパスがありません。
+sourcePathDoesNotExistForStaticRouteExceptionMessage = [{0})] {1}: 静的ルートに対して提供されたソースパスが存在しません: {2}
+noLogicPassedForMethodRouteExceptionMessage = [{0}] {1}: ロジックが渡されませんでした。
+moduleDoesNotContainFunctionExceptionMessage = モジュール {0} にはルートに変換する関数 {1} が含まれていません。
+pageNameShouldBeAlphaNumericExceptionMessage = ページ名は有効な英数字である必要があります: {0}
 '@
