@@ -83,7 +83,7 @@ PS> Start-PodeServer -FilePath './File.ps1'
 !!! tip
     Normally when you restart your Pode server any changes to the main scriptblock don't reflect. However, if you reference a file instead, then restarting the server will reload the scriptblock from that file - so any changes will reflect.
 
-## Localization
+## Internationalization
 
 Pode has built-in support for internationalization (i18n).
 
@@ -92,7 +92,7 @@ You can enforce a specific localization when importing the Pode module by using 
 Here’s an example of how to enforce Korean localization:
 
 ```powershell
-Import-Module -Name Pode -ArgumentList @{ UICulture = 'ko-KR' }
+Import-Module -Name Pode -ArgumentList 'ko-KR'
 ```
 
 In this example, 'ko-KR' is the culture code for Korean as used in South Korea. You can replace 'ko-KR' with the culture code for any other language or region.
@@ -105,6 +105,6 @@ This can be done using the following command:
 [System.Threading.Thread]::CurrentThread.CurrentUICulture = 'ko-KR'
 ```
 
-This command changes the UICulture for the current PowerShell session to Korean as used in South Korea. 
+This command changes the UICulture for the current PowerShell session to Korean as used in South Korea.
 
 Please note that this change is temporary and will only affect the current session. If you open a new PowerShell session, it will use the default UICulture.

@@ -6,7 +6,8 @@ function Start-PodeServiceServer {
     }
 
     # state we're running
-    Write-PodeHost "Server looping every $($PodeContext.Server.Interval)secs" -ForegroundColor Yellow
+    # Server looping every $PodeContext.Server.Interval secs
+    Write-PodeHost ($PodeLocale.serverLoopingMessage -f $PodeContext.Server.Interval) -ForegroundColor Yellow
 
     # script for the looping server
     $serverScript = {

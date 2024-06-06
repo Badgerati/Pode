@@ -207,10 +207,12 @@ function Start-PodeServer {
         }
 
         if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Shutdown) {
-            Write-PodeHost '(IIS Shutdown) ' -NoNewline -ForegroundColor Yellow
+            # (IIS Shutdown)
+            Write-PodeHost $PodeLocale.iisShutdownMessage -NoNewline -ForegroundColor Yellow
+            Write-PodeHost  ' ' -NoNewline
         }
-
-        Write-PodeHost 'Terminating...' -NoNewline -ForegroundColor Yellow
+        # Terminating...
+        Write-PodeHost $PodeLocale.terminatingMessage -NoNewline -ForegroundColor Yellow
         Invoke-PodeEvent -Type Terminate
         $PodeContext.Tokens.Cancellation.Cancel()
     }

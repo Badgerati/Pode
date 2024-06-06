@@ -16,7 +16,8 @@ function Start-PodeGuiRunspace {
             # if there are multiple endpoints, flag warning we're only using the first - unless explicitly set
             if ($null -eq $PodeContext.Server.Gui.Endpoint) {
                 if ($PodeContext.Server.Endpoints.Values.Count -gt 1) {
-                    Write-PodeHost 'Multiple endpoints defined, only the first will be used for the GUI' -ForegroundColor Yellow
+                    # Multiple endpoints defined, only the first will be used for the GUI
+                    Write-PodeHost $PodeLocale.multipleEndpointsForGuiMessage -ForegroundColor Yellow
                 }
             }
 
@@ -120,7 +121,8 @@ function Start-PodeGuiRunspace {
             }
 
             # display the form
-            Write-PodeHost 'Opening GUI' -ForegroundColor Yellow
+            # Opening the GUI
+            Write-PodeHost $PodeLocale.openingGuiMessage -ForegroundColor Yellow
             $null = $form.ShowDialog()
             Start-Sleep -Seconds 1
         }

@@ -879,7 +879,7 @@ function Close-PodeServerInternal {
     Remove-PodePSDrive
 
     if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
-        Write-PodeHost ' Done' -ForegroundColor Green
+        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
     }
 }
 
@@ -2979,7 +2979,7 @@ function Get-PodeHandler {
 function Convert-PodeFileToScriptBlock {
     param(
         [Parameter(Mandatory = $true)]
-        [Alias("FilePath")]
+        [Alias('FilePath')]
         [string]
         $Path
     )
@@ -3027,7 +3027,7 @@ function Convert-PodeQueryStringToHashTable {
 function Get-PodeAstFromFile {
     param(
         [Parameter(Mandatory = $true)]
-        [Alias("FilePath")]
+        [Alias('FilePath')]
         [string]
         $Path
     )
@@ -3606,14 +3606,16 @@ function Test-PodeVersionPwshEOL {
     $isEol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
 
     if ($isEol) {
-        Write-PodeHost "[WARNING] Pode $(Get-PodeVersion) has not been tested on PowerShell $($PSVersionTable.PSVersion), as it is EOL." -ForegroundColor Yellow
+        # [WARNING] Pode version has not been tested on PowerShell version, as it is EOL
+        Write-PodeHost ($PodeLocale.eolPowerShellWarningMessage -f $PodeVersion, $PSVersion) -ForegroundColor Yellow
     }
 
     $SupportedVersions = $moduleManifest.PrivateData.PwshVersions.Supported -split ','
     $isSupported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
 
     if ((! $isSupported) -and (! $isEol) -and $ReportUntested) {
-        Write-PodeHost "[WARNING] Pode $(Get-PodeVersion) has not been tested on PowerShell $($PSVersionTable.PSVersion), as it was not available when Pode was released." -ForegroundColor Yellow
+        # [WARNING] Pode version has not been tested on PowerShell version, as it was not available when Pode was released
+        Write-PodeHost ($PodeLocale.untestedPowerShellVersionWarningMessage -f $PodeVersion, $PSVersion) -ForegroundColor Yellow
     }
 
     return @{

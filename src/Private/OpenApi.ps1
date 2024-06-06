@@ -2038,31 +2038,37 @@ function Test-PodeOADefinitionInternal {
     # Check if the validation result indicates issues
     if (! $definitionIssues.valid) {
         # Print a header for undefined OpenAPI references
-        Write-PodeHost 'Undefined OpenAPI References :' -ForegroundColor Red
+        # Undefined OpenAPI References
+        Write-PodeHost $PodeLocale.undefinedOpenApiReferencesMessage -ForegroundColor Red
 
         # Iterate over each issue found in the definitions
         foreach ($tag in $definitionIssues.issues.keys) {
-            Write-PodeHost "Definition $tag :" -ForegroundColor Red
+            # Definition tag
+            Write-PodeHost ($PodeLocale.definitionTagMessage -f $tag) -ForegroundColor Red
 
             # Check and display issues related to OpenAPI document generation error
             if ($definitionIssues.issues[$tag].definition ) {
-                Write-PodeHost ' OpenAPI generation document error: ' -ForegroundColor Red
+                # OpenAPI generation document error
+                Write-PodeHost $PodeLocale.openApiGenerationDocumentErrorMessage -ForegroundColor Red
                 Write-PodeHost " $($definitionIssues.issues[$tag].definition)" -ForegroundColor Red
             }
 
             # Check for missing mandatory 'title' field
             if ($definitionIssues.issues[$tag].title ) {
-                Write-PodeHost ' info.title is mandatory' -ForegroundColor Red
+                # info.title is mandatory
+                Write-PodeHost $PodeLocale.infoTitleMandatoryMessage -ForegroundColor Red
             }
 
             # Check for missing mandatory 'version' field
             if ($definitionIssues.issues[$tag].version ) {
-                Write-PodeHost ' info.version is mandatory' -ForegroundColor Red
+                # info.version is mandatory
+                Write-PodeHost $PodeLocale.infoVersionMandatoryMessage -ForegroundColor Red
             }
 
             # Check for missing components and list them
             if ($definitionIssues.issues[$tag].components ) {
-                Write-PodeHost ' Missing component(s)' -ForegroundColor Red
+                # Missing component(s)
+                Write-PodeHost $PodeLocale.missingComponentsMessage -ForegroundColor Red
                 foreach ($key in $definitionIssues.issues[$tag].components.keys) {
                     $occurences = $definitionIssues.issues[$tag].components[$key]
                     # Adjust occurrence count based on schema validation setting
