@@ -28,7 +28,7 @@ env:
   POWERSHELL_VERSION: 'Preview'
 
 jobs:
-  build:
+  build-preview:
     runs-on: ${{ matrix.os }}
 
     strategy:
