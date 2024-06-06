@@ -1,10 +1,9 @@
 
 param (
     [Parameter(Mandatory = $false)]
-    [string]$Path = 'c:\Users\m_dan\Documents\GitHub\Pode\src\Locales\en\Pode.psd1 '
+    [string]$Path = 'c:\Users\m_dan\Documents\GitHub\Pode\src\Locales'
 )
-$PodeFileContent = Get-content $Path -raw
-$value = Invoke-Expression $podeFileContent
+
 
 
 function Convert-HashTable {
@@ -15,25 +14,26 @@ function Convert-HashTable {
 
 
     $sb = New-Object System.Text.StringBuilder
-    $sb.AppendLine('@{')
+    $sb.AppendLine('@{') | Out-Null
 
     foreach ($key in $hashtable.Keys) {
         $value = $hashtable[$key]
-
-        if ($value -is [hashtable]) {
-            $nestedPsd1 = Convert-HashTable -hashtable $value
-            $sb.AppendLine(" $key = $nestedPsd1") | Out-Null
-        }
-        else {
-            $sb.AppendLine(" $key = `"$($value -replace '$','`$')`"") | Out-Null
-        }
+        $sb.AppendLine(" $key = `"$value`"") | Out-Null
     }
 
-    $sb.AppendLine('}')
+    $sb.AppendLine('}') | Out-Null
     return $sb.ToString()
 }
 
+$languageDirs = Get-ChildItem -Path $Path -Directory
+foreach ($item in $languageDirs) {
+    $fullName = Join-Path -Path $item.FullName -ChildPath 'Pode.psd1'
 
-$sb = Convert-HashTable -hashtable $value
-Move-Item  -path $Path -destination "$Path.old"
-Set-Content -Path $Path -Value  $sb
+    $PodeFileContent = Get-content  $fullName  -raw
+    $value = Invoke-Expression $podeFileContent
+
+
+    $result = Convert-HashTable -hashtable $value
+    Move-Item  -path $fullName -destination "$fullName.old"
+    Set-Content -Path $fullName -Value  $result
+}
