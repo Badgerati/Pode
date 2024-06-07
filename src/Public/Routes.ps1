@@ -1095,8 +1095,13 @@ An Array of strings representing the unique tag for the API specification.
 This tag helps in distinguishing between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Route's main logic.
+
 .EXAMPLE
 Add-PodeRouteGroup -Path '/api' -Routes { Add-PodeRoute -Path '/route1' -Etc }
+.EXAMPLE
+Add-PodeRouteGroup -Path '/api' -FilePath '/routes/file.ps1'
 #>
 function Add-PodeRouteGroup {
     [CmdletBinding()]
@@ -1171,15 +1176,16 @@ function Add-PodeRouteGroup {
         $FilePath
     )
 
-     
+
 
     if (Test-PodeIsEmpty $Routes) {
-                if ($PSCmdlet.ParameterSetName -ieq 'file') {
-                    $Routes = Convert-PodeFileToScriptBlock -FilePath $FilePath
-                }else{
-                
-        throw 'No scriptblock for -Routes passed'
-                }
+        if ($PSCmdlet.ParameterSetName -ieq 'file') {
+            $Routes = Convert-PodeFileToScriptBlock -FilePath $FilePath
+        }
+        else {
+
+            throw 'No scriptblock for -Routes passed'
+        }
     }
 
     if ($Path -eq '/') {
