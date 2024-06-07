@@ -109,7 +109,7 @@
     noSecretVaultRegisteredExceptionMessage                               = "Nessun Vault dei Segreti con il nome '{0}' è stato registrato."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage           = "È richiesto un nome per l'endpoint se viene fornito il parametro RedirectTo."
     openApiLicenseObjectRequiresNameExceptionMessage                      = "L'oggetto OpenAPI 'license' richiede la proprietà 'name'. Utilizzare il parametro -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0})] {1}: Il percorso sorgente fornito per la rotta statica non esiste: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0}] {1}: Il percorso sorgente fornito per la rotta statica non esiste: {2}'
     noNameForWebSocketDisconnectExceptionMessage                          = 'Nessun nome fornito per disconnettere il WebSocket.'
     certificateExpiredExceptionMessage                                    = "Il certificato '{0}' è scaduto: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                     = 'La data di scadenza per sbloccare il Vault dei Segreti è nel passato (UTC): {0}'
@@ -166,7 +166,7 @@
     routeParameterNeedsValidScriptblockExceptionMessage                   = 'Il parametro della rotta richiede uno ScriptBlock valido e non vuoto.'
     nextTriggerCalculationErrorExceptionMessage                           = 'Sembra che ci sia stato un errore nel tentativo di calcolare la prossima data e ora del trigger: {0}'
     cannotLockValueTypeExceptionMessage                                   = 'Non è possibile bloccare un [ValueTypes].'
-    failedToCreateOpenSslCertExceptionMessage                             = 'Impossibile creare il certificato openssl: {0}'
+    failedToCreateOpenSslCertExceptionMessage                             = 'Impossibile creare il certificato OpenSSL: {0}'
     jwtExpiredExceptionMessage                                            = 'JWT è scaduto.'
     openingGuiMessage                                                     = 'Apertura della GUI.'
     multiTypePropertiesRequireOpenApi31ExceptionMessage                   = 'Le proprietà multi-tipo richiedono OpenApi versione 3.1 o superiore.'

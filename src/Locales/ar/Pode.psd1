@@ -109,7 +109,7 @@
     noSecretVaultRegisteredExceptionMessage                               = "لم يتم تسجيل خزينة سرية بالاسم '{0}'."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage           = 'مطلوب اسم لنقطة النهاية إذا تم توفير معامل RedirectTo.'
     openApiLicenseObjectRequiresNameExceptionMessage                      = "يتطلب كائن OpenAPI 'license' الخاصية 'name'. استخدم المعامل -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0})] {1}: مسار المصدر المقدم للمسار الثابت غير موجود: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0}] {1}: مسار المصدر المقدم للمسار الثابت غير موجود: {2}'
     noNameForWebSocketDisconnectExceptionMessage                          = 'لا يوجد اسم لفصل WebSocket من المزود.'
     certificateExpiredExceptionMessage                                    = "الشهادة '{0}' منتهية الصلاحية: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                     = 'تاريخ انتهاء صلاحية فتح مخزن الأسرار في الماضي (UTC): {0}'
@@ -166,7 +166,7 @@
     routeParameterNeedsValidScriptblockExceptionMessage                   = 'المعامل Route يتطلب ScriptBlock صالح وغير فارغ.'
     nextTriggerCalculationErrorExceptionMessage                           = 'يبدو أن هناك خطأ ما أثناء محاولة حساب تاريخ المشغل التالي: {0}'
     cannotLockValueTypeExceptionMessage                                   = 'لا يمكن قفل [ValueTypes].'
-    failedToCreateOpenSslCertExceptionMessage                             = 'فشل في إنشاء شهادة openssl: {0}'
+    failedToCreateOpenSslCertExceptionMessage                             = 'فشل في إنشاء شهادة OpenSSL: {0}'
     jwtExpiredExceptionMessage                                            = 'انتهت صلاحية JWT.'
     openingGuiMessage                                                     = 'جارٍ فتح الواجهة الرسومية.'
     multiTypePropertiesRequireOpenApi31ExceptionMessage                   = 'تتطلب خصائص الأنواع المتعددة إصدار OpenApi 3.1 أو أعلى.'

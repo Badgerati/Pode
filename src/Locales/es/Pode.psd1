@@ -109,7 +109,7 @@
     noSecretVaultRegisteredExceptionMessage                               = "No se ha registrado un Cofre de Secretos con el nombre '{0}'."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage           = 'Se requiere un nombre para el endpoint si se proporciona el parámetro RedirectTo.'
     openApiLicenseObjectRequiresNameExceptionMessage                      = "El objeto OpenAPI 'license' requiere la propiedad 'name'. Use el parámetro -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0})] {1}: La ruta de origen proporcionada para la Ruta estática no existe: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0}] {1}: La ruta de origen proporcionada para la Ruta estática no existe: {2}'
     noNameForWebSocketDisconnectExceptionMessage                          = 'No se proporcionó ningún nombre para desconectar el WebSocket.'
     certificateExpiredExceptionMessage                                    = "El certificado '{0}' ha expirado: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                     = 'La fecha de expiración para desbloquear el Cofre de Secretos está en el pasado (UTC): {0}'
@@ -166,7 +166,7 @@
     routeParameterNeedsValidScriptblockExceptionMessage                   = 'El parámetro Route necesita un ScriptBlock válido y no vacío.'
     nextTriggerCalculationErrorExceptionMessage                           = 'Parece que algo salió mal al intentar calcular la siguiente fecha y hora del disparador: {0}'
     cannotLockValueTypeExceptionMessage                                   = 'No se puede bloquear un [ValueTypes].'
-    failedToCreateOpenSslCertExceptionMessage                             = 'Error al crear el certificado openssl: {0}'
+    failedToCreateOpenSslCertExceptionMessage                             = 'Error al crear el certificado OpenSSL: {0}'
     jwtExpiredExceptionMessage                                            = 'El JWT ha expirado.'
     openingGuiMessage                                                     = 'Abriendo la GUI.'
     multiTypePropertiesRequireOpenApi31ExceptionMessage                   = 'Las propiedades de tipo múltiple requieren OpenApi versión 3.1 o superior.'

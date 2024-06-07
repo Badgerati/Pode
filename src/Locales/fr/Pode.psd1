@@ -166,7 +166,7 @@
     routeParameterNeedsValidScriptblockExceptionMessage                   = 'Le paramètre de la route nécessite un ScriptBlock valide et non vide.'
     nextTriggerCalculationErrorExceptionMessage                           = 'Il semble que quelque chose ait mal tourné lors de la tentative de calcul de la prochaine date et heure de déclenchement : {0}'
     cannotLockValueTypeExceptionMessage                                   = 'Impossible de verrouiller un [ValueTypes].'
-    failedToCreateOpenSslCertExceptionMessage                             = 'Échec de la création du certificat openssl : {0}'
+    failedToCreateOpenSslCertExceptionMessage                             = 'Échec de la création du certificat OpenSSL : {0}'
     jwtExpiredExceptionMessage                                            = 'Le JWT a expiré.'
     openingGuiMessage                                                     = "Ouverture de l'interface graphique."
     multiTypePropertiesRequireOpenApi31ExceptionMessage                   = 'Les propriétés multi-types nécessitent OpenApi Version 3.1 ou supérieure.'

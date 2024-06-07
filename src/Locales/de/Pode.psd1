@@ -109,7 +109,7 @@
     noSecretVaultRegisteredExceptionMessage                               = "Kein Geheimnistresor mit dem Namen '{0}' registriert."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage           = 'Ein Name ist für den Endpunkt erforderlich, wenn der RedirectTo-Parameter angegeben ist.'
     openApiLicenseObjectRequiresNameExceptionMessage                      = "Das OpenAPI-Objekt 'license' erfordert die Eigenschaft 'name'. Verwenden Sie den Parameter -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0})] {1}: Der angegebene Quellpfad für die statische Route existiert nicht: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0}] {1}: Der angegebene Quellpfad für die statische Route existiert nicht: {2}'
     noNameForWebSocketDisconnectExceptionMessage                          = 'Kein Name für die Trennung vom WebSocket angegeben.'
     certificateExpiredExceptionMessage                                    = "Das Zertifikat '{0}' ist abgelaufen: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                     = 'Das Ablaufdatum zum Entsperren des Geheimnis-Tresors liegt in der Vergangenheit (UTC): {0}'

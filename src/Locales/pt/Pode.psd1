@@ -109,7 +109,7 @@
     noSecretVaultRegisteredExceptionMessage                               = "Nenhum Cofre de Segredos com o nome '{0}' foi registrado."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage           = 'Um nome é necessário para o endpoint se o parâmetro RedirectTo for fornecido.'
     openApiLicenseObjectRequiresNameExceptionMessage                      = "O objeto OpenAPI 'license' requer a propriedade 'name'. Use o parâmetro -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0})] {1}: O caminho de origem fornecido para a Rota Estática não existe: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0}] {1}: O caminho de origem fornecido para a Rota Estática não existe: {2}'
     noNameForWebSocketDisconnectExceptionMessage                          = 'Nenhum nome fornecido para desconectar do WebSocket.'
     certificateExpiredExceptionMessage                                    = "O certificado '{0}' expirou: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                     = 'A data de expiração de desbloqueio do Cofre de Segredos está no passado (UTC): {0}'
@@ -166,7 +166,7 @@
     routeParameterNeedsValidScriptblockExceptionMessage                   = 'O parâmetro da Rota precisa de um ScriptBlock válido e não vazio.'
     nextTriggerCalculationErrorExceptionMessage                           = 'Parece que algo deu errado ao tentar calcular a próxima data e hora do gatilho: {0}'
     cannotLockValueTypeExceptionMessage                                   = 'Não é possível bloquear um [ValueTypes].'
-    failedToCreateOpenSslCertExceptionMessage                             = 'Falha ao criar o certificado openssl: {0}'
+    failedToCreateOpenSslCertExceptionMessage                             = 'Falha ao criar o certificado OpenSSL: {0}'
     jwtExpiredExceptionMessage                                            = 'O JWT expirou.'
     openingGuiMessage                                                     = 'Abrindo a GUI.'
     multiTypePropertiesRequireOpenApi31ExceptionMessage                   = 'Propriedades de múltiplos tipos requerem a versão 3.1 ou superior do OpenApi.'
@@ -180,7 +180,7 @@
     failedToConnectToUrlExceptionMessage                                  = 'Falha ao conectar ao URL: {0}'
     failedToAcquireMutexOwnershipExceptionMessage                         = 'Falha ao adquirir a propriedade do mutex. Nome do mutex: {0}'
     sessionsRequiredForOAuth2WithPKCEExceptionMessage                     = 'Sessões são necessárias para usar OAuth2 com PKCE'
-    failedToConnectToWebSocketExceptionMessage                            = 'Falha ao conectar ao websocket: {0}'
+    failedToConnectToWebSocketExceptionMessage                            = 'Falha ao conectar ao WebSocket: {0}'
     unsupportedObjectExceptionMessage                                     = 'Objeto não suportado'
     failedToParseAddressExceptionMessage                                  = "Falha ao analisar '{0}' como um endereço IP/Host:Port válido"
     mustBeRunningWithAdminPrivilegesExceptionMessage                      = 'Deve estar sendo executado com privilégios de administrador para escutar endereços que não sejam localhost.'

@@ -109,7 +109,7 @@
     noSecretVaultRegisteredExceptionMessage                               = "이름이 '{0}'인 비밀 금고가 등록되지 않았습니다."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage           = 'RedirectTo 매개변수가 제공된 경우 엔드포인트에 이름이 필요합니다.'
     openApiLicenseObjectRequiresNameExceptionMessage                      = "OpenAPI 객체 'license'는 'name' 속성이 필요합니다. -LicenseName 매개변수를 사용하십시오."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0})] {1}: 정적 경로에 대한 제공된 소스 경로가 존재하지 않습니다: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0}] {1}: 정적 경로에 대한 제공된 소스 경로가 존재하지 않습니다: {2}'
     noNameForWebSocketDisconnectExceptionMessage                          = '연결을 끊을 WebSocket의 이름이 제공되지 않았습니다.'
     certificateExpiredExceptionMessage                                    = "인증서 '{0}'이(가) 만료되었습니다: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                     = '시크릿 금고의 잠금 해제 만료 날짜가 과거입니다 (UTC): {0}'
@@ -166,7 +166,7 @@
     routeParameterNeedsValidScriptblockExceptionMessage                   = '경로 매개변수에는 유효하고 비어 있지 않은 ScriptBlock이 필요합니다.'
     nextTriggerCalculationErrorExceptionMessage                           = '다음 트리거 날짜 및 시간을 계산하는 중에 문제가 발생한 것 같습니다: {0}'
     cannotLockValueTypeExceptionMessage                                   = '[ValueTypes]를 잠글 수 없습니다.'
-    failedToCreateOpenSslCertExceptionMessage                             = 'openssl 인증서 생성 실패: {0}'
+    failedToCreateOpenSslCertExceptionMessage                             = 'OpenSSL 인증서 생성 실패: {0}'
     jwtExpiredExceptionMessage                                            = 'JWT가 만료되었습니다.'
     openingGuiMessage                                                     = 'GUI 열기.'
     multiTypePropertiesRequireOpenApi31ExceptionMessage                   = '다중 유형 속성은 OpenApi 버전 3.1 이상이 필요합니다.'

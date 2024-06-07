@@ -30,9 +30,9 @@
   terminatingMessage                                                    = 'Terminating...'
   noCommandsSuppliedToConvertToRoutesExceptionMessage                   = 'No commands supplied to convert to Routes.'
   invalidTaskTypeExceptionMessage                                       = 'Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]'
-  alreadyConnectedToWebSocketExceptionMessage                           = "Already connected to websocket with name '{0}'"
+  alreadyConnectedToWebSocketExceptionMessage                           = "Already connected to WebSocket with name '{0}'"
   crlfMessageEndCheckOnlySupportedOnTcpEndpointsExceptionMessage        = 'The CRLF message end check is only supported on TCP endpoints.'
-  testPodeOAComponentSchemaNeedToBeEnabledExceptionMessage              = "'Test-PodeOAComponentchema' need to be enabled using 'Enable-PodeOpenApi -EnableSchemaValidation'"
+  testPodeOAComponentSchemaNeedToBeEnabledExceptionMessage              = "'Test-PodeOAComponentschema' need to be enabled using 'Enable-PodeOpenApi -EnableSchemaValidation'"
   adModuleNotInstalledExceptionMessage                                  = 'Active Directory module is not installed.'
   cronExpressionInvalidExceptionMessage                                 = 'Cron expression should only consist of 5 parts: {0}'
   noSessionToSetOnResponseExceptionMessage                              = 'There is no session available to set on the response.'
@@ -109,7 +109,7 @@
   noSecretVaultRegisteredExceptionMessage                               = "No Secret Vault with the name '{0}' has been registered."
   nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage           = 'A Name is required for the endpoint if the RedirectTo parameter is supplied.'
   openApiLicenseObjectRequiresNameExceptionMessage                      = "The OpenAPI object 'license' required the property 'name'. Use -LicenseName parameter."
-  sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0})] {1}: The Source path supplied for Static Route does not exist: {2}'
+  sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0}] {1}: The Source path supplied for Static Route does not exist: {2}'
   noNameForWebSocketDisconnectExceptionMessage                          = 'No Name for a WebSocket to disconnect from supplied.'
   certificateExpiredExceptionMessage                                    = "The certificate '{0}' has expired: {1}"
   secretVaultUnlockExpiryDateInPastExceptionMessage                     = 'Secret Vault unlock expiry date is in the past (UTC): {0}'
@@ -166,7 +166,7 @@
   routeParameterNeedsValidScriptblockExceptionMessage                   = 'The Route parameter needs a valid, not empty, scriptblock.'
   nextTriggerCalculationErrorExceptionMessage                           = 'Looks like something went wrong trying to calculate the next trigger datetime: {0}'
   cannotLockValueTypeExceptionMessage                                   = 'Cannot lock a [ValueTypes]'
-  failedToCreateOpenSslCertExceptionMessage                             = 'Failed to create openssl cert: {0}'
+  failedToCreateOpenSslCertExceptionMessage                             = 'Failed to create OpenSSL cert: {0}'
   jwtExpiredExceptionMessage                                            = 'The JWT has expired.'
   openingGuiMessage                                                     = 'Opening the GUI.'
   multiTypePropertiesRequireOpenApi31ExceptionMessage                   = 'Multi-type properties require OpenApi Version 3.1 or above.'
@@ -180,7 +180,7 @@
   failedToConnectToUrlExceptionMessage                                  = 'Failed to connect to URL: {0}'
   failedToAcquireMutexOwnershipExceptionMessage                         = 'Failed to acquire mutex ownership. Mutex name: {0}'
   sessionsRequiredForOAuth2WithPKCEExceptionMessage                     = 'Sessions are required to use OAuth2 with PKCE'
-  failedToConnectToWebSocketExceptionMessage                            = 'Failed to connect to websocket: {0}'
+  failedToConnectToWebSocketExceptionMessage                            = 'Failed to connect to WebSocket: {0}'
   unsupportedObjectExceptionMessage                                     = 'Unsupported object'
   failedToParseAddressExceptionMessage                                  = "Failed to parse '{0}' as a valid IP/Host:Port address"
   mustBeRunningWithAdminPrivilegesExceptionMessage                      = 'Must be running with administrator privileges to listen on non-localhost addresses.'
@@ -210,7 +210,7 @@
   noNameForWebSocketResetExceptionMessage                               = 'No Name for a WebSocket to reset supplied.'
   mergeDefaultAuthNotInListExceptionMessage                             = "The MergeDefault Authentication '{0}' is not in the Authentication list supplied."
   descriptionRequiredExceptionMessage                                   = 'A Description is required.'
-  pageNameShouldBeAlphaNumericExceptionMessage                          = 'The Page name should be a valid AlphaNumeric value: {0}'
+  pageNameShouldBeAlphaNumericExceptionMessage                          = 'The Page name should be a valid Alphanumeric value: {0}'
   defaultValueNotBooleanOrEnumExceptionMessage                          = 'The default value is not a boolean and is not part of the enum.'
   openApiComponentSchemaDoesNotExistExceptionMessage                    = "The OpenApi component schema {0} doesn't exist."
   timerParameterMustBeGreaterThanZeroExceptionMessage                   = '[Timer] {0}: {1} must be greater than 0.'

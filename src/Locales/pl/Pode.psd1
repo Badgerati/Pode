@@ -109,7 +109,7 @@
     noSecretVaultRegisteredExceptionMessage                               = "Nie zarejestrowano Skarbca Tajemnic o nazwie '{0}'."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage           = 'Nazwa jest wymagana dla punktu końcowego, jeśli podano parametr RedirectTo.'
     openApiLicenseObjectRequiresNameExceptionMessage                      = "Obiekt OpenAPI 'license' wymaga właściwości 'name'. Użyj parametru -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0})] {1}: Dostarczona ścieżka źródłowa dla trasy statycznej nie istnieje: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0}] {1}: Dostarczona ścieżka źródłowa dla trasy statycznej nie istnieje: {2}'
     noNameForWebSocketDisconnectExceptionMessage                          = 'Nie podano nazwy dla rozłączenia WebSocket.'
     certificateExpiredExceptionMessage                                    = "Certyfikat '{0}' wygasł: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                     = 'Data wygaśnięcia odblokowania Skarbca tajemnic jest w przeszłości (UTC): {0}'
@@ -166,7 +166,7 @@
     routeParameterNeedsValidScriptblockExceptionMessage                   = 'Parametr trasy wymaga prawidłowego, niepustego ScriptBlock.'
     nextTriggerCalculationErrorExceptionMessage                           = 'Wygląda na to, że coś poszło nie tak przy próbie obliczenia następnej daty i godziny wyzwalacza: {0}'
     cannotLockValueTypeExceptionMessage                                   = 'Nie można zablokować [ValueTypes].'
-    failedToCreateOpenSslCertExceptionMessage                             = 'Nie udało się utworzyć certyfikatu openssl: {0}'
+    failedToCreateOpenSslCertExceptionMessage                             = 'Nie udało się utworzyć certyfikatu OpenSSL: {0}'
     jwtExpiredExceptionMessage                                            = 'JWT wygasł.'
     openingGuiMessage                                                     = 'Otwieranie GUI.'
     multiTypePropertiesRequireOpenApi31ExceptionMessage                   = 'Właściwości wielotypowe wymagają wersji OpenApi 3.1 lub wyższej.'
