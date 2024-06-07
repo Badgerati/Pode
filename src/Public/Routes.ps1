@@ -1164,11 +1164,22 @@ function Add-PodeRouteGroup {
         $AllowAnon,
 
         [string[]]
-        $OADefinitionTag
+        $OADefinitionTag,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'file')]
+        [string]
+        $FilePath
     )
 
+     
+
     if (Test-PodeIsEmpty $Routes) {
+                if ($PSCmdlet.ParameterSetName -ieq 'file') {
+                    $Routes = Convert-PodeFileToScriptBlock -FilePath $FilePath
+                }else{
+                
         throw 'No scriptblock for -Routes passed'
+                }
     }
 
     if ($Path -eq '/') {
