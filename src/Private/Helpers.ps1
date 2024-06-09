@@ -3165,7 +3165,8 @@ function Read-PodeWebExceptionInfo {
         }
 
         default {
-            throw ($PodeLocale.invalidExceptionTypeExceptionMessage -f ($_.Exception.GetType().Name))#"Exception is of an invalid type, should be either WebException or HttpRequestException, but got: $($_.Exception.GetType().Name)"
+            #Exception is of an invalid type, should be either WebException or HttpRequestException
+            throw ($PodeLocale.invalidWebExceptionTypeExceptionMessage -f ($_.Exception.GetType().Name))
         }
     }
 

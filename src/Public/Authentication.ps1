@@ -725,7 +725,7 @@ function Add-PodeAuth {
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the authentication method
-                    throw $PodeLocale.nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage
+                    throw $PodeLocale.nonEmptyScriptBlockRequiredForAuthMethodExceptionMessage
                 }
 
                 return $true

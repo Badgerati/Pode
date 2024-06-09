@@ -1,6 +1,6 @@
 @{
     schemaValidationRequiresPowerShell610ExceptionMessage                 = 'Schema validation required PowerShell version 6.1.0 or greater.'
-    pathOrScriptBlockRequiredExceptionMessage                             = 'A Path or ScriptBlock is required for sourcing the Custom access values.'
+    customAccessPathOrScriptBlockRequiredExceptionMessage                 = 'A Path or ScriptBlock is required for sourcing the Custom access values.'
     operationIdMustBeUniqueForArrayExceptionMessage                       = 'OperationID: {0} has to be unique and cannot be applied to an array.'
     endpointNotDefinedForRedirectingExceptionMessage                      = "An endpoint named '{0}' has not been defined for redirecting."
     filesHaveChangedMessage                                               = 'The following files have changed:'
@@ -63,6 +63,7 @@
     maximumConcurrentWebSocketThreadsLessThanMinimumExceptionMessage      = 'Maximum concurrent WebSocket threads cannot be less than the minimum of {0} but got: {1}'
     middlewareAlreadyDefinedExceptionMessage                              = '[Middleware] {0}: Middleware already defined.'
     invalidAtomCharacterExceptionMessage                                  = 'Invalid atom character: {0}'
+    invalidCronAtomFormatExceptionMessage                                          = 'Invalid cron atom format found: {0}'
     cacheStorageNotFoundForRetrieveExceptionMessage                       = "Cache storage with name '{0}' not found when attempting to retrieve cached item '{1}'"
     headerMustHaveNameInEncodingContextExceptionMessage                   = 'Header must have a name when used in an encoding context.'
     moduleDoesNotContainFunctionExceptionMessage                          = 'Module {0} does not contain function {1} to convert to a Route.'
@@ -113,7 +114,7 @@
     noNameForWebSocketDisconnectExceptionMessage                          = 'No Name for a WebSocket to disconnect from supplied.'
     certificateExpiredExceptionMessage                                    = "The certificate '{0}' has expired: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                     = 'Secret Vault unlock expiry date is in the past (UTC): {0}'
-    invalidExceptionTypeExceptionMessage                                  = 'Exception is of an invalid type, should be either WebException or HttpRequestException, but got: {0}'
+    invalidWebExceptionTypeExceptionMessage                               = 'Exception is of an invalid type, should be either WebException or HttpRequestException, but got: {0}'
     invalidSecretValueTypeExceptionMessage                                = 'Secret value is of an invalid type. Expected types: String, SecureString, HashTable, Byte[], or PSCredential. But got: {0}'
     explicitTlsModeOnlySupportedOnSmtpsTcpsEndpointsExceptionMessage      = 'The Explicit TLS mode is only supported on SMTPS and TCPS endpoints.'
     discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage     = "The parameter 'DiscriminatorMapping' can only be used when 'DiscriminatorProperty' is present."
@@ -165,7 +166,7 @@
     userFileDoesNotExistExceptionMessage                                  = 'The user file does not exist: {0}'
     routeParameterNeedsValidScriptblockExceptionMessage                   = 'The Route parameter needs a valid, not empty, scriptblock.'
     nextTriggerCalculationErrorExceptionMessage                           = 'Looks like something went wrong trying to calculate the next trigger datetime: {0}'
-    cannotLockValueTypeExceptionMessage                                   = 'Cannot lock a [ValueTypes]'
+    cannotLockValueTypeExceptionMessage                                   = 'Cannot lock a [ValueType]'
     failedToCreateOpenSslCertExceptionMessage                             = 'Failed to create OpenSSL cert: {0}'
     jwtExpiredExceptionMessage                                            = 'The JWT has expired.'
     openingGuiMessage                                                     = 'Opening the GUI.'
@@ -173,7 +174,7 @@
     noNameForWebSocketRemoveExceptionMessage                              = 'No Name for a WebSocket to remove supplied.'
     maxSizeInvalidExceptionMessage                                        = 'MaxSize must be 0 or greater, but got: {0}'
     iisShutdownMessage                                                    = '(IIS Shutdown)'
-    cannotUnlockValueTypeExceptionMessage                                 = 'Cannot unlock a [ValueTypes]'
+    cannotUnlockValueTypeExceptionMessage                                 = 'Cannot unlock a [ValueType]'
     noJwtSignatureForAlgorithmExceptionMessage                            = 'No JWT signature supplied for {0}.'
     maximumConcurrentWebSocketThreadsInvalidExceptionMessage              = 'Maximum concurrent WebSocket threads must be >=1 but got: {0}'
     acknowledgeMessageOnlySupportedOnSmtpTcpEndpointsExceptionMessage     = 'The Acknowledge message is only supported on SMTP and TCP endpoints.'
@@ -201,6 +202,7 @@
     noUnlockScriptBlockForVaultExceptionMessage                           = "No Unlock ScriptBlock supplied for unlocking the vault '{0}'"
     definitionTagMessage                                                  = 'Definition {0}:'
     failedToOpenRunspacePoolExceptionMessage                              = 'Failed to open RunspacePool: {0}'
+    failedToCloseRunspacePoolExceptionMessage                                      = 'Failed to close RunspacePool: {0}'
     verbNoLogicPassedExceptionMessage                                     = '[Verb] {0}: No logic passed'
     noMutexFoundExceptionMessage                                          = "No mutex found called '{0}'"
     documentationMessage                                                  = 'Documentation'
@@ -224,7 +226,7 @@
     cacheStorageAlreadyExistsExceptionMessage                             = "Cache Storage with name '{0}' already exists."
     loggingMethodRequiresValidScriptBlockExceptionMessage                 = "The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock."
     scopedVariableAlreadyDefinedExceptionMessage                          = 'Scoped Variable already defined: {0}'
-    oauth2RequiresAuthorizeUrlExceptionMessage                            = 'OAuth2 requires an Authorise URL to be supplied'
+    oauth2RequiresAuthorizeUrlExceptionMessage                            = "OAuth2 requires an 'AuthoriseUrl' property to be supplied."
     pathNotExistExceptionMessage                                          = 'Path does not exist: {0}'
     noDomainServerNameForWindowsAdAuthExceptionMessage                    = 'No domain server name has been supplied for Windows AD authentication'
     suppliedDateAfterScheduleEndTimeExceptionMessage                      = 'Supplied date is after the end time of the schedule at {0}'
@@ -242,7 +244,6 @@
     bodyParserAlreadyDefinedForContentTypeExceptionMessage                = 'A body-parser is already defined for the {0} content-type.'
     invalidJwtSuppliedExceptionMessage                                    = 'Invalid JWT supplied.'
     sessionsRequiredForFlashMessagesExceptionMessage                      = 'Sessions are required to use Flash messages.'
-    outputMethodRequiresValidScriptBlockForRequestLoggingExceptionMessage = 'The supplied output Method for Request Logging requires a valid ScriptBlock.'
     semaphoreAlreadyExistsExceptionMessage                                = 'A semaphore with the following name already exists: {0}'
     invalidJwtHeaderAlgorithmSuppliedExceptionMessage                     = 'Invalid JWT header algorithm supplied.'
     oauth2ProviderDoesNotSupportPasswordGrantTypeExceptionMessage         = "The OAuth2 provider does not support the 'password' grant_type required by using an InnerScheme."

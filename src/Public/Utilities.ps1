@@ -193,7 +193,7 @@ function Use-PodeScript {
     # check if the path exists
     if (!(Test-PodePath $_path -NoStatus)) {
         # The script path does not exist
-        throw ($PodeLocale.scriptPathDoesNotExistExceptionMessage -f (Protect-PodeValue -Value $_path -Default 'DefaultPath'))
+        throw ($PodeLocale.scriptPathDoesNotExistExceptionMessage -f (Protect-PodeValue -Value $_path -Default $Path))
     }
 
     # dot-source the script

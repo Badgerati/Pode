@@ -271,7 +271,7 @@ function Enable-PodeRequestLogging {
     # ensure the Method contains a scriptblock
     if (Test-PodeIsEmpty $Method.ScriptBlock) {
         # The supplied output Method for Request Logging requires a valid ScriptBlock
-        throw $PodeLocale.outputMethodRequiresValidScriptBlockForRequestLoggingExceptionMessage
+        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Request')
     }
 
     # username property
@@ -350,13 +350,13 @@ function Enable-PodeErrorLogging {
     # error if it's already enabled
     if ($PodeContext.Server.Logging.Types.Contains($name)) {
         # Error Logging has already been enabled
-        throw $PodeLocale.requestLoggingAlreadyEnabledExceptionMessage
+        throw $PodeLocale.errorLoggingAlreadyEnabledExceptionMessage
     }
 
     # ensure the Method contains a scriptblock
     if (Test-PodeIsEmpty $Method.ScriptBlock) {
         # The supplied output Method for Error Logging requires a valid ScriptBlock
-        throw $PodeLocale.outputMethodRequiresValidScriptBlockForRequestLoggingExceptionMessage
+        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Error')
     }
 
     # all errors?
@@ -450,7 +450,7 @@ function Add-PodeLogger {
 
     # ensure the Method contains a scriptblock
     if (Test-PodeIsEmpty $Method.ScriptBlock) {
-        # The supplied output Method for the Logging method requires a valid ScriptBlock 
+        # The supplied output Method for the Logging method requires a valid ScriptBlock
         throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
     }
 

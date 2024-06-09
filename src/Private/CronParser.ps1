@@ -282,7 +282,7 @@ function ConvertFrom-PodeCronExpression {
         # error
         else {
             # Invalid cron atom format found
-            throw ($PodeLocale.invalidAtomCharacterExceptionMessage -f $_atom)
+            throw ($PodeLocale.invalidCronAtomFormatExceptionMessage -f $_atom)
         }
 
         # ensure cron expression values are valid

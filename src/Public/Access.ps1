@@ -70,7 +70,7 @@ function New-PodeAccessScheme {
     if ($Custom) {
         if ([string]::IsNullOrWhiteSpace($Path) -and (Test-PodeIsEmpty $ScriptBlock)) {
             # A Path or ScriptBlock is required for sourcing the Custom access values
-            throw $PodeLocale.pathOrScriptBlockRequiredExceptionMessage
+            throw $PodeLocale.customAccessPathOrScriptBlockRequiredExceptionMessage
         }
     }
 

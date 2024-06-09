@@ -753,7 +753,8 @@ function Close-PodeRunspacePool {
 
         if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
             $item.Pool.EndClose($item.Result) | Out-Default
-            throw ($PodeLocale.failedToOpenRunspacePoolExceptionMessage -f $key) #"Failed to open RunspacePool: $($key)"
+            # Failed to close RunspacePool
+            throw ($PodeLocale.failedToCloseRunspacePoolExceptionMessage -f $key)
         }
     }
 

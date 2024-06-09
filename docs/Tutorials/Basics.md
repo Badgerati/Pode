@@ -1,6 +1,6 @@
 # Basics
-<sub><b>!!! Warning</b>
-It’s important to note that you can initiate only one server per PowerShell instance. This means that within a single PowerShell or pwsh session, you can only run one server at a time. If you need to run multiple servers, you’ll need to start additional PowerShell or pwsh instances. Each instance of PowerShell or pwsh can then run its own server. This is a fundamental aspect of how Pode operates. Please keep this in mind when designing your scripts and infrastructure.</sub>
+ <sub><b>!!! Warning</b>
+You can initiate only one server per PowerShell instance. To run multiple servers, start additional PowerShell, or pwsh, sessions. Each session can run its own server. This is fundamental to how Pode operates, so consider it when designing your scripts and infrastructure.</sub>
 
 
 While it’s not mandatory, we strongly recommend importing the Pode module with a specified maximum version. This practice helps to prevent potential issues arising from breaking changes introduced in new major versions:
@@ -85,7 +85,7 @@ PS> Start-PodeServer -FilePath './File.ps1'
 
 ## Internationalization
 
-Pode has built-in support for internationalization (i18n).
+Pode has built-in support for internationalization (i18n). By default, Pode uses the `$PsUICulture` variable to determine the User Interface Culture (UICulture).
 
 You can enforce a specific localization when importing the Pode module by using the UICulture argument. This argument accepts a culture code, which specifies the language and regional settings to use.
 

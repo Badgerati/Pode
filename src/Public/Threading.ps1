@@ -246,7 +246,7 @@ function Enter-PodeLockable {
 
     # check if value type and throw
     if ($Object -is [valuetype]) {
-        # Cannot lock a [ValueTypes]
+        # Cannot lock a [ValueType]
         throw $PodeLocale.cannotLockValueTypeExceptionMessage
     }
 
@@ -313,7 +313,7 @@ function Exit-PodeLockable {
 
     # check if value type and throw
     if ($Object -is [valuetype]) {
-        # Cannot unlock a [ValueTypes]
+        # Cannot unlock a [ValueType]
         throw $PodeLocale.cannotUnlockValueTypeExceptionMessage
     }
 
