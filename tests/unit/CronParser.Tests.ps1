@@ -118,7 +118,7 @@ Describe 'ConvertFrom-PodeCronExpression' {
         }
 
         It 'Throws error for range atom with invalid min' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 0-5 * *' } | Should -Throw -ExpectedMessage  ($PodeLocale.minValueInvalidExceptionMessage -f 0,'DayOfMonth',1) # '*is invalid, should be greater than/equal to*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 0-5 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.minValueInvalidExceptionMessage -f 0,'DayOfMonth',1) # '*is invalid, should be greater than/equal to*'
         }
 
         It 'Throws error for range atom with invalid max' {

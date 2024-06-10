@@ -57,7 +57,7 @@ Describe 'Add-PodeSchedule' {
         $start = ([DateTime]::Now.AddHours(3))
         $end = ([DateTime]::Now.AddHours(1))
         $expectedMessage = ($PodeLocale.scheduleStartTimeAfterEndTimeExceptionMessage -f 'test').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
-        { Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock {} -StartTime $start -EndTime $end } | Should -Throw -ExpectedMessage  $expectedMessage # [Schedule] {0}: Cannot have a 'StartTime' after the 'EndTime'
+        { Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock {} -StartTime $start -EndTime $end } | Should -Throw -ExpectedMessage $expectedMessage # [Schedule] {0}: Cannot have a 'StartTime' after the 'EndTime'
     }
 
     It 'Adds new schedule supplying everything' {

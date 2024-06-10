@@ -308,7 +308,7 @@ Describe 'Add-PodeRoute' {
             }
         }
         $expectedMessage = ($PodeLocale.methodPathAlreadyDefinedExceptionMessage -f 'GET', '/').Replace('[','`[').Replace(']','`]')
-        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } } | Should -Throw -ExpectedMessage  $expectedMessage #'*already defined*'
+        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
     }
 
     It 'Throws error on GET route for endpoint name not existing' {

@@ -2,6 +2,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 BeforeAll {
+    Add-Type -AssemblyName "System.Net.Http"
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
@@ -773,7 +774,7 @@ Describe 'Get-PodeEndpointInfo' {
     }
 
     It 'Throws an error for an out-of-range IP endpoint' {
-        { Get-PodeEndpointInfo -Address '700.0.0.0' } | Should -Throw -ExpectedMessage  ($PodeLocale.invalidIpAddressExceptionMessage -f '700.0.0.0' ) # '*The IP address supplied is invalid*'
+        { Get-PodeEndpointInfo -Address '700.0.0.0' } | Should -Throw -ExpectedMessage ($PodeLocale.invalidIpAddressExceptionMessage -f '700.0.0.0' ) # '*The IP address supplied is invalid*'
     }
 
     It 'Throws an error for an invalid Hostname endpoint' {
@@ -1124,7 +1125,7 @@ Describe 'Test-PodeIsServerless' {
 
     It 'Throws no error if not serverless' {
         $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
-        { Test-PodeIsServerless -FunctionName 'FakeFunction' -ThrowError } | Should -Not -Throw -ExpectedMessage  ($PodeLocale.unsupportedFunctionInServerlessContextExceptionMessage -f 'FakeFunction') #'*not supported in a serverless*'
+        { Test-PodeIsServerless -FunctionName 'FakeFunction' -ThrowError } | Should -Not -Throw -ExpectedMessage ($PodeLocale.unsupportedFunctionInServerlessContextExceptionMessage -f 'FakeFunction') #'*not supported in a serverless*'
     }
 }
 
@@ -1643,7 +1644,7 @@ Describe 'New-PodeCron' {
     }
 
     It 'Throws an error for multiple Hours when using Interval' {
-        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should -Throw -ExpectedMessage  ($PodeLocale.singleValueForIntervalExceptionMessage -f 'Hour')  #'*only supply a single*'
+        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should -Throw -ExpectedMessage ($PodeLocale.singleValueForIntervalExceptionMessage -f 'Hour')  #'*only supply a single*'
     }
 
     It 'Throws an error for multiple Minutes when using Interval' {
@@ -1659,7 +1660,7 @@ Describe 'New-PodeCron' {
     }
 
     It 'Throws an error when using Interval for Every Year' {
-        { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage  $PodeLocale.cannotSupplyIntervalForYearExceptionMessage #'Cannot supply interval value for every year'
+        { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage $PodeLocale.cannotSupplyIntervalForYearExceptionMessage #'Cannot supply interval value for every year'
     }
 }
 
