@@ -6,21 +6,21 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'Get-PodeInbuiltMiddleware' {
     Context 'Invalid parameters supplied' {
         It 'Throws null name parameter error' {
-            { Get-PodeInbuiltMiddleware -Name $null -ScriptBlock {} } | Should -Throw -ExpectedMessage '*null or empty*'
+            { Get-PodeInbuiltMiddleware -Name $null -ScriptBlock {} } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Get-PodeInbuiltMiddleware'
         }
 
         It 'Throws empty name parameter error' {
-            { Get-PodeInbuiltMiddleware -Name ([string]::Empty) -ScriptBlock {} } | Should -Throw -ExpectedMessage '*null or empty*'
+            { Get-PodeInbuiltMiddleware -Name ([string]::Empty) -ScriptBlock {} } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Get-PodeInbuiltMiddleware'
         }
 
         It 'Throws null logic error' {
-            { Get-PodeInbuiltMiddleware -Name 'test' -ScriptBlock $null } | Should -Throw -ExpectedMessage '*argument is null*'
+            { Get-PodeInbuiltMiddleware -Name 'test' -ScriptBlock $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Get-PodeInbuiltMiddleware'
         }
     }
 
@@ -108,12 +108,14 @@ Describe 'Middleware' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Add-PodeMiddleware -Name 'Test1' -ScriptBlock { write-host 'middle1' }
-            { Add-PodeMiddleware -Name 'Test1' -ScriptBlock { write-host 'middle2' } } | Should -Throw -ExpectedMessage '*already defined*'
+            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[','`[').Replace(']','`]') # -replace '\[', '`[' -replace '\]', '`]'
+            { Add-PodeMiddleware -Name 'Test1' -ScriptBlock { write-host 'middle2' } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
         }
 
         It 'Throws error when adding middleware hash with no logic' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
-            { Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Rand' = { write-host 'middle1' } } } | Should -Throw -ExpectedMessage '*no logic supplied*'
+            $expectedMessage = $PodeLocale.middlewareNoLogicSuppliedExceptionMessage.Replace('[','`[').Replace(']','`]') # -replace '\[', '`[' -replace '\]', '`]'
+            { Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Rand' = { write-host 'middle1' } } } | Should -Throw -ExpectedMessage $expectedMessage # '*no logic supplied*'
         }
 
         It 'Adds single middleware hash to list' {
@@ -160,7 +162,8 @@ Describe 'Middleware' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Logic' = { write-host 'middle1' } }
-            { Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Logic' = { write-host 'middle2' } } } | Should -Throw -ExpectedMessage '*already defined*'
+            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[','`[').Replace(']','`]') # -replace '\[', '`[' -replace '\]', '`]'
+            { Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Logic' = { write-host 'middle2' } } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
         }
     }
 }
@@ -908,7 +911,7 @@ Describe 'Add-PodeBodyParser' {
 
     It 'Fails on an invalid content-type' {
         $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{} } }
-        { Add-PodeBodyParser -ContentType 'text_xml' -ScriptBlock {} } | Should -Throw -ExpectedMessage "*Cannot validate argument on parameter 'ContentType'*"
+        { Add-PodeBodyParser -ContentType 'text_xml' -ScriptBlock {} } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Add-PodeBodyParser'
     }
 
     It 'Adds a script for a content-type' {
@@ -921,7 +924,7 @@ Describe 'Add-PodeBodyParser' {
 Describe 'Remove-PodeBodyParser' {
     It 'Fails on an invalid content-type' {
         $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{} } }
-        { Remove-PodeBodyParser -ContentType 'text_xml' } | Should -Throw -ExpectedMessage "*Cannot validate argument on parameter 'ContentType'*"
+        { Remove-PodeBodyParser -ContentType 'text_xml' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Remove-PodeBodyParser'
     }
 
     It 'Does nothing if no script set for content-type' {

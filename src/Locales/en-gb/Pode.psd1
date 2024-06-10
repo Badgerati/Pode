@@ -110,7 +110,7 @@
     noSecretVaultRegisteredExceptionMessage                               = "No Secret Vault with the name '{0}' has been registered."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage           = 'A Name is required for the endpoint if the RedirectTo parameter is supplied.'
     openApiLicenseObjectRequiresNameExceptionMessage                      = "The OpenAPI object 'license' required the property 'name'. Use -LicenseName parameter."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '[{0}] {1}: The Source path supplied for Static Route does not exist: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage                  = '{0}: The Source path supplied for Static Route does not exist: {1}'
     noNameForWebSocketDisconnectExceptionMessage                          = 'No Name for a WebSocket to disconnect from supplied.'
     certificateExpiredExceptionMessage                                    = "The certificate '{0}' has expired: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                     = 'Secret Vault unlock expiry date is in the past (UTC): {0}'

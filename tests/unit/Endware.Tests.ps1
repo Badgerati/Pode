@@ -1,8 +1,10 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+param()
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'Invoke-PodeEndware' {
@@ -39,7 +41,7 @@ Describe 'Invoke-PodeEndware' {
 Describe 'Add-PodeEndware' {
     Context 'Invalid parameters supplied' {
         It 'Throws null logic error' {
-            { Add-PodeEndware -ScriptBlock $null } | Should -Throw -ExpectedMessage '*because it is null*'
+            { Add-PodeEndware -ScriptBlock $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Add-PodeEndware'
         }
     }
 

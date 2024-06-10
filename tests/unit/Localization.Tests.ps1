@@ -1,7 +1,26 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 param()
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
+}
+BeforeDiscovery {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src'
 
+    # All language directories
+    $localizationDir = "$src/Locales"
+
+    # Discover all language directories
+    $languageDirs = Get-ChildItem -Path $localizationDir -Directory | Where-Object { $_.Name -ne 'en' }
+
+    # Get all source code files recursively from the specified directory
+    $sourceFiles = Get-ChildItem -Path $src -Recurse -Include *.ps1, *.psm1
+    Import-LocalizedData -BindingVariable LanguageOfReference -BaseDirectory $localizationDir -FileName 'Pode' -UICulture 'en'
+}
 Describe 'Localization Check' {
 
 
@@ -25,25 +44,10 @@ Describe 'Localization Check' {
         return $keys
     }
 
-
-    $path = $PSCommandPath
-    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src'
-
-    # All language directories
-    $localizationDir = "$src/Locales"
-
-    $localizationMessages = Import-LocalizedData -FileName 'Pode.psd1' -BaseDirectory $localizationDir -UICulture 'en'
-    $global:localizationKeys = $localizationMessages.Keys
-    # Discover all language directories
-    $languageDirs = Get-ChildItem -Path $localizationDir -Directory | Where-Object { $_.Name -ne 'en' }
-
-    # Get all source code files recursively from the specified directory
-    $sourceFiles = Get-ChildItem -Path $src -Recurse -Include *.ps1, *.psm1
-
     Describe 'Verify Invalid Hashtable Keys in [<_.Name>]' -ForEach  ($sourceFiles) {
         $keysInFile = Export-KeysFromFile -filePath $_.FullName
         It "should find the key '[<_>]' in the hashtable"  -ForEach  ($keysInFile) {
-            $global:localizationKeys -contains $_ | Should -BeTrue
+            $PodeLocale.Keys -contains $_ | Should -BeTrue
         }
     }
 
@@ -55,11 +59,11 @@ Describe 'Localization Check' {
 
         $global:content = Import-LocalizedData -FileName 'Pode.psd1' -BaseDirectory $localizationDir -UICulture $_.Name
         it 'Number of entry equal to the [en]' {
-            $global:content.Keys.Count | Should -be $global:localizationKeys.Count
+            $global:content.Keys.Count | Should -be $PodeLocale.Count
         }
 
-        It -ForEach ($global:localizationKeys) -Name 'Resource File contain <_>' {
-            foreach ($key in $global:localizationKeys) {
+        It -ForEach ( $LanguageOfReference.Keys) -Name 'Resource File contain <_>' {
+            foreach ($key in  $PodeLocale.Keys) {
                 $global:content.Keys -contains $_ | Should -BeTrue
             }
         }

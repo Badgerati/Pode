@@ -110,7 +110,7 @@
     noSecretVaultRegisteredExceptionMessage                           = "Aucun coffre-fort de secrets enregistré sous le nom '{0}'."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage       = 'Un nom est requis pour le point de terminaison si le paramètre RedirectTo est fourni.'
     openApiLicenseObjectRequiresNameExceptionMessage                  = "L'objet OpenAPI 'license' nécessite la propriété 'name'. Utilisez le paramètre -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage              = "[{0})] {1}: Le chemin source fourni pour la Route statique n'existe pas: {2}"
+    sourcePathDoesNotExistForStaticRouteExceptionMessage              = "{0}: Le chemin source fourni pour la Route statique n'existe pas: {1}"
     noNameForWebSocketDisconnectExceptionMessage                      = 'Aucun Nom fourni pour déconnecter le WebSocket.'
     certificateExpiredExceptionMessage                                = "Le certificat '{0}' a expiré: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                 = "La date d'expiration du déverrouillage du Coffre-Fort de Secrets est dans le passé (UTC) : {0}"

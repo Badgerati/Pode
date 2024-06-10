@@ -110,7 +110,7 @@
     noSecretVaultRegisteredExceptionMessage                           = "No se ha registrado un Cofre de Secretos con el nombre '{0}'."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage       = 'Se requiere un nombre para el endpoint si se proporciona el parámetro RedirectTo.'
     openApiLicenseObjectRequiresNameExceptionMessage                  = "El objeto OpenAPI 'license' requiere la propiedad 'name'. Use el parámetro -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '[{0}] {1}: La ruta de origen proporcionada para la Ruta estática no existe: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '{0}: La ruta de origen proporcionada para la Ruta estática no existe: {1}'
     noNameForWebSocketDisconnectExceptionMessage                      = 'No se proporcionó ningún nombre para desconectar el WebSocket.'
     certificateExpiredExceptionMessage                                = "El certificado '{0}' ha expirado: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                 = 'La fecha de expiración para desbloquear el Cofre de Secretos está en el pasado (UTC): {0}'

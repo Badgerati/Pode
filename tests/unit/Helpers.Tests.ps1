@@ -1,10 +1,11 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'Get-PodeType' {
@@ -259,7 +260,7 @@ Describe 'Test-PodeIPAddress' {
 Describe 'ConvertTo-PodeIPAddress' {
     Context 'Null values' {
         It 'Throws error for null' {
-            { ConvertTo-PodeIPAddress -Address $null } | Should -Throw -ExpectedMessage '*the argument is null*'
+            { ConvertTo-PodeIPAddress -Address $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,ConvertTo-PodeIPAddress'
         }
     }
 
@@ -284,11 +285,11 @@ Describe 'ConvertTo-PodeIPAddress' {
 Describe 'Test-PodeIPAddressLocal' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodeIPAddressLocal -IP ([string]::Empty) } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressLocal -IP ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressLocal'
         }
 
         It 'Throws error for null' {
-            { Test-PodeIPAddressLocal -IP $null } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressLocal -IP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressLocal'
         }
     }
 
@@ -312,11 +313,11 @@ Describe 'Test-PodeIPAddressLocal' {
 Describe 'Test-PodeIPAddressLocalOrAny' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodeIPAddressLocalOrAny -IP ([string]::Empty) } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressLocalOrAny -IP ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressLocalOrAny'
         }
 
         It 'Throws error for null' {
-            { Test-PodeIPAddressLocalOrAny -IP $null } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressLocalOrAny -IP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressLocalOrAny'
         }
     }
 
@@ -348,11 +349,11 @@ Describe 'Test-PodeIPAddressLocalOrAny' {
 Describe 'Test-PodeIPAddressAny' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodeIPAddressAny -IP ([string]::Empty) } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressAny -IP ([string]::Empty) } | Should -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressAny'
         }
 
         It 'Throws error for null' {
-            { Test-PodeIPAddressAny -IP $null } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressAny -IP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressAny'
         }
     }
 
@@ -402,7 +403,7 @@ Describe 'Get-PodeIPAddress' {
         }
 
         It 'Throws error for invalid IP' {
-            { Get-PodeIPAddress -IP '~fake.net' } | Should -Throw -ExpectedMessage '*invalid IP address*'
+            { Get-PodeIPAddress -IP '~fake.net' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
         }
     }
 
@@ -412,7 +413,7 @@ Describe 'Get-PodeIPAddress' {
         }
 
         It 'Throws error for invalid IP' {
-            { Get-PodeIPAddress -IP '256.0.0.0' } | Should -Throw -ExpectedMessage '*invalid IP address*'
+            { Get-PodeIPAddress -IP '256.0.0.0' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
         }
     }
 
@@ -426,7 +427,7 @@ Describe 'Get-PodeIPAddress' {
         }
 
         It 'Throws error for invalid IP' {
-            { Get-PodeIPAddress -IP '[]' } | Should -Throw -ExpectedMessage '*invalid IP address*'
+            { Get-PodeIPAddress -IP '[]' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
         }
     }
 }
@@ -434,15 +435,15 @@ Describe 'Get-PodeIPAddress' {
 Describe 'Test-PodeIPAddressInRange' {
     Context 'No parameters supplied' {
         It 'Throws error for no ip' {
-            { Test-PodeIPAddressInRange -IP $null -LowerIP @{} -UpperIP @{} } | Should -Throw -ExpectedMessage '*because it is null*'
+            { Test-PodeIPAddressInRange -IP $null -LowerIP @{} -UpperIP @{} } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Test-PodeIPAddressInRange'
         }
 
         It 'Throws error for no lower ip' {
-            { Test-PodeIPAddressInRange -IP @{} -LowerIP $null -UpperIP @{} } | Should -Throw -ExpectedMessage '*because it is null*'
+            { Test-PodeIPAddressInRange -IP @{} -LowerIP $null -UpperIP @{} } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Test-PodeIPAddressInRange'
         }
 
         It 'Throws error for no upper ip' {
-            { Test-PodeIPAddressInRange -IP @{} -LowerIP @{} -UpperIP $null } | Should -Throw -ExpectedMessage '*because it is null*'
+            { Test-PodeIPAddressInRange -IP @{} -LowerIP @{} -UpperIP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Test-PodeIPAddressInRange'
         }
     }
 
@@ -501,11 +502,11 @@ Describe 'Test-PodeIPAddressInRange' {
 Describe 'Test-PodeIPAddressIsSubnetMask' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodeIPAddressIsSubnetMask -IP ([string]::Empty) } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Test-PodeIPAddressIsSubnetMask -IP ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeIPAddressIsSubnetMask'
         }
 
         It 'Throws error for null' {
-            { Test-PodeIPAddressIsSubnetMask -IP $null } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Test-PodeIPAddressIsSubnetMask -IP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeIPAddressIsSubnetMask'
         }
     }
 
@@ -721,11 +722,11 @@ Describe 'Test-PodePathIsWildcard' {
 Describe 'Test-PodePathIsDirectory' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodePathIsDirectory -Path ([string]::Empty) } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Test-PodePathIsDirectory -Path ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodePathIsDirectory'
         }
 
         It 'Throws error for null' {
-            { Test-PodePathIsDirectory -Path $null } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Test-PodePathIsDirectory -Path $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodePathIsDirectory'
         }
     }
 
@@ -768,15 +769,15 @@ Describe 'Get-PodeEndpointInfo' {
     }
 
     It 'Throws an error for an invalid IP endpoint' {
-        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage '*Failed to parse*'
+        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f  '700.0.0.a' ) #'*Failed to parse*'
     }
 
     It 'Throws an error for an out-of-range IP endpoint' {
-        { Get-PodeEndpointInfo -Address '700.0.0.0' } | Should -Throw -ExpectedMessage '*The IP address supplied is invalid*'
+        { Get-PodeEndpointInfo -Address '700.0.0.0' } | Should -Throw -ExpectedMessage  ($PodeLocale.invalidIpAddressExceptionMessage -f '700.0.0.0' ) # '*The IP address supplied is invalid*'
     }
 
     It 'Throws an error for an invalid Hostname endpoint' {
-        { Get-PodeEndpointInfo -Address '@test.host.com' } | Should -Throw -ExpectedMessage '*Failed to parse*'
+        { Get-PodeEndpointInfo -Address '@test.host.com' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f '@test.host.com') # '*Failed to parse*'
     }
 }
 
@@ -1118,12 +1119,12 @@ Describe 'Test-PodeIsServerless' {
 
     It 'Throws error if serverless' {
         $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
-        { Test-PodeIsServerless -ThrowError } | Should -Throw -ExpectedMessage '*not supported in a serverless*'
+        { Test-PodeIsServerless -FunctionName 'FakeFunction' -ThrowError } | Should -Throw -ExpectedMessage ($PodeLocale.unsupportedFunctionInServerlessContextExceptionMessage -f 'FakeFunction') #'*not supported in a serverless*'
     }
 
     It 'Throws no error if not serverless' {
         $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
-        { Test-PodeIsServerless -ThrowError } | Should -Not -Throw -ExpectedMessage '*not supported in a serverless*'
+        { Test-PodeIsServerless -FunctionName 'FakeFunction' -ThrowError } | Should -Not -Throw -ExpectedMessage  ($PodeLocale.unsupportedFunctionInServerlessContextExceptionMessage -f 'FakeFunction') #'*not supported in a serverless*'
     }
 }
 
@@ -1511,12 +1512,12 @@ Describe 'Get-PodeAcceptEncoding' {
 
     It 'Errors when no encoding matches, and identity disabled' {
         $PodeContext.Server.Web.Compression.Enabled = $true
-        { Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' -ThrowError } | Should -Throw -ExpectedMessage '*HttpRequestException*'
+        { Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
     }
 
     It 'Errors when no encoding matches, and wildcard disabled' {
         $PodeContext.Server.Web.Compression.Enabled = $true
-        { Get-PodeAcceptEncoding -AcceptEncoding 'br,*;q=0' -ThrowError } | Should -Throw -ExpectedMessage '*HttpRequestException*'
+        { Get-PodeAcceptEncoding -AcceptEncoding 'br,*;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
     }
 
     It 'Returns empty if identity is allowed, but wildcard disabled' {
@@ -1554,7 +1555,7 @@ Describe 'Get-PodeTransferEncoding' {
     }
 
     It 'Errors when no encoding matches' {
-        { Get-PodeTransferEncoding -TransferEncoding 'compress,chunked' -ThrowError } | Should -Throw -ExpectedMessage '*HttpRequestException*'
+        { Get-PodeTransferEncoding -TransferEncoding 'compress,chunked' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
     }
 }
 
@@ -1642,11 +1643,11 @@ Describe 'New-PodeCron' {
     }
 
     It 'Throws an error for multiple Hours when using Interval' {
-        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should -Throw -ExpectedMessage '*only supply a single*'
+        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should -Throw -ExpectedMessage  ($PodeLocale.singleValueForIntervalExceptionMessage -f 'Hour')  #'*only supply a single*'
     }
 
     It 'Throws an error for multiple Minutes when using Interval' {
-        { New-PodeCron -Every Minute -Minute 2, 4 -Interval 15 } | Should -Throw -ExpectedMessage '*only supply a single*'
+        { New-PodeCron -Every Minute -Minute 2, 4 -Interval 15 } | Should -Throw -ExpectedMessage ($PodeLocale.singleValueForIntervalExceptionMessage -f 'Minute') #'*only supply a single*'
     }
 
     It 'Throws an error when using Interval without Every' {

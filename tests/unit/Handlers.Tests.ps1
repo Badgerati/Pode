@@ -1,18 +1,19 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
     $PodeContext = @{ 'Server' = $null; }
 }
 
 Describe 'Get-PodeHandler' {
     Context 'Invalid parameters supplied' {
         It 'Throw invalid type error' {
-            { Get-PodeHandler -Type 'Moo' } | Should -Throw -ExpectedMessage "*Cannot validate argument on parameter 'Type'*"
+            { Get-PodeHandler -Type 'Moo' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Get-PodeHandler'
         }
     }
 
@@ -71,7 +72,9 @@ Describe 'Get-PodeHandler' {
 Describe 'Add-PodeHandler' {
     It 'Throws error because type already exists' {
         $PodeContext.Server = @{ 'Handlers' = @{ 'Smtp' = @{ 'Main' = @{}; }; }; }
-        { Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {} } | Should -Throw -ExpectedMessage '*already defined*'
+        $expectedMessage = ($PodeLocale.handlerAlreadyDefinedExceptionMessage -f 'Smtp', 'Main').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {} } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
+
     }
 
     It 'Adds smtp handler' {

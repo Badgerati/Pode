@@ -5,23 +5,23 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'Add-PodeFlashMessage' {
     It 'Throws error because sessions are not configured' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Add-PodeFlashMessage -Name 'name' -Message 'message' } | Should -Throw -ExpectedMessage '*Sessions are required*'
+        { Add-PodeFlashMessage -Name 'name' -Message 'message' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
     }
 
     It 'Throws error for no name supplied' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Add-PodeFlashMessage -Name '' -Message 'message' } | Should -Throw -ExpectedMessage '*empty string*'
+        { Add-PodeFlashMessage -Name '' -Message 'message' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeFlashMessage'
     }
 
     It 'Throws error for no message supplied' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Add-PodeFlashMessage -Name 'name' -Message '' } | Should -Throw -ExpectedMessage '*empty string*'
+        { Add-PodeFlashMessage -Name 'name' -Message '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeFlashMessage'
     }
 
     It 'Adds a single key and value' {
@@ -66,7 +66,7 @@ Describe 'Add-PodeFlashMessage' {
 Describe 'Clear-PodeFlashMessages' {
     It 'Throws error because sessions are not configured' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Clear-PodeFlashMessages } | Should -Throw -ExpectedMessage '*Sessions are required*'
+        { Clear-PodeFlashMessages } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
     }
 
     It 'Adds two keys and then Clears them all' {
@@ -89,12 +89,12 @@ Describe 'Clear-PodeFlashMessages' {
 Describe 'Get-PodeFlashMessage' {
     It 'Throws error because sessions are not configured' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Get-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage '*Sessions are required*'
+        { Get-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
     }
 
     It 'Throws error for no key supplied' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Get-PodeFlashMessage -Name '' } | Should -Throw -ExpectedMessage '*empty string*'
+        { Get-PodeFlashMessage -Name '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Get-PodeFlashMessage'
     }
 
     It 'Returns empty array on key that does not exist' {
@@ -157,7 +157,7 @@ Describe 'Get-PodeFlashMessage' {
 Describe 'Get-PodeFlashMessageNames' {
     It 'Throws error because sessions are not configured' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Get-PodeFlashMessageNames } | Should -Throw -ExpectedMessage '*Sessions are required*'
+        { Get-PodeFlashMessageNames } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
     }
 
     It 'Adds two keys and then retrieves the Keys' {
@@ -192,12 +192,12 @@ Describe 'Get-PodeFlashMessageNames' {
 Describe 'Remove-PodeFlashMessage' {
     It 'Throws error because sessions are not configured' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Remove-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage '*Sessions are required*'
+        { Remove-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
     }
 
     It 'Throws error for no key supplied' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Remove-PodeFlashMessage -Name '' } | Should -Throw -ExpectedMessage '*empty string*'
+        { Remove-PodeFlashMessage -Name '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Remove-PodeFlashMessage'
     }
 
     It 'Adds two keys and then Remove one of them' {
@@ -220,12 +220,12 @@ Describe 'Remove-PodeFlashMessage' {
 Describe 'Test-PodeFlashMessage' {
     It 'Throws error because sessions are not configured' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{} } }
-        { Test-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage '*Sessions are required*'
+        { Test-PodeFlashMessage -Name 'name' } | Should -Throw -ExpectedMessage $PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage #'*Sessions are required*'
     }
 
     It 'Throws error for no key supplied' {
         $PodeContext = @{ 'Server' = @{ 'Sessions' = @{ 'Secret' = 'Key' } } }
-        { Test-PodeFlashMessage -Name '' } | Should -Throw -ExpectedMessage '*empty string*'
+        { Test-PodeFlashMessage -Name '' } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeFlashMessage'
     }
 
     It 'Adds two keys and then Tests if one of them exists' {

@@ -2,7 +2,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'Invoke-PodeHMACSHA256Hash' {
@@ -16,11 +16,11 @@ Describe 'Invoke-PodeHMACSHA256Hash' {
 Describe 'Invoke-PodeSHA256Hash' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Invoke-PodeSHA256Hash -Value $null } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeSHA256Hash -Value $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeSHA256Hash'
         }
 
         It 'Throws empty value error' {
-            { Invoke-PodeSHA256Hash -Value '' } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeSHA256Hash -Value '' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeSHA256Hash'
         }
     }
 

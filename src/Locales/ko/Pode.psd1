@@ -110,7 +110,7 @@
     noSecretVaultRegisteredExceptionMessage                           = "이름이 '{0}'인 비밀 금고가 등록되지 않았습니다."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage       = 'RedirectTo 매개변수가 제공된 경우 엔드포인트에 이름이 필요합니다.'
     openApiLicenseObjectRequiresNameExceptionMessage                  = "OpenAPI 객체 'license'는 'name' 속성이 필요합니다. -LicenseName 매개변수를 사용하십시오."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '[{0}] {1}: 정적 경로에 대한 제공된 소스 경로가 존재하지 않습니다: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '{0}: 정적 경로에 대한 제공된 소스 경로가 존재하지 않습니다: {1}'
     noNameForWebSocketDisconnectExceptionMessage                      = '연결을 끊을 WebSocket의 이름이 제공되지 않았습니다.'
     certificateExpiredExceptionMessage                                = "인증서 '{0}'이(가) 만료되었습니다: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                 = '시크릿 금고의 잠금 해제 만료 날짜가 과거입니다 (UTC): {0}'

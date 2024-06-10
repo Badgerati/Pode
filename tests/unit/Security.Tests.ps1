@@ -1,18 +1,19 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
     $PodeContext = @{ 'Server' = $null; }
 }
 Describe 'Test-PodeIPAccess' {
     Context 'Invalid parameters' {
         It 'Throws error for invalid IP' {
-            { Test-PodeIPAccess -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ExpectedMessage '*argument is null*'
+            { Test-PodeIPAccess -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeIPAccess'
         }
     }
 }
@@ -20,7 +21,7 @@ Describe 'Test-PodeIPAccess' {
 Describe 'Test-PodeIPLimit' {
     Context 'Invalid parameters' {
         It 'Throws error for invalid IP' {
-            { Test-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ExpectedMessage '*argument is null*'
+            { Test-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeIPLimit'
         }
     }
 }
@@ -82,23 +83,23 @@ Describe 'Add-PodeAccessRule' {
 Describe 'Add-PodeIPLimit' {
     Context 'Invalid parameters' {
         It 'Throws error for invalid IP' {
-            { Add-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ExpectedMessage '*because it is an empty string*'
+            { Add-PodeIPLimit -IP $null -Limit 1 -Seconds 1 } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeIPLimit'
         }
 
         It 'Throws error for negative limit' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit -1 -Seconds 1 } | Should -Throw -ExpectedMessage '*0 or less*'
+            { Add-PodeIPLimit -IP '127.0.0.1' -Limit -1 -Seconds 1 } | Should -Throw -ExpectedMessage ($PodeLocale.limitValueCannotBeZeroOrLessExceptionMessage -f '127.0.0.1') #'*0 or less*'
         }
 
         It 'Throws error for negative seconds' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds -1 } | Should -Throw -ExpectedMessage '*0 or less*'
+            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds -1 } | Should -Throw -ExpectedMessage ($PodeLocale.secondsValueCannotBeZeroOrLessExceptionMessage -f '127.0.0.1') #'*0 or less*'
         }
 
         It 'Throws error for zero limit' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 0 -Seconds 1 } | Should -Throw -ExpectedMessage '*0 or less*'
+            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 0 -Seconds 1 } | Should -Throw -ExpectedMessage ($PodeLocale.limitValueCannotBeZeroOrLessExceptionMessage -f '127.0.0.1') #'*0 or less*'
         }
 
         It 'Throws error for zero seconds' {
-            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds 0 } | Should -Throw -ExpectedMessage '*0 or less*'
+            { Add-PodeIPLimit -IP '127.0.0.1' -Limit 1 -Seconds 0 } | Should -Throw -ExpectedMessage ($PodeLocale.secondsValueCannotBeZeroOrLessExceptionMessage -f '127.0.0.1') #'*0 or less*'
         }
     }
 
@@ -195,7 +196,7 @@ Describe 'Add-PodeIPLimit' {
 
         It 'Throws error for invalid IP' {
             $PodeContext.Server = @{ 'Limits' = @{ 'Rules' = @{}; 'Active' = @{}; } }
-            { Add-PodeIPLimit -IP '256.0.0.0' -Limit 1 -Seconds 1 } | Should -Throw -ExpectedMessage '*invalid ip address*'
+            { Add-PodeIPLimit -IP '256.0.0.0' -Limit 1 -Seconds 1 } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
         }
     }
 }
@@ -390,7 +391,7 @@ Describe 'Add-PodeIPAccess' {
 
         It 'Throws error for invalid IP' {
             $PodeContext.Server = @{ 'Access' = @{ 'Allow' = @{}; 'Deny' = @{}; } }
-            { Add-PodeIPAccess -Access 'Allow' -IP '256.0.0.0' } | Should -Throw -ExpectedMessage '*invalid ip address*'
+            { Add-PodeIPAccess -Access 'Allow' -IP '256.0.0.0' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
         }
     }
 }

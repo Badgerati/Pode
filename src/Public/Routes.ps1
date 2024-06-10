@@ -304,7 +304,7 @@ function Add-PodeRoute {
     # if middleware, scriptblock and file path are all null/empty, error
     if ((Test-PodeIsEmpty $Middleware) -and (Test-PodeIsEmpty $ScriptBlock) -and (Test-PodeIsEmpty $FilePath) -and (Test-PodeIsEmpty $Authentication)) {
         # [Method] Path: No logic passed
-        throw ($PodeLocale.noLogicPassedForMethodRouteExceptionMessage -f $Method, $Path)
+        throw ($PodeLocale.noLogicPassedForMethodRouteExceptionMessage -f ($Method -join ','), $Path)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -777,7 +777,7 @@ function Add-PodeStaticRoute {
     $Source = Get-PodeRelativePath -Path $Source -JoinRoot
     if (!(Test-PodePath -Path $Source -NoStatus)) {
         # [Method)] Path: The Source path supplied for Static Route does not exist
-        throw ($PodeLocale.sourcePathDoesNotExistForStaticRouteExceptionMessage -f $Method, $Path, $Source)
+        throw ($PodeLocale.sourcePathDoesNotExistForStaticRouteExceptionMessage -f  $Path, $Source)
     }
 
     # setup a temp drive for the path

@@ -4,7 +4,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'Get-PodeCronField' {
@@ -96,41 +96,41 @@ Describe 'Get-PodeCronFieldAlias' {
 Describe 'ConvertFrom-PodeCronExpression' {
     Context 'Invalid parameters supplied' {
         It 'Throw null expression parameter error' {
-            { ConvertFrom-PodeCronExpression -Expression $null } | Should -Throw -ExpectedMessage '*The argument is null or empty*'
+            { ConvertFrom-PodeCronExpression -Expression $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,ConvertFrom-PodeCronExpression'
         }
 
         It 'Throw empty expression parameter error' {
-            { ConvertFrom-PodeCronExpression -Expression ([string]::Empty) } | Should -Throw -ExpectedMessage '*The argument is null*'
+            { ConvertFrom-PodeCronExpression -Expression ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationError,ConvertFrom-PodeCronExpression'
         }
     }
 
     Context 'Valid schedule parameters' {
         It 'Throws error for too few number of cron atoms' {
-            { ConvertFrom-PodeCronExpression -Expression '* * *' } | Should -Throw -ExpectedMessage '*Cron expression should only consist of 5 parts*'
+            { ConvertFrom-PodeCronExpression -Expression '* * *' } | Should -Throw -ExpectedMessage ($PodeLocale.cronExpressionInvalidExceptionMessage -f '* * *') #'*Cron expression should only consist of 5 parts*'
         }
 
         It 'Throws error for too many number of cron atoms' {
-            { ConvertFrom-PodeCronExpression -Expression '* * * * * *' } | Should -Throw -ExpectedMessage '*Cron expression should only consist of 5 parts*'
+            { ConvertFrom-PodeCronExpression -Expression '* * * * * *' } | Should -Throw -ExpectedMessage ($PodeLocale.cronExpressionInvalidExceptionMessage -f '* * * * * *') #'*Cron expression should only consist of 5 parts*'
         }
 
         It 'Throws error for range atom with min>max' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 20-15 * *' } | Should -Throw -ExpectedMessage '*should not be greater than the max value*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 20-15 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.minValueGreaterThanMaxExceptionMessage -f 'DayOfMonth') #'*should not be greater than the max value*'
         }
 
         It 'Throws error for range atom with invalid min' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 0-5 * *' } | Should -Throw -ExpectedMessage '*is invalid, should be greater than/equal to*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 0-5 * *' } | Should -Throw -ExpectedMessage  ($PodeLocale.minValueInvalidExceptionMessage -f 0,'DayOfMonth',1) # '*is invalid, should be greater than/equal to*'
         }
 
         It 'Throws error for range atom with invalid max' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 1-32 * *' } | Should -Throw -ExpectedMessage '*is invalid, should be less than/equal to*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 1-32 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.maxValueInvalidExceptionMessage -f 32,'DayOfMonth',31) #'*is invalid, should be less than/equal to*'
         }
 
         It 'Throws error for atom with invalid min' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 0 * *' } | Should -Throw -ExpectedMessage '*invalid, should be between*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 0 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.valueOutOfRangeExceptionMessage -f '','DayOfMonth',1,31) # '*invalid, should be between*'
         }
 
         It 'Throws error for atom with invalid max' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 32 * *' } | Should -Throw -ExpectedMessage '*invalid, should be between*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 32 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.valueOutOfRangeExceptionMessage -f '','DayOfMonth',1,31)#'*invalid, should be between*'
         }
 
 

@@ -4,7 +4,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
     $PodeContext = @{ 'Server' = $null; }
 }
 
@@ -22,7 +22,7 @@ Describe 'Get-PodeConfig' {
 Describe 'Add-PodeEndpoint' {
     Context 'Invalid parameters supplied' {
         It 'Throw invalid type error for no protocol' {
-            { Add-PodeEndpoint -Address '127.0.0.1' -Protocol 'MOO' } | Should -Throw -ExpectedMessage "Cannot validate argument on parameter 'Protocol'*"
+            { Add-PodeEndpoint -Address '127.0.0.1' -Protocol 'MOO' } | Should -Throw  -ErrorId 'ParameterArgumentValidationError,Add-PodeEndpoint'
         }
     }
 
@@ -226,7 +226,7 @@ Describe 'Add-PodeEndpoint' {
 
         It 'Throws error for an invalid IPv4' {
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
-            { Add-PodeEndpoint -Address '256.0.0.1' -Protocol 'HTTP' } | Should -Throw -ExpectedMessage '*Invalid IP Address*'
+            { Add-PodeEndpoint -Address '256.0.0.1' -Protocol 'HTTP' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
 
             $PodeContext.Server.Types | Should -Be $null
             $PodeContext.Server.Endpoints.Count | Should -Be 0
@@ -234,7 +234,7 @@ Describe 'Add-PodeEndpoint' {
 
         It 'Throws error for an invalid IPv4 address with port' {
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
-            { Add-PodeEndpoint -Address '256.0.0.1' -Port 80 -Protocol 'HTTP' } | Should -Throw -ExpectedMessage '*Invalid IP Address*'
+            { Add-PodeEndpoint -Address '256.0.0.1' -Port 80 -Protocol 'HTTP' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
 
             $PodeContext.Server.Types | Should -Be $null
             $PodeContext.Server.Endpoints.Count | Should -Be 0
@@ -327,7 +327,7 @@ Describe 'Add-PodeEndpoint' {
         It 'Throws error when adding two endpoints with the same name' {
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
             Add-PodeEndpoint -Address '127.0.0.1' -Port 80 -Protocol 'HTTP' -Name 'Example'
-            { Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -Name 'Example' } | Should -Throw -ExpectedMessage '*already been defined*'
+            { Add-PodeEndpoint -Address 'pode.foo.com' -Port 80 -Protocol 'HTTP' -Name 'Example' } | Should -Throw -ExpectedMessage ($PodeLocale.endpointAlreadyDefinedExceptionMessage -f 'Example') #'*already been defined*'
         }
 
         It 'Add two endpoints to listen on, one of SMTP and one of SMTPS' {
@@ -373,7 +373,7 @@ Describe 'Add-PodeEndpoint' {
         It 'Throws an error for not running as admin' {
             Mock Test-PodeIsAdminUser { return $false }
             $PodeContext.Server = @{ Endpoints = @{}; EndpointsMap = @{}; 'Type' = $null }
-            { Add-PodeEndpoint -Address '127.0.0.2' -Protocol 'HTTP' } | Should -Throw -ExpectedMessage '*Must be running with admin*'
+            { Add-PodeEndpoint -Address '127.0.0.2' -Protocol 'HTTP' } | Should -Throw -ExpectedMessage $PodeLocale.mustBeRunningWithAdminPrivilegesExceptionMessage #'*Must be running with admin*'
         }
     }
 }
@@ -502,19 +502,19 @@ Describe 'Get-PodeEndpoint' {
 Describe 'Import-PodeModule' {
     Context 'Invalid parameters supplied' {
         It 'Throw null path parameter error' {
-            { Import-PodeModule -Path $null } | Should -Throw -ExpectedMessage '*it is an empty string*'
+            { Import-PodeModule -Path $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Import-PodeModule'
         }
 
         It 'Throw empty path parameter error' {
-            { Import-PodeModule -Path ([string]::Empty) } | Should -Throw -ExpectedMessage '*it is an empty string*'
+            { Import-PodeModule -Path ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Import-PodeModule'
         }
 
         It 'Throw null name parameter error' {
-            { Import-PodeModule -Name $null } | Should -Throw -ExpectedMessage '*it is an empty string*'
+            { Import-PodeModule -Name $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Import-PodeModule'
         }
 
         It 'Throw empty name parameter error' {
-            { Import-PodeModule -Name ([string]::Empty) } | Should -Throw -ExpectedMessage '*it is an empty string*'
+            { Import-PodeModule -Name ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Import-PodeModule'
         }
     }
 

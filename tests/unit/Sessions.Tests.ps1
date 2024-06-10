@@ -5,7 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -UICulture 'en-us' -FileName 'Pode'
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
     $now = [datetime]::UtcNow
 }
@@ -21,7 +21,7 @@ Describe 'Get-PodeSession' {
                 }
             }
 
-            { Get-PodeSession } | Should -Throw -ExpectedMessage '*because it is an empty string*'
+            { Get-PodeSession } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeCookieSigned'
         }
 
         It 'Throws an empry string value error' {
@@ -33,7 +33,7 @@ Describe 'Get-PodeSession' {
                 }
             }
 
-            { Get-PodeSession } | Should -Throw -ExpectedMessage '*because it is an empty string*'
+            { Get-PodeSession } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeCookieSigned'
         }
     }
 
@@ -109,7 +109,7 @@ Describe 'Get-PodeSession' {
 Describe 'Set-PodeSessionDataHash' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Set-PodeSessionDataHash } | Should -Throw -ExpectedMessage '*No session available*'
+            { Set-PodeSessionDataHash } | Should -Throw -ExpectedMessage $PodeLocale.noSessionToCalculateDataHashExceptionMessage #'*No session available*'
         }
     }
 

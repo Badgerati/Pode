@@ -110,7 +110,7 @@
     noSecretVaultRegisteredExceptionMessage                           = "Nie zarejestrowano Skarbca Tajemnic o nazwie '{0}'."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage       = 'Nazwa jest wymagana dla punktu końcowego, jeśli podano parametr RedirectTo.'
     openApiLicenseObjectRequiresNameExceptionMessage                  = "Obiekt OpenAPI 'license' wymaga właściwości 'name'. Użyj parametru -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '[{0}] {1}: Dostarczona ścieżka źródłowa dla trasy statycznej nie istnieje: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '{0}: Dostarczona ścieżka źródłowa dla trasy statycznej nie istnieje: {1}'
     noNameForWebSocketDisconnectExceptionMessage                      = 'Nie podano nazwy dla rozłączenia WebSocket.'
     certificateExpiredExceptionMessage                                = "Certyfikat '{0}' wygasł: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                 = 'Data wygaśnięcia odblokowania Skarbca tajemnic jest w przeszłości (UTC): {0}'

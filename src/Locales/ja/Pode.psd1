@@ -110,7 +110,7 @@
     noSecretVaultRegisteredExceptionMessage                           = "名前 '{0}' のシークレットボールトは登録されていません。"
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage       = 'RedirectToパラメーターが提供されている場合、エンドポイントには名前が必要です。'
     openApiLicenseObjectRequiresNameExceptionMessage                  = "OpenAPI オブジェクト 'license' には 'name' プロパティが必要です。-LicenseName パラメータを使用してください。"
-    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '[{0}] {1}: 静的ルートに対して提供されたソースパスが存在しません: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '{0}: 静的ルートに対して提供されたソースパスが存在しません: {1}'
     noNameForWebSocketDisconnectExceptionMessage                      = '切断する WebSocket の名前が指定されていません。'
     certificateExpiredExceptionMessage                                = "証明書 '{0}' の有効期限が切れています: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                 = 'シークレットボールトのアンロック有効期限が過去に設定されています (UTC) :{0}'

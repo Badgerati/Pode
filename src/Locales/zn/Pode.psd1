@@ -110,7 +110,7 @@
     noSecretVaultRegisteredExceptionMessage                           = "未注册名为 '{0}' 的秘密保险库。"
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage       = '如果提供了RedirectTo参数, 则需要为端点指定名称。'
     openApiLicenseObjectRequiresNameExceptionMessage                  = "OpenAPI 对象 'license' 需要属性 'name'。请使用 -LicenseName 参数。"
-    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '[{0}] {1}: 为静态路径提供的源路径不存在: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '{0}: 为静态路径提供的源路径不存在: {1}'
     noNameForWebSocketDisconnectExceptionMessage                      = '没有提供断开连接的 WebSocket 的名称。'
     certificateExpiredExceptionMessage                                = "证书 '{0}' 已过期: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                 = '秘密保险库的解锁到期日期已过 (UTC) :{0}'

@@ -110,7 +110,7 @@
     noSecretVaultRegisteredExceptionMessage                           = "لم يتم تسجيل خزينة سرية بالاسم '{0}'."
     nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage       = 'مطلوب اسم لنقطة النهاية إذا تم توفير معامل RedirectTo.'
     openApiLicenseObjectRequiresNameExceptionMessage                  = "يتطلب كائن OpenAPI 'license' الخاصية 'name'. استخدم المعامل -LicenseName."
-    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '[{0}] {1}: مسار المصدر المقدم للمسار الثابت غير موجود: {2}'
+    sourcePathDoesNotExistForStaticRouteExceptionMessage              = '{0}: مسار المصدر المقدم للمسار الثابت غير موجود: {1}'
     noNameForWebSocketDisconnectExceptionMessage                      = 'لا يوجد اسم لفصل WebSocket من المزود.'
     certificateExpiredExceptionMessage                                = "الشهادة '{0}' منتهية الصلاحية: {1}"
     secretVaultUnlockExpiryDateInPastExceptionMessage                 = 'تاريخ انتهاء صلاحية فتح مخزن الأسرار في الماضي (UTC): {0}'
