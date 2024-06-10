@@ -226,7 +226,7 @@ function Enable-PodeOpenApi {
         }
         else {
             # Schema validation required PowerShell version 6.1.0 or greater
-            throw $PodeLocale.schemaValidationRequiresPowerShell610ExceptionMessage
+            throw ($PodeLocale.schemaValidationRequiresPowerShell610ExceptionMessage)
         }
     }
 
@@ -270,7 +270,7 @@ function Enable-PodeOpenApi {
             return
         }
 
-        if (($mode -ieq 'download')  ) {
+        if ($mode -ieq 'download') {
             # Set-PodeResponseAttachment -Path
             Add-PodeHeader -Name 'Content-Disposition' -Value "attachment; filename=openapi.$format"
         }
@@ -357,7 +357,7 @@ Add-PodeOAServerEndpoint -Url "https://{username}.gigantic-server.com:{port}/{ba
             description = 'this value is assigned by the service provider, in this example gigantic-server.com'
         }
         port = @{
-            enum = @('System.Object[]')  # Assuming 'System.Object[]' is a placeholder for actual values
+            enum = @('System.Object[]') # Assuming 'System.Object[]' is a placeholder for actual values
             default = 8443
         }
         basePath = @{
@@ -617,7 +617,7 @@ function Add-PodeOAResponse {
 
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
-        throw $PodeLocale.routeParameterCannotBeNullExceptionMessage
+        throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
     }
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
@@ -693,7 +693,7 @@ function Remove-PodeOAResponse {
 
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
-        throw $PodeLocale.routeParameterCannotBeNullExceptionMessage
+        throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
     }
 
     # override status code with default
@@ -757,7 +757,7 @@ function Set-PodeOARequest {
 
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
-        throw $PodeLocale.routeParameterCannotBeNullExceptionMessage
+        throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
     }
 
     foreach ($r in @($Route)) {
@@ -936,7 +936,7 @@ function New-PodeOARequestBody {
             }
             else {
                 # The encoding attribute only applies to multipart and application/x-www-form-urlencoded request bodies
-                throw $PodeLocale.encodingAttributeOnlyAppliesToMultipartExceptionMessage
+                throw ($PodeLocale.encodingAttributeOnlyAppliesToMultipartExceptionMessage)
             }
         }
         $result[$tag] = $param
@@ -1001,7 +1001,7 @@ function Test-PodeOAJsonSchemaCompliance {
 
     if (!$PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaValidation) {
         # 'Test-PodeOAComponentchema' need to be enabled using 'Enable-PodeOpenApi -EnableSchemaValidation'
-        throw $PodeLocale.testPodeOAComponentSchemaNeedToBeEnabledExceptionMessage
+        throw ($PodeLocale.testPodeOAComponentSchemaNeedToBeEnabledExceptionMessage)
     }
     if (!(Test-PodeOAComponentSchemaJson -Name $SchemaReference -DefinitionTag $DefinitionTag)) {
         # The OpenApi component schema doesn't exist
@@ -1320,7 +1320,7 @@ function ConvertTo-PodeOAParameter {
             }
             else {
                 # The OpenApi parameter requires a name to be specified
-                throw $PodeLocale.openApiParameterRequiresNameExceptionMessage
+                throw ($PodeLocale.openApiParameterRequiresNameExceptionMessage)
             }
         }
         if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders -and $Name ) {
@@ -1467,7 +1467,7 @@ function ConvertTo-PodeOAParameter {
 
     if ($In -ieq 'Path' -and !$prop.required ) {
         # If the parameter location is 'Path', the switch parameter 'Required' is mandatory
-        throw $PodeLocale.pathParameterRequiresRequiredSwitchExceptionMessage
+        throw ($PodeLocale.pathParameterRequiresRequiredSwitchExceptionMessage)
     }
 
     return $prop
@@ -1549,7 +1549,7 @@ function Set-PodeOARouteInfo {
 
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
-        throw $PodeLocale.routeParameterCannotBeNullExceptionMessage
+        throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
     }
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
@@ -1763,7 +1763,7 @@ function Enable-PodeOAViewer {
         }
         if (Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag) {
             # This version on Swagger-Editor doesn't support OpenAPI 3.1
-            throw $PodeLocale.swaggerEditorDoesNotSupportOpenApi31ExceptionMessage
+            throw ($PodeLocale.swaggerEditorDoesNotSupportOpenApi31ExceptionMessage)
         }
         # setup meta info
         $meta = @{
@@ -1838,7 +1838,7 @@ function Enable-PodeOAViewer {
     else {
         if ($Type -ieq 'RapiPdf' -and (Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag)) {
             # The Document tool RapidPdf doesn't support OpenAPI 3.1
-            throw $PodeLocale.rapidPdfDoesNotSupportOpenApi31ExceptionMessage
+            throw ($PodeLocale.rapidPdfDoesNotSupportOpenApi31ExceptionMessage)
         }
         # set a default path
         $Path = Protect-PodeValue -Value $Path -Default "/$($Type.ToLowerInvariant())"
@@ -2149,7 +2149,7 @@ function Add-PodeOAInfo {
         }
         else {
             # The OpenAPI object 'license' required the property 'name'. Use -LicenseName parameter.
-            throw $PodeLocale.openApiLicenseObjectRequiresNameExceptionMessage
+            throw ($PodeLocale.openApiLicenseObjectRequiresNameExceptionMessage)
         }
     }
 
@@ -2322,7 +2322,7 @@ function New-PodeOAExample {
             }
             else {
                 # Parameters 'Value' or 'ExternalValue' are mandatory
-                throw $PodeLocale.parametersValueOrExternalValueMandatoryExceptionMessage
+                throw ($PodeLocale.parametersValueOrExternalValueMandatoryExceptionMessage)
             }
         }
         $param = [ordered]@{}
@@ -2576,7 +2576,7 @@ function Add-PodeOACallBack {
 
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
-        throw $PodeLocale.routeParameterCannotBeNullExceptionMessage
+        throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
     }
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
@@ -3201,7 +3201,7 @@ function Add-PodeOAExternalRoute {
         'pipeline' {
             if ($null -eq $Route) {
                 # The parameter 'Route' cannot be null
-                throw $PodeLocale.routeParameterCannotBeNullExceptionMessage
+                throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
             }
             foreach ($r in @($Route)) {
                 $r.OpenApi.Servers = $Servers
@@ -3346,7 +3346,7 @@ function Add-PodeOAWebhook {
     foreach ($tag in $DefinitionTag) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $tag ) {
             # The Webhooks feature is not supported in OpenAPI v3.0.x
-            throw $PodeLocale.webhooksFeatureNotSupportedInOpenApi30ExceptionMessage
+            throw ($PodeLocale.webhooksFeatureNotSupportedInOpenApi30ExceptionMessage)
         }
         $PodeContext.Server.OpenAPI.Definitions[$tag].webhooks[$Name] = $refRoute
     }
@@ -3404,7 +3404,7 @@ function Select-PodeOADefinition {
 
     if (Test-PodeIsEmpty $Scriptblock) {
         # No ScriptBlock supplied
-        throw $PodeLocale.noScriptBlockSuppliedExceptionMessage
+        throw ($PodeLocale.noScriptBlockSuppliedExceptionMessage)
     }
     if (Test-PodeIsEmpty -Value $Tag) {
         $Tag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag

@@ -135,7 +135,7 @@ function New-PodeLoggingMethod {
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the Custom logging output method
-                    throw $PodeLocale.nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage
+                    throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage)
                 }
 
                 return $true
@@ -191,7 +191,7 @@ function New-PodeLoggingMethod {
             # only windows
             if (!(Test-PodeIsWindows)) {
                 # Event Viewer logging only supported on Windows
-                throw $PodeLocale.eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage
+                throw ($PodeLocale.eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage)
             }
 
             # create source
@@ -265,7 +265,7 @@ function Enable-PodeRequestLogging {
     # error if it's already enabled
     if ($PodeContext.Server.Logging.Types.Contains($name)) {
         # Request Logging has already been enabled
-        throw $PodeLocale.requestLoggingAlreadyEnabledExceptionMessage
+        throw ($PodeLocale.requestLoggingAlreadyEnabledExceptionMessage)
     }
 
     # ensure the Method contains a scriptblock
@@ -350,7 +350,7 @@ function Enable-PodeErrorLogging {
     # error if it's already enabled
     if ($PodeContext.Server.Logging.Types.Contains($name)) {
         # Error Logging has already been enabled
-        throw $PodeLocale.errorLoggingAlreadyEnabledExceptionMessage
+        throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
     }
 
     # ensure the Method contains a scriptblock
@@ -429,7 +429,7 @@ function Add-PodeLogger {
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the logging method
-                    throw $PodeLocale.nonEmptyScriptBlockRequiredForLoggingMethodExceptionMessage
+                    throw ($PodeLocale.nonEmptyScriptBlockRequiredForLoggingMethodExceptionMessage)
                 }
 
                 return $true

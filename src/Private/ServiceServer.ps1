@@ -2,7 +2,7 @@ function Start-PodeServiceServer {
     # ensure we have service handlers
     if (Test-PodeIsEmpty (Get-PodeHandler -Type Service)) {
         # No Service handlers have been defined
-        throw $PodeLocale.noServiceHandlersDefinedExceptionMessage
+        throw ($PodeLocale.noServiceHandlersDefinedExceptionMessage)
     }
 
     # state we're running

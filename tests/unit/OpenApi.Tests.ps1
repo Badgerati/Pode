@@ -2093,7 +2093,7 @@ Describe 'OpenApi' {
             It 'AllOf and ObjectDefinitions not an object' {
                 { Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                     ((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name'))
-                    ) } | Should  -Throw -ExpectedMessage ($PodeLocale.propertiesTypeObjectAssociationExceptionMessage -f 'allOf')  # Only properties of type Object can be associated with allOf
+                    ) } | Should  -Throw -ExpectedMessage ($PodeLocale.propertiesTypeObjectAssociationExceptionMessage -f 'allOf') # Only properties of type Object can be associated with allOf
             }
 
         }

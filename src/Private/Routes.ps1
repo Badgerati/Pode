@@ -683,7 +683,7 @@ function ConvertTo-PodeMiddleware {
         if ($mid -is [hashtable]) {
             if ($null -eq $mid.Logic) {
                 # A Hashtable Middleware supplied has no Logic defined
-                throw $PodeLocale.hashtableMiddlewareNoLogicExceptionMessage
+                throw ($PodeLocale.hashtableMiddlewareNoLogicExceptionMessage)
             }
 
             if ($mid.Logic -isnot [scriptblock]) {

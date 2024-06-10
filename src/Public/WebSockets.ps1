@@ -176,7 +176,7 @@ function Disconnect-PodeWebSocket {
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
         # No Name for a WebSocket to disconnect from supplied
-        throw $PodeLocale.noNameForWebSocketDisconnectExceptionMessage
+        throw ($PodeLocale.noNameForWebSocketDisconnectExceptionMessage)
     }
 
     if (Test-PodeWebSocket -Name $Name) {
@@ -211,8 +211,7 @@ function Remove-PodeWebSocket {
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
         # No Name for a WebSocket to remove supplied
-        throw $PodeLocale.noNameForWebSocketRemoveExceptionMessage
-
+        throw ($PodeLocale.noNameForWebSocketRemoveExceptionMessage)
     }
 
     $PodeContext.Server.WebSockets.Receiver.RemoveWebSocket($Name)
@@ -269,7 +268,7 @@ function Send-PodeWebSocket {
     # do we have a name?
     if ([string]::IsNullOrWhiteSpace($Name)) {
         # No Name for a WebSocket to send message to supplied
-        throw $PodeLocale.noNameForWebSocketSendMessageExceptionMessage
+        throw ($PodeLocale.noNameForWebSocketSendMessageExceptionMessage)
     }
 
     # do the socket exist?
@@ -325,7 +324,7 @@ function Reset-PodeWebSocket {
 
     if ([string]::IsNullOrWhiteSpace($Name)) {
         # No Name for a WebSocket to reset supplied
-        throw $PodeLocale.noNameForWebSocketResetExceptionMessage
+        throw ($PodeLocale.noNameForWebSocketResetExceptionMessage)
     }
 
     if (Test-PodeWebSocket -Name $Name) {

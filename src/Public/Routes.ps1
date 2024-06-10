@@ -285,7 +285,7 @@ function Add-PodeRoute {
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
         # No Path supplied for the Route
-        throw $PodeLocale.noPathSuppliedForRouteExceptionMessage
+        throw ($PodeLocale.noPathSuppliedForRouteExceptionMessage)
     }
 
     # ensure the route has appropriate slashes
@@ -322,7 +322,7 @@ function Add-PodeRoute {
     if (![string]::IsNullOrWhiteSpace($Access)) {
         if ([string]::IsNullOrWhiteSpace($Authentication)) {
             # Access requires Authentication to be supplied on Routes
-            throw $PodeLocale.accessRequiresAuthenticationOnRoutesExceptionMessage
+            throw ($PodeLocale.accessRequiresAuthenticationOnRoutesExceptionMessage)
         }
 
         if (!(Test-PodeAccessExists -Name $Access)) {
@@ -736,7 +736,7 @@ function Add-PodeStaticRoute {
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
         # No Path supplied for the Route.
-        throw $PodeLocale.noPathSuppliedForRouteExceptionMessage
+        throw ($PodeLocale.noPathSuppliedForRouteExceptionMessage)
     }
 
     # ensure the route has appropriate slashes
@@ -777,7 +777,7 @@ function Add-PodeStaticRoute {
     $Source = Get-PodeRelativePath -Path $Source -JoinRoot
     if (!(Test-PodePath -Path $Source -NoStatus)) {
         # [Method)] Path: The Source path supplied for Static Route does not exist
-        throw ($PodeLocale.sourcePathDoesNotExistForStaticRouteExceptionMessage -f  $Path, $Source)
+        throw ($PodeLocale.sourcePathDoesNotExistForStaticRouteExceptionMessage -f $Path, $Source)
     }
 
     # setup a temp drive for the path
@@ -799,7 +799,7 @@ function Add-PodeStaticRoute {
     if (![string]::IsNullOrWhiteSpace($Access)) {
         if ([string]::IsNullOrWhiteSpace($Authentication)) {
             # Access requires Authentication to be supplied on Routes
-            throw $PodeLocale.accessRequiresAuthenticationOnRoutesExceptionMessage
+            throw ($PodeLocale.accessRequiresAuthenticationOnRoutesExceptionMessage)
         }
 
         if (!(Test-PodeAccessExists -Name $Access)) {
@@ -818,7 +818,7 @@ function Add-PodeStaticRoute {
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
         if (!(Test-PodeAuthExists -Name $Authentication)) {
             # Authentication method does not exist
-            throw $PodeLocale.authenticationMethodDoesNotExistExceptionMessage
+            throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage)
         }
 
         $options = @{
@@ -1180,7 +1180,7 @@ function Add-PodeRouteGroup {
 
     if (Test-PodeIsEmpty $Routes) {
         # The Route parameter needs a valid, not empty, scriptblock
-        throw $PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage
+        throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
     }
 
     if ($Path -eq '/') {
@@ -1438,7 +1438,7 @@ function Add-PodeStaticRouteGroup {
 
     if (Test-PodeIsEmpty $Routes) {
         # The Route parameter needs a valid, not empty, scriptblock
-        throw $PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage
+        throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
     }
 
     if ($Path -eq '/') {
@@ -1606,7 +1606,7 @@ function Add-PodeSignalRouteGroup {
 
     if (Test-PodeIsEmpty $Routes) {
         # The Route parameter needs a valid, not empty, scriptblock
-        throw $PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage
+        throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
     }
 
     if ($Path -eq '/') {
@@ -2025,7 +2025,7 @@ function ConvertTo-PodeRoute {
     # if there are no commands, fail
     if (Test-PodeIsEmpty $Commands) {
         # No commands supplied to convert to Routes
-        throw $PodeLocale.noCommandsSuppliedToConvertToRoutesExceptionMessage
+        throw ($PodeLocale.noCommandsSuppliedToConvertToRoutesExceptionMessage)
     }
 
     # trim end trailing slashes from the path
@@ -2272,7 +2272,7 @@ function Add-PodePage {
         'scriptblock' {
             if (Test-PodeIsEmpty $ScriptBlock) {
                 # A non-empty ScriptBlock is required to create a Page Route
-                throw $PodeLocale.nonEmptyScriptBlockRequiredForPageRouteExceptionMessage
+                throw ($PodeLocale.nonEmptyScriptBlockRequiredForPageRouteExceptionMessage)
             }
 
             $arg = @($ScriptBlock, $Data)
@@ -2670,7 +2670,7 @@ function Test-PodeRoute {
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
         # No Path supplied for the Route
-        throw $PodeLocale.noPathSuppliedForRouteExceptionMessage
+        throw ($PodeLocale.noPathSuppliedForRouteExceptionMessage)
     }
 
     # ensure the route has appropriate slashes
@@ -2724,7 +2724,7 @@ function Test-PodeStaticRoute {
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
         # No Path supplied for the Route
-        throw $PodeLocale.noPathSuppliedForRouteExceptionMessage
+        throw ($PodeLocale.noPathSuppliedForRouteExceptionMessage)
     }
 
     # ensure the route has appropriate slashes

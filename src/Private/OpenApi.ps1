@@ -182,7 +182,7 @@ function ConvertTo-PodeOAObjectSchema {
                 }
                 else {
                     # The Properties parameters cannot be used if the Property has no name
-                    Throw $PodeLocale.propertiesParameterWithoutNameExceptionMessage
+                    throw ($PodeLocale.propertiesParameterWithoutNameExceptionMessage)
                 }
             }
             else {
@@ -400,7 +400,7 @@ function ConvertTo-PodeOASchemaProperty {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
             if ($Property.type -is [string[]]) {
                 # Multi type properties requeired OpenApi Version 3.1 or above
-                throw $PodeLocale.multiTypePropertiesRequireOpenApi31ExceptionMessage
+                throw ($PodeLocale.multiTypePropertiesRequireOpenApi31ExceptionMessage)
             }
             $schema['type'] = $Property.type.ToLower()
         }
@@ -834,7 +834,7 @@ function Get-PodeOpenApiDefinitionInternal {
 
     if (!$Definition.Version) {
         # OpenApi Version property is mandatory
-        throw $PodeLocale.openApiVersionPropertyMandatoryExceptionMessage
+        throw ($PodeLocale.openApiVersionPropertyMandatoryExceptionMessage)
     }
     $localEndpoint = $null
     # set the openapi version
@@ -891,7 +891,7 @@ function Get-PodeOpenApiDefinitionInternal {
     if ($Definition.webhooks.count -gt 0) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag) {
             # Webhooks feature is unsupported in OpenAPI v3.0.x
-            throw $PodeLocale.webhooksFeatureNotSupportedInOpenApi30ExceptionMessage
+            throw ($PodeLocale.webhooksFeatureNotSupportedInOpenApi30ExceptionMessage)
         }
         else {
             $keys = [string[]]$Definition.webhooks.Keys
@@ -939,7 +939,7 @@ function Get-PodeOpenApiDefinitionInternal {
     if ($components.pathItems.count -gt 0) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag) {
             # Feature pathItems is unsupported in OpenAPI v3.0.x
-            throw $PodeLocale.pathItemsFeatureNotSupportedInOpenApi30ExceptionMessage
+            throw ($PodeLocale.pathItemsFeatureNotSupportedInOpenApi30ExceptionMessage)
         }
         else {
             $keys = [string[]]$components.pathItems.Keys
@@ -1540,7 +1540,7 @@ function Resolve-PodeOAReference {
                                 }
                                 else {
                                     # Unsupported object
-                                    throw $PodeLocale.unsupportedObjectExceptionMessage
+                                    throw ($PodeLocale.unsupportedObjectExceptionMessage)
                                 }
                             }
                         }
@@ -1557,12 +1557,12 @@ function Resolve-PodeOAReference {
                     'oneof' {
                         # Throw an error for unsupported schema constructs to notify the user
                         # Validation of schema with oneof is not supported
-                        throw $PodeLocale.validationOfOneOfSchemaNotSupportedExceptionMessage
+                        throw ($PodeLocale.validationOfOneOfSchemaNotSupportedExceptionMessage)
                     }
                     'anyof' {
                         # Throw an error for unsupported schema constructs to notify the user
                         # Validation of schema with anyof is not supported
-                        throw $PodeLocale.validationOfAnyOfSchemaNotSupportedExceptionMessage
+                        throw ($PodeLocale.validationOfAnyOfSchemaNotSupportedExceptionMessage)
                     }
                 }
             }
@@ -1648,7 +1648,7 @@ function New-PodeOAPropertyInternal {
         }
         else {
             # Cannot create the property no type is defined
-            throw $PodeLocale.cannotCreatePropertyWithoutTypeExceptionMessage
+            throw ($PodeLocale.cannotCreatePropertyWithoutTypeExceptionMessage)
         }
     }
 
@@ -1792,7 +1792,7 @@ function ConvertTo-PodeOAHeaderProperty {
         }
         else {
             # Header requires a name when used in an encoding context
-            throw $PodeLocale.headerMustHaveNameInEncodingContextExceptionMessage
+            throw ($PodeLocale.headerMustHaveNameInEncodingContextExceptionMessage)
         }
     }
 
@@ -1908,7 +1908,7 @@ function New-PodeOResponseInternal {
         }
         else {
             # A Description is required
-            throw $PodeLocale.descriptionRequiredExceptionMessage
+            throw ($PodeLocale.descriptionRequiredExceptionMessage)
         }
     }
     else {
@@ -2085,7 +2085,7 @@ function Test-PodeOADefinitionInternal {
 
         # Throw an error indicating non-compliance with OpenAPI standards
         # OpenAPI document compliance issues
-        throw $PodeLocale.openApiDocumentNotCompliantExceptionMessage
+        throw ($PodeLocale.openApiDocumentNotCompliantExceptionMessage)
     }
 }
 

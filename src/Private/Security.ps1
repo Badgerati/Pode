@@ -875,7 +875,7 @@ function Find-PodeCertificateInCertStore {
     # fail if not windows
     if (!(Test-PodeIsWindows)) {
         # Certificate Thumbprints/Name are only supported on Windows
-        throw $PodeLocale.certificateThumbprintsNameSupportedOnWindowsExceptionMessage
+        throw ($PodeLocale.certificateThumbprintsNameSupportedOnWindowsExceptionMessage)
     }
 
     # open the currentuser\my store

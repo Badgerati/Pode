@@ -2,7 +2,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 BeforeAll {
-    Add-Type -AssemblyName "System.Net.Http"
+    Add-Type -AssemblyName "System.Net.Http" -ErrorAction SilentlyContinue
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
@@ -1644,7 +1644,7 @@ Describe 'New-PodeCron' {
     }
 
     It 'Throws an error for multiple Hours when using Interval' {
-        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should -Throw -ExpectedMessage ($PodeLocale.singleValueForIntervalExceptionMessage -f 'Hour')  #'*only supply a single*'
+        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should -Throw -ExpectedMessage ($PodeLocale.singleValueForIntervalExceptionMessage -f 'Hour') #'*only supply a single*'
     }
 
     It 'Throws an error for multiple Minutes when using Interval' {

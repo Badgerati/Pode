@@ -143,7 +143,7 @@ function New-PodeCsrfToken {
     # fail if the csrf logic hasn't been initialised
     if (!(Test-PodeCsrfConfigured)) {
         # CSRF Middleware has not been initialized
-        throw $PodeLocale.csrfMiddlewareNotInitializedExceptionMessage
+        throw ($PodeLocale.csrfMiddlewareNotInitializedExceptionMessage)
     }
 
     # generate a new secret and salt
@@ -173,7 +173,7 @@ function Get-PodeCsrfMiddleware {
     # fail if the csrf logic hasn't been initialised
     if (!(Test-PodeCsrfConfigured)) {
         # CSRF Middleware has not been initialized
-        throw $PodeLocale.csrfMiddlewareNotInitializedExceptionMessage
+        throw ($PodeLocale.csrfMiddlewareNotInitializedExceptionMessage)
     }
 
     # return scriptblock for the csrf route middleware to test tokens
@@ -242,7 +242,7 @@ function Initialize-PodeCsrf {
     # if sessions haven't been setup and we're not using cookies, error
     if (!$UseCookies -and !(Test-PodeSessionsEnabled)) {
         # Sessions are required to use CSRF unless you want to use cookies
-        throw $PodeLocale.sessionsRequiredForCsrfExceptionMessage
+        throw ($PodeLocale.sessionsRequiredForCsrfExceptionMessage)
     }
 
     # if we're using cookies, ensure a global secret exists
@@ -251,7 +251,7 @@ function Initialize-PodeCsrf {
 
         if (Test-PodeIsEmpty $Secret) {
             # When using cookies for CSRF, a Secret is required
-            throw $PodeLocale.csrfCookieRequiresSecretExceptionMessage
+            throw ($PodeLocale.csrfCookieRequiresSecretExceptionMessage)
         }
     }
 
@@ -484,7 +484,7 @@ function Add-PodeMiddleware {
     # ensure we have a script to run
     if (Test-PodeIsEmpty $InputObject.Logic) {
         # [Middleware]: No logic supplied in ScriptBlock
-        throw $PodeLocale.middlewareNoLogicSuppliedExceptionMessage
+        throw ($PodeLocale.middlewareNoLogicSuppliedExceptionMessage)
     }
 
     # set name, and override route/args

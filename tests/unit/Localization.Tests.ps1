@@ -62,7 +62,7 @@ Describe 'Localization Check' {
             $global:content.Keys.Count | Should -be $PodeLocale.Count
         }
 
-        It -ForEach ( $LanguageOfReference.Keys) -Name 'Resource File contain <_>' {
+        It -ForEach ( $LanguageOfReference.Keys) -Name 'Resource File contains <_>' {
             foreach ($key in  $PodeLocale.Keys) {
                 $global:content.Keys -contains $_ | Should -BeTrue
             }

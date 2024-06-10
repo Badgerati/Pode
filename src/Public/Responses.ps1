@@ -1592,8 +1592,8 @@ function Use-PodePartialView {
 
     # test the file path, and set status accordingly
     if (!(Test-PodePath $Path -NoStatus)) {
-         # The Views path does not exist
-         throw ($PodeLocale.viewsPathDoesNotExistExceptionMessage -f $Path)
+        # The Views path does not exist
+        throw ($PodeLocale.viewsPathDoesNotExistExceptionMessage -f $Path)
     }
 
     # run any engine logic
@@ -1660,7 +1660,7 @@ function Send-PodeSignal {
     # error if not configured
     if (!$PodeContext.Server.Signals.Enabled) {
         # WebSockets have not been configured to send signal messages
-        throw $PodeLocale.websocketsNotConfiguredForSignalMessagesExceptionMessage
+        throw ($PodeLocale.websocketsNotConfiguredForSignalMessagesExceptionMessage)
     }
 
     # do nothing if no value

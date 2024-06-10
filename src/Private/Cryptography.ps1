@@ -54,7 +54,7 @@ function Invoke-PodeHMACSHA256Hash {
     # Validate secret length
     if ($SecretBytes.Length -eq 0) {
         # No secret supplied for HMAC256 hash
-        throw $PodeLocale.noSecretForHmac256ExceptionMessage
+        throw ($PodeLocale.noSecretForHmac256ExceptionMessage)
     }
 
     # Compute HMAC-SHA384 hash
@@ -119,7 +119,7 @@ function Invoke-PodeHMACSHA384Hash {
     # Validate secret length
     if ($SecretBytes.Length -eq 0) {
         # No secret supplied for HMAC384 hash
-        throw $PodeLocale.noSecretForHmac384ExceptionMessage
+        throw ($PodeLocale.noSecretForHmac384ExceptionMessage)
     }
 
     # Compute private HMAC-SHA384 hash
@@ -184,7 +184,7 @@ function Invoke-PodeHMACSHA512Hash {
     # Validate secret length
     if ($SecretBytes.Length -eq 0) {
         # No secret supplied for HMAC512 hash
-        throw $PodeLocale.noSecretForHmac512ExceptionMessage
+        throw ($PodeLocale.noSecretForHmac512ExceptionMessage)
     }
 
     # Compute private HMAC-SHA512 hash
@@ -453,12 +453,12 @@ function New-PodeJwtSignature {
 
     if (($Algorithm -ine 'none') -and (($null -eq $SecretBytes) -or ($SecretBytes.Length -eq 0))) {
         # No secret supplied for JWT signature
-        throw $PodeLocale.noSecretForJwtSignatureExceptionMessage
+        throw ($PodeLocale.noSecretForJwtSignatureExceptionMessage)
     }
 
     if (($Algorithm -ieq 'none') -and (($null -ne $secretBytes) -and ($SecretBytes.Length -gt 0))) {
         # Expected no secret to be supplied for no signature
-        throw $PodeLocale.noSecretExpectedForNoSignatureExceptionMessage
+        throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
     }
 
     $sig = $null
@@ -548,7 +548,7 @@ function ConvertFrom-PodeJwtBase64Value {
     }
     catch {
         # Invalid Base64 encoded value found in JWT
-        throw $PodeLocale.invalidBase64JwtExceptionMessage
+        throw ($PodeLocale.invalidBase64JwtExceptionMessage)
     }
 
     # return json
@@ -557,6 +557,6 @@ function ConvertFrom-PodeJwtBase64Value {
     }
     catch {
         # Invalid JSON value found in JWT
-        throw $PodeLocale.invalidJsonJwtExceptionMessage
+        throw ($PodeLocale.invalidJsonJwtExceptionMessage)
     }
 }

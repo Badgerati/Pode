@@ -1310,7 +1310,7 @@ function Set-PodeSecurityAccessControl {
         if ($Headers -icontains '*') {
             if ($Credentials) {
                 # When Credentials is passed, The * wildcard for Headers will be taken as a literal string and not a wildcard
-                throw $PodeLocale.credentialsPassedWildcardForHeadersLiteralExceptionMessage
+                throw ($PodeLocale.credentialsPassedWildcardForHeadersLiteralExceptionMessage)
             }
 
             $Headers = @('*')
@@ -1336,7 +1336,7 @@ function Set-PodeSecurityAccessControl {
     if ($AutoHeaders) {
         if ($Headers -icontains '*') {
             # The * wildcard for Headers is incompatible with the AutoHeaders switch
-            throw $PodeLocale.wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage
+            throw ($PodeLocale.wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage)
         }
 
         Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value 'content-type' -Append
@@ -1346,7 +1346,7 @@ function Set-PodeSecurityAccessControl {
     if ($AutoMethods) {
         if ($Methods -icontains '*') {
             # The * wildcard for Methods is incompatible with the AutoMethods switch
-            throw $PodeLocale.wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage
+            throw ($PodeLocale.wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage)
         }
         if ($WithOptions) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value 'Options' -Append
