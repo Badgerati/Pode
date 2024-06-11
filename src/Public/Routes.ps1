@@ -1100,6 +1100,7 @@ A literal, or relative, path to a file containing a ScriptBlock for the Route's 
 
 .EXAMPLE
 Add-PodeRouteGroup -Path '/api' -Routes { Add-PodeRoute -Path '/route1' -Etc }
+
 .EXAMPLE
 Add-PodeRouteGroup -Path '/api' -FilePath '/routes/file.ps1'
 #>
@@ -1584,8 +1585,14 @@ The EndpointName of an Endpoint(s) to use for the Signal Routes.
 .PARAMETER IfExists
 Specifies what action to take when a Signal Route already exists. (Default: Default)
 
+.PARAMETER FilePath
+A literal, or relative, path to a file containing a ScriptBlock for the Route's main logic.
+
 .EXAMPLE
 Add-PodeSignalRouteGroup -Path '/signals' -Routes { Add-PodeSignalRoute -Path '/signal1' -Etc }
+
+.EXAMPLE
+Add-PodeSignalRouteGroup -Path '/api' -FilePath '/routes/file.ps1'
 #>
 function Add-PodeSignalRouteGroup {
     [CmdletBinding()]
@@ -1605,11 +1612,22 @@ function Add-PodeSignalRouteGroup {
         [Parameter()]
         [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
         [string]
-        $IfExists = 'Default'
+        $IfExists = 'Default',
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'file')]
+        [string]
+        $FilePath
     )
 
+    i
     if (Test-PodeIsEmpty $Routes) {
-        throw 'No scriptblock for -Routes passed'
+        if ($PSCmdlet.ParameterSetName -ieq 'file') {
+            $Routes = Convert-PodeFileToScriptBlock -FilePath $FilePath
+        }
+        else {
+
+            throw 'No scriptblock for -Routes passed'
+        }
     }
 
     if ($Path -eq '/') {
