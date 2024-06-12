@@ -196,7 +196,7 @@ function Import-PodeSecretManagementVaultsIntoRegistry {
 
         # is a vault with this name already registered?
         if (Test-PodeSecretVault -Name $vault.Name) {
-            throw ($PodeLocale.secretVaultAlreadyRegisteredExceptionMessage -f $vault.Name)
+            throw ($PodeLocale.secretVaultAlreadyRegisteredExceptionMessage -f $vault.Name,"")
             #"A Secret Vault with the name '$($vault.Name)' has already been registered while auto-importing Secret Vaults"
         }
 
