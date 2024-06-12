@@ -1,12 +1,5 @@
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 param()
-BeforeAll {
-    $path = $PSCommandPath
-    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
-}
 BeforeDiscovery {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src'
@@ -21,6 +14,16 @@ BeforeDiscovery {
     $sourceFiles = Get-ChildItem -Path $src -Recurse -Include *.ps1, *.psm1
     Import-LocalizedData -BindingVariable LanguageOfReference -BaseDirectory $localizationDir -FileName 'Pode' -UICulture 'en'
 }
+
+BeforeAll {
+    $path = $PSCommandPath
+    $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    # All language directories
+    $localizationDir = "$src/Locales"
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory $localizationDir -FileName 'Pode'
+}
+
 Describe 'Localization Check' {
 
 
@@ -53,19 +56,20 @@ Describe 'Localization Check' {
 
 
     Describe  'Verifying Language [<_.Name>]' -ForEach  ($languageDirs) {
+
+        BeforeAll {
+            $content = Import-LocalizedData -FileName 'Pode.psd1' -BaseDirectory $localizationDir -UICulture $_.Name
+        }
         it 'Language resource file exist' {
             Test-Path -Path "$($_.FullName)/Pode.psd1" | Should -BeTrue
         }
 
-        $global:content = Import-LocalizedData -FileName 'Pode.psd1' -BaseDirectory $localizationDir -UICulture $_.Name
         it 'Number of entry equal to the [en]' {
-            $global:content.Keys.Count | Should -be $PodeLocale.Count
+            $content.Keys.Count | Should -be $PodeLocale.Count
         }
 
         It -ForEach ( $LanguageOfReference.Keys) -Name 'Resource File contains <_>' {
-            foreach ($key in  $PodeLocale.Keys) {
-                $global:content.Keys -contains $_ | Should -BeTrue
-            }
+            $content.Keys -contains $_ | Should -BeTrue
         }
     }
 }

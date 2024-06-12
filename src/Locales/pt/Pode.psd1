@@ -63,6 +63,7 @@
     maximumConcurrentWebSocketThreadsLessThanMinimumExceptionMessage  = 'O número máximo de threads concorrentes do WebSocket não pode ser menor que o mínimo de {0}, mas foi obtido: {1}'
     middlewareAlreadyDefinedExceptionMessage                          = '[Middleware] {0}: Middleware já definido.'
     invalidAtomCharacterExceptionMessage                              = 'Caractere atômico inválido: {0}'
+    invalidCronAtomFormatExceptionMessage                             = 'Formato de átomo cron inválido encontrado: {0}'
     cacheStorageNotFoundForRetrieveExceptionMessage                   = "Armazenamento em cache com o nome '{0}' não encontrado ao tentar recuperar o item em cache '{1}'."
     headerMustHaveNameInEncodingContextExceptionMessage               = 'O cabeçalho deve ter um nome quando usado em um contexto de codificação.'
     moduleDoesNotContainFunctionExceptionMessage                      = 'O módulo {0} não contém a função {1} para converter em uma Rota.'
@@ -201,6 +202,7 @@
     noUnlockScriptBlockForVaultExceptionMessage                       = "Nenhum ScriptBlock de desbloqueio fornecido para desbloquear o cofre '{0}'"
     definitionTagMessage                                              = 'Definição {0}:'
     failedToOpenRunspacePoolExceptionMessage                          = 'Falha ao abrir o RunspacePool: {0}'
+    failedToCloseRunspacePoolExceptionMessage                         = 'Falha ao fechar RunspacePool: {0}'
     verbNoLogicPassedExceptionMessage                                 = '[Verbo] {0}: Nenhuma lógica passada'
     noMutexFoundExceptionMessage                                      = "Nenhum mutex encontrado chamado '{0}'"
     documentationMessage                                              = 'Documentação'
