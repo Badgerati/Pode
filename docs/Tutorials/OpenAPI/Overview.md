@@ -912,13 +912,13 @@ To enable a viewer you can use the [`Enable-PodeOAViewer`](../../../Functions/Op
 
 ```powershell
 # for swagger at "/docs/swagger"
-Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger' -DarkMode
+Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DarkMode
 
 # and ReDoc at the default "/redoc"
-Enable-PodeOpenApiViewer -Type ReDoc
+Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc'
 
 # and RapiDoc at "/docs/rapidoc"
-Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
+Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc'
 
 # and StopLight at "/docs/stoplight"
 Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight'
