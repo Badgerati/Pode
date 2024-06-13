@@ -1,16 +1,25 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+}
+catch { throw }
 
 # or just:
 # Import-Module Pode
 
-# Invoke-RestMethod -Method Get -Uri 'http://localhost:8085/users' -Headers @{ Authorization = 'Bearer test-token' }
+# Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ Authorization = 'Bearer test-token' }
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
 
-    # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    # listen on localhost:8081
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     New-PodeLoggingMethod -File -Name 'requests' | Enable-PodeRequestLogging
 

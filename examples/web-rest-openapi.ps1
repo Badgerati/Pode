@@ -1,5 +1,14 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+}
+catch { throw }
 
 Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Name 'user'
@@ -8,14 +17,14 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
-    Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger'
-    Enable-PodeOpenApiViewer -Type ReDoc  -Path '/docs/redoc'
-    Enable-PodeOpenApiViewer -Type RapiDoc  -Path '/docs/rapidoc'
-    Enable-PodeOpenApiViewer -Type StopLight  -Path '/docs/stoplight'
-    Enable-PodeOpenApiViewer -Type Explorer  -Path '/docs/explorer'
-    Enable-PodeOpenApiViewer -Type RapiPdf  -Path '/docs/rapipdf'
-    Enable-PodeOpenApiViewer -Editor -Path '/docs/editor'
-    Enable-PodeOpenApiViewer -Bookmarks -Path '/docs'
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
+    Enable-PodeOAViewer -Type ReDoc  -Path '/docs/redoc'
+    Enable-PodeOAViewer -Type RapiDoc  -Path '/docs/rapidoc'
+    Enable-PodeOAViewer -Type StopLight  -Path '/docs/stoplight'
+    Enable-PodeOAViewer -Type Explorer  -Path '/docs/explorer'
+    Enable-PodeOAViewer -Type RapiPdf  -Path '/docs/rapipdf'
+    Enable-PodeOAViewer -Editor -Path '/docs/editor'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs'
 
     New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
         return @{

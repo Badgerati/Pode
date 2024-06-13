@@ -1,5 +1,14 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+}
+catch { throw }
 
 # or just:
 # Import-Module Pode
@@ -30,7 +39,7 @@ Start-PodeServer {
     # runs forever, but skips the first 3 "loops" - is paused for 15secs then loops every 5secs
     Add-PodeTimer -Name 'pause-first-3' -Interval 5 -ScriptBlock {
         'Skip 3 then run' | Out-PodeHost
-      Write-PodeHost $TimerEvent -Explode -ShowType
+        Write-PodeHost $TimerEvent -Explode -ShowType
     } -Skip 3
 
     # runs every 5secs, but only runs for 3 "loops" (ie, 15secs)

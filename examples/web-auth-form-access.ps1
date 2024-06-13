@@ -1,16 +1,19 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
-    Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
 }
-else {
-    Import-Module -Name 'Pode'
-}
-
+catch { throw }
 <#
 This examples shows how to use session persistant authentication with access.
 The example used here is Form authentication and RBAC access on pages, sent from the <form> in HTML.
 
-Navigating to the 'http://localhost:8085' endpoint in your browser will auto-rediect you to the '/login'
+Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
 page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
 back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
 take you back to the login page.
@@ -20,11 +23,11 @@ take you back to the login page.
 - The Register page is only accessible by QAs (for morty this will 403)
 #>
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
 
-    # listen on localhost:8085
-    Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http
+    # listen on localhost:8081
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # set the view engine
     Set-PodeViewEngine -Type Pode

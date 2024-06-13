@@ -8,10 +8,10 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 3 {
 
     # listen
-    Add-PodeEndpoint -Address * -Port 8091 -Protocol Http
-    Add-PodeEndpoint -Address * -Port 8091 -Protocol Ws
-    #Add-PodeEndpoint -Address * -Port 8090 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Https
-    #Add-PodeEndpoint -Address * -Port 8091 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Wss
+    Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws
+    #Add-PodeEndpoint -Address localhost -Port 8090 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Https
+    #Add-PodeEndpoint -Address localhost -Port 8091 -Certificate './certs/pode-cert.pfx' -CertificatePassword '1234' -Protocol Wss
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Level Error, Debug, Verbose

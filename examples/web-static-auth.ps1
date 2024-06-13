@@ -1,16 +1,20 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
-    Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
 }
-else {
-    Import-Module -Name 'Pode'
-}
+catch { throw }
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
 
-    # listen on localhost:8085
-    Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http
+    # listen on localhost:8081
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -40,7 +44,7 @@ Start-PodeServer -Threads 2 {
     Add-PodeStaticRoute -Path '/assets' -Source './assets' -Defaults @('index.html') -Authentication 'Validate'
     Add-PodeStaticRoute -Path '/assets/download' -Source './assets' -DownloadOnly
 
-    # GET request for web page on "localhost:8085/"
+    # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'web-static' -Data @{ 'numbers' = @(1, 2, 3); }
     }

@@ -1,19 +1,24 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
-    Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
 }
-else {
-    Import-Module -Name 'Pode'
-}
+catch { throw }
+
 # or just:
 # Import-Module Pode
 
 $LOGGING_TYPE = 'terminal' # Terminal, File, Custom
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
     switch ($LOGGING_TYPE.ToLowerInvariant()) {
@@ -35,7 +40,7 @@ Start-PodeServer {
         }
     }
 
-    # GET request for web page on "localhost:8085/"
+    # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }

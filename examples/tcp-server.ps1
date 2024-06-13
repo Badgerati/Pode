@@ -1,16 +1,25 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+}
+catch { throw }
 
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 9000
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
 
     # add two endpoints
-    Add-PodeEndpoint -Address * -Port 9000 -Protocol Tcp -CRLFMessageEnd #-Acknowledge 'Welcome!'
-    # Add-PodeEndpoint -Address * -Port 9000 -Protocol Tcps -SelfSigned -CRLFMessageEnd -TlsMode Explicit -Acknowledge 'Welcome!'
-    # Add-PodeEndpoint -Address * -Port 9000 -Protocol Tcps -SelfSigned -CRLFMessageEnd -TlsMode Implicit -Acknowledge 'Welcome!'
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Tcp -CRLFMessageEnd #-Acknowledge 'Welcome!'
+    # Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Tcps -SelfSigned -CRLFMessageEnd -TlsMode Explicit -Acknowledge 'Welcome!'
+    # Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Tcps -SelfSigned -CRLFMessageEnd -TlsMode Implicit -Acknowledge 'Welcome!'
 
     # enable logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

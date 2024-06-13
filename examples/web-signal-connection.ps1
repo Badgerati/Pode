@@ -8,7 +8,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -EnablePool WebSockets {
 
     # listen
-    Add-PodeEndpoint -Address * -Port 8092 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8092 -Protocol Http
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Level Error, Debug, Verbose

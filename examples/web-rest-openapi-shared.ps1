@@ -1,6 +1,14 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
-#Import-Module -Name powershell-yaml -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+}
+catch { throw }
 
 Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Name 'user'
@@ -9,16 +17,16 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
-    Enable-PodeOpenApiViewer -Type Swagger
-    Enable-PodeOpenApiViewer -Type ReDoc
-    Enable-PodeOpenApiViewer -Type RapiDoc
-    Enable-PodeOpenApiViewer -Type StopLight
-    Enable-PodeOpenApiViewer -Type Explorer
-    Enable-PodeOpenApiViewer -Type RapiPdf
+    Enable-PodeOAViewer -Type Swagger
+    Enable-PodeOAViewer -Type ReDoc
+    Enable-PodeOAViewer -Type RapiDoc
+    Enable-PodeOAViewer -Type StopLight
+    Enable-PodeOAViewer -Type Explorer
+    Enable-PodeOAViewer -Type RapiPdf
 
 
-    Enable-PodeOpenApiViewer -Editor
-    Enable-PodeOpenApiViewer -Bookmarks
+    Enable-PodeOAViewer -Editor
+    Enable-PodeOAViewer -Bookmarks
 
 
     New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Validate' -Sessionless -ScriptBlock {
