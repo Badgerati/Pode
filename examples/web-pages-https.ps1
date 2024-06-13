@@ -1,5 +1,14 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+}
+catch { throw }
 
 # or just:
 # Import-Module Pode
@@ -14,10 +23,10 @@ Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error
 
     # bind to ip/port and set as https with self-signed cert
-    Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
-    #Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -Certificate './certs/cert.pem' -CertificateKey './certs/key.pem' -CertificatePassword 'test'
-    #Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -Certificate './certs/cert_nodes.pem' -CertificateKey './certs/key_nodes.pem'
-    #Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -CertificateThumbprint '2A623A8DC46ED42A13B27DD045BFC91FDDAEB957'
+    Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -SelfSigned
+    #Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -Certificate './certs/cert.pem' -CertificateKey './certs/key.pem' -CertificatePassword 'test'
+    #Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -Certificate './certs/cert_nodes.pem' -CertificateKey './certs/key_nodes.pem'
+    #Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -CertificateThumbprint '2A623A8DC46ED42A13B27DD045BFC91FDDAEB957'
 
     # set view engine for web pages
     Set-PodeViewEngine -Type Pode

@@ -1,13 +1,28 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+}
+catch { throw }
 
-# or just:
-# Import-Module Pode
+try {
+    if (Get-Command redis-cli -ErrorAction Stop) {
+        Write-Output 'redis-cli exists.'
+    }
+}
+catch {
+    throw 'Cannot continue redis-cli does not exist.'
+}
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 3 {
-    # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port 8090 -Protocol Http
+    # listen on localhost:8081
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # log errors
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -39,26 +54,28 @@ Start-PodeServer -Threads 3 {
         }
         Clear  = {}
     }
-    Add-PodeCacheStorage -Name 'Redis' @params
+    if ($params) {
+        Add-PodeCacheStorage -Name 'Redis' @params
 
-    # set default value for cache
-    $cache:cpu = (Get-Random -Minimum 1 -Maximum 1000)
-
-    # get cpu, and cache it
-    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        if ((Test-PodeCache -Key 'cpu') -and ($null -ne $cache:cpu)) {
-            Write-PodeJsonResponse -Value @{ CPU = $cache:cpu }
-            # Write-PodeHost 'here - cached'
-            return
-        }
-
-        # $cache:cpu = (Get-Counter '\Processor(_Total)\% Processor Time').CounterSamples.CookedValue
-        Start-Sleep -Milliseconds 500
+        # set default value for cache
         $cache:cpu = (Get-Random -Minimum 1 -Maximum 1000)
-        Write-PodeJsonResponse -Value @{ CPU = $cache:cpu }
-        # $cpu = (Get-Random -Minimum 1 -Maximum 1000)
-        # Write-PodeJsonResponse -Value @{ CPU = $cpu }
-        # Write-PodeHost 'here - raw'
+
+        # get cpu, and cache it
+        Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+            if ((Test-PodeCache -Key 'cpu') -and ($null -ne $cache:cpu)) {
+                Write-PodeJsonResponse -Value @{ CPU = $cache:cpu }
+                # Write-PodeHost 'here - cached'
+                return
+            }
+
+            # $cache:cpu = (Get-Counter '\Processor(_Total)\% Processor Time').CounterSamples.CookedValue
+            Start-Sleep -Milliseconds 500
+            $cache:cpu = (Get-Random -Minimum 1 -Maximum 1000)
+            Write-PodeJsonResponse -Value @{ CPU = $cache:cpu }
+            # $cpu = (Get-Random -Minimum 1 -Maximum 1000)
+            # Write-PodeJsonResponse -Value @{ CPU = $cpu }
+            # Write-PodeHost 'here - raw'
+        }
     }
 
 }

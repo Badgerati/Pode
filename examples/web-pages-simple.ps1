@@ -13,8 +13,8 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port 8090 -Protocol Http -Name '8090Address'
-    Add-PodeEndpoint -Address * -Port $Port -Protocol Http -Name '8085Address' -RedirectTo '8090Address'
+    Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http -Name '8090Address'
+    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -Name '8085Address' -RedirectTo '8090Address'
 
     # log errors to the terminal
     # New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

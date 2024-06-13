@@ -14,7 +14,7 @@ function Write-MyOuterResponse {
 # create a server, and start listening on port 8085
 Start-PodeServer -Threads 2 {
     # listen on localhost:8090
-    Add-PodeEndpoint -Address * -Port 8090 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging

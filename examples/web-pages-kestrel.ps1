@@ -1,22 +1,32 @@
 param(
     [int]
-    $Port = 8085
+    $Port = 8081
 )
 
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+
+    # you will require the Pode.Kestrel module for this example
+    Import-Module Pode.Kestrel -Force -ErrorAction Stop
+}
+catch { throw }
 
 # or just:
 # Import-Module Pode
 
-# you will require the Pode.Kestrel module for this example
-Import-Module Pode.Kestrel
 
-# create a server, and start listening on port 8085 using kestrel
+# create a server, and start listening on port 8081 using kestrel
 Start-PodeServer -Threads 2 -ListenerType Kestrel {
-    # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port 8090 -Protocol Http -Name '8090Address'
-    Add-PodeEndpoint -Address * -Port $Port -Protocol Http -Name '8085Address' -RedirectTo '8090Address'
+    # listen on localhost:8081
+    Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http -Name '8090Address'
+    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -Name '8081Address' -RedirectTo '8090Address'
 
     # allow the local ip and some other ips
     Add-PodeAccessRule -Access Allow -Type IP -Values @('127.0.0.1', '[::1]')
@@ -47,7 +57,7 @@ Start-PodeServer -Threads 2 -ListenerType Kestrel {
         }
     }
 
-    # GET request for web page on "localhost:8085/"
+    # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # $WebEvent.Request | Write-PodeLog -Name 'custom'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }

@@ -1,5 +1,14 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+}
+catch { throw }
 
 # or just:
 # Import-Module Pode
@@ -7,18 +16,18 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 <#
 This examples shows how to use session persistant authentication using Azure AD and OAuth2
 
-Navigating to the 'http://localhost:8085' endpoint in your browser will auto-rediect you to Azure.
+Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to Azure.
 There, login to Azure and you'll be redirected back to the home page
 
 Note: You'll need to register a new app in Azure, and note you clientId, secret, and tenant
       in the variables below.
 #>
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
 
-    # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http -Default
+    # listen on localhost:8081
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set the view engine

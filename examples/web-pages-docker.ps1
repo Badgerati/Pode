@@ -1,14 +1,17 @@
-Import-Module /usr/local/share/powershell/Modules/Pode/Pode.psm1 -Force -ErrorAction Stop
+try {
+    Import-Module /usr/local/share/powershell/Modules/Pode/Pode.psm1 -Force -ErrorAction Stop
+}
+catch { throw }
 
 <#
 docker-compose up --force-recreate --build
 #>
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
 
-    # listen on *:8085
-    Add-PodeEndpoint -Address * -Port 8085 -Protocol Http
+    # listen on *:8081
+    Add-PodeEndpoint -Address * -Port 8081 -Protocol Http
     Set-PodeSecurity -Type Simple
 
     # set view engine to pode renderer
@@ -20,7 +23,7 @@ Start-PodeServer -Threads 2 {
         return @{ InnerValue = 'hey look, a value!' }
     }
 
-    # GET request for web page on "localhost:8085/"
+    # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }

@@ -1,24 +1,34 @@
 param(
     [int]
-    $Port = 8085
+    $Port = 8081
 )
 
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop
+    }
+    Import-Module -Name Pode.Kestrel -ErrorAction Stop
+}
+catch { throw }
+
 
 # or just:
 # Import-Module Pode
-Import-Module Pode.Kestrel
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 -ListenerType Kestrel {
 
-    # listen on localhost:8085
-    Add-PodeEndpoint -Address * -Port $port -Protocol Http
+    # listen on localhost:8081
+    Add-PodeEndpoint -Address localhost -Port $port -Protocol Http
 
     Set-PodeViewEngine -Type HTML
 
-    # GET request for web page on "localhost:8085/"
+    # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'web-upload'
     }
