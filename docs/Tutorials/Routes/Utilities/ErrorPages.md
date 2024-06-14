@@ -53,6 +53,33 @@ Start-PodeServer {
 }
 ```
 
+### Internal Server Errors
+By default, any internal Pode error will now generate an HTTP `500` status code without returning any additional internal information to the user.
+This change enhances security by preventing the exposure of internal server details.
+
+For debugging purposes, detailed error information can be included in HTTP 500 responses using the `Code500Details` switch parameter.
+
+Example Usage with `Code500Details`:
+
+```powershell
+# Start the Pode server with detailed error information in HTTP 500 responses for debugging
+Start-PodeServer -Code500Details
+```
+
+The `Code500Details` parameter can also be configured using the `server.psd1` configuration file in the following format:
+
+```powershell
+@{
+    # omit
+    Server = @{
+        # omit
+        Debug = @{
+            Code500Details = $true
+        }
+    }
+}
+```
+This configuration ensures that any internal error generates a code 500 with detailed exception information, aiding in the debugging process.
 ## Error Pages
 
 When a response is returned with a status code of 400+, then Pode will attempt to render these as styled error pages. By default, Pode has inbuilt error pages that will be used (these show the status code, description, the URL, and if enabled the exception message/stacktrace).

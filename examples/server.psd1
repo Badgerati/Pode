@@ -60,6 +60,7 @@
             Breakpoints = @{
                 Enable = $true
             }
+            Code500Details= $true
         }
     }
 }
