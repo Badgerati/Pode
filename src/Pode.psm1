@@ -61,7 +61,7 @@ try {
         }
     }
     catch {
-        throw "Failed to Import Localized Data $(Join-Path -Path $localesPath -ChildPath  $UICulture -AdditionalChildPath 'Pode.psd1') $_"
+        throw ("Failed to Import Localized Data $(Join-Path -Path $localesPath -ChildPath  $UICulture -AdditionalChildPath 'Pode.psd1') $_")
     }
 
     # Create the global msgTable read-only variable
@@ -127,6 +127,6 @@ try {
     }
 }
 catch {
-    throw "Failed to load the Pode module. $_"
+    throw ("Failed to load the Pode module. $_")
 }
 
