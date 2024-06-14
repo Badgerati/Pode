@@ -1,5 +1,65 @@
 using namespace Pode
 
+<#
+.SYNOPSIS
+    Creates and initializes a new Pode context object with specified configurations.
+
+.DESCRIPTION
+    Sets up a new Pode context object that includes settings for threads, intervals, server
+    root, server name, serverless type, and various other configurations. This context is
+    used to manage the state and configuration of a Pode server.
+
+.PARAMETER ScriptBlock
+    The script block that contains the server logic to be executed.
+
+.PARAMETER FilePath
+    The file path to the server's script block if it exists on disk.
+
+.PARAMETER Threads
+    The number of general-purpose threads to use. Defaults to 1.
+
+.PARAMETER Interval
+    The interval at which the server should auto-restart, in seconds. Defaults to 0.
+
+.PARAMETER ServerRoot
+    The root directory of the server.
+
+.PARAMETER Name
+    The name of the server. If not specified, a random name will be generated.
+
+.PARAMETER ServerlessType
+    The type of serverless environment (e.g., 'AzureFunctions', 'AWSLambda').
+
+.PARAMETER StatusPageExceptions
+    Configuration for displaying exceptions on the status page.
+
+.PARAMETER ListenerType
+    The type of listener to use for the server.
+
+.PARAMETER EnablePool
+    Array of strings specifying which pools to enable (e.g., 'timers', 'tasks', 'websockets').
+
+.PARAMETER DisableTermination
+    Switch to disable server termination.
+
+.PARAMETER Quiet
+    Switch to enable quiet mode, suppressing console output.
+
+.PARAMETER EnableBreakpoints
+    Switch to enable breakpoints for debugging.
+
+.PARAMETER Code500Details
+    Switch to enable detailed error information in HTTP 500 responses.
+
+.EXAMPLE
+    New-PodeContext -ScriptBlock $script -FilePath 'path/to/file.ps1' -Threads 4
+
+.EXAMPLE
+    New-PodeContext -ServerRoot 'C:\MyServerRoot' -Name 'MyServer' -EnablePool 'timers','tasks'
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function New-PodeContext {
     [CmdletBinding()]
     param(
@@ -97,7 +157,6 @@ function New-PodeContext {
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
-    $ctx.Server.Code500Details = $Code500Details.IsPresent
 
     # list of created listeners/receivers
     $ctx.Listeners = @()
@@ -192,6 +251,11 @@ function New-PodeContext {
         'Errors' = 'errors'
     }
 
+    # default debugging
+    $ctx.Server.Debug = @{
+        Breakpoints = @{}
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -213,15 +277,17 @@ function New-PodeContext {
     if (Test-PodeIsEmpty $ctx.Server.Root) {
         $ctx.Server.Root = $PWD.Path
     }
-
-    # debugging
-    if ($EnableBreakpoints) {
-        if ($null -eq $ctx.Server.Debug) {
-            $ctx.Server.Debug = @{ Breakpoints = @{} }
-        }
-
+    # enable breakpoints created by using Wait-PodeDebugger.
+    if ($EnableBreakpoints.IsPresent) {
         $ctx.Server.Debug.Breakpoints.Enabled = $EnableBreakpoints.IsPresent
     }
+
+    # enable detailed error information in HTTP 500 responses.
+    if ($Code500Details.IsPresent) {
+        $ctx.Server.Debug.Code500Details = $Code500Details.IsPresent
+    }
+
+
 
     # set the server's listener type
     $ctx.Server.ListenerType = $ListenerType

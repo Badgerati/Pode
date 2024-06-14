@@ -276,8 +276,8 @@ function Start-PodeWebServer {
                             $_.Exception | Write-PodeErrorLog -CheckInnerException
 
                             # Check if Code 500 has to return the internal details
-                            if ($PodeContext.Server.Code500Details) {
-                                Set-PodeResponseStatus -Code 500  -Exception $_
+                            if ($PodeContext.Server.Debug.Code500Details) {
+                                Set-PodeResponseStatus -Code 500 -Exception $_
                             }
                             else {
                                 Set-PodeResponseStatus -Code 500
