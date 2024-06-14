@@ -1,3 +1,28 @@
+<#
+.SYNOPSIS
+    Starts the internal Pode server with the specified configurations.
+
+.DESCRIPTION
+    Initializes and starts the Pode internal server, setting up necessary variables,
+    runspaces, and middleware. Handles the configuration and startup process for
+    different server types, including HTTP, WebSocket, and serverless (Azure Functions
+    and AWS Lambda).
+
+.PARAMETER Request
+    The incoming request data, used when running in serverless mode.
+
+.PARAMETER Browse
+    Optional switch to automatically open the first endpoint URL in the default web browser.
+
+.EXAMPLE
+    Start-PodeInternalServer
+
+.EXAMPLE
+    Start-PodeInternalServer -Browse
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Start-PodeInternalServer {
     param(
         [Parameter()]

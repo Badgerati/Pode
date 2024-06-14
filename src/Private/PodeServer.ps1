@@ -1,5 +1,27 @@
 using namespace Pode
 
+<#
+.SYNOPSIS
+    Starts the Pode web server with specified configurations.
+
+.DESCRIPTION
+    Initializes and starts the Pode web server, setting up inbuilt middleware,
+    registering endpoints, and starting listeners for HTTP and WebSocket protocols.
+    Configures and manages the server's behavior, including error handling and signal
+    processing.
+
+.PARAMETER Browse
+    Optional switch to automatically open the first endpoint URL in the default web browser.
+
+.EXAMPLE
+    Start-PodeWebServer
+
+.EXAMPLE
+    Start-PodeWebServer -Browse
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Start-PodeWebServer {
     param(
         [switch]
@@ -252,7 +274,14 @@ function Start-PodeWebServer {
                         catch {
                             $_ | Write-PodeErrorLog
                             $_.Exception | Write-PodeErrorLog -CheckInnerException
-                            Set-PodeResponseStatus -Code 500 -Exception $_
+
+                            # Check if Code 500 has to return the internal details
+                            if ($PodeContext.Server.Code500Details) {
+                                Set-PodeResponseStatus -Code 500  -Exception $_
+                            }
+                            else {
+                                Set-PodeResponseStatus -Code 500
+                            }
                         }
                         finally {
                             Update-PodeServerRequestMetric -WebEvent $WebEvent

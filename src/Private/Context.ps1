@@ -50,7 +50,10 @@ function New-PodeContext {
         $Quiet,
 
         [switch]
-        $EnableBreakpoints
+        $EnableBreakpoints,
+
+        [switch]
+        $Code500Details
     )
 
     # set a random server name if one not supplied
@@ -94,6 +97,7 @@ function New-PodeContext {
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+    $ctx.Server.Code500Details = $Code500Details.IsPresent
 
     # list of created listeners/receivers
     $ctx.Listeners = @()

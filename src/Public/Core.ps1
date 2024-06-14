@@ -1,60 +1,63 @@
 <#
 .SYNOPSIS
-Starts a Pode Server with the supplied ScriptBlock.
+    Starts a Pode Server with the supplied ScriptBlock.
 
 .DESCRIPTION
-Starts a Pode Server with the supplied ScriptBlock.
+    Starts a Pode Server with the supplied ScriptBlock.
 
 .PARAMETER ScriptBlock
-The main logic for the Server.
+    The main logic for the Server.
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Server's logic.
-The directory of this file will be used as the Server's root path - unless a specific -RootPath is supplied.
+    A literal, or relative, path to a file containing a ScriptBlock for the Server's logic.
+    The directory of this file will be used as the Server's root path - unless a specific -RootPath is supplied.
 
 .PARAMETER Interval
-For 'Service' type Servers, will invoke the ScriptBlock every X seconds.
+    For 'Service' type Servers, will invoke the ScriptBlock every X seconds.
 
 .PARAMETER Name
-An optional name for the Server (intended for future ideas).
+    An optional name for the Server (intended for future ideas).
 
 .PARAMETER Threads
-The numbers of threads to use for Web, SMTP, and TCP servers.
+    The numbers of threads to use for Web, SMTP, and TCP servers.
 
 .PARAMETER RootPath
-An override for the Server's root path.
+    An override for the Server's root path.
 
 .PARAMETER Request
-Intended for Serverless environments, this is Requests details that Pode can parse and use.
+    Intended for Serverless environments, this is Requests details that Pode can parse and use.
 
 .PARAMETER ServerlessType
-Optional, this is the serverless type, to define how Pode should run and deal with incoming Requests.
+    Optional, this is the serverless type, to define how Pode should run and deal with incoming Requests.
 
 .PARAMETER StatusPageExceptions
-An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
-If supplied this value will override the ShowExceptions setting in the server.psd1 file.
+    An optional value of Show/Hide to control where Stacktraces are shown in the Status Pages.
+    If supplied this value will override the ShowExceptions setting in the server.psd1 file.
 
 .PARAMETER ListenerType
-An optional value to use a custom Socket Listener. The default is Pode's inbuilt listener.
-There's the Pode.Kestrel module, so the value here should be "Kestrel" if using that.
+    An optional value to use a custom Socket Listener. The default is Pode's inbuilt listener.
+    There's the Pode.Kestrel module, so the value here should be "Kestrel" if using that.
 
 .PARAMETER DisableTermination
-Disables the ability to terminate the Server.
+    Disables the ability to terminate the Server.
 
 .PARAMETER Quiet
-Disables any output from the Server.
+    Disables any output from the Server.
 
 .PARAMETER Browse
-Open the web Server's default endpoint in your default browser.
+    Open the web Server's default endpoint in your default browser.
 
 .PARAMETER CurrentPath
-Sets the Server's root path to be the current working path - for -FilePath only.
+    Sets the Server's root path to be the current working path - for -FilePath only.
 
 .PARAMETER EnablePool
-Tells Pode to configure certain RunspacePools when they're being used adhoc, such as Timers or Schedules.
+    Tells Pode to configure certain RunspacePools when they're being used adhoc, such as Timers or Schedules.
 
 .PARAMETER EnableBreakpoints
-If supplied, any breakpoints created by using Wait-PodeDebugger will be enabled - or disabled if false passed explicitly, or not supplied.
+    If supplied, any breakpoints created by using Wait-PodeDebugger will be enabled - or disabled if false passed explicitly, or not supplied.
+
+.PARAMETER Code500Details
+    Optional switch to include detailed error information in HTTP 500 responses.
 
 .EXAMPLE
 Start-PodeServer { /* logic */ }
@@ -64,6 +67,9 @@ Start-PodeServer -Interval 10 { /* logic */ }
 
 .EXAMPLE
 Start-PodeServer -Request $LambdaInput -ServerlessType AwsLambda { /* logic */ }
+
+.EXAMPLE
+Start-PodeServer -Code500Details -ScriptBlock { /* logic */ }
 #>
 function Start-PodeServer {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -128,7 +134,10 @@ function Start-PodeServer {
         $CurrentPath,
 
         [switch]
-        $EnableBreakpoints
+        $EnableBreakpoints,
+
+        [switch]
+        $Code500Details
     )
 
     # ensure the session is clean
@@ -169,7 +178,8 @@ function Start-PodeServer {
             -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
             -Quiet:$Quiet `
-            -EnableBreakpoints:$EnableBreakpoints
+            -EnableBreakpoints:$EnableBreakpoints `
+            -Code500Details:$Code500Details
 
         # set it so ctrl-c can terminate, unless serverless/iis, or disabled
         if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {

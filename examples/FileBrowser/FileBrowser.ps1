@@ -9,7 +9,7 @@ else {
 
 $directoryPath = $podePath
 # Start Pode server
-Start-PodeServer -ScriptBlock {
+Start-PodeServer -Browse -ScriptBlock {
 
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
 
