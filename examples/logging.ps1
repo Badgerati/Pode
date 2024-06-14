@@ -8,10 +8,10 @@ else {
 # or just:
 # Import-Module Pode
 
-$LOGGING_TYPE = 'terminal' # Terminal, File, Custom
+$LOGGING_TYPE = 'syslog' # Terminal, File, Custom
 
 # create a server, and start listening on port 8085
-Start-PodeServer {
+Start-PodeServer -browse {
 
     Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http
     Set-PodeViewEngine -Type Pode
@@ -32,6 +32,9 @@ Start-PodeServer {
             }
 
             $type | Enable-PodeRequestLogging
+        }
+        'syslog'{
+            New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport TCP| Enable-PodeRequestLogging
         }
     }
 

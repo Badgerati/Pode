@@ -75,6 +75,186 @@ function Get-PodeLoggingFileMethod {
     }
 }
 
+
+function Get-PodeLoggingSysLogMethod {
+    return {
+        param($item, $options)
+
+        function HandleFailure {
+            param($message, $FailureAction)
+            switch ($FailureAction.ToLowerInvariant()) {
+                'ignore' {
+                    # Do nothing and continue
+                }
+                'report' {
+                    # Report on console and continue
+                    Write-PodeHost $message
+                }
+                'halt' {
+                    # Report on console and halt
+                    Write-PodeHost $message
+                    Close-PodeServer
+                }
+            }
+        }
+
+        # Mask values
+        $item = ($item | Protect-PodeLogItem)
+        if (('UDP' , 'TCP' , 'TLS') -contains $options.Transport) {
+            $processId = $PID
+
+            # Define the facility and severity
+            $facility = 1 # User-level messages
+            $severity = 6 # Informational
+            $priority = ($facility * 8) + $severity
+
+            # Determine the syslog message format
+            if ($options.RFC3164) {
+                # Set the max message length per RFC 3164 section 4.1
+                $MaxLength = 1024
+                # Assemble the full syslog formatted Message
+                $timestamp = (Get-Date).ToString('MMM dd HH:mm:ss')
+                $fullSyslogMessage = "<$priority>$timestamp $($options.Hostname) $($options.Source)[$processId]: $item"
+            }
+            else {
+                # Assemble the full syslog formatted Message
+                $fullSyslogMessage = "<$priority>1 $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.ffffffK') $($options.Hostname) $($options.Source) $processId - - $item"
+                write-podehost $fullSyslogMessage
+                # Set the max message length per RFC 5424 section 6.1
+                $MaxLength = 2048
+            }
+
+            # Write-PodeHost $fullSyslogMessage
+
+            # Ensure that the message is not too long
+            if ($fullSyslogMessage.Length -gt $MaxLength) {
+                $fullSyslogMessage = $fullSyslogMessage.Substring(0, $MaxLength)
+            }
+
+            # Convert the message to a byte array
+            $byteMessage = [Text.Encoding]::UTF8.GetBytes($fullSyslogMessage)
+        }
+
+        # Determine the transport protocol and send the message
+        switch ($options.Transport) {
+            'UDP' {
+                $udpClient = New-Object System.Net.Sockets.UdpClient
+                try {
+                    # Send the message to the syslog server
+                    $udpClient.Send($byteMessage, $byteMessage.Length, $options.Server, $options.Port)
+                }
+                catch {
+                    HandleFailure  "Failed to send UDP message: $_" $options.FailureAction
+                }
+                finally {
+                    # Close the UDP client
+                    $udpClient.Close()
+                }
+            }
+            'TCP' {
+                try {
+                    # Create a TCP client for non-secure communication
+                    $tcpClient = New-Object System.Net.Sockets.TcpClient
+                    $tcpClient.Connect($options.Server, $options.Port)
+                    $networkStream = $tcpClient.GetStream()
+
+                    # Send the message
+                    $networkStream.Write($byteMessage, 0, $byteMessage.Length)
+                    $networkStream.Flush()
+                }
+                catch {
+                    HandleFailure  "Failed to send TCP message: $_" $options.FailureAction
+                }
+                finally {
+                    # Close the TCP client
+                    if ($networkStream) { $networkStream.Close() }
+                    if ($tcpClient) { $tcpClient.Close() }
+                }
+            }
+            'TLS' {
+                try {
+                    # Create a TCP client for secure communication
+                    $tcpClient = New-Object System.Net.Sockets.TcpClient
+                    $tcpClient.Connect($options.Server, $options.Port)
+
+                    $sslStream = if ($options.SkipCertificateCheck) {
+                        New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false, { $true })
+                    }
+                    else {
+                        New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false)
+                    }
+
+                    # Define the TLS protocol version
+                    $tlsProtocol = if ($options.TlsProtocols) {
+                        $options.TlsProtocols
+                    }
+                    else {
+                        [System.Security.Authentication.SslProtocols]::Tls12  # Default to TLS 1.2
+                    }
+
+                    # Authenticate as client with specific TLS protocol
+                    $sslStream.AuthenticateAsClient($options.Server, $null, $tlsProtocol, $false)
+
+                    # Send the message
+                    $sslStream.Write($byteMessage)
+                    $sslStream.Flush()
+                }
+                catch {
+                    HandleFailure  "Failed to send secure TLS message: $_" $options.FailureAction
+                }
+                finally {
+                    # Close the TCP client
+                    if ($sslStream) { $sslStream.Close() }
+                    if ($tcpClient) { $tcpClient.Close() }
+                }
+            }
+            'Splunk' {
+                # Construct the Splunk API URL
+                $url = "http://$($options.Server):$($options.Port)/services/collector"
+                $headers = @{
+                    'Authorization' = "Splunk $($options.Token)"
+                }
+
+                $unixEpochTime = [math]::Round((Get-Date).ToUniversalTime().Subtract((Get-Date '1970-01-01')).TotalSeconds)
+                $Body = ConvertTo-Json -InputObject @{event = $item; host = $options.Hostname ; time = $unixEpochTime } -Compress
+
+                try {
+                    Invoke-RestMethod -Uri $splunkUrl -Method Post -Headers $headers -Body $body -ContentType 'application/json'
+                }
+                catch {
+                    HandleFailure  "Failed to send log to Splunk: $_" $options.FailureAction
+                }
+            }
+            'LogInsight' {
+
+                # Construct the Log Insight API URL
+                $url = "http://$($options.Server):$($options.Port)/api/v1/messages/ingest/$($options.Id)"
+
+                # Define the message payload
+                $payload = @{
+                    messages = @(
+                        @{
+                            text      = $item
+                            timestamp = [math]::Round((Get-Date).ToUniversalTime().Subtract((Get-Date '1970-01-01')).TotalMilliseconds)
+                        }
+                    )
+                }
+
+                # Convert payload to JSON
+                $body = $payload | ConvertTo-Json   -Compress
+
+                # Send the message to Log Insight
+                try {
+                    Invoke-RestMethod -Uri $url -Method Post -Body $body -ContentType 'application/json'
+                }
+                catch {
+                    HandleFailure  "Failed to send log to LogInsight: $_" $options.FailureAction
+                }
+            }
+        }
+    }
+}
+
 function Get-PodeLoggingEventViewerMethod {
     return {
         param($item, $options, $rawItem)

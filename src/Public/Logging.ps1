@@ -88,6 +88,7 @@ function New-PodeLoggingMethod {
         $EventLogName = 'Application',
 
         [Parameter(ParameterSetName = 'EventViewer')]
+        [Parameter(ParameterSetName = 'Syslog')]
         [string]
         $Source = 'Pode',
 
@@ -142,9 +143,53 @@ function New-PodeLoggingMethod {
 
         [Parameter(ParameterSetName = 'Custom')]
         [object[]]
-        $ArgumentList
-    )
+        $ArgumentList,
 
+        [Parameter(Mandatory = $true, ParameterSetName = 'Syslog')]
+        [switch]
+        $Syslog,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Syslog')]
+        [string]
+        $Server,
+
+        [Parameter( ParameterSetName = 'Syslog')]
+        [Int16]
+        $Port = 514,
+
+        [Parameter( ParameterSetName = 'Syslog')]
+        [ValidateSet('UDP', 'TCP', 'TCPwithTLS', 'Splunk', 'LogInsight')]
+        $Transport = 'UDP',
+
+        [Parameter( ParameterSetName = 'Syslog')]
+        [System.Security.Authentication.SslProtocols]
+        $TlsProtocol = [System.Security.Authentication.SslProtocols]::Tls12,
+
+        [Parameter( ParameterSetName = 'Syslog')]
+        [switch]
+        $RFC3164,
+
+        [Parameter( ParameterSetName = 'Syslog')]
+        [string]$Hostname = [System.Net.Dns]::GetHostName(),
+
+        [Parameter( ParameterSetName = 'Syslog')]
+        [switch]
+        $SkipCertificateCheck,
+
+        [Parameter( ParameterSetName = 'Syslog')]
+        [string]
+        $Token,
+
+        [Parameter( ParameterSetName = 'Syslog')]
+        [string]
+        $Id,
+
+        [Parameter( ParameterSetName = 'Syslog')]
+        [string]
+        [ValidateSet('Ignore', 'Report', 'Halt' )]
+        $FailureAction = 'Ignore'
+    )
+    
     # batch details
     $batchInfo = @{
         Size       = $Batch
@@ -202,6 +247,26 @@ function New-PodeLoggingMethod {
                     LogName = $EventLogName
                     Source  = $Source
                     ID      = $EventID
+                }
+            }
+        }
+
+        'syslog' {
+            return @{
+                ScriptBlock = (Get-PodeLoggingSysLogMethod)
+                Batch       = $batchInfo
+                Arguments   = @{
+                    Server               = $Server
+                    Port                 = $Port
+                    Transport            = $Transport
+                    Hostname             = $Hostname
+                    Source               = $Source
+                    TslProtocols         = $TlsProtocol
+                    SkipCertificateCheck = $SkipCertificateCheck
+                    RFC3164              = $RFC3164
+                    Token                = $Token
+                    Id                   = $Id
+                    FailureAction        = $FailureAction
                 }
             }
         }
