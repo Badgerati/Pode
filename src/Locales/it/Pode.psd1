@@ -1,12 +1,12 @@
 @{
-    schemaValidationRequiresPowerShell610ExceptionMessage = 'La convalida dello schema richiede PowerShell versione 6.1.0 o superiore.'
-    customAccessPathOrScriptBlockRequiredExceptionMessage = 'È necessario un percorso o un ScriptBlock per ottenere i valori di accesso personalizzati.'
-    operationIdMustBeUniqueForArrayExceptionMessage       = 'OperationID: {0} deve essere univoco e non può essere applicato a una matrice.'
-    endpointNotDefinedForRedirectingExceptionMessage      = "Non è stato definito un endpoint denominato '{0}' per il reindirizzamento."
-    filesHaveChangedMessage                               = 'I seguenti file sono stati modificati:'
-    iisAspnetcoreTokenMissingExceptionMessage             = 'IIS ASPNETCORE_TOKEN è mancante.'
-    minValueGreaterThanMaxExceptionMessage                = 'Il valore minimo per {0} non deve essere maggiore del valore massimo.'
-    noLogicPassedForRouteExceptionMessage                 = "Nessuna logica passata per la 'route': {0}"
+    schemaValidationRequiresPowerShell610ExceptionMessage             = 'La convalida dello schema richiede PowerShell versione 6.1.0 o superiore.'
+    customAccessPathOrScriptBlockRequiredExceptionMessage             = 'È necessario un percorso o un ScriptBlock per ottenere i valori di accesso personalizzati.'
+    operationIdMustBeUniqueForArrayExceptionMessage                   = 'OperationID: {0} deve essere univoco e non può essere applicato a una matrice.'
+    endpointNotDefinedForRedirectingExceptionMessage                  = "Non è stato definito un endpoint denominato '{0}' per il reindirizzamento."
+    filesHaveChangedMessage                                           = 'I seguenti file sono stati modificati:'
+    iisAspnetcoreTokenMissingExceptionMessage                         = 'IIS ASPNETCORE_TOKEN è mancante.'
+    minValueGreaterThanMaxExceptionMessage                            = 'Il valore minimo per {0} non deve essere maggiore del valore massimo.'
+    noLogicPassedForRouteExceptionMessage                             = "Nessuna logica passata per la 'route': {0}"
     scriptPathDoesNotExistExceptionMessage                            = 'Il percorso dello script non esiste: {0}'
     mutexAlreadyExistsExceptionMessage                                = 'Un mutex con il seguente nome esiste già: {0}'
     listeningOnEndpointsMessage                                       = 'In ascolto sui seguenti {0} endpoint [{1} thread]:'
@@ -257,7 +257,7 @@
     schemeRequiresValidScriptBlockExceptionMessage                    = "Lo schema fornito per il validatore di autenticazione '{0}' richiede uno ScriptBlock valido."
     serverLoopingMessage                                              = 'Ciclo del server ogni {0} secondi'
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'Impronte digitali/nome del certificato supportati solo su Windows.'
-    sseConnectionNameRequiredExceptionMessage                         = "È richiesto un nome di connessione SSE, sia da -Name che da $`$WebEvent.Sse.Name"
+    sseConnectionNameRequiredExceptionMessage                         = "È richiesto un nome di connessione SSE, sia da -Name che da `$WebEvent.Sse.Name"
     invalidMiddlewareTypeExceptionMessage                             = 'Uno dei Middleware forniti è di un tipo non valido. Previsto ScriptBlock o Hashtable, ma ottenuto: {0}'
     noSecretForJwtSignatureExceptionMessage                           = 'Nessun segreto fornito per la firma JWT.'
     modulePathDoesNotExistExceptionMessage                            = 'Il percorso del modulo non esiste: {0}'

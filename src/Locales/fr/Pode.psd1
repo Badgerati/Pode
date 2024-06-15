@@ -22,7 +22,7 @@
     noPropertiesMutuallyExclusiveExceptionMessage                     = "Le paramètre 'NoProperties' est mutuellement exclusif avec 'Properties', 'MinProperties' et 'MaxProperties'."
     incompatiblePodeDllExceptionMessage                               = 'Une version incompatible existante de Pode.DLL {0} est chargée. La version {1} est requise. Ouvrez une nouvelle session Powershell/pwsh et réessayez.'
     accessMethodDoesNotExistExceptionMessage                          = "La méthode d'accès n'existe pas : {0}."
-    scheduleAlreadyDefinedExceptionMessage                            = '[Calendrier] {0}: Calendrier déjà défini.'
+    scheduleAlreadyDefinedExceptionMessage                            = '[Horaire] {0}: Horaire déjà défini.'
     secondsValueCannotBeZeroOrLessExceptionMessage                    = 'La valeur en secondes ne peut pas être 0 ou inférieure pour {0}'
     pathToLoadNotFoundExceptionMessage                                = 'Chemin à charger {0} non trouvé : {1}'
     failedToImportModuleExceptionMessage                              = "Échec de l'importation du module : {0}"
@@ -42,7 +42,7 @@
     eolPowerShellWarningMessage                                       = "[AVERTISSEMENT] Pode {0} n'a pas été testé sur PowerShell {1}, car il est en fin de vie."
     runspacePoolFailedToLoadExceptionMessage                          = "{0} RunspacePool n'a pas pu être chargé."
     noEventRegisteredExceptionMessage                                 = 'Aucun événement {0} enregistré : {1}'
-    scheduleCannotHaveNegativeLimitExceptionMessage                   = '[Calendrier] {0}: Ne peut pas avoir de limite négative.'
+    scheduleCannotHaveNegativeLimitExceptionMessage                   = '[Horaire] {0}: Ne peut pas avoir de limite négative.'
     openApiRequestStyleInvalidForParameterExceptionMessage            = 'Le style de la requête OpenApi ne peut pas être {0} pour un paramètre {1}.'
     openApiDocumentNotCompliantExceptionMessage                       = "Le document OpenAPI n'est pas conforme."
     taskDoesNotExistExceptionMessage                                  = "La tâche '{0}' n'existe pas."
@@ -93,7 +93,7 @@
     noSessionAvailableToSaveExceptionMessage                          = 'Aucune session disponible pour sauvegarder.'
     pathParameterRequiresRequiredSwitchExceptionMessage               = "Si l'emplacement du paramètre est 'Path', le paramètre switch 'Required' est obligatoire."
     noOpenApiUrlSuppliedExceptionMessage                              = 'Aucune URL OpenAPI fournie pour {0}.'
-    maximumConcurrentSchedulesInvalidExceptionMessage                 = 'Les calendriers simultanés maximum doivent être >=1 mais obtenu: {0}'
+    maximumConcurrentSchedulesInvalidExceptionMessage                 = 'Les horaires simultanés maximum doivent être >=1 mais obtenu: {0}'
     snapinsSupportedOnWindowsPowershellOnlyExceptionMessage           = 'Les Snapins sont uniquement pris en charge sur Windows PowerShell.'
     eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage          = "La journalisation dans le Visualisateur d'événements n'est prise en charge que sous Windows."
     parametersMutuallyExclusiveExceptionMessage                       = "Les paramètres '{0}' et '{1}' sont mutuellement exclusifs."
@@ -120,7 +120,7 @@
     discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage = "Le paramètre 'DiscriminatorMapping' ne peut être utilisé que lorsque 'DiscriminatorProperty' est présent."
     scriptErrorExceptionMessage                                       = "Erreur '{0}' dans le script {1} {2} (ligne {3}) char {4} en exécutant {5} sur l'objet {6} '{7}' Classe : {8} ClasseBase : {9}"
     cannotSupplyIntervalForQuarterExceptionMessage                    = "Impossible de fournir une valeur d'intervalle pour chaque trimestre."
-    scheduleEndTimeMustBeInFutureExceptionMessage                     = '[Calendrier] {0}: La valeur de EndTime doit être dans le futur.'
+    scheduleEndTimeMustBeInFutureExceptionMessage                     = '[Horaire] {0}: La valeur de EndTime doit être dans le futur.'
     invalidJwtSignatureSuppliedExceptionMessage                       = 'Signature JWT fournie invalide.'
     noSetScriptBlockForVaultExceptionMessage                          = "Aucun ScriptBlock de configuration fourni pour mettre à jour/créer des secrets dans le coffre '{0}'"
     accessMethodNotExistForMergingExceptionMessage                    = "La méthode d'accès n'existe pas pour la fusion : {0}"
@@ -192,7 +192,7 @@
     unsupportedJwtAlgorithmExceptionMessage                           = "L'algorithme JWT n'est actuellement pas pris en charge : {0}"
     websocketsNotConfiguredForSignalMessagesExceptionMessage          = 'Les WebSockets ne sont pas configurés pour envoyer des messages de signal.'
     invalidLogicTypeInHashtableMiddlewareExceptionMessage             = 'Un Middleware Hashtable fourni a un type de logique non valide. Attendu ScriptBlock, mais a obtenu : {0}'
-    maximumConcurrentSchedulesLessThanMinimumExceptionMessage         = 'Les calendriers simultanés maximum ne peuvent pas être inférieurs au minimum de {0} mais obtenu: {1}'
+    maximumConcurrentSchedulesLessThanMinimumExceptionMessage         = 'Les Horaires simultanés maximum ne peuvent pas être inférieurs au minimum de {0} mais obtenu: {1}'
     failedToAcquireSemaphoreOwnershipExceptionMessage                 = "Échec de l'acquisition de la propriété du sémaphore. Nom du sémaphore: {0}"
     propertiesParameterWithoutNameExceptionMessage                    = "Les paramètres Properties ne peuvent pas être utilisés si la propriété n'a pas de nom."
     customSessionStorageMethodNotImplementedExceptionMessage          = "Le stockage de session personnalisé n'implémente pas la méthode requise '{0}()'."
@@ -217,7 +217,7 @@
     openApiComponentSchemaDoesNotExistExceptionMessage                = "Le schéma du composant OpenApi {0} n'existe pas."
     timerParameterMustBeGreaterThanZeroExceptionMessage               = '[Minuteur] {0}: {1} doit être supérieur à 0.'
     taskTimedOutExceptionMessage                                      = 'La tâche a expiré après {0}ms.'
-    scheduleStartTimeAfterEndTimeExceptionMessage                     = "[Calendrier] {0}: Ne peut pas avoir un 'StartTime' après 'EndTime'"
+    scheduleStartTimeAfterEndTimeExceptionMessage                     = "[Horaire] {0}: Ne peut pas avoir un 'StartTime' après 'EndTime'"
     infoVersionMandatoryMessage                                       = 'info.version est obligatoire.'
     cannotUnlockNullObjectExceptionMessage                            = 'Impossible de déverrouiller un objet nul.'
     nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage          = "Un ScriptBlock non vide est requis pour le schéma d'authentification personnalisé."
@@ -230,7 +230,7 @@
     oauth2RequiresAuthorizeUrlExceptionMessage                        = "OAuth2 nécessite une URL d'autorisation."
     pathNotExistExceptionMessage                                      = "Le chemin n'existe pas : {0}"
     noDomainServerNameForWindowsAdAuthExceptionMessage                = "Aucun nom de serveur de domaine n'a été fourni pour l'authentification Windows AD."
-    suppliedDateAfterScheduleEndTimeExceptionMessage                  = "La date fournie est postérieure à l'heure de fin du calendrier à {0}"
+    suppliedDateAfterScheduleEndTimeExceptionMessage                  = "La date fournie est postérieure à l'heure de fin du Horaire à {0}"
     wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage        = 'Le caractère générique * pour les Méthodes est incompatible avec le commutateur AutoMethods.'
     cannotSupplyIntervalForYearExceptionMessage                       = "Impossible de fournir une valeur d'intervalle pour chaque année."
     missingComponentsMessage                                          = 'Composant(s) manquant(s)'
@@ -239,7 +239,7 @@
     daysInMonthExceededExceptionMessage                               = "{0} n'a que {1} jours, mais {2} a été fourni."
     nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage       = 'Un ScriptBlock non vide est requis pour la méthode de journalisation personnalisée.'
     encodingAttributeOnlyAppliesToMultipartExceptionMessage           = "L'attribut d'encodage s'applique uniquement aux corps de requête multipart et application/x-www-form-urlencoded."
-    suppliedDateBeforeScheduleStartTimeExceptionMessage               = "La date fournie est antérieure à l'heure de début du calendrier à {0}"
+    suppliedDateBeforeScheduleStartTimeExceptionMessage               = "La date fournie est antérieure à l'heure de début du Horaire à {0}"
     unlockSecretRequiredExceptionMessage                              = "Une propriété 'UnlockSecret' est requise lors de l'utilisation de Microsoft.PowerShell.SecretStore"
     noLogicPassedForMethodRouteExceptionMessage                       = '[{0}] {1}: Aucune logique passée.'
     bodyParserAlreadyDefinedForContentTypeExceptionMessage            = 'Un analyseur de corps est déjà défini pour le type de contenu {0}.'
@@ -249,7 +249,7 @@
     invalidJwtHeaderAlgorithmSuppliedExceptionMessage                 = "Algorithme de l'en-tête JWT fourni invalide."
     oauth2ProviderDoesNotSupportPasswordGrantTypeExceptionMessage     = "Le fournisseur OAuth2 ne supporte pas le type de subvention 'password' requis par l'utilisation d'un InnerScheme."
     invalidAliasFoundExceptionMessage                                 = 'Alias {0} non valide trouvé : {1}'
-    scheduleDoesNotExistExceptionMessage                              = "Le calendrier '{0}' n'existe pas."
+    scheduleDoesNotExistExceptionMessage                              = "Le Horaire '{0}' n'existe pas."
     accessMethodNotExistExceptionMessage                              = "La méthode d'accès n'existe pas : {0}"
     oauth2ProviderDoesNotSupportCodeResponseTypeExceptionMessage      = "Le fournisseur OAuth2 ne supporte pas le type de réponse 'code'."
     untestedPowerShellVersionWarningMessage                           = "[AVERTISSEMENT] Pode {0} n'a pas été testé sur PowerShell {1}, car il n'était pas disponible lors de la sortie de Pode."
@@ -257,7 +257,7 @@
     schemeRequiresValidScriptBlockExceptionMessage                    = "Le schéma fourni pour le validateur d'authentification '{0}' nécessite un ScriptBlock valide."
     serverLoopingMessage                                              = 'Boucle du serveur toutes les {0} secondes'
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'Les empreintes digitales/Noms de certificat ne sont pris en charge que sous Windows.'
-    sseConnectionNameRequiredExceptionMessage                         = "Un nom de connexion SSE est requis, soit de -Name soit de $`$WebEvent.Sse.Name"
+    sseConnectionNameRequiredExceptionMessage                         = "Un nom de connexion SSE est requis, soit de -Name soit de `$WebEvent.Sse.Name"
     invalidMiddlewareTypeExceptionMessage                             = "Un des Middlewares fournis est d'un type non valide. Attendu ScriptBlock ou Hashtable, mais a obtenu : {0}"
     noSecretForJwtSignatureExceptionMessage                           = 'Aucun secret fourni pour la signature JWT.'
     modulePathDoesNotExistExceptionMessage                            = "Le chemin du module n'existe pas : {0}"

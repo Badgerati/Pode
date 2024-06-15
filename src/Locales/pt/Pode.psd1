@@ -22,7 +22,7 @@
     noPropertiesMutuallyExclusiveExceptionMessage                     = "O parâmetro 'NoProperties' é mutuamente exclusivo com 'Properties', 'MinProperties' e 'MaxProperties'."
     incompatiblePodeDllExceptionMessage                               = 'Uma versão incompatível existente do Pode.DLL {0} está carregada. É necessária a versão {1}. Abra uma nova sessão do Powershell/pwsh e tente novamente.'
     accessMethodDoesNotExistExceptionMessage                          = 'O método de acesso não existe: {0}.'
-    scheduleAlreadyDefinedExceptionMessage                            = '[Agenda] {0}: Agenda já definida.'
+    scheduleAlreadyDefinedExceptionMessage                            = '[Cronograma] {0}: Cronograma já definida.'
     secondsValueCannotBeZeroOrLessExceptionMessage                    = 'O valor dos segundos não pode ser 0 ou inferior para {0}'
     pathToLoadNotFoundExceptionMessage                                = 'Caminho para carregar {0} não encontrado: {1}'
     failedToImportModuleExceptionMessage                              = 'Falha ao importar módulo: {0}'
@@ -42,7 +42,7 @@
     eolPowerShellWarningMessage                                       = '[AVISO] Pode {0} não foi testado no PowerShell {1}, pois está em EOL.'
     runspacePoolFailedToLoadExceptionMessage                          = '{0} Falha ao carregar RunspacePool.'
     noEventRegisteredExceptionMessage                                 = 'Nenhum evento {0} registrado: {1}'
-    scheduleCannotHaveNegativeLimitExceptionMessage                   = '[Agenda] {0}: Não pode ter um limite negativo.'
+    scheduleCannotHaveNegativeLimitExceptionMessage                   = '[Cronograma] {0}: Não pode ter um limite negativo.'
     openApiRequestStyleInvalidForParameterExceptionMessage            = 'O estilo da solicitação OpenApi não pode ser {0} para um parâmetro {1}.'
     openApiDocumentNotCompliantExceptionMessage                       = 'O documento OpenAPI não está em conformidade.'
     taskDoesNotExistExceptionMessage                                  = "A tarefa '{0}' não existe."
@@ -93,7 +93,7 @@
     noSessionAvailableToSaveExceptionMessage                          = 'Não há sessão disponível para salvar.'
     pathParameterRequiresRequiredSwitchExceptionMessage               = "Se a localização do parâmetro for 'Path', o parâmetro de switch 'Required' é obrigatório."
     noOpenApiUrlSuppliedExceptionMessage                              = 'Nenhuma URL do OpenAPI fornecida para {0}.'
-    maximumConcurrentSchedulesInvalidExceptionMessage                 = 'As agendas simultâneas máximas devem ser >=1, mas obtidas: {0}'
+    maximumConcurrentSchedulesInvalidExceptionMessage                 = 'As cronogramas simultâneas máximas devem ser >=1, mas obtidas: {0}'
     snapinsSupportedOnWindowsPowershellOnlyExceptionMessage           = 'Os Snapins são suportados apenas no Windows PowerShell.'
     eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage          = 'O registro no Visualizador de Eventos é suportado apenas no Windows.'
     parametersMutuallyExclusiveExceptionMessage                       = "Os parâmetros '{0}' e '{1}' são mutuamente exclusivos."
@@ -120,7 +120,7 @@
     discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage = "O parâmetro 'DiscriminatorMapping' só pode ser usado quando 'DiscriminatorProperty' está presente."
     scriptErrorExceptionMessage                                       = "Erro '{0}' no script {1} {2} (linha {3}) caractere {4} executando {5} em {6} objeto '{7}' Classe: {8} ClasseBase: {9}"
     cannotSupplyIntervalForQuarterExceptionMessage                    = 'Não é possível fornecer um valor de intervalo para cada trimestre.'
-    scheduleEndTimeMustBeInFutureExceptionMessage                     = '[Agenda] {0}: O valor de EndTime deve estar no futuro.'
+    scheduleEndTimeMustBeInFutureExceptionMessage                     = '[Cronograma] {0}: O valor de EndTime deve estar no futuro.'
     invalidJwtSignatureSuppliedExceptionMessage                       = 'Assinatura JWT fornecida inválida.'
     noSetScriptBlockForVaultExceptionMessage                          = "Nenhum ScriptBlock fornecido para atualizar/criar segredos no cofre '{0}'"
     accessMethodNotExistForMergingExceptionMessage                    = 'O método de acesso não existe para a mesclagem: {0}'
@@ -192,7 +192,7 @@
     unsupportedJwtAlgorithmExceptionMessage                           = 'O algoritmo JWT não é atualmente suportado: {0}'
     websocketsNotConfiguredForSignalMessagesExceptionMessage          = 'WebSockets não estão configurados para enviar mensagens de sinal.'
     invalidLogicTypeInHashtableMiddlewareExceptionMessage             = 'Um Middleware do tipo Hashtable fornecido tem um tipo de lógica inválido. Esperado ScriptBlock, mas obtido: {0}'
-    maximumConcurrentSchedulesLessThanMinimumExceptionMessage         = 'As agendas simultâneas máximas não podem ser inferiores ao mínimo de {0}, mas obtidas: {1}'
+    maximumConcurrentSchedulesLessThanMinimumExceptionMessage         = 'As cronogramas simultâneas máximas não podem ser inferiores ao mínimo de {0}, mas obtidas: {1}'
     failedToAcquireSemaphoreOwnershipExceptionMessage                 = 'Falha ao adquirir a propriedade do semáforo. Nome do semáforo: {0}'
     propertiesParameterWithoutNameExceptionMessage                    = 'Os parâmetros Properties não podem ser usados se a propriedade não tiver um nome.'
     customSessionStorageMethodNotImplementedExceptionMessage          = "O armazenamento de sessão personalizado não implementa o método requerido '{0}()'."
@@ -217,7 +217,7 @@
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'O esquema do componente OpenApi {0} não existe.'
     timerParameterMustBeGreaterThanZeroExceptionMessage               = '[Temporizador] {0}: {1} deve ser maior que 0.'
     taskTimedOutExceptionMessage                                      = 'A tarefa expirou após {0}ms.'
-    scheduleStartTimeAfterEndTimeExceptionMessage                     = "[Agenda] {0}: Não pode ter um 'StartTime' após o 'EndTime'"
+    scheduleStartTimeAfterEndTimeExceptionMessage                     = "[Cronograma] {0}: Não pode ter um 'StartTime' após o 'EndTime'"
     infoVersionMandatoryMessage                                       = 'info.version é obrigatório.'
     cannotUnlockNullObjectExceptionMessage                            = 'Não é possível desbloquear um objeto nulo.'
     nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage          = 'É necessário um ScriptBlock não vazio para o esquema de autenticação personalizado.'
@@ -230,7 +230,7 @@
     oauth2RequiresAuthorizeUrlExceptionMessage                        = 'OAuth2 requer que seja fornecida uma URL de Autorização'
     pathNotExistExceptionMessage                                      = 'O caminho não existe: {0}'
     noDomainServerNameForWindowsAdAuthExceptionMessage                = 'Nenhum nome de servidor de domínio foi fornecido para a autenticação AD do Windows'
-    suppliedDateAfterScheduleEndTimeExceptionMessage                  = 'A data fornecida é posterior ao horário de término da agenda em {0}'
+    suppliedDateAfterScheduleEndTimeExceptionMessage                  = 'A data fornecida é posterior ao horário de término da cronograma em {0}'
     wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage        = 'O caractere curinga * para os Métodos é incompatível com a chave AutoMethods.'
     cannotSupplyIntervalForYearExceptionMessage                       = 'Não é possível fornecer um valor de intervalo para cada ano.'
     missingComponentsMessage                                          = 'Componente(s) ausente(s)'
@@ -239,7 +239,7 @@
     daysInMonthExceededExceptionMessage                               = '{0} tem apenas {1} dias, mas {2} foi fornecido.'
     nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage       = 'Um ScriptBlock não vazio é necessário para o método de registro personalizado.'
     encodingAttributeOnlyAppliesToMultipartExceptionMessage           = 'O atributo de codificação só se aplica a corpos de solicitação multipart e application/x-www-form-urlencoded.'
-    suppliedDateBeforeScheduleStartTimeExceptionMessage               = 'A data fornecida é anterior ao horário de início da agenda em {0}'
+    suppliedDateBeforeScheduleStartTimeExceptionMessage               = 'A data fornecida é anterior ao horário de início da cronograma em {0}'
     unlockSecretRequiredExceptionMessage                              = "É necessária uma propriedade 'UnlockSecret' ao usar Microsoft.PowerShell.SecretStore"
     noLogicPassedForMethodRouteExceptionMessage                       = '[{0}] {1}: Nenhuma lógica passada.'
     bodyParserAlreadyDefinedForContentTypeExceptionMessage            = 'Um body-parser já está definido para o tipo de conteúdo {0}.'
@@ -249,7 +249,7 @@
     invalidJwtHeaderAlgorithmSuppliedExceptionMessage                 = 'Algoritmo de cabeçalho JWT fornecido inválido.'
     oauth2ProviderDoesNotSupportPasswordGrantTypeExceptionMessage     = "O provedor OAuth2 não suporta o grant_type 'password' necessário ao usar um InnerScheme."
     invalidAliasFoundExceptionMessage                                 = 'Alias {0} inválido encontrado: {1}'
-    scheduleDoesNotExistExceptionMessage                              = "A agenda '{0}' não existe."
+    scheduleDoesNotExistExceptionMessage                              = "A cronograma '{0}' não existe."
     accessMethodNotExistExceptionMessage                              = 'O método de acesso não existe: {0}'
     oauth2ProviderDoesNotSupportCodeResponseTypeExceptionMessage      = "O provedor OAuth2 não suporta o response_type 'code'."
     untestedPowerShellVersionWarningMessage                           = '[AVISO] Pode {0} não foi testado no PowerShell {1}, pois não estava disponível quando o Pode foi lançado.'

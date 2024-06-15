@@ -257,7 +257,7 @@
     schemeRequiresValidScriptBlockExceptionMessage                    = "Dostarczony schemat dla walidatora uwierzytelniania '{0}' wymaga ważnego ScriptBlock."
     serverLoopingMessage                                              = 'Pętla serwera co {0} sekund'
     certificateThumbprintsNameSupportedOnWindowsExceptionMessage      = 'Odciski palców/nazwa certyfikatu są obsługiwane tylko w systemie Windows.'
-    sseConnectionNameRequiredExceptionMessage                         = "Wymagana jest nazwa połączenia SSE, z -Name lub $`$WebEvent.Sse.Name"
+    sseConnectionNameRequiredExceptionMessage                         = "Wymagana jest nazwa połączenia SSE, z -Name lub `$WebEvent.Sse.Name"
     invalidMiddlewareTypeExceptionMessage                             = 'Jeden z dostarczonych Middleware jest nieprawidłowego typu. Oczekiwano ScriptBlock lub Hashtable, ale otrzymano: {0}'
     noSecretForJwtSignatureExceptionMessage                           = 'Nie podano tajemnicy dla podpisu JWT.'
     modulePathDoesNotExistExceptionMessage                            = 'Ścieżka modułu nie istnieje: {0}'

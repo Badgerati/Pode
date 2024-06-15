@@ -1,5 +1,5 @@
 @{
-  schemaValidationRequiresPowerShell610ExceptionMessage             = 'Schema validation required PowerShell version 6.1.0 or greater.'
+  schemaValidationRequiresPowerShell610ExceptionMessage             = 'Schema validation requires PowerShell version 6.1.0 or greater.'
   customAccessPathOrScriptBlockRequiredExceptionMessage             = 'A Path or ScriptBlock is required for sourcing the Custom access values.'
   operationIdMustBeUniqueForArrayExceptionMessage                   = 'OperationID: {0} has to be unique and cannot be applied to an array.'
   endpointNotDefinedForRedirectingExceptionMessage                  = "An endpoint named '{0}' has not been defined for redirecting."

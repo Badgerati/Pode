@@ -22,7 +22,7 @@
     noPropertiesMutuallyExclusiveExceptionMessage                     = "Der Parameter 'NoProperties' schließt 'Properties', 'MinProperties' und 'MaxProperties' gegenseitig aus."
     incompatiblePodeDllExceptionMessage                               = 'Eine vorhandene inkompatible Pode.DLL-Version {0} ist geladen. Version {1} wird benötigt. Öffnen Sie eine neue PowerShell/pwsh-Sitzung und versuchen Sie es erneut.'
     accessMethodDoesNotExistExceptionMessage                          = 'Zugriffsmethode existiert nicht: {0}.'
-    scheduleAlreadyDefinedExceptionMessage                            = '[Zeitplan] {0}: Zeitplan bereits definiert.'
+    scheduleAlreadyDefinedExceptionMessage                            = '[Aufgabenplaner] {0}: Aufgabenplaner bereits definiert.'
     secondsValueCannotBeZeroOrLessExceptionMessage                    = 'Der Sekundenwert darf für {0} nicht 0 oder weniger sein.'
     pathToLoadNotFoundExceptionMessage                                = 'Pfad zum Laden von {0} nicht gefunden: {1}'
     failedToImportModuleExceptionMessage                              = 'Modulimport fehlgeschlagen: {0}'
@@ -42,7 +42,7 @@
     eolPowerShellWarningMessage                                       = '[WARNUNG] Pode {0} wurde nicht auf PowerShell {1} getestet, da es das Ende des Lebenszyklus erreicht hat.'
     runspacePoolFailedToLoadExceptionMessage                          = '{0} RunspacePool konnte nicht geladen werden.'
     noEventRegisteredExceptionMessage                                 = 'Kein Ereignis {0} registriert: {1}'
-    scheduleCannotHaveNegativeLimitExceptionMessage                   = '[Zeitplan] {0}: Kann kein negatives Limit haben.'
+    scheduleCannotHaveNegativeLimitExceptionMessage                   = '[Aufgabenplaner] {0}: Kann kein negatives Limit haben.'
     openApiRequestStyleInvalidForParameterExceptionMessage            = 'Der OpenApi-Anfragestil kann für einen {1}-Parameter nicht {0} sein.'
     openApiDocumentNotCompliantExceptionMessage                       = 'Das OpenAPI-Dokument ist nicht konform.'
     taskDoesNotExistExceptionMessage                                  = "Aufgabe '{0}' existiert nicht."
@@ -120,7 +120,7 @@
     discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage = "Der Parameter 'DiscriminatorMapping' kann nur verwendet werden, wenn 'DiscriminatorProperty' vorhanden ist."
     scriptErrorExceptionMessage                                       = "Fehler '{0}' im Skript {1} {2} (Zeile {3}) Zeichen {4} beim Ausführen von {5} auf {6} Objekt '{7}' Klasse: {8} Basisklasse: {9}"
     cannotSupplyIntervalForQuarterExceptionMessage                    = 'Ein Intervallwert kann nicht für jedes Quartal angegeben werden.'
-    scheduleEndTimeMustBeInFutureExceptionMessage                     = '[Zeitplan] {0}: Der Wert für EndTime muss in der Zukunft liegen.'
+    scheduleEndTimeMustBeInFutureExceptionMessage                     = '[Aufgabenplaner] {0}: Der Wert für EndTime muss in der Zukunft liegen.'
     invalidJwtSignatureSuppliedExceptionMessage                       = 'Ungültige JWT-Signatur angegeben.'
     noSetScriptBlockForVaultExceptionMessage                          = "Kein Set ScriptBlock für das Aktualisieren/Erstellen von Geheimnissen im Tresor '{0}' bereitgestellt."
     accessMethodNotExistForMergingExceptionMessage                    = 'Zugriffsmethode zum Zusammenführen nicht vorhanden: {0}.'
@@ -217,7 +217,7 @@
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'Das OpenApi-Komponentenschema {0} existiert nicht.'
     timerParameterMustBeGreaterThanZeroExceptionMessage               = '[Timer] {0}: {1} muss größer als 0 sein.'
     taskTimedOutExceptionMessage                                      = 'Aufgabe ist nach {0}ms abgelaufen.'
-    scheduleStartTimeAfterEndTimeExceptionMessage                     = '[Zeitplan] {0}: StartTime kann nicht nach EndTime liegen.'
+    scheduleStartTimeAfterEndTimeExceptionMessage                     = '[Aufgabenplaner] {0}: StartTime kann nicht nach EndTime liegen.'
     infoVersionMandatoryMessage                                       = 'info.version ist obligatorisch.'
     cannotUnlockNullObjectExceptionMessage                            = 'Kann ein null-Objekt nicht entsperren.'
     nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage          = 'Ein nicht leerer ScriptBlock ist für das benutzerdefinierte Authentifizierungsschema erforderlich.'
@@ -230,7 +230,7 @@
     oauth2RequiresAuthorizeUrlExceptionMessage                        = 'OAuth2 erfordert die Angabe einer Autorisierungs-URL.'
     pathNotExistExceptionMessage                                      = 'Pfad existiert nicht: {0}'
     noDomainServerNameForWindowsAdAuthExceptionMessage                = 'Es wurde kein Domänenservername für die Windows-AD-Authentifizierung angegeben.'
-    suppliedDateAfterScheduleEndTimeExceptionMessage                  = 'Das angegebene Datum liegt nach der Endzeit des Zeitplans bei {0}'
+    suppliedDateAfterScheduleEndTimeExceptionMessage                  = 'Das angegebene Datum liegt nach der Endzeit des Aufgabenplaners bei {0}'
     wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage        = 'Das *-Wildcard für Methoden ist nicht mit dem AutoMethods-Schalter kompatibel.'
     cannotSupplyIntervalForYearExceptionMessage                       = 'Ein Intervallwert kann nicht für jedes Jahr angegeben werden.'
     missingComponentsMessage                                          = 'Fehlende Komponente(n)'
@@ -239,7 +239,7 @@
     daysInMonthExceededExceptionMessage                               = '{0} hat nur {1} Tage, aber {2} wurden angegeben'
     nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage       = 'Ein nicht leerer ScriptBlock ist für die benutzerdefinierte Protokollierungsmethode erforderlich.'
     encodingAttributeOnlyAppliesToMultipartExceptionMessage           = 'Das Encoding-Attribut gilt nur für multipart und application/x-www-form-urlencoded Anfragekörper.'
-    suppliedDateBeforeScheduleStartTimeExceptionMessage               = 'Das angegebene Datum liegt vor der Startzeit des Zeitplans bei {0}'
+    suppliedDateBeforeScheduleStartTimeExceptionMessage               = 'Das angegebene Datum liegt vor der Startzeit des Aufgabenplaners bei {0}'
     unlockSecretRequiredExceptionMessage                              = "Eine 'UnlockSecret'-Eigenschaft ist erforderlich, wenn Microsoft.PowerShell.SecretStore verwendet wird."
     noLogicPassedForMethodRouteExceptionMessage                       = '[{0}] {1}: Keine Logik übergeben.'
     bodyParserAlreadyDefinedForContentTypeExceptionMessage            = 'Für den Inhaltstyp {0} ist bereits ein Body-Parser definiert.'
@@ -249,7 +249,7 @@
     invalidJwtHeaderAlgorithmSuppliedExceptionMessage                 = 'Ungültiger JWT-Header-Algorithmus angegeben.'
     oauth2ProviderDoesNotSupportPasswordGrantTypeExceptionMessage     = "Der OAuth2-Anbieter unterstützt den für die Verwendung eines InnerScheme erforderlichen 'password'-Grant-Typ nicht."
     invalidAliasFoundExceptionMessage                                 = 'Ungültiges {0}-Alias gefunden: {1}'
-    scheduleDoesNotExistExceptionMessage                              = "Zeitplan '{0}' existiert nicht."
+    scheduleDoesNotExistExceptionMessage                              = "Aufgabenplaner '{0}' existiert nicht."
     accessMethodNotExistExceptionMessage                              = 'Zugriffsmethode nicht vorhanden: {0}.'
     oauth2ProviderDoesNotSupportCodeResponseTypeExceptionMessage      = "Der OAuth2-Anbieter unterstützt den 'code'-Antworttyp nicht."
     untestedPowerShellVersionWarningMessage                           = '[WARNUNG] Pode {0} wurde nicht auf PowerShell {1} getestet, da diese Version bei der Veröffentlichung von Pode nicht verfügbar war.'
