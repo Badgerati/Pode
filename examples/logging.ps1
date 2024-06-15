@@ -33,18 +33,36 @@ Start-PodeServer -browse {
 
             $type | Enable-PodeRequestLogging
         }
-        'syslog'{
-            New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport TCP| Enable-PodeRequestLogging
+        'syslog' {
+            $logging = New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP
+
+            $logging | Enable-PodeRequestLogging
+            $logging | Enable-PodeErrorLogging
+            $logging | Enable-PodeLogging -Name 'custom'
+
+
         }
     }
-
+    Write-PodeLog -Name 'custom' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        Write-PodeLog -Name  'custom' -Message 'My custom log' -Level 'Info'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
+
+        Set-PodeResponseStatus -Code 500
+    }
+
+    Add-PodeRoute -Method Get -Path '/exception' -ScriptBlock {
+        try {
+            throw 'something happened'
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
         Set-PodeResponseStatus -Code 500
     }
 

@@ -280,6 +280,7 @@
         'New-PodeLoggingMethod',
         'Enable-PodeRequestLogging',
         'Enable-PodeErrorLogging',
+        'Enable-PodeLogging',
         'Disable-PodeRequestLogging',
         'Disable-PodeErrorLogging',
         'Add-PodeLogger',

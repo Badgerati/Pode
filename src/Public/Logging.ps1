@@ -63,22 +63,31 @@ The port on the Syslog server (Default: 514).
 The transport protocol to use (Default: UDP).
 
 .PARAMETER TlsProtocol
-The TLS protocol version to use.
+The TLS protocol version to use (Default: TLS 1.3).
 
-.PARAMETER RFC3164
-Use RFC3164 format for Syslog messages.
+.PARAMETER SyslogProtocol
+The Syslog protocol to use (Default: RFC5424).
 
-.PARAMETER Hostname
-The hostname to include in Syslog messages (Default: System.Net.Dns::GetHostName()).
+.PARAMETER Encoding
+The encoding to use for the Syslog messages (Default: UTF8).
 
 .PARAMETER SkipCertificateCheck
 Skip certificate validation for TLS connections.
 
+.PARAMETER Restful
+If supplied, will use the Restful logging output method.
+
+.PARAMETER BaseUrl
+The base URL for the Restful logging endpoint.
+
+.PARAMETER Platform
+The platform for Restful logging (Splunk, LogInsight).
+
 .PARAMETER Token
-The token for authentication with Syslog servers that require it.
+The token for authentication with Restful servers that require it.
 
 .PARAMETER Id
-The identifier for the Syslog message.
+The LogInsight collector ID.
 
 .PARAMETER FailureAction
 Defines the behavior in case of failure. Options are: Ignore, Report, Halt (Default: Ignore).
@@ -94,6 +103,9 @@ $custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
 
 .EXAMPLE
 $syslog_logging = New-PodeLoggingMethod -Syslog -Server '192.168.1.1' -Port 514 -Transport 'UDP'
+
+.EXAMPLE
+$restful_logging = New-PodeLoggingMethod -Restful -BaseUrl 'https://logserver.example.com' -Platform 'Splunk' -Token 'your-token'
 #>
 function New-PodeLoggingMethod {
     [CmdletBinding(DefaultParameterSetName = 'Terminal')]
@@ -194,32 +206,68 @@ function New-PodeLoggingMethod {
         $Port = 514,
 
         [Parameter( ParameterSetName = 'Syslog')]
-        [ValidateSet('UDP', 'TCP', 'TCPwithTLS', 'Splunk', 'LogInsight')]
+        [ValidateSet('UDP', 'TCP', 'TLS' )]
+        [string]
         $Transport = 'UDP',
 
         [Parameter( ParameterSetName = 'Syslog')]
         [System.Security.Authentication.SslProtocols]
-        $TlsProtocol = [System.Security.Authentication.SslProtocols]::Tls12,
+        $TlsProtocol = [System.Security.Authentication.SslProtocols]::Tls13,
 
         [Parameter( ParameterSetName = 'Syslog')]
-        [switch]
-        $RFC3164,
+        [ValidateSet('RFC3164' , 'RFC5424')]
+        [string]
+        $SyslogProtocol = 'RFC5424',
 
         [Parameter( ParameterSetName = 'Syslog')]
-        [string]$Hostname = [System.Net.Dns]::GetHostName(),
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Default', 'Unicode', 'UTF32', 'UTF7', 'UTF8')]
+        [string]
+        $Encoding = 'UTF8',
 
         [Parameter( ParameterSetName = 'Syslog')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Restful')]
         [switch]
         $SkipCertificateCheck,
 
-        [Parameter( ParameterSetName = 'Syslog')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Restful')]
+        [switch]
+        $Restful,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Restful')]
+        [ValidateScript({
+                try {
+                    $uri = [System.Uri]::new($_)
+                    if ($uri.Scheme -match 'http|https' -and $uri.Host) {
+                        return $true
+                    }
+                    else {
+                        throw
+                    }
+                }
+                catch {
+                    throw "Invalid URL: $_"
+                }
+            })]
+        [string]
+        $BaseUrl,
+
+        [Parameter( ParameterSetName = 'Restful')]
+        [ValidateSet( 'Splunk', 'LogInsight')]
+        $Platform = 'Splunk',
+
+        [Parameter( ParameterSetName = 'Restful')]
         [string]
         $Token,
 
-        [Parameter( ParameterSetName = 'Syslog')]
+        [Parameter( ParameterSetName = 'Restful')]
         [string]
         $Id,
 
+        [Parameter(ParameterSetName = 'EventViewer')]
+        [Parameter(ParameterSetName = 'File')]
+        [Parameter(ParameterSetName = 'Custom')]
+        [Parameter( ParameterSetName = 'Restful')]
         [Parameter( ParameterSetName = 'Syslog')]
         [string]
         [ValidateSet('Ignore', 'Report', 'Halt' )]
@@ -261,6 +309,7 @@ function New-PodeLoggingMethod {
                     FileId        = 0
                     Date          = $null
                     NextClearDown = [datetime]::Now.Date
+                    FailureAction = $FailureAction
                 }
             }
         }
@@ -280,14 +329,22 @@ function New-PodeLoggingMethod {
                 ScriptBlock = (Get-PodeLoggingEventViewerMethod)
                 Batch       = $batchInfo
                 Arguments   = @{
-                    LogName = $EventLogName
-                    Source  = $Source
-                    ID      = $EventID
+                    LogName       = $EventLogName
+                    Source        = $Source
+                    ID            = $EventID
+                    FailureAction = $FailureAction
                 }
             }
         }
 
         'syslog' {
+            # Get the encoding object based on the selected encoding name
+            $selectedEncoding = [System.Text.Encoding]::$Encoding
+
+            if ($null -eq $selectedEncoding) {
+                throw "Invalid encoding selected: $Encoding"
+            }
+
             return @{
                 ScriptBlock = (Get-PodeLoggingSysLogMethod)
                 Batch       = $batchInfo
@@ -299,7 +356,23 @@ function New-PodeLoggingMethod {
                     Source               = $Source
                     TslProtocols         = $TlsProtocol
                     SkipCertificateCheck = $SkipCertificateCheck
-                    RFC3164              = $RFC3164
+                    SyslogProtocol       = $SyslogProtocol
+                    Encoding             = $selectedEncoding
+                    FailureAction        = $FailureAction
+                }
+            }
+        }
+
+        'restful' {
+            return @{
+                ScriptBlock = (Get-PodeLoggingRestfulMethod)
+                Batch       = $batchInfo
+                Arguments   = @{
+                    BaseUrl              = $BaseUrl
+                    Platform             = $Platform
+                    Hostname             = $Hostname
+                    Source               = $Source
+                    SkipCertificateCheck = $SkipCertificateCheck
                     Token                = $Token
                     Id                   = $Id
                     FailureAction        = $FailureAction
@@ -315,6 +388,7 @@ function New-PodeLoggingMethod {
                 UsingVariables = $usingVars
                 Batch          = $batchInfo
                 Arguments      = $ArgumentList
+                FailureAction  = $FailureAction
             }
         }
     }
@@ -461,6 +535,70 @@ function Enable-PodeErrorLogging {
     $PodeContext.Server.Logging.Types[$name] = @{
         Method      = $Method
         ScriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
+        Arguments   = @{
+            Raw    = $Raw
+            Levels = $Levels
+        }
+    }
+}
+
+
+<#
+.SYNOPSIS
+Enables a specified logging method in Pode.
+
+.DESCRIPTION
+This function enables a specified logging method in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
+
+.PARAMETER Method
+The hashtable defining the logging method, including the ScriptBlock for log output.
+
+.PARAMETER Levels
+An array of log levels to be enabled for the logging method (Default: 'Error', 'Emergency', 'Alert', 'Critical', 'Warning', 'Notice', 'Informational', 'Info', 'Verbose', 'Debug').
+
+.PARAMETER Name
+The name of the logging method to be enabled.
+
+.PARAMETER Raw
+If set, the raw log data will be included in the logging output.
+
+.EXAMPLE
+$method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
+$method | Enable-PodeLogging -Name "mysyslog"
+#>
+function Enable-PodeLogging {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [hashtable]
+        $Method,
+
+        [string[]]
+        $Levels = @('Error', 'Emergency', 'Alert', 'Critical', 'Warning', 'Notice', 'Informational', 'Info', 'Verbose', 'Debug'),
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [switch]
+        $Raw
+    )
+
+
+    # error if it's already enabled
+    if ($PodeContext.Server.Logging.Types.Contains($Name)) {
+        throw "Error $Name Logging has already been enabled"
+    }
+
+    # ensure the Method contains a scriptblock
+    if (Test-PodeIsEmpty $Method.ScriptBlock) {
+        throw 'The supplied output Method for Error Logging requires a valid ScriptBlock'
+    }
+
+    # add the error logger
+    $PodeContext.Server.Logging.Types[$Name] = @{
+        Method      = $Method
+        ScriptBlock = (Get-PodeLoggingInbuiltType -Type Custom)
         Arguments   = @{
             Raw    = $Raw
             Levels = $Levels
@@ -710,27 +848,53 @@ The Object to write.
 $object | Write-PodeLog -Name 'LogName'
 #>
 function Write-PodeLog {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'inbuilt')]
         [object]
-        $InputObject
+        $InputObject,
+
+        [Parameter( ParameterSetName = 'custom')]
+        [string]
+        $Level = 'INFO',
+
+        [Parameter( Mandatory = $true, ParameterSetName = 'custom')]
+        [string]
+        $Message
+
     )
 
     # do nothing if logging is disabled, or logger isn't setup
     if (!(Test-PodeLoggerEnabled -Name $Name)) {
         return
     }
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'inbuilt' {
 
-    # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add(@{
-            Name = $Name
-            Item = $InputObject
-        })
+            # add the item to be processed
+            $null = $PodeContext.LogsToProcess.Add(@{
+                    Name = $Name
+                    Item = $InputObject
+                })
+        }
+        'custom' {
+            # add the item to be processed
+            $null = $PodeContext.LogsToProcess.Add(@{
+                    Name = $Name
+                    Item = @{
+                        Server   = $PodeContext.Server.ComputerName
+                        Level    = $Level
+                        Date     = [datetime]::Now
+                        ThreadId = [int]$ThreadId
+                        Message  = $Message
+                    }
+                })
+        }
+    }
 }
 
 <#

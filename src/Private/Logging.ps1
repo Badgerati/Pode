@@ -1,3 +1,20 @@
+<#
+.SYNOPSIS
+Defines the method for writing log messages to the terminal.
+
+.DESCRIPTION
+This internal function handles writing log messages to the terminal.
+It checks if the server is in quiet mode and protects sensitive information before outputting the log messages.
+
+.PARAMETER item
+The log item to be written to the terminal.
+
+.PARAMETER options
+A hashtable containing options for the terminal logging method.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
 function Get-PodeLoggingTerminalMethod {
     return {
         param($item, $options)
@@ -17,60 +34,81 @@ function Get-PodeLoggingTerminalMethod {
     }
 }
 
+<#
+.SYNOPSIS
+Defines the method for writing log messages to a file.
+
+.DESCRIPTION
+This internal function handles writing log messages to a file, managing file rotation based on size and date, and removing old log files beyond a specified retention period.
+It includes error handling based on user-defined actions.
+
+.PARAMETER item
+The log item to be written to the file.
+
+.PARAMETER options
+A hashtable containing options for the file logging method including Path, Name, MaxDays, MaxSize, Date, FileId, and FailureAction.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
 function Get-PodeLoggingFileMethod {
     return {
         param($item, $options)
+        try {
+            # check if it's an array from batching
+            if ($item -is [array]) {
+                $item = ($item -join [System.Environment]::NewLine)
+            }
 
-        # check if it's an array from batching
-        if ($item -is [array]) {
-            $item = ($item -join [System.Environment]::NewLine)
-        }
+            # mask values
+            $item = ($item | Protect-PodeLogItem)
 
-        # mask values
-        $item = ($item | Protect-PodeLogItem)
+            # variables
+            $date = [DateTime]::Now.ToString('yyyy-MM-dd')
 
-        # variables
-        $date = [DateTime]::Now.ToString('yyyy-MM-dd')
+            # do we need to reset the fileId?
+            if ($options.Date -ine $date) {
+                $options.Date = $date
+                $options.FileId = 0
+            }
 
-        # do we need to reset the fileId?
-        if ($options.Date -ine $date) {
-            $options.Date = $date
-            $options.FileId = 0
-        }
-
-        # get the fileId
-        if ($options.FileId -eq 0) {
-            $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_*.log")
-            $options.FileId = (@(Get-ChildItem -Path $path)).Length
+            # get the fileId
             if ($options.FileId -eq 0) {
-                $options.FileId = 1
+                $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_*.log")
+                $options.FileId = (@(Get-ChildItem -Path $path)).Length
+                if ($options.FileId -eq 0) {
+                    $options.FileId = 1
+                }
             }
-        }
 
-        $id = "$($options.FileId)".PadLeft(3, '0')
-        if ($options.MaxSize -gt 0) {
+            $id = "$($options.FileId)".PadLeft(3, '0')
+            if ($options.MaxSize -gt 0) {
+                $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
+                if ((Get-Item -Path $path -Force).Length -ge $options.MaxSize) {
+                    $options.FileId++
+                    $id = "$($options.FileId)".PadLeft(3, '0')
+                }
+            }
+
+            # get the file to write to
             $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
-            if ((Get-Item -Path $path -Force).Length -ge $options.MaxSize) {
-                $options.FileId++
-                $id = "$($options.FileId)".PadLeft(3, '0')
+
+            # write the item to the file
+            $item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
+
+            # if set, remove log files beyond days set (ensure this is only run once a day)
+            if (($options.MaxDays -gt 0) -and ($options.NextClearDown -lt [DateTime]::Now.Date)) {
+                $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
+
+                $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
+                    Where-Object { $_.CreationTime -lt $date } |
+                    Remove-Item $_ -Force
+
+                $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
             }
         }
-
-        # get the file to write to
-        $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
-
-        # write the item to the file
-        $item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
-
-        # if set, remove log files beyond days set (ensure this is only run once a day)
-        if (($options.MaxDays -gt 0) -and ($options.NextClearDown -lt [DateTime]::Now.Date)) {
-            $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
-
-            $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
-                Where-Object { $_.CreationTime -lt $date } |
-                Remove-Item $_ -Force
-
-            $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
+        catch {
+            Invoke-PodeHandleFailure -Message "Failed to Log a message: $_" -FailureAction $options.FailureAction
         }
     }
 }
@@ -89,75 +127,77 @@ The log item to be sent to the Syslog server.
 .PARAMETER options
 A hashtable containing options for the Syslog message including Transport, Server, Port, Hostname, Source, TlsProtocols, SkipCertificateCheck, RFC3164, Token, Id, and FailureAction.
 
-.EXAMPLE
-Send a log message using UDP transport:
-$logMethod = Get-PodeLoggingSysLogMethod
-$logMethod.Invoke('This is a log message', @{ Transport = 'UDP'; Server = 'syslog.example.com'; Port = 514 })
-
-.EXAMPLE
-Send a log message using TLS transport with certificate validation:
-$logMethod = Get-PodeLoggingSysLogMethod
-$logMethod.Invoke('This is a secure log message', @{ Transport = 'TLS'; Server = 'syslog.example.com'; Port = 6514; TlsProtocols = [System.Security.Authentication.SslProtocols]::Tls12 })
-
-.EXAMPLE
-Send a log message to Splunk:
-$logMethod = Get-PodeLoggingSysLogMethod
-$logMethod.Invoke('This is a Splunk log message', @{ Transport = 'Splunk'; Server = 'splunk.example.com'; Port = 8088; Token = 'your-splunk-token' })
-
-.EXAMPLE
-Send a log message to Log Insight:
-$logMethod = Get-PodeLoggingSysLogMethod
-$logMethod.Invoke('This is a Log Insight message', @{ Transport = 'LogInsight'; Server = 'loginsight.example.com'; Port = 9000; Id = 'your-agent-id' })
+.PARAMETER rawItem
+The raw log item, used to determine the log level.
 
 .NOTES
 This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeLoggingSysLogMethod {
     return {
-        param($item, $options)
-
-        function HandleFailure {
-            param($message, $FailureAction)
-            switch ($FailureAction.ToLowerInvariant()) {
-                'ignore' {
-                    # Do nothing and continue
-                }
-                'report' {
-                    # Report on console and continue
-                    Write-PodeHost $message
-                }
-                'halt' {
-                    # Report on console and halt
-                    Write-PodeHost $message
-                    Close-PodeServer
-                }
-            }
+        param($item, $options, $rawItem)
+        if ($item -isnot [array]) {
+            $item = @($item)
         }
 
-        # Mask values
-        $item = ($item | Protect-PodeLogItem)
-        if (('UDP' , 'TCP' , 'TLS') -contains $options.Transport) {
-            $processId = $PID
+        if ($rawItem -isnot [array]) {
+            $rawItem = @($rawItem)
+        }
+        for ($i = 0; $i -lt $item.Length; $i++) {
+            # Mask values
+            if ($rawItem[$i].Message) {
+                if ($rawItem[$i].StackTrace) {
+                    $message = "$($rawItem[$i].Level.ToUpperInvariant()): $($rawItem[$i].Message | Protect-PodeLogItem). Exception Type: $($rawItem[$i].Category). Stack Trace: $($rawItem[$i].StackTrace)"
+                }
+                else {
+                    $message = ($rawItem[$i].Message | Protect-PodeLogItem)
+                }
+            }
+            else {
+                $message = ($item[$i] | Protect-PodeLogItem)
+            }
+
+            # Map $Level to syslog severity
+            switch ($rawItem[$i].Level) {
+                'emergency' { $severity = 0; break }
+                'alert' { $severity = 1; break }
+                'critical' { $severity = 2; break }
+                'error' { $severity = 3; break }
+                'warning' { $severity = 4; break }
+                'notice' { $severity = 5; break }
+                'info' { $severity = 6; break }
+                'informational' { $severity = 6; break }
+                'debug' { $severity = 7; break }
+                default { $severity = 6 } # Default to Informational
+            }
 
             # Define the facility and severity
             $facility = 1 # User-level messages
-            $severity = 6 # Informational
             $priority = ($facility * 8) + $severity
 
             # Determine the syslog message format
-            if ($options.RFC3164) {
-                # Set the max message length per RFC 3164 section 4.1
-                $MaxLength = 1024
-                # Assemble the full syslog formatted Message
-                $timestamp = (Get-Date).ToString('MMM dd HH:mm:ss')
-                $fullSyslogMessage = "<$priority>$timestamp $($options.Hostname) $($options.Source)[$processId]: $item"
-            }
-            else {
-                # Assemble the full syslog formatted Message
-                $fullSyslogMessage = "<$priority>1 $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.ffffffK') $($options.Hostname) $($options.Source) $processId - - $item"
+            switch ($options.SyslogProtocol.ToUpperInvariant()) {
+                'RFC3164' {
+                    # Set the max message length per RFC 3164 section 4.1
+                    $MaxLength = 1024
+                    # Assemble the full syslog formatted Message
+                    $timestamp = $rawItem[$i].Date.ToString('MMM dd HH:mm:ss')
+                    $fullSyslogMessage = "<$priority>$timestamp $($PodeContext.Server.ComputerName) $($options.Source)[$processId]: $message"
+                    break
+                }
+                'RFC5424' {
+                    $processId = $PID
+                    $timestamp = $rawItem[$i].Date.ToString('yyyy-MM-ddTHH:mm:ss.ffffffK')
+                    # Assemble the full syslog formatted Message
+                    $fullSyslogMessage = "<$priority>1 $timestamp $($PodeContext.Server.ComputerName) $($options.Source) $processId - - $message"
 
-                # Set the max message length per RFC 5424 section 6.1
-                $MaxLength = 2048
+                    # Set the max message length per RFC 5424 section 6.1
+                    $MaxLength = 2048
+                    break
+                }
+                default {
+                    throw "Unsupported Syslog protocol: $($options.SyslogProtocol)"
+                }
             }
 
             # Ensure that the message is not too long
@@ -166,112 +206,180 @@ function Get-PodeLoggingSysLogMethod {
             }
 
             # Convert the message to a byte array
-            $byteMessage = [Text.Encoding]::UTF8.GetBytes($fullSyslogMessage)
+            $byteMessage = $($options.Encoding).GetBytes($fullSyslogMessage)
+
+            # Determine the transport protocol and send the message
+            switch ($options.Transport.ToUpperInvariant()) {
+                'UDP' {
+                    $udpClient = New-Object System.Net.Sockets.UdpClient
+                    try {
+                        # Send the message to the syslog server
+                        $udpClient.Send($byteMessage, $byteMessage.Length, $options.Server, $options.Port)
+                    }
+                    catch {
+                        Invoke-PodeHandleFailure -Message "Failed to send UDP message: $_" -FailureAction $options.FailureAction
+                    }
+                    finally {
+                        # Close the UDP client
+                        if ($udpClient) {
+                            $udpClient.Close()
+                        }
+                    }
+                }
+                'TCP' {
+                    try {
+                        # Create a TCP client for non-secure communication
+                        $tcpClient = New-Object System.Net.Sockets.TcpClient
+                        $tcpClient.Connect($options.Server, $options.Port)
+                        $networkStream = $tcpClient.GetStream()
+
+                        # Send the message
+                        $networkStream.Write($byteMessage, 0, $byteMessage.Length)
+                        $networkStream.Flush()
+                    }
+                    catch {
+                        Invoke-PodeHandleFailure -Message "Failed to send TCP message: $_" -FailureAction $options.FailureAction
+                    }
+                    finally {
+                        # Close the TCP client
+                        if ($networkStream) { $networkStream.Close() }
+                        if ($tcpClient) { $tcpClient.Close() }
+                    }
+                }
+                'TLS' {
+                    try {
+                        # Create a TCP client for secure communication
+                        $tcpClient = New-Object System.Net.Sockets.TcpClient
+                        $tcpClient.Connect($options.Server, $options.Port)
+
+                        $sslStream = if ($options.SkipCertificateCheck) {
+                            New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false, { $true })
+                        }
+                        else {
+                            New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false)
+                        }
+
+                        # Define the TLS protocol version
+                        $tlsProtocol = if ($options.TlsProtocols) {
+                            $options.TlsProtocols
+                        }
+                        else {
+                            [System.Security.Authentication.SslProtocols]::Tls12  # Default to TLS 1.2
+                        }
+
+                        # Authenticate as client with specific TLS protocol
+                        $sslStream.AuthenticateAsClient($options.Server, $null, $tlsProtocol, $false)
+
+                        # Send the message
+                        $sslStream.Write($byteMessage)
+                        $sslStream.Flush()
+                    }
+                    catch {
+                        Invoke-PodeHandleFailure -Message "Failed to send secure TLS message: $_" -FailureAction $options.FailureAction
+                    }
+                    finally {
+                        # Close the TCP client
+                        if ($sslStream) { $sslStream.Close() }
+                        if ($tcpClient) { $tcpClient.Close() }
+                    }
+                }
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Defines the method for sending log messages to a Restful API endpoint.
+
+.DESCRIPTION
+This internal function handles the sending of log messages to Restful API endpoints for platforms like Splunk and Log Insight. It formats log messages, manages headers, and includes error handling based on user-defined actions.
+
+.PARAMETER item
+The log item to be sent to the Restful API endpoint.
+
+.PARAMETER options
+A hashtable containing options for the Restful API message including BaseUrl, Platform, Token, Id, Hostname, Source, and FailureAction.
+
+.PARAMETER rawItem
+The raw log item, used to determine additional fields such as log level and timestamp.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeLoggingRestfulMethod {
+    return {
+        param($item, $options, $rawItem)
+
+        if ($item -isnot [array]) {
+            $item = @($item)
+        }
+
+        if ($rawItem -isnot [array]) {
+            $rawItem = @($rawItem)
         }
 
         # Determine the transport protocol and send the message
-        switch ($options.Transport) {
-            'UDP' {
-                $udpClient = New-Object System.Net.Sockets.UdpClient
-                try {
-                    # Send the message to the syslog server
-                    $udpClient.Send($byteMessage, $byteMessage.Length, $options.Server, $options.Port)
-                }
-                catch {
-                    HandleFailure  "Failed to send UDP message: $_" $options.FailureAction
-                }
-                finally {
-                    # Close the UDP client
-                    $udpClient.Close()
-                }
-            }
-            'TCP' {
-                try {
-                    # Create a TCP client for non-secure communication
-                    $tcpClient = New-Object System.Net.Sockets.TcpClient
-                    $tcpClient.Connect($options.Server, $options.Port)
-                    $networkStream = $tcpClient.GetStream()
-
-                    # Send the message
-                    $networkStream.Write($byteMessage, 0, $byteMessage.Length)
-                    $networkStream.Flush()
-                }
-                catch {
-                    HandleFailure  "Failed to send TCP message: $_" $options.FailureAction
-                }
-                finally {
-                    # Close the TCP client
-                    if ($networkStream) { $networkStream.Close() }
-                    if ($tcpClient) { $tcpClient.Close() }
-                }
-            }
-            'TLS' {
-                try {
-                    # Create a TCP client for secure communication
-                    $tcpClient = New-Object System.Net.Sockets.TcpClient
-                    $tcpClient.Connect($options.Server, $options.Port)
-
-                    $sslStream = if ($options.SkipCertificateCheck) {
-                        New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false, { $true })
-                    }
-                    else {
-                        New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false)
-                    }
-
-                    # Define the TLS protocol version
-                    $tlsProtocol = if ($options.TlsProtocols) {
-                        $options.TlsProtocols
-                    }
-                    else {
-                        [System.Security.Authentication.SslProtocols]::Tls12  # Default to TLS 1.2
-                    }
-
-                    # Authenticate as client with specific TLS protocol
-                    $sslStream.AuthenticateAsClient($options.Server, $null, $tlsProtocol, $false)
-
-                    # Send the message
-                    $sslStream.Write($byteMessage)
-                    $sslStream.Flush()
-                }
-                catch {
-                    HandleFailure  "Failed to send secure TLS message: $_" $options.FailureAction
-                }
-                finally {
-                    # Close the TCP client
-                    if ($sslStream) { $sslStream.Close() }
-                    if ($tcpClient) { $tcpClient.Close() }
-                }
-            }
+        switch ($options.Platform) {
             'Splunk' {
                 # Construct the Splunk API URL
-                $url = "http://$($options.Server):$($options.Port)/services/collector"
+                $url = "$($options.BaseUrl)/services/collector"
+
                 $headers = @{
                     'Authorization' = "Splunk $($options.Token)"
+                    'Content-Type'  = 'application/json'
                 }
 
-                $unixEpochTime = [math]::Round((Get-Date).ToUniversalTime().Subtract((Get-Date '1970-01-01')).TotalSeconds)
-                $Body = ConvertTo-Json -InputObject @{event = $item; host = $options.Hostname ; time = $unixEpochTime } -Compress
+                $items = @()
+                for ($i = 0; $i -lt $item.Length; $i++) {
+                    # Mask values
+                    $message = ($item[$i] | Protect-PodeLogItem)
+                    if ([string]::IsNullOrWhiteSpace($rawItem[$i].Level)) {
+                        $severity = 'INFO'
+                    }
+                    else {
+                        $severity = $rawItem[$i].Level.ToUpperInvariant()
+                    }
+                    $items += ConvertTo-Json -Compress -InputObject @{
+                        event  = $message
+                        host   = $PodeContext.Server.ComputerName
+                        source = $options.source
+                        time   = [math]::Round(($rawItem[$i].Date).ToUniversalTime().Subtract((Get-Date '1970-01-01')).TotalSeconds)
+                        fields = @{
+                            severity = $severity
+                        }
+                    }
 
-                try {
-                    Invoke-RestMethod -Uri $splunkUrl -Method Post -Headers $headers -Body $body -ContentType 'application/json'
-                }
-                catch {
-                    HandleFailure  "Failed to send log to Splunk: $_" $options.FailureAction
+                    $Body = $items -join ' '
+
+                    try {
+                        Invoke-RestMethod -Uri $splunkUrl -Method Post -Headers $headers -Body $body -SkipCertificateCheck:$options.SkipCertificateCheck
+                    }
+                    catch {
+                        Invoke-PodeHandleFailure -Message "Failed to send log to Splunk: $_" -FailureAction $options.FailureAction
+                    }
+
+                    break
                 }
             }
+
             'LogInsight' {
-
                 # Construct the Log Insight API URL
-                $url = "http://$($options.Server):$($options.Port)/api/v1/messages/ingest/$($options.Id)"
+                $url = "$($options.BaseUrl)/api/v1/messages/ingest/$($options.Id)"
 
+                $headers = @{
+                    'Content-Type' = 'application/json'
+                }
+                $messages = @()
+                for ($i = 0; $i -lt $item.Length; $i++) {
+                    $messages += @{
+                        text      = $message
+                        timestamp = [math]::Round(($rawItem[$i].Date).ToUniversalTime().Subtract((Get-Date '1970-01-01')).TotalSeconds)
+                    }
+                }
                 # Define the message payload
                 $payload = @{
-                    messages = @(
-                        @{
-                            text      = $item
-                            timestamp = [math]::Round((Get-Date).ToUniversalTime().Subtract((Get-Date '1970-01-01')).TotalMilliseconds)
-                        }
-                    )
+                    messages = $messages
                 }
 
                 # Convert payload to JSON
@@ -279,16 +387,39 @@ function Get-PodeLoggingSysLogMethod {
 
                 # Send the message to Log Insight
                 try {
-                    Invoke-RestMethod -Uri $url -Method Post -Body $body -ContentType 'application/json'
+                    Invoke-RestMethod -Uri $url -Method Post -Body $body -Headers $headers -SkipCertificateCheck:$options.SkipCertificateCheck
                 }
                 catch {
-                    HandleFailure  "Failed to send log to LogInsight: $_" $options.FailureAction
+                    Invoke-PodeHandleFailure -Message "Failed to send log to LogInsight: $_" -FailureAction $options.FailureAction
                 }
+
+                break
             }
         }
     }
 }
 
+
+
+<#
+.SYNOPSIS
+Defines the method for sending log messages to the Windows Event Viewer.
+
+.DESCRIPTION
+This internal function handles the sending of log messages to the Windows Event Viewer, converting log levels and creating event log entries. It includes error handling based on user-defined actions.
+
+.PARAMETER item
+The log item to be sent to the Event Viewer.
+
+.PARAMETER options
+A hashtable containing options for the Event Viewer message including LogName, Source, ID, and FailureAction.
+
+.PARAMETER rawItem
+The raw log item, used to determine the log level.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
 function Get-PodeLoggingEventViewerMethod {
     return {
         param($item, $options, $rawItem)
@@ -318,12 +449,28 @@ function Get-PodeLoggingEventViewerMethod {
                 $entryLog.WriteEvent($entryInstance, $message)
             }
             catch {
-                $_ | Write-PodeErrorLog -Level Debug
+                Invoke-PodeHandleFailure -Message "Failed to write an Event Viewer message: $_" -FailureAction $options.FailureAction
             }
         }
     }
 }
+<#
+.SYNOPSIS
+Converts a log level string to a corresponding EventLogEntryType.
 
+.DESCRIPTION
+This internal function converts a provided log level string to the corresponding `System.Diagnostics.EventLogEntryType` enumeration value.
+It defaults to `Information` if the level is empty or unrecognized.
+
+.PARAMETER Level
+The log level string to be converted (e.g., 'error', 'warning').
+
+.RETURNS
+Returns a `System.Diagnostics.EventLogEntryType` enumeration value corresponding to the provided log level.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
 function ConvertTo-PodeEventViewerLevel {
     param(
         [Parameter()]
@@ -349,7 +496,7 @@ function ConvertTo-PodeEventViewerLevel {
 function Get-PodeLoggingInbuiltType {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Errors', 'Requests')]
+        [ValidateSet('Errors', 'Requests', 'Custom')]
         [string]
         $Type
     )
@@ -403,6 +550,34 @@ function Get-PodeLoggingInbuiltType {
                     "Category: $($item.Category)",
                     "Message: $($item.Message)",
                     "StackTrace: $($item.StackTrace)"
+                )
+
+                # join the details and return
+                return "$($row -join "`n")`n"
+            }
+        }
+        'custom' {
+            $script = {
+                param($item, $options)
+                # do nothing if the error level isn't present
+                if (@($options.Levels) -inotcontains $item.Level) {
+                    return
+                }
+
+                # just return the item if Raw is set
+                if ($options.Raw) {
+                    write-podehost 'return item'
+                    return $item
+                }
+
+                # build the exception details
+                $row = @(
+                    "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
+                    "Level: $($item.Level)",
+                    "ThreadId: $($item.ThreadId)",
+                    "Server: $($item.Server)",
+                    "Category: $($item.Category)",
+                    "Message: $($item.Message)"
                 )
 
                 # join the details and return
@@ -512,7 +687,7 @@ function Write-PodeRequestLog {
         Host            = $Request.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = '-'
         User            = '-'
-        Date            = [DateTime]::Now.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
+        Date            = [DateTime]::Now #.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
             Resource = $Path
@@ -525,6 +700,7 @@ function Write-PodeRequestLog {
             StatusDescription = $Response.StatusDescription
             Size              = '-'
         }
+        Level           = 'info'
     }
 
     # set size if >0
