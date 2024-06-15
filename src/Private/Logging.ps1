@@ -75,7 +75,43 @@ function Get-PodeLoggingFileMethod {
     }
 }
 
+<#
+.SYNOPSIS
+Handles the sending of log messages to a Syslog server using various transport protocols.
 
+.DESCRIPTION
+This function defines the logic for sending log messages to a Syslog server using different transport protocols including UDP, TCP, TLS, Splunk, and VMware LogInsight.
+It supports both RFC 3164 and RFC 5424 formats and includes error handling based on user-defined actions.
+
+.PARAMETER item
+The log item to be sent to the Syslog server.
+
+.PARAMETER options
+A hashtable containing options for the Syslog message including Transport, Server, Port, Hostname, Source, TlsProtocols, SkipCertificateCheck, RFC3164, Token, Id, and FailureAction.
+
+.EXAMPLE
+Send a log message using UDP transport:
+$logMethod = Get-PodeLoggingSysLogMethod
+$logMethod.Invoke('This is a log message', @{ Transport = 'UDP'; Server = 'syslog.example.com'; Port = 514 })
+
+.EXAMPLE
+Send a log message using TLS transport with certificate validation:
+$logMethod = Get-PodeLoggingSysLogMethod
+$logMethod.Invoke('This is a secure log message', @{ Transport = 'TLS'; Server = 'syslog.example.com'; Port = 6514; TlsProtocols = [System.Security.Authentication.SslProtocols]::Tls12 })
+
+.EXAMPLE
+Send a log message to Splunk:
+$logMethod = Get-PodeLoggingSysLogMethod
+$logMethod.Invoke('This is a Splunk log message', @{ Transport = 'Splunk'; Server = 'splunk.example.com'; Port = 8088; Token = 'your-splunk-token' })
+
+.EXAMPLE
+Send a log message to Log Insight:
+$logMethod = Get-PodeLoggingSysLogMethod
+$logMethod.Invoke('This is a Log Insight message', @{ Transport = 'LogInsight'; Server = 'loginsight.example.com'; Port = 9000; Id = 'your-agent-id' })
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
 function Get-PodeLoggingSysLogMethod {
     return {
         param($item, $options)
@@ -119,12 +155,10 @@ function Get-PodeLoggingSysLogMethod {
             else {
                 # Assemble the full syslog formatted Message
                 $fullSyslogMessage = "<$priority>1 $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.ffffffK') $($options.Hostname) $($options.Source) $processId - - $item"
-                write-podehost $fullSyslogMessage
+
                 # Set the max message length per RFC 5424 section 6.1
                 $MaxLength = 2048
             }
-
-            # Write-PodeHost $fullSyslogMessage
 
             # Ensure that the message is not too long
             if ($fullSyslogMessage.Length -gt $MaxLength) {

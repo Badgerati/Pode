@@ -50,6 +50,39 @@ The ScriptBlock that defines how to output a log item.
 .PARAMETER ArgumentList
 An array of arguments to supply to the Custom Logging output method's ScriptBlock.
 
+.PARAMETER Syslog
+If supplied, will use the Syslog logging output method.
+
+.PARAMETER Server
+The Syslog server to send logs to.
+
+.PARAMETER Port
+The port on the Syslog server (Default: 514).
+
+.PARAMETER Transport
+The transport protocol to use (Default: UDP).
+
+.PARAMETER TlsProtocol
+The TLS protocol version to use.
+
+.PARAMETER RFC3164
+Use RFC3164 format for Syslog messages.
+
+.PARAMETER Hostname
+The hostname to include in Syslog messages (Default: System.Net.Dns::GetHostName()).
+
+.PARAMETER SkipCertificateCheck
+Skip certificate validation for TLS connections.
+
+.PARAMETER Token
+The token for authentication with Syslog servers that require it.
+
+.PARAMETER Id
+The identifier for the Syslog message.
+
+.PARAMETER FailureAction
+Defines the behavior in case of failure. Options are: Ignore, Report, Halt (Default: Ignore).
+
 .EXAMPLE
 $term_logging = New-PodeLoggingMethod -Terminal
 
@@ -58,6 +91,9 @@ $file_logging = New-PodeLoggingMethod -File -Path ./logs -Name 'requests'
 
 .EXAMPLE
 $custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
+
+.EXAMPLE
+$syslog_logging = New-PodeLoggingMethod -Syslog -Server '192.168.1.1' -Port 514 -Transport 'UDP'
 #>
 function New-PodeLoggingMethod {
     [CmdletBinding(DefaultParameterSetName = 'Terminal')]
@@ -189,7 +225,7 @@ function New-PodeLoggingMethod {
         [ValidateSet('Ignore', 'Report', 'Halt' )]
         $FailureAction = 'Ignore'
     )
-    
+
     # batch details
     $batchInfo = @{
         Size       = $Batch
