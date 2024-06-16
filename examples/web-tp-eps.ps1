@@ -5,7 +5,7 @@ try {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }
     else {
-        Import-Module -Name 'Pode' -ErrorAction Stop
+        Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
     }
 
     Import-Module -Name 'EPS' -ErrorAction Stop
