@@ -2,31 +2,23 @@ param (
     [switch]
     $Reset
 )
-$petStorePath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
-$podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $petStorePath)
-try{
-if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
-    Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
-}
-else {
-    Import-Module -Name 'Pode'
-}
-}catch {throw }
-function Write-ObjectContent {
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        $Object
-    )
 
-    Write-PodeHost -ForegroundColor Blue "Type:$($Object.gettype())"
-    $objectString = $Object | Out-String
-    Write-PodeHost -ForegroundColor Blue -Object $objectString
+try {
+    $petStorePath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
+    $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $petStorePath)
 
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
+    }
+
+    Import-Module -Name "$petStorePath/PetData.psm1" -ErrorAction Stop
+    Import-Module -Name "$petStorePath/Order.psm1" -ErrorAction Stop
+    Import-Module -Name "$petStorePath/UserData.psm1" -ErrorAction Stop
 }
-
-Import-Module -Name "$petStorePath/PetData.psm1"
-Import-Module -Name "$petStorePath/Order.psm1"
-Import-Module -Name "$petStorePath/UserData.psm1"
+catch { throw }
 
 Start-PodeServer -Threads 1 -ScriptBlock {
 
