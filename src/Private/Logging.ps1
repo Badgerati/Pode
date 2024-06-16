@@ -136,6 +136,7 @@ This is an internal function and may change in future releases of Pode.
 function Get-PodeLoggingSysLogMethod {
     return {
         param($item, $options, $rawItem)
+
         if ($item -isnot [array]) {
             $item = @($item)
         }
@@ -154,7 +155,15 @@ function Get-PodeLoggingSysLogMethod {
                 }
             }
             else {
-                $message = ($item[$i] | Protect-PodeLogItem)
+                if ($item[$i] -is [hashtable]) {
+                    # build the url with http method
+                    $url = "$(Convert-PodeEmptyStringToDash $item.Request.Method) $(Convert-PodeEmptyStringToDash $item.Request.Resource) $(Convert-PodeEmptyStringToDash $item.Request.Protocol)"
+                    # build and return the request row
+                    $message = "$(Convert-PodeEmptyStringToDash $item.Host) $(Convert-PodeEmptyStringToDash $item.RfcUserIdentity) $(Convert-PodeEmptyStringToDash $item.User) [$($item.Date.ToString($options.DataFormat))] `"$($url)`" $(Convert-PodeEmptyStringToDash $item.Response.StatusCode) $(Convert-PodeEmptyStringToDash $item.Response.Size) `"$(Convert-PodeEmptyStringToDash $item.Request.Referrer)`" `"$(Convert-PodeEmptyStringToDash $item.Request.Agent)`""
+                }
+                else {
+                    $message = ($item[$i] | Protect-PodeLogItem)
+                }
             }
 
             # Map $Level to syslog severity
@@ -510,20 +519,11 @@ function Get-PodeLoggingInbuiltType {
                 if ($options.Raw) {
                     return $item
                 }
-
-                function sg($value) {
-                    if ([string]::IsNullOrWhiteSpace($value)) {
-                        return '-'
-                    }
-
-                    return $value
-                }
-
                 # build the url with http method
-                $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
+                $url = "$(Convert-PodeEmptyStringToDash $item.Request.Method) $(Convert-PodeEmptyStringToDash $item.Request.Resource) $(Convert-PodeEmptyStringToDash $item.Request.Protocol)"
 
                 # build and return the request row
-                return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$(sg $item.Date)] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
+                return "$(Convert-PodeEmptyStringToDash $item.Host) $(Convert-PodeEmptyStringToDash $item.RfcUserIdentity) $(Convert-PodeEmptyStringToDash $item.User) [$($item.Date.ToString($options.DataFormat))] `"$($url)`" $(Convert-PodeEmptyStringToDash $item.Response.StatusCode) $(Convert-PodeEmptyStringToDash $item.Response.Size) `"$(Convert-PodeEmptyStringToDash $item.Request.Referrer)`" `"$(Convert-PodeEmptyStringToDash $item.Request.Agent)`""
             }
         }
 
@@ -543,7 +543,7 @@ function Get-PodeLoggingInbuiltType {
 
                 # build the exception details
                 $row = @(
-                    "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
+                    "Date: $($item.Date.ToString($options.DataFormat))",
                     "Level: $($item.Level)",
                     "ThreadId: $($item.ThreadId)",
                     "Server: $($item.Server)",
@@ -566,7 +566,6 @@ function Get-PodeLoggingInbuiltType {
 
                 # just return the item if Raw is set
                 if ($options.Raw) {
-                    write-podehost 'return item'
                     return $item
                 }
 
@@ -623,6 +622,20 @@ function Get-PodeLogger {
     )
 
     return $PodeContext.Server.Logging.Types[$Name]
+}
+
+
+
+function Test-PodeStandardLogger {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    return $PodeContext.Server.Logging.Types[$Name].Standard
 }
 
 function Test-PodeLoggerEnabled {
@@ -687,7 +700,7 @@ function Write-PodeRequestLog {
         Host            = $Request.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = '-'
         User            = '-'
-        Date            = [DateTime]::Now #.ToString('dd/MMM/yyyy:HH:mm:ss zzz')
+        Date            = [DateTime]::Now
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
             Resource = $Path

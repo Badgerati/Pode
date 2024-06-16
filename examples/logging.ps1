@@ -1,14 +1,25 @@
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
-    Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+param(
+    [ValidateSet('Terminal', 'File', 'Custom', 'Syslog')]
+    [string]
+    $LoggingType = 'Syslog',
+
+    [switch]
+    $Raw
+)
+
+try {
+    $FileBrowserPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
+    $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $FileBrowserPath)
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -ErrorAction Stop -MaximumVersion 2.99.99
+    }
 }
-else {
-    Import-Module -Name 'Pode'
-}
+catch { throw }
 # or just:
 # Import-Module Pode
-
-$LOGGING_TYPE = 'syslog' # Terminal, File, Custom
 
 # create a server, and start listening on port 8085
 Start-PodeServer -browse {
@@ -16,13 +27,21 @@ Start-PodeServer -browse {
     Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http
     Set-PodeViewEngine -Type Pode
 
-    switch ($LOGGING_TYPE.ToLowerInvariant()) {
+    switch ($LoggingType.ToLowerInvariant()) {
         'terminal' {
-            New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+            $logging = New-PodeLoggingMethod -Terminal
+
+            $logging | Enable-PodeRequestLogging -Raw:$Raw
+            $logging | Enable-PodeErrorLogging -Raw:$Raw
+            $logging | Enable-PodeLogging -Name 'custom' -Raw:$Raw
         }
 
         'file' {
-            New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4 | Enable-PodeRequestLogging
+            $logging = New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
+
+            $logging | Enable-PodeRequestLogging -Raw:$Raw
+            $logging | Enable-PodeErrorLogging -Raw:$Raw
+            $logging | Enable-PodeLogging -Name 'custom' -Raw:$Raw
         }
 
         'custom' {
@@ -33,14 +52,13 @@ Start-PodeServer -browse {
 
             $type | Enable-PodeRequestLogging
         }
+
         'syslog' {
             $logging = New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP
 
-            $logging | Enable-PodeRequestLogging
-            $logging | Enable-PodeErrorLogging
-            $logging | Enable-PodeLogging -Name 'custom'
-
-
+            $logging | Enable-PodeRequestLogging -Raw:$Raw
+            $logging | Enable-PodeErrorLogging -Raw:$Raw
+            $logging | Enable-PodeLogging -Name 'custom' -Raw:$Raw
         }
     }
     Write-PodeLog -Name 'custom' -Message 'just started' -Level 'Info'

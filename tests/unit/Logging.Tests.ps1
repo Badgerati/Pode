@@ -39,6 +39,7 @@ Describe 'Write-PodeLog' {
 
     It 'Adds a log item' {
         Mock Test-PodeLoggerEnabled { return $true }
+        Mock Test-PodeStandardLogger { return $false }
         $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
 
         Write-PodeLog -Name 'test' -InputObject 'test'

@@ -92,6 +92,9 @@ The LogInsight collector ID.
 .PARAMETER FailureAction
 Defines the behavior in case of failure. Options are: Ignore, Report, Halt (Default: Ignore).
 
+.PARAMETER DataFormat
+The date format to use for the log entries (Default: 'yyyy-MM-ddTHH:mm:ssK').
+
 .EXAMPLE
 $term_logging = New-PodeLoggingMethod -Terminal
 
@@ -271,7 +274,29 @@ function New-PodeLoggingMethod {
         [Parameter( ParameterSetName = 'Syslog')]
         [string]
         [ValidateSet('Ignore', 'Report', 'Halt' )]
-        $FailureAction = 'Ignore'
+        $FailureAction = 'Ignore',
+
+        [Parameter()]
+        [ValidateScript({
+                # Define a sample date to test the format
+                $sampleDate = [DateTime]::Now
+                try {
+                    # Try to format the sample date using the provided format
+                    $formattedDate = $sampleDate.ToString($_)
+
+                    # Try to parse the formatted date back to a DateTime object using the same format
+                    [DateTime]::ParseExact($formattedDate, $_, $null)
+
+                    # If no exceptions are thrown, the format is valid
+                    $true
+                }
+                catch {
+                    # If an exception is thrown, the format is invalid
+                    $false
+                }
+            })]
+        [string]
+        $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
     )
 
     # batch details
@@ -289,7 +314,9 @@ function New-PodeLoggingMethod {
             return @{
                 ScriptBlock = (Get-PodeLoggingTerminalMethod)
                 Batch       = $batchInfo
-                Arguments   = @{}
+                Arguments   = @{
+                    DataFormat = $DataFormat
+                }
             }
         }
 
@@ -310,6 +337,7 @@ function New-PodeLoggingMethod {
                     Date          = $null
                     NextClearDown = [datetime]::Now.Date
                     FailureAction = $FailureAction
+                    DataFormat    = $DataFormat
                 }
             }
         }
@@ -333,6 +361,7 @@ function New-PodeLoggingMethod {
                     Source        = $Source
                     ID            = $EventID
                     FailureAction = $FailureAction
+                    DataFormat    = $DataFormat
                 }
             }
         }
@@ -359,6 +388,7 @@ function New-PodeLoggingMethod {
                     SyslogProtocol       = $SyslogProtocol
                     Encoding             = $selectedEncoding
                     FailureAction        = $FailureAction
+                    DataFormat           = $DataFormat
                 }
             }
         }
@@ -376,6 +406,7 @@ function New-PodeLoggingMethod {
                     Token                = $Token
                     Id                   = $Id
                     FailureAction        = $FailureAction
+                    DataFormat           = $DataFormat
                 }
             }
         }
@@ -389,6 +420,7 @@ function New-PodeLoggingMethod {
                 Batch          = $batchInfo
                 Arguments      = $ArgumentList
                 FailureAction  = $FailureAction
+                DataFormat     = $DataFormat
             }
         }
     }
@@ -456,8 +488,10 @@ function Enable-PodeRequestLogging {
             Username = $UsernameProperty
         }
         Arguments   = @{
-            Raw = $Raw
+            Raw        = $Raw
+            DataFormat = $Method.Arguments.DataFormat
         }
+        Standard    = $true
     }
 }
 
@@ -536,9 +570,11 @@ function Enable-PodeErrorLogging {
         Method      = $Method
         ScriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
         Arguments   = @{
-            Raw    = $Raw
-            Levels = $Levels
+            Raw        = $Raw
+            Levels     = $Levels
+            DataFormat = $Method.Arguments.DataFormat
         }
+        Standard    = $true
     }
 }
 
@@ -600,9 +636,11 @@ function Enable-PodeLogging {
         Method      = $Method
         ScriptBlock = (Get-PodeLoggingInbuiltType -Type Custom)
         Arguments   = @{
-            Raw    = $Raw
-            Levels = $Levels
+            Raw        = $Raw
+            Levels     = $Levels
+            DataFormat = $Method.Arguments.DataFormat
         }
+        Standard    = $true
     }
 }
 
@@ -831,21 +869,31 @@ function Write-PodeErrorLog {
     }
 }
 
+
 <#
 .SYNOPSIS
-Write an object to a configured custom Logging method.
+Write an object to a configured custom or inbuilt logging method.
 
 .DESCRIPTION
-Write an object to a configured custom Logging method.
+This function writes an object to a configured logging method in Pode. It supports both custom and inbuilt logging methods, allowing for structured logging with different log levels and messages.
 
 .PARAMETER Name
-The Name of the Logging method.
+The name of the logging method.
 
 .PARAMETER InputObject
-The Object to write.
+The object to write to the logging method.
+
+.PARAMETER Level
+The log level for the custom logging method (Default: 'INFO').
+
+.PARAMETER Message
+The log message for the custom logging method.
 
 .EXAMPLE
 $object | Write-PodeLog -Name 'LogName'
+
+.EXAMPLE
+Write-PodeLog -Name 'CustomLog' -Level 'Error' -Message 'An error occurred.'
 #>
 function Write-PodeLog {
     [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
@@ -860,41 +908,46 @@ function Write-PodeLog {
 
         [Parameter( ParameterSetName = 'custom')]
         [string]
-        $Level = 'INFO',
+        $Level = 'Informational',
 
         [Parameter( Mandatory = $true, ParameterSetName = 'custom')]
         [string]
         $Message
-
     )
 
     # do nothing if logging is disabled, or logger isn't setup
     if (!(Test-PodeLoggerEnabled -Name $Name)) {
         return
     }
+
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'inbuilt' {
-
-            # add the item to be processed
-            $null = $PodeContext.LogsToProcess.Add(@{
-                    Name = $Name
-                    Item = $InputObject
-                })
+            $logItem = @{
+                Name = $Name
+                Item = $InputObject
+            }
+            break
         }
         'custom' {
-            # add the item to be processed
-            $null = $PodeContext.LogsToProcess.Add(@{
-                    Name = $Name
-                    Item = @{
-                        Server   = $PodeContext.Server.ComputerName
-                        Level    = $Level
-                        Date     = [datetime]::Now
-                        ThreadId = [int]$ThreadId
-                        Message  = $Message
-                    }
-                })
+            $logItem = @{
+                Name = $Name
+                Item = @{
+                    Level   = $Level
+                    Message = $Message
+                }
+            }
+            break
         }
     }
+
+    if (Test-PodeStandardLogger -Name $Name) {
+        $logItem.Item.Server = $PodeContext.Server.ComputerName
+        $logItem.Item.Date = [datetime]::Now
+        $logItem.Item.ThreadId = [int]$ThreadId
+    }
+
+    # add the item to be processed
+    $null = $PodeContext.LogsToProcess.Add($logItem)
 }
 
 <#

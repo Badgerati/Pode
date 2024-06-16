@@ -4072,3 +4072,36 @@ function Invoke-PodeHandleFailure {
         }
     }
 }
+
+<#
+.SYNOPSIS
+Converts an empty or whitespace string to a dash.
+
+.DESCRIPTION
+This function checks if the provided value is an empty or whitespace string and converts it to a dash ('-'). If the value is not empty or whitespace, it returns the original value.
+
+.PARAMETER value
+The string value to be checked and potentially converted.
+
+.RETURNS
+Returns a dash ('-') if the input value is empty or whitespace; otherwise, returns the original value.
+
+.EXAMPLE
+Convert-PodeEmptyStringToDash -value ''
+
+.EXAMPLE
+Convert-PodeEmptyStringToDash -value 'Hello'
+#>
+function Convert-PodeEmptyStringToDash {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        return '-'
+    }
+
+    return $value
+}
