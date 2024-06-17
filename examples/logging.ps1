@@ -33,7 +33,7 @@ Start-PodeServer -browse {
 
             $logging | Enable-PodeRequestLogging -Raw:$Raw
             $logging | Enable-PodeErrorLogging -Raw:$Raw
-            $logging | Enable-PodeLogging -Name 'custom' -Raw:$Raw
+            $logging | Enable-PodeGeneralLogging -Name 'custom' -Raw:$Raw
         }
 
         'file' {
@@ -41,7 +41,7 @@ Start-PodeServer -browse {
 
             $logging | Enable-PodeRequestLogging -Raw:$Raw
             $logging | Enable-PodeErrorLogging -Raw:$Raw
-            $logging | Enable-PodeLogging -Name 'custom' -Raw:$Raw
+            $logging | Enable-PodeGeneralLogging -Name 'custom' -Raw:$Raw
         }
 
         'custom' {
@@ -58,7 +58,7 @@ Start-PodeServer -browse {
 
             $logging | Enable-PodeRequestLogging -Raw:$Raw
             $logging | Enable-PodeErrorLogging -Raw:$Raw
-            $logging | Enable-PodeLogging -Name 'custom' -Raw:$Raw
+            $logging | Enable-PodeGeneralLogging -Name 'custom' -Raw:$Raw
         }
     }
     Write-PodeLog -Name 'custom' -Message 'just started' -Level 'Info'

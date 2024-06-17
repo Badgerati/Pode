@@ -631,9 +631,9 @@ If set, the raw log data will be included in the logging output.
 
 .EXAMPLE
 $method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
-$method | Enable-PodeLogging -Name "mysyslog"
+$method | Enable-PodeGeneralLogging -Name "mysyslog"
 #>
-function Enable-PodeLogging {
+function Enable-PodeGeneralLogging {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
