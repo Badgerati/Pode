@@ -8,13 +8,13 @@ param(
 )
 
 try {
-    $FileBrowserPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
-    $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $FileBrowserPath)
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }
     else {
-        Import-Module -Name 'Pode' -ErrorAction Stop -MaximumVersion 2.99.99
+        Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
     }
 }
 catch { throw }
@@ -54,7 +54,7 @@ Start-PodeServer -browse {
         }
 
         'syslog' {
-            $logging = New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP
+            $logging = New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601
 
             $logging | Enable-PodeRequestLogging -Raw:$Raw
             $logging | Enable-PodeErrorLogging -Raw:$Raw

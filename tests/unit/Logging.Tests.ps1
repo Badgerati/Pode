@@ -28,9 +28,21 @@ Describe 'Get-PodeLogger' {
 }
 
 Describe 'Write-PodeLog' {
+    BeforeEach {
+        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList
+            Server                      = @{
+                Logging = @{
+                    Types = @{
+                        test = @{
+                            Standard = $false
+                        }
+                    }
+                }
+            }
+        }
+    }
     It 'Does nothing when logging disabled' {
         Mock Test-PodeLoggerEnabled { return $false }
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
 
         Write-PodeLog -Name 'test' -InputObject 'test'
 
@@ -39,9 +51,6 @@ Describe 'Write-PodeLog' {
 
     It 'Adds a log item' {
         Mock Test-PodeLoggerEnabled { return $true }
-        Mock Test-PodeStandardLogger { return $false }
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
-
         Write-PodeLog -Name 'test' -InputObject 'test'
 
         $PodeContext.LogsToProcess.Count | Should -Be 1
@@ -51,9 +60,21 @@ Describe 'Write-PodeLog' {
 }
 
 Describe 'Write-PodeErrorLog' {
+    BeforeEach {
+        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList
+            Server                      = @{
+                Logging = @{
+                    Types = @{
+                        test = @{
+                            Standard = $false
+                        }
+                    }
+                }
+            }
+        }
+    }
     It 'Does nothing when logging disabled' {
         Mock Test-PodeLoggerEnabled { return $false }
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
 
         Write-PodeLog -Name 'test' -InputObject 'test'
 
@@ -67,7 +88,6 @@ Describe 'Write-PodeErrorLog' {
                 }
             } }
 
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
 
         try { throw 'some error' }
         catch {
@@ -85,8 +105,6 @@ Describe 'Write-PodeErrorLog' {
                 }
             } }
 
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
-
         $exp = [exception]::new('some error')
         Write-PodeErrorLog -Exception $exp
 
@@ -100,8 +118,6 @@ Describe 'Write-PodeErrorLog' {
                     Levels = @('Error')
                 }
             } }
-
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
 
         $exp = [exception]::new('some error')
         Write-PodeErrorLog -Exception $exp -Level Verbose

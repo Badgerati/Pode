@@ -4102,6 +4102,5 @@ function Convert-PodeEmptyStringToDash {
     if ([string]::IsNullOrWhiteSpace($value)) {
         return '-'
     }
-
     return $value
 }

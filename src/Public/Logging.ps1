@@ -93,7 +93,14 @@ The LogInsight collector ID.
 Defines the behavior in case of failure. Options are: Ignore, Report, Halt (Default: Ignore).
 
 .PARAMETER DataFormat
-The date format to use for the log entries (Default: 'yyyy-MM-ddTHH:mm:ssK').
+The date format to use for the log entries (Default: 'dd/MMM/yyyy:HH:mm:ss zzz').
+
+.PARAMETER ISO8601
+If set, the date format will be ISO 8601 compliant (equivalent to -DataFormat 'yyyy-MM-ddTHH:mm:ssK')
+This parameter is mutually exclusive with DataFormat.
+
+.PARAMETER AsUTC
+If set, the time will be logged in UTC instead of local time.
 
 .EXAMPLE
 $term_logging = New-PodeLoggingMethod -Terminal
@@ -296,8 +303,26 @@ function New-PodeLoggingMethod {
                 }
             })]
         [string]
-        $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
+        $DataFormat,
+
+        [Parameter()]
+        [switch]
+        $ISO8601,
+
+        [Parameter()]
+        [switch]
+        $AsUTC
     )
+
+    if ((! [string]::IsNullOrEmpty($DataFormat)) -and $ISO8601.IsPresent) {
+        throw ("Parameters '{0}' and '{1}' are mutually exclusive." -f 'DataFormat', 'ISO8601')
+    }
+    if ($ISO8601.IsPresent) {
+        $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
+    }
+    else {
+        $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz'
+    }
 
     # batch details
     $batchInfo = @{
@@ -316,6 +341,7 @@ function New-PodeLoggingMethod {
                 Batch       = $batchInfo
                 Arguments   = @{
                     DataFormat = $DataFormat
+                    AsUTC      = $AsUTC
                 }
             }
         }
@@ -338,6 +364,7 @@ function New-PodeLoggingMethod {
                     NextClearDown = [datetime]::Now.Date
                     FailureAction = $FailureAction
                     DataFormat    = $DataFormat
+                    AsUTC         = $AsUTC
                 }
             }
         }
@@ -362,6 +389,7 @@ function New-PodeLoggingMethod {
                     ID            = $EventID
                     FailureAction = $FailureAction
                     DataFormat    = $DataFormat
+                    AsUTC         = $AsUTC
                 }
             }
         }
@@ -389,6 +417,7 @@ function New-PodeLoggingMethod {
                     Encoding             = $selectedEncoding
                     FailureAction        = $FailureAction
                     DataFormat           = $DataFormat
+                    AsUTC                = $AsUTC
                 }
             }
         }
@@ -407,6 +436,7 @@ function New-PodeLoggingMethod {
                     Id                   = $Id
                     FailureAction        = $FailureAction
                     DataFormat           = $DataFormat
+                    AsUTC                = $AsUTC
                 }
             }
         }
@@ -421,6 +451,7 @@ function New-PodeLoggingMethod {
                 Arguments      = $ArgumentList
                 FailureAction  = $FailureAction
                 DataFormat     = $DataFormat
+                AsUTC          = $AsUTC
             }
         }
     }
@@ -854,8 +885,8 @@ function Write-PodeErrorLog {
     # add general info
     $item['Server'] = $PodeContext.Server.ComputerName
     $item['Level'] = $Level
-    $item['Date'] = [datetime]::Now
-    $item['ThreadId'] = [int]$ThreadId
+    $item['Date'] = Get-Date -AsUTC:($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC)
+    $item['ThreadId'] = [System.Threading.Thread]::CurrentThread.ManagedThreadId #[int]$ThreadId
 
     # add the item to be processed
     $null = $PodeContext.LogsToProcess.Add(@{
@@ -875,7 +906,8 @@ function Write-PodeErrorLog {
 Write an object to a configured custom or inbuilt logging method.
 
 .DESCRIPTION
-This function writes an object to a configured logging method in Pode. It supports both custom and inbuilt logging methods, allowing for structured logging with different log levels and messages.
+This function writes an object to a configured logging method in Pode.
+It supports both custom and inbuilt logging methods, allowing for structured logging with different log levels and messages.
 
 .PARAMETER Name
 The name of the logging method.
@@ -888,6 +920,11 @@ The log level for the custom logging method (Default: 'INFO').
 
 .PARAMETER Message
 The log message for the custom logging method.
+
+.PARAMETER Tag
+A string that identifies the source application, service, or process generating the log message.
+The tag helps in distinguishing log messages from different sources and makes it easier to filter and analyze logs.
+It is typically a short identifier such as the application name or process ID.
 
 .EXAMPLE
 $object | Write-PodeLog -Name 'LogName'
@@ -912,7 +949,12 @@ function Write-PodeLog {
 
         [Parameter( Mandatory = $true, ParameterSetName = 'custom')]
         [string]
-        $Message
+        $Message,
+
+        [Parameter( ParameterSetName = 'custom')]
+        [string]
+        $Tag='-'
+
     )
 
     # do nothing if logging is disabled, or logger isn't setup
@@ -934,16 +976,17 @@ function Write-PodeLog {
                 Item = @{
                     Level   = $Level
                     Message = $Message
+                    Tag     = $Tag
                 }
             }
             break
         }
     }
-
-    if (Test-PodeStandardLogger -Name $Name) {
+    $log = $PodeContext.Server.Logging.Types[$Name]
+    if ($log.Standard) {
         $logItem.Item.Server = $PodeContext.Server.ComputerName
-        $logItem.Item.Date = [datetime]::Now
-        $logItem.Item.ThreadId = [int]$ThreadId
+        $logItem.Item.Date = Get-Date -asUTC:($log.Method.Arguments.AsUTC)
+        $logItem.Item.ThreadId = [System.Threading.Thread]::CurrentThread.ManagedThreadId
     }
 
     # add the item to be processed

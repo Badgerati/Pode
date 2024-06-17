@@ -353,7 +353,7 @@ function Get-PodeLoggingRestfulMethod {
                         event  = $message
                         host   = $PodeContext.Server.ComputerName
                         source = $options.source
-                        time   = [math]::Round(($rawItem[$i].Date).ToUniversalTime().Subtract((Get-Date '1970-01-01')).TotalSeconds)
+                        time   = [math]::Round(($rawItem[$i].Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)
                         fields = @{
                             severity = $severity
                         }
@@ -383,7 +383,7 @@ function Get-PodeLoggingRestfulMethod {
                 for ($i = 0; $i -lt $item.Length; $i++) {
                     $messages += @{
                         text      = $message
-                        timestamp = [math]::Round(($rawItem[$i].Date).ToUniversalTime().Subtract((Get-Date '1970-01-01')).TotalSeconds)
+                        timestamp = [math]::Round(($rawItem[$i].Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)
                     }
                 }
                 # Define the message payload
@@ -563,24 +563,12 @@ function Get-PodeLoggingInbuiltType {
                 if (@($options.Levels) -inotcontains $item.Level) {
                     return
                 }
-
                 # just return the item if Raw is set
                 if ($options.Raw) {
                     return $item
                 }
 
-                # build the exception details
-                $row = @(
-                    "Date: $($item.Date.ToString('yyyy-MM-dd HH:mm:ss'))",
-                    "Level: $($item.Level)",
-                    "ThreadId: $($item.ThreadId)",
-                    "Server: $($item.Server)",
-                    "Category: $($item.Category)",
-                    "Message: $($item.Message)"
-                )
-
-                # join the details and return
-                return "$($row -join "`n")`n"
+                return "[$($item.Date.ToString($options.DataFormat))] $($item.Level) $( $item.Tag) $($item.ThreadId) $($item.Message)"
             }
         }
     }
@@ -700,7 +688,7 @@ function Write-PodeRequestLog {
         Host            = $Request.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = '-'
         User            = '-'
-        Date            = [DateTime]::Now
+        Date            = Get-Date -AsUTC:($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC)
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
             Resource = $Path
