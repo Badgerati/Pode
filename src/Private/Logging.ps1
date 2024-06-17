@@ -919,13 +919,19 @@ function Test-PodeLoggerBatch {
 
 
 function Write-PodeMainLog {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Parameter')]
     param(
+        [Parameter(Mandatory, ParameterSetName = 'Parameter')]
         [string]
         $Operation,
 
+        [Parameter(Mandatory, ParameterSetName = 'Parameter')]
         [hashtable]
-        $Parameters
+        $Parameters,
+
+        [Parameter(Mandatory, ParameterSetName = 'Message')]
+        [string]
+        $Message
     )
 
     # do nothing if logging is disabled, or error logging isn't setup
@@ -933,23 +939,33 @@ function Write-PodeMainLog {
     if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }
-    $Message = if ($Parameters) {
-        $paramString = ($Parameters.GetEnumerator() | ForEach-Object {
-                if ($_.Value -is [scriptblock]) {
-                    "$($_.Key)=<ScriptBlock>"
-                }
-                elseif ($_.Key -eq 'Route') {
-                    "$($_.Key)={ Path : `"$($_.Value.Path -join ',')`" ,Method : `"$($_.Value.Method -join ',')`" }"
-                }
-                else {
-                    "$($_.Key)=$($_.Value)"
-                }
-            }) -join ', '
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'parameter' {
+            $Message = if ($Parameters) {
+                $paramString = ($Parameters.GetEnumerator() | ForEach-Object {
+                        if ($_.Value -is [scriptblock]) {
+                            "$($_.Key)=<ScriptBlock>"
+                        }
+                        elseif ($_.Key -eq 'Route') {
+                            "$($_.Key)={ Path : `"$($_.Value.Path -join ',')`" ,Method : `"$($_.Value.Method -join ',')`" }"
+                        }
+                        else {
+                            "$($_.Key)=$($_.Value)"
+                        }
+                    }) -join ', '
 
-        "Operation $Operation invoked with parameters: $paramString"
-    }
-    else {
-        "Operation $Operation invoked with no parameters"
+                "Operation $Operation invoked with parameters: $paramString"
+            }
+            else {
+                "Operation $Operation invoked with no parameters"
+            }
+            break
+        }
+        'Message' {
+            $Operation = '-'
+            $Parameters = @{}
+            break
+        }
     }
 
     if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {

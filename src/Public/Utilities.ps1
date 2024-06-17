@@ -99,6 +99,9 @@ function Start-PodeStopwatch {
         $ScriptBlock
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     try {
         $watch = [System.Diagnostics.Stopwatch]::StartNew()
         . $ScriptBlock

@@ -524,7 +524,7 @@ function New-PodeRunspacePool {
     # setup main runspace pool
     $threadsCounts = @{
         Default  = 3
-        Timer    = 1 
+        Timer    = 1
         Schedule = 1
         Misc     = 1
     }

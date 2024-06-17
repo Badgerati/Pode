@@ -131,6 +131,9 @@ function Start-PodeServer {
         $EnableBreakpoints
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # ensure the session is clean
     $PodeContext = $null
     $ShowDoneMessage = $true
