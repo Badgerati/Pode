@@ -432,6 +432,7 @@ function New-PodeContext {
         Gui       = $null
         Tasks     = $null
         Files     = $null
+        Logs      = $null
     }
 
     # threading locks, etc.
@@ -523,8 +524,7 @@ function New-PodeRunspacePool {
     # setup main runspace pool
     $threadsCounts = @{
         Default  = 3
-        Timer    = 1
-        Log      = 1
+        Timer    = 1 
         Schedule = 1
         Misc     = 1
     }
@@ -545,6 +545,12 @@ function New-PodeRunspacePool {
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{
         Pool  = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+        State = 'Waiting'
+    }
+
+    # logs runspace - any log is running here
+    $PodeContext.RunspacePools.Logs = @{
+        Pool  = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         State = 'Waiting'
     }
 
