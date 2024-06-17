@@ -519,11 +519,33 @@ function Get-PodeLoggingInbuiltType {
                 if ($options.Raw) {
                     return $item
                 }
-                # build the url with http method
-                $url = "$(Convert-PodeEmptyStringToDash $item.Request.Method) $(Convert-PodeEmptyStringToDash $item.Request.Resource) $(Convert-PodeEmptyStringToDash $item.Request.Protocol)"
+                function sg($value) {
+                    if ([string]::IsNullOrWhiteSpace($value)) {
+                        return '-'
+                    }
 
-                # build and return the request row
-                return "$(Convert-PodeEmptyStringToDash $item.Host) $(Convert-PodeEmptyStringToDash $item.RfcUserIdentity) $(Convert-PodeEmptyStringToDash $item.User) [$($item.Date.ToString($options.DataFormat))] `"$($url)`" $(Convert-PodeEmptyStringToDash $item.Response.StatusCode) $(Convert-PodeEmptyStringToDash $item.Response.Size) `"$(Convert-PodeEmptyStringToDash $item.Request.Referrer)`" `"$(Convert-PodeEmptyStringToDash $item.Request.Agent)`""
+                    return $value
+                }
+                # build the url with http method
+                $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
+
+                switch ($options.LogFormat.ToLowerInvariant()) {
+                    'Extended' {
+                        $timeTaken = '-'
+                        return "$($item.Date.ToString('yyyy-MM-dd')) $($item.Date.ToString('HH:mm:ss')) $(sg $item.Host) $(sg $item.User) $(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Query)  $(sg $item.Response.StatusCode) $scBytes $(sg $item.Response.Size) $timeTaken"
+                    }
+                    'Combined' {
+                        $date =  [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), "([+-]\d{2}):(\d{2})", '$1$2')
+                        # build and return the request row
+                        return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
+
+                    }
+                    'Common' {
+                        $date =  [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), "([+-]\d{2}):(\d{2})", '$1$2')
+                        return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size)"
+                    }
+                }
+                return $item
             }
         }
 
@@ -697,18 +719,26 @@ function Write-PodeRequestLog {
         return
     }
 
+    if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
+        $date = [datetime]::UtcNow
+    }
+    else {
+        $date = [datetime]::Now
+    }
+
     # build a request object
     $item = @{
         Host            = $Request.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = '-'
         User            = '-'
-        Date            = Get-Date -AsUTC:($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC)
+        Date            = $Date
         Request         = @{
-            Method   = $Request.HttpMethod.ToUpperInvariant()
-            Resource = $Path
-            Protocol = "HTTP/$($Request.ProtocolVersion)"
-            Referrer = $Request.UrlReferrer
-            Agent    = $Request.UserAgent
+            Method      = $Request.HttpMethod.ToUpperInvariant()
+            Resource    = $Path
+            Protocol    = "HTTP/$($Request.ProtocolVersion)"
+            Referrer    = $Request.UrlReferrer
+            Agent       = $Request.UserAgent
+            Query= ($Request.url -split '\?')[1]
         }
         Response        = @{
             StatusCode        = $Response.StatusCode
@@ -910,6 +940,12 @@ function Write-PodeMainLog {
     else {
         "Operation $Operation invoked with no parameters"
     }
+    if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
+        $date = [datetime]::UtcNow
+    }
+    else {
+        $date = [datetime]::Now
+    }
 
     # build   object for what we need
     $item = @{
@@ -919,7 +955,7 @@ function Write-PodeMainLog {
         Level      = 'Info'
         Server     = $PodeContext.Server.ComputerName
         Tag        = 'Main'
-        Date       = Get-Date -AsUTC:($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC)
+        Date       = $date
         ThreadId   = [System.Threading.Thread]::CurrentThread.ManagedThreadId
     }
 

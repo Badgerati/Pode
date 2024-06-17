@@ -19,7 +19,7 @@ Describe 'Get-PodeLogger' {
     }
 
     It 'Returns custom logger for name' {
-        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = { Write-Host 'hello' } }; } }; }
+        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = { Write-PodeHost 'hello' } }; } }; }
         $result = (Get-PodeLogger -Name 'test')
 
         $result | Should -Not -Be $null

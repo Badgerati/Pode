@@ -321,7 +321,7 @@ function New-PodeLoggingMethod {
         $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
     }
     else {
-        $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz'
+        $DataFormat = 'R' #RFC 1123 Format
     }
 
     # batch details
@@ -489,7 +489,11 @@ function Enable-PodeRequestLogging {
         $UsernameProperty,
 
         [switch]
-        $Raw
+        $Raw,
+
+        [string]
+        [ValidateSet('Extended', 'Common', 'Combined' )]
+        $LogFormat = 'Combined'
     )
 
     Test-PodeIsServerless -FunctionName 'Enable-PodeRequestLogging' -ThrowError
@@ -523,6 +527,7 @@ function Enable-PodeRequestLogging {
             DataFormat = $Method.Arguments.DataFormat
         }
         Standard    = $true
+        LogFormat   = $LogFormat
     }
 }
 
@@ -1049,7 +1054,15 @@ function Write-PodeLog {
     $log = $PodeContext.Server.Logging.Types[$Name]
     if ($log.Standard) {
         $logItem.Item.Server = $PodeContext.Server.ComputerName
-        $logItem.Item.Date = Get-Date -asUTC:($log.Method.Arguments.AsUTC)
+
+        if ($log.Method.Arguments.AsUTC) {
+            $logItem.Item.Date
+            $logItem.Item.Date = [datetime]::UtcNow
+        }
+        else {
+            $logItem.Item.Date = [datetime]::Now
+        }
+
         $logItem.Item.ThreadId = [System.Threading.Thread]::CurrentThread.ManagedThreadId
     }
 

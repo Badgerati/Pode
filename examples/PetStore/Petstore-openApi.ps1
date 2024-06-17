@@ -72,14 +72,14 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default
     }
 
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-    <#   $Raw = $true
+    # New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    $Raw = $false
     $logging = New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601
     $logging | Enable-PodeMainLogging -Raw:$Raw
     $logging | Enable-PodeRequestLogging -Raw:$Raw
     $logging | Enable-PodeErrorLogging -Raw:$Raw
     $logging | Enable-PodeGeneralLogging -Name 'mylog' -Raw:$Raw
-    #>
+
 
     #Configure CORS
     Set-PodeSecurityAccessControl -Origin '*'  -Duration 7200   -WithOptions   -AuthorizationHeader -autoMethods -AutoHeader -Credentials -CrossDomainXhrRequests  #-Header 'content-type' # -Header   'Accept','Content-Type' ,'Connection' #-Headers '*' 'x-requested-with' ,'crossdomain'#
