@@ -958,7 +958,13 @@ function Write-PodeErrorLog {
     # add general info
     $item['Server'] = $PodeContext.Server.ComputerName
     $item['Level'] = $Level
-    $item['Date'] = Get-Date -AsUTC:($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC)
+    if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
+        $Item.Date = [datetime]::UtcNow
+    }
+    else {
+        $Item.Date = [datetime]::Now
+    }
+
     $item['ThreadId'] = [System.Threading.Thread]::CurrentThread.ManagedThreadId #[int]$ThreadId
 
     # add the item to be processed
@@ -1059,8 +1065,7 @@ function Write-PodeLog {
     if ($log.Standard) {
         $logItem.Item.Server = $PodeContext.Server.ComputerName
 
-        if ($log.Method.Arguments.AsUTC) {
-            $logItem.Item.Date
+        if ($log.Method.Arguments.AsUTC) { 
             $logItem.Item.Date = [datetime]::UtcNow
         }
         else {

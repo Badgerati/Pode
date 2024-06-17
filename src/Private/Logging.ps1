@@ -942,6 +942,7 @@ function Write-PodeMainLog {
     else {
         "Operation $Operation invoked with no parameters"
     }
+    
     if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
         $date = [datetime]::UtcNow
     }
