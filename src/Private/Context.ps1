@@ -407,7 +407,7 @@ function New-PodeContext {
     }
 
     # requests that should be logged
-    $ctx.LogsToProcess = [System.Collections.ArrayList]::Synchronized([System.Collections.ArrayList]::new()) #New-Object System.Collections.ArrayList is not threadsafe
+    $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()

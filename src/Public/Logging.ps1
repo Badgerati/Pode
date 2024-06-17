@@ -496,7 +496,7 @@ function Enable-PodeRequestLogging {
         $Raw,
 
         [string]
-        [ValidateSet('Extended', 'Common', 'Combined','JSON' )]
+        [ValidateSet('Extended', 'Common', 'Combined', 'JSON' )]
         $LogFormat = 'Combined'
     )
 
@@ -1065,7 +1065,7 @@ function Write-PodeLog {
     if ($log.Standard) {
         $logItem.Item.Server = $PodeContext.Server.ComputerName
 
-        if ($log.Method.Arguments.AsUTC) { 
+        if ($log.Method.Arguments.AsUTC) {
             $logItem.Item.Date = [datetime]::UtcNow
         }
         else {

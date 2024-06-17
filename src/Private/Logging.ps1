@@ -137,6 +137,14 @@ function Get-PodeLoggingSysLogMethod {
     return {
         param($item, $options, $rawItem)
 
+        function sg($value) {
+            if ([string]::IsNullOrWhiteSpace($value)) {
+                return '-'
+            }
+
+            return $value
+        }
+
         if ($item -isnot [array]) {
             $item = @($item)
         }
@@ -144,6 +152,7 @@ function Get-PodeLoggingSysLogMethod {
         if ($rawItem -isnot [array]) {
             $rawItem = @($rawItem)
         }
+
         for ($i = 0; $i -lt $item.Length; $i++) {
             # Mask values
             if ($rawItem[$i].Message) {
@@ -156,10 +165,7 @@ function Get-PodeLoggingSysLogMethod {
             }
             else {
                 if ($item[$i] -is [hashtable]) {
-                    # build the url with http method
-                    $url = "$(Convert-PodeEmptyStringToDash $item.Request.Method) $(Convert-PodeEmptyStringToDash $item.Request.Resource) $(Convert-PodeEmptyStringToDash $item.Request.Protocol)"
-                    # build and return the request row
-                    $message = "$(Convert-PodeEmptyStringToDash $item.Host) $(Convert-PodeEmptyStringToDash $item.RfcUserIdentity) $(Convert-PodeEmptyStringToDash $item.User) `"$($url)`" $(Convert-PodeEmptyStringToDash $item.Response.StatusCode) $(Convert-PodeEmptyStringToDash $item.Response.Size) `"$(Convert-PodeEmptyStringToDash $item.Request.Referrer)`" `"$(Convert-PodeEmptyStringToDash $item.Request.Agent)`""
+                    $message = "{`"time`": `"$($item.Date.ToString('yyyy-MM-ddTHH:mm:ssK'))`",`"remote_ip`": `"$(sg $item.Host)`",`"user`": `"$(sg $item.User)`",`"method`": `"$(sg $item.Request.Method)`",`"uri`": `"$(sg $item.Request.Resource)`",`"query`": `"$(sg $item.Request.Query)`",`"status`": $(sg $item.Response.StatusCode),`"response_size`": $(sg $item.Response.Size),`"user_agent`": `"$(sg $item.Request.Agent)`"}"
                 }
                 else {
                     $message = ($item[$i] | Protect-PodeLogItem)
@@ -526,20 +532,22 @@ function Get-PodeLoggingInbuiltType {
 
                     return $value
                 }
-                # build the url with http method
-                $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
 
                 switch ($options.LogFormat.ToLowerInvariant()) {
                     'extended' {
                         return "$($item.Date.ToString('yyyy-MM-dd')) $($item.Date.ToString('HH:mm:ss')) $(sg $item.Host) $(sg $item.User) $(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Query)  $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Agent)`""
                     }
                     'combined' {
+                        # build the url with http method
+                        $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
                         $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
                         # build and return the request row
                         return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
 
                     }
                     'common' {
+                        # build the url with http method
+                        $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
                         $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
                         return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size)"
                     }
@@ -929,8 +937,9 @@ function Write-PodeMainLog {
         $paramString = ($Parameters.GetEnumerator() | ForEach-Object {
                 if ($_.Value -is [scriptblock]) {
                     "$($_.Key)=<ScriptBlock>"
-                    #  }elseif($_.Value -is [hashtable]) {
-                    #         "$($_.Key)=$($_.Value|ConvertTo-Json -Depth 2 -Compress)"
+                }
+                elseif ($_.Key -eq 'Route') {
+                    "$($_.Key)={ Path : `"$($_.Value.Path -join ',')`" ,Method : `"$($_.Value.Method -join ',')`" }"
                 }
                 else {
                     "$($_.Key)=$($_.Value)"
@@ -942,7 +951,7 @@ function Write-PodeMainLog {
     else {
         "Operation $Operation invoked with no parameters"
     }
-    
+
     if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
         $date = [datetime]::UtcNow
     }
