@@ -23,7 +23,7 @@ Describe 'Get-PodeLogger' {
         $result = (Get-PodeLogger -Name 'test')
 
         $result | Should -Not -Be $null
-        $result.ToString() | Should -Be ({ Write-Host 'hello' }).ToString()
+        $result.ToString() | Should -Be ({ Write-PodeHost 'hello' }).ToString()
     }
 }
 

@@ -472,7 +472,11 @@ The Method to use for output the log entry (From New-PodeLoggingMethod).
 An optional property path within the $WebEvent.Auth.User object for the user's Username. (Default: Username).
 
 .PARAMETER Raw
-If supplied, the log item returned will be the raw Request item as a hashtable and not a string (for Custom methods).
+If supplied, the log item returned will be the raw Request item as a hashtable and not a string.
+
+.PARAMETER LogFormat
+The format to use for the log entries. Options are: Extended, Common, Combined, JSON (Default: Combined).
+
 
 .EXAMPLE
 New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
@@ -492,7 +496,7 @@ function Enable-PodeRequestLogging {
         $Raw,
 
         [string]
-        [ValidateSet('Extended', 'Common', 'Combined' )]
+        [ValidateSet('Extended', 'Common', 'Combined','JSON' )]
         $LogFormat = 'Combined'
     )
 
