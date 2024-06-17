@@ -172,6 +172,9 @@ function Add-PodeAccess {
         $Match = 'One'
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # check name unique
     if (Test-PodeAccessExists -Name $Name) {
         throw "Access method already defined: $($Name)"
@@ -303,6 +306,9 @@ function Add-PodeAccessCustom {
     )
 
     begin {
+        # Record the operation on the main log
+        Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         $routes = @()
     }
 
@@ -604,6 +610,9 @@ function Remove-PodeAccess {
         $Name
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $null = $PodeContext.Server.Authorisations.Methods.Remove($Name)
 }
 
@@ -620,6 +629,9 @@ Clear-PodeAccess
 function Clear-PodeAccess {
     [CmdletBinding()]
     param()
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Authorisations.Methods.Clear()
 }
@@ -661,6 +673,9 @@ function Add-PodeAccessMiddleware {
         [string]
         $Route
     )
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if (!(Test-PodeAccessExists -Name $Access)) {
         throw "Access method does not exist: $($Access)"

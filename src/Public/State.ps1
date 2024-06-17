@@ -37,6 +37,9 @@ function Set-PodeState {
         $Scope
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if ($null -eq $PodeContext.Server.State) {
         throw 'Pode has not been initialised'
     }
@@ -174,6 +177,9 @@ function Remove-PodeState {
         [string]
         $Name
     )
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if ($null -eq $PodeContext.Server.State) {
         throw 'Pode has not been initialised'

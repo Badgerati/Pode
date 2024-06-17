@@ -106,6 +106,9 @@ function Add-PodeFileWatcher {
         $PassThru
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # set random name
     if ([string]::IsNullOrEmpty($Name)) {
         $Name = New-PodeGuid -Secure
@@ -276,6 +279,9 @@ function Remove-PodeFileWatcher {
         $Name
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $null = $PodeContext.Fim.Items.Remove($Name)
 }
 
@@ -292,6 +298,9 @@ Clear-PodeFileWatchers
 function Clear-PodeFileWatchers {
     [CmdletBinding()]
     param()
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Fim.Items.Clear()
 }

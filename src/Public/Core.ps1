@@ -897,6 +897,9 @@ function Add-PodeEndpoint {
         $Default
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeEndpoint' -ThrowError
 
@@ -1306,6 +1309,10 @@ function Set-PodeDefaultFolder {
         [string]
         $Path
     )
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if (Test-Path -Path $Path -PathType Container) {
         $PodeContext.Server.DefaultFolders[$Type] = $Path
     }

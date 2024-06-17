@@ -159,7 +159,7 @@ function Get-PodeLoggingSysLogMethod {
                     # build the url with http method
                     $url = "$(Convert-PodeEmptyStringToDash $item.Request.Method) $(Convert-PodeEmptyStringToDash $item.Request.Resource) $(Convert-PodeEmptyStringToDash $item.Request.Protocol)"
                     # build and return the request row
-                    $message = "$(Convert-PodeEmptyStringToDash $item.Host) $(Convert-PodeEmptyStringToDash $item.RfcUserIdentity) $(Convert-PodeEmptyStringToDash $item.User) [$($item.Date.ToString($options.DataFormat))] `"$($url)`" $(Convert-PodeEmptyStringToDash $item.Response.StatusCode) $(Convert-PodeEmptyStringToDash $item.Response.Size) `"$(Convert-PodeEmptyStringToDash $item.Request.Referrer)`" `"$(Convert-PodeEmptyStringToDash $item.Request.Agent)`""
+                    $message = "$(Convert-PodeEmptyStringToDash $item.Host) $(Convert-PodeEmptyStringToDash $item.RfcUserIdentity) $(Convert-PodeEmptyStringToDash $item.User) `"$($url)`" $(Convert-PodeEmptyStringToDash $item.Response.StatusCode) $(Convert-PodeEmptyStringToDash $item.Response.Size) `"$(Convert-PodeEmptyStringToDash $item.Request.Referrer)`" `"$(Convert-PodeEmptyStringToDash $item.Request.Agent)`""
                 }
                 else {
                     $message = ($item[$i] | Protect-PodeLogItem)
@@ -505,7 +505,7 @@ function ConvertTo-PodeEventViewerLevel {
 function Get-PodeLoggingInbuiltType {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Errors', 'Requests', 'Custom')]
+        [ValidateSet('Errors', 'Requests', 'General', 'Main')]
         [string]
         $Type
     )
@@ -556,7 +556,7 @@ function Get-PodeLoggingInbuiltType {
                 return "$($row -join "`n")`n"
             }
         }
-        'custom' {
+        'general' {
             $script = {
                 param($item, $options)
                 # do nothing if the error level isn't present
@@ -571,6 +571,16 @@ function Get-PodeLoggingInbuiltType {
                 return "[$($item.Date.ToString($options.DataFormat))] $($item.Level) $( $item.Tag) $($item.ThreadId) $($item.Message)"
             }
         }
+        'main' {
+            $script = {
+                param($item, $options)
+                # just return the item if Raw is set
+                if ($options.Raw) {
+                    return $item
+                }
+                return "[$($item.Date.ToString($options.DataFormat))] $($item.Level) $( $item.Tag) $($item.ThreadId) $($item.Message)"
+            }
+        }
     }
 
     return $script
@@ -582,6 +592,10 @@ function Get-PodeRequestLoggingName {
 
 function Get-PodeErrorLoggingName {
     return '__pode_log_errors__'
+}
+
+function Get-PodeMainLoggingName {
+    return '__pode_log_main__'
 }
 
 <#
@@ -861,4 +875,59 @@ function Test-PodeLoggerBatch {
             $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
         }
     }
+}
+
+
+function Write-PodeMainLog {
+    [CmdletBinding()]
+    param(
+        [string]
+        $Operation,
+
+        [hashtable]
+        $Parameters
+    )
+
+    # do nothing if logging is disabled, or error logging isn't setup
+    $name = Get-PodeMainLoggingName
+    if (!(Test-PodeLoggerEnabled -Name $name)) {
+        return
+    }
+    $Message = if ($Parameters) {
+        $paramString = ($Parameters.GetEnumerator() | ForEach-Object {
+                if ($_.Value -is [scriptblock]) {
+                    "$($_.Key)=<ScriptBlock>"
+                    #  }elseif($_.Value -is [hashtable]) {
+                    #         "$($_.Key)=$($_.Value|ConvertTo-Json -Depth 2 -Compress)"
+                }
+                else {
+                    "$($_.Key)=$($_.Value)"
+                }
+            }) -join ', '
+
+        "Operation $Operation invoked with parameters: $paramString"
+    }
+    else {
+        "Operation $Operation invoked with no parameters"
+    }
+
+    # build   object for what we need
+    $item = @{
+        Parameters = $Parameters
+        Message    = $Message
+        Operation  = $Operation
+        Level      = 'Info'
+        Server     = $PodeContext.Server.ComputerName
+        Tag        = 'Main'
+        Date       = Get-Date -AsUTC:($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC)
+        ThreadId   = [System.Threading.Thread]::CurrentThread.ManagedThreadId
+    }
+
+    # add the item to be processed
+    $null = $PodeContext.LogsToProcess.Add(@{
+            Name = $name
+            Item = $item
+        })
+
+
 }

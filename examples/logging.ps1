@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Terminal', 'File', 'Custom', 'Syslog')]
+    [ValidateSet('Terminal', 'File', 'mylog', 'Syslog')]
     [string]
     $LoggingType = 'Syslog',
 
@@ -30,41 +30,32 @@ Start-PodeServer -browse {
     switch ($LoggingType.ToLowerInvariant()) {
         'terminal' {
             $logging = New-PodeLoggingMethod -Terminal
-
-            $logging | Enable-PodeRequestLogging -Raw:$Raw
-            $logging | Enable-PodeErrorLogging -Raw:$Raw
-            $logging | Enable-PodeGeneralLogging -Name 'custom' -Raw:$Raw
         }
 
         'file' {
             $logging = New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
-
-            $logging | Enable-PodeRequestLogging -Raw:$Raw
-            $logging | Enable-PodeErrorLogging -Raw:$Raw
-            $logging | Enable-PodeGeneralLogging -Name 'custom' -Raw:$Raw
         }
 
         'custom' {
-            $type = New-PodeLoggingMethod -Custom -ScriptBlock {
+            $logging = New-PodeLoggingMethod -Custom -ScriptBlock {
                 param($item)
                 # send request row to S3
             }
-
-            $type | Enable-PodeRequestLogging
         }
 
         'syslog' {
             $logging = New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601
-
-            $logging | Enable-PodeRequestLogging -Raw:$Raw
-            $logging | Enable-PodeErrorLogging -Raw:$Raw
-            $logging | Enable-PodeGeneralLogging -Name 'custom' -Raw:$Raw
         }
     }
-    Write-PodeLog -Name 'custom' -Message 'just started' -Level 'Info'
+    $logging | Enable-PodeMainLogging -Raw:$Raw
+    $logging | Enable-PodeRequestLogging -Raw:$Raw
+    $logging | Enable-PodeErrorLogging -Raw:$Raw
+    $logging | Enable-PodeGeneralLogging -Name 'mylog' -Raw:$Raw
+
+    Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8085/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
-        Write-PodeLog -Name  'custom' -Message 'My custom log' -Level 'Info'
+        Write-PodeLog -Name  'mylog' -Message 'My custom log' -Level 'Info'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 

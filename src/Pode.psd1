@@ -281,6 +281,7 @@
         'Enable-PodeRequestLogging',
         'Enable-PodeErrorLogging',
         'Enable-PodeGeneralLogging',
+        'Enable-PodeMainLogging',
         'Disable-PodeRequestLogging',
         'Disable-PodeErrorLogging',
         'Add-PodeLogger',

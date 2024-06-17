@@ -750,6 +750,9 @@ function Add-PodeAuth {
         $SuccessUseOrigin
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         throw "Authentication method already defined: $($Name)"
@@ -1267,6 +1270,9 @@ function Add-PodeAuthWindowsAd {
         $KeepCredential
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         throw "Windows AD Authentication method already defined: $($Name)"
@@ -1403,6 +1409,9 @@ function Add-PodeAuthSession {
         $SuccessUseOrigin
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
         throw 'Sessions have not been configured'
@@ -1494,6 +1503,9 @@ function Remove-PodeAuth {
         $Name
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $null = $PodeContext.Server.Authentications.Methods.Remove($Name)
 }
 
@@ -1510,6 +1522,9 @@ Clear-PodeAuth
 function Clear-PodeAuth {
     [CmdletBinding()]
     param()
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Authentications.Methods.Clear()
 }
@@ -1560,6 +1575,9 @@ function Add-PodeAuthMiddleware {
         [string[]]
         $OADefinitionTag
     )
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
@@ -1687,6 +1705,9 @@ function Add-PodeAuthIIS {
         [switch]
         $SuccessUseOrigin
     )
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # ensure we're on Windows!
     if (!(Test-PodeIsWindows)) {
@@ -1851,6 +1872,9 @@ function Add-PodeAuthUserFile {
         $SuccessUseOrigin
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
         throw "User File Authentication method already defined: $($Name)"
@@ -2008,6 +2032,9 @@ function Add-PodeAuthWindowsLocal {
         [switch]
         $SuccessUseOrigin
     )
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # ensure we're on Windows!
     if (!(Test-PodeIsWindows)) {

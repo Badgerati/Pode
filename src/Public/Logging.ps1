@@ -612,10 +612,10 @@ function Enable-PodeErrorLogging {
 
 <#
 .SYNOPSIS
-Enables a specified logging method in Pode.
+Enables a generic logging method in Pode.
 
 .DESCRIPTION
-This function enables a specified logging method in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
+This function enables a generic logging method in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
 
 .PARAMETER Method
 The hashtable defining the logging method, including the ScriptBlock for log output.
@@ -665,7 +665,7 @@ function Enable-PodeGeneralLogging {
     # add the error logger
     $PodeContext.Server.Logging.Types[$Name] = @{
         Method      = $Method
-        ScriptBlock = (Get-PodeLoggingInbuiltType -Type Custom)
+        ScriptBlock = (Get-PodeLoggingInbuiltType -Type General)
         Arguments   = @{
             Raw        = $Raw
             Levels     = $Levels
@@ -674,6 +674,61 @@ function Enable-PodeGeneralLogging {
         Standard    = $true
     }
 }
+
+
+
+<#
+.SYNOPSIS
+Enables a specific logging method in Pode.
+
+.DESCRIPTION
+This function enables a specific logging method in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
+
+.PARAMETER Method
+The hashtable defining the logging method, including the ScriptBlock for log output.
+
+.PARAMETER Raw
+If set, the raw log data will be included in the logging output.
+
+.EXAMPLE
+$method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
+$method | Enable-PodeMainLogging
+#>
+function Enable-PodeMainLogging {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [hashtable]
+        $Method,
+
+        [switch]
+        $Raw
+    )
+
+    $name = Get-PodeMainLoggingName
+
+    # error if it's already enabled
+    if ($PodeContext.Server.Logging.Types.Contains($Name)) {
+        throw "Error $Name Logging has already been enabled"
+    }
+
+    # ensure the Method contains a scriptblock
+    if (Test-PodeIsEmpty $Method.ScriptBlock) {
+        throw 'The supplied output Method for Main Logging requires a valid ScriptBlock'
+    }
+
+    # add the error logger
+    $PodeContext.Server.Logging.Types[$Name] = @{
+        Method      = $Method
+        ScriptBlock = (Get-PodeLoggingInbuiltType -Type Main)
+        Arguments   = @{
+            Raw        = $Raw
+            DataFormat = $Method.Arguments.DataFormat
+        }
+        Standard    = $true
+    }
+}
+
 
 <#
 .SYNOPSIS
@@ -741,6 +796,9 @@ function Add-PodeLogger {
         $ArgumentList
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # ensure the name doesn't already exist
     if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
         throw "Logging method already defined: $($Name)"
@@ -784,6 +842,9 @@ function Remove-PodeLogger {
         $Name
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $null = $PodeContext.Server.Logging.Types.Remove($Name)
 }
 
@@ -800,6 +861,9 @@ Clear-PodeLoggers
 function Clear-PodeLoggers {
     [CmdletBinding()]
     param()
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Logging.Types.Clear()
 }
@@ -953,7 +1017,7 @@ function Write-PodeLog {
 
         [Parameter( ParameterSetName = 'custom')]
         [string]
-        $Tag='-'
+        $Tag = '-'
 
     )
 
