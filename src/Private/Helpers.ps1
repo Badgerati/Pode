@@ -4063,11 +4063,12 @@ function Invoke-PodeHandleFailure {
         }
         'report' {
             # Report on console and continue
-            Write-PodeHost $Message
+            Write-PodeHost $Message -ForegroundColor Yellow
         }
         'halt' {
             # Report on console and halt
-            Write-PodeHost $Message
+            Write-PodeHost $Message -ForegroundColor Red
+            Write-PodeHost "Pode Server shutting down." -ForegroundColor Red
             Close-PodeServer
         }
     }

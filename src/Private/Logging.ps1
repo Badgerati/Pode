@@ -165,7 +165,7 @@ function Get-PodeLoggingSysLogMethod {
             }
             else {
                 if ($item[$i] -is [hashtable]) {
-                    $message = "{`"time`": `"$($item.Date.ToString('yyyy-MM-ddTHH:mm:ssK'))`",`"remote_ip`": `"$(sg $item.Host)`",`"user`": `"$(sg $item.User)`",`"method`": `"$(sg $item.Request.Method)`",`"uri`": `"$(sg $item.Request.Resource)`",`"query`": `"$(sg $item.Request.Query)`",`"status`": $(sg $item.Response.StatusCode),`"response_size`": $(sg $item.Response.Size),`"user_agent`": `"$(sg $item.Request.Agent)`"}"
+                    $message = $item[$i] | ConvertTo-Json -Compress -Depth 2 -ErrorAction SilentlyContinue
                 }
                 else {
                     $message = ($item[$i] | Protect-PodeLogItem)
@@ -826,6 +826,10 @@ function Start-PodeLoggingRunspace {
                 Test-PodeLoggerBatch
                 Start-Sleep -Seconds 5
                 continue
+            }
+
+            if ($PodeContext.LogsToProcess.Count -ge $PodeContext.Server.Logging.QueueLimit) {
+                Invoke-PodeHandleFailure -Message "Reached the log Queue Limit of $($PodeContext.Server.Logging.QueueLimit)" -FailureAction $logger.Method.Arguments.FailureAction
             }
 
             # safely pop off the first log from the array

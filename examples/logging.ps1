@@ -44,7 +44,7 @@ Start-PodeServer -browse {
         }
 
         'syslog' {
-            $logging = New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601
+            $logging = New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -FailureAction Report
         }
     }
     $logging | Enable-PodeMainLogging -Raw:$Raw
