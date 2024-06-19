@@ -525,6 +525,7 @@ function Get-PodeLoggingInbuiltType {
                 if ($options.Raw) {
                     return $item
                 }
+
                 function sg($value) {
                     if ([string]::IsNullOrWhiteSpace($value)) {
                         return '-'
@@ -537,14 +538,6 @@ function Get-PodeLoggingInbuiltType {
                     'extended' {
                         return "$($item.Date.ToString('yyyy-MM-dd')) $($item.Date.ToString('HH:mm:ss')) $(sg $item.Host) $(sg $item.User) $(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Query)  $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Agent)`""
                     }
-                    'combined' {
-                        # build the url with http method
-                        $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
-                        $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
-                        # build and return the request row
-                        return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
-
-                    }
                     'common' {
                         # build the url with http method
                         $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
@@ -553,6 +546,15 @@ function Get-PodeLoggingInbuiltType {
                     }
                     'json' {
                         return "{`"time`": `"$($item.Date.ToString('yyyy-MM-ddTHH:mm:ssK'))`",`"remote_ip`": `"$(sg $item.Host)`",`"user`": `"$(sg $item.User)`",`"method`": `"$(sg $item.Request.Method)`",`"uri`": `"$(sg $item.Request.Resource)`",`"query`": `"$(sg $item.Request.Query)`",`"status`": $(sg $item.Response.StatusCode),`"response_size`": $(sg $item.Response.Size),`"user_agent`": `"$(sg $item.Request.Agent)`"}"
+                    }
+                    # Combined is the default
+                    default {
+                        # build the url with http method
+                        $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
+                        $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
+                        # build and return the request row
+                        return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
+
                     }
                 }
                 return $item
@@ -852,6 +854,7 @@ function Start-PodeLoggingRunspace {
             # convert to log item into a writable format
             $rawItems = $log.Item
             $_args = @($log.Item) + @($logger.Arguments)
+
             $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
 
             # check batching
@@ -878,8 +881,10 @@ function Start-PodeLoggingRunspace {
 
             # send the writable log item off to the log writer
             if ($null -ne $result) {
-                $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
-                $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
+                foreach ($method in $logger.Method) {
+                    $_args = @(, $result) + @($method.Arguments) + @(, $rawItems)
+                    $null = Invoke-PodeScriptBlock -ScriptBlock $method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
+                }
             }
 
             # small sleep to lower cpu usage

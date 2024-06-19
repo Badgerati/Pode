@@ -1,7 +1,7 @@
 param(
     [ValidateSet('Terminal', 'File', 'mylog', 'Syslog')]
-    [string]
-    $LoggingType = 'Syslog',
+    [string[]]
+    $LoggingType = @('Syslog', 'Terminal'),
 
     [switch]
     $Raw
@@ -26,27 +26,31 @@ Start-PodeServer -browse {
 
     Add-PodeEndpoint -Address localhost -Port 8085 -Protocol Http
     Set-PodeViewEngine -Type Pode
+    $logging = @()
 
-    switch ($LoggingType.ToLowerInvariant()) {
-        'terminal' {
-            $logging = New-PodeLoggingMethod -Terminal
-        }
+    if ( $LoggingType -icontains 'terminal') {
+        $logging += New-PodeLoggingMethod -Terminal
+    }
 
-        'file' {
-            $logging = New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
-        }
+    if ( $LoggingType -icontains 'file') {
+        $logging += New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
+    }
 
-        'custom' {
-            $logging = New-PodeLoggingMethod -Custom -ScriptBlock {
-                param($item)
-                # send request row to S3
-            }
-        }
-
-        'syslog' {
-            $logging = New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -FailureAction Report
+    if ( $LoggingType -icontains 'custom') {
+        $logging += New-PodeLoggingMethod -Custom -ScriptBlock {
+            param($item)
+            # send request row to S3
         }
     }
+
+    if ( $LoggingType -icontains 'syslog') {
+        $logging += New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -FailureAction Report
+    }
+
+    if ($logging.Count -eq 0) {
+        throw 'No logging selected'
+    }
+
     $logging | Enable-PodeMainLogging -Raw:$Raw
     $logging | Enable-PodeRequestLogging -Raw:$Raw
     $logging | Enable-PodeErrorLogging -Raw:$Raw
