@@ -1358,3 +1358,553 @@ function ConvertFrom-PodeXml {
     return $oHash
 
 }
+
+<#
+.SYNOPSIS
+Sets the Pode server configuration.
+
+.DESCRIPTION
+This function allows you to set various configurations for the Pode server as an alternative to using the server.psd1 file or directly modifying the $PodeContext hashtable.
+
+.PARAMETER SslProtocols
+Indicates the SSL Protocols that should be used.
+[link](https://badgerati.github.io/Pode/Tutorials/Certificates)
+
+.PARAMETER RequestTimeout
+Defines the request timeout in seconds.
+[link](https://badgerati.github.io/Pode/Tutorials/RequestLimits/#timeout)
+
+.PARAMETER RequestBodySize
+Defines the maximum body size for a request in bytes.
+[link](https://badgerati.github.io/Pode/Tutorials/RequestLimits/#body-size)
+
+.PARAMETER AutoImport
+Defines the AutoImport scoping rules for Modules, SnapIns and Functions.
+[link](https://badgerati.github.io/Pode/Tutorials/Scoping)
+
+.PARAMETER DisableAutoImportModules
+Disables the AutoImport setting for Modules.
+[link](https://badgerati.github.io/Pode/Tutorials/Scoping/#modules)
+
+.PARAMETER AutoImportModulesExportOnly
+Sets the AutoImport Modules ExportOnly option. Defaults to $false.
+[link](https://badgerati.github.io/Pode/Tutorials/Scoping/#modules)
+
+.PARAMETER DisableAutoImportSnapins
+Disables the AutoImport setting for Snapins.
+[link](https://badgerati.github.io/Pode/Tutorials/Scoping/#snapins)
+
+.PARAMETER AutoImportSnapinsExportOnly
+Sets the AutoImport Snapins ExportOnly option. Defaults to $false.
+[link](https://badgerati.github.io/Pode/Tutorials/Scoping/#snapins)
+
+.PARAMETER DisableAutoImportFunctions
+Disables the AutoImport setting for Functions.
+[link](https://badgerati.github.io/Pode/Tutorials/Scoping/#functions)
+
+.PARAMETER AutoImportFunctionsExportOnly
+Sets the AutoImport Functions ExportOnly option. Defaults to $false.
+[link](https://badgerati.github.io/Pode/Tutorials/Scoping/#functions)
+
+.PARAMETER DisableSecretManagement
+Disables the AutoImport setting for SecretVault.
+[link](https://badgerati.github.io/Pode/Tutorials/Scoping/#secret-vaults)
+
+.PARAMETER SecretManagementExportOnly
+Sets the AutoImport SecretVault ExportOnly option. Defaults to $false.
+[link](https://badgerati.github.io/Pode/Tutorials/Scoping/#secret-vaults)
+
+.PARAMETER Root
+Overrides root path of the server.
+[link](https://badgerati.github.io/Pode/Tutorials/Misc/ServerRoot)
+
+.PARAMETER RestartPeriod
+Sets the interval in minutes for automatically restarting the server.
+[link](https://badgerati.github.io/Pode/Tutorials/Restarting/Types/AutoRestarting/#periodic)
+
+.PARAMETER RestartCrons
+Sets the cron schedules for automatically restarting the server.
+[link](https://badgerati.github.io/Pode/Tutorials/Restarting/Types/AutoRestarting/#cron-expressions)
+
+.PARAMETER RestartTimes
+Sets the times for automatically restarting the server in the format "HH:mm".
+[link](https://badgerati.github.io/Pode/Tutorials/Restarting/Types/AutoRestarting/#times)
+
+.PARAMETER FileMonitorEnable
+Enables or disables file monitoring for restarting the server.
+[link](https://badgerati.github.io/Pode/Tutorials/Restarting/Types/FileMonitoring)
+
+.PARAMETER FileMonitorInclude
+Specifies the file patterns to include for monitoring.
+[link](https://badgerati.github.io/Pode/Tutorials/Restarting/Types/FileMonitoring/#includeexclude)
+
+.PARAMETER FileMonitorExclude
+Specifies the file patterns to exclude from monitoring.
+[link](https://badgerati.github.io/Pode/Tutorials/Restarting/Types/FileMonitoring/#includeexclude)
+
+.PARAMETER FileMonitorShowFiles
+Enables or disables showing monitored files.
+[link](https://badgerati.github.io/Pode/Tutorials/Restarting/Types/FileMonitoring/#show-files)
+
+.PARAMETER DefaultFoldersPublic
+Sets the custom path for the Public folder.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent/#changing-the-default-folders)
+
+.PARAMETER DefaultFoldersViews
+Sets the custom path for the Views folder.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent/#changing-the-default-folders)
+
+.PARAMETER DefaultFoldersErrors
+Sets the custom path for the Errors folder.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent/#changing-the-default-folders)
+
+.PARAMETER OpenApiDefaultDefinitionTag
+Defines the primary tag name for OpenAPI (default is 'default').
+[link](https://badgerati.github.io/Pode/Tutorials/OpenAPI/Overview/#how-to-use-it)
+
+.PARAMETER StaticValidateLast
+Changes the way routes are processed.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent)
+
+.PARAMETER TransferEncodingDefault
+Sets the default transfer encoding.
+[link](https://badgerati.github.io/Pode/Tutorials/Compression/Requests/#configuration)
+
+.PARAMETER TransferEncodingRoutes
+Sets the transfer encoding for specific routes.
+[link](https://badgerati.github.io/Pode/Tutorials/Compression/Requests/#route-patterns)
+
+.PARAMETER Compression
+Sets any compression to use on the Response.
+[link](https://badgerati.github.io/Pode/Tutorials/Compression/Responses)
+
+.PARAMETER ContentTypeDefault
+Sets the default transfer encoding.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/ContentTypes/#configuration)
+
+.PARAMETER ContentTypeRoutes
+Sets the transfer encoding for specific routes.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/ContentTypes/#route-patterns)
+
+.PARAMETER ErrorPagesDefault
+Sets the default transfer encoding.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/ErrorPages/#configuration)
+
+.PARAMETER ErrorPagesRoutes
+Sets the transfer encoding for specific routes.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/ErrorPages/#route-patterns)
+
+.PARAMETER ErrorPagesShowExceptions
+Enables or disables the viewing of exceptions on the error page.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/ErrorPages/#exceptions)
+
+.PARAMETER ErrorPagesStrictContentTyping
+Enables or disables generating an error page that matches the route/request's content type.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/ErrorPages/#strict-typing)
+
+.PARAMETER StaticDefaults
+Sets the default static files.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent)
+
+.PARAMETER StaticCacheEnable
+Enables or disables caching for static content.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent)
+
+.PARAMETER StaticCacheExclude
+Specifies the file patterns to exclude from caching.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent)
+
+.PARAMETER StaticCacheInclude
+Specifies the file patterns to include for caching.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent)
+
+.PARAMETER LoggingMaskingPatterns
+Defines the patterns for masking sensitive data in logs.
+[link](https://badgerati.github.io/Pode/Tutorials/Logging/Overview/#masking-values)
+
+.PARAMETER LoggingMask
+Defines the mask to use for sensitive data in logs.
+[link](https://badgerati.github.io/Pode/Tutorials/Logging/Overview/#masking-values)
+
+.PARAMETER LoggingQueueLimit
+Defines the maximum number of logs allowed in the queue before throwing an event.
+[link](https://badgerati.github.io/Pode/Tutorials/Logging/Overview)
+
+.EXAMPLE
+Set-PodeConfiguration -SslProtocols @('TLS12', 'TLS13')
+
+.EXAMPLE
+Set-PodeConfiguration -RequestTimeout 300 -RequestBodySize 1048576
+
+.EXAMPLE
+Set-PodeConfiguration -DisableAutoImportModules -AutoImportModulesExportOnly
+
+.EXAMPLE
+Set-PodeConfiguration -RestartPeriod 360
+
+.EXAMPLE
+Set-PodeConfiguration -RestartCrons @('0 12 * * TUE,FRI')
+
+.EXAMPLE
+Set-PodeConfiguration -RestartTimes @('09:45', '21:15')
+
+.EXAMPLE
+Set-PodeConfiguration -FileMonitorEnable -FileMonitorInclude @('*.txt', '*.ps1') -FileMonitorExclude @('public/*') -FileMonitorShowFiles
+
+.EXAMPLE
+Set-PodeConfiguration -TransferEncodingDefault 'gzip' -TransferEncodingRoutes @{'/api/*' = 'gzip'; '/status/*' = 'deflate'}
+
+.EXAMPLE
+Set-PodeConfiguration -ErrorPagesShowExceptions -ErrorPagesStrictContentTyping
+
+.EXAMPLE
+Set-PodeConfiguration -StaticDefaults @('home.html') -StaticCacheEnable -StaticCacheExclude @('*.exe') -StaticCacheInclude @('/images/*', '/assets/*.js')
+
+.EXAMPLE
+Set-PodeConfiguration -DefaultFoldersPublic 'c:\custom\public' -DefaultFoldersViews 'd:\shared\views' -DefaultFoldersErrors 'e:\logs\errors'
+
+.EXAMPLE
+Set-PodeConfiguration -LoggingMaskingPatterns @('(?<keep_before>Password=)\w+') -LoggingMask '--MASKED--' -LoggingQueueLimit 500
+#>
+function Set-PodeConfiguration {
+    [CmdletBinding(DefaultParameterSetName = 'Server')]
+    param (
+
+        [Parameter(ParameterSetName = 'DefaultFolder')]
+        [string]$DefaultFoldersPublic,
+
+        [Parameter(ParameterSetName = 'DefaultFolder')]
+        [string]$DefaultFoldersViews,
+
+        [Parameter(ParameterSetName = 'DefaultFolder')]
+        [string]$DefaultFoldersErrors,
+
+        [Parameter(ParameterSetName = 'OpenAPI')]
+        [string]$OpenApiDefaultDefinitionTag,
+
+        [Parameter(ParameterSetName = 'Compression')]
+        [switch]$Compression,
+
+        [Parameter(ParameterSetName = 'Server')]
+        [string]$Root,
+
+        [Parameter(ParameterSetName = 'Server')]
+        [ValidateSet('SSL2', 'SSL3', 'TLS', 'TLS11', 'TLS12', 'TLS13')]
+        [string[]]$SslProtocols,
+
+        [Parameter(ParameterSetName = 'Server')]
+        [int]$RequestTimeout,
+
+        [Parameter(ParameterSetName = 'Server')]
+        [int]$RequestBodySize,
+
+        [Parameter(ParameterSetName = 'AutoImport')]
+        [switch]$DisableAutoImportModules,
+
+        [Parameter(ParameterSetName = 'AutoImport')]
+        [switch]$AutoImportModulesExportOnly,
+
+        [Parameter(ParameterSetName = 'AutoImport')]
+        [switch]$DisableAutoImportSnapins,
+
+        [Parameter(ParameterSetName = 'AutoImport')]
+        [switch]$AutoImportSnapinsExportOnly,
+
+        [Parameter(ParameterSetName = 'AutoImport')]
+        [switch]$DisableAutoImportFunctions,
+
+        [Parameter(ParameterSetName = 'AutoImport')]
+        [switch]$AutoImportFunctionsExportOnly,
+
+        [Parameter(ParameterSetName = 'AutoImport')]
+        [switch]$DisableSecretManagement ,
+
+        [Parameter(ParameterSetName = 'AutoImport')]
+        [switch]$SecretManagementExportOnly,
+
+        [Parameter(ParameterSetName = 'Restart')]
+        [int]$RestartPeriod,
+
+        [Parameter(ParameterSetName = 'Restart')]
+        [ValidatePattern('^[0-5]?\d\s[0-5]?\d\s([0-1]?\d|2[0-3])\s([1-9]|1[0-9]|2[0-8]|3[01]|\*)\s([1-9]|1[0-2]|\*|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s([0-7]|\*|SUN|MON|TUE|WED|THU|FRI|SAT)(\s[0-7])?$')]
+        [string[]]$RestartCrons,
+
+        [Parameter(ParameterSetName = 'Restart')]
+        [ValidatePattern('^(?:[01]\d|2[0-3]):[0-5]\d$')]
+        [string[]]$RestartTimes,
+
+        [Parameter(ParameterSetName = 'FileMonitor')]
+        [switch]$FileMonitorEnable,
+
+        [Parameter(ParameterSetName = 'FileMonitor')]
+        [string[]]$FileMonitorInclude,
+
+        [Parameter(ParameterSetName = 'FileMonitor')]
+        [string[]]$FileMonitorExclude,
+
+        [Parameter(ParameterSetName = 'FileMonitor')]
+        [switch]$FileMonitorShowFiles,
+
+        [Parameter(ParameterSetName = 'ContentType')]
+        [string]$ContentTypeDefault,
+
+        [Parameter(ParameterSetName = 'ContentType')]
+        [hashtable]$ContentTypeRoutes,
+
+        [Parameter(ParameterSetName = 'Error')]
+        [string]$ErrorPagesDefault,
+
+        [Parameter(ParameterSetName = 'Error')]
+        [hashtable]$ErrorPagesRoutes,
+
+        [Parameter(ParameterSetName = 'Error')]
+        [switch]$ErrorPagesShowExceptions,
+
+        [Parameter(ParameterSetName = 'Error')]
+        [switch]$ErrorPagesStrictContentTyping,
+
+        [Parameter(ParameterSetName = 'Static')]
+        [bool]$StaticValidateLast,
+
+        [Parameter(ParameterSetName = 'Static')]
+        [string[]]$StaticDefaults,
+
+        [Parameter(ParameterSetName = 'Static')]
+        [switch]$StaticCacheEnable,
+
+        [Parameter(ParameterSetName = 'Static')]
+        [string[]]$StaticCacheExclude,
+
+        [Parameter(ParameterSetName = 'Static')]
+        [string[]]$StaticCacheInclude,
+
+        [Parameter(ParameterSetName = 'TransferEncoding')]
+        [string]$TransferEncodingDefault,
+
+        [Parameter(ParameterSetName = 'TransferEncoding')]
+        [hashtable]$TransferEncodingRoutes,
+
+        [Parameter(ParameterSetName = 'Logging')]
+        [string[]]$LoggingMaskingPatterns,
+
+        [Parameter(ParameterSetName = 'Logging')]
+        [string]$LoggingMask,
+
+        [Parameter(ParameterSetName = 'Logging')]
+        [int]$LoggingQueueLimit
+
+    )
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'static' {
+            if ( $StaticValidateLast.IsPresent) { $PodeContext.Web.Static.ValidateLast = $StaticValidateLast.IsPresent }
+            if ($StaticDefaults) { $PodeContext.Web.Static.Defaults = $StaticDefaults }
+            if ($StaticCacheEnable.IsPresent) { $PodeContext.Web.Static.Cache.Enable = $StaticCacheEnable.IsPresent }
+            if ($StaticCacheExclude) { $PodeContext.Web.Static.Cache.Exclude = $StaticCacheExclude }
+            if ($StaticCacheInclude) { $PodeContext.Web.Static.Cache.Include = $StaticCacheInclude }
+        }
+
+        'error' {
+            if ($ErrorPagesDefault) { $PodeContext.Web.ErrorPages.Default = $ErrorPagesDefault }
+            if ($ErrorPagesRoutes) { $PodeContext.Web.ErrorPages.Routes = $ErrorPagesRoutes }
+            if ($ErrorPagesShowExceptions.IsPresent) { $PodeContext.Web.ErrorPages.ShowExceptions = $ErrorPagesShowExceptions.IsPresent }
+            if ($ErrorPagesStrictContentTyping.IsPresent) { $PodeContext.Web.ErrorPages.StrictContentTyping = $ErrorPagesStrictContentTyping.IsPresent }
+        }
+
+        'contenttype' {
+            if ($ContentTypeDefault) { $PodeContext.Web.ContentType.Default = $ContentTypeDefault }
+            if ($ContentTypeRoutes) { $PodeContext.Web.ContentType.Routes = $ContentTypeRoutes }
+        }
+
+        'autoimport' {
+            if ($DisableAutoImportModules.IsPresent) {
+                $PodeContext.Server.AutoImport.Modules.Enable = $false
+            }
+            elseif ($AutoImportModulesExportOnly.IsPresent) {
+                $PodeContext.Server.AutoImport.Modules.Enable = $true
+                $PodeContext.Server.AutoImport.Modules.ExportOnly = $AutoImportModulesExportOnly.IsPresent
+            }
+
+            if ($DisableAutoImportSnapins.IsPresent) {
+                $PodeContext.Server.AutoImport.Snapins.Enable = $false
+            }
+            elseif ($AutoImportSnapinsExportOnly.IsPresent) {
+                $PodeContext.Server.AutoImport.Snapins.Enable = $true
+                $PodeContext.Server.AutoImport.Snapins.ExportOnly = $AutoImportSnapinsExportOnly.IsPresent
+            }
+
+            if ($DisableAutoImportFunctions.IsPresent) {
+                $PodeContext.Server.AutoImport.Functions.Enable = ! $DisableAutoImportFunctions.IsPresent
+            }
+            elseif ($AutoImportFunctionsExportOnly.IsPresent) {
+                $PodeContext.Server.AutoImport.Functions.Enable = $true
+                $PodeContext.Server.AutoImport.Functions.ExportOnly = $AutoImportFunctionsExportOnly.IsPresent
+            }
+
+            if ($DisableSecretManagement.IsPresent) {
+                $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enable = $DisableSecretManagement.IsPresent
+            }
+            elseif ($SecretManagementExportOnly.IsPresent) {
+                $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enable = $true
+                $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.ExportOnly = $SecretManagementExportOnly.IsPresent
+            }
+        }
+        'restart' {
+            if ($RestartPeriod) { $PodeContext.Server.Restart.Period = $RestartPeriod }
+            if ($RestartCrons) { $PodeContext.Server.Restart.Crons = $RestartCrons }
+            if ($RestartTimes) { $PodeContext.Server.Restart.Times = $RestartTimes }
+        }
+
+        'filemonitor' {
+            if ($FileMonitor) { $PodeContext.Server.FileMonitor = $FileMonitor }
+            if ($FileMonitorEnable.IsPresent) {
+                $PodeContext.Server.FileMonitor.Enable = $true
+                if ($FileMonitorShowFiles.IsPresent) { $PodeContext.Server.FileMonitor.ShowFiles = $true }
+                if ($FileMonitorInclude) { $PodeContext.Server.FileMonitor.Include = $FileMonitorInclude }
+                if ($FileMonitorExclude) { $PodeContext.Server.FileMonitor.Exclude = $FileMonitorExclude }
+            }
+            else {
+                if ($FileMonitorShowFiles.IsPresent -or $FileMonitorInclude -or $FileMonitorExclude) {
+                    throw 'FileMonitorEnable switch has to be present'
+                }
+            }
+        }
+
+        'contenttype' {
+            if ($ContentTypeDefault) { $PodeContext.Web.ContentType.Default = $ContentTypeDefault }
+            if ($ContentTypeRoutes) { $PodeContext.Web.ContentType.Routes = $ContentTypeRoutes }
+        }
+
+        'transferencoding' {
+            if ($TransferEncodingDefault) { $PodeContext.Web.TransferEncoding.Default = $TransferEncodingDefault }
+            if ($TransferEncodingRoutes) { $PodeContext.Web.TransferEncoding.Routes = $TransferEncodingRoutes }
+        }
+
+        'server' {
+            if ($RequestTimeout) { $PodeContext.Server.Request.Timeout = $RequestTimeout }
+            if ($RequestBodySize) { $PodeContext.Server.Request.BodySize = $RequestBodySize }
+            if ($SslProtocols) { $PodeContext.Server.Ssl.Protocols = $SslProtocols }
+            if ($Root) { $PodeContext.Server.Root = $Root }
+        }
+
+        'defaultfolder' {
+            if ($DefaultFoldersPublic) { $PodeContext.Server.DefaultFolders.Public = $DefaultFoldersPublic }
+            if ($DefaultFoldersViews) { $PodeContext.Server.DefaultFolders.Views = $DefaultFoldersViews }
+            if ($DefaultFoldersErrors) { $PodeContext.Server.DefaultFolders.Errors = $DefaultFoldersErrors }
+        }
+
+        'compression' {
+            if ($Compression.IsPresent) { $PodeContext.Web.Compression = $Compression.IsPresent }
+        }
+
+        'openapi' {
+            if ($OpenApiDefaultDefinitionTag) { $PodeContext.Web.OpenApi.DefaultDefinitionTag = $OpenApiDefaultDefinitionTag }
+        }
+
+        'logging' {
+            if (-not $PodeContext.Server.Logging.Masking) { $PodeContext.Server.Logging.Masking = @{} }
+            if ($LoggingMaskingPatterns) { $PodeContext.Server.Logging.Masking.Patterns = $LoggingMaskingPatterns }
+            if ($LoggingMask) { $PodeContext.Server.Logging.Masking.Mask = $LoggingMask }
+            if ($LoggingQueueLimit) { $PodeContext.Server.Logging.QueueLimit = $LoggingQueueLimit }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Gets the current Pode server configuration.
+
+.DESCRIPTION
+This function retrieves the current configurations for the Pode server by reading from the $PodeContext hashtable.
+
+.EXAMPLE
+Get-PodeConfiguration
+
+.EXAMPLE
+Get-PodeConfiguration -Section 'SslProtocols'
+
+.EXAMPLE
+Get-PodeConfiguration -Section 'RequestTimeout'
+#>
+function Get-PodeConfiguration {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('SslProtocols', 'RequestTimeout', 'RequestBodySize', 'AutoImport', 'Root', 'Restart', 'FileMonitor', 'DefaultFolders', 'OpenApi', 'Static', 'TransferEncoding', 'Compression', 'ContentType', 'ErrorPages', 'Logging')]
+        [string]$Section
+    )
+
+    switch ($Section) {
+        'SslProtocols' {
+            return $PodeContext.Server.Ssl.Protocols
+        }
+        'RequestTimeout' {
+            return $PodeContext.Server.Request.Timeout
+        }
+        'RequestBodySize' {
+            return $PodeContext.Server.Request.BodySize
+        }
+        'AutoImport' {
+            return $PodeContext.Server.AutoImport
+        }
+        'Root' {
+            return $PodeContext.Server.Root
+        }
+        'Restart' {
+            return $PodeContext.Server.Restart
+        }
+        'FileMonitor' {
+            return $PodeContext.Server.FileMonitor
+        }
+        'DefaultFolders' {
+            return $PodeContext.Server.DefaultFolders
+        }
+        'OpenApi' {
+            return $PodeContext.Web.OpenApi
+        }
+        'Static' {
+            return $PodeContext.Web.Static
+        }
+        'TransferEncoding' {
+            return $PodeContext.Web.TransferEncoding
+        }
+        'Compression' {
+            return $PodeContext.Web.Compression
+        }
+        'ContentType' {
+            return $PodeContext.Web.ContentType
+        }
+        'ErrorPages' {
+            return $PodeContext.Web.ErrorPages
+        }
+        'Logging' {
+            return $PodeContext.Server.Logging
+        }
+        default {
+            return @{
+                Server = @{
+                    SslProtocols = $PodeContext.Server.Ssl.Protocols
+                    Request = @{
+                        Timeout = $PodeContext.Server.Request.Timeout
+                        BodySize = $PodeContext.Server.Request.BodySize
+                    }
+                    AutoImport = $PodeContext.Server.AutoImport
+                    Root = $PodeContext.Server.Root
+                    Restart = $PodeContext.Server.Restart
+                    FileMonitor = $PodeContext.Server.FileMonitor
+                    DefaultFolders = $PodeContext.Server.DefaultFolders
+                    Logging = $PodeContext.Server.Logging
+                }
+                Web = @{
+                    OpenApi = $PodeContext.Web.OpenApi
+                    Static = $PodeContext.Web.Static
+                    TransferEncoding = $PodeContext.Web.TransferEncoding
+                    Compression = $PodeContext.Web.Compression
+                    ContentType = $PodeContext.Web.ContentType
+                    ErrorPages = $PodeContext.Web.ErrorPages
+                }
+            }
+        }
+    }
+}
+
+
