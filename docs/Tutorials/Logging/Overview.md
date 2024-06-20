@@ -114,42 +114,45 @@ You can also sent a `-BatchTimeout` value, in seconds, so that if your batch siz
 
 ## Configuring Failure Actions for Log Writing
 
-Defines the behavior in case of failure to write a log. This can happen if the disk is full, the Syslog server is offline, or if the number of logs in the queue reaches the maximum allowed (default is 500). The options are:
-- **Ignore**: Does nothing and continues execution.
-- **Report**: Writes a message to the console for any failure.
-- **Halt**: Writes a message to the console and shuts down the Pode server.
-
-#### Example
+Defines the behavior in case of failure to write a log. This can happen if the disk is full, the Syslog server is offline, or if the number of logs in the queue reaches the maximum allowed. The options are:
+- **Ignore** : Does nothing and continues execution. **(Default)**
+- **Report** : Writes a message to the console for any failure.
+- **Halt** : Writes a message to the console and shuts down the Pode server.
 
 ```powershell
 New-PodeLoggingMethod -File -Path './logs' -Name 'errors' -FailureAction 'Report' | Enable-PodeRequestLogging
 ```
 
+## QueueLimit
+Defines the maximum number of logs allowed in the queue before throwing an event.
+The default value is 500.  The exception is handled based on the `-FailureAction` parameter.
+
+```powershell
+@{
+    Server = @{
+        Logging = @{
+            QueueLimit = 1000
+        }
+    }
+}
+```
+
 ## DataFormat
-
 The date format to use for the log entries. The default format is `'dd/MMM/yyyy:HH:mm:ss zzz'`.
-
-#### Example
 
 ```powershell
 New-PodeLoggingMethod -File -Path './logs' -Name 'access' -DataFormat 'yyyy-MM-dd HH:mm:ss' | Enable-PodeErrorLogging
 ```
 
 ## ISO8601
-
 If set, the date format will be ISO 8601 compliant (equivalent to `-DataFormat 'yyyy-MM-ddTHH:mm:ssK'`). This parameter is mutually exclusive with DataFormat.
-
-#### Example
 
 ```powershell
 New-PodeLoggingMethod -File -Path './logs' -Name 'access' -ISO8601 | Enable-PodeErrorLogging
 ```
 
 ## AsUTC
-
 If set, the time will be logged in UTC instead of local time.
-
-#### Example
 
 ```powershell
 New-PodeLoggingMethod -File -Path './logs' -Name 'access' -AsUTC -ISO8601 | Enable-PodeErrorLogging
