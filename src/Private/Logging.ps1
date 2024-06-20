@@ -948,6 +948,7 @@ function Write-PodeMainLog {
     if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }
+    
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'parameter' {
             $Message = if ($Parameters) {
@@ -955,8 +956,20 @@ function Write-PodeMainLog {
                         if ($_.Value -is [scriptblock]) {
                             "$($_.Key)=<ScriptBlock>"
                         }
+                        elseif ($_.Key -eq 'ArgumentList') {
+                            "$($_.Key)=<ArgumentList>"
+                        }
                         elseif ($_.Key -eq 'Route') {
                             "$($_.Key)={ Path : `"$($_.Value.Path -join ',')`" ,Method : `"$($_.Value.Method -join ',')`" }"
+                        }
+                        elseif ($_.Key -eq 'ExternalDoc') {
+                            "$($_.Key)=$($_.Value|ConvertTo-Json -Compress)"
+                        }
+                        elseif ($_.Key -eq 'Scheme') {
+                            "$($_.Key)={ Name : `"$($_.Value.Name)`" , Scheme : `"$($_.Value.Scheme)`" }"
+                        }
+                        elseif ($_.Key -eq 'InputObject') {
+                            "$($_.Key)=<InputObject>"
                         }
                         else {
                             "$($_.Key)=$($_.Value)"
