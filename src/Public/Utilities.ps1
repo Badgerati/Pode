@@ -1816,6 +1816,9 @@ Gets the current Pode server configuration.
 .DESCRIPTION
 This function retrieves the current configurations for the Pode server by reading from the $PodeContext hashtable.
 
+.PARAMETER Section
+Specifies which section of the configuration to retrieve (e.g., `SslProtocols`, `RequestTimeout`, `AutoImport`, etc.).
+
 .EXAMPLE
 Get-PodeConfiguration
 
