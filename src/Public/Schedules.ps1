@@ -88,21 +88,25 @@ function Add-PodeSchedule {
 
     # ensure the schedule doesn't already exist
     if ($PodeContext.Schedules.Items.ContainsKey($Name)) {
-        throw "[Schedule] $($Name): Schedule already defined"
+        # [Schedule] Name: Schedule already defined
+        throw ($PodeLocale.scheduleAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # ensure the limit is valid
     if ($Limit -lt 0) {
-        throw "[Schedule] $($Name): Cannot have a negative limit"
+        # [Schedule] Name: Cannot have a negative limit
+        throw ($PodeLocale.scheduleCannotHaveNegativeLimitExceptionMessage -f $Name)
     }
 
     # ensure the start/end dates are valid
     if (($null -ne $EndTime) -and ($EndTime -lt [DateTime]::Now)) {
-        throw "[Schedule] $($Name): The EndTime value must be in the future"
+        # [Schedule] Name: The EndTime value must be in the future
+        throw ($PodeLocale.scheduleEndTimeMustBeInFutureExceptionMessage -f $Name)
     }
 
     if (($null -ne $StartTime) -and ($null -ne $EndTime) -and ($EndTime -le $StartTime)) {
-        throw "[Schedule] $($Name): Cannot have a StartTime after the EndTime"
+        # [Schedule] Name: Cannot have a 'StartTime' after the 'EndTime'
+        throw ($PodeLocale.scheduleStartTimeAfterEndTimeExceptionMessage -f $Name)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -159,7 +163,8 @@ function Set-PodeScheduleConcurrency {
 
     # error if <=0
     if ($Maximum -le 0) {
-        throw "Maximum concurrent schedules must be >=1 but got: $($Maximum)"
+        # Maximum concurrent schedules must be >=1 but got
+        throw ($PodeLocale.maximumConcurrentSchedulesInvalidExceptionMessage -f $Maximum)
     }
 
     # ensure max > min
@@ -169,7 +174,8 @@ function Set-PodeScheduleConcurrency {
     }
 
     if ($_min -gt $Maximum) {
-        throw "Maximum concurrent schedules cannot be less than the minimum of $($_min) but got: $($Maximum)"
+        # Maximum concurrent schedules cannot be less than the minimum of $_min but got $Maximum
+        throw ($PodeLocale.maximumConcurrentSchedulesLessThanMinimumExceptionMessage -f $_min, $Maximum)
     }
 
     # set the max schedules
@@ -209,7 +215,8 @@ function Invoke-PodeSchedule {
 
     # ensure the schedule exists
     if (!$PodeContext.Schedules.Items.ContainsKey($Name)) {
-        throw "Schedule '$($Name)' does not exist"
+        # Schedule 'Name' does not exist
+        throw ($PodeLocale.scheduleDoesNotExistExceptionMessage -f $Name)
     }
 
     # run schedule logic
@@ -304,7 +311,8 @@ function Edit-PodeSchedule {
 
     # ensure the schedule exists
     if (!$PodeContext.Schedules.Items.ContainsKey($Name)) {
-        throw "Schedule '$($Name)' does not exist"
+        # Schedule 'Name' does not exist
+        throw ($PodeLocale.scheduleDoesNotExistExceptionMessage -f $Name)
     }
 
     $_schedule = $PodeContext.Schedules.Items[$Name]
@@ -487,18 +495,21 @@ function Get-PodeScheduleNextTrigger {
 
     # ensure the schedule exists
     if (!$PodeContext.Schedules.Items.ContainsKey($Name)) {
-        throw "Schedule '$($Name)' does not exist"
+        # Schedule 'Name' does not exist
+        throw ($PodeLocale.scheduleDoesNotExistExceptionMessage -f $Name)
     }
 
     $_schedule = $PodeContext.Schedules.Items[$Name]
 
     # ensure date is after start/before end
     if (($null -ne $DateTime) -and ($null -ne $_schedule.StartTime) -and ($DateTime -lt $_schedule.StartTime)) {
-        throw "Supplied date is before the start time of the schedule at $($_schedule.StartTime)"
+        # Supplied date is before the start time of the schedule at $_schedule.StartTime
+        throw ($PodeLocale.suppliedDateBeforeScheduleStartTimeExceptionMessage -f $_schedule.StartTime)
     }
 
     if (($null -ne $DateTime) -and ($null -ne $_schedule.EndTime) -and ($DateTime -gt $_schedule.EndTime)) {
-        throw "Supplied date is after the end time of the schedule at $($_schedule.EndTime)"
+        # Supplied date is after the end time of the schedule at $_schedule.EndTime
+        throw ($PodeLocale.suppliedDateAfterScheduleEndTimeExceptionMessage -f $_schedule.EndTime)
     }
 
     # get the next trigger

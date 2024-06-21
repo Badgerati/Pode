@@ -4,6 +4,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 Describe 'Test-PodeCookie' {
     It 'Returns true' {
@@ -49,7 +50,7 @@ Describe 'Test-PodeCookieSigned' {
             }
         }
 
-        { Test-PodeCookieSigned -Name 'test' } | Should -Throw -ExpectedMessage '*argument is null*'
+        { Test-PodeCookieSigned -Name 'test' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeCookieSigned'
         Assert-MockCalled Invoke-PodeValueUnsign -Times 0 -Scope It
     }
 
@@ -478,19 +479,19 @@ Describe 'Remove-PodeCookie' {
 Describe 'Invoke-PodeValueSign' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Invoke-PodeValueSign -Value $null -Secret 'key' } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeValueSign -Value $null -Secret 'key' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeValueSign'
         }
 
         It 'Throws empty value error' {
-            { Invoke-PodeValueSign -Value '' -Secret 'key' } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeValueSign -Value '' -Secret 'key' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeValueSign'
         }
 
         It 'Throws null secret error' {
-            { Invoke-PodeValueSign -Value 'value' -Secret $null } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeValueSign -Value 'value' -Secret $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeValueSign'
         }
 
         It 'Throws empty secret error' {
-            { Invoke-PodeValueSign -Value 'value' -Secret '' } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeValueSign -Value 'value' -Secret '' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeValueSign'
         }
     }
 
@@ -504,19 +505,19 @@ Describe 'Invoke-PodeValueSign' {
 Describe 'Invoke-PodeValueUnsign' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Invoke-PodeValueUnsign -Value $null -Secret 'key' } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeValueUnsign -Value $null -Secret 'key' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeValueUnsign'
         }
 
         It 'Throws empty value error' {
-            { Invoke-PodeValueUnsign -Value '' -Secret 'key' } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeValueUnsign -Value '' -Secret 'key' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeValueUnsign'
         }
 
         It 'Throws null secret error' {
-            { Invoke-PodeValueUnsign -Value 'value' -Secret $null } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeValueUnsign -Value 'value' -Secret $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeValueUnsign'
         }
 
         It 'Throws empty secret error' {
-            { Invoke-PodeValueUnsign -Value 'value' -Secret '' } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Invoke-PodeValueUnsign -Value 'value' -Secret '' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Invoke-PodeValueUnsign'
         }
     }
 

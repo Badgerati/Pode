@@ -4,6 +4,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 Describe 'Get-PodeContentType' {
     Context 'No extension supplied' {
@@ -1287,7 +1288,7 @@ Describe 'Get-PodeContentType' {
                 '.z'                      = 'application/x-compress'
                 '.zip'                    = 'application/zip'
             } }
-        It "Returns correct content type for <_>" -ForEach ($types.Keys) {
+        It 'Returns correct content type for <_>' -ForEach ($types.Keys) {
             Get-PodeContentType -Extension $_ | Should -Be $types[$_]
 
         }
@@ -1456,9 +1457,9 @@ Describe 'Get-PodeStatusDescription' {
                 '511' = 'Network Authentication Required'
                 '526' = 'Invalid SSL Certificate'
             } }
-        It  "Returns description for the <_> StatusCode"  -ForEach ($codes.Keys) {
+        It  'Returns description for the <_> StatusCode'  -ForEach ($codes.Keys) {
             Get-PodeStatusDescription -StatusCode $_ | Should -Be $codes[$_]
         }
 
-    }#>
+    }
 }

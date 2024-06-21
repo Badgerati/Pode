@@ -192,7 +192,8 @@ function Use-PodeScript {
 
     # check if the path exists
     if (!(Test-PodePath $_path -NoStatus)) {
-        throw "The script path does not exist: $(Protect-PodeValue -Value $_path -Default $Path)"
+        # The script path does not exist
+        throw ($PodeLocale.scriptPathDoesNotExistExceptionMessage -f (Protect-PodeValue -Value $_path -Default $Path))
     }
 
     # dot-source the script
@@ -350,12 +351,14 @@ function Import-PodeModule {
 
     # if it's still empty, error
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw "Failed to import module: $(Protect-PodeValue -Value $Path -Default $Name)"
+        # Failed to import module
+        throw ($PodeLocale.failedToImportModuleExceptionMessage -f (Protect-PodeValue -Value $Path -Default $Name))
     }
 
     # check if the path exists
     if (!(Test-PodePath $Path -NoStatus)) {
-        throw "The module path does not exist: $(Protect-PodeValue -Value $Path -Default $Name)"
+        # The module path does not exist
+        throw ($PodeLocale.modulePathDoesNotExistExceptionMessage -f (Protect-PodeValue -Value $Path -Default $Name))
     }
 
     $null = Import-Module $Path -Force -DisableNameChecking -Scope Global -ErrorAction Stop
@@ -384,7 +387,8 @@ function Import-PodeSnapin {
 
     # if non-windows or core, fail
     if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
-        throw 'Snapins are only supported on Windows PowerShell'
+        # Snapins are only supported on Windows PowerShell
+        throw ($PodeLocale.snapinsSupportedOnWindowsPowershellOnlyExceptionMessage)
     }
 
     # import the snap-in
@@ -1057,7 +1061,8 @@ function New-PodeCron {
 
     # cant have None and Interval
     if (($Every -ieq 'none') -and ($Interval -gt 0)) {
-        throw 'Cannot supply an interval when -Every is set to None'
+        # Cannot supply an interval when the parameter `Every` is set to None
+        throw ($PodeLocale.cannotSupplyIntervalWhenEveryIsNoneExceptionMessage)
     }
 
     # base cron
@@ -1157,7 +1162,8 @@ function New-PodeCron {
             $cron.Month = '1,4,7,10'
 
             if ($Interval -gt 0) {
-                throw 'Cannot supply interval value for every quarter'
+                # Cannot supply interval value for every quarter
+                throw ($PodeLocale.cannotSupplyIntervalForQuarterExceptionMessage)
             }
         }
 
@@ -1168,7 +1174,8 @@ function New-PodeCron {
             $cron.Month = '1'
 
             if ($Interval -gt 0) {
-                throw 'Cannot supply interval value for every year'
+                # Cannot supply interval value for every year
+                throw ($PodeLocale.cannotSupplyIntervalForYearExceptionMessage)
             }
         }
     }

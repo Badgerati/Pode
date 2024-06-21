@@ -1,25 +1,27 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
     $PodeContext = @{ 'Server' = $null; }
 }
 
 Describe 'Find-PodeRoute' {
     Context 'Invalid parameters supplied' {
         It 'Throw invalid method error for no method' {
-            { Find-PodeRoute -Method 'MOO' -Path '/' } | Should -Throw -ExpectedMessage "*Cannot validate argument on parameter 'Method'*"
+            { Find-PodeRoute -Method 'MOO' -Path '/' } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Find-PodeRoute'
         }
 
         It 'Throw null route parameter error' {
-            { Find-PodeRoute -Method GET -Path $null } | Should -Throw -ExpectedMessage '*The argument is null or empty*'
+            { Find-PodeRoute -Method GET -Path $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Find-PodeRoute'
         }
 
         It 'Throw empty route parameter error' {
-            { Find-PodeRoute -Method GET -Path ([string]::Empty) } | Should -Throw -ExpectedMessage '*The argument is null or empty*'
+            { Find-PodeRoute -Method GET -Path ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Find-PodeRoute'
         }
     }
 
@@ -102,7 +104,7 @@ Describe 'Add-PodeStaticRoute' {
     It 'Throws error when adding static route for non-existing folder' {
         Mock Test-PodePath { return $false }
         $PodeContext.Server = @{ 'Routes' = @{ 'STATIC' = @{}; }; 'Root' = $pwd; FindEndpoints = @{} }
-        { Add-PodeStaticRoute -Path '/assets' -Source './assets' } | Should -Throw -ExpectedMessage '*does not exist*'
+        { Add-PodeStaticRoute -Path '/assets' -Source './assets' } | Should -Throw -ExpectedMessage ($PodeLocale.sourcePathDoesNotExistForStaticRouteExceptionMessage -f '*', '*/assets' ) #'*does not exist*'
     }
 }
 
@@ -259,39 +261,44 @@ Describe 'Add-PodeRoute' {
         }
     }
     It 'Throws invalid method error for no method' {
-        { Add-PodeRoute -Method 'MOO' -Path '/' -ScriptBlock {} } | Should -Throw -ExpectedMessage "*Cannot validate argument on parameter 'Method'*"
+        { Add-PodeRoute -Method 'MOO' -Path '/' -ScriptBlock {} } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Add-PodeRoute'
     }
 
     It 'Throws null route parameter error' {
-        { Add-PodeRoute -Method GET -Path $null -ScriptBlock {} } | Should -Throw -ExpectedMessage '*it is an empty string*'
+        { Add-PodeRoute -Method GET -Path $null -ScriptBlock {} } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeRoute'#-ExpectedMessage
     }
 
     It 'Throws empty route parameter error' {
-        { Add-PodeRoute -Method GET -Path ([string]::Empty) -ScriptBlock {} } | Should -Throw -ExpectedMessage '*it is an empty string*'
+        { Add-PodeRoute -Method GET -Path ([string]::Empty) -ScriptBlock {} } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Add-PodeRoute'
     }
 
     It 'Throws error when scriptblock and file path supplied' {
-        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } -FilePath './path' } | Should -Throw -ExpectedMessage '*parameter set cannot be resolved*'
+        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } -FilePath './path' } | Should -Throw -ErrorId 'AmbiguousParameterSet,Add-PodeRoute'
     }
 
     It 'Throws error when file path is a directory' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Test-PodePath { return $true }
-        { Add-PodeRoute -Method GET -Path '/' -FilePath './path' } | Should -Throw -ExpectedMessage '*cannot be a wildcard or a directory*'
+        # cannot be a wildcard or a directory
+        { Add-PodeRoute -Method GET -Path '/' -FilePath './path' } | Should -Throw -ExpectedMessage ($PodeLocale.invalidPathWildcardOrDirectoryExceptionMessage -f './path')
     }
 
     It 'Throws error when file path is a wildcard' {
         Mock Get-PodeRelativePath { return $Path }
         Mock Test-PodePath { return $true }
-        { Add-PodeRoute -Method GET -Path '/' -FilePath './path/*' } | Should -Throw -ExpectedMessage '*cannot be a wildcard or a directory*'
+        { Add-PodeRoute -Method GET -Path '/' -FilePath './path/*' } | Should -Throw -ExpectedMessage ($PodeLocale.invalidPathWildcardOrDirectoryExceptionMessage -f './path/*') #'*cannot be a wildcard or a directory*'
     }
 
     It 'Throws error because no scriptblock supplied' {
-        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock {} } | Should -Throw -ExpectedMessage '*No logic passed*'
+
+   #     ?*[] can be escaped using backtick, ex `*.
+        $expectedMessage = ($PodeLocale.noLogicPassedForMethodRouteExceptionMessage -f 'GET', '/').Replace('[','`[').Replace(']','`]')
+        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock {} } | Should -Throw -ExpectedMessage $expectedMessage # '*No logic passed*'
+        # -Throw -ExpectedMessage $expectedMessage # '*No logic passed*'
     }
 
     It 'Throws error because only querystring has been given' {
-        { Add-PodeRoute -Method GET -Path '?k=v' -ScriptBlock { write-host 'hi' } } | Should -Throw -ExpectedMessage '*No path supplied*'
+        { Add-PodeRoute -Method GET -Path '?k=v' -ScriptBlock { write-host 'hi' } } | Should -Throw -ExpectedMessage $PodeLocale.noPathSuppliedForRouteExceptionMessage #'*No path supplied*'
     }
 
     It 'Throws error because route already exists' {
@@ -300,12 +307,12 @@ Describe 'Add-PodeRoute' {
                 )
             }
         }
-
-        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } } | Should -Throw -ExpectedMessage '*already defined*'
+        $expectedMessage = ($PodeLocale.methodPathAlreadyDefinedExceptionMessage -f 'GET', '/').Replace('[','`[').Replace(']','`]')
+        { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
     }
 
     It 'Throws error on GET route for endpoint name not existing' {
-        { Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' } -EndpointName 'test' } | Should -Throw -ExpectedMessage '*does not exist*'
+        { Add-PodeRoute -Method GET -Path '/users' -ScriptBlock { Write-Host 'hello' } -EndpointName 'test' } | Should -Throw -ExpectedMessage ($PodeLocale.endpointNameNotExistExceptionMessage -f 'Test') #*does not exist*'
     }
 
     It 'Adds route with simple url' {
@@ -406,15 +413,15 @@ Describe 'Add-PodeRoute' {
     }
 
     It 'Adds route with middleware supplied as hashtable with null logic' {
-        { Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = $null }) -ScriptBlock {} } | Should -Throw -ExpectedMessage '*no logic defined*'
+        { Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = $null }) -ScriptBlock {} } | Should -Throw -ExpectedMessage $PodeLocale.hashtableMiddlewareNoLogicExceptionMessage #'*no logic defined*'
     }
 
     It 'Adds route with middleware supplied as hashtable with invalid type logic' {
-        { Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = 74 }) -ScriptBlock {} } | Should -Throw -ExpectedMessage '*invalid logic type*'
+        { Add-PodeRoute -Method GET -Path '/users' -Middleware (@{ 'Logic' = 74 }) -ScriptBlock {} } | Should -Throw -ExpectedMessage ($PodeLocale.invalidLogicTypeInHashtableMiddlewareExceptionMessage -f 'Int32') #'*invalid logic type*'
     }
 
     It 'Adds route with invalid middleware type' {
-        { Add-PodeRoute -Method GET -Path '/users' -Middleware 74 -ScriptBlock {} } | Should -Throw -ExpectedMessage '*invalid type*'
+        { Add-PodeRoute -Method GET -Path '/users' -Middleware 74 -ScriptBlock {} } | Should -Throw -ExpectedMessage ($PodeLocale.invalidMiddlewareTypeExceptionMessage -f 'Int32') #*invalid type*'
     }
 
     It 'Adds route with middleware supplied as hashtable and empty logic' {
@@ -580,11 +587,11 @@ Describe 'ConvertTo-PodeRoute' {
         Mock Get-Module { return @{ ExportedCommands = @{ Keys = @('Some-ModuleCommand1', 'Some-ModuleCommand2') } } }
     }
     It 'Throws error when module does not contain command' {
-        { ConvertTo-PodeRoute -Module Example -Commands 'Get-ChildItem' } | Should -Throw -ExpectedMessage '*does not contain function*'
+        { ConvertTo-PodeRoute -Module Example -Commands 'Get-ChildItem' } | Should -Throw -ExpectedMessage ($PodeLocale.moduleDoesNotContainFunctionExceptionMessage -f 'Example', 'Get-ChildItem') #'*does not contain function*'
     }
 
     It 'Throws error for no commands' {
-        { ConvertTo-PodeRoute } | Should -Throw -ExpectedMessage 'No commands supplied to convert to Routes'
+        { ConvertTo-PodeRoute } | Should -Throw -ExpectedMessage $PodeLocale.noCommandsSuppliedToConvertToRoutesExceptionMessage # No commands supplied to convert to Routes.
     }
 
     It 'Calls Add-PodeRoute twice for commands' {
@@ -609,16 +616,16 @@ Describe 'Add-PodePage' {
     }
 
     It 'Throws error for invalid Name' {
-        { Add-PodePage -Name 'Rick+Morty' -ScriptBlock {} } | Should -Throw -ExpectedMessage '*should be a valid alphanumeric*'
+        { Add-PodePage -Name 'Rick+Morty' -ScriptBlock {} } | Should -Throw -ExpectedMessage ($PodeLocale.pageNameShouldBeAlphaNumericExceptionMessage -f 'Rick+Morty' ) #'*should be a valid alphanumeric*'
     }
 
     It 'Throws error for invalid ScriptBlock' {
-        { Add-PodePage -Name 'RickMorty' -ScriptBlock {} } | Should -Throw -ExpectedMessage '*non-empty scriptblock is required*'
+        { Add-PodePage -Name 'RickMorty' -ScriptBlock {} } | Should -Throw -ExpectedMessage $PodeLocale.nonEmptyScriptBlockRequiredForPageRouteExceptionMessage #'*non-empty scriptblock is required*'
     }
 
     It 'Throws error for invalid FilePath' {
         $PodeContext.Server = @{ 'Root' = $pwd }
-        { Add-PodePage -Name 'RickMorty' -FilePath './fake/path' } | Should -Throw -ExpectedMessage '*the path does not exist*'
+        { Add-PodePage -Name 'RickMorty' -FilePath './fake/path' } | Should -Throw -ExpectedMessage ($PodeLocale.pathNotExistExceptionMessage -f '*/fake/path') #'*the path does not exist*'
     }
 
     It 'Call Add-PodeRoute once for ScriptBlock page' {
@@ -1050,15 +1057,15 @@ Describe 'ConvertTo-PodeMiddleware' {
     }
 
     It 'Errors for invalid middleware type' {
-        { ConvertTo-PodeMiddleware -Middleware 'string' -PSSession $_PSSession } | Should -Throw -ExpectedMessage '*invalid type*'
+        { ConvertTo-PodeMiddleware -Middleware 'string' -PSSession $_PSSession } | Should -Throw -ExpectedMessage ($PodeLocale.invalidMiddlewareTypeExceptionMessage -f 'string') # '*invalid type*'
     }
 
     It 'Errors for invalid middleware hashtable - no logic' {
-        { ConvertTo-PodeMiddleware -Middleware @{} -PSSession $_PSSession } | Should -Throw -ExpectedMessage '*no logic defined*'
+        { ConvertTo-PodeMiddleware -Middleware @{} -PSSession $_PSSession } | Should -Throw -ExpectedMessage $PodeLocale.hashtableMiddlewareNoLogicExceptionMessage # '*no logic defined*'
     }
 
     It 'Errors for invalid middleware hashtable - logic not scriptblock' {
-        { ConvertTo-PodeMiddleware -Middleware @{ Logic = 'string' } -PSSession $_PSSession } | Should -Throw -ExpectedMessage '*invalid logic type*'
+        { ConvertTo-PodeMiddleware -Middleware @{ Logic = 'string' } -PSSession $_PSSession } | Should -Throw -ExpectedMessage ($PodeLocale.invalidLogicTypeInHashtableMiddlewareExceptionMessage -f 'string') #'*invalid logic type*'
     }
 
     It 'Returns hashtable for single hashtable middleware' {

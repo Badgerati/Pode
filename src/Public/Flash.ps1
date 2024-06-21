@@ -29,7 +29,8 @@ function Add-PodeFlashMessage {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use Flash messages'
+        # Sessions are required to use Flash messages
+        throw ($PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage)
     }
 
     # append the message against the key
@@ -61,7 +62,8 @@ function Clear-PodeFlashMessages {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use Flash messages'
+        # Sessions are required to use Flash messages
+        throw ($PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage)
     }
 
     # clear all keys
@@ -95,7 +97,8 @@ function Get-PodeFlashMessage {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use Flash messages'
+        # Sessions are required to use Flash messages
+        throw ($PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage)
     }
 
     # retrieve messages from session, then delete it
@@ -130,7 +133,8 @@ function Get-PodeFlashMessageNames {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use Flash messages'
+        # Sessions are required to use Flash messages
+        throw ($PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage)
     }
 
     # return list of all current keys
@@ -164,7 +168,8 @@ function Remove-PodeFlashMessage {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use Flash messages'
+        # Sessions are required to use Flash messages
+        throw ($PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage)
     }
 
     # remove key from flash messages
@@ -197,7 +202,8 @@ function Test-PodeFlashMessage {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use Flash messages'
+        # Sessions are required to use Flash messages
+        throw ($PodeLocale.sessionsRequiredForFlashMessagesExceptionMessage)
     }
 
     # return if a key exists as a flash message

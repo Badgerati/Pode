@@ -24,7 +24,7 @@ function Install-PodeModule($path, $version) {
         Push-Location (Join-Path $toolsDir 'src')
 
         # which folders do we need?
-        $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses')
+        $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses','Locales')
         $folders | ForEach-Object {
             New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
             Copy-Item -Path "./$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null

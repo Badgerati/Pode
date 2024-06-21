@@ -21,4 +21,5 @@
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '5.1'
+
 }

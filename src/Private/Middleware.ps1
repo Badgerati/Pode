@@ -79,7 +79,8 @@ function New-PodeMiddlewareInternal {
     )
 
     if (Test-PodeIsEmpty $ScriptBlock) {
-        throw '[Middleware]: No ScriptBlock supplied'
+        # No ScriptBlock supplied
+        throw ($PodeLocale.noScriptBlockSuppliedExceptionMessage)
     }
 
     # if route is empty, set it to root
@@ -416,7 +417,8 @@ function Initialize-PodeIISMiddleware {
 
     # fail if no iis token - because there should be!
     if ([string]::IsNullOrWhiteSpace($PodeContext.Server.IIS.Token)) {
-        throw 'IIS ASPNETCORE_TOKEN is missing'
+        # IIS ASPNETCORE_TOKEN is missing
+        throw ($PodeLocale.iisAspnetcoreTokenMissingExceptionMessage)
     }
 
     # add middleware to check every request has the token

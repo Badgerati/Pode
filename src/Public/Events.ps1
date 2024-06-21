@@ -43,7 +43,7 @@ function Register-PodeEvent {
 
     # error if already registered
     if (Test-PodeEvent -Type $Type -Name $Name) {
-        throw "$($Type) event already registered: $($Name)"
+        throw ($PodeLocale.eventAlreadyRegisteredExceptionMessage -f $Type, $Name) # "$($Type) event already registered: $($Name)"
     }
 
     # check for scoped vars
@@ -89,7 +89,7 @@ function Unregister-PodeEvent {
 
     # error if not registered
     if (!(Test-PodeEvent -Type $Type -Name $Name)) {
-        throw "No $($Type) event registered: $($Name)"
+        throw ($PodeLocale.noEventRegisteredExceptionMessage -f $Type, $Name) # "No $($Type) event registered: $($Name)"
     }
 
     # remove event

@@ -69,7 +69,8 @@ function New-PodeAccessScheme {
     # for custom access a validator is mandatory
     if ($Custom) {
         if ([string]::IsNullOrWhiteSpace($Path) -and (Test-PodeIsEmpty $ScriptBlock)) {
-            throw 'A Path or ScriptBlock is required for sourcing the Custom access values'
+            # A Path or ScriptBlock is required for sourcing the Custom access values
+            throw ($PodeLocale.customAccessPathOrScriptBlockRequiredExceptionMessage)
         }
     }
 
@@ -174,7 +175,7 @@ function Add-PodeAccess {
 
     # check name unique
     if (Test-PodeAccessExists -Name $Name) {
-        throw "Access method already defined: $($Name)"
+        throw ($PodeLocale.accessMethodAlreadyDefinedExceptionMessage -f $Name) #"Access method already defined: $($Name)"
     }
 
     # parse using variables in validator scriptblock
@@ -241,13 +242,13 @@ function Merge-PodeAccess {
 
     # ensure the name doesn't already exist
     if (Test-PodeAccessExists -Name $Name) {
-        throw "Access method already defined: $($Name)"
+        throw ($PodeLocale.accessMethodAlreadyDefinedExceptionMessage -f $Name) #"Access method already defined: $($Name)"
     }
 
     # ensure all the access methods exist
     foreach ($accName in $Access) {
         if (!(Test-PodeAccessExists -Name $accName)) {
-            throw "Access method does not exist for merging: $($accName)"
+            throw ($PodeLocale.accessMethodNotExistForMergingExceptionMessage -f $accName) #"Access method does not exist for merging: $($accName)"
         }
     }
 
@@ -313,7 +314,7 @@ function Add-PodeAccessCustom {
     end {
         foreach ($r in $routes) {
             if ($r.AccessMeta.Custom.ContainsKey($Name)) {
-                throw "Route '[$($r.Method)] $($r.Path)' already contains Custom Access with name '$($Name)'"
+                throw ($PodeLocale.routeAlreadyContainsCustomAccessExceptionMessage -f $r.Method, $r.Path, $Name) #"Route '[$($r.Method)] $($r.Path)' already contains Custom Access with name '$($Name)'"
             }
 
             $r.AccessMeta.Custom[$Name] = $Value
@@ -663,7 +664,7 @@ function Add-PodeAccessMiddleware {
     )
 
     if (!(Test-PodeAccessExists -Name $Access)) {
-        throw "Access method does not exist: $($Access)"
+        throw ($PodeLocale.accessMethodNotExistExceptionMessage -f $Access) #"Access method does not exist: $($Access)"
     }
 
     Get-PodeAccessMiddlewareScript |

@@ -1,7 +1,8 @@
 $path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
 if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
     Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
-} else {
+}
+else {
     Import-Module -Name 'Pode'
 }
 
@@ -201,7 +202,7 @@ Some useful links:
                         (New-PodeOAStringProperty -Name 'photoUrls' -Array),
                         (New-PodeOASchemaProperty -Name 'tags' -Component 'Tag')
                         (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
-        ))  #>
+        )) #>
 
         <#    Add-PodeOAComponentSchema -Name 'Cat' -Schema (   New-PodeOAObjectProperty  -Name 'testcat' -Description 'Type of cat' -Properties (
             New-PodeOAStringProperty -Name 'breed' -Description 'Type of Breed' -Enum @(  'Abyssinian', 'Balinese-Javanese', 'Burmese', 'British Shorthair') |
@@ -295,7 +296,8 @@ Some useful links:
                 Code      = 401
                 Challenge = 'qop="auth", nonce="<some-random-guid>"'
             }
-        } else {
+        }
+        else {
             return @{
                 Message = 'No Authorization header found'
                 Code    = 401
@@ -329,7 +331,6 @@ Some useful links:
 
     $clientId = '123123123'
     $clientSecret = 'acascascasca>zzzcz'
-    $tenantId = '56456232'
 
     <#     $InnerScheme = New-PodeAuthScheme -Form
     $scheme = New-PodeAuthScheme `
@@ -371,7 +372,8 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['petId'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatePasdadaetWithForm' -PassThru |
@@ -381,14 +383,15 @@ Some useful links:
                     New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'User'; 'application/xml' = 'User' }  -Examples  $ex
 
                 ) -PassThru |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' })  -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
 
             Add-PodeRoute -PassThru -Method Put -Path '/paet/:petId' -ScriptBlock {
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet' -PassThru |
@@ -432,7 +435,8 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet2' -PassThru |
@@ -456,7 +460,8 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet3' -PassThru |
@@ -476,7 +481,8 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet4' -PassThru |
@@ -505,7 +511,8 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -517,7 +524,7 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -Content @{
-                    'application/json' = (New-PodeOAObjectProperty -Properties @(    (New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')  ))
+                    'application/json' = (New-PodeOAObjectProperty -Properties @((New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')))
                 }
 
             Add-PodeRoute -PassThru -Method Post -Path '/pet'  -Authentication 'Login-OAuth2' -Scope 'write'  -ScriptBlock {
@@ -528,7 +535,8 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -538,7 +546,7 @@ Some useful links:
                 Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'PetBodySchema' ) -PassThru |
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -Content @{
-                    'application/json' = (New-PodeOAObjectProperty -Properties @(    (New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')  ))
+                    'application/json' = (New-PodeOAObjectProperty -Properties @((New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')))
                 }
 
             Add-PodeRoute -PassThru -Method Post -Path '/petcallback'  -Authentication 'Login-OAuth2' -Scope 'write'  -ScriptBlock {
@@ -548,7 +556,8 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -558,7 +567,7 @@ Some useful links:
                 Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Reference 'PetBodySchema' ) -PassThru |
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -Content @{
-                    'application/json' = (New-PodeOAObjectProperty -Properties @(    (New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')  ))
+                    'application/json' = (New-PodeOAObjectProperty -Properties @((New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')))
                 } -PassThru |
                 Add-PodeOACallBack -Name 'test' -Path '{$request.body#/id}' -Method Post  -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id') } ) `
                     -Response (
@@ -586,7 +595,8 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -646,9 +656,7 @@ Some useful links:
                 Set-PodeOARequest -PassThru -Parameters @(( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ),
                             (  New-PodeOAStringProperty -Name 'name' -Description 'Name of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query ) ,
                             (  New-PodeOAStringProperty -Name 'status' -Description 'Status of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query )
-                )  -RequestBody (
-                    # New-PodeOARequestBody   -Content    @{
-                    #       'application/x-www-form-urlencoded' = (New-PodeOAObjectProperty -Properties @(  (New-PodeOAStringProperty -format 'uuid'), (New-PodeOAObjectProperty -Properties @())))
+                ) -RequestBody (
                     New-PodeOARequestBody -Properties -Content @{
                         'multipart/form-data' = (New-PodeOAStringProperty -Name 'file' -Format binary -Array)
                     }) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru |
@@ -663,7 +671,7 @@ Some useful links:
                 Set-PodeOARequest -PassThru -Parameters @(( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ),
                                 (  New-PodeOAStringProperty -Name 'name' -Description 'Name of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query ) ,
                                 (  New-PodeOAStringProperty -Name 'status' -Description 'Status of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query )
-                )  -RequestBody (
+                ) -RequestBody (
                     New-PodeOARequestBody   -Content    @{
                         'application/x-www-form-urlencoded' = (New-PodeOAObjectProperty -Properties @(
                          (New-PodeOAStringProperty -name 'id' -format 'uuid'), (New-PodeOAObjectProperty -name 'address' -NoProperties)))
@@ -678,7 +686,7 @@ Some useful links:
                 Set-PodeOARequest -PassThru -Parameters @(( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ),
                                     (  New-PodeOAStringProperty -Name 'name' -Description 'Name of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query ) ,
                                     (  New-PodeOAStringProperty -Name 'status' -Description 'Status of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query )
-                )  -RequestBody (New-PodeOARequestBody -Content @{'multipart/form-data' =
+                ) -RequestBody (New-PodeOARequestBody -Content @{'multipart/form-data' =
                         New-PodeOAStringProperty -name 'id' -format 'uuid' |
                             New-PodeOAObjectProperty -name 'address' -NoProperties |
                             New-PodeOAStringProperty -name 'children' -array |
@@ -695,7 +703,7 @@ Some useful links:
                 Set-PodeOARequest -PassThru -Parameters @(( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ),
                                             (  New-PodeOAStringProperty -Name 'name' -Description 'Name of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query ) ,
                                             (  New-PodeOAStringProperty -Name 'status' -Description 'Status of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Query )
-                )  -RequestBody (New-PodeOARequestBody -Content @{'multipart/form-data' =
+                ) -RequestBody (New-PodeOARequestBody -Content @{'multipart/form-data' =
                         New-PodeOAStringProperty -name 'id' -format 'uuid' |
                             New-PodeOAObjectProperty -name 'address' -NoProperties |
                             New-PodeOAObjectProperty -name 'historyMetadata' -Description 'metadata in XML format' -NoProperties |
@@ -708,7 +716,7 @@ Some useful links:
                                         New-PodeOAIntProperty -Name 'X-Rate-Limit-Reset' -Description 'The number of seconds left in the current period' -Minimum 2
                                     )
                                 )
-                            ) | Add-PodeOAResponse -StatusCode 200 -PassThru  -Description 'A simple string response'   -Content (  New-PodeOAContentMediaType -MediaType 'text/plain' -Content ( New-PodeOAStringProperty) ) |
+                            ) | Add-PodeOAResponse -StatusCode 200 -PassThru  -Description 'A simple string response'   -Content (  New-PodeOAContentMediaType -MediaType 'text/plain' -Content ( New-PodeOAStringProperty)) |
                             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
                             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
@@ -722,7 +730,7 @@ Some useful links:
                                             (  New-PodeOAStringProperty -Name 'additionalMetadata' -Description 'Additional Metadata' | ConvertTo-PodeOAParameter -In Query )
                 ) -RequestBody (New-PodeOARequestBody -Required -Content @{   'multipart/form-data' = New-PodeOAObjectProperty -Properties @( (New-PodeOAStringProperty -Name 'image' -Format Binary  )) } ) -PassThru |
                 Add-PodeOAResponse -StatusCode 200 -Description 'A simple string response' -Content  (
-                    New-PodeOAContentMediaType -MediaType 'text/plain' -Content ( New-PodeOAStringProperty -Example 'whoa!') )  -Headers (
+                    New-PodeOAContentMediaType -MediaType 'text/plain' -Content ( New-PodeOAStringProperty -Example 'whoa!')) -Headers (
                     New-PodeOAIntProperty -Name 'X-Rate-Limit-Limit' -Description 'The number of allowed requests in the current period' |
                         New-PodeOAIntProperty -Name 'X-Rate-Limit-Remaining' -Description 'The number of remaining requests in the current period' |
                         New-PodeOAIntProperty -Name 'X-Rate-Limit-Reset' -Description 'The number of seconds left in the current period' -Maximum 3
@@ -811,7 +819,8 @@ Some useful links:
                     $User = $WebEvent.data
                     $User.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($User | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -821,7 +830,7 @@ Some useful links:
                 Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Required -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )) -PassThru |
                 Add-PodeOAResponse -StatusCode 200 -Reference 'UserOpSuccess' -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input' -Content @{
-                    'application/json' = (New-PodeOAObjectProperty -Properties @(    (New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')  ))
+                    'application/json' = (New-PodeOAObjectProperty -Properties @((New-PodeOAStringProperty -Name 'result'), (New-PodeOAStringProperty -Name 'message')))
                 }
 
             Add-PodeRoute -PassThru -Method post -Path '/user/createWithList' -ScriptBlock {

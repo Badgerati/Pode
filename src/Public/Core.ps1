@@ -207,10 +207,12 @@ function Start-PodeServer {
         }
 
         if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Shutdown) {
-            Write-PodeHost '(IIS Shutdown) ' -NoNewline -ForegroundColor Yellow
+            # (IIS Shutdown)
+            Write-PodeHost $PodeLocale.iisShutdownMessage -NoNewline -ForegroundColor Yellow
+            Write-PodeHost  ' ' -NoNewline
         }
-
-        Write-PodeHost 'Terminating...' -NoNewline -ForegroundColor Yellow
+        # Terminating...
+        Write-PodeHost $PodeLocale.terminatingMessage -NoNewline -ForegroundColor Yellow
         Invoke-PodeEvent -Type Terminate
         $PodeContext.Tokens.Cancellation.Cancel()
     }
@@ -642,7 +644,8 @@ function Show-PodeGui {
 
     # only valid for Windows PowerShell
     if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
-        throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7+ on Windows'
+        # Show-PodeGui is currently only available for Windows PowerShell and PowerShell 7+ on Windows
+        throw ($PodeLocale.showPodeGuiOnlyAvailableOnWindowsExceptionMessage)
     }
 
     # enable the gui and set general settings
@@ -657,7 +660,8 @@ function Show-PodeGui {
     if (![string]::IsNullOrWhiteSpace($Icon)) {
         $PodeContext.Server.Gui.Icon = Get-PodeRelativePath -Path $Icon -JoinRoot -Resolve
         if (!(Test-Path $PodeContext.Server.Gui.Icon)) {
-            throw "Path to icon for GUI does not exist: $($PodeContext.Server.Gui.Icon)"
+            # Path to icon for GUI does not exist
+            throw ($PodeLocale.pathToIconForGuiDoesNotExistExceptionMessage -f $PodeContext.Server.Gui.Icon)
         }
     }
 
@@ -678,7 +682,8 @@ function Show-PodeGui {
 
     if (![string]::IsNullOrWhiteSpace($EndpointName)) {
         if (!$PodeContext.Server.Endpoints.ContainsKey($EndpointName)) {
-            throw "Endpoint with name '$($EndpointName)' does not exist"
+            # Endpoint with name '$EndpointName' does not exist.
+            throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $EndpointName)
         }
 
         $PodeContext.Server.Gui.Endpoint = $PodeContext.Server.Endpoints[$EndpointName]
@@ -902,7 +907,8 @@ function Add-PodeEndpoint {
 
     # if RedirectTo is supplied, then a Name is mandatory
     if (![string]::IsNullOrWhiteSpace($RedirectTo) -and [string]::IsNullOrWhiteSpace($Name)) {
-        throw 'A Name is required for the endpoint if the RedirectTo parameter is supplied'
+        # A Name is required for the endpoint if the RedirectTo parameter is supplied
+        throw ($PodeLocale.nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage)
     }
 
     # get the type of endpoint
@@ -928,7 +934,8 @@ function Add-PodeEndpoint {
 
     # parse the endpoint for host/port info
     if (![string]::IsNullOrWhiteSpace($Hostname) -and !(Test-PodeHostname -Hostname $Hostname)) {
-        throw "Invalid hostname supplied: $($Hostname)"
+        # Invalid hostname supplied
+        throw ($PodeLocale.invalidHostnameSuppliedExceptionMessage -f $Hostname)
     }
 
     if ((Test-PodeHostname -Hostname $Address) -and ($Address -inotin @('localhost', 'all'))) {
@@ -948,27 +955,32 @@ function Add-PodeEndpoint {
     }
 
     if ($PodeContext.Server.Endpoints.ContainsKey($Name)) {
-        throw "An endpoint with the name '$($Name)' has already been defined"
+        # An endpoint named has already been defined
+        throw ($PodeLocale.endpointAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # protocol must be https for client certs, or hosted behind a proxy like iis
     if (($Protocol -ine 'https') -and !(Test-PodeIsHosted) -and $AllowClientCertificate) {
-        throw 'Client certificates are only supported on HTTPS endpoints'
+        # Client certificates are only supported on HTTPS endpoints
+        throw ($PodeLocale.clientCertificatesOnlySupportedOnHttpsEndpointsExceptionMessage)
     }
 
     # explicit tls is only supported for smtp/tcp
     if (($type -inotin @('smtp', 'tcp')) -and ($TlsMode -ieq 'explicit')) {
-        throw 'The Explicit TLS mode is only supported on SMTPS and TCPS endpoints'
+        # The Explicit TLS mode is only supported on SMTPS and TCPS endpoints
+        throw ($PodeLocale.explicitTlsModeOnlySupportedOnSmtpsTcpsEndpointsExceptionMessage)
     }
 
     # ack message is only for smtp/tcp
     if (($type -inotin @('smtp', 'tcp')) -and ![string]::IsNullOrEmpty($Acknowledge)) {
-        throw 'The Acknowledge message is only supported on SMTP and TCP endpoints'
+        # The Acknowledge message is only supported on SMTP and TCP endpoints
+        throw ($PodeLocale.acknowledgeMessageOnlySupportedOnSmtpTcpEndpointsExceptionMessage)
     }
 
     # crlf message end is only for tcp
     if (($type -ine 'tcp') -and $CRLFMessageEnd) {
-        throw 'The CRLF message end check is only supported on TCP endpoints'
+        # The CRLF message end check is only supported on TCP endpoints
+        throw ($PodeLocale.crlfMessageEndCheckOnlySupportedOnTcpEndpointsExceptionMessage)
     }
 
     # new endpoint object
@@ -1041,7 +1053,8 @@ function Add-PodeEndpoint {
 
     # if the address is non-local, then check admin privileges
     if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeIsAdminUser)) {
-        throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
+        # Must be running with administrator privileges to listen on non-localhost addresses
+        throw ($PodeLocale.mustBeRunningWithAdminPrivilegesExceptionMessage)
     }
 
     # has this endpoint been added before? (for http/https we can just not add it again)
@@ -1053,7 +1066,8 @@ function Add-PodeEndpoint {
     if (!(Test-PodeIsHosted) -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
         if (@('https', 'wss', 'smtps', 'tcps') -inotcontains $Protocol) {
-            throw 'Certificate supplied for non-HTTPS/WSS endpoint'
+            # Certificate supplied for non-HTTPS/WSS endpoint
+            throw ($PodeLocale.certificateSuppliedForNonHttpsWssEndpointExceptionMessage)
         }
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -1076,7 +1090,8 @@ function Add-PodeEndpoint {
 
         # fail if the cert is expired
         if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
-            throw "The certificate '$($obj.Certificate.Raw.Subject)' has expired: $($obj.Certificate.Raw.NotAfter)"
+            # The certificate has expired
+            throw ($PodeLocale.certificateExpiredExceptionMessage -f $obj.Certificate.Raw.Subject, $obj.Certificate.Raw.NotAfter)
         }
     }
 
@@ -1102,7 +1117,8 @@ function Add-PodeEndpoint {
 
         # ensure the name exists
         if (Test-PodeIsEmpty $redir_endpoint) {
-            throw "An endpoint with the name '$($RedirectTo)' has not been defined for redirecting"
+            # An endpoint named has not been defined for redirecting
+            throw ($PodeLocale.endpointNotDefinedForRedirectingExceptionMessage -f $RedirectTo)
         }
 
         # build the redirect route
@@ -1310,7 +1326,8 @@ function Set-PodeDefaultFolder {
         $PodeContext.Server.DefaultFolders[$Type] = $Path
     }
     else {
-        throw "Folder $Path doesn't exist"
+        # Path does not exist
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
     }
 }
 
