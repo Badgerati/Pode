@@ -971,4 +971,8 @@ Some useful links:
     Write-PodeHost "`rYAML Tag: v3.1  Output:`r $yaml"
 
     Write-PodeHost "`rJSON Tag: v3 Output:`r $json"
+#    Set-PodeConfiguration -DebugBreakpointsEnable:$false
+
+ #   Set-PodeConfiguration  -StaticCacheEnable:$false
+    Get-PodeConfiguration -Save -Force -FileName "test.psd1"
 }

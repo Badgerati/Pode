@@ -1382,7 +1382,7 @@ Defines the maximum body size for a request in bytes.
 Defines the AutoImport scoping rules for Modules, SnapIns and Functions.
 [link](https://badgerati.github.io/Pode/Tutorials/Scoping)
 
-.PARAMETER DisableAutoImportModules
+.PARAMETER EnableAutoImportModules
 Disables the AutoImport setting for Modules.
 [link](https://badgerati.github.io/Pode/Tutorials/Scoping/#modules)
 
@@ -1390,7 +1390,7 @@ Disables the AutoImport setting for Modules.
 Sets the AutoImport Modules ExportOnly option. Defaults to $false.
 [link](https://badgerati.github.io/Pode/Tutorials/Scoping/#modules)
 
-.PARAMETER DisableAutoImportSnapins
+.PARAMETER EnableAutoImportSnapins
 Disables the AutoImport setting for Snapins.
 [link](https://badgerati.github.io/Pode/Tutorials/Scoping/#snapins)
 
@@ -1398,7 +1398,7 @@ Disables the AutoImport setting for Snapins.
 Sets the AutoImport Snapins ExportOnly option. Defaults to $false.
 [link](https://badgerati.github.io/Pode/Tutorials/Scoping/#snapins)
 
-.PARAMETER DisableAutoImportFunctions
+.PARAMETER EnableAutoImportFunctions
 Disables the AutoImport setting for Functions.
 [link](https://badgerati.github.io/Pode/Tutorials/Scoping/#functions)
 
@@ -1406,7 +1406,7 @@ Disables the AutoImport setting for Functions.
 Sets the AutoImport Functions ExportOnly option. Defaults to $false.
 [link](https://badgerati.github.io/Pode/Tutorials/Scoping/#functions)
 
-.PARAMETER DisableSecretManagement
+.PARAMETER EnableSecretManagement
 Disables the AutoImport setting for SecretVault.
 [link](https://badgerati.github.io/Pode/Tutorials/Scoping/#secret-vaults)
 
@@ -1518,6 +1518,10 @@ Specifies the file patterns to exclude from caching.
 Specifies the file patterns to include for caching.
 [link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent)
 
+.PARAMETER StaticCacheMaxAge
+Specifies the caching max cache TTL.
+[link](https://badgerati.github.io/Pode/Tutorials/Routes/Utilities/StaticContent)
+
 .PARAMETER LoggingMaskingPatterns
 Defines the patterns for masking sensitive data in logs.
 [link](https://badgerati.github.io/Pode/Tutorials/Logging/Overview/#masking-values)
@@ -1583,7 +1587,7 @@ function Set-PodeConfiguration {
         [string]$OpenApiDefaultDefinitionTag,
 
         [Parameter(ParameterSetName = 'Compression')]
-        [switch]$Compression,
+        [bool]$Compression,
 
         [Parameter(ParameterSetName = 'Server')]
         [string]$Root,
@@ -1599,28 +1603,28 @@ function Set-PodeConfiguration {
         [int]$RequestBodySize,
 
         [Parameter(ParameterSetName = 'AutoImport')]
-        [switch]$DisableAutoImportModules,
+        [bool]$EnableAutoImportModules,
 
         [Parameter(ParameterSetName = 'AutoImport')]
-        [switch]$AutoImportModulesExportOnly,
+        [bool]$AutoImportModulesExportOnly,
 
         [Parameter(ParameterSetName = 'AutoImport')]
-        [switch]$DisableAutoImportSnapins,
+        [bool]$EnableAutoImportSnapins,
 
         [Parameter(ParameterSetName = 'AutoImport')]
-        [switch]$AutoImportSnapinsExportOnly,
+        [bool]$AutoImportSnapinsExportOnly,
 
         [Parameter(ParameterSetName = 'AutoImport')]
-        [switch]$DisableAutoImportFunctions,
+        [bool]$EnableAutoImportFunctions,
 
         [Parameter(ParameterSetName = 'AutoImport')]
-        [switch]$AutoImportFunctionsExportOnly,
+        [bool]$AutoImportFunctionsExportOnly,
 
         [Parameter(ParameterSetName = 'AutoImport')]
-        [switch]$DisableSecretManagement ,
+        [bool]$EnableSecretManagement ,
 
         [Parameter(ParameterSetName = 'AutoImport')]
-        [switch]$SecretManagementExportOnly,
+        [bool]$SecretManagementExportOnly,
 
         [Parameter(ParameterSetName = 'Restart')]
         [int]$RestartPeriod,
@@ -1634,7 +1638,7 @@ function Set-PodeConfiguration {
         [string[]]$RestartTimes,
 
         [Parameter(ParameterSetName = 'FileMonitor')]
-        [switch]$FileMonitorEnable,
+        [bool]$FileMonitorEnable,
 
         [Parameter(ParameterSetName = 'FileMonitor')]
         [string[]]$FileMonitorInclude,
@@ -1643,7 +1647,7 @@ function Set-PodeConfiguration {
         [string[]]$FileMonitorExclude,
 
         [Parameter(ParameterSetName = 'FileMonitor')]
-        [switch]$FileMonitorShowFiles,
+        [bool]$FileMonitorShowFiles,
 
         [Parameter(ParameterSetName = 'ContentType')]
         [string]$ContentTypeDefault,
@@ -1658,10 +1662,10 @@ function Set-PodeConfiguration {
         [hashtable]$ErrorPagesRoutes,
 
         [Parameter(ParameterSetName = 'Error')]
-        [switch]$ErrorPagesShowExceptions,
+        [bool]$ErrorPagesShowExceptions,
 
         [Parameter(ParameterSetName = 'Error')]
-        [switch]$ErrorPagesStrictContentTyping,
+        [bool]$ErrorPagesStrictContentTyping,
 
         [Parameter(ParameterSetName = 'Static')]
         [bool]$StaticValidateLast,
@@ -1670,13 +1674,16 @@ function Set-PodeConfiguration {
         [string[]]$StaticDefaults,
 
         [Parameter(ParameterSetName = 'Static')]
-        [switch]$StaticCacheEnable,
+        [bool]$StaticCacheEnable,
 
         [Parameter(ParameterSetName = 'Static')]
         [string[]]$StaticCacheExclude,
 
         [Parameter(ParameterSetName = 'Static')]
         [string[]]$StaticCacheInclude,
+
+        [Parameter(ParameterSetName = 'Static')]
+        [string[]]$StaticCacheMaxAge,
 
         [Parameter(ParameterSetName = 'TransferEncoding')]
         [string]$TransferEncodingDefault,
@@ -1691,63 +1698,83 @@ function Set-PodeConfiguration {
         [string]$LoggingMask,
 
         [Parameter(ParameterSetName = 'Logging')]
-        [int]$LoggingQueueLimit
+        [int]$LoggingQueueLimit,
+
+        [Parameter(ParameterSetName = 'Debug')]
+        [bool]$DebugBreakpointsEnable
+
 
     )
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'debug' {
+            if ($DebugBreakpointsEnable) { $PodeContext.Server.Debug.Breakpoints.Enabled = $DebugBreakpointsEnable }
+        }
+
         'static' {
-            if ( $StaticValidateLast.IsPresent) { $PodeContext.Web.Static.ValidateLast = $StaticValidateLast.IsPresent }
-            if ($StaticDefaults) { $PodeContext.Web.Static.Defaults = $StaticDefaults }
-            if ($StaticCacheEnable.IsPresent) { $PodeContext.Web.Static.Cache.Enable = $StaticCacheEnable.IsPresent }
-            if ($StaticCacheExclude) { $PodeContext.Web.Static.Cache.Exclude = $StaticCacheExclude }
-            if ($StaticCacheInclude) { $PodeContext.Web.Static.Cache.Include = $StaticCacheInclude }
+            if ($StaticValidateLast ) { $PodeContext.Server.Web.Static.ValidateLast = $StaticValidateLast }
+            if ($StaticDefaults) { $PodeContext.Server.Web.Static.Defaults = $StaticDefaults }
+            if ($StaticCacheEnable) { $PodeContext.Server.Web.Static.Cache.Enabled = $StaticCacheEnable }
+            if ($StaticCacheExclude) { $PodeContext.Server.Web.Static.Cache.Exclude = Convert-PodePathPatternsToRegex -Paths $StaticCacheExclude }
+            if ($StaticCacheInclude) { $PodeContext.Server.Web.Static.Cache.Include = Convert-PodePathPatternsToRegex -Paths $StaticCacheInclude }
+            if ($StaticCacheMaxAge) { $PodeContext.Server.Web.Static.Cache.MaxAge = $StaticCacheMaxAge }
         }
 
         'error' {
-            if ($ErrorPagesDefault) { $PodeContext.Web.ErrorPages.Default = $ErrorPagesDefault }
-            if ($ErrorPagesRoutes) { $PodeContext.Web.ErrorPages.Routes = $ErrorPagesRoutes }
-            if ($ErrorPagesShowExceptions.IsPresent) { $PodeContext.Web.ErrorPages.ShowExceptions = $ErrorPagesShowExceptions.IsPresent }
-            if ($ErrorPagesStrictContentTyping.IsPresent) { $PodeContext.Web.ErrorPages.StrictContentTyping = $ErrorPagesStrictContentTyping.IsPresent }
+            if ($ErrorPagesDefault) { $PodeContext.Server.Web.ErrorPages.Default = $ErrorPagesDefault }
+            if ($ErrorPagesRoutes) { $PodeContext.Server.Web.ErrorPages.Routes = $ErrorPagesRoutes }
+            if ($ErrorPagesShowExceptions ) { $PodeContext.Server.Web.ErrorPages.ShowExceptions = $ErrorPagesShowExceptions }
+            if ($ErrorPagesStrictContentTyping) { $PodeContext.Server.Web.ErrorPages.StrictContentTyping = $ErrorPagesStrictContentTyping }
         }
 
         'contenttype' {
-            if ($ContentTypeDefault) { $PodeContext.Web.ContentType.Default = $ContentTypeDefault }
-            if ($ContentTypeRoutes) { $PodeContext.Web.ContentType.Routes = $ContentTypeRoutes }
+            if ($ContentTypeDefault) { $PodeContext.Server.Web.ContentType.Default = $ContentTypeDefault }
+            if ($ContentTypeRoutes) { $PodeContext.Server.Web.ContentType.Routes = $ContentTypeRoutes }
+        }
+
+        'transferencoding' {
+            if ($TransferEncodingDefault) { $PodeContext.Server.Web.TransferEncoding.Default = $TransferEncodingDefault }
+            if ($TransferEncodingRoutes) { $PodeContext.Server.Web.TransferEncoding.Routes = $TransferEncodingRoutes }
+        }
+
+        'compression' {
+            if ($Compression) { $PodeContext.Server.Web.Compression = $Compression }
+        }
+
+        'openapi' {
+            if ($OpenApiDefaultDefinitionTag) { $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag = $OpenApiDefaultDefinitionTag }
         }
 
         'autoimport' {
-            if ($DisableAutoImportModules.IsPresent) {
-                $PodeContext.Server.AutoImport.Modules.Enable = $false
+            if ($EnableAutoImportModules) {
+                $PodeContext.Server.AutoImport.Modules.Enabled = $EnableAutoImportModules
             }
-            elseif ($AutoImportModulesExportOnly.IsPresent) {
-                $PodeContext.Server.AutoImport.Modules.Enable = $true
-                $PodeContext.Server.AutoImport.Modules.ExportOnly = $AutoImportModulesExportOnly.IsPresent
-            }
-
-            if ($DisableAutoImportSnapins.IsPresent) {
-                $PodeContext.Server.AutoImport.Snapins.Enable = $false
-            }
-            elseif ($AutoImportSnapinsExportOnly.IsPresent) {
-                $PodeContext.Server.AutoImport.Snapins.Enable = $true
-                $PodeContext.Server.AutoImport.Snapins.ExportOnly = $AutoImportSnapinsExportOnly.IsPresent
+            if ($AutoImportModulesExportOnly) {
+                $PodeContext.Server.AutoImport.Modules.ExportOnly = $AutoImportModulesExportOnly
             }
 
-            if ($DisableAutoImportFunctions.IsPresent) {
-                $PodeContext.Server.AutoImport.Functions.Enable = ! $DisableAutoImportFunctions.IsPresent
+            if ($EnableAutoImportSnapins ) {
+                $PodeContext.Server.AutoImport.Snapins.Enabled = $EnableAutoImportSnapins
             }
-            elseif ($AutoImportFunctionsExportOnly.IsPresent) {
-                $PodeContext.Server.AutoImport.Functions.Enable = $true
-                $PodeContext.Server.AutoImport.Functions.ExportOnly = $AutoImportFunctionsExportOnly.IsPresent
+            if ($AutoImportSnapinsExportOnly ) {
+                $PodeContext.Server.AutoImport.Snapins.ExportOnly = $AutoImportSnapinsExportOnly
             }
 
-            if ($DisableSecretManagement.IsPresent) {
-                $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enable = $DisableSecretManagement.IsPresent
+            if ($EnableAutoImportFunctions) {
+                $PodeContext.Server.AutoImport.Functions.Enabled = $EnableAutoImportFunctions
             }
-            elseif ($SecretManagementExportOnly.IsPresent) {
-                $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enable = $true
-                $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.ExportOnly = $SecretManagementExportOnly.IsPresent
+            if ($AutoImportFunctionsExportOnly ) {
+                $PodeContext.Server.AutoImport.Functions.ExportOnly = $AutoImportFunctionsExportOnly
+            }
+
+            if ($EnableSecretManagement) {
+                $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enabled = $EnableSecretManagement
+            }
+
+            if ($SecretManagementExportOnly ) {
+                $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.ExportOnly = $SecretManagementExportOnly
             }
         }
+
         'restart' {
             if ($RestartPeriod) { $PodeContext.Server.Restart.Period = $RestartPeriod }
             if ($RestartCrons) { $PodeContext.Server.Restart.Crons = $RestartCrons }
@@ -1755,28 +1782,11 @@ function Set-PodeConfiguration {
         }
 
         'filemonitor' {
-            if ($FileMonitor) { $PodeContext.Server.FileMonitor = $FileMonitor }
-            if ($FileMonitorEnable.IsPresent) {
-                $PodeContext.Server.FileMonitor.Enable = $true
-                if ($FileMonitorShowFiles.IsPresent) { $PodeContext.Server.FileMonitor.ShowFiles = $true }
-                if ($FileMonitorInclude) { $PodeContext.Server.FileMonitor.Include = $FileMonitorInclude }
-                if ($FileMonitorExclude) { $PodeContext.Server.FileMonitor.Exclude = $FileMonitorExclude }
-            }
-            else {
-                if ($FileMonitorShowFiles.IsPresent -or $FileMonitorInclude -or $FileMonitorExclude) {
-                    throw 'FileMonitorEnable switch has to be present'
-                }
-            }
-        }
+            if ($FileMonitorEnable) { $PodeContext.Server.FileMonitor.Enabled = $FileMonitorEnable }
+            if ($FileMonitorShowFiles ) { $PodeContext.Server.FileMonitor.ShowFiles = $FileMonitorShowFiles }
+            if ($FileMonitorInclude) { $PodeContext.Server.FileMonitor.Include = Convert-PodePathPatternsToRegex -Paths $FileMonitorInclude }
+            if ($FileMonitorExclude) { $PodeContext.Server.FileMonitor.Exclude = Convert-PodePathPatternsToRegex -Paths $FileMonitorExclude }
 
-        'contenttype' {
-            if ($ContentTypeDefault) { $PodeContext.Web.ContentType.Default = $ContentTypeDefault }
-            if ($ContentTypeRoutes) { $PodeContext.Web.ContentType.Routes = $ContentTypeRoutes }
-        }
-
-        'transferencoding' {
-            if ($TransferEncodingDefault) { $PodeContext.Web.TransferEncoding.Default = $TransferEncodingDefault }
-            if ($TransferEncodingRoutes) { $PodeContext.Web.TransferEncoding.Routes = $TransferEncodingRoutes }
         }
 
         'server' {
@@ -1790,14 +1800,6 @@ function Set-PodeConfiguration {
             if ($DefaultFoldersPublic) { $PodeContext.Server.DefaultFolders.Public = $DefaultFoldersPublic }
             if ($DefaultFoldersViews) { $PodeContext.Server.DefaultFolders.Views = $DefaultFoldersViews }
             if ($DefaultFoldersErrors) { $PodeContext.Server.DefaultFolders.Errors = $DefaultFoldersErrors }
-        }
-
-        'compression' {
-            if ($Compression.IsPresent) { $PodeContext.Web.Compression = $Compression.IsPresent }
-        }
-
-        'openapi' {
-            if ($OpenApiDefaultDefinitionTag) { $PodeContext.Web.OpenApi.DefaultDefinitionTag = $OpenApiDefaultDefinitionTag }
         }
 
         'logging' {
@@ -1829,85 +1831,616 @@ Get-PodeConfiguration -Section 'SslProtocols'
 Get-PodeConfiguration -Section 'RequestTimeout'
 #>
 function Get-PodeConfiguration {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Section')]
     param (
         [Parameter(Mandatory = $false)]
-        [ValidateSet('SslProtocols', 'RequestTimeout', 'RequestBodySize', 'AutoImport', 'Root', 'Restart', 'FileMonitor', 'DefaultFolders', 'OpenApi', 'Static', 'TransferEncoding', 'Compression', 'ContentType', 'ErrorPages', 'Logging')]
-        [string]$Section
+        [ValidateSet('SslProtocols', 'Request', 'AutoImport', 'Root', 'Restart', 'FileMonitor', 'DefaultFolders', 'OpenApi', 'Static', 'TransferEncoding', 'Compression', 'ContentType', 'ErrorPages', 'Logging', 'Debug')]
+        [string]$Section,
+        [Parameter(ParameterSetName = 'Save')]
+        [switch]$Save,
+        [string]$FileName,
+        [switch]$Force
     )
 
-    switch ($Section) {
-        'SslProtocols' {
-            return $PodeContext.Server.Ssl.Protocols
-        }
-        'RequestTimeout' {
-            return $PodeContext.Server.Request.Timeout
-        }
-        'RequestBodySize' {
-            return $PodeContext.Server.Request.BodySize
-        }
-        'AutoImport' {
-            return $PodeContext.Server.AutoImport
-        }
-        'Root' {
-            return $PodeContext.Server.Root
-        }
-        'Restart' {
-            return $PodeContext.Server.Restart
-        }
-        'FileMonitor' {
-            return $PodeContext.Server.FileMonitor
-        }
-        'DefaultFolders' {
-            return $PodeContext.Server.DefaultFolders
-        }
-        'OpenApi' {
-            return $PodeContext.Web.OpenApi
-        }
-        'Static' {
-            return $PodeContext.Web.Static
-        }
-        'TransferEncoding' {
-            return $PodeContext.Web.TransferEncoding
-        }
-        'Compression' {
-            return $PodeContext.Web.Compression
-        }
-        'ContentType' {
-            return $PodeContext.Web.ContentType
-        }
-        'ErrorPages' {
-            return $PodeContext.Web.ErrorPages
-        }
-        'Logging' {
-            return $PodeContext.Server.Logging
-        }
-        default {
-            return @{
-                Server = @{
-                    SslProtocols = $PodeContext.Server.Ssl.Protocols
-                    Request = @{
-                        Timeout = $PodeContext.Server.Request.Timeout
-                        BodySize = $PodeContext.Server.Request.BodySize
+    if ($Save) {
+        $export = @{}
+
+        if ($PodeContext.Server.Web) {
+            $export.Web = @{}
+            $export.Web += Get-PodeConfiguration -Section OpenApi
+            $export.Web += Get-PodeConfiguration -Section 'Static'
+            $export.Web += Get-PodeConfiguration -Section TransferEncoding
+            $export.Web += Get-PodeConfiguration -Section ContentType
+            $export.Web += Get-PodeConfiguration -Section ErrorPages
+
+            <#
+            if ($PodeContext.Server.Web.Compression) {
+                $export.Web.Compression = $PodeContext.Server.Web.Compression
+            }
+
+            if ($PodeContext.Server.Web.Static) {
+                $export.Web.Static = @{}
+                if ($PodeContext.Server.Web.Static.ValidateLast) {
+                    $export.Web.Static.ValidateLast = $PodeContext.Server.Web.Static.ValidateLast
+                }
+                if ($PodeContext.Server.Web.Static.Defaults) {
+                    $export.Web.Static.Defaults = $PodeContext.Server.Web.Static.Defaults
+                }
+                if ($PodeContext.Server.Web.Static.Cache) {
+                    $export.Web.Static.Cache = @{}
+                    if ($PodeContext.Server.Web.Static.Cache.Enabled) {
+                        $export.Web.Static.Cache.Enable = $PodeContext.Server.Web.Static.Cache.Enabled
                     }
-                    AutoImport = $PodeContext.Server.AutoImport
-                    Root = $PodeContext.Server.Root
-                    Restart = $PodeContext.Server.Restart
-                    FileMonitor = $PodeContext.Server.FileMonitor
-                    DefaultFolders = $PodeContext.Server.DefaultFolders
-                    Logging = $PodeContext.Server.Logging
+                    if ($PodeContext.Server.Web.Static.Cache.Exclude) {
+                        $export.Web.Static.Cache.Exclude = $PodeContext.Server.Web.Static.Cache.Exclude.Replace('^(.*?\.', '*.').Replace(')$', '')
+                    }
+                    if ($PodeContext.Server.Web.Static.Cache.Include) {
+                        $export.Web.Static.Cache.Include = $PodeContext.Server.Web.Static.Cache.Include.Replace('^(.*?\.', '*.').Replace(')$', '')
+                    }
+                    if ($PodeContext.Server.Web.Static.Cache.NaxAge) {
+                        $export.Web.Static.Cache.NaxAge = $PodeContext.Server.Web.Static.Cache.NaxAge
+                    }
                 }
-                Web = @{
-                    OpenApi = $PodeContext.Web.OpenApi
-                    Static = $PodeContext.Web.Static
-                    TransferEncoding = $PodeContext.Web.TransferEncoding
-                    Compression = $PodeContext.Web.Compression
-                    ContentType = $PodeContext.Web.ContentType
-                    ErrorPages = $PodeContext.Web.ErrorPages
+            }
+
+            if ($PodeContext.Server.Web.ErrorPages) {
+                $export.Web.ErrorPages = @{}
+                if ($PodeContext.Server.Web.ErrorPages.Default) {
+                    $export.Web.ErrorPages.Default = $PodeContext.Server.Web.ErrorPages.Default
                 }
+                if ($PodeContext.Server.Web.ErrorPages.Routes) {
+                    $export.Web.ErrorPages.Routes = Convert-PodePathRegexToPattern -Route $PodeContext.Server.Web.ErrorPages.Routes
+                }
+                if ($PodeContext.Server.Web.ErrorPages.ShowExceptions) {
+                    $export.Web.ErrorPages.ShowExceptions = $PodeContext.Server.Web.ErrorPages.ShowExceptions
+                }
+                if ($PodeContext.Server.Web.ErrorPages.StrictContentTyping) {
+                    $export.Web.ErrorPages.StrictContentTyping = $PodeContext.Server.Web.ErrorPages.StrictContentTyping
+                }
+            }
+
+            if ($PodeContext.Server.Web.ContentType) {
+                $export.Web.ContentType = @{}
+                if ($PodeContext.Server.Web.ContentType.Default) {
+                    $export.Web.ContentType.Default = $PodeContext.Server.Web.ContentType.Default
+                }
+                if ($PodeContext.Server.Web.ContentType.Routes) {
+                    $export.Web.ContentType.Routes = Convert-PodePathRegexToPattern -Route $PodeContext.Server.Web.ContentType.Routes
+                }
+            }
+
+            if ($PodeContext.Server.Web.TransferEncoding) {
+                $export.Web.TransferEncoding = @{}
+                if ($PodeContext.Server.Web.TransferEncoding.Default) {
+                    $export.Web.TransferEncoding.Default = $PodeContext.Server.Web.TransferEncoding.Default
+                }
+                if ($PodeContext.Server.Web.TransferEncoding.Routes) {
+                    $export.Web.TransferEncoding.Routes = Convert-PodePathRegexToPattern -Route $PodeContext.Server.Web.TransferEncoding.Routes
+                }
+            }
+
+            if ($PodeContext.Server.Web.OpenApi) {
+                $export.Web.OpenApi = @{}
+                if ($PodeContext.Server.Web.OpenApi.DefaultDefinitionTag) {
+                    $export.Web.OpenApi.DefaultDefinitionTag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag
+                }
+            }
+        }#>
+
+            if ($PodeContext.Server) {
+                $export.Server = @{}
+                $export.Server += Get-PodeConfiguration -Section SslProtocols
+                $export.Server += Get-PodeConfiguration -Section Request
+                $export.Server += Get-PodeConfiguration -Section AutoImport
+                $export.Server += Get-PodeConfiguration -Section Root
+                $export.Server += Get-PodeConfiguration -Section Restart
+                $export.Server += Get-PodeConfiguration -Section FileMonitor
+                $export.Server += Get-PodeConfiguration -Section DefaultFolders
+                $export.Server += Get-PodeConfiguration -Section Logging
+                $export.Server += Get-PodeConfiguration -Section Debug
+            }
+ 
+        <#
+
+
+            if ($PodeContext.Server.Ssl) {
+                $export.Server.Ssl = @{}
+                if ($PodeContext.Server.Ssl.Protocols) {
+                    $export.Server.Ssl.Protocols = $PodeContext.Server.Ssl.Protocols
+                }
+            }
+
+            if ($PodeContext.Server.Root) {
+                $export.Server.Root = $PodeContext.Server.Root
+            }
+
+            if ($PodeContext.Server.Request) {
+                $export.Server.Request = @{}
+                if ($PodeContext.Server.Request.Timeout) {
+                    $export.Server.Request.Timeout = $PodeContext.Server.Request.Timeout
+                }
+                if ($PodeContext.Server.Request.BodySize) {
+                    $export.Server.Request.BodySize = $PodeContext.Server.Request.BodySize
+                }
+            }
+
+            if ($PodeContext.Server.Restart) {
+                $export.Server.Restart = @{}
+                if ($PodeContext.Server.Restart.Period) {
+                    $export.Server.Restart.Period = $PodeContext.Server.Restart.Period
+                }
+                if ($PodeContext.Server.Restart.Crons) {
+                    $export.Server.Restart.Crons = $PodeContext.Server.Restart.Crons
+                }
+                if ($PodeContext.Server.Restart.Times) {
+                    $export.Server.Restart.Times = $PodeContext.Server.Restart.Times
+                }
+            }
+            if ($PodeContext.Server.AutoImport) {
+                $export.Server.AutoImport = @{}
+                if ($PodeContext.Server.AutoImport.Modules) {
+                    $export.Server.AutoImport.Modules = @{}
+                    if ( $PodeContext.Server.AutoImport.Modules.Enabled) {
+                        $export.Server.AutoImport.Modules.Enable = $PodeContext.Server.AutoImport.Modules.Enabled
+                    }
+                    if ( $PodeContext.Server.AutoImport.Modules.ExportOnly) {
+                        $export.Server.AutoImport.Modules.ExportOnly = $PodeContext.Server.AutoImport.Modules.ExportOnly
+                    }
+                }
+
+                if ($PodeContext.Server.AutoImport.Snapins) {
+                    $export.Server.AutoImport.Snapins = @{}
+                    if ( $PodeContext.Server.AutoImport.Snapins.Enabled) {
+                        $export.Server.AutoImport.Snapins.Enable = $PodeContext.Server.AutoImport.Snapins.Enabled
+                    }
+                    if ( $PodeContext.Server.AutoImport.Snapins.ExportOnly) {
+                        $export.Server.AutoImport.Snapins.ExportOnly = $PodeContext.Server.AutoImport.Snapins.ExportOnly
+                    }
+                }
+
+                if ($PodeContext.Server.AutoImport.Functions) {
+                    $export.Server.AutoImport.Functions = @{}
+                    if ( $PodeContext.Server.AutoImport.Functions.Enabled) {
+                        $export.Server.AutoImport.Functions.Enable = $PodeContext.Server.AutoImport.Functions.Enabled
+                    }
+                    if ( $PodeContext.Server.AutoImport.Functions.ExportOnly) {
+                        $export.Server.AutoImport.Functions.ExportOnly = $PodeContext.Server.AutoImport.Functions.ExportOnly
+                    }
+                }
+
+                if ($PodeContext.Server.AutoImport.SecretVaults) {
+                    $export.Server.AutoImport.SecretVaults = @{}
+                    if ($PodeContext.Server.AutoImport.SecretVaults.SecretManagement) {
+                        $export.Server.AutoImport.SecretVaults.SecretManagement = @{}
+                        if ( $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enabled) {
+                            $export.Server.AutoImport.SecretVaults.SecretManagement.Enable = $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enabled
+                        }
+                        if ( $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.ExportOnly) {
+                            $export.Server.AutoImport.SecretVaults.SecretManagement.ExportOnly = $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.ExportOnly
+                        }
+                    }
+                }
+            }
+
+            if ($PodeContext.Server.FileMonitor) {
+                $export.Server.FileMonitor = @{}
+                if ($PodeContext.Server.FileMonitor.Enabled) {
+                    $export.Server.FileMonitor.Enable = $PodeContext.Server.FileMonitor.Enabled
+                }
+                if ($PodeContext.Server.FileMonitor.ShowFiles) {
+                    $export.Server.FileMonitor.ShowFiles = $PodeContext.Server.FileMonitor.ShowFiles
+                }
+                if ($PodeContext.Server.FileMonitor.Include) {
+                    $export.Server.FileMonitor.Include = $PodeContext.Server.FileMonitor.Include.Replace('^(.*?\.', '*.').Replace(')$', '')
+                }
+                if ($PodeContext.Server.FileMonitor.Exclude) {
+                    $export.Server.FileMonitor.Exclude = $PodeContext.Server.FileMonitor.Exclude.Replace('^(.*?\.', '*.').Replace(')$', '')
+                }
+            }
+            if ($PodeContext.Server.DefaultFolders) {
+                $export.Server.DefaultFolders = @{}
+                if ($PodeContext.Server.DefaultFolders.Public) {
+                    $export.Server.DefaultFolders.Public = $PodeContext.Server.DefaultFolders.Public
+                }
+                if ($PodeContext.Server.DefaultFolders.Views ) {
+                    $export.Server.DefaultFolders.Views = $PodeContext.Server.DefaultFolders.Views
+                }
+                if ($PodeContext.Server.DefaultFolders.Errors) {
+                    $export.Server.DefaultFolders.Errors = $PodeContext.Server.DefaultFolders.Errors
+                }
+            }
+            if ($PodeContext.Server.Logging) {
+                $export.Server.Logging = @{}
+                if ($PodeContext.Server.Logging.Masking) {
+                    $export.Server.Logging.Masking = @{}
+                    if ($PodeContext.Server.Logging.Masking.Patterns) {
+
+                        $export.Server.Logging.Masking.Patterns = $PodeContext.Server.Logging.Masking.Patterns
+                    }
+                    if ($PodeContext.Server.Logging.Masking.Mask) {
+                        $export.Server.Logging.Masking.Mask = $PodeContext.Server.Logging.Masking.Mask
+                    }
+                }
+                if ($PodeContext.Server.Logging.QueueLimit) {
+                    $export.Server.Logging.QueueLimit = $PodeContext.Server.Logging.QueueLimit
+                }
+            }
+            if ($PodeContext.Server.Debug) {
+                $export.Server.Debug = @{}
+                if ($PodeContext.Server.Debug.Breakpoints) {
+                    $export.Server.Debug.Breakpoints = @{}
+                    if ($PodeContext.Server.Debug.Breakpoints.Enabled) {
+                        $export.Server.Debug.Breakpoints.Enable = $PodeContext.Server.Debug.Breakpoints.Enabled
+                    }
+                }
+            }#>
+    }
+    if ($FileName) {
+        $psd1FileName = $FileName
+    }
+    else {
+        $psd1FileName = Join-Path -Path $PodeContext.Server.Root -ChildPath 'server.psd1'
+    }
+
+    if ((Test-Path -Path $psd1FileName) -and (! $Force.IsPresent)) {
+        throw "$psd1FileName already present. Use -Force to overwrite."
+    }
+
+    $export | ConvertTo-PodePsd1 | Out-File $psd1FileName
+    return
+}
+$export = @{}
+switch ($Section) {
+    'SslProtocols' {
+        if ($PodeContext.Server.Ssl) {
+            $export.Ssl = @{}
+            if ($PodeContext.Server.Ssl.Protocols) {
+                $export.Ssl.Protocols = $PodeContext.Server.Ssl.Protocols
+            }
+        }
+        break
+    }
+    'Request' {
+        if ($PodeContext.Server.Request) {
+            $export.Request = @{}
+            if ($PodeContext.Server.Request.Timeout) {
+                $export.Request.Timeout = $PodeContext.Server.Request.Timeout
+            }
+            if ($PodeContext.Server.Request.BodySize) {
+                $export.Request.BodySize = $PodeContext.Server.Request.BodySize
+            }
+        }
+        break
+    }
+
+    'AutoImport' {
+        if ($PodeContext.Server.AutoImport) {
+            $export.AutoImport = @{}
+            if ($PodeContext.Server.AutoImport.Modules) {
+                $export.AutoImport.Modules = @{}
+                if ( $PodeContext.Server.AutoImport.Modules.Enabled) {
+                    $export.AutoImport.Modules.Enable = $PodeContext.Server.AutoImport.Modules.Enabled
+                }
+                if ( $PodeContext.Server.AutoImport.Modules.ExportOnly) {
+                    $export.AutoImport.Modules.ExportOnly = $PodeContext.Server.AutoImport.Modules.ExportOnly
+                }
+            }
+
+            if ($PodeContext.Server.AutoImport.Snapins) {
+                $export.AutoImport.Snapins = @{}
+                if ( $PodeContext.Server.AutoImport.Snapins.Enabled) {
+                    $export.AutoImport.Snapins.Enable = $PodeContext.Server.AutoImport.Snapins.Enabled
+                }
+                if ( $PodeContext.Server.AutoImport.Snapins.ExportOnly) {
+                    $export.AutoImport.Snapins.ExportOnly = $PodeContext.Server.AutoImport.Snapins.ExportOnly
+                }
+            }
+
+            if ($PodeContext.Server.AutoImport.Functions) {
+                $export.AutoImport.Functions = @{}
+                if ( $PodeContext.Server.AutoImport.Functions.Enabled) {
+                    $export.AutoImport.Functions.Enable = $PodeContext.Server.AutoImport.Functions.Enabled
+                }
+                if ( $PodeContext.Server.AutoImport.Functions.ExportOnly) {
+                    $export.AutoImport.Functions.ExportOnly = $PodeContext.Server.AutoImport.Functions.ExportOnly
+                }
+            }
+
+            if ($PodeContext.Server.AutoImport.SecretVaults) {
+                $export.AutoImport.SecretVaults = @{}
+                if ($PodeContext.Server.AutoImport.SecretVaults.SecretManagement) {
+                    $export.AutoImport.SecretVaults.SecretManagement = @{}
+                    if ( $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enabled) {
+                        $export.AutoImport.SecretVaults.SecretManagement.Enable = $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.Enabled
+                    }
+                    if ( $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.ExportOnly) {
+                        $export.AutoImport.SecretVaults.SecretManagement.ExportOnly = $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.ExportOnly
+                    }
+                }
+            }
+        }
+        break
+    }
+    'Root' {
+        $export.Root = $PodeContext.Server.Root
+        break
+
+    }
+    'Restart' {
+        if ($PodeContext.Server.Restart) {
+            $export.Restart = @{}
+            if ($PodeContext.Server.Restart.Period) {
+                $export.Restart.Period = $PodeContext.Server.Restart.Period
+            }
+            if ($PodeContext.Server.Restart.Crons) {
+                $export.Restart.Crons = $PodeContext.Server.Restart.Crons
+            }
+            if ($PodeContext.Server.Restart.Times) {
+                $export.Restart.Times = $PodeContext.Server.Restart.Times
+            }
+        }
+        break
+    }
+    'FileMonitor' {
+        if ($PodeContext.Server.FileMonitor) {
+            $export.FileMonitor = @{}
+            if ($PodeContext.Server.FileMonitor.Enabled) {
+                $export.FileMonitor.Enable = $PodeContext.Server.FileMonitor.Enabled
+            }
+            if ($PodeContext.Server.FileMonitor.ShowFiles) {
+                $export.FileMonitor.ShowFiles = $PodeContext.Server.FileMonitor.ShowFiles
+            }
+            if ($PodeContext.Server.FileMonitor.Include) {
+                $export.FileMonitor.Include = $PodeContext.Server.FileMonitor.Include.Replace('^(.*?\.', '*.').Replace(')$', '')
+            }
+            if ($PodeContext.Server.FileMonitor.Exclude) {
+                $export.FileMonitor.Exclude = $PodeContext.Server.FileMonitor.Exclude.Replace('^(.*?\.', '*.').Replace(')$', '')
+            }
+        }
+        break
+    }
+    'DefaultFolders' {
+        if ($PodeContext.Server.DefaultFolders) {
+            $export.DefaultFolders = @{}
+            if ($PodeContext.Server.DefaultFolders.Public) {
+                $export.DefaultFolders.Public = $PodeContext.Server.DefaultFolders.Public
+            }
+            if ($PodeContext.Server.DefaultFolders.Views ) {
+                $export.DefaultFolders.Views = $PodeContext.Server.DefaultFolders.Views
+            }
+            if ($PodeContext.Server.DefaultFolders.Errors) {
+                $export.DefaultFolders.Errors = $PodeContext.Server.DefaultFolders.Errors
+            }
+        }
+        break
+    }
+    'OpenApi' {
+        if ($PodeContext.Server.Web.OpenApi) {
+            $export.OpenApi = @{}
+            if ($PodeContext.Server.Web.OpenApi.DefaultDefinitionTag) {
+                $export.OpenApi.DefaultDefinitionTag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag
+            }
+        }
+        break
+    }
+    'Static' {
+        if ($PodeContext.Server.Web.Static) {
+            $export.Static = @{}
+            if ($PodeContext.Server.Web.Static.ValidateLast) {
+                $export.Static.ValidateLast = $PodeContext.Server.Web.Static.ValidateLast
+            }
+            if ($PodeContext.Server.Web.Static.Defaults) {
+                $export.Static.Defaults = $PodeContext.Server.Web.Static.Defaults
+            }
+            if ($PodeContext.Server.Web.Static.Cache) {
+                $export.Static.Cache = @{}
+                if ($PodeContext.Server.Web.Static.Cache.Enabled) {
+                    $export.Static.Cache.Enable = $PodeContext.Server.Web.Static.Cache.Enabled
+                }
+                if ($PodeContext.Server.Web.Static.Cache.Exclude) {
+                    $export.Static.Cache.Exclude = $PodeContext.Server.Web.Static.Cache.Exclude.Replace('^(.*?\.', '*.').Replace(')$', '')
+                }
+                if ($PodeContext.Server.Web.Static.Cache.Include) {
+                    $export.Static.Cache.Include = $PodeContext.Server.Web.Static.Cache.Include.Replace('^(.*?\.', '*.').Replace(')$', '')
+                }
+                if ($PodeContext.Server.Web.Static.Cache.NaxAge) {
+                    $export.Static.Cache.NaxAge = $PodeContext.Server.Web.Static.Cache.NaxAge
+                }
+            }
+        }
+        break
+    }
+    'TransferEncoding' {
+        if ($PodeContext.Server.Web.TransferEncoding) {
+            $export.TransferEncoding = @{}
+            if ($PodeContext.Server.Web.TransferEncoding.Default) {
+                $export.TransferEncoding.Default = $PodeContext.Server.Web.TransferEncoding.Default
+            }
+            if ($PodeContext.Server.Web.TransferEncoding.Routes) {
+                $export.TransferEncoding.Routes = Convert-PodePathRegexToPattern -Route $PodeContext.Server.Web.TransferEncoding.Routes
+            }
+        }
+        break
+    }
+    'Compression' {
+        if ($PodeContext.Server.Web.Compression) {
+            $export.Compression = $PodeContext.Server.Web.Compression
+        }
+        break
+    }
+    'ContentType' {
+        if ($PodeContext.Server.Web.ContentType) {
+            $export.ContentType = @{}
+            if ($PodeContext.Server.Web.ContentType.Default) {
+                $export.ContentType.Default = $PodeContext.Server.Web.ContentType.Default
+            }
+            if ($PodeContext.Server.Web.ContentType.Routes) {
+                $export.ContentType.Routes = Convert-PodePathRegexToPattern -Route $PodeContext.Server.Web.ContentType.Routes
+            }
+        }
+    }
+    'ErrorPages' {
+        if ($PodeContext.Server.Web.ErrorPages) {
+            $export.ErrorPages = @{}
+            if ($PodeContext.Server.Web.ErrorPages.Default) {
+                $export.ErrorPages.Default = $PodeContext.Server.Web.ErrorPages.Default
+            }
+            if ($PodeContext.Server.Web.ErrorPages.Routes) {
+                $export.ErrorPages.Routes = Convert-PodePathRegexToPattern -Route $PodeContext.Server.Web.ErrorPages.Routes
+            }
+            if ($PodeContext.Server.Web.ErrorPages.ShowExceptions) {
+                $export.ErrorPages.ShowExceptions = $PodeContext.Server.Web.ErrorPages.ShowExceptions
+            }
+            if ($PodeContext.Server.Web.ErrorPages.StrictContentTyping) {
+                $export.ErrorPages.StrictContentTyping = $PodeContext.Server.Web.ErrorPages.StrictContentTyping
+            }
+        }
+    }
+    'Logging' {
+        if ($PodeContext.Server.Logging) {
+            $export.Logging = @{}
+            if ($PodeContext.Server.Logging.Masking) {
+                $export.Logging.Masking = @{}
+                if ($PodeContext.Server.Logging.Masking.Patterns) {
+
+                    $export.Logging.Masking.Patterns = $PodeContext.Server.Logging.Masking.Patterns
+                }
+                if ($PodeContext.Server.Logging.Masking.Mask) {
+                    $export.Logging.Masking.Mask = $PodeContext.Server.Logging.Masking.Mask
+                }
+            }
+            if ($PodeContext.Server.Logging.QueueLimit) {
+                $export.Logging.QueueLimit = $PodeContext.Server.Logging.QueueLimit
+            }
+        }
+        break
+    }
+    'Debug' {
+        if ($PodeContext.Server.Debug) {
+            $export.Debug = @{}
+            if ($PodeContext.Server.Debug.Breakpoints) {
+                $export.Debug.Breakpoints = @{}
+                if ($PodeContext.Server.Debug.Breakpoints.Enabled) {
+                    $export.Debug.Breakpoints.Enable = $PodeContext.Server.Debug.Breakpoints.Enabled
+                }
+            }
+        }
+        break
+    }
+    default {
+        return @{
+            Server = @{
+                SslProtocols   = $PodeContext.Server.Ssl.Protocols
+                Request        = @{
+                    Timeout  = $PodeContext.Server.Request.Timeout
+                    BodySize = $PodeContext.Server.Request.BodySize
+                }
+                AutoImport     = $PodeContext.Server.AutoImport
+                Root           = $PodeContext.Server.Root
+                Restart        = $PodeContext.Server.Restart
+                FileMonitor    = $PodeContext.Server.FileMonitor
+                DefaultFolders = $PodeContext.Server.DefaultFolders
+                Logging        = $PodeContext.Server.Logging
+                Debug          = $PodeContext.Server.Debug
+            }
+            Web    = @{
+                OpenApi          = $PodeContext.Server.Web.OpenApi
+                Static           = $PodeContext.Server.Web.Static
+                TransferEncoding = $PodeContext.Server.Web.TransferEncoding
+                Compression      = $PodeContext.Server.Web.Compression
+                ContentType      = $PodeContext.Server.Web.ContentType
+                ErrorPages       = $PodeContext.Server.Web.ErrorPages
             }
         }
     }
 }
+return $export
+}
 
+<#
+.SYNOPSIS
+Converts a hashtable or PSCustomObject to a formatted .psd1 string.
 
+.DESCRIPTION
+This function converts a given hashtable or PSCustomObject to a .psd1 formatted string.
+It ensures the correct formatting by handling JSON-specific characters and removing unwanted
+characters, such as commas outside of quotes and quotes before the equals sign.
+
+.PARAMETER InputObject
+The hashtable or PSCustomObject to be converted to .psd1 format.
+
+.EXAMPLE
+$hashtable = @{
+    Key1 = "Value1"
+    Key2 = @{
+        SubKey1 = "SubValue1"
+        SubKey2 = "SubValue2"
+    }
+    Key3 = @("ArrayValue1", "ArrayValue2")
+}
+
+$psd1Content = $hashtable | ConvertTo-PodePsd1
+$psd1Content | Set-Content -Path "output.psd1"
+Write-Output $psd1Content
+
+.EXAMPLE
+$psCustomObject = [pscustomobject]@{
+    Key1 = "Value1"
+    Key2 = [pscustomobject]@{
+        SubKey1 = "SubValue1"
+        SubKey2 = "SubValue2"
+    }
+    Key3 = @("ArrayValue1", "ArrayValue2")
+}
+
+$psd1Content = $psCustomObject | ConvertTo-PodePsd1
+$psd1Content | Set-Content -Path "output.psd1"
+Write-Output $psd1Content
+
+#>
+function ConvertTo-PodePsd1 {
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object]$InputObject
+    )
+
+    process {
+        if ($InputObject -is [hashtable] -or $InputObject -is [pscustomobject]) {
+            # Convert the input object to JSON
+            $json = $InputObject | ConvertTo-Json -Depth 10
+
+            # Replace JSON-specific characters with .psd1-specific characters
+            $psd1Content = $json.Replace('":', '" =').Replace('{', '@{').Replace('[', '@(').Replace(']', ')').Replace('true', '$True').Replace('false', '$False')
+
+            # Use a regex to remove commas outside of quotes
+            $psd1Content = [regex]::Replace($psd1Content, ',(?=(?:[^"]*"[^"]*")*[^"]*$)', '')
+
+            # Use a regex to remove quotes before the equals sign
+            $psd1Content = [regex]::Replace($psd1Content, '"(\w+)"\s*=', '$1 =')
+
+            # Use a regex to replace double backslashes inside quotes
+            $psd1Content = [regex]::Replace($psd1Content, '"([^"]*)"', {
+                    param($m)
+                    $innerContent = $m.Groups[1].Value
+                    # Replace double backslashes with a single backslash
+                    $innerContent = $innerContent.replace('\\', '\')
+                    return '"' + $innerContent + '"'
+                })
+
+            # Add the appropriate .psd1 header
+            $header = @'
+#
+# .psd1 file auto-generated by Pode
+#
+'@
+
+            # Combine the header and the content
+            $psd1Formatted = $header + "`n" + $psd1Content.Trim()
+
+            return $psd1Formatted
+        }
+        else {
+            Write-Error 'Input must be a hashtable or a pscustomobject.'
+        }
+    }
+}

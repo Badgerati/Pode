@@ -2208,6 +2208,46 @@ function Convert-PodePathPatternToRegex {
     return "^$($Path)$"
 }
 
+
+<#
+.SYNOPSIS
+    Converts an array of wildcard path patterns to a single regex pattern.
+
+.DESCRIPTION
+    This function takes an array of wildcard path patterns and converts each pattern to a regex pattern.
+    It can handle optional parameters to control the conversion process, such as whether to convert
+    slashes or to be strict about the pattern matching. The resulting regex patterns are joined
+    together into a single regex pattern.
+
+.PARAMETER Paths
+    The array of wildcard path patterns to be converted to regex patterns.
+
+.PARAMETER NotSlashes
+    A switch parameter that indicates whether slashes should not be converted.
+
+.PARAMETER NotStrict
+    A switch parameter that indicates whether the resulting regex pattern should not be strict.
+
+.EXAMPLE
+    $paths = @("*.jpg", "/images/*", "*.png")
+    $regexPattern = Convert-PodePathPatternsToRegex -Paths $paths
+    $regexPattern
+
+    # Output:
+    # ^((.*?\.jpg|/images/.*|.*?\.png))$
+
+.EXAMPLE
+    $paths = @("*.jpg", "/images/*", "*.png")
+    $regexPattern = Convert-PodePathPatternsToRegex -Paths $paths -NotSlashes
+    $regexPattern
+
+    # Output:
+    # ^((.*?\.jpg|/images/*|.*?\.png))$
+
+.NOTES
+    This function leverages the Convert-PodePathPatternToRegex helper function to convert individual
+    path patterns to regex patterns.
+#>
 function Convert-PodePathPatternsToRegex {
     param(
         [Parameter()]
@@ -2242,6 +2282,54 @@ function Convert-PodePathPatternsToRegex {
 
     return "^$($joined)$"
 }
+
+<#
+.SYNOPSIS
+    Converts regex patterns in the keys of a hashtable to wildcard patterns.
+
+.DESCRIPTION
+    This function takes a hashtable where the keys are regex patterns and converts these keys
+    to wildcard patterns. The converted keys and their corresponding values are stored in a new hashtable
+    which is returned by the function.
+
+.PARAMETER Route
+    The hashtable containing keys as regex patterns to be converted to wildcard patterns.
+
+.EXAMPLE
+    $hashtable = @{
+        "^/john$" = "application/json"
+        "^/doe$"  = "application/xml"
+    }
+
+    $newHashtable = Convert-PodePathRegexToPattern -Hashtable $hashtable
+    $newHashtable
+
+    # Output:
+    # /john = application/json
+    # /doe  = application/xml
+
+.NOTES
+    This function handles the conversion of `^`, `$`, and `\\` characters in the regex pattern keys to
+    the appropriate wildcard pattern equivalents.
+#>
+function Convert-PodePathRegexToPattern {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $Route
+    )
+    $newRoute = @{}
+
+    foreach ($key in $Route.Keys) {
+        # Convert the key from regex to wildcard pattern
+        $newKey = $key.Replace('^', '').Replace('$', '').Replace('\\', '\')
+
+        # Add the new key-value pair to the new hashtable
+        $newRoute[$newKey] = $Route[$key]
+    }
+    return $newRoute
+}
+
 
 <#
 .SYNOPSIS
