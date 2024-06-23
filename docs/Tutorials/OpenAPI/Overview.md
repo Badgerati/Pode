@@ -987,7 +987,7 @@ The default `Definition Tag` is named "default". This can be changed using the `
 @{
     Web=@{
         OpenApi=@{
-            DefaultDefinitionTag= 'NewDfault'
+            DefaultDefinitionTag= 'NewDefault'
         }
     }
 }
