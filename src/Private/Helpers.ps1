@@ -3747,11 +3747,17 @@ function ConvertTo-PodeYaml {
     }
 
     end {
-        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
-            $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
-        }
+
         if ($pipelineObject.Count -gt 1) {
             $InputObject = $pipelineObject
+        }
+
+        if($PodeContext.Server.Web.OpenApi.UsePodeYamlInternal){
+            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+        }
+
+        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
+            $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
         }
 
         if ($PodeContext.Server.InternalCache.YamlModuleImported) {

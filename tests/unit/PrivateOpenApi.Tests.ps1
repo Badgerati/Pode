@@ -337,7 +337,7 @@ Describe 'PrivateOpenApi' {
 
     Describe "Initialize-PodeOpenApiTable Tests" {
         It "Initializes OpenAPI table with default settings" {
-            $openApiTable = Initialize-PodeOpenApiTable
+            $openApiTable = Initialize-PodeOpenApiTable -DefaultDefinitionTag 'default'
 
             $openApiTable | Should -BeOfType [hashtable]
             $openApiTable.DefinitionTagSelectionStack -is  [System.Collections.Generic.Stack[System.Object]]   | Should -BeTrue

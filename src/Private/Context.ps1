@@ -373,7 +373,7 @@ function New-PodeContext {
     $ctx.Server.Sessions = @{}
 
     #OpenApi Definition Tag
-    $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
+    $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
     # server metrics
     $ctx.Metrics = @{
@@ -934,6 +934,13 @@ function Set-PodeWebConfiguration {
         Compression      = @{
             Enabled = [bool]$Configuration.Compression.Enable
         }
+        OpenApi          = @{
+            DefaultDefinitionTag = [string](Protect-PodeValue -Value $Configuration.OpenApi.DefaultDefinitionTag -Default 'default')
+        }
+    }
+
+    if ($Configuration.OpenApi.ContainsKey('UsePodeYamlInternal')) {
+        $Context.Server.Web.OpenApi.UsePodeYamlInternal = $Configuration.OpenApi.UsePodeYamlInternal
     }
 
     # setup content type route patterns for forced content types

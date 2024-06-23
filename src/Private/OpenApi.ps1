@@ -1284,19 +1284,16 @@ This is an internal function and may change in future releases of Pode.
 function Initialize-PodeOpenApiTable {
     param(
         [string]
-        $DefaultDefinitionTag = $null
+        $DefaultDefinitionTag = 'default'
     )
+
     # Initialization of the OpenAPI table with default settings
     $OpenAPI = @{
         DefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
     }
-    # Set the default definition tag
-    if ([string]::IsNullOrEmpty($DefaultDefinitionTag)) {
-        $OpenAPI['DefaultDefinitionTag'] = 'default'
-    }
-    else {
-        $OpenAPI['DefaultDefinitionTag'] = $DefaultDefinitionTag
-    }
+
+    $OpenAPI['DefaultDefinitionTag'] = $DefaultDefinitionTag
+
 
     # Set the currently selected definition tag
     $OpenAPI['SelectedDefinitionTag'] = $OpenAPI['DefaultDefinitionTag']

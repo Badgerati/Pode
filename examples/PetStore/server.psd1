@@ -7,12 +7,13 @@
     CertificatePassword = 'password@01'
     SessionsTtlMinutes  = 360
     Server              = @{
-        Timeout                     = 60
-        BodySize                    = 100MB
+        Timeout  = 60
+        BodySize = 100MB
     }
-    Web=@{
-        OpenApi=@{
+    Web                 = @{
+        OpenApi = @{
             DefaultDefinitionTag = 'v3.0.3'
+            UsePodeYamlInternal  = $true
         }
     }
 }
