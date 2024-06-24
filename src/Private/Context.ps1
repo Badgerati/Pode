@@ -21,7 +21,11 @@ function New-PodeContext {
 
         [Parameter()]
         [string]
-        $ServerRoot,
+        $RootPath,
+
+        [Parameter()]
+        [string]
+        $InvocationPath,
 
         [Parameter()]
         [string]
@@ -188,6 +192,8 @@ function New-PodeContext {
         'Errors' = 'errors'
     }
 
+    $ServerRoot=  (Protect-PodeValue -Value $RootPath -Default $InvocationPath )
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -202,6 +208,10 @@ function New-PodeContext {
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
+
+    # configure the server's Invocation path
+    $ctx.Server.InvocationPath = $InvocationPath
+
     if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
         $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
@@ -939,7 +949,7 @@ function Set-PodeWebConfiguration {
         }
     }
 
-    if ($Configuration.OpenApi.ContainsKey('UsePodeYamlInternal')) {
+    if ($Configuration.OpenApi -and $Configuration.OpenApi.ContainsKey('UsePodeYamlInternal')) {
         $Context.Server.Web.OpenApi.UsePodeYamlInternal = $Configuration.OpenApi.UsePodeYamlInternal
     }
 

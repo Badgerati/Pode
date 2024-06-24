@@ -162,7 +162,8 @@ function Start-PodeServer {
             -FilePath $FilePath `
             -Threads $Threads `
             -Interval $Interval `
-            -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
+            -RootPath $RootPath `
+            -InvocationPath $MyInvocation.PSScriptRoot `
             -ServerlessType $ServerlessType `
             -ListenerType $ListenerType `
             -EnablePool $EnablePool `

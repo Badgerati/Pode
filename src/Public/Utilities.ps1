@@ -1821,9 +1821,9 @@ function Set-PodeConfiguration {
         }
 
         'defaultfolder' {
-            if ($DefaultFoldersPublic) { $PodeContext.Server.DefaultFolders.Public = $DefaultFoldersPublic }
-            if ($DefaultFoldersViews) { $PodeContext.Server.DefaultFolders.Views = $DefaultFoldersViews }
-            if ($DefaultFoldersErrors) { $PodeContext.Server.DefaultFolders.Errors = $DefaultFoldersErrors }
+            if ($DefaultFoldersPublic) { Set-PodeDefaultFolder -Type 'Public' -Path $DefaultFoldersPublic }
+            if ($DefaultFoldersViews) { Set-PodeDefaultFolder -Type 'Views' -Path $DefaultFoldersViews }
+            if ($DefaultFoldersErrors) { Set-PodeDefaultFolder -Type 'Errors' -Path$DefaultFoldersErrors }
         }
 
         'logging' {
@@ -2070,7 +2070,9 @@ function Get-PodeConfiguration {
                     break
                 }
                 'Root' {
-                    $export.Root = $PodeContext.Server.Root
+                    if ($PodeContext.Server.Root -ne $PodeContext.Server.InvocationPath ) {
+                        $export.Root = $PodeContext.Server.Root
+                    }
                     break
 
                 }
@@ -2107,17 +2109,18 @@ function Get-PodeConfiguration {
                     }
                     break
                 }
+
                 'DefaultFolders' {
                     if ($PodeContext.Server.DefaultFolders) {
                         $export.DefaultFolders = @{}
                         if ($PodeContext.Server.DefaultFolders.Public) {
-                            $export.DefaultFolders.Public = $PodeContext.Server.DefaultFolders.Public
+                            $export.DefaultFolders.Public = Get-PodeDefaultFolder -Type Public
                         }
                         if ($PodeContext.Server.DefaultFolders.Views ) {
-                            $export.DefaultFolders.Views = $PodeContext.Server.DefaultFolders.Views
+                            $export.DefaultFolders.Views = Get-PodeDefaultFolder -Type Views
                         }
                         if ($PodeContext.Server.DefaultFolders.Errors) {
-                            $export.DefaultFolders.Errors = $PodeContext.Server.DefaultFolders.Errors
+                            $export.DefaultFolders.Errors = Get-PodeDefaultFolder -Type Errors
                         }
                     }
                     break
@@ -2169,7 +2172,7 @@ function Get-PodeConfiguration {
                 'Server' {
                     if ($PodeContext.Server) {
                         $export.Server = @{}
-                        $export.Server += Get-PodeConfiguration -Section SslProtocols
+                        $export.Server += Get-PodeConfiguration -Section Sockets
                         $export.Server += Get-PodeConfiguration -Section Request
                         $export.Server += Get-PodeConfiguration -Section AutoImport
                         $export.Server += Get-PodeConfiguration -Section Root
