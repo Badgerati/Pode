@@ -313,6 +313,7 @@
         'New-PodeOARequestBody',
         'Test-PodeOADefinitionTag',
         'Test-PodeOADefinition',
+        'Rename-PodeOADefinitionTagName',
 
         # properties
         'New-PodeOAIntProperty',
