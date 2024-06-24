@@ -3376,19 +3376,21 @@ The current tag name of the OpenAPI definition. If not specified, the default de
 .PARAMETER NewTag
 The new tag name for the OpenAPI definition. This parameter is mandatory.
 
-.EXAMPLES
-# Example 1: Rename a specific OpenAPI definition tag
+.EXAMPLE
 Rename-PodeOADefinitionTagName -Tag 'oldTag' -NewTag 'newTag'
 
-# Example 2: Rename the default OpenAPI definition tag
+Rename a specific OpenAPI definition tag
+
+.EXAMPLE
 Rename-PodeOADefinitionTagName -NewTag 'newDefaultTag'
+
+Rename the default OpenAPI definition tag
 
 .NOTES
 This function will throw an error if:
 - It is used inside a Select-PodeOADefinition ScriptBlock.
 - The new tag name already exists.
 - The current tag name does not exist.
-
 #>
 function Rename-PodeOADefinitionTagName {
     param (
