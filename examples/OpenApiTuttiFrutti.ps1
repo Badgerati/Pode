@@ -1,13 +1,14 @@
 $path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
 if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
     Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
-} else {
+}
+else {
     Import-Module -Name 'Pode'
 }
 
 Start-PodeServer -Threads 2 -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default -Name 'endpoint_v3'
-        Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http -Default -Name 'endpoint_v3.1'
+    Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http -Default -Name 'endpoint_v3.1'
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
     $InfoDescription = @'
 This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about Swagger at [http://swagger.io](http://swagger.io).
@@ -290,7 +291,8 @@ Some useful links:
                 Code      = 401
                 Challenge = 'qop="auth", nonce="<some-random-guid>"'
             }
-        } else {
+        }
+        else {
             return @{
                 Message = 'No Authorization header found'
                 Code    = 401
@@ -366,7 +368,8 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['petId'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatePasdadaetWithForm' -PassThru |
@@ -383,7 +386,8 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet' -PassThru |
@@ -427,7 +431,8 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet2' -PassThru |
@@ -451,7 +456,8 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet3' -PassThru |
@@ -471,7 +477,8 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet4' -PassThru |
@@ -500,7 +507,8 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -523,7 +531,8 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -543,7 +552,8 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -581,7 +591,8 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -806,7 +817,8 @@ Some useful links:
                     $User = $WebEvent.data
                     $User.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($User | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                } else {
+                }
+                else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
