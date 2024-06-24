@@ -21,7 +21,11 @@ function New-PodeContext {
 
         [Parameter()]
         [string]
-        $ServerRoot,
+        $RootPath,
+
+        [Parameter()]
+        [string]
+        $InvocationPath,
 
         [Parameter()]
         [string]
@@ -83,7 +87,8 @@ function New-PodeContext {
         Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru |
         Add-Member -MemberType NoteProperty -Name Receivers -Value @() -PassThru |
         Add-Member -MemberType NoteProperty -Name Watchers -Value @() -PassThru |
-        Add-Member -MemberType NoteProperty -Name Fim -Value @{} -PassThru
+        Add-Member -MemberType NoteProperty -Name Fim -Value @{} -PassThru|
+        Add-Member -MemberType NoteProperty -Name InvocationPath -Value  $InvocationPath -PassThru
 
     # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
@@ -188,6 +193,8 @@ function New-PodeContext {
         'Errors' = 'errors'
     }
 
+    $ServerRoot=  (Protect-PodeValue -Value $RootPath -Default $InvocationPath )
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -202,6 +209,10 @@ function New-PodeContext {
 
     # configure the server's root path
     $ctx.Server.Root = $ServerRoot
+
+    # configure the server's Invocation path
+    $ctx.InvocationPath = $InvocationPath
+
     if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
         $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
     }
@@ -373,7 +384,7 @@ function New-PodeContext {
     $ctx.Server.Sessions = @{}
 
     #OpenApi Definition Tag
-    $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
+    $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
     # server metrics
     $ctx.Metrics = @{
@@ -934,6 +945,13 @@ function Set-PodeWebConfiguration {
         Compression      = @{
             Enabled = [bool]$Configuration.Compression.Enable
         }
+        OpenApi          = @{
+            DefaultDefinitionTag = [string](Protect-PodeValue -Value $Configuration.OpenApi.DefaultDefinitionTag -Default 'default')
+        }
+    }
+
+    if ($Configuration.OpenApi -and $Configuration.OpenApi.ContainsKey('UsePodeYamlInternal')) {
+        $Context.Server.Web.OpenApi.UsePodeYamlInternal = $Configuration.OpenApi.UsePodeYamlInternal
     }
 
     # setup content type route patterns for forced content types

@@ -183,7 +183,8 @@ function Enable-PodeOpenApi {
         }
         Write-PodeHost -ForegroundColor Yellow "WARNING: Title, Version, and Description on 'Enable-PodeOpenApi' are deprecated. Please use 'Add-PodeOAInfo' instead."
     }
-    if ( $DefinitionTag -ine $PodeContext.Server.OpenAPI.DefaultDefinitionTag ) {
+    if ( $DefinitionTag -ine $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag) {
+        #$PodeContext.Server.OpenAPI.DefaultDefinitionTag ) {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag] = Get-PodeOABaseObject
     }
     $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
@@ -978,7 +979,7 @@ function Test-PodeOAJsonSchemaCompliance {
         }
     }
     else {
-        $DefinitionTag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag
+        $DefinitionTag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag #$PodeContext.Server.OpenAPI.DefaultDefinitionTag
     }
 
     if ($Json -isnot [string]) {
@@ -3353,7 +3354,7 @@ function Select-PodeOADefinition {
         throw 'No scriptblock for -Scriptblock passed'
     }
     if (Test-PodeIsEmpty -Value $Tag) {
-        $Tag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag
+        $Tag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag #$PodeContext.Server.OpenAPI.DefaultDefinitionTag
     }
     else {
         $Tag = Test-PodeOADefinitionTag -Tag $Tag
@@ -3368,13 +3369,6 @@ function Select-PodeOADefinition {
     $PodeContext.Server.OpenAPI.SelectedDefinitionTag = $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Pop()
 
 }
-
-
-
-
-
-
-
 
 <#
 .SYNOPSIS
