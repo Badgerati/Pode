@@ -2112,7 +2112,7 @@ function Get-PodeConfiguration {
                     break
                 }
                 'Root' {
-                    if ($PodeContext.Server.Root -ne $PodeContext.Server.InvocationPath ) {
+                    if ($PodeContext.Server.Root -ne $PodeContext.InvocationPath ) {
                         $export.Root = $PodeContext.Server.Root
                     }
                     break

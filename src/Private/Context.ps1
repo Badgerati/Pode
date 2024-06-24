@@ -87,7 +87,8 @@ function New-PodeContext {
         Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru |
         Add-Member -MemberType NoteProperty -Name Receivers -Value @() -PassThru |
         Add-Member -MemberType NoteProperty -Name Watchers -Value @() -PassThru |
-        Add-Member -MemberType NoteProperty -Name Fim -Value @{} -PassThru
+        Add-Member -MemberType NoteProperty -Name Fim -Value @{} -PassThru|
+        Add-Member -MemberType NoteProperty -Name InvocationPath -Value  $InvocationPath -PassThru
 
     # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
@@ -210,7 +211,7 @@ function New-PodeContext {
     $ctx.Server.Root = $ServerRoot
 
     # configure the server's Invocation path
-    $ctx.Server.InvocationPath = $InvocationPath
+    $ctx.InvocationPath = $InvocationPath
 
     if (!(Test-PodeIsEmpty $ctx.Server.Configuration.Server.Root)) {
         $ctx.Server.Root = Get-PodeRelativePath -Path $ctx.Server.Configuration.Server.Root -RootPath $ctx.Server.Root -JoinRoot -Resolve -TestPath
