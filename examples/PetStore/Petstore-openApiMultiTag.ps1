@@ -72,8 +72,8 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.2' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses  -EndpointName  'endpoint_v3'
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0' -OpenApiVersion '3.0.2' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses  -EndpointName  'endpoint_v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1' -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     $swaggerDocs | Add-PodeOAExternalDoc   -DefinitionTag 'v3.0.3', 'v3.1'
 

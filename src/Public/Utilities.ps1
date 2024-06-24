@@ -1911,11 +1911,16 @@ function Get-PodeConfiguration {
             switch ($Section) {
                 'OpenApi' {
                     if ($PodeContext.Server.Web.OpenApi) {
-                        $export.OpenApi = @{}
-                        if ($PodeContext.Server.Web.OpenApi.DefaultDefinitionTag) {
+                        if ($PodeContext.Server.Web.OpenApi.DefaultDefinitionTag -and $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag -ne 'default') {
+                            if (! $export.ContainsKey('OpenApi' )) {
+                                $export.OpenApi = @{}
+                            }
                             $export.OpenApi.DefaultDefinitionTag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag
                         }
                         if ($PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
+                            if (! $export.ContainsKey('OpenApi' )) {
+                                $export.OpenApi = @{}
+                            }
                             $export.OpenApi.UsePodeYamlInternal = $PodeContext.Server.Web.OpenApi.UsePodeYamlInternal
                         }
                     }
@@ -1931,17 +1936,28 @@ function Get-PodeConfiguration {
                             $export.Static.Defaults = $PodeContext.Server.Web.Static.Defaults
                         }
                         if ($PodeContext.Server.Web.Static.Cache) {
-                            $export.Static.Cache = @{}
                             if ($PodeContext.Server.Web.Static.Cache.Enabled) {
+                                if (! $export.Static.ContainsKey('Cache' )) {
+                                    $export.Static.Cache = @{}
+                                }
                                 $export.Static.Cache.Enable = $PodeContext.Server.Web.Static.Cache.Enabled
                             }
                             if ($PodeContext.Server.Web.Static.Cache.Exclude) {
+                                if (! $export.Static.ContainsKey('Cache' )) {
+                                    $export.Static.Cache = @{}
+                                }
                                 $export.Static.Cache.Exclude = $PodeContext.Server.Web.Static.Cache.Exclude.Replace('^(.*?\.', '*.').Replace(')$', '')
                             }
                             if ($PodeContext.Server.Web.Static.Cache.Include) {
+                                if (! $export.Static.ContainsKey('Cache' )) {
+                                    $export.Static.Cache = @{}
+                                }
                                 $export.Static.Cache.Include = $PodeContext.Server.Web.Static.Cache.Include.Replace('^(.*?\.', '*.').Replace(')$', '')
                             }
                             if ($PodeContext.Server.Web.Static.Cache.MaxAge) {
+                                if (! $export.Static.ContainsKey('Cache' )) {
+                                    $export.Static.Cache = @{}
+                                }
                                 $export.Static.Cache.MaxAge = $PodeContext.Server.Web.Static.Cache.MaxAge
                             }
                         }
@@ -1950,11 +1966,16 @@ function Get-PodeConfiguration {
                 }
                 'TransferEncoding' {
                     if ($PodeContext.Server.Web.TransferEncoding) {
-                        $export.TransferEncoding = @{}
                         if ($PodeContext.Server.Web.TransferEncoding.Default) {
+                            if (! $export.ContainsKey('TransferEncoding' )) {
+                                $export.TransferEncoding = @{}
+                            }
                             $export.TransferEncoding.Default = $PodeContext.Server.Web.TransferEncoding.Default
                         }
                         if ($PodeContext.Server.Web.TransferEncoding.Routes) {
+                            if (! $export.ContainsKey('TransferEncoding' )) {
+                                $export.TransferEncoding = @{}
+                            }
                             $export.TransferEncoding.Routes = Convert-PodePathRegexToPattern -Route $PodeContext.Server.Web.TransferEncoding.Routes
                         }
                     }
@@ -1968,28 +1989,44 @@ function Get-PodeConfiguration {
                 }
                 'ContentType' {
                     if ($PodeContext.Server.Web.ContentType) {
-                        $export.ContentType = @{}
                         if ($PodeContext.Server.Web.ContentType.Default) {
+                            if (! $export.ContainsKey('ContentType' )) {
+                                $export.ContentType = @{}
+                            }
                             $export.ContentType.Default = $PodeContext.Server.Web.ContentType.Default
                         }
                         if ($PodeContext.Server.Web.ContentType.Routes) {
+                            if (! $export.ContainsKey('ContentType' )) {
+                                $export.ContentType = @{}
+                            }
                             $export.ContentType.Routes = Convert-PodePathRegexToPattern -Route $PodeContext.Server.Web.ContentType.Routes
                         }
                     }
                 }
                 'ErrorPages' {
                     if ($PodeContext.Server.Web.ErrorPages) {
-                        $export.ErrorPages = @{}
                         if ($PodeContext.Server.Web.ErrorPages.Default) {
+                            if (! $export.ContainsKey('ErrorPages' )) {
+                                $export.ErrorPages = @{}
+                            }
                             $export.ErrorPages.Default = $PodeContext.Server.Web.ErrorPages.Default
                         }
                         if ($PodeContext.Server.Web.ErrorPages.Routes) {
+                            if (! $export.ContainsKey('ErrorPages' )) {
+                                $export.ErrorPages = @{}
+                            }
                             $export.ErrorPages.Routes = Convert-PodePathRegexToPattern -Route $PodeContext.Server.Web.ErrorPages.Routes
                         }
                         if ($PodeContext.Server.Web.ErrorPages.ShowExceptions) {
+                            if (! $export.ContainsKey('ErrorPages' )) {
+                                $export.ErrorPages = @{}
+                            }
                             $export.ErrorPages.ShowExceptions = $PodeContext.Server.Web.ErrorPages.ShowExceptions
                         }
                         if ($PodeContext.Server.Web.ErrorPages.StrictContentTyping) {
+                            if (! $export.ContainsKey('ErrorPages' )) {
+                                $export.ErrorPages = @{}
+                            }
                             $export.ErrorPages.StrictContentTyping = $PodeContext.Server.Web.ErrorPages.StrictContentTyping
                         }
                     }
@@ -1998,8 +2035,8 @@ function Get-PodeConfiguration {
                 # Server part
                 'Sockets' {
                     if ($PodeContext.Server.Sockets.Ssl) {
-                        $export.Ssl = @{}
                         if ($PodeContext.Server.Sockets.Ssl.Protocols) {
+                            $export.Ssl = @{}
                             $export.Ssl.Protocols = $PodeContext.Server.Sockets.Ssl.Protocols
                         }
                         if ($PodeContext.Server.Sockets.ReceiveTimeout) {
@@ -2010,11 +2047,16 @@ function Get-PodeConfiguration {
                 }
                 'Request' {
                     if ($PodeContext.Server.Request) {
-                        $export.Request = @{}
                         if ($PodeContext.Server.Request.Timeout) {
+                            if (! $export.ContainsKey('Request' )) {
+                                $export.Request = @{}
+                            }
                             $export.Request.Timeout = $PodeContext.Server.Request.Timeout
                         }
                         if ($PodeContext.Server.Request.BodySize) {
+                            if (! $export.ContainsKey('Request' )) {
+                                $export.Request = @{}
+                            }
                             $export.Request.BodySize = $PodeContext.Server.Request.BodySize
                         }
                     }
