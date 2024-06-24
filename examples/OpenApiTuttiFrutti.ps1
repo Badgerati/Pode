@@ -1,15 +1,12 @@
 $path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
 if (Test-Path -Path "$($path)/src/Pode.psm1" -PathType Leaf) {
     Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
-}
-else {
+} else {
     Import-Module -Name 'Pode'
 }
 
 Start-PodeServer -Threads 2 -ScriptBlock {
-    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default -Name 'endpoint_v3'
-    Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http -Default -Name 'endpoint_v3.1'
-
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
     $InfoDescription = @'
 This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about Swagger at [http://swagger.io](http://swagger.io).
@@ -24,12 +21,19 @@ Some useful links:
 
 
 
+    #Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.0' -EnableSchemaValidation -DisableMinimalDefinitions -DefaultResponses @{}
+    #  New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
+    #  Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
 
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3'   -EndpointName  'endpoint_v3'
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1'
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
     $swaggerDocs | Add-PodeOAExternalDoc  -DefinitionTag 'v3', 'v3.1'
+
+
+    #  Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -ContactUrl 'http://example.com/support'
+
 
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'  -DefinitionTag 'v3', 'v3.1'
 
@@ -39,7 +43,7 @@ Some useful links:
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.1' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3.1'
 
-    #OpenAPI 3.0
+
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3'
@@ -49,7 +53,7 @@ Some useful links:
     Enable-PodeOAViewer -Editor -DefinitionTag 'v3'
     Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3'
 
-    #OpenAPI 3.1
+
     Enable-PodeOAViewer -Type Swagger -Path '/docs/v3.1/swagger' -DefinitionTag 'v3.1'
     Enable-PodeOAViewer -Type ReDoc -Path '/docs/v3.1/redoc' -DarkMode -DefinitionTag 'v3.1'
     Enable-PodeOAViewer -Type RapiDoc -Path '/docs/v3.1/rapidoc' -DarkMode -DefinitionTag 'v3.1'
@@ -64,6 +68,30 @@ Some useful links:
         Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs
         Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs
 
+
+        <#   Add-PodeOAComponentSchema -Name 'Address' -Schema (
+        New-PodeOAObjectProperty -Name 'Address' -XmlName  'address' } -Description 'Shipping Address' -Properties (
+            New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
+                New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
+                New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
+                New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required
+        ))
+        Merge-PodeOAProperty -Type OneOf -ObjectDefinitions @(
+            (New-PodeOAIntProperty -Name 'userId' -Object),
+            (New-PodeOAStringProperty -Name 'name' -Object),
+            (New-PodeOABoolProperty -Name 'enabled' -Object)
+        )|Add-PodeOAComponentSchema -Name 'Test123'
+
+    New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+        New-PodeOAObjectProperty -Name 'User' -XmlName  'user' } -Properties  (
+            New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 -ReadOnly |
+                New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required ) |
+            New-PodeOAStringProperty -Name 'username' -Example 'theUser' -Required |
+            New-PodeOAStringProperty -Name 'firstName' -Example 'John' |
+            New-PodeOAStringProperty -Name 'lastName' -Example 'James' |
+            New-PodeOAObjectProperty -Name 'test' | Add-PodeOAComponentSchema -Name 'Test'
+
+#>
         New-PodeOAStringProperty -Name 'street' -Example '437 Lytton' -Required |
             New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
             New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
@@ -267,8 +295,7 @@ Some useful links:
                 Code      = 401
                 Challenge = 'qop="auth", nonce="<some-random-guid>"'
             }
-        }
-        else {
+        } else {
             return @{
                 Message = 'No Authorization header found'
                 Code    = 401
@@ -344,8 +371,7 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['petId'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatePasdadaetWithForm' -PassThru |
@@ -362,8 +388,7 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet' -PassThru |
@@ -407,8 +432,7 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet2' -PassThru |
@@ -432,8 +456,7 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet3' -PassThru |
@@ -453,8 +476,7 @@ Some useful links:
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['id'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet4' -PassThru |
@@ -483,8 +505,7 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -507,8 +528,7 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -528,8 +548,7 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -567,8 +586,7 @@ Some useful links:
                     $Pet = $WebEvent.data
                     $Pet.tags.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($Pet | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -793,8 +811,7 @@ Some useful links:
                     $User = $WebEvent.data
                     $User.id = Get-Random -Minimum 1 -Maximum 9999999
                     Write-PodeJsonResponse -Value ($User | ConvertTo-Json -Depth 20 ) -StatusCode 200
-                }
-                else {
+                } else {
                     Write-PodeJsonResponse -StatusCode 405 -Value @{
                         result  = $Validate.result
                         message = $Validate.message -join ', '
@@ -954,8 +971,6 @@ Some useful links:
     Write-PodeHost "`rYAML Tag: v3.1  Output:`r $yaml"
 
     Write-PodeHost "`rJSON Tag: v3 Output:`r $json"
-    #    Set-PodeConfiguration -DebugBreakpointsEnable:$false
 
-    #   Set-PodeConfiguration  -StaticCacheEnable:$false
-    Get-PodeConfiguration -Save -Force -FileName 'test.psd1'
+    Get-PodeConfiguration -Save -Force
 }
