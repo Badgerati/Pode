@@ -778,9 +778,8 @@ function Write-PodeRequestLog {
             $item.User = $user -ireplace '\s+', '.'
         }
     }
-
     # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add(@{
+    $null = $PodeContext.LogsToProcess.Enqueue(@{
             Name = $name
             Item = $item
         })
@@ -822,73 +821,67 @@ function Start-PodeLoggingRunspace {
     }
 
     $script = {
+        $log = @{}
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-            # if there are no logs to process, just sleep for a few seconds - but after checking the batch
-            if ($PodeContext.LogsToProcess.Count -eq 0) {
-                Test-PodeLoggerBatch
-                Start-Sleep -Seconds 5
-                continue
-            }
-
             if ($PodeContext.LogsToProcess.Count -ge $PodeContext.Server.Logging.QueueLimit) {
                 Invoke-PodeHandleFailure -Message "Reached the log Queue Limit of $($PodeContext.Server.Logging.QueueLimit)" -FailureAction $logger.Method.Arguments.FailureAction
             }
+            if ($PodeContext.LogsToProcess.TryDequeue([ref]$log)) {
 
-            # safely pop off the first log from the array
-            $log = (Lock-PodeObject -Return -Object $PodeContext.LogsToProcess -ScriptBlock {
-                    $log = $PodeContext.LogsToProcess[0]
-                    $null = $PodeContext.LogsToProcess.RemoveAt(0)
-                    return $log
-                })
-
-            # run the log item through the appropriate method
-            $logger = Get-PodeLogger -Name $log.Name
-            $now = [datetime]::Now
-
-            # if the log is null, check batch then sleep and skip
-            if ($null -eq $log) {
-                Start-Sleep -Milliseconds 100
-                continue
-            }
-
-            # convert to log item into a writable format
-            $rawItems = $log.Item
-            $_args = @($log.Item) + @($logger.Arguments)
-
-            $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
-
-            # check batching
-            $batch = $logger.Method.Batch
-            if ($batch.Size -gt 1) {
-                # add current item to batch
-                $batch.Items += $result
-                $batch.RawItems += $log.Item
-                $batch.LastUpdate = $now
-
-                # if the current amount of items matches the batch, write
-                $result = $null
-                if ($batch.Items.Length -ge $batch.Size) {
-                    $result = $batch.Items
-                    $rawItems = $batch.RawItems
+                # if the log is null, check batch then sleep and skip
+                if ($null -eq $log) {
+                    Start-Sleep -Milliseconds 100
+                    continue
                 }
 
-                # if we're writing, reset the items
+                # run the log item through the appropriate method
+                $logger = $PodeContext.Server.Logging.Types[$log.Name]
+                $now = [datetime]::Now
+
+                # convert to log item into a writable format
+                $rawItems = $log.Item
+                $_args = @($log.Item) + @($logger.Arguments)
+
+                $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
+
+                # check batching
+                $batch = $logger.Method.Batch
+                if ($batch.Size -gt 1) {
+                    # add current item to batch
+                    $batch.Items += $result
+                    $batch.RawItems += $log.Item
+                    $batch.LastUpdate = $now
+
+                    # if the current amount of items matches the batch, write
+                    $result = $null
+                    if ($batch.Items.Length -ge $batch.Size) {
+                        $result = $batch.Items
+                        $rawItems = $batch.RawItems
+                    }
+
+                    # if we're writing, reset the items
+                    if ($null -ne $result) {
+                        $batch.Items = @()
+                        $batch.RawItems = @()
+                    }
+                }
+
+                # send the writable log item off to the log writer
                 if ($null -ne $result) {
-                    $batch.Items = @()
-                    $batch.RawItems = @()
+                    foreach ($method in $logger.Method) {
+                        $_args = @(, $result) + @($method.Arguments) + @(, $rawItems)
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
+                    }
                 }
+
+                # small sleep to lower cpu usage
+                Start-Sleep -Milliseconds 100
+            }
+            else {
+                Test-PodeLoggerBatch
+                Start-Sleep -Seconds 5
             }
 
-            # send the writable log item off to the log writer
-            if ($null -ne $result) {
-                foreach ($method in $logger.Method) {
-                    $_args = @(, $result) + @($method.Arguments) + @(, $rawItems)
-                    $null = Invoke-PodeScriptBlock -ScriptBlock $method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
-                }
-            }
-
-            # small sleep to lower cpu usage
-            Start-Sleep -Milliseconds 100
         }
     }
 
@@ -948,7 +941,7 @@ function Write-PodeMainLog {
     if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }
-    
+
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'parameter' {
             $Message = if ($Parameters) {
@@ -1010,10 +1003,9 @@ function Write-PodeMainLog {
     }
 
     # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add(@{
+    $null = $PodeContext.LogsToProcess.Enqueue(@{
             Name = $name
             Item = $item
         })
-
 
 }

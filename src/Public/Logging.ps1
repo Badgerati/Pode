@@ -1053,7 +1053,7 @@ function Write-PodeErrorLog {
     $item['ThreadId'] = [System.Threading.Thread]::CurrentThread.ManagedThreadId #[int]$ThreadId
 
     # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add(@{
+    $null = $PodeContext.LogsToProcess.Enqueue(@{
             Name = $name
             Item = $item
         })
@@ -1161,7 +1161,7 @@ function Write-PodeLog {
     }
 
     # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Add($logItem)
+    $PodeContext.LogsToProcess.Enqueue($logItem)
 }
 
 <#

@@ -408,7 +408,7 @@ function New-PodeContext {
     }
 
     # requests that should be logged
-    $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
+    $ctx.LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()
