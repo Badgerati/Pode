@@ -29,8 +29,9 @@ Describe 'Get-PodeLogger' {
 
 Describe 'Write-PodeLog' {
     BeforeEach {
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList
-            Server                      = @{
+        $PodeContext = @{
+            LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+            Server        = @{
                 Logging = @{
                     Types = @{
                         test = @{
@@ -61,8 +62,9 @@ Describe 'Write-PodeLog' {
 
 Describe 'Write-PodeErrorLog' {
     BeforeEach {
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList
-            Server                      = @{
+        $PodeContext = @{
+            LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+            Server        = @{
                 Logging = @{
                     Types = @{
                         test = @{
