@@ -10,7 +10,8 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "ms-vscode.powershell"
+        "ms-vscode.powershell",
+        "pspester.pester-test"
       ]
     }
   },
