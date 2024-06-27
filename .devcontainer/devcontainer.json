@@ -15,5 +15,5 @@
       ]
     }
   },
-  "postCreateCommand": "pwsh -Command 'Install-Module -Name Pester,Invoke-Build -Force -SkipPublisherCheck'"
+  "postCreateCommand": "pwsh -Command 'Install-Module -Name InvokeBuild -Force -SkipPublisherCheck'"
 }
