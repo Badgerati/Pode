@@ -1,6 +1,6 @@
 try {
     # Get the path of the script being executed
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
     # Get the parent directory of the script's path
     $podePath = Split-Path -Parent -Path $ScriptPath
 
