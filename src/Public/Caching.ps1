@@ -117,29 +117,46 @@ function Set-PodeCache {
         $Storage = $null
     )
 
-    # use the global settable default here
-    if ($Ttl -le 0) {
-        $Ttl = $PodeContext.Server.Cache.DefaultTtl
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    # inmem or custom storage?
-    if ([string]::IsNullOrEmpty($Storage)) {
-        $Storage = $PodeContext.Server.Cache.DefaultStorage
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
     }
 
-    # use inmem cache
-    if ([string]::IsNullOrEmpty($Storage)) {
-        Set-PodeCacheInternal -Key $Key -InputObject $InputObject -Ttl $Ttl
-    }
+    end {
+        # If there are multiple piped-in values, set InputObject to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $InputObject = $pipelineValue
+        }
 
-    # used custom storage
-    elseif (Test-PodeCacheStorage -Key $Storage) {
-        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Key, $InputObject, $Ttl) -Splat
-    }
+        # use the global settable default here
+        if ($Ttl -le 0) {
+            $Ttl = $PodeContext.Server.Cache.DefaultTtl
+        }
 
-    # storage not found!
-    else {
-        throw "Cache storage with name '$($Storage)' not found when attempting to set cached item '$($Key)'"
+        # inmem or custom storage?
+        if ([string]::IsNullOrEmpty($Storage)) {
+            $Storage = $PodeContext.Server.Cache.DefaultStorage
+        }
+
+        # use inmem cache
+        if ([string]::IsNullOrEmpty($Storage)) {
+            Set-PodeCacheInternal -Key $Key -InputObject $InputObject -Ttl $Ttl
+        }
+
+        # used custom storage
+        elseif (Test-PodeCacheStorage -Key $Storage) {
+            $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Key, $InputObject, $Ttl) -Splat
+        }
+
+        # storage not found!
+        else {
+            throw "Cache storage with name '$($Storage)' not found when attempting to set cached item '$($Key)'"
+        }
     }
 }
 

@@ -1987,129 +1987,145 @@ function ConvertTo-PodeRoute {
         [switch]
         $NoOpenApi
     )
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
+    }
 
-    # if a module was supplied, import it - then validate the commands
-    if (![string]::IsNullOrWhiteSpace($Module)) {
-        Import-PodeModule -Name $Module
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
 
-        Write-Verbose 'Getting exported commands from module'
-        $ModuleCommands = (Get-Module -Name $Module | Sort-Object -Descending | Select-Object -First 1).ExportedCommands.Keys
-
-        # if commands were supplied validate them - otherwise use all exported ones
-        if (Test-PodeIsEmpty $Commands) {
-            Write-Verbose "Using all commands in $($Module) for converting to routes"
-            $Commands = $ModuleCommands
+    end {
+        # Set InputObject to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Commands = $pipelineValue
         }
-        else {
-            Write-Verbose "Validating supplied commands against module's exported commands"
-            foreach ($cmd in $Commands) {
-                if ($ModuleCommands -inotcontains $cmd) {
-                    throw "Module $($Module) does not contain function $($cmd) to convert to a Route"
+
+        # if a module was supplied, import it - then validate the commands
+        if (![string]::IsNullOrWhiteSpace($Module)) {
+            Import-PodeModule -Name $Module
+
+            Write-Verbose 'Getting exported commands from module'
+            $ModuleCommands = (Get-Module -Name $Module | Sort-Object -Descending | Select-Object -First 1).ExportedCommands.Keys
+
+            # if commands were supplied validate them - otherwise use all exported ones
+            if (Test-PodeIsEmpty $Commands) {
+                Write-Verbose "Using all commands in $($Module) for converting to routes"
+                $Commands = $ModuleCommands
+            }
+            else {
+                Write-Verbose "Validating supplied commands against module's exported commands"
+                foreach ($cmd in $Commands) {
+                    if ($ModuleCommands -inotcontains $cmd) {
+                        throw "Module $($Module) does not contain function $($cmd) to convert to a Route"
+                    }
                 }
             }
         }
-    }
 
-    # if there are no commands, fail
-    if (Test-PodeIsEmpty $Commands) {
-        throw 'No commands supplied to convert to Routes'
-    }
-
-    # trim end trailing slashes from the path
-    $Path = Protect-PodeValue -Value $Path -Default '/'
-    $Path = $Path.TrimEnd('/')
-
-    # create the routes for each of the commands
-    foreach ($cmd in $Commands) {
-        # get module verb/noun and comvert verb to HTTP method
-        $split = ($cmd -split '\-')
-
-        if ($split.Length -ge 2) {
-            $verb = $split[0]
-            $noun = $split[1..($split.Length - 1)] -join ([string]::Empty)
-        }
-        else {
-            $verb = [string]::Empty
-            $noun = $split[0]
+        # if there are no commands, fail
+        if (Test-PodeIsEmpty $Commands) {
+            throw 'No commands supplied to convert to Routes'
         }
 
-        # determine the http method, or use the one passed
-        $_method = $Method
-        if ([string]::IsNullOrWhiteSpace($_method)) {
-            $_method = Convert-PodeFunctionVerbToHttpMethod -Verb $verb
-        }
+        # trim end trailing slashes from the path
+        $Path = Protect-PodeValue -Value $Path -Default '/'
+        $Path = $Path.TrimEnd('/')
 
-        # use the full function name, or remove the verb
-        $name = $cmd
-        if ($NoVerb) {
-            $name = $noun
-        }
+        # create the routes for each of the commands
+        foreach ($cmd in $Commands) {
+            # get module verb/noun and comvert verb to HTTP method
+            $split = ($cmd -split '\-')
 
-        # build the route's path
-        $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
-
-        # create the route
-        $params = @{
-            Method         = $_method
-            Path           = $_path
-            Middleware     = $Middleware
-            Authentication = $Authentication
-            Access         = $Access
-            Role           = $Role
-            Group          = $Group
-            Scope          = $Scope
-            User           = $User
-            AllowAnon      = $AllowAnon
-            ArgumentList   = $cmd
-            PassThru       = $true
-        }
-
-        $route = Add-PodeRoute @params -ScriptBlock {
-            param($cmd)
-
-            # either get params from the QueryString or Payload
-            if ($WebEvent.Method -ieq 'get') {
-                $parameters = $WebEvent.Query
+            if ($split.Length -ge 2) {
+                $verb = $split[0]
+                $noun = $split[1..($split.Length - 1)] -join ([string]::Empty)
             }
             else {
-                $parameters = $WebEvent.Data
+                $verb = [string]::Empty
+                $noun = $split[0]
             }
 
-            # invoke the function
-            $result = (. $cmd @parameters)
-
-            # if we have a result, convert it to json
-            if (!(Test-PodeIsEmpty $result)) {
-                Write-PodeJsonResponse -Value $result -Depth 1
+            # determine the http method, or use the one passed
+            $_method = $Method
+            if ([string]::IsNullOrWhiteSpace($_method)) {
+                $_method = Convert-PodeFunctionVerbToHttpMethod -Verb $verb
             }
-        }
 
-        # set the openapi metadata of the function, unless told to skip
-        if ($NoOpenApi) {
-            continue
-        }
+            # use the full function name, or remove the verb
+            $name = $cmd
+            if ($NoVerb) {
+                $name = $noun
+            }
 
-        $help = Get-Help -Name $cmd
-        $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
+            # build the route's path
+            $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
 
-        # set the routes parameters (get = query, everything else = payload)
-        $params = (Get-Command -Name $cmd).Parameters
-        if (($null -eq $params) -or ($params.Count -eq 0)) {
-            continue
-        }
+            # create the route
+            $params = @{
+                Method         = $_method
+                Path           = $_path
+                Middleware     = $Middleware
+                Authentication = $Authentication
+                Access         = $Access
+                Role           = $Role
+                Group          = $Group
+                Scope          = $Scope
+                User           = $User
+                AllowAnon      = $AllowAnon
+                ArgumentList   = $cmd
+                PassThru       = $true
+            }
 
-        $props = @(foreach ($key in $params.Keys) {
-                $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
-            })
+            $route = Add-PodeRoute @params -ScriptBlock {
+                param($cmd)
 
-        if ($_method -ieq 'get') {
-            $route | Set-PodeOARequest -Parameters @(foreach ($prop in $props) { $prop | ConvertTo-PodeOAParameter -In Query })
-        }
+                # either get params from the QueryString or Payload
+                if ($WebEvent.Method -ieq 'get') {
+                    $parameters = $WebEvent.Query
+                }
+                else {
+                    $parameters = $WebEvent.Data
+                }
 
-        else {
-            $route | Set-PodeOARequest -RequestBody (
-                New-PodeOARequestBody -ContentSchemas @{ 'application/json' = (New-PodeOAObjectProperty -Array -Properties $props) }
-            )
+                # invoke the function
+                $result = (. $cmd @parameters)
+
+                # if we have a result, convert it to json
+                if (!(Test-PodeIsEmpty $result)) {
+                    Write-PodeJsonResponse -Value $result -Depth 1
+                }
+            }
+
+            # set the openapi metadata of the function, unless told to skip
+            if ($NoOpenApi) {
+                continue
+            }
+
+            $help = Get-Help -Name $cmd
+            $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
+
+            # set the routes parameters (get = query, everything else = payload)
+            $params = (Get-Command -Name $cmd).Parameters
+            if (($null -eq $params) -or ($params.Count -eq 0)) {
+                continue
+            }
+
+            $props = @(foreach ($key in $params.Keys) {
+                    $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
+                })
+
+            if ($_method -ieq 'get') {
+                $route | Set-PodeOARequest -Parameters @(foreach ($prop in $props) { $prop | ConvertTo-PodeOAParameter -In Query })
+            }
+
+            else {
+                $route | Set-PodeOARequest -RequestBody (
+                    New-PodeOARequestBody -ContentSchemas @{ 'application/json' = (New-PodeOAObjectProperty -Array -Properties $props) }
+                )
+            }
         }
     }
 }

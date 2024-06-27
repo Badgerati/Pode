@@ -612,32 +612,45 @@ function Add-PodeOAResponse {
         [string[]]
         $DefinitionTag
     )
-
-    if ($null -eq $Route) { throw 'Add-PodeOAResponse - The parameter -Route cannot be NULL.' }
-
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-    # override status code with default
-    if ($Default) {
-        $code = 'default'
-    }
-    else {
-        $code = "$($StatusCode)"
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    # add the respones to the routes
-    foreach ($r in @($Route)) {
-        foreach ($tag in $DefinitionTag) {
-            if (! $r.OpenApi.Responses.$tag) {
-                $r.OpenApi.Responses.$tag = @{}
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        # Set Route to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Route = $pipelineValue
+        }
+
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+        # override status code with default
+        if ($Default) {
+            $code = 'default'
+        }
+        else {
+            $code = "$($StatusCode)"
+        }
+
+        # add the respones to the routes
+        foreach ($r in $Route) {
+            foreach ($tag in $DefinitionTag) {
+                if (! $r.OpenApi.Responses.$tag) {
+                    $r.OpenApi.Responses.$tag = @{}
+                }
+                $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
             }
-            $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
+        }
+
+        if ($PassThru) {
+            return $Route
         }
     }
-
-    if ($PassThru) {
-        return $Route
-    }
-
 }
 
 
@@ -685,23 +698,37 @@ function Remove-PodeOAResponse {
         [switch]
         $PassThru
     )
-
-    if ($null -eq $Route) { throw 'The parameter -Route cannot be NULL.' }
-
-    # override status code with default
-    $code = "$($StatusCode)"
-    if ($Default) {
-        $code = 'default'
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
-    # remove the respones from the routes
-    foreach ($r in @($Route)) {
-        if ($r.OpenApi.Responses.ContainsKey($code)) {
-            $null = $r.OpenApi.Responses.Remove($code)
+
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        # Set Route to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Route = $pipelineValue
         }
-    }
 
-    if ($PassThru) {
-        return $Route
+        # override status code with default
+        $code = "$($StatusCode)"
+        if ($Default) {
+            $code = 'default'
+        }
+        # remove the respones from the routes
+        foreach ($r in $Route) {
+            if ($r.OpenApi.Responses.ContainsKey($code)) {
+                $null = $r.OpenApi.Responses.Remove($code)
+            }
+        }
+
+        if ($PassThru) {
+            return $Route
+        }
     }
 
 }
@@ -746,23 +773,36 @@ function Set-PodeOARequest {
         [switch]
         $PassThru
     )
-
-    if ($null -eq $Route) { throw 'Set-PodeOARequest - The parameter -Route cannot be NULL.' }
-
-    foreach ($r in @($Route)) {
-
-        if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
-            $r.OpenApi.Parameters = @($Parameters)
-        }
-
-        if ($null -ne $RequestBody) {
-            $r.OpenApi.RequestBody = $RequestBody
-        }
-
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    if ($PassThru) {
-        return $Route
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        # Set Route to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Route = $pipelineValue
+        }
+
+        foreach ($r in $Route) {
+
+            if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
+                $r.OpenApi.Parameters = @($Parameters)
+            }
+
+            if ($null -ne $RequestBody) {
+                $r.OpenApi.RequestBody = $RequestBody
+            }
+        }
+
+        if ($PassThru) {
+            return $Route
+        }
     }
 }
 
@@ -1517,49 +1557,67 @@ function Set-PodeOARouteInfo {
         [string[]]
         $DefinitionTag
     )
-
-    if ($null -eq $Route) { throw 'Set-PodeOARouteInfo - The parameter -Route cannot be NULL.' }
-
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-
-    foreach ($r in @($Route)) {
-
-        $r.OpenApi.DefinitionTag = $DefinitionTag
-
-        if ($Summary) {
-            $r.OpenApi.Summary = $Summary
-        }
-        if ($Description) {
-            $r.OpenApi.Description = $Description
-        }
-        if ($OperationId) {
-            if ($Route.Count -gt 1) {
-                throw "OperationID:$OperationId has to be unique and cannot be applied to an array."
-            }
-            foreach ($tag in $DefinitionTag) {
-                if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
-                    throw "OperationID:$OperationId has to be unique."
-                }
-                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId += $OperationId
-            }
-            $r.OpenApi.OperationId = $OperationId
-        }
-        if ($Tags) {
-            $r.OpenApi.Tags = $Tags
-        }
-
-        if ($ExternalDocs) {
-            $r.OpenApi.ExternalDocs = $ExternalDoc
-        }
-
-        $r.OpenApi.Swagger = $true
-        if ($Deprecated.IsPresent) {
-            $r.OpenApi.Deprecated = $Deprecated.IsPresent
-        }
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    if ($PassThru) {
-        return $Route
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        # Set Route to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Route = $pipelineValue
+        }
+
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+        foreach ($r in $Route) {
+
+            $r.OpenApi.DefinitionTag = $DefinitionTag
+
+            if ($OperationId) {
+                if ($Route.Count -gt 1) {
+                    throw "OperationID:$OperationId has to be unique and cannot be applied to an array."
+                }
+                foreach ($tag in $DefinitionTag) {
+                    if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
+                        throw "OperationID:$OperationId has to be unique."
+                    }
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId += $OperationId
+                }
+                $r.OpenApi.OperationId = $OperationId
+            }
+
+            if ($Summary) {
+                $r.OpenApi.Summary = $Summary
+            }
+
+            if ($Description) {
+                $r.OpenApi.Description = $Description
+            }
+
+            if ($Tags) {
+                $r.OpenApi.Tags = $Tags
+            }
+
+            if ($ExternalDocs) {
+                $r.OpenApi.ExternalDocs = $ExternalDoc
+            }
+
+            $r.OpenApi.Swagger = $true
+
+            if ($Deprecated.IsPresent) {
+                $r.OpenApi.Deprecated = $Deprecated.IsPresent
+            }
+        }
+
+        if ($PassThru) {
+            return $Route
+        }
     }
 }
 
@@ -2528,36 +2586,50 @@ function Add-PodeOACallBack {
         [string[]]
         $DefinitionTag
     )
-
-    if ($null -eq $Route) { throw 'Add-PodeOACallBack - The parameter -Route cannot be NULL.' }
-
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-
-    foreach ($r in @($Route)) {
-        foreach ($tag in $DefinitionTag) {
-            if ($Reference) {
-                Test-PodeOAComponentInternal -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
-                if (!$Name) {
-                    $Name = $Reference
-                }
-                if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
-                    $r.OpenApi.CallBacks[$tag] = [ordered]@{}
-                }
-                $r.OpenApi.CallBacks[$tag].$Name = @{
-                    '$ref' = "#/components/callbacks/$Reference"
-                }
-            }
-            else {
-                if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
-                    $r.OpenApi.CallBacks[$tag] = [ordered]@{}
-                }
-                $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
-            }
-        }
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    if ($PassThru) {
-        return $Route
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        # Set Route to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Route = $pipelineValue
+        }
+
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+        foreach ($r in $Route) {
+            foreach ($tag in $DefinitionTag) {
+                if ($Reference) {
+                    Test-PodeOAComponentInternal -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
+                    if (!$Name) {
+                        $Name = $Reference
+                    }
+                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                        $r.OpenApi.CallBacks[$tag] = [ordered]@{}
+                    }
+                    $r.OpenApi.CallBacks[$tag].$Name = @{
+                        '$ref' = "#/components/callbacks/$Reference"
+                    }
+                }
+                else {
+                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                        $r.OpenApi.CallBacks[$tag] = [ordered]@{}
+                    }
+                    $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
+                }
+            }
+        }
+
+        if ($PassThru) {
+            return $Route
+        }
     }
 }
 
@@ -3107,55 +3179,71 @@ function Add-PodeOAExternalRoute {
         [string[]]
         $DefinitionTag
     )
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
+    }
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'builtin' {
-
-            # ensure the route has appropriate slashes
-            $Path = Update-PodeRouteSlash -Path $Path
-            $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-            $Path = Resolve-PodePlaceholder -Path $Path
-            $extRoute = @{
-                Method  = $Method.ToLower()
-                Path    = $Path
-                Local   = $false
-                OpenApi = @{
-                    Path           = $OpenApiPath
-                    Responses      = $null
-                    Parameters     = $null
-                    RequestBody    = $null
-                    callbacks      = [ordered]@{}
-                    Authentication = @()
-                    Servers        = $Servers
-                    DefinitionTag  = $DefinitionTag
-                }
-            }
-            foreach ($tag in $DefinitionTag) {
-                #add the default OpenApi responses
-                if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
-                    $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
-                }
-                if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
-                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = @{}
-                }
-
-                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
-            }
-
-            if ($PassThru) {
-                return $extRoute
-            }
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Pipeline') {
+            # Add the current piped-in value to the array
+            $pipelineValue += $_
         }
+    }
 
-        'pipeline' {
-            if ($null -eq $Route) { throw 'Add-PodeOAExternalRoute - The parameter -Route cannot be NULL.' }
-            foreach ($r in @($Route)) {
-                $r.OpenApi.Servers = $Servers
+    end {
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'builtin' {
+                # ensure the route has appropriate slashes
+                $Path = Update-PodeRouteSlash -Path $Path
+                $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+                $Path = Resolve-PodePlaceholder -Path $Path
+                $extRoute = @{
+                    Method  = $Method.ToLower()
+                    Path    = $Path
+                    Local   = $false
+                    OpenApi = @{
+                        Path           = $OpenApiPath
+                        Responses      = $null
+                        Parameters     = $null
+                        RequestBody    = $null
+                        callbacks      = [ordered]@{}
+                        Authentication = @()
+                        Servers        = $Servers
+                        DefinitionTag  = $DefinitionTag
+                    }
+                }
+                foreach ($tag in $DefinitionTag) {
+                    #add the default OpenApi responses
+                    if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
+                        $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
+                    }
+                    if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
+                        $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = @{}
+                    }
+
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
+                }
+
+                if ($PassThru) {
+                    return $extRoute
+                }
             }
-            if ($PassThru) {
-                return $Route
+
+            'pipeline' {
+                # Set Route to the array of values
+                if ($pipelineValue.Count -gt 1) {
+                    $Route = $pipelineValue
+                }
+
+                foreach ($r in $Route) {
+                    $r.OpenApi.Servers = $Servers
+                }
+                if ($PassThru) {
+                    return $Route
+                }
             }
         }
     }

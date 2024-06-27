@@ -772,10 +772,30 @@ function Out-PodeHost {
         [object]
         $InputObject
     )
-
-    if (!$PodeContext.Server.Quiet) {
-        $InputObject | Out-Default
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
+
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        if ($PodeContext.Server.Quiet) {
+            return
+        }
+        # Set InputObject to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $InputObject = $pipelineValue
+            $InputObject | Out-Default
+        }
+        else {
+            Out-Default -InputObject $InputObject
+        }
+    }
+
 }
 
 <#
@@ -827,31 +847,56 @@ function Write-PodeHost {
         [switch]
         $ShowType
     )
-
-    if ($PodeContext.Server.Quiet) {
-        return
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    if ($Explode.IsPresent ) {
-        if ($null -eq $Object) {
-            if ($ShowType) {
-                $Object = "`tNull Value"
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        if ($PodeContext.Server.Quiet) {
+            return
+        }
+        # Set Object to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Object = $pipelineValue
+        }
+
+        if ($Explode.IsPresent ) {
+            if ($null -eq $Object) {
+                if ($ShowType) {
+                    $Object = "`tNull Value"
+                }
+            }
+            else {
+                $type = $Object.gettype().FullName
+                $Object = $Object | Out-String
+                if ($ShowType) {
+                    $Object = "`tTypeName: $type`n$Object"
+                }
+            }
+        }
+
+        if ($ForegroundColor) {
+            if ($pipelineValue.Count -gt 1) {
+                $Object | Write-Host -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
+            }
+            else {
+                Write-Host -Object $Object -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
             }
         }
         else {
-            $type = $Object.gettype().FullName
-            $Object = $Object | Out-String
-            if ($ShowType) {
-                $Object = "`tTypeName: $type`n$Object"
+            if ($pipelineValue.Count -gt 1) {
+                $Object | Write-Host -NoNewline:$NoNewLine
+            }
+            else {
+                Write-Host -Object $Object -NoNewline:$NoNewLine
             }
         }
-    }
-
-    if ($ForegroundColor) {
-        Write-Host -Object $Object -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
-    }
-    else {
-        Write-Host -Object $Object -NoNewline:$NoNewLine
     }
 }
 
@@ -954,8 +999,24 @@ function Out-PodeVariable {
         [object]
         $Value
     )
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
+    }
 
-    $PodeContext.Server.Output.Variables[$Name] = $Value
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        # Set Value to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Value = $pipelineValue
+        }
+
+        $PodeContext.Server.Output.Variables[$Name] = $Value
+    }
 }
 
 <#
