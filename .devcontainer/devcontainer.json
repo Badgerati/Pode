@@ -1,6 +1,15 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "name": "Codespace with PowerShell and Pester",
+  "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers/features/powershell:1": {}
-  }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.powershell"
+      ]
+    }
+  },
+  "postCreateCommand": "pwsh -Command 'Install-Module -Name Pester -Force -SkipPublisherCheck'"
 }
