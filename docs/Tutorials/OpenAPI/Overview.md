@@ -851,7 +851,7 @@ Enable-PodeOpenApi   -EnableSchemaValidation #any other parameters needed
 
 This command activates the OpenAPI feature with schema validation enabled, ensuring strict adherence to specified schemas.
 
-Next, is possible to validate any route using `PodeOAJsonSchemaCompliance`.
+Next, is possible to validate any route using `Test-PodeOAJsonSchemaCompliance`.
 In this example, we'll create a route for updating a pet:
 
 ```powershell
@@ -893,6 +893,8 @@ Add-PodeRoute -PassThru -Method Post -Path '/user' -ScriptBlock {
 - Depending on the validation result, appropriate HTTP responses are returned.
 - OpenAPI metadata such as summary, description, request body, and responses are also defined for documentation purposes.
 
+!!! Note
+    The current release has some limitations inherithed by the Powershell `Test-Json` function. It cannot validate objects that include the keywords `oneOf` or `anyOf` in their definition. The `allOf` keyword is supported.
 
 
 ## OpenApi Documentation pages
