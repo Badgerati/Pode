@@ -846,7 +846,7 @@ Is possible to validate any parameter submitted by clients against an OpenAPI sc
 First, schema validation has to be enabled using :
 
 ```powershell
-Enable-PodeOpenApi   -EnableSchemaValidation #any other parameters needed
+Enable-PodeOpenApi -EnableSchemaValidation #any other parameters needed
 ```
 
 This command activates the OpenAPI feature with schema validation enabled, ensuring strict adherence to specified schemas.
@@ -887,6 +887,7 @@ Add-PodeRoute -PassThru -Method Post -Path '/user' -ScriptBlock {
     Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input' -PassThru |
     Add-PodeOAResponse -Default -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml'  -Content 'User' )
 ```
+
 #### Explanation
 - The route handles different content types (JSON/XML) and converts them to JSON for validation.
 - It validates the received pet object against the 'User' schema using the 'Test-PodeOAJsonSchemaCompliance' function.
@@ -895,7 +896,6 @@ Add-PodeRoute -PassThru -Method Post -Path '/user' -ScriptBlock {
 
 !!! Note
     The current release has some limitations inherithed by the Powershell `Test-Json` function. It cannot validate objects that include the keywords `oneOf` or `anyOf` in their definition. The `allOf` keyword is supported.
-
 
 ## OpenApi Documentation pages
 
