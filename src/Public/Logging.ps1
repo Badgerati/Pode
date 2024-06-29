@@ -889,28 +889,42 @@ function Add-PodeLogger {
         $ArgumentList
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
-    # ensure the name doesn't already exist
-    if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
-        throw "Logging method already defined: $($Name)"
+    Begin {
+        $pipelineItemCount = 0
     }
 
-    # ensure the Method contains a scriptblock
-    if (Test-PodeIsEmpty $Method.ScriptBlock) {
-        throw "The supplied output Method for the '$($Name)' Logging method requires a valid ScriptBlock"
+    Process {
+        $pipelineItemCount++
     }
 
-    # check for scoped vars
-    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
 
-    # add logging method to server
-    $PodeContext.Server.Logging.Types[$Name] = @{
-        Method         = $Method
-        ScriptBlock    = $ScriptBlock
-        UsingVariables = $usingVars
-        Arguments      = $ArgumentList
+        # Record the operation on the main log
+        Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
+        # ensure the name doesn't already exist
+        if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
+            throw "Logging method already defined: $($Name)"
+        }
+
+        # ensure the Method contains a scriptblock
+        if (Test-PodeIsEmpty $Method.ScriptBlock) {
+            throw "The supplied output Method for the '$($Name)' Logging method requires a valid ScriptBlock"
+        }
+
+        # check for scoped vars
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # add logging method to server
+        $PodeContext.Server.Logging.Types[$Name] = @{
+            Method         = $Method
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+            Arguments      = $ArgumentList
+        }
     }
 }
 
@@ -934,11 +948,12 @@ function Remove-PodeLogger {
         [string]
         $Name
     )
-
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-    if ($PodeContext.Server.Logging.Types.Contains($Name)) {
-        $null = $PodeContext.Server.Logging.Types.Remove($Name)
+    Process {
+        # Record the operation on the main log
+        Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+        if ($PodeContext.Server.Logging.Types.Contains($Name)) {
+            $null = $PodeContext.Server.Logging.Types.Remove($Name)
+        }
     }
 }
 
@@ -1009,58 +1024,60 @@ function Write-PodeErrorLog {
         $CheckInnerException
     )
 
-    # do nothing if logging is disabled, or error logging isn't setup
-    $name = Get-PodeErrorLoggingName
-    if (!(Test-PodeLoggerEnabled -Name $name)) {
-        return
-    }
+    Process {
+        # do nothing if logging is disabled, or error logging isn't setup
+        $name = Get-PodeErrorLoggingName
+        if (!(Test-PodeLoggerEnabled -Name $name)) {
+            return
+        }
 
-    # do nothing if the error level isn't present
-    $levels = @(Get-PodeErrorLoggingLevel)
-    if ($levels -inotcontains $Level) {
-        return
-    }
+        # do nothing if the error level isn't present
+        $levels = @(Get-PodeErrorLoggingLevel)
+        if ($levels -inotcontains $Level) {
+            return
+        }
 
-    # build error object for what we need
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'exception' {
-            $item = @{
-                Category   = $Exception.Source
-                Message    = $Exception.Message
-                StackTrace = $Exception.StackTrace
+        # build error object for what we need
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'exception' {
+                $item = @{
+                    Category   = $Exception.Source
+                    Message    = $Exception.Message
+                    StackTrace = $Exception.StackTrace
+                }
+            }
+
+            'error' {
+                $item = @{
+                    Category   = $ErrorRecord.CategoryInfo.ToString()
+                    Message    = $ErrorRecord.Exception.Message
+                    StackTrace = $ErrorRecord.ScriptStackTrace
+                }
             }
         }
 
-        'error' {
-            $item = @{
-                Category   = $ErrorRecord.CategoryInfo.ToString()
-                Message    = $ErrorRecord.Exception.Message
-                StackTrace = $ErrorRecord.ScriptStackTrace
-            }
+        # add general info
+        $item['Server'] = $PodeContext.Server.ComputerName
+        $item['Level'] = $Level
+        if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
+            $Item.Date = [datetime]::UtcNow
         }
-    }
+        else {
+            $Item.Date = [datetime]::Now
+        }
 
-    # add general info
-    $item['Server'] = $PodeContext.Server.ComputerName
-    $item['Level'] = $Level
-    if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
-        $Item.Date = [datetime]::UtcNow
-    }
-    else {
-        $Item.Date = [datetime]::Now
-    }
+        $item['ThreadId'] = [System.Threading.Thread]::CurrentThread.ManagedThreadId #[int]$ThreadId
 
-    $item['ThreadId'] = [System.Threading.Thread]::CurrentThread.ManagedThreadId #[int]$ThreadId
+        # add the item to be processed
+        $null = $PodeContext.LogsToProcess.Enqueue(@{
+                Name = $name
+                Item = $item
+            })
 
-    # add the item to be processed
-    $null = $PodeContext.LogsToProcess.Enqueue(@{
-            Name = $name
-            Item = $item
-        })
-
-    # for exceptions, check the inner exception
-    if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
-        $Exception.InnerException | Write-PodeErrorLog
+        # for exceptions, check the inner exception
+        if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
+            $Exception.InnerException | Write-PodeErrorLog
+        }
     }
 }
 
@@ -1120,48 +1137,49 @@ function Write-PodeLog {
         $Tag = '-'
 
     )
-
-    # do nothing if logging is disabled, or logger isn't setup
-    if (!(Test-PodeLoggerEnabled -Name $Name)) {
-        return
-    }
-
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'inbuilt' {
-            $logItem = @{
-                Name = $Name
-                Item = $InputObject
-            }
-            break
+    Process {
+        # do nothing if logging is disabled, or logger isn't setup
+        if (!(Test-PodeLoggerEnabled -Name $Name)) {
+            return
         }
-        'custom' {
-            $logItem = @{
-                Name = $Name
-                Item = @{
-                    Level   = $Level
-                    Message = $Message
-                    Tag     = $Tag
+
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'inbuilt' {
+                $logItem = @{
+                    Name = $Name
+                    Item = $InputObject
                 }
+                break
             }
-            break
+            'custom' {
+                $logItem = @{
+                    Name = $Name
+                    Item = @{
+                        Level   = $Level
+                        Message = $Message
+                        Tag     = $Tag
+                    }
+                }
+                break
+            }
         }
+        $log = $PodeContext.Server.Logging.Types[$Name]
+        if ($log.Standard) {
+            $logItem.Item.Server = $PodeContext.Server.ComputerName
+
+            if ($log.Method.Arguments.AsUTC) {
+                $logItem.Item.Date = [datetime]::UtcNow
+            }
+            else {
+                $logItem.Item.Date = [datetime]::Now
+            }
+
+            $logItem.Item.ThreadId = [System.Threading.Thread]::CurrentThread.ManagedThreadId
+        }
+
+        # add the item to be processed
+        $PodeContext.LogsToProcess.Enqueue($logItem)
     }
-    $log = $PodeContext.Server.Logging.Types[$Name]
-    if ($log.Standard) {
-        $logItem.Item.Server = $PodeContext.Server.ComputerName
-
-        if ($log.Method.Arguments.AsUTC) {
-            $logItem.Item.Date = [datetime]::UtcNow
-        }
-        else {
-            $logItem.Item.Date = [datetime]::Now
-        }
-
-        $logItem.Item.ThreadId = [System.Threading.Thread]::CurrentThread.ManagedThreadId
-    }
-
-    # add the item to be processed
-    $PodeContext.LogsToProcess.Enqueue($logItem)
 }
 
 <#
@@ -1187,37 +1205,39 @@ function Protect-PodeLogItem {
         $Item
     )
 
-    # do nothing if there are no masks
-    if (Test-PodeIsEmpty $PodeContext.Server.Logging.Masking.Patterns) {
-        return $item
-    }
+    Process {
+        # do nothing if there are no masks
+        if (Test-PodeIsEmpty $PodeContext.Server.Logging.Masking.Patterns) {
+            return $item
+        }
 
-    # attempt to apply each mask
-    foreach ($mask in $PodeContext.Server.Logging.Masking.Patterns) {
-        if ($Item -imatch $mask) {
-            # has both keep before/after
-            if ($Matches.ContainsKey('keep_before') -and $Matches.ContainsKey('keep_after')) {
-                $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
-            }
+        # attempt to apply each mask
+        foreach ($mask in $PodeContext.Server.Logging.Masking.Patterns) {
+            if ($Item -imatch $mask) {
+                # has both keep before/after
+                if ($Matches.ContainsKey('keep_before') -and $Matches.ContainsKey('keep_after')) {
+                    $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
+                }
 
-            # has just keep before
-            elseif ($Matches.ContainsKey('keep_before')) {
-                $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)")
-            }
+                # has just keep before
+                elseif ($Matches.ContainsKey('keep_before')) {
+                    $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)")
+                }
 
-            # has just keep after
-            elseif ($Matches.ContainsKey('keep_after')) {
-                $Item = ($Item -ireplace $mask, "$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
-            }
+                # has just keep after
+                elseif ($Matches.ContainsKey('keep_after')) {
+                    $Item = ($Item -ireplace $mask, "$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
+                }
 
-            # normal mask
-            else {
-                $Item = ($Item -ireplace $mask, $PodeContext.Server.Logging.Masking.Mask)
+                # normal mask
+                else {
+                    $Item = ($Item -ireplace $mask, $PodeContext.Server.Logging.Masking.Mask)
+                }
             }
         }
-    }
 
-    return $Item
+        return $Item
+    }
 }
 
 <#
