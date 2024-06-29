@@ -612,7 +612,7 @@ function Add-PodeOAResponse {
         [string[]]
         $DefinitionTag
     )
-    begin {
+    Begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -622,7 +622,7 @@ function Add-PodeOAResponse {
         $pipelineValue += $_
     }
 
-    end {
+    End {
         # Set Route to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Route = $pipelineValue
@@ -698,7 +698,7 @@ function Remove-PodeOAResponse {
         [switch]
         $PassThru
     )
-    begin {
+    Begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -708,7 +708,7 @@ function Remove-PodeOAResponse {
         $pipelineValue += $_
     }
 
-    end {
+    End {
         # Set Route to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Route = $pipelineValue
@@ -773,7 +773,7 @@ function Set-PodeOARequest {
         [switch]
         $PassThru
     )
-    begin {
+    Begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -783,7 +783,7 @@ function Set-PodeOARequest {
         $pipelineValue += $_
     }
 
-    end {
+    End {
         # Set Route to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Route = $pipelineValue
@@ -1557,7 +1557,7 @@ function Set-PodeOARouteInfo {
         [string[]]
         $DefinitionTag
     )
-    begin {
+    Begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -1567,7 +1567,7 @@ function Set-PodeOARouteInfo {
         $pipelineValue += $_
     }
 
-    end {
+    End {
         # Set Route to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Route = $pipelineValue
@@ -2306,7 +2306,7 @@ function New-PodeOAExample {
         [string[]]
         $DefinitionTag
     )
-    begin {
+    Begin {
 
         if (Test-PodeIsEmpty -Value $DefinitionTag) {
             $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
@@ -2350,7 +2350,7 @@ function New-PodeOAExample {
     }
     process {
     }
-    end {
+    End {
         if ($ParamsList) {
             if ($ParamsList.keys -contains $param.Keys[0]) {
                 $param.Values[0].GetEnumerator() | ForEach-Object { $ParamsList[$param.Keys[0]].$($_.Key) = $_.Value }
@@ -2437,7 +2437,7 @@ function New-PodeOAEncodingObject {
         [switch]
         $AllowReserved
     )
-    begin {
+    Begin {
 
         $encoding = [ordered]@{
             $Title = [ordered]@{}
@@ -2468,7 +2468,7 @@ function New-PodeOAEncodingObject {
         }
     }
 
-    end {
+    End {
         if ($collectedInput) {
             return $collectedInput + $encoding
         }
@@ -2586,7 +2586,7 @@ function Add-PodeOACallBack {
         [string[]]
         $DefinitionTag
     )
-    begin {
+    Begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -2596,7 +2596,7 @@ function Add-PodeOACallBack {
         $pipelineValue += $_
     }
 
-    end {
+    End {
         # Set Route to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Route = $pipelineValue
@@ -2743,7 +2743,7 @@ function New-PodeOAResponse {
         [string[]]
         $DefinitionTag
     )
-    begin {
+    Begin {
 
         if (Test-PodeIsEmpty -Value $DefinitionTag) {
             $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
@@ -2766,7 +2766,7 @@ function New-PodeOAResponse {
             $response[$tag][$code] = New-PodeOResponseInternal -DefinitionTag $tag -Params $PSBoundParameters
         }
     }
-    end {
+    End {
         if ($ResponseList) {
             foreach ($tag in $DefinitionTag) {
                 if (! $ResponseList.ContainsKey( $tag) ) {
@@ -3058,7 +3058,7 @@ function New-PodeOAResponseLink {
         $DefinitionTag
 
     )
-    begin {
+    Begin {
 
         if (Test-PodeIsEmpty -Value $DefinitionTag) {
             $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
@@ -3082,7 +3082,7 @@ function New-PodeOAResponseLink {
     }
     process {
     }
-    end {
+    End {
         if ($LinkList) {
             $link.GetEnumerator() | ForEach-Object { $LinkList[$_.Key] = $_.Value }
             return $LinkList
@@ -3179,7 +3179,7 @@ function Add-PodeOAExternalRoute {
         [string[]]
         $DefinitionTag
     )
-    begin {
+    Begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -3191,7 +3191,7 @@ function Add-PodeOAExternalRoute {
         }
     }
 
-    end {
+    End {
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -3292,7 +3292,7 @@ function New-PodeOAServerEndpoint {
         [string]
         $Description
     )
-    begin {
+    Begin {
         $lUrl = [ordered]@{url = $Url }
         if ($Description) {
             $lUrl.description = $Description
@@ -3304,7 +3304,7 @@ function New-PodeOAServerEndpoint {
             $collectedInput.AddRange($ServerEndpointList)
         }
     }
-    end {
+    End {
         if ($ServerEndpointList) {
             return $collectedInput + $lUrl
         }

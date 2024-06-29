@@ -330,7 +330,7 @@ function New-PodeOAMultiTypeProperty {
         [hashtable]
         $DiscriminatorMapping
     )
-    begin {
+    Begin {
         $param = New-PodeOAPropertyInternal   -Params $PSBoundParameters
 
         if ($type -contains 'string') {
@@ -389,7 +389,7 @@ function New-PodeOAMultiTypeProperty {
         }
     }
 
-    end {
+    End {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -653,7 +653,7 @@ function New-PodeOAIntProperty {
         [int]
         $MaxItems
     )
-    begin {
+    Begin {
         $param = New-PodeOAPropertyInternal -type 'integer' -Params $PSBoundParameters
 
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
@@ -664,7 +664,7 @@ function New-PodeOAIntProperty {
         }
     }
 
-    end {
+    End {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -912,7 +912,7 @@ function New-PodeOANumberProperty {
         [int]
         $MaxItems
     )
-    begin {
+    Begin {
         $param = New-PodeOAPropertyInternal -type 'number' -Params $PSBoundParameters
 
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
@@ -923,7 +923,7 @@ function New-PodeOANumberProperty {
         }
     }
 
-    end {
+    End {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -1165,7 +1165,7 @@ function New-PodeOAStringProperty {
         [int]
         $MaxItems
     )
-    begin {
+    Begin {
         if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
             $_format = $CustomFormat
         }
@@ -1186,7 +1186,7 @@ function New-PodeOAStringProperty {
         }
     }
 
-    end {
+    End {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -1388,7 +1388,7 @@ function New-PodeOABoolProperty {
         [int]
         $MaxItems
     )
-    begin {
+    Begin {
         $param = New-PodeOAPropertyInternal -type 'boolean' -Params $PSBoundParameters
 
         if ($Default) {
@@ -1408,7 +1408,7 @@ function New-PodeOABoolProperty {
         }
     }
 
-    end {
+    End {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -1641,7 +1641,7 @@ function New-PodeOAObjectProperty {
         [hashtable]
         $DiscriminatorMapping
     )
-    begin {
+    Begin {
         $param = New-PodeOAPropertyInternal -type 'object' -Params $PSBoundParameters
         if ($NoProperties) {
             if ($Properties -or $MinProperties -or $MaxProperties) {
@@ -1683,7 +1683,7 @@ function New-PodeOAObjectProperty {
         }
     }
 
-    end {
+    End {
         if ($PropertiesFromPipeline) {
             return $param
         }
@@ -1767,7 +1767,7 @@ function Merge-PodeOAProperty {
         [hashtable]
         $DiscriminatorMapping
     )
-    begin {
+    Begin {
 
         $param = [ordered]@{}
         switch ($type.ToLower()) {
@@ -1817,7 +1817,7 @@ function Merge-PodeOAProperty {
         }
     }
 
-    end {
+    End {
         return $param
     }
 }
@@ -1998,7 +1998,7 @@ function New-PodeOAComponentSchemaProperty {
         [int]
         $MaxItems
     )
-    begin {
+    Begin {
         $param = New-PodeOAPropertyInternal -type 'schema' -Params $PSBoundParameters
         if (! $param.Name) {
             $param.Name = $Reference
@@ -2011,7 +2011,7 @@ function New-PodeOAComponentSchemaProperty {
             $collectedInput.AddRange($ParamsList)
         }
     }
-    end {
+    End {
         if ($collectedInput) {
             return $collectedInput + $param
         }

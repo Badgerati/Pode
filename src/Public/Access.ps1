@@ -171,33 +171,45 @@ function Add-PodeAccess {
         [string]
         $Match = 'One'
     )
-
-    # check name unique
-    if (Test-PodeAccessExists -Name $Name) {
-        throw "Access method already defined: $($Name)"
+    Begin {
+        $pipelineItemCount = 0
     }
 
-    # parse using variables in validator scriptblock
-    $scriptObj = $null
-    if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $scriptObj = @{
-            Script         = $ScriptBlock
-            UsingVariables = $usingScriptVars
+    Process {
+        $pipelineItemCount++
+    }
+
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
         }
-    }
+        # check name unique
+        if (Test-PodeAccessExists -Name $Name) {
+            throw "Access method already defined: $($Name)"
+        }
 
-    # add access object
-    $PodeContext.Server.Authorisations.Methods[$Name] = @{
-        Name        = $Name
-        Description = $Description
-        Scheme      = $Scheme
-        ScriptBlock = $scriptObj
-        Arguments   = $ArgumentList
-        Match       = $Match.ToLowerInvariant()
-        Cache       = @{}
-        Merged      = $false
-        Parent      = $null
+        # parse using variables in validator scriptblock
+        $scriptObj = $null
+        if (!(Test-PodeIsEmpty $ScriptBlock)) {
+            $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $scriptObj = @{
+                Script         = $ScriptBlock
+                UsingVariables = $usingScriptVars
+            }
+        }
+
+        # add access object
+        $PodeContext.Server.Authorisations.Methods[$Name] = @{
+            Name        = $Name
+            Description = $Description
+            Scheme      = $Scheme
+            ScriptBlock = $scriptObj
+            Arguments   = $ArgumentList
+            Match       = $Match.ToLowerInvariant()
+            Cache       = @{}
+            Merged      = $false
+            Parent      = $null
+        }
     }
 }
 
@@ -302,7 +314,7 @@ function Add-PodeAccessCustom {
         $Value
     )
 
-    begin {
+    Begin {
         $routes = @()
     }
 
@@ -310,7 +322,7 @@ function Add-PodeAccessCustom {
         $routes += $Route
     }
 
-    end {
+    End {
         foreach ($r in $routes) {
             if ($r.AccessMeta.Custom.ContainsKey($Name)) {
                 throw "Route '[$($r.Method)] $($r.Path)' already contains Custom Access with name '$($Name)'"
@@ -380,8 +392,9 @@ function Test-PodeAccessExists {
         [string]
         $Name
     )
-
-    return $PodeContext.Server.Authorisations.Methods.ContainsKey($Name)
+    process {
+        return $PodeContext.Server.Authorisations.Methods.ContainsKey($Name)
+    }
 }
 
 <#
@@ -603,8 +616,9 @@ function Remove-PodeAccess {
         [string]
         $Name
     )
-
-    $null = $PodeContext.Server.Authorisations.Methods.Remove($Name)
+    process {
+        $null = $PodeContext.Server.Authorisations.Methods.Remove($Name)
+    }
 }
 
 <#

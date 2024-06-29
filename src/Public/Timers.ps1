@@ -159,14 +159,15 @@ function Invoke-PodeTimer {
         [object[]]
         $ArgumentList = $null
     )
+    Process {
+        # ensure the timer exists
+        if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
+            throw "Timer '$($Name)' does not exist"
+        }
 
-    # ensure the timer exists
-    if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-        throw "Timer '$($Name)' does not exist"
+        # run timer logic
+        Invoke-PodeInternalTimer -Timer $PodeContext.Timers.Items[$Name] -ArgumentList $ArgumentList
     }
-
-    # run timer logic
-    Invoke-PodeInternalTimer -Timer $PodeContext.Timers.Items[$Name] -ArgumentList $ArgumentList
 }
 
 <#
@@ -189,8 +190,9 @@ function Remove-PodeTimer {
         [string]
         $Name
     )
-
-    $null = $PodeContext.Timers.Items.Remove($Name)
+    Process {
+        $null = $PodeContext.Timers.Items.Remove($Name)
+    }
 }
 
 <#
@@ -251,29 +253,30 @@ function Edit-PodeTimer {
         [object[]]
         $ArgumentList
     )
+    Process {
+        # ensure the timer exists
+        if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
+            throw "Timer '$($Name)' does not exist"
+        }
 
-    # ensure the timer exists
-    if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-        throw "Timer '$($Name)' does not exist"
-    }
+        $_timer = $PodeContext.Timers.Items[$Name]
 
-    $_timer = $PodeContext.Timers.Items[$Name]
+        # edit interval if supplied
+        if ($Interval -gt 0) {
+            $_timer.Interval = $Interval
+        }
 
-    # edit interval if supplied
-    if ($Interval -gt 0) {
-        $_timer.Interval = $Interval
-    }
+        # edit scriptblock if supplied
+        if (!(Test-PodeIsEmpty $ScriptBlock)) {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $_timer.Script = $ScriptBlock
+            $_timer.UsingVariables = $usingVars
+        }
 
-    # edit scriptblock if supplied
-    if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $_timer.Script = $ScriptBlock
-        $_timer.UsingVariables = $usingVars
-    }
-
-    # edit arguments if supplied
-    if (!(Test-PodeIsEmpty $ArgumentList)) {
-        $_timer.Arguments = $ArgumentList
+        # edit arguments if supplied
+        if (!(Test-PodeIsEmpty $ArgumentList)) {
+            $_timer.Arguments = $ArgumentList
+        }
     }
 }
 

@@ -61,29 +61,41 @@ function Lock-PodeObject {
         [switch]
         $CheckGlobal
     )
-
-    try {
-        if ([string]::IsNullOrEmpty($Name)) {
-            Enter-PodeLockable -Object $Object -Timeout $Timeout -CheckGlobal:$CheckGlobal
-        }
-        else {
-            Enter-PodeLockable -Name $Name -Timeout $Timeout -CheckGlobal:$CheckGlobal
-        }
-
-        if ($null -ne $ScriptBlock) {
-            Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure -Return:$Return
-        }
+    Begin {
+        $pipelineItemCount = 0
     }
-    catch {
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
+
+    Process {
+        $pipelineItemCount++
     }
-    finally {
-        if ([string]::IsNullOrEmpty($Name)) {
-            Exit-PodeLockable -Object $Object
+
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
         }
-        else {
-            Exit-PodeLockable -Name $Name
+        try {
+            if ([string]::IsNullOrEmpty($Name)) {
+                Enter-PodeLockable -Object $Object -Timeout $Timeout -CheckGlobal:$CheckGlobal
+            }
+            else {
+                Enter-PodeLockable -Name $Name -Timeout $Timeout -CheckGlobal:$CheckGlobal
+            }
+
+            if ($null -ne $ScriptBlock) {
+                Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure -Return:$Return
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+        finally {
+            if ([string]::IsNullOrEmpty($Name)) {
+                Exit-PodeLockable -Object $Object
+            }
+            else {
+                Exit-PodeLockable -Name $Name
+            }
         }
     }
 }
@@ -233,37 +245,49 @@ function Enter-PodeLockable {
         [switch]
         $CheckGlobal
     )
-
-    # get object by name if set
-    if (![string]::IsNullOrEmpty($Name)) {
-        $Object = Get-PodeLockable -Name $Name
+    Begin {
+        $pipelineItemCount = 0
     }
 
-    # if object is null, default to global
-    if ($null -eq $Object) {
-        $Object = $PodeContext.Threading.Lockables.Global
+    Process {
+        $pipelineItemCount++
     }
 
-    # check if value type and throw
-    if ($Object -is [valuetype]) {
-        throw 'Cannot lock value types'
-    }
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
+        # get object by name if set
+        if (![string]::IsNullOrEmpty($Name)) {
+            $Object = Get-PodeLockable -Name $Name
+        }
 
-    # check if null and throw
-    if ($null -eq $Object) {
-        throw 'Cannot lock a null object'
-    }
+        # if object is null, default to global
+        if ($null -eq $Object) {
+            $Object = $PodeContext.Threading.Lockables.Global
+        }
 
-    # check if the global lockable is locked
-    if ($CheckGlobal) {
-        Lock-PodeObject -Object $PodeContext.Threading.Lockables.Global -ScriptBlock {} -Timeout $Timeout
-    }
+        # check if value type and throw
+        if ($Object -is [valuetype]) {
+            throw 'Cannot lock value types'
+        }
 
-    # attempt to acquire lock
-    $locked = $false
-    [System.Threading.Monitor]::TryEnter($Object.SyncRoot, $Timeout, [ref]$locked)
-    if (!$locked) {
-        throw 'Failed to acquire lock on object'
+        # check if null and throw
+        if ($null -eq $Object) {
+            throw 'Cannot lock a null object'
+        }
+
+        # check if the global lockable is locked
+        if ($CheckGlobal) {
+            Lock-PodeObject -Object $PodeContext.Threading.Lockables.Global -ScriptBlock {} -Timeout $Timeout
+        }
+
+        # attempt to acquire lock
+        $locked = $false
+        [System.Threading.Monitor]::TryEnter($Object.SyncRoot, $Timeout, [ref]$locked)
+        if (!$locked) {
+            throw 'Failed to acquire lock on object'
+        }
     }
 }
 
@@ -297,30 +321,42 @@ function Exit-PodeLockable {
         [string]
         $Name
     )
-
-    # get object by name if set
-    if (![string]::IsNullOrEmpty($Name)) {
-        $Object = Get-PodeLockable -Name $Name
+    Begin {
+        $pipelineItemCount = 0
     }
 
-    # if object is null, default to global
-    if ($null -eq $Object) {
-        $Object = $PodeContext.Threading.Lockables.Global
+    Process {
+        $pipelineItemCount++
     }
 
-    # check if value type and throw
-    if ($Object -is [valuetype]) {
-        throw 'Cannot unlock value types'
-    }
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
+        # get object by name if set
+        if (![string]::IsNullOrEmpty($Name)) {
+            $Object = Get-PodeLockable -Name $Name
+        }
 
-    # check if null and throw
-    if ($null -eq $Object) {
-        throw 'Cannot unlock a null object'
-    }
+        # if object is null, default to global
+        if ($null -eq $Object) {
+            $Object = $PodeContext.Threading.Lockables.Global
+        }
 
-    if ([System.Threading.Monitor]::IsEntered($Object.SyncRoot)) {
-        [System.Threading.Monitor]::Pulse($Object.SyncRoot)
-        [System.Threading.Monitor]::Exit($Object.SyncRoot)
+        # check if value type and throw
+        if ($Object -is [valuetype]) {
+            throw 'Cannot unlock value types'
+        }
+
+        # check if null and throw
+        if ($null -eq $Object) {
+            throw 'Cannot unlock a null object'
+        }
+
+        if ([System.Threading.Monitor]::IsEntered($Object.SyncRoot)) {
+            [System.Threading.Monitor]::Pulse($Object.SyncRoot)
+            [System.Threading.Monitor]::Exit($Object.SyncRoot)
+        }
     }
 }
 

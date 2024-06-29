@@ -1987,7 +1987,7 @@ function ConvertTo-PodeRoute {
         [switch]
         $NoOpenApi
     )
-    begin {
+    Begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -1997,7 +1997,7 @@ function ConvertTo-PodeRoute {
         $pipelineValue += $_
     }
 
-    end {
+    End {
         # Set InputObject to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Commands = $pipelineValue

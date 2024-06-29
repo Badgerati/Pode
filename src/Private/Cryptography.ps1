@@ -23,7 +23,7 @@
     $value = "MySecretValue"
     $secret = "MySecretKey"
     $hash = Invoke-PodeHMACSHA256Hash -Value $value -Secret $secret
-    Write-Host "HMAC-SHA256 hash: $hash"
+    Write-PodeHost "HMAC-SHA256 hash: $hash"
 
     This example computes the HMAC-SHA256 hash for the value "MySecretValue" using the secret key "MySecretKey".
 .NOTES
@@ -86,7 +86,7 @@ function Invoke-PodeHMACSHA256Hash {
     $value = "MySecretValue"
     $secret = "MySecretKey"
     $hash = Invoke-PodeHMACSHA384Hash -Value $value -Secret $secret
-    Write-Host "Private HMAC-SHA384 hash: $hash"
+    Write-PodeHost "Private HMAC-SHA384 hash: $hash"
 
     This example computes the private HMAC-SHA384 hash for the value "MySecretValue" using the secret key "MySecretKey".
 
@@ -150,7 +150,7 @@ function Invoke-PodeHMACSHA384Hash {
     $value = "MySecretValue"
     $secret = "MySecretKey"
     $hash = Invoke-PodeHMACSHA512Hash -Value $value -Secret $secret
-    Write-Host "Private HMAC-SHA512 hash: $hash"
+    Write-PodeHost "Private HMAC-SHA512 hash: $hash"
 
     This example computes the private HMAC-SHA512 hash for the value "MySecretValue" using the secret key "MySecretKey".
 
@@ -343,12 +343,13 @@ function Invoke-PodeValueSign {
         [switch]
         $Strict
     )
+    process {
+        if ($Strict) {
+            $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
+        }
 
-    if ($Strict) {
-        $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
+        return "s:$($Value).$(Invoke-PodeHMACSHA256Hash -Value $Value -Secret $Secret)"
     }
-
-    return "s:$($Value).$(Invoke-PodeHMACSHA256Hash -Value $Value -Secret $Secret)"
 }
 
 function Invoke-PodeValueUnsign {
@@ -368,32 +369,33 @@ function Invoke-PodeValueUnsign {
         [switch]
         $Strict
     )
+    process {
+        # the signed value must start with "s:"
+        if (!$Value.StartsWith('s:')) {
+            return $null
+        }
 
-    # the signed value must start with "s:"
-    if (!$Value.StartsWith('s:')) {
-        return $null
+        # the signed value must contain a dot - splitting value and signature
+        $Value = $Value.Substring(2)
+        $periodIndex = $Value.LastIndexOf('.')
+        if ($periodIndex -eq -1) {
+            return $null
+        }
+
+        if ($Strict) {
+            $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
+        }
+
+        # get the raw value and signature
+        $raw = $Value.Substring(0, $periodIndex)
+        $sig = $Value.Substring($periodIndex + 1)
+
+        if ((Invoke-PodeHMACSHA256Hash -Value $raw -Secret $Secret) -ne $sig) {
+            return $null
+        }
+
+        return $raw
     }
-
-    # the signed value must contain a dot - splitting value and signature
-    $Value = $Value.Substring(2)
-    $periodIndex = $Value.LastIndexOf('.')
-    if ($periodIndex -eq -1) {
-        return $null
-    }
-
-    if ($Strict) {
-        $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
-    }
-
-    # get the raw value and signature
-    $raw = $Value.Substring(0, $periodIndex)
-    $sig = $Value.Substring($periodIndex + 1)
-
-    if ((Invoke-PodeHMACSHA256Hash -Value $raw -Secret $Secret) -ne $sig) {
-        return $null
-    }
-
-    return $raw
 }
 
 function Test-PodeValueSigned {
@@ -412,13 +414,14 @@ function Test-PodeValueSigned {
         [switch]
         $Strict
     )
+    process {
+        if ([string]::IsNullOrEmpty($Value)) {
+            return $false
+        }
 
-    if ([string]::IsNullOrEmpty($Value)) {
-        return $false
+        $result = Invoke-PodeValueUnsign -Value $Value -Secret $Secret -Strict:$Strict
+        return ![string]::IsNullOrEmpty($result)
     }
-
-    $result = Invoke-PodeValueUnsign -Value $Value -Secret $Secret -Strict:$Strict
-    return ![string]::IsNullOrEmpty($result)
 }
 
 function ConvertTo-PodeStrictSecret {
