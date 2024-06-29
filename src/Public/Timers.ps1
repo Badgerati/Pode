@@ -76,6 +76,9 @@ function Add-PodeTimer {
         $OnStart
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeTimer' -ThrowError
 
@@ -190,6 +193,9 @@ function Remove-PodeTimer {
         $Name
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $null = $PodeContext.Timers.Items.Remove($Name)
 }
 
@@ -206,6 +212,9 @@ Clear-PodeTimers
 function Clear-PodeTimers {
     [CmdletBinding()]
     param()
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Timers.Items.Clear()
 }

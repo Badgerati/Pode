@@ -32,12 +32,13 @@
         }
         Logging     = @{
             Masking = @{
-                Patterns = @(
+                Patterns   = @(
                     '(?<keep_before>Password=)\w+',
                     '(?<keep_before>AppleWebKit\/)\d+\.\d+(?(<keep_after)\s+\(KHTML)'
                 )
-                Mask     = '--MASKED--'
+                Mask       = '--MASKED--'
             }
+            QueueLimit = 100
         }
         AutoImport  = @{
             Functions    = @{

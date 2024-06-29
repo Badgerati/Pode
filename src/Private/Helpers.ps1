@@ -554,7 +554,7 @@ function Get-PodeSubnetRange {
 function Add-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files','Logs')]
         [string]
         $Type,
 
@@ -4011,5 +4011,65 @@ function Resolve-PodeObjectArray {
     else {
         # For any other type, convert it to a PowerShell object
         return New-Object psobject -Property $Property
+    }
+}
+
+
+<#
+.SYNOPSIS
+Handles failure actions based on the provided parameters.
+
+.DESCRIPTION
+This function processes failure scenarios by either ignoring the failure,
+reporting it on the console and continuing, or reporting it on the console
+and halting the server. The behavior is controlled by the 'FailureAction'
+parameter.
+
+.PARAMETER Message
+The message to be displayed in case of a failure.
+
+.PARAMETER FailureAction
+Specifies the action to take in case of failure. Accepted values are:
+- 'Ignore': Do nothing and continue execution.
+- 'Report': Display the message on the console and continue execution.
+- 'Halt': Display the message on the console and halt the server.
+
+.EXAMPLE
+Invoke-PodeHandleFailure -Message "An error occurred." -FailureAction "Report"
+This will display the message "An error occurred." on the console and continue execution.
+
+.EXAMPLE
+Invoke-PodeHandleFailure -Message "Critical failure." -FailureAction "Halt"
+This will display the message "Critical failure." on the console and halt the server.
+
+.NOTES
+This is an internal function and may change in future releases of Pode.
+#>
+function Invoke-PodeHandleFailure {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Message,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        [ValidateSet('Ignore', 'Report', 'Halt' )]
+        $FailureAction
+
+    )
+    switch ($FailureAction.ToLowerInvariant()) {
+        'ignore' {
+            # Do nothing and continue
+        }
+        'report' {
+            # Report on console and continue
+            Write-PodeHost $Message -ForegroundColor Yellow
+        }
+        'halt' {
+            # Report on console and halt
+            Write-PodeHost $Message -ForegroundColor Red
+            Write-PodeHost "Pode Server shutting down." -ForegroundColor Red
+            Close-PodeServer
+        }
     }
 }

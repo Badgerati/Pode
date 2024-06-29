@@ -21,6 +21,9 @@ function Set-PodeWebSocketConcurrency {
         $Maximum
     )
 
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # error if <=0
     if ($Maximum -le 0) {
         throw "Maximum concurrent WebSocket threads must be >=1 but got: $($Maximum)"
@@ -198,6 +201,9 @@ function Remove-PodeWebSocket {
         [string]
         $Name
     )
+
+    # Record the operation on the main log
+    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if ([string]::IsNullOrWhiteSpace($Name) -and ($null -ne $WsEvent)) {
         $Name = $WsEvent.Request.WebSocket.Name

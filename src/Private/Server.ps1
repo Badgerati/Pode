@@ -146,10 +146,12 @@ function Start-PodeInternalServer {
 
         # run running event hooks
         Invoke-PodeEvent -Type Running
-
+        Write-PodeMainLog -Message "Pode $(Get-PodeVersion) (PID: $($PID))"
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
-            Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
+            $msg = "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:"
+            Write-PodeHost $msg -ForegroundColor Yellow
+            $urlAndFlags = @()
             $endpoints | ForEach-Object {
                 $flags = @()
                 if ($_.DualMode) {
@@ -164,7 +166,9 @@ function Start-PodeInternalServer {
                 }
 
                 Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
+                $urlAndFlags += "$($_.Url) $($flags)"
             }
+            Write-PodeMainLog -Message "$msg - $($urlAndFlags -join ' , ')"
             # state the OpenAPI endpoints for each definition
             foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
                 $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks

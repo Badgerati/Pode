@@ -131,8 +131,9 @@ function New-PodeContext {
 
     # basic logging setup
     $ctx.Server.Logging = @{
-        Enabled = $true
-        Types   = @{}
+        Enabled    = $true
+        Types      = @{}
+        QueueLimit = 500
     }
 
     # set thread counts
@@ -407,7 +408,7 @@ function New-PodeContext {
     }
 
     # requests that should be logged
-    $ctx.LogsToProcess = New-Object System.Collections.ArrayList
+    $ctx.LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()
@@ -432,6 +433,7 @@ function New-PodeContext {
         Gui       = $null
         Tasks     = $null
         Files     = $null
+        Logs      = $null
     }
 
     # threading locks, etc.
@@ -524,7 +526,6 @@ function New-PodeRunspacePool {
     $threadsCounts = @{
         Default  = 3
         Timer    = 1
-        Log      = 1
         Schedule = 1
         Misc     = 1
     }
@@ -545,6 +546,12 @@ function New-PodeRunspacePool {
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{
         Pool  = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+        State = 'Waiting'
+    }
+
+    # logs runspace - any log is running here
+    $PodeContext.RunspacePools.Logs = @{
+        Pool  = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         State = 'Waiting'
     }
 
@@ -844,12 +851,13 @@ function Set-PodeServerConfiguration {
 
     # logging
     $Context.Server.Logging = @{
-        Enabled = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
-        Masking = @{
+        Enabled    = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
+        Masking    = @{
             Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
             Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
         }
-        Types   = @{}
+        Types      = @{}
+        QueueLimit = (Protect-PodeValue -Value $Configuration.Logging.QueueLimit $Context.Server.Logging.QueueLimit)
     }
 
     # sockets

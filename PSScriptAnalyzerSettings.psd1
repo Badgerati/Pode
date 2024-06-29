@@ -5,7 +5,10 @@
     Rules = @{
         PSReviewUnusedParameter = @{
             CommandsToTraverse = @(
-                'Where-Object','Remove-PodeRoute'
+                'Where-Object',
+                'Remove-PodeRoute',
+                'Lock-PodeObject',
+                'Use-PodeStream'
             )
         }
     }
