@@ -4,10 +4,14 @@
     You can only start one server in your script
 
 
-Although not required, it is recommended to import the Pode module using a maximum version, to avoid any breaking changes from new major versions:
+Although not required, it is recommended to import the Pode module using a maximum version to avoid any breaking changes from new major versions. To ensure that any errors during the import process are caught and handled appropriately, use a try-catch block:
 
 ```powershell
-Import-Module -Name Pode -MaximumVersion 2.99.99
+try {
+    Import-Module -Name 'Pode' -MaximumVersion 2.99.99 -ErrorAction Stop
+} catch {
+    # exception management code
+}
 ```
 
 The script for your server should be set in the [`Start-PodeServer`](../../Functions/Core/Start-PodeServer) function, via the `-ScriptBlock` parameter. The following example will listen over HTTP on port 8080, and expose a simple HTML page of running processes at `http://localhost:8080/processes`:

@@ -36,6 +36,16 @@ Success, saved package.json
 Import-Module -Name Pode -MaximumVersion 2.99.99
 ```
 
+* To ensure that any errors during the import process are caught and handled appropriately, use a try-catch block:
+
+```powershell
+try {
+    Import-Module -Name 'Pode' -MaximumVersion 2.99.99 -ErrorAction Stop
+} catch {
+    # exception management code
+}
+```
+
 * Within your `server.ps1` file, first you need to start the Server. This is where the main script will go that defines how the server should function:
 
 ```powershell
