@@ -2184,7 +2184,7 @@ Describe 'OpenApi' {
 
 
 
-    Context 'Set-PodeOARouteInfo' {
+    Context 'Set-PodeOARouteInfo single route' {
         BeforeEach {
             $Route = @{
                 OpenApi = @{
@@ -2238,6 +2238,72 @@ Describe 'OpenApi' {
             $result.OpenApi.tags | Should -Be  'pet'
             $result.OpenApi.swagger | Should -BeTrue
             $result.OpenApi.deprecated | Should -BeNullOrEmpty
+        }
+    }
+
+    Context 'Set-PodeOARouteInfo multi routes' {
+        BeforeEach {
+            $Route = @(@{
+                OpenApi = @{
+                    Path           = '/test'
+                    Responses      = @{
+                        '200'     = @{ description = 'OK' }
+                        'default' = @{ description = 'Internal server error' }
+                    }
+                    Parameters     = $null
+                    RequestBody    = $null
+                    Authentication = @()
+                }
+            },
+            @{
+                OpenApi = @{
+                    Path           = '/test2'
+                    Responses      = @{
+                        '200'     = @{ description = 'OK' }
+                        'default' = @{ description = 'Internal server error' }
+                    }
+                    Parameters     = $null
+                    RequestBody    = $null
+                    Authentication = @()
+                }
+            })
+
+            Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc  (New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io')
+        }
+
+        It 'No switches' {
+            $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet'
+            $Route.OpenApi | Should -Not -BeNullOrEmpty
+            $Route.OpenApi.Summary | Should -Be @('Update an existing pet', 'Update an existing pet')
+            $Route.OpenApi.description | Should -Be @('Update an existing pet by Id','Update an existing pet by Id')
+            $Route.OpenApi.tags | Should -Be  @('pet', 'pet')
+            $Route.OpenApi.swagger | Should -BeTrue
+            $Route.OpenApi.deprecated | Should -BeNullOrEmpty
+        }
+        It 'Deprecated' {
+            $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet'   -Deprecated
+            $Route.OpenApi | Should -Not -BeNullOrEmpty
+            $Route.OpenApi.Summary | Should -Be @('Update an existing pet', 'Update an existing pet')
+            $Route.OpenApi.description | Should -Be @('Update an existing pet by Id','Update an existing pet by Id')
+            $Route.OpenApi.tags | Should -Be  @('pet', 'pet')
+            $Route.OpenApi.swagger | Should -BeTrue
+            $Route.OpenApi.deprecated | Should -BeTrue
+        }
+
+        It 'PassThru' {
+            $result = $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -PassThru
+            $result | Should -Not -BeNullOrEmpty
+            $result.OpenApi | Should -Not -BeNullOrEmpty
+            $Route.OpenApi.Summary | Should -Be @('Update an existing pet', 'Update an existing pet')
+            $Route.OpenApi.description | Should -Be @('Update an existing pet by Id','Update an existing pet by Id')
+            $Route.OpenApi.tags | Should -Be  @('pet', 'pet')
+            $result.OpenApi.swagger | Should -BeTrue
+            $result.OpenApi.deprecated | Should -BeNullOrEmpty
+        }
+
+        It 'PassThru with OperationID' {
+            {$Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru}|
+            Should -Throw -ExpectedMessage "OperationID:updatePet has to be unique and cannot be applied to an array."
         }
     }
 

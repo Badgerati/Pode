@@ -154,22 +154,23 @@ function Invoke-PodeTask {
         [switch]
         $Wait
     )
+    Process {
+        # ensure the task exists
+        if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
+            throw "Task '$($Name)' does not exist"
+        }
 
-    # ensure the task exists
-    if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
-        throw "Task '$($Name)' does not exist"
+        # run task logic
+        $task = Invoke-PodeInternalTask -Task $PodeContext.Tasks.Items[$Name] -ArgumentList $ArgumentList -Timeout $Timeout
+
+        # wait, and return result?
+        if ($Wait) {
+            return (Wait-PodeTask -Task $task -Timeout $Timeout)
+        }
+
+        # return task
+        return $task
     }
-
-    # run task logic
-    $task = Invoke-PodeInternalTask -Task $PodeContext.Tasks.Items[$Name] -ArgumentList $ArgumentList -Timeout $Timeout
-
-    # wait, and return result?
-    if ($Wait) {
-        return (Wait-PodeTask -Task $task -Timeout $Timeout)
-    }
-
-    # return task
-    return $task
 }
 
 <#
@@ -192,8 +193,9 @@ function Remove-PodeTask {
         [string]
         $Name
     )
-
-    $null = $PodeContext.Tasks.Items.Remove($Name)
+    Process {
+        $null = $PodeContext.Tasks.Items.Remove($Name)
+    }
 }
 
 <#
@@ -247,24 +249,25 @@ function Edit-PodeTask {
         [hashtable]
         $ArgumentList
     )
+    Process {
+        # ensure the task exists
+        if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
+            throw "Task '$($Name)' does not exist"
+        }
 
-    # ensure the task exists
-    if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
-        throw "Task '$($Name)' does not exist"
-    }
+        $_task = $PodeContext.Tasks.Items[$Name]
 
-    $_task = $PodeContext.Tasks.Items[$Name]
+        # edit scriptblock if supplied
+        if (!(Test-PodeIsEmpty $ScriptBlock)) {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $_task.Script = $ScriptBlock
+            $_task.UsingVariables = $usingVars
+        }
 
-    # edit scriptblock if supplied
-    if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $_task.Script = $ScriptBlock
-        $_task.UsingVariables = $usingVars
-    }
-
-    # edit arguments if supplied
-    if (!(Test-PodeIsEmpty $ArgumentList)) {
-        $_task.Arguments = $ArgumentList
+        # edit arguments if supplied
+        if (!(Test-PodeIsEmpty $ArgumentList)) {
+            $_task.Arguments = $ArgumentList
+        }
     }
 }
 
@@ -358,8 +361,9 @@ function Close-PodeTask {
         [hashtable]
         $Task
     )
-
-    Close-PodeTaskInternal -Result $Task
+    Process {
+        Close-PodeTaskInternal -Result $Task
+    }
 }
 
 <#
@@ -383,8 +387,9 @@ function Test-PodeTaskCompleted {
         [hashtable]
         $Task
     )
-
-    return [bool]$Task.Runspace.Handler.IsCompleted
+    Process {
+        return [bool]$Task.Runspace.Handler.IsCompleted
+    }
 }
 
 <#
@@ -417,14 +422,26 @@ function Wait-PodeTask {
         [int]
         $Timeout = -1
     )
-
-    if ($Task -is [System.Threading.Tasks.Task]) {
-        return (Wait-PodeNetTaskInternal -Task $Task -Timeout $Timeout)
+    Begin {
+        $pipelineItemCount = 0
     }
 
-    if ($Task -is [hashtable]) {
-        return (Wait-PodeTaskInternal -Task $Task -Timeout $Timeout)
+    Process {
+        $pipelineItemCount++
     }
 
-    throw 'Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]'
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
+        if ($Task -is [System.Threading.Tasks.Task]) {
+            return (Wait-PodeNetTaskInternal -Task $Task -Timeout $Timeout)
+        }
+
+        if ($Task -is [hashtable]) {
+            return (Wait-PodeTaskInternal -Task $Task -Timeout $Timeout)
+        }
+
+        throw 'Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]'
+    }
 }

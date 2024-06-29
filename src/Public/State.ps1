@@ -37,20 +37,37 @@ function Set-PodeState {
         $Scope
     )
 
-    if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+    Begin {
+        if ($null -eq $PodeContext.Server.State) {
+            throw 'Pode has not been initialised'
+        }
+
+        if ($null -eq $Scope) {
+            $Scope = @()
+        }
+
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    if ($null -eq $Scope) {
-        $Scope = @()
+    Process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
     }
 
-    $PodeContext.Server.State[$Name] = @{
-        Value = $Value
-        Scope = $Scope
-    }
+    End {
+        # Set Value to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Value = $pipelineValue
+        }
 
-    return $Value
+        $PodeContext.Server.State[$Name] = @{
+            Value = $Value
+            Scope = $Scope
+        }
+
+        return $Value
+    }
 }
 
 <#

@@ -56,23 +56,36 @@ function Set-PodeResponseAttachment {
         $FileBrowser
 
     )
-
-    # already sent? skip
-    if ($WebEvent.Response.Sent) {
-        return
+    Begin {
+        $pipelineItemCount = 0
     }
 
-    # only attach files from public/static-route directories when path is relative
-    $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
-    if ($route) {
-        $_path = $route.Content.Source
+    Process {
+        $pipelineItemCount++
+    }
 
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
+
+        # already sent? skip
+        if ($WebEvent.Response.Sent) {
+            return
+        }
+
+        # only attach files from public/static-route directories when path is relative
+        $route = (Find-PodeStaticRoute -Path $Path -CheckPublic -EndpointName $EndpointName)
+        if ($route) {
+            $_path = $route.Content.Source
+
+        }
+        else {
+            $_path = Get-PodeRelativePath -Path $Path -JoinRoot
+        }
+        #call internal Attachment function
+        Write-PodeAttachmentResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser
     }
-    else {
-        $_path = Get-PodeRelativePath -Path $Path -JoinRoot
-    }
-    #call internal Attachment function
-    Write-PodeAttachmentResponseInternal -Path $_path -ContentType $ContentType -FileBrowser:$fileBrowser
 }
 
 
@@ -139,156 +152,168 @@ function Write-PodeTextResponse {
         [switch]
         $Cache
     )
-
-    $isStringValue = ($PSCmdlet.ParameterSetName -ieq 'string')
-    $isByteValue = ($PSCmdlet.ParameterSetName -ieq 'bytes')
-
-    # set the status code of the response, but only if it's not 200 (to prevent overriding)
-    if ($StatusCode -ne 200) {
-        Set-PodeResponseStatus -Code $StatusCode -NoErrorPage
-    }
-
-    # if there's nothing to write, return
-    if ($isStringValue -and [string]::IsNullOrWhiteSpace($Value)) {
-        return
-    }
-
-    if ($isByteValue -and (($null -eq $Bytes) -or ($Bytes.Length -eq 0))) {
-        return
-    }
-
-    # if the response stream isn't writable or already sent, return
-    $res = $WebEvent.Response
-    if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite -or $res.Sent))) {
-        return
-    }
-
-    # set a cache value
-    if ($Cache) {
-        Set-PodeHeader -Name 'Cache-Control' -Value "max-age=$($MaxAge), must-revalidate"
-        Set-PodeHeader -Name 'Expires' -Value ([datetime]::UtcNow.AddSeconds($MaxAge).ToString('r', [CultureInfo]::InvariantCulture))
-    }
-
-    # specify the content-type if supplied (adding utf-8 if missing)
-    if (![string]::IsNullOrWhiteSpace($ContentType)) {
-        $charset = 'charset=utf-8'
-        if ($ContentType -inotcontains $charset) {
-            $ContentType = "$($ContentType); $($charset)"
+    Begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
+    }Process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }End {
+        # Set Value to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Value = $pipelineValue -join "`n"
         }
 
-        $res.ContentType = $ContentType
-    }
+        $isStringValue = ($PSCmdlet.ParameterSetName -ieq 'string')
+        $isByteValue = ($PSCmdlet.ParameterSetName -ieq 'bytes')
 
-    # if we're serverless, set the string as the body
-    if (!$WebEvent.Streamed) {
-        if ($isStringValue) {
-            $res.Body = $Value
+        # set the status code of the response, but only if it's not 200 (to prevent overriding)
+        if ($StatusCode -ne 200) {
+            Set-PodeResponseStatus -Code $StatusCode -NoErrorPage
         }
+
+        # if there's nothing to write, return
+        if ($isStringValue -and [string]::IsNullOrWhiteSpace($Value)) {
+            return
+        }
+
+        if ($isByteValue -and (($null -eq $Bytes) -or ($Bytes.Length -eq 0))) {
+            return
+        }
+
+        # if the response stream isn't writable or already sent, return
+        $res = $WebEvent.Response
+        if (($null -eq $res) -or ($WebEvent.Streamed -and (($null -eq $res.OutputStream) -or !$res.OutputStream.CanWrite -or $res.Sent))) {
+            return
+        }
+
+        # set a cache value
+        if ($Cache) {
+            Set-PodeHeader -Name 'Cache-Control' -Value "max-age=$($MaxAge), must-revalidate"
+            Set-PodeHeader -Name 'Expires' -Value ([datetime]::UtcNow.AddSeconds($MaxAge).ToString('r', [CultureInfo]::InvariantCulture))
+        }
+
+        # specify the content-type if supplied (adding utf-8 if missing)
+        if (![string]::IsNullOrWhiteSpace($ContentType)) {
+            $charset = 'charset=utf-8'
+            if ($ContentType -inotcontains $charset) {
+                $ContentType = "$($ContentType); $($charset)"
+            }
+
+            $res.ContentType = $ContentType
+        }
+
+        # if we're serverless, set the string as the body
+        if (!$WebEvent.Streamed) {
+            if ($isStringValue) {
+                $res.Body = $Value
+            }
+            else {
+                $res.Body = $Bytes
+            }
+        }
+
         else {
-            $res.Body = $Bytes
-        }
-    }
+            # convert string to bytes
+            if ($isStringValue) {
+                $Bytes = ConvertFrom-PodeValueToByteArray -Value $Value
+            }
 
-    else {
-        # convert string to bytes
-        if ($isStringValue) {
-            $Bytes = ConvertFrom-PodeValueToByteArray -Value $Value
-        }
+            # check if we only need a range of the bytes
+            if (($null -ne $WebEvent.Ranges) -and ($WebEvent.Response.StatusCode -eq 200) -and ($StatusCode -eq 200)) {
+                $lengths = @()
+                $size = $Bytes.Length
 
-        # check if we only need a range of the bytes
-        if (($null -ne $WebEvent.Ranges) -and ($WebEvent.Response.StatusCode -eq 200) -and ($StatusCode -eq 200)) {
-            $lengths = @()
-            $size = $Bytes.Length
-
-            $Bytes = @(foreach ($range in $WebEvent.Ranges) {
-                    # ensure range not invalid
-                    if (([int]$range.Start -lt 0) -or ([int]$range.Start -ge $size) -or ([int]$range.End -lt 0)) {
-                        Set-PodeResponseStatus -Code 416 -NoErrorPage
-                        return
-                    }
-
-                    # skip start bytes only
-                    if ([string]::IsNullOrWhiteSpace($range.End)) {
-                        $Bytes[$range.Start..($size - 1)]
-                        $lengths += "$($range.Start)-$($size - 1)/$($size)"
-                    }
-
-                    # end bytes only
-                    elseif ([string]::IsNullOrWhiteSpace($range.Start)) {
-                        if ([int]$range.End -gt $size) {
-                            $range.End = $size
-                        }
-
-                        if ([int]$range.End -gt 0) {
-                            $Bytes[$($size - $range.End)..($size - 1)]
-                            $lengths += "$($size - $range.End)-$($size - 1)/$($size)"
-                        }
-                        else {
-                            $lengths += "0-0/$($size)"
-                        }
-                    }
-
-                    # normal range
-                    else {
-                        if ([int]$range.End -ge $size) {
+                $Bytes = @(foreach ($range in $WebEvent.Ranges) {
+                        # ensure range not invalid
+                        if (([int]$range.Start -lt 0) -or ([int]$range.Start -ge $size) -or ([int]$range.End -lt 0)) {
                             Set-PodeResponseStatus -Code 416 -NoErrorPage
                             return
                         }
 
-                        $Bytes[$range.Start..$range.End]
-                        $lengths += "$($range.Start)-$($range.End)/$($size)"
-                    }
-                })
+                        # skip start bytes only
+                        if ([string]::IsNullOrWhiteSpace($range.End)) {
+                            $Bytes[$range.Start..($size - 1)]
+                            $lengths += "$($range.Start)-$($size - 1)/$($size)"
+                        }
 
-            Set-PodeHeader -Name 'Content-Range' -Value "bytes $($lengths -join ', ')"
-            if ($StatusCode -eq 200) {
-                Set-PodeResponseStatus -Code 206 -NoErrorPage
-            }
-        }
+                        # end bytes only
+                        elseif ([string]::IsNullOrWhiteSpace($range.Start)) {
+                            if ([int]$range.End -gt $size) {
+                                $range.End = $size
+                            }
 
-        # check if we need to compress the response
-        if ($PodeContext.Server.Web.Compression.Enabled -and ![string]::IsNullOrWhiteSpace($WebEvent.AcceptEncoding)) {
-            try {
-                $ms = New-Object -TypeName System.IO.MemoryStream
-                $stream = New-Object "System.IO.Compression.$($WebEvent.AcceptEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Compress, $true)
-                $stream.Write($Bytes, 0, $Bytes.Length)
-                $stream.Close()
-                $ms.Position = 0
-                $Bytes = $ms.ToArray()
+                            if ([int]$range.End -gt 0) {
+                                $Bytes[$($size - $range.End)..($size - 1)]
+                                $lengths += "$($size - $range.End)-$($size - 1)/$($size)"
+                            }
+                            else {
+                                $lengths += "0-0/$($size)"
+                            }
+                        }
+
+                        # normal range
+                        else {
+                            if ([int]$range.End -ge $size) {
+                                Set-PodeResponseStatus -Code 416 -NoErrorPage
+                                return
+                            }
+
+                            $Bytes[$range.Start..$range.End]
+                            $lengths += "$($range.Start)-$($range.End)/$($size)"
+                        }
+                    })
+
+                Set-PodeHeader -Name 'Content-Range' -Value "bytes $($lengths -join ', ')"
+                if ($StatusCode -eq 200) {
+                    Set-PodeResponseStatus -Code 206 -NoErrorPage
+                }
             }
-            finally {
-                if ($null -ne $stream) {
+
+            # check if we need to compress the response
+            if ($PodeContext.Server.Web.Compression.Enabled -and ![string]::IsNullOrWhiteSpace($WebEvent.AcceptEncoding)) {
+                try {
+                    $ms = New-Object -TypeName System.IO.MemoryStream
+                    $stream = New-Object "System.IO.Compression.$($WebEvent.AcceptEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Compress, $true)
+                    $stream.Write($Bytes, 0, $Bytes.Length)
                     $stream.Close()
+                    $ms.Position = 0
+                    $Bytes = $ms.ToArray()
+                }
+                finally {
+                    if ($null -ne $stream) {
+                        $stream.Close()
+                    }
+
+                    if ($null -ne $ms) {
+                        $ms.Close()
+                    }
                 }
 
+                # set content encoding header
+                Set-PodeHeader -Name 'Content-Encoding' -Value $WebEvent.AcceptEncoding
+            }
+
+            # write the content to the response stream
+            $res.ContentLength64 = $Bytes.Length
+
+            try {
+                $ms = New-Object -TypeName System.IO.MemoryStream
+                $ms.Write($Bytes, 0, $Bytes.Length)
+                $ms.WriteTo($res.OutputStream)
+            }
+            catch {
+                if ((Test-PodeValidNetworkFailure $_.Exception)) {
+                    return
+                }
+
+                $_ | Write-PodeErrorLog
+                throw
+            }
+            finally {
                 if ($null -ne $ms) {
                     $ms.Close()
                 }
-            }
-
-            # set content encoding header
-            Set-PodeHeader -Name 'Content-Encoding' -Value $WebEvent.AcceptEncoding
-        }
-
-        # write the content to the response stream
-        $res.ContentLength64 = $Bytes.Length
-
-        try {
-            $ms = New-Object -TypeName System.IO.MemoryStream
-            $ms.Write($Bytes, 0, $Bytes.Length)
-            $ms.WriteTo($res.OutputStream)
-        }
-        catch {
-            if ((Test-PodeValidNetworkFailure $_.Exception)) {
-                return
-            }
-
-            $_ | Write-PodeErrorLog
-            throw
-        }
-        finally {
-            if ($null -ne $ms) {
-                $ms.Close()
             }
         }
     }
@@ -370,12 +395,24 @@ function Write-PodeFileResponse {
         [switch]
         $FileBrowser
     )
+    Begin {
+        $pipelineItemCount = 0
+    }
 
-    # resolve for relative path
-    $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
+    Process {
+        $pipelineItemCount++
+    }
 
-    Write-PodeFileResponseInternal -Path $RelativePath -Data $Data -ContentType $ContentType -MaxAge $MaxAge `
-        -StatusCode $StatusCode -Cache:$Cache -FileBrowser:$FileBrowser
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
+        # resolve for relative path
+        $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
+
+        Write-PodeFileResponseInternal -Path $RelativePath -Data $Data -ContentType $ContentType -MaxAge $MaxAge `
+            -StatusCode $StatusCode -Cache:$Cache -FileBrowser:$FileBrowser
+    }
 }
 
 <#
@@ -404,17 +441,30 @@ function Write-PodeDirectoryResponse {
         [string]
         $Path
     )
-
-    # resolve for relative path
-    $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
-
-    if (Test-Path -Path $RelativePath -PathType Container) {
-        Write-PodeDirectoryResponseInternal -Path $RelativePath
+    Begin {
+        $pipelineItemCount = 0
     }
-    else {
-        Set-PodeResponseStatus -Code 404
+
+    Process {
+        $pipelineItemCount++
+    }
+
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
+        # resolve for relative path
+        $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
+
+        if (Test-Path -Path $RelativePath -PathType Container) {
+            Write-PodeDirectoryResponseInternal -Path $RelativePath
+        }
+        else {
+            Set-PodeResponseStatus -Code 404
+        }
     }
 }
+
 <#
 .SYNOPSIS
 Writes CSV data to the Response.
@@ -455,17 +505,17 @@ function Write-PodeCsvResponse {
         $StatusCode = 200
     )
 
-    begin {
+    Begin {
         $pipelineValue = @()
     }
 
-    process {
+    Process {
         if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
         }
     }
 
-    end {
+    End {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
@@ -541,17 +591,17 @@ function Write-PodeHtmlResponse {
         $StatusCode = 200
     )
 
-    begin {
+    Begin {
         $pipelineValue = @()
     }
 
-    process {
+    Process {
         if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
         }
     }
 
-    end {
+    End {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
@@ -621,29 +671,41 @@ function Write-PodeMarkdownResponse {
         [switch]
         $AsHtml
     )
+    Begin {
+        $pipelineItemCount = 0
+    }
 
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'file' {
-            if (Test-PodePath $Path) {
-                $Value = Get-PodeFileContent -Path $Path
+    Process {
+        $pipelineItemCount++
+    }
+
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'file' {
+                if (Test-PodePath $Path) {
+                    $Value = Get-PodeFileContent -Path $Path
+                }
             }
         }
-    }
 
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        $Value = [string]::Empty
-    }
-
-    $mimeType = 'text/markdown'
-
-    if ($AsHtml) {
-        if ($PSVersionTable.PSVersion.Major -ge 7) {
-            $mimeType = 'text/html'
-            $Value = ($Value | ConvertFrom-Markdown).Html
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            $Value = [string]::Empty
         }
-    }
 
-    Write-PodeTextResponse -Value $Value -ContentType $mimeType -StatusCode $StatusCode
+        $mimeType = 'text/markdown'
+
+        if ($AsHtml) {
+            if ($PSVersionTable.PSVersion.Major -ge 7) {
+                $mimeType = 'text/html'
+                $Value = ($Value | ConvertFrom-Markdown).Html
+            }
+        }
+
+        Write-PodeTextResponse -Value $Value -ContentType $mimeType -StatusCode $StatusCode
+    }
 }
 
 <#
@@ -702,17 +764,17 @@ function Write-PodeJsonResponse {
         $NoCompress
 
     )
-    begin {
+    Begin {
         $pipelineValue = @()
     }
 
-    process {
+    Process {
         if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
         }
     }
 
-    end {
+    End {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
@@ -811,17 +873,17 @@ function Write-PodeXmlResponse {
         [int]
         $StatusCode = 200
     )
-    begin {
+    Begin {
         $pipelineValue = @()
     }
 
-    process {
+    Process {
         if ($PSCmdlet.ParameterSetName -eq 'Value' -and $_) {
             $pipelineValue += $_
         }
     }
 
-    end {
+    End {
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
@@ -908,17 +970,17 @@ function Write-PodeYamlResponse {
         $StatusCode = 200
     )
 
-    begin {
+    Begin {
         $pipelineValue = @()
     }
 
-    process {
+    Process {
         if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
         }
     }
 
-    end {
+    End {
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
@@ -1001,59 +1063,71 @@ function Write-PodeViewResponse {
         [switch]
         $FlashMessages
     )
-
-    # default data if null
-    if ($null -eq $Data) {
-        $Data = @{}
+    Begin {
+        $pipelineItemCount = 0
     }
 
-    # add path to data as "pagename" - unless key already exists
-    if (!$Data.ContainsKey('pagename')) {
-        $Data['pagename'] = $Path
+    Process {
+        $pipelineItemCount++
     }
 
-    # load all flash messages if needed
-    if ($FlashMessages -and ($null -ne $WebEvent.Session.Data.Flash)) {
-        $Data['flash'] = @{}
-
-        foreach ($name in (Get-PodeFlashMessageNames)) {
-            $Data.flash[$name] = (Get-PodeFlashMessage -Name $name)
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
         }
-    }
-    elseif ($null -eq $Data['flash']) {
-        $Data['flash'] = @{}
-    }
-
-    # add view engine extension
-    $ext = Get-PodeFileExtension -Path $Path
-    if ([string]::IsNullOrWhiteSpace($ext)) {
-        $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
-    }
-
-    # only look in the view directories
-    $viewFolder = $PodeContext.Server.InbuiltDrives['views']
-    if (![string]::IsNullOrWhiteSpace($Folder)) {
-        $viewFolder = $PodeContext.Server.Views[$Folder]
-    }
-
-    $Path = [System.IO.Path]::Combine($viewFolder, $Path)
-
-    # test the file path, and set status accordingly
-    if (!(Test-PodePath $Path)) {
-        return
-    }
-
-    # run any engine logic and render it
-    $engine = (Get-PodeViewEngineType -Path $Path)
-    $value = (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
-
-    switch ($engine.ToLowerInvariant()) {
-        'md' {
-            Write-PodeMarkdownResponse -Value $value -StatusCode $StatusCode -AsHtml
+        # default data if null
+        if ($null -eq $Data) {
+            $Data = @{}
         }
 
-        default {
-            Write-PodeHtmlResponse -Value $value -StatusCode $StatusCode
+        # add path to data as "pagename" - unless key already exists
+        if (!$Data.ContainsKey('pagename')) {
+            $Data['pagename'] = $Path
+        }
+
+        # load all flash messages if needed
+        if ($FlashMessages -and ($null -ne $WebEvent.Session.Data.Flash)) {
+            $Data['flash'] = @{}
+
+            foreach ($name in (Get-PodeFlashMessageNames)) {
+                $Data.flash[$name] = (Get-PodeFlashMessage -Name $name)
+            }
+        }
+        elseif ($null -eq $Data['flash']) {
+            $Data['flash'] = @{}
+        }
+
+        # add view engine extension
+        $ext = Get-PodeFileExtension -Path $Path
+        if ([string]::IsNullOrWhiteSpace($ext)) {
+            $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
+        }
+
+        # only look in the view directories
+        $viewFolder = $PodeContext.Server.InbuiltDrives['views']
+        if (![string]::IsNullOrWhiteSpace($Folder)) {
+            $viewFolder = $PodeContext.Server.Views[$Folder]
+        }
+
+        $Path = [System.IO.Path]::Combine($viewFolder, $Path)
+
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path)) {
+            return
+        }
+
+        # run any engine logic and render it
+        $engine = (Get-PodeViewEngineType -Path $Path)
+        $value = (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
+
+        switch ($engine.ToLowerInvariant()) {
+            'md' {
+                Write-PodeMarkdownResponse -Value $value -StatusCode $StatusCode -AsHtml
+            }
+
+            default {
+                Write-PodeHtmlResponse -Value $value -StatusCode $StatusCode
+            }
         }
     }
 }
@@ -1272,8 +1346,23 @@ function Write-PodeTcpClient {
         [string]
         $Message
     )
+    Begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
+    }
 
-    $TcpEvent.Response.WriteLine($Message, $true)
+    Process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    End {
+        # Set Route to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Message = $pipelineValue -join "`n"
+        }
+        $TcpEvent.Response.WriteLine($Message, $true)
+    }
 }
 
 <#
@@ -1569,32 +1658,44 @@ function Use-PodePartialView {
         [string]
         $Folder
     )
-
-    # default data if null
-    if ($null -eq $Data) {
-        $Data = @{}
-    }
-    # add view engine extension
-    $ext = Get-PodeFileExtension -Path $Path
-    if ([string]::IsNullOrWhiteSpace($ext)) {
-        $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
+    Begin {
+        $pipelineItemCount = 0
     }
 
-    # only look in the view directory
-    $viewFolder = $PodeContext.Server.InbuiltDrives['views']
-    if (![string]::IsNullOrWhiteSpace($Folder)) {
-        $viewFolder = $PodeContext.Server.Views[$Folder]
+    Process {
+        $pipelineItemCount++
     }
 
-    $Path = [System.IO.Path]::Combine($viewFolder, $Path)
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
+        # default data if null
+        if ($null -eq $Data) {
+            $Data = @{}
+        }
+        # add view engine extension
+        $ext = Get-PodeFileExtension -Path $Path
+        if ([string]::IsNullOrWhiteSpace($ext)) {
+            $Path += ".$($PodeContext.Server.ViewEngine.Extension)"
+        }
 
-    # test the file path, and set status accordingly
-    if (!(Test-PodePath $Path -NoStatus)) {
-        throw "File not found at path: $($Path)"
+        # only look in the view directory
+        $viewFolder = $PodeContext.Server.InbuiltDrives['views']
+        if (![string]::IsNullOrWhiteSpace($Folder)) {
+            $viewFolder = $PodeContext.Server.Views[$Folder]
+        }
+
+        $Path = [System.IO.Path]::Combine($viewFolder, $Path)
+
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path -NoStatus)) {
+            throw "File not found at path: $($Path)"
+        }
+
+        # run any engine logic
+        return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
     }
-
-    # run any engine logic
-    return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
 }
 
 <#
@@ -1654,47 +1755,60 @@ function Send-PodeSignal {
         [switch]
         $IgnoreEvent
     )
-    # error if not configured
-    if (!$PodeContext.Server.Signals.Enabled) {
-        throw 'WebSockets have not been configured to send signal messages'
+    Begin {
+        $pipelineItemCount = 0
     }
 
-    # do nothing if no value
-    if (($null -eq $Value) -or ([string]::IsNullOrEmpty($Value))) {
-        return
+    Process {
+        $pipelineItemCount++
     }
 
-    # jsonify the value
-    if ($Value -isnot [string]) {
-        if ($Depth -le 0) {
-            $Value = (ConvertTo-Json -InputObject $Value -Compress)
+    End {
+        if ($pipelineItemCount -gt 1) {
+            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+        }
+        # error if not configured
+        if (!$PodeContext.Server.Signals.Enabled) {
+            throw 'WebSockets have not been configured to send signal messages'
+        }
+
+        # do nothing if no value
+        if (($null -eq $Value) -or ([string]::IsNullOrEmpty($Value))) {
+            return
+        }
+
+        # jsonify the value
+        if ($Value -isnot [string]) {
+            if ($Depth -le 0) {
+                $Value = (ConvertTo-Json -InputObject $Value -Compress)
+            }
+            else {
+                $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress)
+            }
+        }
+
+        # check signal event
+        if (!$IgnoreEvent -and ($null -ne $SignalEvent)) {
+            if ([string]::IsNullOrWhiteSpace($Path)) {
+                $Path = $SignalEvent.Data.Path
+            }
+
+            if ([string]::IsNullOrWhiteSpace($ClientId)) {
+                $ClientId = $SignalEvent.Data.ClientId
+            }
+
+            if (($Mode -ieq 'Auto') -and ($SignalEvent.Data.Direct -or ($SignalEvent.ClientId -ieq $SignalEvent.Data.ClientId))) {
+                $Mode = 'Direct'
+            }
+        }
+
+        # broadcast or direct?
+        if ($Mode -iin @('Auto', 'Broadcast')) {
+            $PodeContext.Server.Signals.Listener.AddServerSignal($Value, $Path, $ClientId)
         }
         else {
-            $Value = (ConvertTo-Json -InputObject $Value -Depth $Depth -Compress)
+            $SignalEvent.Response.Write($Value)
         }
-    }
-
-    # check signal event
-    if (!$IgnoreEvent -and ($null -ne $SignalEvent)) {
-        if ([string]::IsNullOrWhiteSpace($Path)) {
-            $Path = $SignalEvent.Data.Path
-        }
-
-        if ([string]::IsNullOrWhiteSpace($ClientId)) {
-            $ClientId = $SignalEvent.Data.ClientId
-        }
-
-        if (($Mode -ieq 'Auto') -and ($SignalEvent.Data.Direct -or ($SignalEvent.ClientId -ieq $SignalEvent.Data.ClientId))) {
-            $Mode = 'Direct'
-        }
-    }
-
-    # broadcast or direct?
-    if ($Mode -iin @('Auto', 'Broadcast')) {
-        $PodeContext.Server.Signals.Listener.AddServerSignal($Value, $Path, $ClientId)
-    }
-    else {
-        $SignalEvent.Response.Write($Value)
     }
 }
 

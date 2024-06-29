@@ -1305,6 +1305,11 @@ Describe 'Out-PodeHost' {
         @{ Name = 'Rick' } | Out-PodeHost
         Assert-MockCalled Out-Default -Scope It -Times 1
     }
+
+    It 'Writes an Array to the Host by pipeline' {
+        @('France','Rick',21 ,'male') | Out-PodeHost
+        Assert-MockCalled Out-Default -Scope It -Times 1
+    }
 }
 
 Describe 'Remove-PodeNullKeysFromHashtable' {
