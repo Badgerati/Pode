@@ -3841,9 +3841,20 @@ function ConvertTo-PodeYamlInternal {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
-                        if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
                         if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                        $null = $string.Append( $NewPadding).Append( $item).Append(': ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        $null = $string.Append( $NewPadding).Append( $item).Append(': ')
+                        if ($InputObject[$item] -is [System.ValueType]) {
+                            if ($InputObject[$item] -is [bool]) {
+                                $null = $string.Append($InputObject[$item].ToString().ToLower())
+                            }
+                            else {
+                                $null = $string.Append($InputObject[$item])
+                            }
+                        }
+                        else {
+                            if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        }
                     }
                     $string.ToString()
                 }
@@ -3855,20 +3866,20 @@ function ConvertTo-PodeYamlInternal {
                 if ($InputObject.Count -gt 0 ) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
-                    foreach ($item in $InputObject.Keys) {
+                    foreach ($item in ($InputObject | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name)) {
                         if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
                         $null = $string.Append( $NewPadding).Append( $item).Append(': ')
-                        if ($InputObject[$item] -isnot [System.Collections.IEnumerable]) {
-                            if ($InputObject[$item] -is [bool]) {
-                                $null = $string.Append($InputObject[$item].ToString().ToLower())
+                        if ($InputObject.$item -is [System.ValueType]) {
+                            if ($InputObject.$item -is [bool]) {
+                                $null = $string.Append($InputObject.$item.ToString().ToLower())
                             }
                             else {
-                                $null = $string.Append($InputObject[$item])
+                                $null = $string.Append($InputObject.$item)
                             }
                         }
                         else {
-                            if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
-                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                            if ($InputObject.$item -is [string]) { $increment = 2 } else { $increment = 1 }
+                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject.$item -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
                         }
                     }
                     $string.ToString()
