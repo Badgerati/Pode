@@ -618,8 +618,8 @@ function ConvertTo-PodeOASchemaProperty {
         if ($Property.maxProperties) {
             $schema['maxProperties'] = $Property.maxProperties
         }
-
-        if ($Property.additionalProperties) {
+        #Fix an issue when additionalProperties has an assigned value of $false
+        if ($Property.ContainsKey('additionalProperties')) {
             $schema['additionalProperties'] = $Property.additionalProperties
         }
 
