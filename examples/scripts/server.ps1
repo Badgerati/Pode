@@ -1,5 +1,5 @@
 {
-    Add-PodeEndpoint -Address * -Port 8081 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
     Set-PodeViewEngine -Type Pode
 
