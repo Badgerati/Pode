@@ -5,6 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'PrivateOpenApi' {
@@ -13,11 +14,11 @@ Describe 'PrivateOpenApi' {
         function GetPodeContext {
             return @{
                 Server = @{
-                    Security = @{
+                    Security        = @{
                         autoheaders = $false
                     }
-                    Authentications=@{}
-                    OpenAPI  = @{
+                    Authentications = @{}
+                    OpenAPI         = @{
                         SelectedDefinitionTag = 'default'
                         Definitions           = @{
                             default     = Get-PodeOABaseObject
@@ -287,32 +288,32 @@ Describe 'PrivateOpenApi' {
     }
 
 
-    Describe "Set-PodeOAAuth Tests" {
+    Describe 'Set-PodeOAAuth Tests' {
         BeforeAll {
             # Mock Test-PodeAuthExists to simulate authentication method existence
             Mock Test-PodeAuthExists { return $true }
         }
 
-        It "Applies multiple authentication methods to a route" {
+        It 'Applies multiple authentication methods to a route' {
             $route = @{ OpenApi = @{} }
             { Set-PodeOAAuth -Route @($route) -Name @('BasicAuth', 'ApiKeyAuth') } | Should -Not -Throw
             $route.OpenApi.Authentication.Count | Should -Be 2
         }
 
-        It "Throws an exception for non-existent authentication method" {
+        It 'Throws an exception for non-existent authentication method' {
             Mock Test-PodeAuthExists { return $false }
             $route = @{ OpenApi = @{} }
             { Set-PodeOAAuth -Route @($route) -Name 'InvalidAuth' } | Should -Throw
         }
 
-        It "Allows anonymous access" {
+        It 'Allows anonymous access' {
             $route = @{ OpenApi = @{ Authentication = @{} } }
             { Set-PodeOAAuth -Route @($route) -Name 'BasicAuth' -AllowAnon } | Should -Not -Throw
             $route.OpenApi.Authentication.keys -contains '%_allowanon_%' | Should -Be $true
             $route.OpenApi.Authentication['%_allowanon_%'] | Should -BeNullOrEmpty
         }
 
-        It "Applies both authenticated and anonymous access to a route" {
+        It 'Applies both authenticated and anonymous access to a route' {
             $route = @{ OpenApi = @{} }
             { Set-PodeOAAuth -Route @($route) -Name @('BasicAuth') -AllowAnon } | Should -Not -Throw
             $route.OpenApi.Authentication.Count | Should -Be 2
@@ -321,8 +322,8 @@ Describe 'PrivateOpenApi' {
         }
     }
 
-    Describe "Get-PodeOABaseObject Tests" {
-        It "Returns the correct base OpenAPI object structure" {
+    Describe 'Get-PodeOABaseObject Tests' {
+        It 'Returns the correct base OpenAPI object structure' {
             $baseObject = Get-PodeOABaseObject
 
             $baseObject | Should -BeOfType [hashtable]
@@ -335,20 +336,20 @@ Describe 'PrivateOpenApi' {
         }
     }
 
-    Describe "Initialize-PodeOpenApiTable Tests" {
-        It "Initializes OpenAPI table with default settings" {
+    Describe 'Initialize-PodeOpenApiTable Tests' {
+        It 'Initializes OpenAPI table with default settings' {
             $openApiTable = Initialize-PodeOpenApiTable
 
             $openApiTable | Should -BeOfType [hashtable]
-            $openApiTable.DefinitionTagSelectionStack -is  [System.Collections.Generic.Stack[System.Object]]   | Should -BeTrue
-            $openApiTable.DefaultDefinitionTag | Should -Be "default"
-            $openApiTable.SelectedDefinitionTag | Should -Be "default"
+            $openApiTable.DefinitionTagSelectionStack -is [System.Collections.Generic.Stack[System.Object]] | Should -BeTrue
+            $openApiTable.DefaultDefinitionTag | Should -Be 'default'
+            $openApiTable.SelectedDefinitionTag | Should -Be 'default'
             $openApiTable.Definitions | Should -BeOfType [hashtable]
-            $openApiTable.Definitions["default"] | Should -BeOfType [hashtable]
+            $openApiTable.Definitions['default'] | Should -BeOfType [hashtable]
         }
 
-        It "Initializes OpenAPI table with custom definition tag" {
-            $customTag = "api-v1"
+        It 'Initializes OpenAPI table with custom definition tag' {
+            $customTag = 'api-v1'
             $openApiTable = Initialize-PodeOpenApiTable -DefaultDefinitionTag $customTag
 
             $openApiTable.DefaultDefinitionTag | Should -Be $customTag
@@ -358,7 +359,7 @@ Describe 'PrivateOpenApi' {
         }
     }
 
-    Describe "ConvertTo-PodeOASchemaObjectProperty Tests" {
+    Describe 'ConvertTo-PodeOASchemaObjectProperty Tests' {
         BeforeAll {
             # Mock ConvertTo-PodeOASchemaProperty to simulate its behavior
             Mock ConvertTo-PodeOASchemaProperty { return @{ type = $_.type; processed = $true } }
@@ -366,57 +367,57 @@ Describe 'PrivateOpenApi' {
 
         It "Converts a list of properties excluding 'allOf', 'oneOf', 'anyOf'" {
             $properties = @(
-                @{ name = "prop1"; type = "string" },
-                @{ name = "prop2"; type = "integer" },
-                @{ name = "prop3"; type = "allOf" }
+                @{ name = 'prop1'; type = 'string' },
+                @{ name = 'prop2'; type = 'integer' },
+                @{ name = 'prop3'; type = 'allOf' }
             )
-            $result = ConvertTo-PodeOASchemaObjectProperty -Properties $properties -DefinitionTag "myTag"
+            $result = ConvertTo-PodeOASchemaObjectProperty -Properties $properties -DefinitionTag 'myTag'
 
             $result.Count | Should -Be 2
-            $result["prop1"].processed | Should -Be $true
-            $result["prop2"].processed | Should -Be $true
-            $result.ContainsKey("prop3") | Should -Be $false
+            $result['prop1'].processed | Should -Be $true
+            $result['prop2'].processed | Should -Be $true
+            $result.ContainsKey('prop3') | Should -Be $false
         }
 
-        It "Forms valid schema object for non-excluded properties" {
+        It 'Forms valid schema object for non-excluded properties' {
             $properties = @(
-                @{ name = "prop1"; type = "string" }
+                @{ name = 'prop1'; type = 'string' }
             )
-            $result = ConvertTo-PodeOASchemaObjectProperty -Properties $properties -DefinitionTag "myTag"
+            $result = ConvertTo-PodeOASchemaObjectProperty -Properties $properties -DefinitionTag 'myTag'
 
             $result.Count | Should -Be 1
-            $result["prop1"].type | Should -Be "string"
-            $result["prop1"].processed | Should -Be $true
+            $result['prop1'].type | Should -Be 'string'
+            $result['prop1'].processed | Should -Be $true
         }
     }
 
 
-    Describe "ConvertTo-PodeOAObjectSchema Tests" {
+    Describe 'ConvertTo-PodeOAObjectSchema Tests' {
         Mock ConvertTo-PodeOASchemaProperty { return @{ mockedResult = $true } }
         Mock Test-PodeOAComponentInternal { return $true }
         Mock Test-PodeOAVersion { param($Version) $Version -le 3.0 }
 
-        It "Converts valid content to schema object" {
+        It 'Converts valid content to schema object' {
             $content = @{
-                "application/json" = @{ type = "String" }
+                'application/json' = @{ type = 'String' }
             }
-            $result = ConvertTo-PodeOAObjectSchema -Content $content -DefinitionTag "myTag"
+            $result = ConvertTo-PodeOAObjectSchema -Content $content -DefinitionTag 'myTag'
 
-            $result.ContainsKey("application/json") | Should -Be $true
-            $result["application/json"].schema.type | Should -Be 'string'
+            $result.ContainsKey('application/json') | Should -Be $true
+            $result['application/json'].schema.type | Should -Be 'string'
         }
 
-        It "Handles array structures correctly" {
+        It 'Handles array structures correctly' {
             $content = @{
-                "application/json" = @{
-                    __array = $true
-                    __content = @{ type = "String" }
+                'application/json' = @{
+                    __array   = $true
+                    __content = @{ type = 'String' }
                 }
             }
-            $result = ConvertTo-PodeOAObjectSchema -Content $content -DefinitionTag "myTag"
+            $result = ConvertTo-PodeOAObjectSchema -Content $content -DefinitionTag 'myTag'
 
-            $result["application/json"].schema.type | Should -Be "array"
-            $result["application/json"].schema.Items.type | Should -Be 'string'
+            $result['application/json'].schema.type | Should -Be 'array'
+            $result['application/json'].schema.Items.type | Should -Be 'string'
         }
 
     }
