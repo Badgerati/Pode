@@ -27,7 +27,7 @@ function Add-PodeScopedVariableInternal {
 
     # check if var already defined
     if (Test-PodeScopedVariable -Name $Name) {
-        throw "Scoped Variable already defined: $($Name)"
+        throw ($PodeLocale.scopedVariableAlreadyDefinedExceptionMessage -f $Name)#"Scoped Variable already defined: $($Name)"
     }
 
     # add scoped var definition
@@ -232,7 +232,7 @@ function Find-PodeScopedVariableUsingVariableValue {
             }
 
             if ([string]::IsNullOrEmpty($value)) {
-                throw "Value for `$using:$($varName) could not be found"
+                throw ($PodeLocale.valueForUsingVariableNotFoundExceptionMessage -f $varName) #"Value for `$using:$($varName) could not be found"
             }
 
             # Add to mapped variables

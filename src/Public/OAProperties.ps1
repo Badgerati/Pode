@@ -349,7 +349,8 @@ function New-PodeOAMultiTypeProperty {
         if ($type -contains 'object') {
             if ($NoProperties) {
                 if ($Properties -or $MinProperties -or $MaxProperties) {
-                    throw '-NoProperties is not compatible with -Properties, -MinProperties and -MaxProperties'
+                    # The parameter 'NoProperties' is mutually exclusive with 'Properties', 'MinProperties' and 'MaxProperties'
+                    throw ($PodeLocale.noPropertiesMutuallyExclusiveExceptionMessage)
                 }
                 $param.properties = @($null)
             }
@@ -368,7 +369,8 @@ function New-PodeOAMultiTypeProperty {
                 }
             }
             elseif ($DiscriminatorMapping) {
-                throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
+                # The parameter 'DiscriminatorMapping' can only be used when 'DiscriminatorProperty' is present
+                throw ($PodeLocale.discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage)
             }
         }
         if ($type -contains 'boolean') {
@@ -377,7 +379,8 @@ function New-PodeOAMultiTypeProperty {
                     $param.default = $Default
                 }
                 else {
-                    throw "The default value is not a boolean and it's not part of the enum"
+                    # The default value is not a boolean and is not part of the enum
+                    throw ($PodeLocale.defaultValueNotBooleanOrEnumExceptionMessage)
                 }
             }
         }
@@ -1396,7 +1399,8 @@ function New-PodeOABoolProperty {
                 $param.default = $Default
             }
             else {
-                throw "The default value is not a boolean and it's not part of the enum"
+                # The default value is not a boolean and is not part of the enum
+                throw ($PodeLocale.defaultValueNotBooleanOrEnumExceptionMessage)
             }
         }
 
@@ -1645,7 +1649,8 @@ function New-PodeOAObjectProperty {
         $param = New-PodeOAPropertyInternal -type 'object' -Params $PSBoundParameters
         if ($NoProperties) {
             if ($Properties -or $MinProperties -or $MaxProperties) {
-                throw '-NoProperties is not compatible with -Properties, -MinProperties and -MaxProperties'
+                # The parameter `NoProperties` is mutually exclusive with `Properties`, `MinProperties` and `MaxProperties`
+                throw ($PodeLocale.noPropertiesMutuallyExclusiveExceptionMessage)
             }
             $param.properties = @($null)
             $PropertiesFromPipeline = $false
@@ -1667,7 +1672,8 @@ function New-PodeOAObjectProperty {
             }
         }
         elseif ($DiscriminatorMapping) {
-            throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
+            # The parameter 'DiscriminatorMapping' can only be used when 'DiscriminatorProperty' is present
+            throw ($PodeLocale.discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage)
         }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
@@ -1787,14 +1793,16 @@ function Merge-PodeOAProperty {
             foreach ($schema in $ObjectDefinitions) {
                 if ($schema -is [System.Object[]] -or ($schema -is [hashtable] -and
                 (($schema.type -ine 'object') -and !$schema.object))) {
-                    throw "Only properties of type Object can be associated with $($param.type)"
+                    # Only properties of type Object can be associated with $param.type
+                    throw ($PodeLocale.propertiesTypeObjectAssociationExceptionMessage -f $param.type)
                 }
                 $param.schemas += $schema
             }
         }
         if ($DiscriminatorProperty) {
             if ($type.ToLower() -eq 'allof' ) {
-                throw 'Discriminator parameter is not compatible with allOf'
+                # The parameter 'Discriminator' is incompatible with `allOf`
+                throw ($PodeLocale.discriminatorIncompatibleWithAllOfExceptionMessage)
             }
             $param.discriminator = @{
                 'propertyName' = $DiscriminatorProperty
@@ -1804,14 +1812,16 @@ function Merge-PodeOAProperty {
             }
         }
         elseif ($DiscriminatorMapping) {
-            throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
+            # The parameter 'DiscriminatorMapping' can only be used when 'DiscriminatorProperty' is present
+            throw ($PodeLocale.discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage)
         }
 
     }
     process {
         if ($ParamsList) {
             if ($ParamsList.type -ine 'object' -and !$ParamsList.object) {
-                throw "Only properties of type Object can be associated with $type"
+                # {0} can only be associated with an Object
+                throw ($PodeLocale.typeCanOnlyBeAssociatedWithObjectExceptionMessage -f $type)
             }
             $param.schemas += $ParamsList
         }
