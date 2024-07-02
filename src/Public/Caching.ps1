@@ -154,10 +154,11 @@ function Set-PodeCache {
             $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Key, $InputObject, $Ttl) -Splat
         }
 
-    # storage not found!
-    else {
-        # Cache storage with name not found when attempting to set cached item
-        throw ($PodeLocale.cacheStorageNotFoundForSetExceptionMessage -f $Storage, $Key)
+        # storage not found!
+        else {
+            # Cache storage with name not found when attempting to set cached item
+            throw ($PodeLocale.cacheStorageNotFoundForSetExceptionMessage -f $Storage, $Key)
+        }
     }
 }
 

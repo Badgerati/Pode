@@ -40,7 +40,7 @@ function Set-PodeState {
     Begin {
         if ($null -eq $PodeContext.Server.State) {
             # Pode has not been initialized
-        throw ($PodeLocale.podeNotInitializedExceptionMessage)
+            throw ($PodeLocale.podeNotInitializedExceptionMessage)
         }
 
         if ($null -eq $Scope) {

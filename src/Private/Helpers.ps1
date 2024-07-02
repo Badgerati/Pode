@@ -1194,7 +1194,7 @@ function Remove-PodeNullKeysFromHashtable {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         foreach ($key in ($Hashtable.Clone()).Keys) {
             if ($null -eq $Hashtable[$key]) {
@@ -3329,7 +3329,7 @@ function Clear-PodeHashtableInnerKey {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         if (Test-PodeIsEmpty $InputObject) {
             return

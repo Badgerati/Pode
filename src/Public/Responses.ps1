@@ -66,7 +66,7 @@ function Set-PodeResponseAttachment {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
 
         # already sent? skip
@@ -405,7 +405,7 @@ function Write-PodeFileResponse {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # resolve for relative path
         $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
@@ -451,7 +451,7 @@ function Write-PodeDirectoryResponse {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # resolve for relative path
         $RelativePath = Get-PodeRelativePath -Path $Path -JoinRoot
@@ -681,7 +681,7 @@ function Write-PodeMarkdownResponse {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
@@ -1073,7 +1073,7 @@ function Write-PodeViewResponse {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # default data if null
         if ($null -eq $Data) {
@@ -1670,7 +1670,7 @@ function Use-PodePartialView {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # default data if null
         if ($null -eq $Data) {
@@ -1690,11 +1690,11 @@ function Use-PodePartialView {
 
         $Path = [System.IO.Path]::Combine($viewFolder, $Path)
 
-    # test the file path, and set status accordingly
-    if (!(Test-PodePath $Path -NoStatus)) {
-        # The Views path does not exist
-        throw ($PodeLocale.viewsPathDoesNotExistExceptionMessage -f $Path)
-    }
+        # test the file path, and set status accordingly
+        if (!(Test-PodePath $Path -NoStatus)) {
+            # The Views path does not exist
+            throw ($PodeLocale.viewsPathDoesNotExistExceptionMessage -f $Path)
+        }
 
         # run any engine logic
         return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
@@ -1768,12 +1768,12 @@ function Send-PodeSignal {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # error if not configured
         if (!$PodeContext.Server.Signals.Enabled) {
             # WebSockets have not been configured to send signal messages
-        throw ($PodeLocale.websocketsNotConfiguredForSignalMessagesExceptionMessage)
+            throw ($PodeLocale.websocketsNotConfiguredForSignalMessagesExceptionMessage)
         }
 
         # do nothing if no value

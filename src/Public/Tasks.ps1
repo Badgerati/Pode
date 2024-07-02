@@ -438,7 +438,7 @@ function Wait-PodeTask {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         if ($Task -is [System.Threading.Tasks.Task]) {
             return (Wait-PodeNetTaskInternal -Task $Task -Timeout $Timeout)

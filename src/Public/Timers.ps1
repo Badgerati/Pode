@@ -167,7 +167,7 @@ function Invoke-PodeTimer {
         # ensure the timer exists
         if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
             # Timer 'Name' does not exist
-        throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
+            throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
         }
 
         # run timer logic
@@ -262,7 +262,7 @@ function Edit-PodeTimer {
         # ensure the timer exists
         if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
             # Timer 'Name' does not exist 
-        throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
+            throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
         }
 
         $_timer = $PodeContext.Timers.Items[$Name]

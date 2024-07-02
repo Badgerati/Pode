@@ -297,7 +297,7 @@ function New-PodeAuthScheme {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # default realm
         $_realm = 'User'
@@ -418,62 +418,62 @@ function New-PodeAuthScheme {
                 }
             }
 
-        'oauth2' {
-            if (($null -ne $InnerScheme) -and ($InnerScheme.Name -inotin @('basic', 'form'))) {
-                # OAuth2 InnerScheme can only be one of either Basic or Form authentication, but got: {0}
-                throw ($PodeLocale.oauth2InnerSchemeInvalidExceptionMessage -f $InnerScheme.Name)
-            }
-
-            if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
-                # OAuth2 requires an Authorise URL to be supplied
-                throw ($PodeLocale.oauth2RequiresAuthorizeUrlExceptionMessage)
-            }
-
-            if ($UsePKCE -and !(Test-PodeSessionsEnabled)) {
-                # Sessions are required to use OAuth2 with PKCE
-                throw ($PodeLocale.sessionsRequiredForOAuth2WithPKCEExceptionMessage)
-            }
-
-            if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
-                # OAuth2 requires a Client Secret when not using PKCE
-                throw ($PodeLocale.oauth2ClientSecretRequiredExceptionMessage)
-            }
-            return @{
-                Name          = 'OAuth2'
-                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock   = @{
-                    Script         = (Get-PodeAuthOAuth2Type)
-                    UsingVariables = $null
+            'oauth2' {
+                if (($null -ne $InnerScheme) -and ($InnerScheme.Name -inotin @('basic', 'form'))) {
+                    # OAuth2 InnerScheme can only be one of either Basic or Form authentication, but got: {0}
+                    throw ($PodeLocale.oauth2InnerSchemeInvalidExceptionMessage -f $InnerScheme.Name)
                 }
-                PostValidator = $null
-                Middleware    = $Middleware
-                Scheme        = 'oauth2'
-                InnerScheme   = $InnerScheme
-                Arguments     = @{
-                    Description = $Description
-                    Scopes      = $Scope
-                    PKCE        = @{
-                        Enabled       = $UsePKCE
-                        CodeChallenge = @{
-                            Method = $CodeChallengeMethod
+
+                if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
+                    # OAuth2 requires an Authorise URL to be supplied
+                    throw ($PodeLocale.oauth2RequiresAuthorizeUrlExceptionMessage)
+                }
+
+                if ($UsePKCE -and !(Test-PodeSessionsEnabled)) {
+                    # Sessions are required to use OAuth2 with PKCE
+                    throw ($PodeLocale.sessionsRequiredForOAuth2WithPKCEExceptionMessage)
+                }
+
+                if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
+                    # OAuth2 requires a Client Secret when not using PKCE
+                    throw ($PodeLocale.oauth2ClientSecretRequiredExceptionMessage)
+                }
+                return @{
+                    Name          = 'OAuth2'
+                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthOAuth2Type)
+                        UsingVariables = $null
+                    }
+                    PostValidator = $null
+                    Middleware    = $Middleware
+                    Scheme        = 'oauth2'
+                    InnerScheme   = $InnerScheme
+                    Arguments     = @{
+                        Description = $Description
+                        Scopes      = $Scope
+                        PKCE        = @{
+                            Enabled       = $UsePKCE
+                            CodeChallenge = @{
+                                Method = $CodeChallengeMethod
+                            }
+                        }
+                        Client      = @{
+                            ID     = $ClientId
+                            Secret = $ClientSecret
+                        }
+                        Urls        = @{
+                            Redirect  = $RedirectUrl
+                            Authorise = $AuthoriseUrl
+                            Token     = $TokenUrl
+                            User      = @{
+                                Url    = $UserUrl
+                                Method = (Protect-PodeValue -Value $UserUrlMethod -Default 'Post')
+                            }
                         }
                     }
-                    Client      = @{
-                        ID     = $ClientId
-                        Secret = $ClientSecret
-                    }
-                    Urls        = @{
-                        Redirect  = $RedirectUrl
-                        Authorise = $AuthoriseUrl
-                        Token     = $TokenUrl
-                        User      = @{
-                            Url    = $UserUrl
-                            Method = (Protect-PodeValue -Value $UserUrlMethod -Default 'Post')
-                        }
-                    }
                 }
             }
-        }
 
             'apikey' {
                 # set default location name
@@ -616,7 +616,7 @@ function New-PodeAuthAzureADScheme {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         return New-PodeAuthScheme `
             -OAuth2 `
@@ -791,25 +791,25 @@ function Add-PodeAuth {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # ensure the name doesn't already exist
         if (Test-PodeAuthExists -Name $Name) {
             # Authentication method already defined: {0}
-        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
+            throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
         }
 
-    # ensure the Scheme contains a scriptblock
-    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock
-        throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
-    }
+        # ensure the Scheme contains a scriptblock
+        if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+            # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock
+            throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
-        # Sessions are required to use session persistent authentication
-        throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
-    }
+        # if we're using sessions, ensure sessions have been setup
+        if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
+            # Sessions are required to use session persistent authentication
+            throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
+        }
 
         # check for scoped vars
         $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
@@ -1327,25 +1327,25 @@ function Add-PodeAuthWindowsAd {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # ensure the name doesn't already exist
         if (Test-PodeAuthExists -Name $Name) {
             # Authentication method already defined: {0}
-        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
+            throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
         }
 
-    # ensure the Scheme contains a scriptblock
-    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        # The supplied Scheme for the '$($Name)' Windows AD authentication validator requires a valid ScriptBlock
-        throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
-    }
+        # ensure the Scheme contains a scriptblock
+        if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+            # The supplied Scheme for the '$($Name)' Windows AD authentication validator requires a valid ScriptBlock
+            throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
-        # Sessions are required to use session persistent authentication
-        throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
-    }
+        # if we're using sessions, ensure sessions have been setup
+        if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
+            # Sessions are required to use session persistent authentication
+            throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
+        }
 
         # if AD module set, ensure we're on windows and the module is available, then import/export it
         if ($ADModule) {
@@ -1356,11 +1356,11 @@ function Add-PodeAuthWindowsAd {
         if ([string]::IsNullOrWhiteSpace($Fqdn)) {
             $Fqdn = Get-PodeAuthDomainName
 
-        if ([string]::IsNullOrWhiteSpace($Fqdn)) {
-            # No domain server name has been supplied for Windows AD authentication
-            throw ($PodeLocale.noDomainServerNameForWindowsAdAuthExceptionMessage)
+            if ([string]::IsNullOrWhiteSpace($Fqdn)) {
+                # No domain server name has been supplied for Windows AD authentication
+                throw ($PodeLocale.noDomainServerNameForWindowsAdAuthExceptionMessage)
+            }
         }
-    }
 
         # set the domain if not passed
         if ([string]::IsNullOrWhiteSpace($Domain)) {
@@ -1637,8 +1637,8 @@ function Add-PodeAuthMiddleware {
     }
 
     Get-PodeAuthMiddlewareScript |
-        New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
-        Add-PodeMiddleware -Name $Name -Route $Route
+    New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
+    Add-PodeMiddleware -Name $Name -Route $Route
 
     Set-PodeOAGlobalAuth -DefinitionTag $DefinitionTag -Name $Authentication -Route $Route
 }
@@ -1932,25 +1932,25 @@ function Add-PodeAuthUserFile {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # ensure the name doesn't already exist
         if (Test-PodeAuthExists -Name $Name) {
             # Authentication method already defined: {0}
-        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
+            throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
         }
 
-    # ensure the Scheme contains a scriptblock
-    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock.
-        throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
-    }
+        # ensure the Scheme contains a scriptblock
+        if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+            # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock.
+            throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
-        # Sessions are required to use session persistent authentication
-        throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
-    }
+        # if we're using sessions, ensure sessions have been setup
+        if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
+            # Sessions are required to use session persistent authentication
+            throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
+        }
 
         # set the file path if not passed
         if ([string]::IsNullOrWhiteSpace($FilePath)) {
@@ -1960,11 +1960,11 @@ function Add-PodeAuthUserFile {
             $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot -Resolve
         }
 
-    # ensure the user file exists
-    if (!(Test-PodePath -Path $FilePath -NoStatus -FailOnDirectory)) {
-        # The user file does not exist: {0}
-        throw ($PodeLocale.userFileDoesNotExistExceptionMessage -f $FilePath)
-    }
+        # ensure the user file exists
+        if (!(Test-PodePath -Path $FilePath -NoStatus -FailOnDirectory)) {
+            # The user file does not exist: {0}
+            throw ($PodeLocale.userFileDoesNotExistExceptionMessage -f $FilePath)
+        }
 
         # if we have a scriptblock, deal with using vars
         if ($null -ne $ScriptBlock) {
@@ -2107,31 +2107,31 @@ function Add-PodeAuthWindowsLocal {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # ensure we're on Windows!
         if (!(Test-PodeIsWindows)) {
             # Windows Local Authentication support is for Windows only
-        throw ($PodeLocale.windowsLocalAuthSupportIsForWindowsOnlyExceptionMessage)
+            throw ($PodeLocale.windowsLocalAuthSupportIsForWindowsOnlyExceptionMessage)
         }
 
-    # ensure the name doesn't already exist
-    if (Test-PodeAuthExists -Name $Name) {
-        # Authentication method already defined: {0}
-        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
-    }
+        # ensure the name doesn't already exist
+        if (Test-PodeAuthExists -Name $Name) {
+            # Authentication method already defined: {0}
+            throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        }
 
-    # ensure the Scheme contains a scriptblock
-    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock.
-        throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
-    }
+        # ensure the Scheme contains a scriptblock
+        if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+            # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock.
+            throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
-        # Sessions are required to use session persistent authentication
-        throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
-    }
+        # if we're using sessions, ensure sessions have been setup
+        if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
+            # Sessions are required to use session persistent authentication
+            throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
+        }
 
         # if we have a scriptblock, deal with using vars
         if ($null -ne $ScriptBlock) {
@@ -2489,7 +2489,7 @@ function ConvertFrom-PodeOIDCDiscovery {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # get the discovery doc
         if (!$Url.EndsWith('/.well-known/openid-configuration')) {
@@ -2498,17 +2498,17 @@ function ConvertFrom-PodeOIDCDiscovery {
 
         $config = Invoke-RestMethod -Method Get -Uri $Url
 
-    # check it supports the code response_type
-    if ($config.response_types_supported -inotcontains 'code') {
-        # The OAuth2 provider does not support the 'code' response_type
-        throw ($PodeLocale.oauth2ProviderDoesNotSupportCodeResponseTypeExceptionMessage)
-    }
+        # check it supports the code response_type
+        if ($config.response_types_supported -inotcontains 'code') {
+            # The OAuth2 provider does not support the 'code' response_type
+            throw ($PodeLocale.oauth2ProviderDoesNotSupportCodeResponseTypeExceptionMessage)
+        }
 
-    # can we have an InnerScheme?
-    if (($null -ne $InnerScheme) -and ($config.grant_types_supported -inotcontains 'password')) {
-        # The OAuth2 provider does not support the 'password' grant_type required by using an InnerScheme
-        throw ($PodeLocale.oauth2ProviderDoesNotSupportPasswordGrantTypeExceptionMessage)
-    }
+        # can we have an InnerScheme?
+        if (($null -ne $InnerScheme) -and ($config.grant_types_supported -inotcontains 'password')) {
+            # The OAuth2 provider does not support the 'password' grant_type required by using an InnerScheme
+            throw ($PodeLocale.oauth2ProviderDoesNotSupportPasswordGrantTypeExceptionMessage)
+        }
 
         # scopes
         $scopes = $config.scopes_supported

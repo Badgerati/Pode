@@ -37,7 +37,7 @@ function Register-PodeSecretManagementVault {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # use the Name for VaultName if not passed
         if ([string]::IsNullOrWhiteSpace($VaultName)) {
@@ -54,13 +54,13 @@ function Register-PodeSecretManagementVault {
         # is this the local SecretStore provider?
         $isSecretStore = ($ModuleName -ieq 'Microsoft.PowerShell.SecretStore')
 
-    # check if we have an unlock password for local secret store
-    if ($isSecretStore) {
-        if ([string]::IsNullOrEmpty($VaultConfig.Unlock.Secret)) {
-            # An 'UnlockSecret' is required when using Microsoft.PowerShell.SecretStore
-            throw ($PodeLocale.unlockSecretRequiredExceptionMessage)
+        # check if we have an unlock password for local secret store
+        if ($isSecretStore) {
+            if ([string]::IsNullOrEmpty($VaultConfig.Unlock.Secret)) {
+                # An 'UnlockSecret' is required when using Microsoft.PowerShell.SecretStore
+                throw ($PodeLocale.unlockSecretRequiredExceptionMessage)
+            }
         }
-    }
 
         # does the local secret store already exist?
         $secretStoreExists = ($isSecretStore -and (Test-PodeSecretVaultInternal -Name $VaultName))
@@ -160,7 +160,7 @@ function Register-PodeSecretCustomVault {
         # unlock secret with no script?
         if ($VaultConfig.Unlock.Enabled -and (Test-PodeIsEmpty $UnlockScriptBlock)) {
             # Unlock secret supplied for custom Secret Vault type, but not Unlock ScriptBlock supplied
-        throw ($PodeLocale.unlockSecretButNoScriptBlockExceptionMessage)
+            throw ($PodeLocale.unlockSecretButNoScriptBlockExceptionMessage)
         }
 
         # all is good, so set the config
@@ -211,11 +211,11 @@ function Unlock-PodeSecretCustomVault {
             return
         }
 
-    # do we have an unlock scriptblock
-    if ($null -eq $VaultConfig.Custom.Unlock) {
-         # No Unlock ScriptBlock supplied for unlocking the vault '$($VaultConfig.Name)'
-        throw ($PodeLocale.noUnlockScriptBlockForVaultExceptionMessage -f $VaultConfig.Name) 
-    }
+        # do we have an unlock scriptblock
+        if ($null -eq $VaultConfig.Custom.Unlock) {
+            # No Unlock ScriptBlock supplied for unlocking the vault '$($VaultConfig.Name)'
+            throw ($PodeLocale.noUnlockScriptBlockForVaultExceptionMessage -f $VaultConfig.Name)
+        }
 
         # unlock the vault, and get back an expiry
         $expiry = Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unlock -Splat -Return -Arguments @(

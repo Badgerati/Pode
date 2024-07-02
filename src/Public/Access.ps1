@@ -182,12 +182,12 @@ function Add-PodeAccess {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # check name unique
         if (Test-PodeAccessExists -Name $Name) {
             # Access method already defined: $($Name)
-            throw ($PodeLocale.accessMethodAlreadyDefinedExceptionMessage -f $Name)  
+            throw ($PodeLocale.accessMethodAlreadyDefinedExceptionMessage -f $Name)
         }
 
         # parse using variables in validator scriptblock
@@ -683,8 +683,8 @@ function Add-PodeAccessMiddleware {
     }
 
     Get-PodeAccessMiddlewareScript |
-        New-PodeMiddleware -ArgumentList @{ Name = $Access } |
-        Add-PodeMiddleware -Name $Name -Route $Route
+    New-PodeMiddleware -ArgumentList @{ Name = $Access } |
+    Add-PodeMiddleware -Name $Name -Route $Route
 }
 
 <#

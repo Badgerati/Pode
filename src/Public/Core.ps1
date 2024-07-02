@@ -140,7 +140,7 @@ function Start-PodeServer {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # ensure the session is clean
         $PodeContext = $null
@@ -217,23 +217,23 @@ function Start-PodeServer {
                 }
             }
 
-        if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Shutdown) {
-            # (IIS Shutdown)
-            Write-PodeHost $PodeLocale.iisShutdownMessage -NoNewline -ForegroundColor Yellow
-            Write-PodeHost  ' ' -NoNewline
+            if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Shutdown) {
+                # (IIS Shutdown)
+                Write-PodeHost $PodeLocale.iisShutdownMessage -NoNewLine -ForegroundColor Yellow
+                Write-PodeHost ' ' -NoNewLine
+            }
+            # Terminating...
+            Write-PodeHost $PodeLocale.terminatingMessage -NoNewLine -ForegroundColor Yellow
+            Invoke-PodeEvent -Type Terminate
+            $PodeContext.Tokens.Cancellation.Cancel()
         }
-        # Terminating...
-        Write-PodeHost $PodeLocale.terminatingMessage -NoNewline -ForegroundColor Yellow
-        Invoke-PodeEvent -Type Terminate
-        $PodeContext.Tokens.Cancellation.Cancel()
-    }
-    catch {
-        Invoke-PodeEvent -Type Crash
-        $ShowDoneMessage = $false
-        throw
-    }
-    finally {
-        Invoke-PodeEvent -Type Stop
+        catch {
+            Invoke-PodeEvent -Type Crash
+            $ShowDoneMessage = $false
+            throw
+        }
+        finally {
+            Invoke-PodeEvent -Type Stop
 
             # set output values
             Set-PodeOutputVariable
@@ -661,16 +661,16 @@ function Show-PodeGui {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # error if serverless
         Test-PodeIsServerless -FunctionName 'Show-PodeGui' -ThrowError
 
-    # only valid for Windows PowerShell
-    if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
-        # Show-PodeGui is currently only available for Windows PowerShell and PowerShell 7+ on Windows
-        throw ($PodeLocale.showPodeGuiOnlyAvailableOnWindowsExceptionMessage)
-    }
+        # only valid for Windows PowerShell
+        if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
+            # Show-PodeGui is currently only available for Windows PowerShell and PowerShell 7+ on Windows
+            throw ($PodeLocale.showPodeGuiOnlyAvailableOnWindowsExceptionMessage)
+        }
 
         # enable the gui and set general settings
         $PodeContext.Server.Gui.Enabled = $true
@@ -680,14 +680,14 @@ function Show-PodeGui {
         $PodeContext.Server.Gui.WindowStyle = $WindowStyle
         $PodeContext.Server.Gui.ResizeMode = $ResizeMode
 
-    # set the window's icon path
-    if (![string]::IsNullOrWhiteSpace($Icon)) {
-        $PodeContext.Server.Gui.Icon = Get-PodeRelativePath -Path $Icon -JoinRoot -Resolve
-        if (!(Test-Path $PodeContext.Server.Gui.Icon)) {
-            # Path to icon for GUI does not exist
-            throw ($PodeLocale.pathToIconForGuiDoesNotExistExceptionMessage -f $PodeContext.Server.Gui.Icon)
+        # set the window's icon path
+        if (![string]::IsNullOrWhiteSpace($Icon)) {
+            $PodeContext.Server.Gui.Icon = Get-PodeRelativePath -Path $Icon -JoinRoot -Resolve
+            if (!(Test-Path $PodeContext.Server.Gui.Icon)) {
+                # Path to icon for GUI does not exist
+                throw ($PodeLocale.pathToIconForGuiDoesNotExistExceptionMessage -f $PodeContext.Server.Gui.Icon)
+            }
         }
-    }
 
         # set the height of the window
         $PodeContext.Server.Gui.Height = $Height
@@ -704,11 +704,11 @@ function Show-PodeGui {
         # set the gui to use a specific listener
         $PodeContext.Server.Gui.EndpointName = $EndpointName
 
-    if (![string]::IsNullOrWhiteSpace($EndpointName)) {
-        if (!$PodeContext.Server.Endpoints.ContainsKey($EndpointName)) {
-            # Endpoint with name '$EndpointName' does not exist.
-            throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $EndpointName)
-        }
+        if (![string]::IsNullOrWhiteSpace($EndpointName)) {
+            if (!$PodeContext.Server.Endpoints.ContainsKey($EndpointName)) {
+                # Endpoint with name '$EndpointName' does not exist.
+                throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $EndpointName)
+            }
 
             $PodeContext.Server.Gui.Endpoint = $PodeContext.Server.Endpoints[$EndpointName]
         }

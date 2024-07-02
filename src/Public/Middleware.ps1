@@ -369,12 +369,12 @@ function Add-PodeBodyParser {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # if a parser for the type already exists, fail
         if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
             # A body-parser is already defined for the content-type
-        throw ($PodeLocale.bodyParserAlreadyDefinedForContentTypeExceptionMessage -f $ContentType)
+            throw ($PodeLocale.bodyParserAlreadyDefinedForContentTypeExceptionMessage -f $ContentType)
         }
 
         # check for scoped vars
@@ -483,12 +483,12 @@ function Add-PodeMiddleware {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # ensure name doesn't already exist
         if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
             # [Middleware] Name: Middleware already defined
-        throw ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f $Name)
+            throw ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f $Name)
 
         }
 
@@ -506,11 +506,11 @@ function Add-PodeMiddleware {
             $InputObject.Options = Protect-PodeValue -Value $Options -Default $InputObject.Options
         }
 
-    # ensure we have a script to run
-    if (Test-PodeIsEmpty $InputObject.Logic) {
-        # [Middleware]: No logic supplied in ScriptBlock
-        throw ($PodeLocale.middlewareNoLogicSuppliedExceptionMessage)
-    }
+        # ensure we have a script to run
+        if (Test-PodeIsEmpty $InputObject.Logic) {
+            # [Middleware]: No logic supplied in ScriptBlock
+            throw ($PodeLocale.middlewareNoLogicSuppliedExceptionMessage)
+        }
 
         # set name, and override route/args
         $InputObject.Name = $Name
@@ -568,7 +568,7 @@ function New-PodeMiddleware {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         return New-PodeMiddlewareInternal `
             -ScriptBlock $ScriptBlock `

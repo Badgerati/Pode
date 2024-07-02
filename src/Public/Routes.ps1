@@ -2021,27 +2021,27 @@ function ConvertTo-PodeRoute {
             Write-Verbose 'Getting exported commands from module'
             $ModuleCommands = (Get-Module -Name $Module | Sort-Object -Descending | Select-Object -First 1).ExportedCommands.Keys
 
-        # if commands were supplied validate them - otherwise use all exported ones
-        if (Test-PodeIsEmpty $Commands) {
-            Write-Verbose "Using all commands in $($Module) for converting to routes"
-            $Commands = $ModuleCommands
-        }
-        else {
-            Write-Verbose "Validating supplied commands against module's exported commands"
-            foreach ($cmd in $Commands) {
-                if ($ModuleCommands -inotcontains $cmd) {
-                    # Module Module does not contain function cmd to convert to a Route
-                    throw ($PodeLocale.moduleDoesNotContainFunctionExceptionMessage -f $Module, $cmd)
+            # if commands were supplied validate them - otherwise use all exported ones
+            if (Test-PodeIsEmpty $Commands) {
+                Write-Verbose "Using all commands in $($Module) for converting to routes"
+                $Commands = $ModuleCommands
+            }
+            else {
+                Write-Verbose "Validating supplied commands against module's exported commands"
+                foreach ($cmd in $Commands) {
+                    if ($ModuleCommands -inotcontains $cmd) {
+                        # Module Module does not contain function cmd to convert to a Route
+                        throw ($PodeLocale.moduleDoesNotContainFunctionExceptionMessage -f $Module, $cmd)
+                    }
                 }
             }
         }
-    }
 
-    # if there are no commands, fail
-    if (Test-PodeIsEmpty $Commands) {
-        # No commands supplied to convert to Routes
-        throw ($PodeLocale.noCommandsSuppliedToConvertToRoutesExceptionMessage)
-    }
+        # if there are no commands, fail
+        if (Test-PodeIsEmpty $Commands) {
+            # No commands supplied to convert to Routes
+            throw ($PodeLocale.noCommandsSuppliedToConvertToRoutesExceptionMessage)
+        }
 
         # trim end trailing slashes from the path
         $Path = Protect-PodeValue -Value $Path -Default '/'

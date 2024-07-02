@@ -2303,7 +2303,7 @@ Describe 'OpenApi' {
 
         It 'PassThru with OperationID' {
             {$Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru}|
-            Should -Throw -ExpectedMessage "OperationID:updatePet has to be unique and cannot be applied to an array."
+            Should -Throw -ExpectedMessage ($PodeLocale.operationIdMustBeUniqueForArrayExceptionMessage -f 'updatePet') #'OperationID: {0} has to be unique and cannot be applied to an array.'
         }
     }
 

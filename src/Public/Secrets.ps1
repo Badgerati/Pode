@@ -672,7 +672,7 @@ function Update-PodeSecret {
         # has the secret been mounted?
         if (!(Test-PodeSecret -Name $Name)) {
             # No Secret named has been mounted
-        throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
+            throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
         }
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
@@ -921,7 +921,7 @@ function Set-PodeSecret {
         # has the vault been registered?
         if (!(Test-PodeSecretVault -Name $Vault)) {
             # No Secret Vault with the name has been registered
-        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
+            throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
         }
         # Initialize an array to hold piped-in values
         $pipelineValue = @()

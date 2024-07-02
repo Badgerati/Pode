@@ -50,13 +50,13 @@ function ConvertTo-PodeOAObjectSchema {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         # Ensure all content types are valid MIME types
         foreach ($type in $Content.Keys) {
             if ($type -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$|^"\*\/\*"$') {
                 # Invalid content-type found for schema: $($type)
-                throw ($PodeLocale.invalidContentTypeForSchemaExceptionMessage -f $type) 
+                throw ($PodeLocale.invalidContentTypeForSchemaExceptionMessage -f $type)
             }
         }
         # manage generic schema json conversion issue
@@ -119,95 +119,95 @@ function ConvertTo-PodeOAObjectSchema {
                 }
             }
 
-        if ($Content[$type].__array) {
-            $isArray = $true
-            $item = $Content[$type].__content
-            $obj[$type].schema = [ordered]@{
-                'type'  = 'array'
-                'items' = $null
+            if ($Content[$type].__array) {
+                $isArray = $true
+                $item = $Content[$type].__content
+                $obj[$type].schema = [ordered]@{
+                    'type'  = 'array'
+                    'items' = $null
+                }
+                if ( $Content[$type].__title) {
+                    $obj[$type].schema.title = $Content[$type].__title
+                }
+                if ( $Content[$type].__uniqueItems) {
+                    $obj[$type].schema.uniqueItems = $Content[$type].__uniqueItems
+                }
+                if ( $Content[$type].__maxItems) {
+                    $obj[$type].schema.__maxItems = $Content[$type].__maxItems
+                }
+                if ( $Content[$type].minItems) {
+                    $obj[$type].schema.minItems = $Content[$type].__minItems
+                }
             }
-            if ( $Content[$type].__title) {
-                $obj[$type].schema.title = $Content[$type].__title
+            else {
+                $item = $Content[$type]
+                $isArray = $false
             }
-            if ( $Content[$type].__uniqueItems) {
-                $obj[$type].schema.uniqueItems = $Content[$type].__uniqueItems
-            }
-            if ( $Content[$type].__maxItems) {
-                $obj[$type].schema.__maxItems = $Content[$type].__maxItems
-            }
-            if ( $Content[$type].minItems) {
-                $obj[$type].schema.minItems = $Content[$type].__minItems
-            }
-        }
-        else {
-            $item = $Content[$type]
-            $isArray = $false
-        }
-        # Add set schema objects or empty content
-        if ($item -is [string]) {
-            if (![string]::IsNullOrEmpty($item )) {
-                #Check for empty reference
-                if (@('string', 'integer' , 'number', 'boolean' ) -icontains $item) {
-                    if ($isArray) {
-                        $obj[$type].schema.items = @{
-                            'type' = $item.ToLower()
+            # Add set schema objects or empty content
+            if ($item -is [string]) {
+                if (![string]::IsNullOrEmpty($item )) {
+                    #Check for empty reference
+                    if (@('string', 'integer' , 'number', 'boolean' ) -icontains $item) {
+                        if ($isArray) {
+                            $obj[$type].schema.items = @{
+                                'type' = $item.ToLower()
+                            }
+                        }
+                        else {
+                            $obj[$type].schema = @{
+                                'type' = $item.ToLower()
+                            }
                         }
                     }
                     else {
-                        $obj[$type].schema = @{
-                            'type' = $item.ToLower()
+                        Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
+                        if ($isArray) {
+                            $obj[$type].schema.items = @{
+                                '$ref' = "#/components/schemas/$($item)"
+                            }
+                        }
+                        else {
+                            $obj[$type].schema = @{
+                                '$ref' = "#/components/schemas/$($item)"
+                            }
                         }
                     }
                 }
                 else {
-                    Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
-                    if ($isArray) {
-                        $obj[$type].schema.items = @{
-                            '$ref' = "#/components/schemas/$($item)"
+                    # Create an empty content
+                    $obj[$type] = @{}
+                }
+            }
+            else {
+                if ($item.Count -eq 0) {
+                    $result = @{}
+                }
+                else {
+                    $result = ($item | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
+                }
+                if ($Properties) {
+                    if ($item.Name) {
+                        $obj[$type].schema = @{
+                            'properties' = @{
+                                $item.Name = $result
+                            }
                         }
                     }
                     else {
-                        $obj[$type].schema = @{
-                            '$ref' = "#/components/schemas/$($item)"
-                        }
-                    }
-                }
-            }
-            else {
-                # Create an empty content
-                $obj[$type] = @{}
-            }
-        }
-        else {
-            if ($item.Count -eq 0) {
-                $result = @{}
-            }
-            else {
-                $result = ($item | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
-            }
-            if ($Properties) {
-                if ($item.Name) {
-                    $obj[$type].schema = @{
-                        'properties' = @{
-                            $item.Name = $result
-                        }
+                        # The Properties parameters cannot be used if the Property has no name
+                        throw ($PodeLocale.propertiesParameterWithoutNameExceptionMessage)
                     }
                 }
                 else {
-                    # The Properties parameters cannot be used if the Property has no name
-                    throw ($PodeLocale.propertiesParameterWithoutNameExceptionMessage)
-                }
-            }
-            else {
-                if ($isArray) {
-                    $obj[$type].schema.items = $result
-                }
-                else {
-                    $obj[$type].schema = $result
+                    if ($isArray) {
+                        $obj[$type].schema.items = $result
+                    }
+                    else {
+                        $obj[$type].schema = $result
+                    }
                 }
             }
         }
-    }
 
         return $obj
     }
@@ -415,29 +415,29 @@ function ConvertTo-PodeOASchemaProperty {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
 
-    if ( @('allof', 'oneof', 'anyof') -icontains $Property.type) {
-        $schema = ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $Property
-    }
-    else {
-        # base schema type
-        $schema = [ordered]@{ }
-        if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
-            if ($Property.type -is [string[]]) {
-                # Multi type properties requeired OpenApi Version 3.1 or above
-                throw ($PodeLocale.multiTypePropertiesRequireOpenApi31ExceptionMessage)
-            }
-            $schema['type'] = $Property.type.ToLower()
+        if ( @('allof', 'oneof', 'anyof') -icontains $Property.type) {
+            $schema = ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $Property
         }
         else {
-            $schema.type = @($Property.type.ToLower())
-            if ($Property.nullable) {
-                $schema.type += 'null'
+            # base schema type
+            $schema = [ordered]@{ }
+            if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
+                if ($Property.type -is [string[]]) {
+                    # Multi type properties requeired OpenApi Version 3.1 or above
+                    throw ($PodeLocale.multiTypePropertiesRequireOpenApi31ExceptionMessage)
+                }
+                $schema['type'] = $Property.type.ToLower()
+            }
+            else {
+                $schema.type = @($Property.type.ToLower())
+                if ($Property.nullable) {
+                    $schema.type += 'null'
+                }
             }
         }
-    }
 
         if ($Property.externalDocs) {
             $schema['externalDocs'] = $Property.externalDocs
@@ -1834,11 +1834,11 @@ function ConvertTo-PodeOAHeaderProperty {
                 }
             }
             else {
-             # Header requires a name when used in an encoding context
-             throw ($PodeLocale.headerMustHaveNameInEncodingContextExceptionMessage)
-            
+                # Header requires a name when used in an encoding context
+                throw ($PodeLocale.headerMustHaveNameInEncodingContextExceptionMessage)
+
+            }
         }
-    }
 
         return $elems
     }

@@ -287,11 +287,11 @@ function Enable-PodeOpenApi {
                 Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
             }
             else {
-                Write-PodeYamlResponse -Value $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
+                Write-PodeYamlResponse -Value $def -Depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
             }
         }
         else {
-            Write-PodeJsonResponse -Value $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth -NoCompress:$meta.NoCompress
+            Write-PodeJsonResponse -Value $def -Depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth -NoCompress:$meta.NoCompress
         }
     }
 
@@ -490,14 +490,14 @@ function Get-PodeOADefinition {
         $meta.Description = $Description
     }
 
-    $oApi = Get-PodeOpenApiDefinitionInternal  -MetaInfo $meta -EndpointName $WebEvent.Endpoint.Name -DefinitionTag $DefinitionTag
+    $oApi = Get-PodeOpenApiDefinitionInternal -MetaInfo $meta -EndpointName $WebEvent.Endpoint.Name -DefinitionTag $DefinitionTag
 
     switch ($Format.ToLower()) {
         'json' {
-            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
+            return ConvertTo-Json -InputObject $oApi -Depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
         }
         'json-compress' {
-            return ConvertTo-Json -InputObject $oApi -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth -Compress
+            return ConvertTo-Json -InputObject $oApi -Depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth -Compress
         }
         'yaml' {
             return ConvertTo-PodeYaml -InputObject $oApi -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
@@ -645,7 +645,7 @@ function Add-PodeOAResponse {
                 if (! $r.OpenApi.Responses.$tag) {
                     $r.OpenApi.Responses.$tag = @{}
                 }
-                $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
+                $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal -DefinitionTag $tag -Params $PSBoundParameters
             }
         }
 
@@ -1245,7 +1245,7 @@ function ConvertTo-PodeOAParameter {
             name = $Name
         }
         if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Schema  -Append
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Schema -Append
         }
         if ($AllowEmptyValue.IsPresent ) {
             $prop['allowEmptyValue'] = $AllowEmptyValue.IsPresent
@@ -1333,7 +1333,7 @@ function ConvertTo-PodeOAParameter {
     }
     elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
         # return a reference
-        Test-PodeOAComponentInternal -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
+        Test-PodeOAComponentInternal -Field parameters -DefinitionTag $DefinitionTag -Name $Reference -PostValidation
         $prop = [ordered]@{
             '$ref' = "#/components/parameters/$Reference"
         }
@@ -1355,7 +1355,7 @@ function ConvertTo-PodeOAParameter {
             }
         }
         if ($In -ieq 'Header' -and $PodeContext.Server.Security.autoHeaders -and $Name ) {
-            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value  $Name  -Append
+            Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Name -Append
         }
 
         # build the base parameter
@@ -1602,12 +1602,12 @@ function Set-PodeOARouteInfo {
             if ($OperationId) {
                 if ($Route.Count -gt 1) {
                     # OperationID:$OperationId has to be unique and cannot be applied to an array
-                throw ($PodeLocale.operationIdMustBeUniqueForArrayExceptionMessage -f $OperationId)
+                    throw ($PodeLocale.operationIdMustBeUniqueForArrayExceptionMessage -f $OperationId)
                 }
                 foreach ($tag in $DefinitionTag) {
                     if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
                         # OperationID:$OperationId has to be unique
-                    throw ($PodeLocale.operationIdMustBeUniqueExceptionMessage -f $OperationId)
+                        throw ($PodeLocale.operationIdMustBeUniqueExceptionMessage -f $OperationId)
                     }
                     $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId += $OperationId
                 }
@@ -3098,7 +3098,7 @@ function New-PodeOAResponseLink {
             $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
         }
         if ($Reference) {
-            Test-PodeOAComponentInternal -Field links -DefinitionTag $DefinitionTag -Name $Reference  -PostValidation
+            Test-PodeOAComponentInternal -Field links -DefinitionTag $DefinitionTag -Name $Reference -PostValidation
             if (!$Name) {
                 $Name = $Reference
             }
@@ -3488,7 +3488,7 @@ function Select-PodeOADefinition {
 
     $PodeContext.Server.OpenAPI.SelectedDefinitionTag = $Tag
 
-    $null = Invoke-PodeScriptBlock -ScriptBlock $Scriptblock   -UsingVariables $usingVars -Splat
+    $null = Invoke-PodeScriptBlock -ScriptBlock $Scriptblock -UsingVariables $usingVars -Splat
     $PodeContext.Server.OpenAPI.SelectedDefinitionTag = $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Pop()
 
 }

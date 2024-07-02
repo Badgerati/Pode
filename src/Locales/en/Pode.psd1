@@ -283,5 +283,6 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory module only available on Windows OS.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'Request Logging has already been enabled.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
 }
 

@@ -283,5 +283,7 @@
     adModuleWindowsOnlyExceptionMessage                               = 'O módulo Active Directory está disponível apenas no Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'O registro de solicitações já está habilitado.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duração inválida fornecida para Access-Control-Max-Age: {0}. Deve ser maior que 0.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
+
 }
 

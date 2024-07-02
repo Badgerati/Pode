@@ -80,7 +80,7 @@ function Add-PodeOAComponentResponse {
     )
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     foreach ($tag in $DefinitionTag) {
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.responses[$Name] = New-PodeOResponseInternal -DefinitionTag $tag  -Params $PSBoundParameters
+        $PodeContext.Server.OpenAPI.Definitions[$tag].components.responses[$Name] = New-PodeOResponseInternal -DefinitionTag $tag -Params $PSBoundParameters
     }
 }
 
@@ -150,7 +150,7 @@ function Add-PodeOAComponentSchema {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
@@ -158,11 +158,11 @@ function Add-PodeOAComponentSchema {
             $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
             if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaValidation) {
                 try {
-                    $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty  -DefinitionTag $tag) | Resolve-PodeOAReference -DefinitionTag $tag
+                    $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag) | Resolve-PodeOAReference -DefinitionTag $tag
                     $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
                         'available' = $true
                         'schema'    = $modifiedComponent
-                        'json'      = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.depth
+                        'json'      = $modifiedComponent | ConvertTo-Json -Depth $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.depth
                     }
                 }
                 catch {
@@ -247,7 +247,7 @@ function Add-PodeOAComponentHeader {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
@@ -340,7 +340,7 @@ function Add-PodeOAComponentRequestBody {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
@@ -416,24 +416,24 @@ function Add-PodeOAComponentParameter {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
 
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    foreach ($tag in $DefinitionTag) {
-        if ([string]::IsNullOrWhiteSpace($Name)) {
-            if ($Parameter.name) {
-                $Name = $Parameter.name
+        foreach ($tag in $DefinitionTag) {
+            if ([string]::IsNullOrWhiteSpace($Name)) {
+                if ($Parameter.name) {
+                    $Name = $Parameter.name
+                }
+                else {
+                    # The Parameter has no name. Please provide a name to this component using the `Name` parameter
+                    throw ($PodeLocale.parameterHasNoNameExceptionMessage)
+                }
             }
-            else {
-                # The Parameter has no name. Please provide a name to this component using the `Name` parameter
-                throw ($PodeLocale.parameterHasNoNameExceptionMessage)
-            }
+            $PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters[$Name] = $Parameter
         }
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters[$Name] = $Parameter
     }
-
 }
 
 <#
@@ -939,7 +939,7 @@ function Remove-PodeOAComponent {
 }
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
-    New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer
+    New-Alias Enable-PodeOpenApiViewer -Value Enable-PodeOAViewer
 }
 
 if (!(Test-Path Alias:Enable-PodeOA)) {
