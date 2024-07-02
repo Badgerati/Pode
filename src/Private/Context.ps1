@@ -72,6 +72,7 @@ function New-PodeContext {
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Tasks -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value @() -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
@@ -121,6 +122,12 @@ function New-PodeContext {
         Results = @{}
     }
 
+    $ctx.AsyncRoutes = @{
+        Enabled = $true
+        Items   = @{}
+        Results = @{}
+    }
+
     $ctx.Fim = @{
         Enabled = ($EnablePool -icontains 'files')
         Items   = @{}
@@ -142,6 +149,7 @@ function New-PodeContext {
         Files      = 1
         Tasks      = 2
         WebSockets = 2
+        AsyncRoutes      = 20
     }
 
     # set socket details for pode server
@@ -432,6 +440,7 @@ function New-PodeContext {
         Gui       = $null
         Tasks     = $null
         Files     = $null
+        AsyncRoutes     = $null
     }
 
     # threading locks, etc.
@@ -604,6 +613,12 @@ function New-PodeRunspacePool {
             Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Tasks, $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
         }
+    }
+
+
+    $PodeContext.RunspacePools.AsyncRoutes = @{
+        Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.AsyncRoutes, $PodeContext.RunspaceState, $Host)
+        State = 'Waiting'
     }
 
     # setup files runspace pool -if we have any file watchers
@@ -781,6 +796,7 @@ function New-PodeStateContext {
             Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
             Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
             Add-Member -MemberType NoteProperty -Name Tasks -Value $Context.Tasks -PassThru |
+            Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value $Context.AsyncRoutes -PassThru |
             Add-Member -MemberType NoteProperty -Name Fim -Value $Context.Fim -PassThru |
             Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
             Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |

@@ -554,7 +554,7 @@ function Get-PodeSubnetRange {
 function Add-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files','AsyncRoutes')]
         [string]
         $Type,
 
@@ -599,15 +599,13 @@ function Add-PodeRunspace {
                 $null = $ps.AddParameter($_, $Parameters[$_])
             }
         }
-
         # start the pipeline
         if ($null -eq $OutputStream) {
             $pipeline = $ps.BeginInvoke()
         }
         else {
             $pipeline = $ps.BeginInvoke($OutputStream, $OutputStream)
-        }
-
+        } 
         # do we need to remember this pipeline? sorry, what did you say?
         if ($Forget) {
             $null = $pipeline

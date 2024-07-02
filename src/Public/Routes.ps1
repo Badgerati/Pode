@@ -205,7 +205,10 @@ function Add-PodeRoute {
         $PassThru,
 
         [string[]]
-        $OADefinitionTag
+        $OADefinitionTag,
+
+        [switch]
+        $Async
     )
 
     # check if we have any route group info defined
@@ -312,6 +315,35 @@ function Add-PodeRoute {
 
     # check for scoped vars
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+
+    if ($Async.IsPresent) {
+        $PodeContext.AsyncRoutes.Items["$($Method)_$Path"] = @{
+            Name           = "$($Method)_$Path"
+            Script         = ConvertTo-PodeEnhancedScriptBlock -ScriptBlock $ScriptBlock
+            UsingVariables = $usingVars
+            Arguments      = (Protect-PodeValue -Value $ArgumentList -Default @{})
+        }
+        $ScriptBlock = [scriptblock] {
+            #   Write-PodeHost $WebEvent -Explode
+            write-podehost "$($WebEvent.Method)_$($WebEvent.Path)"
+            #     write-podehost         $PodeContext.AsyncRoutes.Items  -Explode
+            #       write-podehost $WebEvent -Explode
+            #     write-podehost $PodeContext -Explode
+            $id = New-PodeGuid
+            $task = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items["$($WebEvent.Method)_$($WebEvent.Path)"] -ArgumentList @{ WebEvent = $WebEvent; Id = $id }
+            write-podehost $task -Explode
+            $res = @{
+                StartingTime = $task.startingTime
+                Id           = $task.ID
+                State        = 'NotStarted'
+            }
+            Write-PodeJsonResponse -Value ($res | ConvertTo-Json) -StatusCode 200
+        }
+        # check for scoped vars
+        #$ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+    }
 
     # convert any middleware into valid hashtables
     $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
