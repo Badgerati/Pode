@@ -162,7 +162,7 @@ public bool CheckValidationResult(
             $status_code | Should -be 404
         }
         else {
-            { Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop @splatter } | Should -Throw  -ExpectedMessage '*404*'
+            { Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop @splatter } | Should -Throw -ExpectedMessage '*404*'
         }
     }
 
@@ -172,7 +172,7 @@ public bool CheckValidationResult(
             $status_code | Should -be 405
         }
         else {
-            { Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post -ErrorAction Stop @splatter } | Should -Throw  -ExpectedMessage '*405*'
+            { Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post -ErrorAction Stop @splatter } | Should -Throw -ExpectedMessage '*405*'
         }
     }
 
