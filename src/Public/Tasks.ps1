@@ -44,7 +44,8 @@ function Add-PodeTask {
     )
     # ensure the task doesn't already exist
     if ($PodeContext.Tasks.Items.ContainsKey($Name)) {
-        throw "[Task] $($Name): Task already defined"
+        # [Task] Task already defined
+        throw ($PodeLocale.taskAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -88,7 +89,9 @@ function Set-PodeTaskConcurrency {
 
     # error if <=0
     if ($Maximum -le 0) {
-        throw "Maximum concurrent tasks must be >=1 but got: $($Maximum)"
+        # Maximum concurrent tasks must be >=1 but got
+        throw ($PodeLocale.maximumConcurrentTasksInvalidExceptionMessage -f $Maximum)
+
     }
 
     # ensure max > min
@@ -98,7 +101,8 @@ function Set-PodeTaskConcurrency {
     }
 
     if ($_min -gt $Maximum) {
-        throw "Maximum concurrent tasks cannot be less than the minimum of $($_min) but got: $($Maximum)"
+        # Maximum concurrent tasks cannot be less than the minimum of $_min but got $Maximum
+        throw ($PodeLocale.maximumConcurrentTasksLessThanMinimumExceptionMessage -f $_min, $Maximum)
     }
 
     # set the max tasks
@@ -157,7 +161,8 @@ function Invoke-PodeTask {
 
     # ensure the task exists
     if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
-        throw "Task '$($Name)' does not exist"
+        # Task does not exist
+        throw ($PodeLocale.taskDoesNotExistExceptionMessage -f $Name)
     }
 
     # run task logic
@@ -250,7 +255,8 @@ function Edit-PodeTask {
 
     # ensure the task exists
     if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
-        throw "Task '$($Name)' does not exist"
+        # Task does not exist
+        throw ($PodeLocale.taskDoesNotExistExceptionMessage -f $Name)
     }
 
     $_task = $PodeContext.Tasks.Items[$Name]
@@ -426,5 +432,6 @@ function Wait-PodeTask {
         return (Wait-PodeTaskInternal -Task $Task -Timeout $Timeout)
     }
 
-    throw 'Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]'
+    # Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]
+    throw ($PodeLocale.invalidTaskTypeExceptionMessage)
 }
