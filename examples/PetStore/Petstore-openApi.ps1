@@ -4,12 +4,14 @@ param (
 )
 $petStorePath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
 $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $petStorePath)
+try{
 if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
     Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
 }
 else {
     Import-Module -Name 'Pode'
 }
+}catch {throw }
 function Write-ObjectContent {
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -854,7 +856,7 @@ Some useful links:
                 Write-PodeJsonReWrite-PodeHtmlResponsesponse -Value 'Invalid username supplied' -StatusCode 400
             }
         } | Set-PodeOARouteInfo -Summary 'Delete user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'deleteUser' -PassThru |
-            Set-PodeOARequest -Parameters   (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be deleted.' -Required | ConvertTo-PodeOAParameter -In Path )  -PassThru |
+            Set-PodeOARequest -Parameters   (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be deleted.' -Required | ConvertTo-PodeOAParameter -In Path ) -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
     }

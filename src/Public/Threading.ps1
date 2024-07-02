@@ -249,12 +249,14 @@ function Enter-PodeLockable {
 
     # check if value type and throw
     if ($Object -is [valuetype]) {
-        throw 'Cannot lock value types'
+        # Cannot lock a [ValueType]
+        throw ($PodeLocale.cannotLockValueTypeExceptionMessage)
     }
 
     # check if null and throw
     if ($null -eq $Object) {
-        throw 'Cannot lock a null object'
+        # Cannot lock an object that is null
+        throw ($PodeLocale.cannotLockNullObjectExceptionMessage)
     }
 
     # check if the global lockable is locked
@@ -266,7 +268,8 @@ function Enter-PodeLockable {
     $locked = $false
     [System.Threading.Monitor]::TryEnter($Object.SyncRoot, $Timeout, [ref]$locked)
     if (!$locked) {
-        throw 'Failed to acquire lock on object'
+        # Failed to acquire a lock on the object
+        throw ($PodeLocale.failedToAcquireLockExceptionMessage)
     }
 }
 
@@ -313,12 +316,14 @@ function Exit-PodeLockable {
 
     # check if value type and throw
     if ($Object -is [valuetype]) {
-        throw 'Cannot unlock value types'
+        # Cannot unlock a [ValueType]
+        throw ($PodeLocale.cannotUnlockValueTypeExceptionMessage)
     }
 
     # check if null and throw
     if ($null -eq $Object) {
-        throw 'Cannot unlock a null object'
+        # Cannot unlock an object that is null
+        throw ($PodeLocale.cannotUnlockNullObjectExceptionMessage)
     }
 
     if ([System.Threading.Monitor]::IsEntered($Object.SyncRoot)) {
@@ -392,7 +397,8 @@ function New-PodeMutex {
     )
 
     if (Test-PodeMutex -Name $Name) {
-        throw "A mutex with the following name already exists: $($Name)"
+        # A mutex with the following name already exists
+        throw ($PodeLocale.mutexAlreadyExistsExceptionMessage -f $Name)
     }
 
     $mutex = $null
@@ -583,11 +589,13 @@ function Enter-PodeMutex {
 
     $mutex = Get-PodeMutex -Name $Name
     if ($null -eq $mutex) {
-        throw "No mutex found called '$($Name)'"
+        # No mutex found called 'Name'
+        throw ($PodeLocale.noMutexFoundExceptionMessage -f $Name)
     }
 
     if (!$mutex.WaitOne($Timeout)) {
-        throw "Failed to acquire mutex ownership. Mutex name: $($Name)"
+        # Failed to acquire mutex ownership. Mutex name: Name
+        throw ($PodeLocale.failedToAcquireMutexOwnershipExceptionMessage -f $Name)
     }
 }
 
@@ -614,7 +622,8 @@ function Exit-PodeMutex {
 
     $mutex = Get-PodeMutex -Name $Name
     if ($null -eq $mutex) {
-        throw "No mutex found called '$($Name)'"
+        # No mutex found called 'Name'
+        throw ($PodeLocale.noMutexFoundExceptionMessage -f $Name)
     }
 
     $mutex.ReleaseMutex()
@@ -692,7 +701,8 @@ function New-PodeSemaphore {
     )
 
     if (Test-PodeSemaphore -Name $Name) {
-        throw "A semaphore with the following name already exists: $($Name)"
+        # A semaphore with the following name already exists
+        throw ($PodeLocale.semaphoreAlreadyExistsExceptionMessage -f $Name)
     }
 
     if ($Count -le 0) {
@@ -887,11 +897,13 @@ function Enter-PodeSemaphore {
 
     $semaphore = Get-PodeSemaphore -Name $Name
     if ($null -eq $semaphore) {
-        throw "No semaphore found called '$($Name)'"
+        # No semaphore found called 'Name'
+        throw ($PodeLocale.noSemaphoreFoundExceptionMessage -f $Name)
     }
 
     if (!$semaphore.WaitOne($Timeout)) {
-        throw "Failed to acquire semaphore ownership. Semaphore name: $($Name)"
+        # Failed to acquire semaphore ownership. Semaphore name: Name
+        throw ($PodeLocale.failedToAcquireSemaphoreOwnershipExceptionMessage -f $Name)
     }
 }
 
@@ -925,7 +937,8 @@ function Exit-PodeSemaphore {
 
     $semaphore = Get-PodeSemaphore -Name $Name
     if ($null -eq $semaphore) {
-        throw "No semaphore found called '$($Name)'"
+        # No semaphore found called 'Name'
+        throw ($PodeLocale.noSemaphoreFoundExceptionMessage -f $Name)
     }
 
     if ($ReleaseCount -lt 1) {

@@ -136,7 +136,7 @@ function Start-PodeInternalServer {
 
                 # errored?
                 if ($PodeContext.RunspacePools[$pool].State -ieq 'error') {
-                    throw "$($pool) RunspacePool failed to load"
+                    throw ($PodeLocale.runspacePoolFailedToLoadExceptionMessage -f $pool) #"$($pool) RunspacePool failed to load"
                 }
             }
         }
@@ -149,7 +149,8 @@ function Start-PodeInternalServer {
         Write-PodeMainLog -Message "Pode $(Get-PodeVersion) (PID: $($PID))"
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
-            $msg = "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:"
+            # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
+            $msg = ($PodeLocale.listeningOnEndpointsMessage -f $endpoints.Length, $PodeContext.Threads.General)
             Write-PodeHost $msg -ForegroundColor Yellow
             $urlAndFlags = @()
             $endpoints | ForEach-Object {
@@ -175,28 +176,32 @@ function Start-PodeInternalServer {
                 if ( $bookmarks) {
                     Write-PodeHost
                     if (!$OpenAPIHeader) {
-                        Write-PodeHost 'OpenAPI Info:' -ForegroundColor Yellow
+                        # OpenAPI Info
+                        Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor Yellow
                         $OpenAPIHeader = $true
                     }
                     Write-PodeHost " '$key':" -ForegroundColor Yellow
 
                     if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
-                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        # Specification
+                        Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
                         foreach ($endpoint in   $bookmarks.route.Endpoint) {
                             Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor Yellow
                         }
-                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        # Documentation
+                        Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
                         foreach ($endpoint in   $bookmarks.route.Endpoint) {
                             Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor Yellow
                         }
                     }
                     else {
-                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        # Specification
+                        Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
                         $endpoints | ForEach-Object {
                             $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
                             Write-PodeHost "     . $url" -ForegroundColor Yellow
                         }
-                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
                         $endpoints | ForEach-Object {
                             $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
                             Write-PodeHost "     . $url" -ForegroundColor Yellow
@@ -215,7 +220,8 @@ function Start-PodeInternalServer {
 function Restart-PodeInternalServer {
     try {
         # inform restart
-        Write-PodeHost 'Restarting server...' -NoNewline -ForegroundColor Cyan
+        # Restarting server...
+        Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Cyan
 
         # run restart event hooks
         Invoke-PodeEvent -Type Restart
@@ -337,7 +343,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
         # done message
-        Write-PodeHost ' Done' -ForegroundColor Green
+        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++

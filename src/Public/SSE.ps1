@@ -78,7 +78,8 @@ function ConvertTo-PodeSseConnection {
 
     # check Accept header - unless forcing
     if (!$Force -and ((Get-PodeHeader -Name 'Accept') -ine 'text/event-stream')) {
-        throw 'SSE can only be configured on requests with an Accept header value of text/event-stream'
+        # SSE can only be configured on requests with an Accept header value of text/event-stream
+        throw ($PodeLocale.sseOnlyConfiguredOnEventStreamAcceptHeaderExceptionMessage)
     }
 
     # check for default scope, and set
@@ -267,12 +268,14 @@ function Send-PodeSseEvent {
 
     # error if no name
     if ([string]::IsNullOrEmpty($Name)) {
-        throw 'An SSE connection Name is required, either from -Name or $WebEvent.Sse.Name'
+        # An SSE connection Name is required, either from -Name or $WebEvent.Sse.Name
+        throw ($PodeLocale.sseConnectionNameRequiredExceptionMessage)
     }
 
     # check if broadcast level
     if (!(Test-PodeSseBroadcastLevel -Name $Name -Group $Group -ClientId $ClientId)) {
-        throw "SSE failed to broadcast due to defined SSE broadcast level for $($Name): $(Get-PodeSseBroadcastLevel -Name $Name)"
+        # SSE failed to broadcast due to defined SSE broadcast level
+        throw ($PodeLocale.sseFailedToBroadcastExceptionMessage -f $Name, (Get-PodeSseBroadcastLevel -Name $Name))
     }
 
     # send event

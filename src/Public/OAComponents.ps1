@@ -370,6 +370,7 @@ You can use this tag to reference the specific API documentation, schema, or ver
 .EXAMPLE
 New-PodeOAIntProperty -Name 'userId' | ConvertTo-PodeOAParameter -In Query | Add-PodeOAComponentParameter -Name 'UserIdParam'
 #>
+
 function Add-PodeOAComponentParameter {
     [CmdletBinding()]
     param(
@@ -397,7 +398,8 @@ function Add-PodeOAComponentParameter {
                 $Name = $Parameter.name
             }
             else {
-                throw 'The Parameter has no name. Please provide a name to this component using -Name property'
+                # The Parameter has no name. Please provide a name to this component using the `Name` parameter
+                throw ($PodeLocale.parameterHasNoNameExceptionMessage)
             }
         }
         $PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters[$Name] = $Parameter
@@ -763,7 +765,8 @@ function Add-PodeOAComponentPathItem {
     }
     foreach ($tag in $DefinitionTag) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $tag  ) {
-            throw 'The feature reusable component pathItems is not available in OpenAPI v3.0.x'
+            # The 'pathItems' reusable component feature is not available in OpenAPI v3.0.
+            throw ($PodeLocale.reusableComponentPathItemsNotAvailableInOpenApi30ExceptionMessage)
         }
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {

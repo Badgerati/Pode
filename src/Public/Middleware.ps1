@@ -148,7 +148,8 @@ function New-PodeCsrfToken {
 
     # fail if the csrf logic hasn't been initialised
     if (!(Test-PodeCsrfConfigured)) {
-        throw 'CSRF Middleware has not been initialised'
+        # CSRF Middleware has not been initialized
+        throw ($PodeLocale.csrfMiddlewareNotInitializedExceptionMessage)
     }
 
     # generate a new secret and salt
@@ -177,7 +178,8 @@ function Get-PodeCsrfMiddleware {
 
     # fail if the csrf logic hasn't been initialised
     if (!(Test-PodeCsrfConfigured)) {
-        throw 'CSRF Middleware has not been initialised'
+        # CSRF Middleware has not been initialized
+        throw ($PodeLocale.csrfMiddlewareNotInitializedExceptionMessage)
     }
 
     # return scriptblock for the csrf route middleware to test tokens
@@ -245,7 +247,8 @@ function Initialize-PodeCsrf {
 
     # if sessions haven't been setup and we're not using cookies, error
     if (!$UseCookies -and !(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use CSRF unless you want to use cookies'
+        # Sessions are required to use CSRF unless you want to use cookies
+        throw ($PodeLocale.sessionsRequiredForCsrfExceptionMessage)
     }
 
     # if we're using cookies, ensure a global secret exists
@@ -253,7 +256,8 @@ function Initialize-PodeCsrf {
         $Secret = (Protect-PodeValue -Value $Secret -Default (Get-PodeCookieSecret -Global))
 
         if (Test-PodeIsEmpty $Secret) {
-            throw "When using cookies for CSRF, a Secret is required. You can either supply a Secret, or set the Cookie global secret - (Set-PodeCookieSecret '<value>' -Global)"
+            # When using cookies for CSRF, a Secret is required
+            throw ($PodeLocale.csrfCookieRequiresSecretExceptionMessage)
         }
     }
 
@@ -367,7 +371,8 @@ function Add-PodeBodyParser {
 
     # if a parser for the type already exists, fail
     if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
-        throw "There is already a body parser defined for the $($ContentType) content-type"
+        # A body-parser is already defined for the content-type
+        throw ($PodeLocale.bodyParserAlreadyDefinedForContentTypeExceptionMessage -f $ContentType)
     }
 
     # check for scoped vars
@@ -472,7 +477,9 @@ function Add-PodeMiddleware {
 
     # ensure name doesn't already exist
     if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
-        throw "[Middleware] $($Name): Middleware already defined"
+        # [Middleware] Name: Middleware already defined
+        throw ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f $Name)
+
     }
 
     # if it's a script - call New-PodeMiddleware
@@ -491,7 +498,8 @@ function Add-PodeMiddleware {
 
     # ensure we have a script to run
     if (Test-PodeIsEmpty $InputObject.Logic) {
-        throw '[Middleware]: No logic supplied in ScriptBlock'
+        # [Middleware]: No logic supplied in ScriptBlock
+        throw ($PodeLocale.middlewareNoLogicSuppliedExceptionMessage)
     }
 
     # set name, and override route/args

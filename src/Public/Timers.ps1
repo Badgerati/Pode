@@ -84,22 +84,26 @@ function Add-PodeTimer {
 
     # ensure the timer doesn't already exist
     if ($PodeContext.Timers.Items.ContainsKey($Name)) {
-        throw "[Timer] $($Name): Timer already defined"
+        # [Timer] Name: Timer already defined
+        throw ($PodeLocale.timerAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # is the interval valid?
     if ($Interval -le 0) {
-        throw "[Timer] $($Name): Interval must be greater than 0"
+        # [Timer] Name: parameter must be greater than 0
+        throw ($PodeLocale.timerParameterMustBeGreaterThanZeroExceptionMessage -f $Name, 'Interval')
     }
 
     # is the limit valid?
     if ($Limit -lt 0) {
-        throw "[Timer] $($Name): Cannot have a negative limit"
+        # [Timer] Name: parameter must be greater than 0
+        throw ($PodeLocale.timerParameterMustBeGreaterThanZeroExceptionMessage -f $Name, 'Limit')
     }
 
     # is the skip valid?
     if ($Skip -lt 0) {
-        throw "[Timer] $($Name): Cannot have a negative skip value"
+        # [Timer] Name: parameter must be greater than 0
+        throw ($PodeLocale.timerParameterMustBeGreaterThanZeroExceptionMessage -f $Name, 'Skip')
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -165,7 +169,8 @@ function Invoke-PodeTimer {
 
     # ensure the timer exists
     if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-        throw "Timer '$($Name)' does not exist"
+        # Timer 'Name' does not exist
+        throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
     }
 
     # run timer logic
@@ -263,7 +268,8 @@ function Edit-PodeTimer {
 
     # ensure the timer exists
     if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-        throw "Timer '$($Name)' does not exist"
+        # Timer 'Name' does not exist 
+        throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
     }
 
     $_timer = $PodeContext.Timers.Items[$Name]

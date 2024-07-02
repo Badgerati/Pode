@@ -85,7 +85,8 @@ function Add-PodeVerb {
 
     # if scriptblock and file path are all null/empty, error
     if ((Test-PodeIsEmpty $ScriptBlock) -and (Test-PodeIsEmpty $FilePath) -and !$Close -and !$UpgradeToSsl) {
-        throw "[Verb] $($Verb): No logic passed"
+        # [Verb] Verb: No logic passed
+        throw ($PodeLocale.verbNoLogicPassedExceptionMessage -f $Verb)
     }
 
     # if we have a file path supplied, load that path as a scriptblock

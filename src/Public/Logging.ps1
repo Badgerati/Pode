@@ -165,7 +165,8 @@ function New-PodeLoggingMethod {
         [Parameter(ParameterSetName = 'File')]
         [ValidateScript({
                 if ($_ -lt 0) {
-                    throw "MaxDays must be 0 or greater, but got: $($_)s"
+                    # MaxDays must be 0 or greater, but got
+                    throw ($PodeLocale.maxDaysInvalidExceptionMessage -f $MaxDays)
                 }
 
                 return $true
@@ -176,7 +177,8 @@ function New-PodeLoggingMethod {
         [Parameter(ParameterSetName = 'File')]
         [ValidateScript({
                 if ($_ -lt 0) {
-                    throw "MaxSize must be 0 or greater, but got: $($_)s"
+                    # MaxSize must be 0 or greater, but got
+                    throw ($PodeLocale.maxSizeInvalidExceptionMessage -f $MaxSize)
                 }
 
                 return $true
@@ -191,7 +193,8 @@ function New-PodeLoggingMethod {
         [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
-                    throw 'A non-empty ScriptBlock is required for the Custom logging output method'
+                    # A non-empty ScriptBlock is required for the Custom logging output method
+                    throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage)
                 }
 
                 return $true
@@ -372,7 +375,8 @@ function New-PodeLoggingMethod {
         'eventviewer' {
             # only windows
             if (!(Test-PodeIsWindows)) {
-                throw 'Event Viewer logging only supported on Windows'
+                # Event Viewer logging only supported on Windows
+                throw ($PodeLocale.eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage)
             }
 
             # create source
@@ -506,10 +510,11 @@ function Enable-PodeRequestLogging {
 
         $name = Get-PodeRequestLoggingName
 
-        # error if it's already enabled
-        if ($PodeContext.Server.Logging.Types.Contains($name)) {
-            throw 'Request Logging has already been enabled'
-        }
+    # error if it's already enabled
+    if ($PodeContext.Server.Logging.Types.Contains($name)) {
+        # Request Logging has already been enabled
+        throw ($PodeLocale.requestLoggingAlreadyEnabledExceptionMessage)
+    }
 
         # username property
         if ([string]::IsNullOrWhiteSpace($UsernameProperty)) {
@@ -519,7 +524,8 @@ function Enable-PodeRequestLogging {
     process {
         # ensure the Method contains a scriptblock
         if (Test-PodeIsEmpty $_.ScriptBlock) {
-            throw 'The supplied output Method for Request Logging requires a valid ScriptBlock'
+            # The supplied output Method for Request Logging requires a valid ScriptBlock
+        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Request')
         }
         $pipelineMethods += $_
     }
@@ -605,7 +611,8 @@ function Enable-PodeErrorLogging {
         $name = Get-PodeErrorLoggingName
         # error if it's already enabled
         if ($PodeContext.Server.Logging.Types.Contains($Name)) {
-            throw 'Error Logging has already been enabled'
+            # Error Logging has already been enabled
+        throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
         }
         # all errors?
         if ($Levels -contains '*') {
@@ -616,7 +623,8 @@ function Enable-PodeErrorLogging {
     process {
         # ensure the Method contains a scriptblock
         if (Test-PodeIsEmpty $_.ScriptBlock) {
-            throw 'The supplied output Method for Error Logging requires a valid ScriptBlock'
+            # The supplied output Method for Error Logging requires a valid ScriptBlock
+        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Error')
         }
         $pipelineMethods += $_
     }
@@ -876,7 +884,8 @@ function Add-PodeLogger {
         [Parameter(Mandatory = $true)]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
-                    throw 'A non-empty ScriptBlock is required for the logging method'
+                    # A non-empty ScriptBlock is required for the logging method
+                    throw ($PodeLocale.nonEmptyScriptBlockRequiredForLoggingMethodExceptionMessage)
                 }
 
                 return $true
@@ -905,14 +914,16 @@ function Add-PodeLogger {
         # Record the operation on the main log
         Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
-        # ensure the name doesn't already exist
-        if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
-            throw "Logging method already defined: $($Name)"
-        }
+    # ensure the name doesn't already exist
+    if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
+        # Logging method already defined
+        throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
+    }
 
         # ensure the Method contains a scriptblock
         if (Test-PodeIsEmpty $Method.ScriptBlock) {
-            throw "The supplied output Method for the '$($Name)' Logging method requires a valid ScriptBlock"
+            # The supplied output Method for the Logging method requires a valid ScriptBlock
+        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
         }
 
         # check for scoped vars
