@@ -365,7 +365,7 @@ function Write-PodeDirectoryResponseInternal {
         RootPath    = $RootPath
         Path        = $leaf.Replace('\', '/')
         WindowsMode = $windowsMode.ToString().ToLower()
-        FileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
+        FileContent = $htmlContent.ToString() # Convert the StringBuilder content to a string
     }
 
     $podeRoot = Get-PodeModuleMiscPath

@@ -528,10 +528,10 @@ function Test-PodeRouteInternal {
     }
 
     if ([string]::IsNullOrEmpty($_url)) {
-        throw "[$($Method)] $($Path): Already defined"
+        throw ($PodeLocale.methodPathAlreadyDefinedExceptionMessage -f $Method, $Path) #"[$($Method)] $($Path): Already defined"
     }
 
-    throw "[$($Method)] $($Path): Already defined for $($_url)"
+    throw ($PodeLocale.methodPathAlreadyDefinedForUrlExceptionMessage -f $Method, $Path, $_url) #"[$($Method)] $($Path): Already defined for $($_url)"
 }
 
 function Convert-PodeFunctionVerbToHttpMethod {
@@ -676,17 +676,19 @@ function ConvertTo-PodeMiddleware {
 
         # check middleware is a type valid
         if (($mid -isnot [scriptblock]) -and ($mid -isnot [hashtable])) {
-            throw "One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: $($mid.GetType().Name)"
+            throw ($PodeLocale.invalidMiddlewareTypeExceptionMessage -f $mid.GetType().Name)#"One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: $($mid.GetType().Name)"
         }
 
         # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
         if ($mid -is [hashtable]) {
             if ($null -eq $mid.Logic) {
-                throw 'A Hashtable Middleware supplied has no Logic defined'
+                # A Hashtable Middleware supplied has no Logic defined
+                throw ($PodeLocale.hashtableMiddlewareNoLogicExceptionMessage)
             }
 
             if ($mid.Logic -isnot [scriptblock]) {
-                throw "A Hashtable Middleware supplied has an invalid Logic type. Expected ScriptBlock, but got: $($mid.Logic.GetType().Name)"
+                # A Hashtable Middleware supplied has an invalid Logic type. Expected ScriptBlock, but got: {0}
+                throw ($PodeLocale.invalidLogicTypeInHashtableMiddlewareExceptionMessage -f $mid.Logic.GetType().Name)
             }
         }
     }
