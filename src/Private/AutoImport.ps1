@@ -177,7 +177,8 @@ function Import-PodeSecretManagementVaultsIntoRegistry {
 
     # error if SecretManagement module not installed
     if (!(Test-PodeModuleInstalled -Name Microsoft.PowerShell.SecretManagement)) {
-        throw 'Microsoft.PowerShell.SecretManagement module not installed'
+        # Microsoft.PowerShell.SecretManagement module not installed
+        throw ($PodeLocale.secretManagementModuleNotInstalledExceptionMessage)
     }
 
     # import the module
@@ -195,7 +196,8 @@ function Import-PodeSecretManagementVaultsIntoRegistry {
 
         # is a vault with this name already registered?
         if (Test-PodeSecretVault -Name $vault.Name) {
-            throw "A Secret Vault with the name '$($vault.Name)' has already been registered while auto-importing Secret Vaults"
+            throw ($PodeLocale.secretVaultAlreadyRegisteredExceptionMessage -f $vault.Name,"")
+            #"A Secret Vault with the name '$($vault.Name)' has already been registered while auto-importing Secret Vaults"
         }
 
         # register the vault
