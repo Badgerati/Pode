@@ -1476,7 +1476,8 @@ function Save-PodeRequestFile {
 
     # ensure the parameter name exists in data
     if (!(Test-PodeRequestFile -Key $Key)) {
-        throw "A parameter called '$($Key)' was not supplied in the request, or has no data available"
+        # A parameter called was not supplied in the request or has no data available
+        throw ($PodeLocale.parameterNotSuppliedInRequestExceptionMessage -f $Key)
     }
 
     # get the file names
@@ -1492,7 +1493,8 @@ function Save-PodeRequestFile {
     # ensure the file data exists
     foreach ($file in $files) {
         if (!$WebEvent.Files.ContainsKey($file)) {
-            throw "No data for file '$($file)' was uploaded in the request"
+            # No data for file was uploaded in the request
+            throw ($PodeLocale.noDataForFileUploadedExceptionMessage -f $file)
         }
     }
 
@@ -1688,10 +1690,11 @@ function Use-PodePartialView {
 
         $Path = [System.IO.Path]::Combine($viewFolder, $Path)
 
-        # test the file path, and set status accordingly
-        if (!(Test-PodePath $Path -NoStatus)) {
-            throw "File not found at path: $($Path)"
-        }
+    # test the file path, and set status accordingly
+    if (!(Test-PodePath $Path -NoStatus)) {
+        # The Views path does not exist
+        throw ($PodeLocale.viewsPathDoesNotExistExceptionMessage -f $Path)
+    }
 
         # run any engine logic
         return (Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data)
@@ -1769,7 +1772,8 @@ function Send-PodeSignal {
         }
         # error if not configured
         if (!$PodeContext.Server.Signals.Enabled) {
-            throw 'WebSockets have not been configured to send signal messages'
+            # WebSockets have not been configured to send signal messages
+        throw ($PodeLocale.websocketsNotConfiguredForSignalMessagesExceptionMessage)
         }
 
         # do nothing if no value
@@ -1842,13 +1846,15 @@ function Add-PodeViewFolder {
 
     # ensure the folder doesn't already exist
     if ($PodeContext.Server.Views.ContainsKey($Name)) {
-        throw "The Views folder name already exists: $($Name)"
+        # The Views folder name already exists
+        throw ($PodeLocale.viewsFolderNameAlreadyExistsExceptionMessage -f $Name)
     }
 
     # ensure the path exists at server root
     $Source = Get-PodeRelativePath -Path $Source -JoinRoot
     if (!(Test-PodePath -Path $Source -NoStatus)) {
-        throw "The Views path does not exist: $($Source)"
+        # The Views path does not exist
+        throw ($PodeLocale.viewsPathDoesNotExistExceptionMessage -f $Source)
     }
 
     # setup a temp drive for the path

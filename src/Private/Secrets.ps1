@@ -54,12 +54,13 @@ function Register-PodeSecretManagementVault {
         # is this the local SecretStore provider?
         $isSecretStore = ($ModuleName -ieq 'Microsoft.PowerShell.SecretStore')
 
-        # check if we have an unlock password for local secret store
-        if ($isSecretStore) {
-            if ([string]::IsNullOrEmpty($VaultConfig.Unlock.Secret)) {
-                throw 'An "-UnlockSecret" is required when using Microsoft.PowerShell.SecretStore'
-            }
+    # check if we have an unlock password for local secret store
+    if ($isSecretStore) {
+        if ([string]::IsNullOrEmpty($VaultConfig.Unlock.Secret)) {
+            # An 'UnlockSecret' is required when using Microsoft.PowerShell.SecretStore
+            throw ($PodeLocale.unlockSecretRequiredExceptionMessage)
         }
+    }
 
         # does the local secret store already exist?
         $secretStoreExists = ($isSecretStore -and (Test-PodeSecretVaultInternal -Name $VaultName))
@@ -158,7 +159,8 @@ function Register-PodeSecretCustomVault {
     Process {
         # unlock secret with no script?
         if ($VaultConfig.Unlock.Enabled -and (Test-PodeIsEmpty $UnlockScriptBlock)) {
-            throw 'Unlock secret supplied for custom Secret Vault type, but not Unlock ScriptBlock supplied'
+            # Unlock secret supplied for custom Secret Vault type, but not Unlock ScriptBlock supplied
+        throw ($PodeLocale.unlockSecretButNoScriptBlockExceptionMessage)
         }
 
         # all is good, so set the config
@@ -209,10 +211,11 @@ function Unlock-PodeSecretCustomVault {
             return
         }
 
-        # do we have an unlock scriptblock
-        if ($null -eq $VaultConfig.Custom.Unlock) {
-            throw "No Unlock ScriptBlock supplied for unlocking the vault '$($VaultConfig.Name)'"
-        }
+    # do we have an unlock scriptblock
+    if ($null -eq $VaultConfig.Custom.Unlock) {
+         # No Unlock ScriptBlock supplied for unlocking the vault '$($VaultConfig.Name)'
+        throw ($PodeLocale.noUnlockScriptBlockForVaultExceptionMessage -f $VaultConfig.Name) 
+    }
 
         # unlock the vault, and get back an expiry
         $expiry = Invoke-PodeScriptBlock -ScriptBlock $VaultConfig.Custom.Unlock -Splat -Return -Arguments @(
@@ -371,7 +374,7 @@ function Set-PodeSecretCustomKey {
 
     # do we have a set scriptblock?
     if ($null -eq $_vault.Custom.Set) {
-        throw "No Set ScriptBlock supplied for updating/creating secrets in the vault '$($_vault.Name)'"
+        throw ($PodeLocale.noSetScriptBlockForVaultExceptionMessage -f $_vault.Name) #"No Set ScriptBlock supplied for updating/creating secrets in the vault '$($_vault.Name)'"
     }
 
     # set the secret
@@ -421,7 +424,7 @@ function Remove-PodeSecretCustomKey {
 
     # do we have a remove scriptblock?
     if ($null -eq $_vault.Custom.Remove) {
-        throw "No Remove ScriptBlock supplied for removing secrets from the vault '$($_vault.Name)'"
+        throw ($PodeLocale.noRemoveScriptBlockForVaultExceptionMessage -f $_vault.Name) #"No Remove ScriptBlock supplied for removing secrets from the vault '$($_vault.Name)'"
     }
 
     # remove the secret
@@ -554,7 +557,7 @@ function Protect-PodeSecretValueType {
          ($Value -is [pscredential]) -or
          ($Value -is [System.Management.Automation.OrderedHashtable])
         )) {
-        throw "Value to set secret to is of an invalid type. Expected either String, SecureString, HashTable, Byte[], or PSCredential. But got: $($Value.GetType().Name)"
+        throw ($PodeLocale.invalidSecretValueTypeExceptionMessage -f $Value.GetType().Name) #"Value to set secret to is of an invalid type. Expected either String, SecureString, HashTable, Byte[], or PSCredential. But got: $($Value.GetType().Name)"
     }
 
     return $Value

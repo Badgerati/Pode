@@ -5,6 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'OpenApi' {
@@ -2085,15 +2086,14 @@ Describe 'OpenApi' {
                 {
                     Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                 (New-PodeOAObjectProperty  -Properties  @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')))
-                    ) } | Should -Throw -ExpectedMessage 'Discriminator parameter is not compatible with allOf'
+                # Discriminator parameter is not compatible with allOf
+                    ) } | Should -Throw -ExpectedMessage $PodeLocale.discriminatorIncompatibleWithAllOfExceptionMessage
             }
-            #Should  -Throw  -ExpectedMessage 'Discriminator parameter is not compatible with allOf'
-
 
             It 'AllOf and ObjectDefinitions not an object' {
                 { Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                     ((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name'))
-                    ) } | Should  -Throw  -ExpectedMessage   'Only properties of type Object can be associated with allof'
+                    ) } | Should  -Throw -ExpectedMessage ($PodeLocale.propertiesTypeObjectAssociationExceptionMessage -f 'allOf') # Only properties of type Object can be associated with allOf
             }
 
         }
@@ -2342,7 +2342,7 @@ Describe 'OpenApi' {
         it 'throw error' {
             {
                 Add-PodeOAComponentParameter   -Parameter ( New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of the pet' | New-PodeOAObjectProperty ) } |
-                Should -Throw -ExpectedMessage 'The Parameter has no name. Please provide a name to this component using -Name property'
+                Should -Throw -ExpectedMessage $PodeLocale.parameterHasNoNameExceptionMessage # The Parameter has no name. Please give this component a name using the 'Name' parameter.
         }
     }
     Context 'ConvertTo-PodeOAParameter' {
@@ -2474,7 +2474,8 @@ Describe 'OpenApi' {
                 }
 
                 It 'Path - ContentSchema - Exception -Required' {
-                    { ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema 'Cat' } | Should -Throw  -ExpectedMessage '*the switch parameter `-Required*'
+                    { ConvertTo-PodeOAParameter -In Path -Description 'Feline description' -ContentType 'application/json' -Schema 'Cat' } |
+                        Should -Throw -ExpectedMessage $PodeLocale.pathParameterRequiresRequiredSwitchExceptionMessage   # If the parameter location is 'Path', the switch parameter 'Required' is mandatory
                 }
             }
         }

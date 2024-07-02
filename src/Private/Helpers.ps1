@@ -216,7 +216,7 @@ function Get-PodeEndpointInfo {
 
     # validate that we have a valid ip/host:port address
     if (!(($Address -imatch "^$($cmbdRgx)$") -or ($Address -imatch "^$($hostRgx)[\:]{0,1}") -or ($Address -imatch "[\:]{0,1}$($portRgx)$"))) {
-        throw "Failed to parse '$($Address)' as a valid IP/Host:Port address"
+        throw ($PodeLocale.failedToParseAddressExceptionMessage -f $Address)#"Failed to parse '$($Address)' as a valid IP/Host:Port address"
     }
 
     # grab the ip address/hostname
@@ -227,7 +227,7 @@ function Get-PodeEndpointInfo {
 
     # ensure we have a valid ip address/hostname
     if (!(Test-PodeIPAddress -IP $_host)) {
-        throw "The IP address supplied is invalid: $($_host)"
+        throw ($PodeLocale.invalidIpAddressExceptionMessage -f $_host) #"The IP address supplied is invalid: $($_host)"
     }
 
     # grab the port
@@ -238,7 +238,7 @@ function Get-PodeEndpointInfo {
 
     # ensure the port is valid
     if ($_port -lt 0) {
-        throw "The port cannot be negative: $($_port)"
+        throw ($PodeLocale.invalidPortExceptionMessage -f $_port)#"The port cannot be negative: $($_port)"
     }
 
     # return the info
@@ -879,7 +879,7 @@ function Close-PodeServerInternal {
     Remove-PodePSDrive
 
     if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
-        Write-PodeHost ' Done' -ForegroundColor Green
+        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
     }
 }
 
@@ -906,7 +906,7 @@ function New-PodePSDrive {
 
     # if the path supplied doesn't exist, error
     if (!(Test-Path $Path)) {
-        throw "Path does not exist: $($Path)"
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)#"Path does not exist: $($Path)"
     }
 
     # resolve the path
@@ -2808,7 +2808,7 @@ function Get-PodeRelativePath {
 
     # if flagged, test the path and throw error if it doesn't exist
     if ($TestPath -and !(Test-PodePath $Path -NoStatus)) {
-        throw "The path does not exist: $(Protect-PodeValue -Value $Path -Default $_rawPath)"
+        throw ($PodeLocale.pathNotExistExceptionMessage -f (Protect-PodeValue -Value $Path -Default $_rawPath))#"The path does not exist: $(Protect-PodeValue -Value $Path -Default $_rawPath)"
     }
 
     return $Path
@@ -2884,7 +2884,7 @@ function Test-PodeIsServerless {
     )
 
     if ($PodeContext.Server.IsServerless -and $ThrowError) {
-        throw "The $($FunctionName) function is not supported in a serverless context"
+        throw ($PodeLocale.unsupportedFunctionInServerlessContextExceptionMessage -f $FunctionName) #"The $($FunctionName) function is not supported in a serverless context"
     }
 
     if (!$ThrowError) {
@@ -3007,24 +3007,25 @@ function Get-PodeHandler {
 function Convert-PodeFileToScriptBlock {
     param(
         [Parameter(Mandatory = $true)]
+        [Alias('FilePath')]
         [string]
-        $FilePath
+        $Path
     )
 
     # resolve for relative path
-    $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot
+    $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
-    # if file doesn't exist, error
-    if (!(Test-PodePath -Path $FilePath -NoStatus)) {
-        throw "The FilePath supplied does not exist: $($FilePath)"
+    # if Path doesn't exist, error
+    if (!(Test-PodePath -Path $Path -NoStatus)) {
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path) #  "The Path supplied does not exist: $($Path)"
     }
 
     # if the path is a wildcard or directory, error
-    if (!(Test-PodePathIsFile -Path $FilePath -FailOnWildcard)) {
-        throw "The FilePath supplied cannot be a wildcard or a directory: $($FilePath)"
+    if (!(Test-PodePathIsFile -Path $Path -FailOnWildcard)) {
+        throw ($PodeLocale.invalidPathWildcardOrDirectoryExceptionMessage -f $Path) # "The Path supplied cannot be a wildcard or a directory: $($Path)"
     }
 
-    return ([scriptblock](Use-PodeScript -Path $FilePath))
+    return ([scriptblock](Use-PodeScript -Path $Path))
 }
 
 function Convert-PodeQueryStringToHashTable {
@@ -3054,15 +3055,16 @@ function Convert-PodeQueryStringToHashTable {
 function Get-PodeAstFromFile {
     param(
         [Parameter(Mandatory = $true)]
+        [Alias('FilePath')]
         [string]
-        $FilePath
+        $Path
     )
 
-    if (!(Test-Path $FilePath)) {
-        throw "Path to script file does not exist: $($FilePath)"
+    if (!(Test-Path $Path)) {
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path) #  "The Path supplied does not exist: $($Path)"
     }
 
-    return [System.Management.Automation.Language.Parser]::ParseFile($FilePath, [ref]$null, [ref]$null)
+    return [System.Management.Automation.Language.Parser]::ParseFile($Path, [ref]$null, [ref]$null)
 }
 
 function Get-PodeFunctionsFromFile {
@@ -3191,7 +3193,8 @@ function Read-PodeWebExceptionInfo {
         }
 
         default {
-            throw "Exception is of an invalid type, should be either WebException or HttpRequestException, but got: $($_.Exception.GetType().Name)"
+            #Exception is of an invalid type, should be either WebException or HttpRequestException
+            throw ($PodeLocale.invalidWebExceptionTypeExceptionMessage -f ($_.Exception.GetType().Name))
         }
     }
 
@@ -3225,7 +3228,7 @@ function Use-PodeFolder {
 
     # fail if path not found
     if (!(Test-PodePath -Path $Path -NoStatus)) {
-        throw "Path to load $($DefaultPath) not found: $($Path)"
+        throw ($PodeLocale.pathToLoadNotFoundExceptionMessage -f $DefaultPath, $Path) #"Path to load $($DefaultPath) not found: $($Path)"
     }
 
     # get .ps1 files and load them
@@ -3362,7 +3365,7 @@ function Set-PodeCronInterval {
     }
 
     if ($Value.Length -gt 1) {
-        throw "You can only supply a single $($Type) value when using intervals"
+        throw ($PodeLocale.singleValueForIntervalExceptionMessage -f $Type) #"You can only supply a single $($Type) value when using intervals"
     }
 
     if ($Value.Length -eq 1) {
@@ -3644,14 +3647,16 @@ function Test-PodeVersionPwshEOL {
     $isEol = "$($psVersion.Major).$($psVersion.Minor)" -in $eolVersions
 
     if ($isEol) {
-        Write-PodeHost "[WARNING] Pode $(Get-PodeVersion) has not been tested on PowerShell $($PSVersionTable.PSVersion), as it is EOL." -ForegroundColor Yellow
+        # [WARNING] Pode version has not been tested on PowerShell version, as it is EOL
+        Write-PodeHost ($PodeLocale.eolPowerShellWarningMessage -f $PodeVersion, $PSVersion) -ForegroundColor Yellow
     }
 
     $SupportedVersions = $moduleManifest.PrivateData.PwshVersions.Supported -split ','
     $isSupported = "$($psVersion.Major).$($psVersion.Minor)" -in $SupportedVersions
 
     if ((! $isSupported) -and (! $isEol) -and $ReportUntested) {
-        Write-PodeHost "[WARNING] Pode $(Get-PodeVersion) has not been tested on PowerShell $($PSVersionTable.PSVersion), as it was not available when Pode was released." -ForegroundColor Yellow
+        # [WARNING] Pode version has not been tested on PowerShell version, as it was not available when Pode was released
+        Write-PodeHost ($PodeLocale.untestedPowerShellVersionWarningMessage -f $PodeVersion, $PSVersion) -ForegroundColor Yellow
     }
 
     return @{
@@ -3930,7 +3935,7 @@ function ConvertTo-PodeYamlInternal {
     catch {
         $_ | Write-PodeErrorLog
         $_.Exception | Write-PodeErrorLog -CheckInnerException
-        throw "Error'$($_)' in script $($_.InvocationInfo.ScriptName) $($_.InvocationInfo.Line.Trim()) (line $($_.InvocationInfo.ScriptLineNumber)) char $($_.InvocationInfo.OffsetInLine) executing $($_.InvocationInfo.MyCommand) on $type object '$($InputObject)' Class: $($InputObject.GetType().Name) BaseClass: $($InputObject.GetType().BaseType.Name) "
+        throw ($PodeLocale.scriptErrorExceptionMessage -f $_, $_.InvocationInfo.ScriptName, $_.InvocationInfo.Line.Trim(), $_.InvocationInfo.ScriptLineNumber, $_.InvocationInfo.OffsetInLine, $_.InvocationInfo.MyCommand, $type, $InputObject, $InputObject.GetType().Name, $InputObject.GetType().BaseType.Name)
     }
 }
 

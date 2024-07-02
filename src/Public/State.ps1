@@ -39,7 +39,8 @@ function Set-PodeState {
 
     Begin {
         if ($null -eq $PodeContext.Server.State) {
-            throw 'Pode has not been initialised'
+            # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
         }
 
         if ($null -eq $Scope) {
@@ -98,7 +99,8 @@ function Get-PodeState {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     if ($WithScope) {
@@ -141,7 +143,8 @@ function Get-PodeStateNames {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     if ($null -eq $Scope) {
@@ -193,7 +196,8 @@ function Remove-PodeState {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     $value = $PodeContext.Server.State[$Name].Value
@@ -264,7 +268,8 @@ function Save-PodeState {
 
     # error if attempting to use outside of the pode server
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     # get the full path to save the state
@@ -358,7 +363,8 @@ function Restore-PodeState {
 
     # error if attempting to use outside of the pode server
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     # get the full path to the state
@@ -432,7 +438,8 @@ function Test-PodeState {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     return $PodeContext.Server.State.ContainsKey($Name)

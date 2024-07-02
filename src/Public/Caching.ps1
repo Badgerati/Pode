@@ -57,7 +57,8 @@ function Get-PodeCache {
     }
 
     # storage not found!
-    throw "Cache storage with name '$($Storage)' not found when attempting to retrieve cached item '$($Key)'"
+    # Cache storage with name not found when attempting to retrieve cached item
+    throw ($PodeLocale.cacheStorageNotFoundForRetrieveExceptionMessage -f $Storage, $Key)
 }
 
 <#
@@ -153,10 +154,10 @@ function Set-PodeCache {
             $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Key, $InputObject, $Ttl) -Splat
         }
 
-        # storage not found!
-        else {
-            throw "Cache storage with name '$($Storage)' not found when attempting to set cached item '$($Key)'"
-        }
+    # storage not found!
+    else {
+        # Cache storage with name not found when attempting to set cached item
+        throw ($PodeLocale.cacheStorageNotFoundForSetExceptionMessage -f $Storage, $Key)
     }
 }
 
@@ -207,7 +208,8 @@ function Test-PodeCache {
     }
 
     # storage not found!
-    throw "Cache storage with name '$($Storage)' not found when attempting to check if cached item '$($Key)' exists"
+    # Cache storage with name not found when attempting to check if cached item exists
+    throw ($PodeLocale.cacheStorageNotFoundForExistsExceptionMessage -f $Storage, $Key)
 }
 
 <#
@@ -258,7 +260,8 @@ function Remove-PodeCache {
 
     # storage not found!
     else {
-        throw "Cache storage with name '$($Storage)' not found when attempting to remove cached item '$($Key)'"
+        # Cache storage with name not found when attempting to remove cached item
+        throw ($PodeLocale.cacheStorageNotFoundForRemoveExceptionMessage -f $Storage, $Key)
     }
 }
 
@@ -303,7 +306,8 @@ function Clear-PodeCache {
 
     # storage not found!
     else {
-        throw "Cache storage with name '$($Storage)' not found when attempting to clear cached"
+        # Cache storage with name not found when attempting to clear the cache
+        throw ($PodeLocale.cacheStorageNotFoundForClearExceptionMessage -f $Storage)
     }
 }
 
@@ -372,7 +376,8 @@ function Add-PodeCacheStorage {
 
     # test if storage already exists
     if (Test-PodeCacheStorage -Name $Name) {
-        throw "Cache Storage with name '$($Name) already exists"
+        # Cache Storage with name already exists
+        throw ($PodeLocale.cacheStorageAlreadyExistsExceptionMessage -f $Name)
     }
 
     # add cache storage
