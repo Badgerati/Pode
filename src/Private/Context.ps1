@@ -504,6 +504,7 @@ function New-PodeRunspaceState {
     $session = New-PodeStateContext -Context $PodeContext
 
     $variables = @(
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeLocale', $PodeLocale, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $session, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null),
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PODE_SCOPE_RUNSPACE', $true, $null)
@@ -697,7 +698,7 @@ function Open-PodeRunspacePool {
 
         if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
             $item.Pool.EndOpen($item.Result) | Out-Default
-            throw "Failed to open RunspacePool: $($key)"
+            throw ($PodeLocale.failedToOpenRunspacePoolExceptionMessage -f $key) #"Failed to open RunspacePool: $($key)"
         }
     }
 
@@ -763,7 +764,8 @@ function Close-PodeRunspacePool {
 
         if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
             $item.Pool.EndClose($item.Result) | Out-Default
-            throw "Failed to close RunspacePool: $($key)"
+            # Failed to close RunspacePool
+            throw ($PodeLocale.failedToCloseRunspacePoolExceptionMessage -f $key)
         }
     }
 

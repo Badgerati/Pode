@@ -5,6 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'PrivateOpenApi' {
@@ -13,7 +14,7 @@ Describe 'PrivateOpenApi' {
         function GetPodeContext {
             return @{
                 Server = @{
-                    Security        = @{
+                    Security               = @{
                         autoheaders = $false
                     }
                     Authentications = @{}
@@ -337,10 +338,11 @@ Describe 'PrivateOpenApi' {
 
     Describe 'Initialize-PodeOpenApiTable Tests' {
         It 'Initializes OpenAPI table with default settings' {
-            $openApiTable = Initialize-PodeOpenApiTable -DefaultDefinitionTag 'default'
+            $openApiTable = Initialize-PodeOpenApiTable
 
             $openApiTable | Should -BeOfType [hashtable]
             $openApiTable.DefinitionTagSelectionStack -is [System.Collections.Generic.Stack[System.Object]] | Should -BeTrue
+            $openApiTable.DefaultDefinitionTag | Should -Be 'default'
             $openApiTable.SelectedDefinitionTag | Should -Be 'default'
             $openApiTable.Definitions | Should -BeOfType [hashtable]
             $openApiTable.Definitions['default'] | Should -BeOfType [hashtable]
