@@ -510,11 +510,11 @@ function Enable-PodeRequestLogging {
 
         $name = Get-PodeRequestLoggingName
 
-    # error if it's already enabled
-    if ($PodeContext.Server.Logging.Types.Contains($name)) {
-        # Request Logging has already been enabled
-        throw ($PodeLocale.requestLoggingAlreadyEnabledExceptionMessage)
-    }
+        # error if it's already enabled
+        if ($PodeContext.Server.Logging.Types.Contains($name)) {
+            # Request Logging has already been enabled
+            throw ($PodeLocale.requestLoggingAlreadyEnabledExceptionMessage)
+        }
 
         # username property
         if ([string]::IsNullOrWhiteSpace($UsernameProperty)) {
@@ -525,7 +525,7 @@ function Enable-PodeRequestLogging {
         # ensure the Method contains a scriptblock
         if (Test-PodeIsEmpty $_.ScriptBlock) {
             # The supplied output Method for Request Logging requires a valid ScriptBlock
-        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Request')
+            throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Request')
         }
         $pipelineMethods += $_
     }
@@ -612,7 +612,7 @@ function Enable-PodeErrorLogging {
         # error if it's already enabled
         if ($PodeContext.Server.Logging.Types.Contains($Name)) {
             # Error Logging has already been enabled
-        throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
+            throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
         }
         # all errors?
         if ($Levels -contains '*') {
@@ -624,7 +624,7 @@ function Enable-PodeErrorLogging {
         # ensure the Method contains a scriptblock
         if (Test-PodeIsEmpty $_.ScriptBlock) {
             # The supplied output Method for Error Logging requires a valid ScriptBlock
-        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Error')
+            throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Error')
         }
         $pipelineMethods += $_
     }
@@ -908,22 +908,22 @@ function Add-PodeLogger {
 
     End {
         if ($pipelineItemCount -gt 1) {
-            throw "The function '$($MyInvocation.MyCommand.Name)' does not accept an array as pipeline input."
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
 
         # Record the operation on the main log
         Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
-    # ensure the name doesn't already exist
-    if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
-        # Logging method already defined
-        throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
-    }
+        # ensure the name doesn't already exist
+        if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
+            # Logging method already defined
+            throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
+        }
 
         # ensure the Method contains a scriptblock
         if (Test-PodeIsEmpty $Method.ScriptBlock) {
             # The supplied output Method for the Logging method requires a valid ScriptBlock
-        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
+            throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
         }
 
         # check for scoped vars
