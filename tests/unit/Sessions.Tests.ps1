@@ -5,6 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
     $now = [datetime]::UtcNow
 }
@@ -20,7 +21,7 @@ Describe 'Get-PodeSession' {
                 }
             }
 
-            { Get-PodeSession } | Should -Throw -ExpectedMessage '*because it is an empty string*'
+            { Get-PodeSession } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeCookieSigned'
         }
 
         It 'Throws an empry string value error' {
@@ -32,7 +33,7 @@ Describe 'Get-PodeSession' {
                 }
             }
 
-            { Get-PodeSession } | Should -Throw -ExpectedMessage '*because it is an empty string*'
+            { Get-PodeSession } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeCookieSigned'
         }
     }
 
@@ -108,7 +109,7 @@ Describe 'Get-PodeSession' {
 Describe 'Set-PodeSessionDataHash' {
     Context 'Invalid parameters supplied' {
         It 'Throws null value error' {
-            { Set-PodeSessionDataHash } | Should -Throw -ExpectedMessage '*No session available*'
+            { Set-PodeSessionDataHash } | Should -Throw -ExpectedMessage $PodeLocale.noSessionToCalculateDataHashExceptionMessage #'*No session available*'
         }
     }
 
@@ -258,7 +259,7 @@ Describe 'Set-PodeSession' {
 Describe 'Remove-PodeSession' {
     It 'Throws an error if sessions are not configured' {
         Mock Test-PodeSessionsEnabled { return $false }
-        { Remove-PodeSession } | Should -Throw 'Sessions have not been configured'
+        { Remove-PodeSession } | Should -Throw $PodeLocale.sessionsNotConfiguredExceptionMessage # Sessions have not been configured.
     }
 
     It 'Does nothing if there is no session' {
@@ -285,13 +286,13 @@ Describe 'Remove-PodeSession' {
 Describe 'Save-PodeSession' {
     It 'Throws an error if sessions are not configured' {
         Mock Test-PodeSessionsEnabled { return $false }
-        { Save-PodeSession } | Should -Throw 'Sessions have not been configured'
+        { Save-PodeSession } | Should -Throw $PodeLocale.sessionsNotConfiguredExceptionMessage # Sessions have not been configured.
     }
 
     It 'Throws error if there is no session' {
         Mock Test-PodeSessionsEnabled { return $true }
         $WebEvent = @{}
-        { Save-PodeSession } | Should -Throw -ExpectedMessage 'There is no session available to save'
+        { Save-PodeSession } | Should -Throw -ExpectedMessage $PodeLocale.noSessionAvailableToSaveExceptionMessage # There is no session available to save.
     }
 
     It 'Call saves the session' {
