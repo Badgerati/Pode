@@ -165,7 +165,7 @@
         'Test-PodeRoute',
         'Test-PodeStaticRoute',
         'Test-PodeSignalRoute',
-
+        'Add-PodeTaskRoute',
         # handlers
         'Add-PodeHandler',
         'Remove-PodeHandler',

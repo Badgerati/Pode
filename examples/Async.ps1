@@ -19,6 +19,20 @@ Start-PodeServer -Threads 1 {
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
+    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses
+
+    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
+        -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io'
+
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
+
+    Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs'
     <#   Add-PodeRoute -Method Get -Path '/async1' -async  -ScriptBlock {
         param($WebEvent, $id)
         try {
@@ -45,37 +59,17 @@ Start-PodeServer -Threads 1 {
         }
     }#>
 
-    Add-PodeRoute -Method Get -Path '/async1' -async  -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Get -Path '/async1' -async  -ScriptBlock {
         #    Write-PodeHost $WebEvent.Parameters -Explode
         #  Write-PodeHost    $PodeContext.AsyncRoutes.Results -Explode
         #     Write-PodeHost      $PodeContext.AsyncRoutes.Results[$id] -Explode
         Start-Sleep 40
         return @{ InnerValue = 'hey look, a value!' }
-    }
+    } | Set-PodeOARouteInfo -Summary 'Do something'
 
 
-    Add-PodeRoute -Method Get -Path '/getasync'   -ScriptBlock {
-        $id = $WebEvent.Query['id']
-        #   write-podehost      $PodeContext.AsyncRoutes.Results[$id]  -Explode
-        #    write-podehost      $PodeContext.AsyncRoutes.Results[$id].Runspace.Handler  -Explode
-        $taskSummary = @{
-            ID            = $PodeContext.AsyncRoutes.Results[$id].ID
-            StartingTime  = $PodeContext.AsyncRoutes.Results[$id].StartingTime
-            Result        = $null #$PodeContext.AsyncRoutes.Results[$id].result
-            CompletedTime = $PodeContext.AsyncRoutes.Results[$id].CompletedTime
-            Task          = $PodeContext.AsyncRoutes.Results[$id].Task
-            State         = $PodeContext.AsyncRoutes.Results[$id].State
+    Add-PodeTaskRoute -Path '/task' -ResponseType XML
 
-        }
-
-        if ($PodeContext.AsyncRoutes.Results[$id].Runspace.Handler.IsCompleted) {
-            $taskSummary.Result = $PodeContext.AsyncRoutes.Results[$id].result
-            #  $taskSummary.Result = 'completed'
-        }
-
-        Write-PodeJsonResponse -StatusCode 200 -Value $taskSummary
-
-    }
 
 
 }

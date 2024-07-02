@@ -120,8 +120,8 @@ finally {
 }
 '@
 
-    $originalScriptContent = $OriginalScriptBlock.ToString()
-    $enhancedScriptBlockContent = $enhancedScriptBlockTemplate -replace '<# ScriptBlock #>', $originalScriptContent
+    $enhancedScriptBlockContent = $enhancedScriptBlockTemplate -replace '<# ScriptBlock #>', $ScriptBlock.ToString()
 
     [ScriptBlock]::Create($enhancedScriptBlockContent)
 }
+ 
