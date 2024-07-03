@@ -317,6 +317,10 @@ function Enable-PodeOpenApi {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = $DefaultResponses
     }
     $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.enabled = $true
+
+    if ($EndpointName) {
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.EndpointName = $EndpointName
+    }
 }
 
 
@@ -1642,8 +1646,8 @@ The title of the web page. (Default is the OpenAPI title from Enable-PodeOpenApi
 If supplied, the page will be rendered using a dark theme (this is not supported for all viewers).
 
 .PARAMETER EndpointName
-The EndpointName of an Endpoint(s) to bind the static Route against.
-
+The EndpointName of an Endpoint(s) to bind the static Route against.This parameter is normally not required.
+The Endpoint is retrieved by the OpenAPI DefinitionTag
 .PARAMETER Authentication
 The name of an Authentication method which should be used as middleware on this Route.
 
@@ -1740,6 +1744,12 @@ function Enable-PodeOAViewer {
         $DefinitionTag
     )
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+    # If no EndpointName try to reetrieve the EndpointName from the DefinitionTag if exist
+    if ([string]::IsNullOrWhiteSpace($EndpointName) -and $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.EndpointName) {
+        $EndpointName = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.EndpointName
+    }
+
     # error if there's no OpenAPI URL
     $OpenApiUrl = Protect-PodeValue -Value $OpenApiUrl -Default $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].Path
     if ([string]::IsNullOrWhiteSpace($OpenApiUrl)) {
