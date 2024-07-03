@@ -29,7 +29,7 @@ $ProgressPreference = 'SilentlyContinue'
 # Dependency Versions
 #>
 $Versions = @{
-    Pester      = '5.5.0'
+    Pester      = '5.6.1'
     MkDocs      = '1.6.0'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'

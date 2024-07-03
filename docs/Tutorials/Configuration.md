@@ -79,7 +79,8 @@ A "path" like `Server.Ssl.Protocols` looks like the below in the file:
 | Server.FileMonitor               | Defines configuration for restarting the server based on file updates       | [link](../Restarting/Types/FileMonitoring)                              |
 | Server.ReceiveTimeout            | Define the amount of time a Receive method call will block waiting for data | [link](../Endpoints/Basic/StaticContent/#server-timeout)                |
 | Server.DefaultFolders            | Set the Default Folders paths                                               | [link](../Routes/Utilities/StaticContent/#changing-the-default-folders) |
-| Web.OpenApi.DefaultDefinitionTag | Define the primary tag name for OpenAPI ( 'default' is the default)         | [link](../OpenAPI/Overview)                                             |
+| Web.OpenApi.DefaultDefinitionTag | Define the primary tag name for OpenAPI ( `default` is the default)         | [link](../OpenAPI/Overview)                                             |
+| Web.OpenApi.UsePodeYamlInternal  | Force the use of the internal YAML converter (`False` is the default)       |                                                                         |
 | Web.Static.ValidateLast          | Changes the way routes are processed.                                       | [link](../Routes/Utilities/StaticContent)                               |
 | Web.TransferEncoding             | Sets the Request TransferEncoding                                           | [link](../Compression/Requests)                                         |
 | Web.Compression                  | Sets any compression to use on the Response                                 | [link](../Compression/Responses)                                        |
