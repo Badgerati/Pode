@@ -283,5 +283,6 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory-Modul nur unter Windows verfügbar.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'Die Anforderungsprotokollierung wurde bereits aktiviert.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ungültige Access-Control-Max-Age-Dauer angegeben: {0}. Sollte größer als 0 sein.'
+    fileAlreadyPresentExceptionMessage                                = '{0} ist bereits vorhanden. Verwenden Sie -Force, um es zu überschreiben.'
 }
 

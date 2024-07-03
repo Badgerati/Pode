@@ -1907,7 +1907,8 @@ function Get-PodeConfiguration {
             }
 
             if ((Test-Path -Path $psd1FileName) -and (! $Force.IsPresent)) {
-                throw "$psd1FileName already present. Use -Force to overwrite."
+                # {0} already present. Use -Force to overwrite.
+                throw ($PodeLocale.fileAlreadyPresentExceptionMessage -f $psd1FileName)
             }
 
             $export | ConvertTo-PodePsd1 | Out-File $psd1FileName

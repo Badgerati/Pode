@@ -283,5 +283,6 @@
     adModuleWindowsOnlyExceptionMessage                               = '仅支持 Windows 的 Active Directory 模块。'
     requestLoggingAlreadyEnabledExceptionMessage                      = '请求日志记录已启用。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '提供的 Access-Control-Max-Age 时长无效：{0}。应大于 0。'
+    fileAlreadyPresentExceptionMessage                                = '{0} 已存在。使用 -Force 覆盖它。'
 }
 

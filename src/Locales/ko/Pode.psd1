@@ -283,5 +283,6 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory 모듈은 Windows에서만 사용할 수 있습니다.'
     requestLoggingAlreadyEnabledExceptionMessage                      = '요청 로깅이 이미 활성화되었습니다.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '잘못된 Access-Control-Max-Age 기간이 제공되었습니다: {0}. 0보다 커야 합니다.'
+    fileAlreadyPresentExceptionMessage                                = '{0}이(가) 이미 존재합니다. 덮어쓰려면 -Force를 사용하십시오.'
 }
 

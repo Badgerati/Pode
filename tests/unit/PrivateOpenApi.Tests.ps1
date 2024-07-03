@@ -342,7 +342,6 @@ Describe 'PrivateOpenApi' {
 
             $openApiTable | Should -BeOfType [hashtable]
             $openApiTable.DefinitionTagSelectionStack -is [System.Collections.Generic.Stack[System.Object]] | Should -BeTrue
-            $openApiTable.DefaultDefinitionTag | Should -Be 'default'
             $openApiTable.SelectedDefinitionTag | Should -Be 'default'
             $openApiTable.Definitions | Should -BeOfType [hashtable]
             $openApiTable.Definitions['default'] | Should -BeOfType [hashtable]

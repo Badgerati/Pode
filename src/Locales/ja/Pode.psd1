@@ -283,5 +283,6 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active DirectoryモジュールはWindowsでのみ利用可能です。'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'リクエストロギングは既に有効になっています。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。'
+    fileAlreadyPresentExceptionMessage                                = '{0} は既に存在します。上書きするには -Force を使用してください。'
 }
 

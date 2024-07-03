@@ -283,5 +283,6 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Le module Active Directory est uniquement disponible sur Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'La journalisation des requêtes est déjà activée.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
+    fileAlreadyPresentExceptionMessage                                = '{0} est déjà présent. Utilisez -Force pour écraser.'
 }
 
