@@ -644,13 +644,13 @@ function ConvertTo-PodeOASchemaProperty {
                 $schema['minProperties'] = $Property.minProperties
             }
 
-            if ($Property.maxProperties) {
-                $schema['maxProperties'] = $Property.maxProperties
-            }
-
-            if ($Property.additionalProperties) {
-                $schema['additionalProperties'] = $Property.additionalProperties
-            }
+        if ($Property.maxProperties) {
+            $schema['maxProperties'] = $Property.maxProperties
+        }
+        #Fix an issue when additionalProperties has an assigned value of $false
+        if ($Property.ContainsKey('additionalProperties')) {
+            $schema['additionalProperties'] = $Property.additionalProperties
+        }
 
             if ($Property.discriminator) {
                 $schema['discriminator'] = $Property.discriminator
