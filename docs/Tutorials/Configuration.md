@@ -79,7 +79,8 @@ A "path" like `Server.Ssl.Protocols` looks like the below in the file:
 | Server.FileMonitor               | Defines configuration for restarting the server based on file updates   | [link](../Restarting/Types/FileMonitoring) |
 | Server.Logging.QueueLimit        | Set the maximum number of logs allowed in the queue                     | [link](../Logging/Overview)                |
 | Server.Logging.Masking.Patterns  | Regular expressions congiguration to mask sensitive logs information    | [link](../Logging/Overview)                |
-| Web.OpenApi.DefaultDefinitionTag | Define the primary tag name for OpenAPI ( 'default' is the default)     | [link](../OpenAPI/OpenAPI)                 |
+| Web.OpenApi.DefaultDefinitionTag | Define the primary tag name for OpenAPI ( `default` is the default)     | [link](../OpenAPI/OpenAPI)                 |
+| Web.OpenApi.UsePodeYamlInternal  | Force the use of the internal YAML converter (`False` is the default)   |                                            |
 | Web.Static.ValidateLast          | Changes the way routes are processed.                                   | [link](../Routes/Utilities/StaticContent)  |
 | Web.TransferEncoding             | Sets the Request TransferEncoding                                       | [link](../Compression/Requests)            |
 | Web.Compression                  | Sets any compression to use on the Response                             | [link](../Compression/Responses)           |

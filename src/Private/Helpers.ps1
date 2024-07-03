@@ -3664,11 +3664,16 @@ function ConvertTo-PodeYaml {
     }
 
     end {
-        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
-            $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
-        }
         if ($pipelineObject.Count -gt 1) {
             $InputObject = $pipelineObject
+        }
+
+        if ($PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
+            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+        }
+
+        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
+            $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
         }
 
         if ($PodeContext.Server.InternalCache.YamlModuleImported) {
@@ -3757,8 +3762,8 @@ function ConvertTo-PodeYamlInternal {
             $Type = "$($InputObject.GetType().BaseType.Name)"
         }
 
-        # Check for specific value types (int, bool, float, double, string, etc.)
-        if ($Type -notin @('Int32', 'Boolean', 'Single', 'Double', 'String')) {
+        # Check for specific value types string
+        if ($Type -ne 'String') {
             # prevent these values being identified as an object
             if ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
                 $Type = 'hashTable'
@@ -3835,38 +3840,59 @@ function ConvertTo-PodeYamlInternal {
                 }
                 break
             }
+
             'hashtable' {
                 if ($InputObject.Count -gt 0 ) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
-                        if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
                         if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                        $null = $string.Append( $NewPadding).Append( $item).Append(': ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        $null = $string.Append( $NewPadding).Append( $item).Append(': ')
+                        if ($InputObject[$item] -is [System.ValueType]) {
+                            if ($InputObject[$item] -is [bool]) {
+                                $null = $string.Append($InputObject[$item].ToString().ToLower())
+                            }
+                            else {
+                                $null = $string.Append($InputObject[$item])
+                            }
+                        }
+                        else {
+                            if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        }
                     }
                     $string.ToString()
                 }
                 else { '{}' }
                 break
             }
+
             'pscustomobject' {
                 if ($InputObject.Count -gt 0 ) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in ($InputObject | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name)) {
-                        if ($InputObject.$item -is [string]) { $increment = 2 } else { $increment = 1 }
                         if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
-                        $null = $string.Append( $NewPadding).Append( $item).Append(': ').Append((ConvertTo-PodeYamlInternal -InputObject $InputObject.$item -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        $null = $string.Append( $NewPadding).Append( $item).Append(': ')
+                        if ($InputObject.$item -is [System.ValueType]) {
+                            if ($InputObject.$item -is [bool]) {
+                                $null = $string.Append($InputObject.$item.ToString().ToLower())
+                            }
+                            else {
+                                $null = $string.Append($InputObject.$item)
+                            }
+                        }
+                        else {
+                            if ($InputObject.$item -is [string]) { $increment = 2 } else { $increment = 1 }
+                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject.$item -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                        }
                     }
                     $string.ToString()
                 }
                 else { '{}' }
                 break
             }
-            'boolean' {
-                if ($InputObject -eq $true) { 'true' } else { 'false' }
-                break
-            }
+
             'array' {
                 $string = [System.Text.StringBuilder]::new()
                 $index = 0
@@ -3877,15 +3903,7 @@ function ConvertTo-PodeYamlInternal {
                 $string.ToString()
                 break
             }
-            'int32' {
-                $InputObject
-            }
-            'double' {
-                $InputObject
-            }
-            'single' {
-                $InputObject
-            }
+
             default {
                 "'$InputObject'"
             }
