@@ -1,0 +1,19 @@
+{
+  "name": "Codespace with PowerShell, Pester, Invoke-Build, and .NET 8",
+  "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/powershell:1": {},
+    "ghcr.io/devcontainers/features/dotnet:1": {
+      "version": "8.0"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.powershell",
+        "pspester.pester-test"
+      ]
+    }
+  },
+  "postCreateCommand": "pwsh -Command 'Install-Module -Name InvokeBuild,Pester -Force -SkipPublisherCheck; sleep 5; Invoke-Build Build   '"
+}
