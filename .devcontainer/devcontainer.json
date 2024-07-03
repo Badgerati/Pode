@@ -15,5 +15,5 @@
       ]
     }
   },
-  "postCreateCommand": "pwsh -Command 'Install-Module -Name InvokeBuild -Force -SkipPublisherCheck'"
+  "postCreateCommand": "pwsh -Command 'Install-Module -Name InvokeBuild,Pester -Force -SkipPublisherCheck; sleep 5; Invoke-Build Build   '"
 }

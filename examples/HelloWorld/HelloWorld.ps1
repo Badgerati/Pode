@@ -23,7 +23,7 @@ catch {
 # Import-Module Pode
 
 # Start the Pode server
-Start-PodeServer -Browse {
+Start-PodeServer  {
     # Add an HTTP endpoint listening on localhost at port 8080
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 
