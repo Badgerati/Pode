@@ -7,7 +7,8 @@ else {
 }
 
 Start-PodeServer -Threads 2 -ScriptBlock {
-    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default -Name 'endpoint_v3'
+    Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http -Default -Name 'endpoint_v3.1'
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
     $InfoDescription = @'
 This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about Swagger at [http://swagger.io](http://swagger.io).
@@ -20,14 +21,8 @@ Some useful links:
 - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
 '@
 
-
-
-    #Enable-PodeOpenApi -Path '/docs/openapi'     -OpenApiVersion '3.0.0' -EnableSchemaValidation -DisableMinimalDefinitions -DefaultResponses @{}
-    #  New-PodeOAExternalDoc -Name 'SwaggerDocs' -Description 'Find out more about Swagger' -Url 'http://swagger.io'
-    #  Add-PodeOAExternalDoc -Reference 'SwaggerDocs'
-
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3'
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
     $swaggerDocs | Add-PodeOAExternalDoc  -DefinitionTag 'v3', 'v3.1'
