@@ -939,10 +939,9 @@ function Set-PodeWebConfiguration {
     }
 
     if ($Configuration.OpenApi -and $Configuration.OpenApi.ContainsKey('UsePodeYamlInternal')) {
-        if (!$Context.Server.Web.ContainsKey('OpenApi')) {
-            $Context.Server.Web.OpenApi = @{}
+        $Context.Server.Web.OpenApi = @{
+            UsePodeYamlInternal = $Configuration.OpenApi.UsePodeYamlInternal
         }
-        $Context.Server.Web.OpenApi.UsePodeYamlInternal = $Configuration.OpenApi.UsePodeYamlInternal
     }
 
     # setup content type route patterns for forced content types
