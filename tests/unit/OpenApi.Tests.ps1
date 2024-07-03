@@ -3090,14 +3090,14 @@ Describe 'OpenApi' {
                 Description = 'Existing tag description'
             }
 
-            { Rename-PodeOADefinitionTagName -Tag 'oldTag' -NewTag 'existingTag' } | Should -Throw 'OpenAPI definition named existingTag already exist.'
+            { Rename-PodeOADefinitionTagName -Tag 'oldTag' -NewTag 'existingTag' } | Should -Throw -ExpectedMessage ($PodeLocale.openApiDefinitionAlreadyExistsExceptionMessage -f 'existingTag')
         }
 
         # Test case: Error when used inside Select-PodeOADefinition ScriptBlock
         It 'Throws an error when used inside a Select-PodeOADefinition ScriptBlock' {
             $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Push('dummy')
 
-            { Rename-PodeOADefinitionTagName -Tag 'oldTag' -NewTag 'newTag' } | Should -Throw "Rename-PodeOADefinitionTagName cannot be used inside a Select-PodeOADefinition 'ScriptBlock'"
+            { Rename-PodeOADefinitionTagName -Tag 'oldTag' -NewTag 'newTag' } | Should -Throw  -ExpectedMessage ($PodeLocale.renamePodeOADefinitionTagNameExceptionMessage)
 
             # Clear the stack after test
             $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Clear()

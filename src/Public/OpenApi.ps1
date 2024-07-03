@@ -3456,12 +3456,12 @@ function Rename-PodeOADefinitionTagName {
 
     # Check if the function is being used inside a Select-PodeOADefinition ScriptBlock
     if ($PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Count -gt 0) {
-        throw "Rename-PodeOADefinitionTagName cannot be used inside a Select-PodeOADefinition 'ScriptBlock'"
+        throw ($PodeLocale.renamePodeOADefinitionTagNameExceptionMessage)
     }
 
     # Check if the new tag name already exists in the OpenAPI definitions
     if ($PodeContext.Server.OpenAPI.Definitions.ContainsKey($NewTag)) {
-        throw "OpenAPI definition named $NewTag already exist."
+        throw ($PodeLocale.openApiDefinitionAlreadyExistsExceptionMessage -f $NewTag )
     }
 
     # If the Tag parameter is null or whitespace, use the default definition tag
