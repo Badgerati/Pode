@@ -70,7 +70,7 @@ function Invoke-PodeInternalAsync {
             ExpireTime    = $expireTime
             Timeout       = $Timeout
             State         = 'NotStarted'
-            Error         = $null
+            Error         = ''
         }
 
         return $PodeContext.AsyncRoutes.Results[$Id]
@@ -124,4 +124,3 @@ finally {
 
     [ScriptBlock]::Create($enhancedScriptBlockContent)
 }
- 

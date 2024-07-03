@@ -33,42 +33,18 @@ Start-PodeServer -Threads 1 {
 
     Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor'
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
-    <#   Add-PodeRoute -Method Get -Path '/async1' -async  -ScriptBlock {
-        param($WebEvent, $id)
-        try {
-            $PodeContext.AsyncRoutes.Results[$id].State = 'Running'
 
-            Write-PodeHost $WebEvent.Parameters -Explode
-            #  Write-PodeHost    $PodeContext.AsyncRoutes.Results -Explode
-            Write-PodeHost      $PodeContext.AsyncRoutes.Results[$id] -Explode
-            Start-Sleep 40
-            return @{ InnerValue = 'hey look, a value!' }
-
-        }
-        catch {
-            $PodeContext.AsyncRoutes.Results[$id].State = 'Failed'
-            $_ | Write-PodeErrorLog
-            $PodeContext.AsyncRoutes.Results[$id].Error = $_
-            return
-        }
-        finally {
-            if ( $PodeContext.AsyncRoutes.Results[$id].State -eq 'Running') {
-                $PodeContext.AsyncRoutes.Results[$id].State = 'Completed'
-            }
-            $PodeContext.AsyncRoutes.Results[$id].CompletedTime = [datetime]::UtcNow
-        }
-    }#>
 
     Add-PodeRoute -PassThru -Method Get -Path '/async1' -async  -ScriptBlock {
         #    Write-PodeHost $WebEvent.Parameters -Explode
         #  Write-PodeHost    $PodeContext.AsyncRoutes.Results -Explode
         #     Write-PodeHost      $PodeContext.AsyncRoutes.Results[$id] -Explode
-        Start-Sleep 40
+        Start-Sleep 5
         return @{ InnerValue = 'hey look, a value!' }
     } | Set-PodeOARouteInfo -Summary 'Do something'
 
 
-    Add-PodeTaskRoute -Path '/task' -ResponseType XML
+    Add-PodeTaskRoute -Path '/task' -ResponseType JSON, XML, YAML
 
 
 
