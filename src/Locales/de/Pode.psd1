@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "Ein Parameter namens '{0}' wurde in der Anfrage nicht angegeben oder es sind keine Daten verfügbar."
     cacheStorageNotFoundForSetExceptionMessage                        = "Der Cache-Speicher mit dem Namen '{0}' wurde nicht gefunden, als versucht wurde, das zwischengespeicherte Element '{1}' zu setzen."
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: Bereits definiert.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'Die Fehlerprotokollierung wurde bereits aktiviert.'
     valueForUsingVariableNotFoundExceptionMessage                     = "Der Wert für '`$using:{0}' konnte nicht gefunden werden."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = 'Das Dokumentationstool RapidPdf unterstützt OpenAPI 3.1 nicht.'
     oauth2ClientSecretRequiredExceptionMessage                        = 'OAuth2 erfordert ein Client Secret, wenn PKCE nicht verwendet wird.'
@@ -281,7 +280,10 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "Das bereitgestellte '{0}'-Schema für den Authentifizierungsvalidator '{1}' erfordert einen gültigen ScriptBlock."
     sseFailedToBroadcastExceptionMessage                              = 'SSE konnte aufgrund des definierten SSE-Broadcast-Levels für {0}: {1} nicht übertragen werden.'
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory-Modul nur unter Windows verfügbar.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'Die Anforderungsprotokollierung wurde bereits aktiviert.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ungültige Access-Control-Max-Age-Dauer angegeben: {0}. Sollte größer als 0 sein.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
+    loggingAlreadyEnabledExceptionMessage                             = "Das Logging '{0}' wurde bereits aktiviert."
+    invalidEncodingExceptionMessage                                   = 'Ungültige Codierung: {0}'
+    syslogProtocolExceptionMessage                                    = 'Das Syslog-Protokoll kann nur RFC3164 oder RFC5424 verwenden.'
 }
 

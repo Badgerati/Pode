@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "Parametr o nazwie '{0}' nie został dostarczony w żądaniu lub nie ma dostępnych danych."
     cacheStorageNotFoundForSetExceptionMessage                        = "Nie znaleziono magazynu pamięci podręcznej o nazwie '{0}' podczas próby ustawienia elementu w pamięci podręcznej '{1}'."
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: Już zdefiniowane.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'Rejestrowanie błędów jest już włączone.'
     valueForUsingVariableNotFoundExceptionMessage                     = "Nie można znaleźć wartości dla '`$using:{0}'."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = 'Narzędzie do dokumentów RapidPdf nie obsługuje OpenAPI 3.1'
     oauth2ClientSecretRequiredExceptionMessage                        = 'OAuth2 wymaga tajemnicy klienta, gdy nie używa się PKCE.'
@@ -281,7 +280,10 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "Dostarczony schemat '{0}' dla walidatora uwierzytelniania '{1}' wymaga ważnego ScriptBlock."
     sseFailedToBroadcastExceptionMessage                              = 'SSE nie udało się przesłać z powodu zdefiniowanego poziomu przesyłania SSE dla {0}: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Moduł Active Directory jest dostępny tylko w systemie Windows.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'Rejestrowanie żądań jest już włączone.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Podano nieprawidłowy czas trwania Access-Control-Max-Age: {0}. Powinien być większy niż 0.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
+    loggingAlreadyEnabledExceptionMessage                             = "Rejestrowanie '{0}' jest już włączone."
+    invalidEncodingExceptionMessage                                   = 'Nieprawidłowe kodowanie: {0}'
+    syslogProtocolExceptionMessage                                    = 'Protokół Syslog może używać tylko RFC3164 lub RFC5424.'
 }
 

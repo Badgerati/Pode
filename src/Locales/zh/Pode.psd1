@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "请求中未提供名为 '{0}' 的参数或没有可用数据。"
     cacheStorageNotFoundForSetExceptionMessage                        = "尝试设置缓存项 '{1}' 时，找不到名为 '{0}' 的缓存存储。"
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: 已经定义。'
-    errorLoggingAlreadyEnabledExceptionMessage                        = '错误日志记录已启用。'
     valueForUsingVariableNotFoundExceptionMessage                     = "未找到 '`$using:{0}' 的值。"
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = '文档工具 RapidPdf 不支持 OpenAPI 3.1'
     oauth2ClientSecretRequiredExceptionMessage                        = '不使用 PKCE 时, OAuth2 需要一个客户端密钥。'
@@ -281,7 +280,10 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "提供的 '{0}' 方案用于 '{1}' 身份验证验证器，需要一个有效的 ScriptBlock。"
     sseFailedToBroadcastExceptionMessage                              = '由于为{0}定义的SSE广播级别, SSE广播失败: {1}'
     adModuleWindowsOnlyExceptionMessage                               = '仅支持 Windows 的 Active Directory 模块。'
-    requestLoggingAlreadyEnabledExceptionMessage                      = '请求日志记录已启用。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '提供的 Access-Control-Max-Age 时长无效：{0}。应大于 0。'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "函数 '{0}' 不接受数组作为管道输入。"
+    loggingAlreadyEnabledExceptionMessage                             = "日志记录 '{0}' 已启用。"
+    invalidEncodingExceptionMessage                                   = '无效的编码: {0}'
+    syslogProtocolExceptionMessage                                    = 'Syslog 协议只能使用 RFC3164 或 RFC5424。'
 }
 

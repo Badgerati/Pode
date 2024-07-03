@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "Un paramètre nommé '{0}' n'a pas été fourni dans la demande ou aucune donnée n'est disponible."
     cacheStorageNotFoundForSetExceptionMessage                        = "Le stockage de cache nommé '{0}' est introuvable lors de la tentative de définition de l'élément mis en cache '{1}'."
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1} : Déjà défini.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'La journalisation des erreurs est déjà activée.'
     valueForUsingVariableNotFoundExceptionMessage                     = "Valeur pour '`$using:{0}' introuvable."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = "L'outil de documentation RapidPdf ne prend pas en charge OpenAPI 3.1"
     oauth2ClientSecretRequiredExceptionMessage                        = "OAuth2 nécessite un Client Secret lorsque PKCE n'est pas utilisé."
@@ -281,7 +280,11 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "Le schéma '{0}' fourni pour le validateur d'authentification '{1}' nécessite un ScriptBlock valide."
     sseFailedToBroadcastExceptionMessage                              = 'SSE a échoué à diffuser en raison du niveau de diffusion SSE défini pour {0} : {1}.'
     adModuleWindowsOnlyExceptionMessage                               = 'Le module Active Directory est uniquement disponible sur Windows.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'La journalisation des requêtes est déjà activée.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
+    loggingAlreadyEnabledExceptionMessage                             = "La journalisation '{0}' a déjà été activée."
+    invalidEncodingExceptionMessage                                   = 'Encodage invalide : {0}'
+    syslogProtocolExceptionMessage                                    = 'Le protocole Syslog ne peut utiliser que RFC3164 ou RFC5424.'
+
 }
 

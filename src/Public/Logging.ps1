@@ -248,20 +248,7 @@ function New-PodeLoggingMethod {
         $Restful,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Restful')]
-        [ValidateScript({
-                try {
-                    $uri = [System.Uri]::new($_)
-                    if ($uri.Scheme -match 'http|https' -and $uri.Host) {
-                        return $true
-                    }
-                    else {
-                        throw
-                    }
-                }
-                catch {
-                    throw "Invalid URL: $_"
-                }
-            })]
+        [ValidatePattern('^(https?://|/).+')]
         [string]
         $BaseUrl,
 
@@ -403,7 +390,7 @@ function New-PodeLoggingMethod {
             $selectedEncoding = [System.Text.Encoding]::$Encoding
 
             if ($null -eq $selectedEncoding) {
-                throw "Invalid encoding selected: $Encoding"
+                throw ($PodeLocale.invalidEncodingExceptionMessage -f $Encoding)
             }
 
             return @{
@@ -513,7 +500,7 @@ function Enable-PodeRequestLogging {
         # error if it's already enabled
         if ($PodeContext.Server.Logging.Types.Contains($name)) {
             # Request Logging has already been enabled
-            throw ($PodeLocale.requestLoggingAlreadyEnabledExceptionMessage)
+            throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f 'Request')
         }
 
         # username property
@@ -612,7 +599,7 @@ function Enable-PodeErrorLogging {
         # error if it's already enabled
         if ($PodeContext.Server.Logging.Types.Contains($Name)) {
             # Error Logging has already been enabled
-            throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
+            throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f 'Error')
         }
         # all errors?
         if ($Levels -contains '*') {
@@ -694,7 +681,7 @@ function Enable-PodeGeneralLogging {
         $pipelineMethods = @()
         # error if it's already enabled
         if ($PodeContext.Server.Logging.Types.Contains($Name)) {
-            throw "Error $Name Logging has already been enabled"
+            throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f $Name)
         }
 
     }
@@ -702,7 +689,8 @@ function Enable-PodeGeneralLogging {
     process {
         # ensure the Method contains a scriptblock
         if (Test-PodeIsEmpty $_.ScriptBlock) {
-            throw "The supplied output Method for $Name Logging requires a valid ScriptBlock"
+            # The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock.
+            throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
         }
         $pipelineMethods += $_
     }
@@ -783,14 +771,15 @@ function Enable-PodeMainLogging {
         $name = Get-PodeMainLoggingName
         # error if it's already enabled
         if ($PodeContext.Server.Logging.Types.Contains($Name)) {
-            throw "Error $Name Logging has already been enabled"
+            throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f $Name)
         }
     }
 
     process {
         # ensure the Method contains a scriptblock
         if (Test-PodeIsEmpty $_.ScriptBlock) {
-            throw 'The supplied output Method for Main Logging requires a valid ScriptBlock'
+            # The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock.
+            throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Main')
         }
         $pipelineMethods += $_
     }

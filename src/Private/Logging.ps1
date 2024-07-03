@@ -211,7 +211,8 @@ function Get-PodeLoggingSysLogMethod {
                     break
                 }
                 default {
-                    throw "Unsupported Syslog protocol: $($options.SyslogProtocol)"
+                    # The Syslog protocol can use only RFC3164 or RFC5424.
+                    throw ($PodeLocale.syslogProtocolExceptionMessage)
                 }
             }
 
