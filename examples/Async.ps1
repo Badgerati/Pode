@@ -35,16 +35,25 @@ Start-PodeServer -Threads 1 {
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
 
 
-    Add-PodeRoute -PassThru -Method Get -Path '/async1' -async  -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/async5' -async  -ScriptBlock {
         #    Write-PodeHost $WebEvent.Parameters -Explode
         #  Write-PodeHost    $PodeContext.AsyncRoutes.Results -Explode
         #     Write-PodeHost      $PodeContext.AsyncRoutes.Results[$id] -Explode
         Start-Sleep 5
-        return @{ InnerValue = 'hey look, a value!' }
+        return @{ InnerValue = 'hey look, a value 5!' }
     } | Set-PodeOARouteInfo -Summary 'Do something'
 
 
-    Add-PodeTaskRoute -Path '/task' -ResponseType JSON, XML, YAML
+    Add-PodeRoute -PassThru -Method Put -Path '/async20' -async  -ScriptBlock {
+        for ($i = 0; $i -lt 20; $i++) {
+            Start-Sleep 10
+        }
+        return @{ InnerValue = 'hey look, a value 20!' }
+    } | Set-PodeOARouteInfo -Summary 'Do something'
+
+    Add-PodeGetTaskRoute -Path '/task' -ResponseType JSON, XML, YAML -In Path -TaskIdName 'pippopppoId'
+    Add-PodeStopTaskRoute -Path '/task' -ResponseType JSON, XML, YAML -In Query -TaskIdName 'pippopppoId'
+
 
 
 

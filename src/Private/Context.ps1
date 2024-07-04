@@ -72,7 +72,7 @@ function New-PodeContext {
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Tasks -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value @() -PassThru |
+        Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
@@ -144,12 +144,12 @@ function New-PodeContext {
 
     # set thread counts
     $ctx.Threads = @{
-        General    = $Threads
-        Schedules  = 10
-        Files      = 1
-        Tasks      = 2
-        WebSockets = 2
-        AsyncRoutes      = 20
+        General     = $Threads
+        Schedules   = 10
+        Files       = 1
+        Tasks       = 2
+        WebSockets  = 2
+        AsyncRoutes = 20
     }
 
     # set socket details for pode server
@@ -431,16 +431,16 @@ function New-PodeContext {
 
     # runspace pools
     $ctx.RunspacePools = @{
-        Main      = $null
-        Web       = $null
-        Smtp      = $null
-        Tcp       = $null
-        Signals   = $null
-        Schedules = $null
-        Gui       = $null
-        Tasks     = $null
-        Files     = $null
-        AsyncRoutes     = $null
+        Main        = $null
+        Web         = $null
+        Smtp        = $null
+        Tcp         = $null
+        Signals     = $null
+        Schedules   = $null
+        Gui         = $null
+        Tasks       = $null
+        Files       = $null
+        AsyncRoutes = $null
     }
 
     # threading locks, etc.
