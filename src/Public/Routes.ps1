@@ -208,7 +208,10 @@ function Add-PodeRoute {
         $OADefinitionTag,
 
         [switch]
-        $Async
+        $Async,
+
+        [int]
+        $Timeout = -1
     )
 
     # check if we have any route group info defined
@@ -320,15 +323,23 @@ function Add-PodeRoute {
 
 
     if ($Async.IsPresent) {
-        $PodeContext.AsyncRoutes.Items["$($Method)_$Path"] = @{
-            Name           = "$($Method)_$Path"
+        Start-PodeAsyncRoutesHousekeeper
+
+        $asyncName = "$($Method):$Path"
+        <#  $PodeContext.RunspacePools.AsyncRoutes[$asyncName] = @{
+            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.AsyncRoutes, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }#>
+        $PodeContext.AsyncRoutes.Items[$asyncName] = @{
+            Name           = $asyncName
             Script         = ConvertTo-PodeEnhancedScriptBlock -ScriptBlock $ScriptBlock
             UsingVariables = $usingVars
             Arguments      = (Protect-PodeValue -Value $ArgumentList -Default @{})
         }
         $ScriptBlock = [scriptblock] {
+            param($Timeout)
             $id = New-PodeGuid
-            $task = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items["$($WebEvent.Method)_$($WebEvent.Path)"] -ArgumentList @{ WebEvent = $WebEvent; Id = $id }
+            $task = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items["$($WebEvent.Method):$($WebEvent.Path)" ] -ArgumentList @{ WebEvent = $WebEvent; Id = $id } -Timeout $Timeout
             $res = @{
                 StartingTime = $task.startingTime
                 Id           = $task.ID
@@ -336,6 +347,7 @@ function Add-PodeRoute {
             }
             Write-PodeJsonResponse -Value ($res | ConvertTo-Json) -StatusCode 200
         }
+        $ArgumentList = @($Timeout)
 
     }
 

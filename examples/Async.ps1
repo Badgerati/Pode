@@ -34,22 +34,24 @@ Start-PodeServer -Threads 1 {
     Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor'
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
 
-
+    $sleepTime = 5
+    $Message = 'coming from outside'
     Add-PodeRoute -PassThru -Method Put -Path '/async5' -async  -ScriptBlock {
         #    Write-PodeHost $WebEvent.Parameters -Explode
         #  Write-PodeHost    $PodeContext.AsyncRoutes.Results -Explode
         #     Write-PodeHost      $PodeContext.AsyncRoutes.Results[$id] -Explode
-        Start-Sleep 5
-        return @{ InnerValue = 'hey look, a value 5!' }
+        Start-Sleep $using:sleepTime
+        return @{ InnerValue = $using:Message }
     } | Set-PodeOARouteInfo -Summary 'Do something'
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/async20' -async  -ScriptBlock {
+        param($sleepTime2)
         for ($i = 0; $i -lt 20; $i++) {
-            Start-Sleep 10
+            Start-Sleep $sleepTime2
         }
         return @{ InnerValue = 'hey look, a value 20!' }
-    } | Set-PodeOARouteInfo -Summary 'Do something'
+    } -ArgumentList 2 | Set-PodeOARouteInfo -Summary 'Do something'
 
     Add-PodeGetTaskRoute -Path '/task' -ResponseType JSON, XML, YAML -In Path -TaskIdName 'pippopppoId'
     Add-PodeStopTaskRoute -Path '/task' -ResponseType JSON, XML, YAML -In Query -TaskIdName 'pippopppoId'

@@ -73,15 +73,23 @@ function Add-PodeGetTaskRoute {
             if ($PodeContext.AsyncRoutes.Results[$id].Runspace.Handler.IsCompleted) {
                 # ISO 8601 UTC format
                 $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                if ($result.Error) {
-                    $taskSummary.Error = $result.Error
-                }
-                else {
-                    if ($result.result.Count -gt 0) {
-                        $taskSummary.Result = $result.result[0]
+                switch ($result.State.ToLowerInvariant() ) {
+                    'failed' {
+                        $taskSummary.Error = $result.Error
+                        break
                     }
-                    else {
-                        $result.result = $null
+                    'completed' {
+                        if ($result.result.Count -gt 0) {
+                            $taskSummary.Result = $result.result[0]
+                        }
+                        else {
+                            $result.result = $null
+                        }
+                        break
+                    }
+                    'aborted' {
+                        $taskSummary.Error = $result.Error
+                        break
                     }
                 }
             }
