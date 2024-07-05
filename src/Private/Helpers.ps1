@@ -554,7 +554,7 @@ function Get-PodeSubnetRange {
 function Add-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files', 'AsyncRoutes')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files','AsyncRoutes')]
         [string]
         $Type,
 
@@ -599,6 +599,7 @@ function Add-PodeRunspace {
                 $null = $ps.AddParameter($_, $Parameters[$_])
             }
         }
+
         # start the pipeline
         if ($null -eq $OutputStream) {
             $pipeline = $ps.BeginInvoke()
@@ -606,6 +607,7 @@ function Add-PodeRunspace {
         else {
             $pipeline = $ps.BeginInvoke($OutputStream, $OutputStream)
         }
+
         # do we need to remember this pipeline? sorry, what did you say?
         if ($Forget) {
             $null = $pipeline
@@ -3766,9 +3768,6 @@ function ConvertTo-PodeYamlInternal {
             if ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
                 $Type = 'hashTable'
             }
-            elseif ($Type -ieq 'PSDataCollection`1') {
-                $Type = 'array'
-            }
             elseif ($Type -ieq 'List`1') {
                 $Type = 'array'
             }
@@ -3988,7 +3987,7 @@ function Open-PodeRunspace {
 .PARAMETER Property
     The property to be resolved. It can be a hashtable, an object array, or a single object.
 
-.RETURN
+.RETURNS
     Returns a PowerShell object or an array of PowerShell objects, depending on the input property type.
 
 .EXAMPLE
@@ -4007,6 +4006,7 @@ function Resolve-PodeObjectArray {
         [object]
         $Property
     )
+
     # Check if the property is a hashtable
     if ($Property -is [hashtable]) {
         # If the hashtable has only one item, convert it to a PowerShell object
@@ -4015,7 +4015,7 @@ function Resolve-PodeObjectArray {
         }
         else {
             # If the hashtable has more than one item, recursively resolve each item
-            return @(foreach ($p in $Property.Keys) {
+            return @(foreach ($p in $Property) {
                     Resolve-PodeObjectArray -Property $p
                 })
         }
@@ -4035,88 +4035,4 @@ function Resolve-PodeObjectArray {
         # For any other type, convert it to a PowerShell object
         return New-Object psobject -Property $Property
     }
-}
-
-
-<#
-.SYNOPSIS
-    Converts a hashtable or an array of hashtables to a human-readable XML string.
-
-.DESCRIPTION
-    This is an internal function and may change in future releases of Pode.
-    The function takes a hashtable or an array of hashtables as input and converts them to a formatted XML string.
-    It handles nested hashtables and arrays.
-
-.PARAMETER Value
-    The hashtable or array of hashtables to be converted to XML.
-
-.EXAMPLE
-    $hashTable = @{ Name = "John"; Age = 30 }
-    Convert-PodeHashTableToXml -Value $hashTable
-#>
-function Convert-PodeHashTableToXml {
-    param(
-        [Parameter(Mandatory = $true)]
-        [object]
-        $Value
-    )
-
-    # Create a new XML document
-    $xmlDocument = New-Object System.Xml.XmlDocument
-    $root = $xmlDocument.CreateElement('root')
-    $xmlDocument.AppendChild($root) | Out-Null
-
-    # Function to recursively add nodes
-    function Add-XmlNode {
-        param(
-            [System.Xml.XmlDocument]$doc,
-            [System.Xml.XmlElement]$parent,
-            [string]$key,
-            [object]$value
-        )
-
-        $node = $doc.CreateElement($key)
-
-        if ($value -is [hashtable]) {
-            $value.GetEnumerator() | ForEach-Object {
-                Add-XmlNode -doc $doc -parent $node -key $_.Key -value $_.Value
-            }
-        }
-        elseif ($value -is [array]) {
-            foreach ($item in $value) {
-                Add-XmlNode -doc $doc -parent $node -key 'item' -value $item
-            }
-        }
-        else {
-            $node.InnerText = $value.ToString()
-        }
-
-        $parent.AppendChild($node) | Out-Null
-    }
-
-    # Check if the input is an array of hashtables
-    if ($Value -is [array]) {
-        $Value | ForEach-Object {
-            if ($_ -is [hashtable]) {
-                $hashtableNode = $xmlDocument.CreateElement('hashtable')
-                $root.AppendChild($hashtableNode) | Out-Null
-                $_.GetEnumerator() | ForEach-Object {
-                    Add-XmlNode -doc $xmlDocument -parent $hashtableNode -key $_.Key -value $_.Value
-                }
-            }
-            else {
-                throw "Array contains non-hashtable element"
-            }
-        }
-    }
-    elseif ($Value -is [hashtable]) {
-        $Value.GetEnumerator() | ForEach-Object {
-            Add-XmlNode -doc $xmlDocument -parent $root -key $_.Key -value $_.Value
-        }
-    }
-    else {
-        throw "Input is not a hashtable or an array of hashtables"
-    }
-
-    return $xmlDocument.OuterXml
 }
