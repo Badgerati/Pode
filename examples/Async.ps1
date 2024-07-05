@@ -23,7 +23,7 @@ Start-PodeServer -Threads 1 {
 
     Add-PodeOAInfo -Title 'Async test - OpenAPI 3.0' -Version 0.0.1
 
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' 
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
 
     Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor'
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
@@ -55,7 +55,7 @@ Start-PodeServer -Threads 1 {
             Start-Sleep $state:data.sleepTime
         }
         return @{ InnerValue = $state:data.Message }
-    } | Set-PodeRouteAsync -ResponseType JSON, YAML
+    } | Set-PodeRouteAsync -ResponseType JSON, YAML,XML
 
 
 

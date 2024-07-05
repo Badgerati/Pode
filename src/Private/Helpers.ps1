@@ -4008,7 +4008,7 @@ function Resolve-PodeObjectArray {
         $Property
     )
     # Check if the property is a hashtable
-    elseif ($Property -is [hashtable]) {
+    if ($Property -is [hashtable]) {
         # If the hashtable has only one item, convert it to a PowerShell object
         if ($Property.Count -eq 1) {
             return New-Object psobject -Property $Property
