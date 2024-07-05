@@ -56,6 +56,9 @@ Tells Pode to configure certain RunspacePools when they're being used adhoc, suc
 .PARAMETER EnableBreakpoints
 If supplied, any breakpoints created by using Wait-PodeDebugger will be enabled - or disabled if false passed explicitly, or not supplied.
 
+.PARAMETER Experimental
+Enable feature in experimental stage
+
 .EXAMPLE
 Start-PodeServer { /* logic */ }
 
@@ -128,7 +131,10 @@ function Start-PodeServer {
         $CurrentPath,
 
         [switch]
-        $EnableBreakpoints
+        $EnableBreakpoints,
+
+        [hashtable]
+        $Experimental = @{}
     )
 
     # ensure the session is clean
@@ -169,7 +175,8 @@ function Start-PodeServer {
             -StatusPageExceptions $StatusPageExceptions `
             -DisableTermination:$DisableTermination `
             -Quiet:$Quiet `
-            -EnableBreakpoints:$EnableBreakpoints
+            -EnableBreakpoints:$EnableBreakpoints `
+            -Experimental $Experimental
 
         # set it so ctrl-c can terminate, unless serverless/iis, or disabled
         if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {

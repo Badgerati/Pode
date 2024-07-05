@@ -50,7 +50,10 @@ function New-PodeContext {
         $Quiet,
 
         [switch]
-        $EnableBreakpoints
+        $EnableBreakpoints,
+
+        [hashtable]
+        $Experimental = @{}
     )
 
     # set a random server name if one not supplied
@@ -188,6 +191,9 @@ function New-PodeContext {
         'Errors' = 'errors'
     }
 
+    # default Experimental settings
+    $ctx.Server.Experimental = $Experimental
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -285,7 +291,12 @@ function New-PodeContext {
     $ctx.Server.InbuiltDrives = @{}
 
     # shared state between runspaces
-    $ctx.Server.State = @{}
+    if ($ctx.Server.Experimental.ConcurrentDictionaryState) {
+        $ctx.Server.State = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase)
+    }
+    else {
+        $ctx.Server.State = @{}
+    }
 
     # setup caching
     $ctx.Server.Cache = @{
@@ -892,6 +903,13 @@ function Set-PodeServerConfiguration {
     $Context.Server.Debug = @{
         Breakpoints = @{
             Enabled = [bool]$Configuration.Debug.Breakpoints.Enable
+        }
+    }
+
+    # experimental settings
+    if ($Configuration.Experimental) {
+        if ($Configuration.Experimental.ContainsKey( 'ConcurrentDictionaryState')) {
+            $Context.Server.Experimental.ConcurrentDictionaryState = $Configuration.Experimental.ConcurrentDictionaryState
         }
     }
 }
