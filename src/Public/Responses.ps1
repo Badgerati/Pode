@@ -479,7 +479,8 @@ function Write-PodeCsvResponse {
                 }
 
                 if ($Value -isnot [string]) {
-                    $Value = Resolve-PodeObjectArray -Property $Value
+                    $Value = ConvertTo-PodePSObject -InputObject $Value
+                  #  $Value = Resolve-PodeObjectArray -Property $Value
 
                     if (Test-PodeIsPSCore) {
                         $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
@@ -761,6 +762,9 @@ The Depth to generate the XML document - the larger this value the worse perform
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER NoPropertyName
+Switch to handle hashtables without property names.
+
 .EXAMPLE
 Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
 
@@ -809,7 +813,10 @@ function Write-PodeXmlResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200
+        $StatusCode = 200,
+
+        [switch]
+        $NoPropertyName
     )
     begin {
         $pipelineValue = @()
@@ -835,14 +842,22 @@ function Write-PodeXmlResponse {
                     $Value = $pipelineValue
                 }
 
-                if ($Value -isnot [string]) {
-                    $Value = Resolve-PodeObjectArray -Property $Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
+                if ($Value -is [hashtable]) {
+                    $Value = Convert-PodeHashTableToXml -Value $Value
+                }
+                elseif ($NoPropertyName.IsPresent) {
+                    $Value = ConvertTo-Json -InputObject $value -Depth 99 -Compress -AsArray | ConvertFrom-Json -AsHashtable
+                    $Value = Convert-PodeHashTableToXml -Value $Value
+                }
+                elseif ($Value -isnot [string]) {
+                    $Value = ConvertTo-PodePSObject -InputObject $Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
+                   #$Value = Resolve-PodeObjectArray -Property $Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
                 }
             }
         }
 
         if ([string]::IsNullOrWhiteSpace($Value)) {
-            $Value = [string]::Empty
+            $Value = '<?xml version="1.0" encoding="UTF-8"?><rootElement/>'
         }
 
         Write-PodeTextResponse -Value $Value -ContentType 'text/xml' -StatusCode $StatusCode
