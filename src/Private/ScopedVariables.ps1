@@ -76,7 +76,7 @@ function Add-PodeScopedVariableInbuiltSession {
 function Add-PodeScopedVariableInbuiltState {
     Add-PodeScopedVariable -Name 'state' `
         -SetReplace "Set-PodeState -Name '{{name}}' -Value " `
-        -GetReplace "`$PodeContext.Server.State['{{name}}'].Value"
+        -GetReplace "`$PodeContext.Server.State.'{{name}}'.Value"
 }
 
 function Add-PodeScopedVariableInbuiltUsing {
