@@ -47,9 +47,9 @@ function Set-PodeState {
     }
     if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
         $item = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase)
-        $item.TryAdd('Value', $Value)
-        $item.TryAdd('Scope', $Scope)
-        $PodeContext.Server.State.TryAdd($Name, $item  )
+        $null = $item.TryAdd('Value', $Value)
+        $null = $item.TryAdd('Scope', $Scope)
+        $null = $PodeContext.Server.State.TryAdd($Name, $item  )
     }
     else {
         $PodeContext.Server.State[$Name] = @{
@@ -195,8 +195,16 @@ function Remove-PodeState {
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
+
+    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+        $item = ''
+        $null = $PodeContext.Server.State.tryRemove($Name, [ref]$item)
+        return $item.value
+    }
+
     $value = $PodeContext.Server.State[$Name].Value
     $null = $PodeContext.Server.State.Remove($Name)
+ 
     return $value
 }
 
@@ -273,7 +281,7 @@ function Save-PodeState {
     # contruct the state to save (excludes, etc)
 
     if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
-        $state = Convert-ConcurrentDictionaryToPodeHashtable -concurrentDictionary $PodeContext.Server.State
+        $state = Convert-PodeConcurrentDictionaryToHashtable -concurrentDictionary $PodeContext.Server.State
     }
     else {
         $state = $PodeContext.Server.State.Clone()
@@ -387,9 +395,12 @@ function Restore-PodeState {
         }
     }
 
+    # Clone the keys
+    $keys = $state.Keys.clone()
+
     # check for no scopes, and add for backwards compat
     $convert = $false
-    foreach ($_key in $state.Keys) {
+    foreach ($_key in $keys) {
         if ($null -eq $state[$_key].Scope) {
             $convert = $true
             break
@@ -397,7 +408,7 @@ function Restore-PodeState {
     }
 
     if ($convert) {
-        foreach ($_key in $state.Keys) {
+        foreach ($_key in $keys) {
             $state[$_key] = @{
                 Value = $state[$_key]
                 Scope = @()
@@ -415,7 +426,7 @@ function Restore-PodeState {
         $PodeContext.Server.State = ConvertTo-PodeConcurrentDictionary $state
     }
     else {
-        foreach ($_key in $state.Keys) {
+        foreach ($_key in $keys) {
             $PodeContext.Server.State[$_key] = $state[$_key]
         }
     }

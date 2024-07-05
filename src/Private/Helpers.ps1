@@ -4101,7 +4101,7 @@ function ConvertTo-PodeConcurrentDictionary {
     Converts a ConcurrentDictionary to a hashtable.
 
 .DESCRIPTION
-    The `Convert-ConcurrentDictionaryToPodeHashtable` function takes a ConcurrentDictionary and converts
+    The `Convert-PodeConcurrentDictionaryToHashtable` function takes a ConcurrentDictionary and converts
     it into a hashtable. This function supports the recursive conversion of nested ConcurrentDictionary objects.
 
 .PARAMETER concurrentDictionary
@@ -4118,10 +4118,10 @@ function ConvertTo-PodeConcurrentDictionary {
     $nestedConcurrentDictionary.TryAdd('SubKey1', 'SubValue1') | Out-Null
     $concurrentDictionary.TryAdd('Key2', $nestedConcurrentDictionary) | Out-Null
 
-    $hashtable = Convert-ConcurrentDictionaryToPodeHashtable -concurrentDictionary $concurrentDictionary
+    $hashtable = Convert-PodeConcurrentDictionaryToHashtable -concurrentDictionary $concurrentDictionary
     # The variable $hashtable now contains a hashtable with the same structure as $concurrentDictionary
 #>
-function Convert-ConcurrentDictionaryToPodeHashtable {
+function Convert-PodeConcurrentDictionaryToHashtable {
     param (
         [System.Collections.Concurrent.ConcurrentDictionary[string, object]]$concurrentDictionary
     )
@@ -4133,7 +4133,7 @@ function Convert-ConcurrentDictionaryToPodeHashtable {
 
         # Recursively convert nested ConcurrentDictionary objects
         if ($value -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]]) {
-            $value = ConvertTo-Hashtable -concurrentDictionary $value
+            $value = Convert-PodeConcurrentDictionaryToHashtable -concurrentDictionary $value
         }
 
         $hashtable[$key] = $value
