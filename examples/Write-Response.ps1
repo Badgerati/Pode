@@ -8,6 +8,11 @@ else {
 
 Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
+    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'
+    Add-PodeOAInfo -Title 'Test Write-Response' -Version 0.0.1
+
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs'
     #   nopipe
     Add-PodeRoute -Path '/html/processes'  -Method Get -ScriptBlock {
         $myProcess = Get-Process | .{ process { if ($_.WS -gt 100mb) { $_ } } } |
@@ -82,6 +87,14 @@ Start-PodeServer {
         Write-PodeXmlResponse -Value $myProcess  -StatusCode 200
     }
 
+      #   nopipe
+      Add-PodeRoute -Path '/xml/processesNoPropertyName'  -Method Get -ScriptBlock {
+        $myProcess = Get-Process | .{ process { if ($_.WS -gt 100mb) { $_ } } } |
+            Select-Object Name, @{e = { [int]($_.WS / 1mb) }; n = 'WS' } |
+            Sort-Object WS -Descending
+        Write-PodeXmlResponse -Value $myProcess  -StatusCode 200 -NoPropertyName
+    }
+
     #    pipe
     Add-PodeRoute -Path '/xml/processesPiped'  -Method Get -ScriptBlock {
         Get-Process | .{ process { if ($_.WS -gt 100mb) { $_ } } } |
@@ -108,22 +121,5 @@ Start-PodeServer {
             Select-Object Name, @{e = { [int]($_.WS / 1mb) }; n = 'WS' } |
             Sort-Object WS -Descending | Write-PodeYamlResponse   -StatusCode 200 -ContentType 'text/yaml'
     }
-    Start-Job -ScriptBlock {
-        Start-Sleep -Seconds 5
-        Start-Process http://localhost:8081/html/processesPiped
-        Start-Process http://localhost:8081/html/processes
-        Start-Process http://localhost:8081/text/processesPiped
-        Start-Process http://localhost:8081/text/processes
-        Start-Process http://localhost:8081/csv/processesPiped
-        Start-Process http://localhost:8081/csv/processes
-        Start-Process http://localhost:8081/csv/string
-        Start-Process http://localhost:8081/csv/hash
-        Start-Process http://localhost:8081/json/processesPiped
-        Start-Process http://localhost:8081/json/processes
-        Start-Process http://localhost:8081/xml/processesPiped
-        Start-Process http://localhost:8081/xml/processes
-        Start-Process http://localhost:8081/xml/hash
-        Start-Process http://localhost:8081/yaml/processesPiped
-        Start-Process http://localhost:8081/yaml/processes
-    }
+
 }

@@ -480,7 +480,6 @@ function Write-PodeCsvResponse {
 
                 if ($Value -isnot [string]) {
                     $Value = ConvertTo-PodePSObject -InputObject $Value
-                  #  $Value = Resolve-PodeObjectArray -Property $Value
 
                     if (Test-PodeIsPSCore) {
                         $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
@@ -851,7 +850,6 @@ function Write-PodeXmlResponse {
                 }
                 elseif ($Value -isnot [string]) {
                     $Value = ConvertTo-PodePSObject -InputObject $Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
-                   #$Value = Resolve-PodeObjectArray -Property $Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
                 }
             }
         }

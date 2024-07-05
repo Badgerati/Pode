@@ -3977,69 +3977,37 @@ function Open-PodeRunspace {
 
 <#
 .SYNOPSIS
-    Resolves various types of object arrays into PowerShell objects.
+    Converts any object, including nested hashtables and arrays, to a PSObject.
 
 .DESCRIPTION
-    This function takes an input property and determines its type.
-    It then resolves the property into a PowerShell object or an array of objects,
-    depending on whether the property is a hashtable, array, or single object.
+    The ConvertTo-PodePSObject function recursively converts an input object
+    to a PSObject. It handles nested hashtables and arrays, ensuring that
+    all nested structures are properly converted.
 
-.PARAMETER Property
-    The property to be resolved. It can be a hashtable, an object array, or a single object.
-
-.RETURNS
-    Returns a PowerShell object or an array of PowerShell objects, depending on the input property type.
+.PARAMETER InputObject
+    The input object to be converted. This can be a hashtable, array, or any other type of object.
 
 .EXAMPLE
-    $result = Resolve-PodeObjectArray -Property $myProperty
-    This example resolves the $myProperty into a PowerShell object or an array of objects.
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-#>
-function Resolve-PodeObjectArray {
-    [CmdletBinding()]
-    [OutputType([object[]])]
-    [OutputType([psobject])]
-    param (
-        [AllowNull()]
-        [object]
-        $Property
-    )
-
-    # Check if the property is a hashtable
-    if ($Property -is [hashtable]) {
-        # Create a new PSObject
-        $psObject = New-Object PSObject
-        # Add members to the PSObject from the hashtable
-        foreach ($key in $hashtable.Keys) {
-            $value = $hashtable[$key]
-
-            if ($value -is [hashtable]) {
-                # If the value is a hashtable, convert it recursively
-                $value = Convert-HashtableToPSObject -hashtable $value
-            }
-            $psObject | Add-Member -MemberType NoteProperty -Name $key -Value $value
+    $complexObject = @{
+        Name = "John Doe"
+        Age = 30
+        Occupation = "Engineer"
+        Address = @{
+            Street = "123 Main St"
+            City = "Anytown"
+            State = "CA"
+            Zip = "12345"
         }
+        Projects = @(
+            @{ ProjectName = "Project Alpha"; Duration = "6 months" }
+            @{ ProjectName = "Project Beta"; Duration = "3 months" }
+        )
+        Skills = @("PowerShell", "C#", "SQL")
     }
-    # Check if the property is an array of objects
-    elseif ($Property -is [object[]]) {
-        # Recursively resolve each item in the array
-        return @(foreach ($p in $Property) {
-                Resolve-PodeObjectArray -Property $p
-            })
-    }
-    # Check if the property is already a PowerShell object
-    elseif ($Property -is [psobject]) {
-        return $Property
-    }
-    else {
-        # For any other type, convert it to a PowerShell object
-        return New-Object psobject -Property $Property
-    }
-}
 
-
+    $psObject = $complexObject | ConvertTo-PodePSObject
+    $psObject
+#>
 function ConvertTo-PodePSObject {
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -4051,14 +4019,14 @@ function ConvertTo-PodePSObject {
             $psObject = New-Object PSObject
             foreach ($key in $InputObject.Keys) {
                 $value = $InputObject[$key]
-                $convertedValue = Convert-ToPSObject -InputObject $value
+                $convertedValue = ConvertTo-PodePSObject -InputObject $value
                 $psObject | Add-Member -MemberType NoteProperty -Name $key -Value $convertedValue
             }
             return $psObject
         } elseif ($InputObject -is [array]) {
             $convertedArray = @()
             foreach ($item in $InputObject) {
-                $convertedArray += Convert-ToPSObject -InputObject $item
+                $convertedArray += ConvertTo-PodePSObject -InputObject $item
             }
             return $convertedArray
         } else {
