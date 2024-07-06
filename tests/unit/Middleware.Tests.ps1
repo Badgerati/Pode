@@ -934,8 +934,8 @@ Describe 'Remove-PodeBodyParser' {
             }
         }
 
-        { Remove-PodeBodyParser -ContentType 'text/yaml' } | Should -Not -Throw
-        $PodeContext.Server.BodyParsers.ContainsKey('text/xml') | Should -Be $true
+        { Remove-PodeBodyParser -ContentType 'application/yaml' } | Should -Not -Throw
+        $PodeContext.Server.BodyParsers.ContainsKey('application/xml') | Should -Be $true
     }
 
     It 'Removes the script for the content-type' {
