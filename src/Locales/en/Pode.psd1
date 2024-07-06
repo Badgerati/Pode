@@ -283,5 +283,8 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory module only available on Windows OS.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'Request Logging has already been enabled.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.'
+    UnsupportedSerializationTypeExceptionMessage                      = 'Unsupported serialization type: {0}'
+    GetRequestBodyNotAllowedExceptionMessage                          = 'GET operations cannot have a Request Body.'
+    InvalidQueryFormatExceptionMessage                                = 'The query provided has an invalid format.'
 }
 

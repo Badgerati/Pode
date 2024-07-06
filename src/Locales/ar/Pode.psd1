@@ -283,5 +283,9 @@
     adModuleWindowsOnlyExceptionMessage                               = 'وحدة Active Directory متاحة فقط على نظام Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'تم تمكين تسجيل الطلبات بالفعل.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.'
+    UnsupportedSerializationTypeExceptionMessage                      = 'نوع التسلسل غير مدعوم: {0}'
+    GetRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات GET على محتوى الطلب.'
+    InvalidQueryFormatExceptionMessage                                = 'الاستعلام المقدم له تنسيق غير صالح.'
+
 }
 

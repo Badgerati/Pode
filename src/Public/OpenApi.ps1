@@ -771,6 +771,10 @@ function Set-PodeOARequest {
         }
 
         if ($null -ne $RequestBody) {
+            if ($r.Method -eq 'Get') {
+                # GET operations cannot have a Request Body.
+                throw $PodeLocale.GetRequestBodyNotAllowedExceptionMessage
+            }
             $r.OpenApi.RequestBody = $RequestBody
         }
 
@@ -882,10 +886,10 @@ function New-PodeOARequestBody {
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    if ($Example -and $Examples) {
-        # Parameters 'Examples' and 'Example' are mutually exclusive
-        throw ($PodeLocale.parametersMutuallyExclusiveExceptionMessage -f 'Example', 'Examples')
-    }
+    # if ($Example -and $Examples) {
+    # Parameters 'Examples' and 'Example' are mutually exclusive
+    #     throw ($PodeLocale.parametersMutuallyExclusiveExceptionMessage -f 'Example', 'Examples')
+    #  }
     $result = @{}
     foreach ($tag in $DefinitionTag) {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -1301,7 +1305,12 @@ function ConvertTo-PodeOAParameter {
             if ($AllowReserved.IsPresent) {
                 $prop['allowReserved'] = $AllowReserved.IsPresent
             }
-
+            if ($Example ) {
+                $prop.example = $Example
+            }
+            elseif ($Examples) {
+                $prop.examples = $Examples
+            }
         }
     }
     elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {

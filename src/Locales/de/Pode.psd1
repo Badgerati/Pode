@@ -283,5 +283,8 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory-Modul nur unter Windows verfügbar.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'Die Anforderungsprotokollierung wurde bereits aktiviert.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ungültige Access-Control-Max-Age-Dauer angegeben: {0}. Sollte größer als 0 sein.'
+    UnsupportedSerializationTypeExceptionMessage                      = 'Nicht unterstützter Serialisierungstyp: {0}'
+    GetRequestBodyNotAllowedExceptionMessage                          = 'GET-Operationen können keinen Anforderungstext haben.'
+    InvalidQueryFormatExceptionMessage                                = 'Die angegebene Abfrage hat ein ungültiges Format.'
 }
 

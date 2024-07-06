@@ -212,7 +212,29 @@ function Start-PodeAsyncRoutesHousekeeper {
     }
 }
 
+<#
+.SYNOPSIS
+    Closes and cleans up resources for asynchronous Pode routes.
 
+.DESCRIPTION
+    The Close-PodeAsyncRoutesInternal function is used to close and clean up disposable resources associated with asynchronous Pode routes.
+    It ensures that runspaces and results are properly disposed of and removed from the provided result hashtable.
+
+.PARAMETER Result
+    A hashtable containing the resources to be disposed of. The hashtable should contain 'Runspace' and 'Result' keys.
+
+.EXAMPLE
+    $result = @{
+        Runspace = [some runspace object]
+        Result   = [some result object]
+    }
+    Close-PodeAsyncRoutesInternal -Result $result
+
+    This example demonstrates how to use the Close-PodeAsyncRoutesInternal function to clean up resources in the provided result hashtable.
+
+.OUTPUTS
+    None
+#>
 function Close-PodeAsyncRoutesInternal {
     param(
         [Parameter()]
@@ -232,7 +254,25 @@ function Close-PodeAsyncRoutesInternal {
 }
 
 
+<#
+.SYNOPSIS
+    Adds an OpenAPI component schema for Pode asynchronous tasks.
 
+.DESCRIPTION
+    The Add-PodeAsyncComponentSchema function creates an OpenAPI component schema for Pode asynchronous tasks if it does not already exist.
+    This schema includes properties such as ID, CreationTime, StartingTime, Result, CompletedTime, State, Error, and Task.
+
+.PARAMETER Name
+    The name of the OpenAPI component schema. Defaults to 'PodeTask'.
+
+.EXAMPLE
+    Add-PodeAsyncComponentSchema -Name 'CustomTask'
+
+    This example creates an OpenAPI component schema named 'CustomTask' with the specified properties if it does not already exist.
+
+.OUTPUTS
+    None
+#>
 function Add-PodeAsyncComponentSchema {
     param (
         [string]
@@ -250,4 +290,117 @@ function Add-PodeAsyncComponentSchema {
             New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name
     }
 
+}
+
+<#
+.SYNOPSIS
+    Searches for asynchronous Pode tasks based on specified query conditions.
+
+.DESCRIPTION
+    The Search-PodeAsyncTask function searches the Pode context for asynchronous tasks that match the specified query conditions.
+    It supports comparison operators such as greater than (GT), less than (LT), greater than or equal (GE), less than or equal (LE),
+    equal (EQ), not equal (NE), like (LIKE), and not like (NOTLIKE).
+
+.PARAMETER Query
+    A hashtable containing the query conditions. Each key in the hashtable represents a field to search on,
+    and the value is another hashtable containing 'op' (operator) and 'value' (comparison value).
+
+.EXAMPLE
+    $query = @{
+        'State' = @{ 'op' = 'EQ'; 'value' = 'Running' }
+        'CreationTime' = @{ 'op' = 'GT'; 'value' = (Get-Date).AddHours(-1) }
+    }
+    $results = Search-PodeAsyncTask -Query $query
+
+    This example searches for tasks that are in the 'Running' state and were created within the last hour.
+
+.OUTPUTS
+    Returns an array of hashtables representing the matched tasks.
+#>
+function Search-PodeAsyncTask {
+    param (
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $Query
+    )
+
+    $matchedElements = @()
+
+    foreach ( $key in $PodeContext.AsyncRoutes.Results.keys.Clone()) {
+        $result = $PodeContext.AsyncRoutes.Results[$key]
+        $match = $false
+
+        foreach ($key in $Query.Keys) {
+            $queryCondition = $Query[$key]
+
+            if ($queryCondition.ContainsKey('op') -and $queryCondition.ContainsKey('value')) {
+                $operator = $queryCondition['op']
+                $value = $queryCondition['value']
+
+                switch ($operator) {
+                    'GT' {
+                        if ($result[$key] -gt $value) {
+                            $match = $true
+                            break
+                        }
+                    }
+                    'LT' {
+                        if ($result[$key] -lt $value) {
+                            $match = $true
+                            break
+                        }
+                    }
+                    'GE' {
+                        if ($result[$key] -ge $value) {
+                            $match = $true
+                            break
+                        }
+                    }
+                    'LE' {
+                        if ($result[$key] -le $value) {
+                            $match = $true
+                            break
+                        }
+                    }
+                    'EQ' {
+                        if ($result[$key] -eq $value) {
+                            $match = $true
+                            break
+                        }
+                    }
+                    'NE' {
+                        if ($result[$key] -ne $value) {
+                            $match = $true
+                            break
+                        }
+                    }
+                    'NOTLIKE' {
+                        if ($result[$key] -notlike "*$value*") {
+                            $match = $true
+                            break
+                        }
+                    }
+                    'LIKE' {
+                        if ($result[$key] -like "*$value*") {
+                            $match = $true
+                            break
+                        }
+                    }
+                    Default {
+                        $match = $false
+                        break
+                    }
+                }
+            }
+            else {
+                # The query provided has an invalid format.
+                throw $PodeLocale.InvalidQueryFormatExceptionMessage
+            }
+        }
+
+        if ($match) {
+            $matchedElements += $result
+        }
+    }
+    return $matchedElements
 }

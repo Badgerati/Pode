@@ -283,5 +283,8 @@
     adModuleWindowsOnlyExceptionMessage                               = 'O módulo Active Directory está disponível apenas no Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'O registro de solicitações já está habilitado.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duração inválida fornecida para Access-Control-Max-Age: {0}. Deve ser maior que 0.'
+    UnsupportedSerializationTypeExceptionMessage                      = 'Tipo de serialização não suportado: {0}'
+    GetRequestBodyNotAllowedExceptionMessage                          = 'As operações GET não podem ter um corpo de solicitação.'
+    InvalidQueryFormatExceptionMessage                                = 'A consulta fornecida tem um formato inválido.'
 }
 

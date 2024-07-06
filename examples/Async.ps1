@@ -43,7 +43,7 @@ Start-PodeServer -Threads 1 {
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeRouteAsync -ResponseType JSON, YAML
+    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
 
 
 
@@ -55,7 +55,7 @@ Start-PodeServer -Threads 1 {
             Start-Sleep $state:data.sleepTime
         }
         return @{ InnerValue = $state:data.Message }
-    } | Set-PodeRouteAsync -ResponseType JSON, YAML,XML
+    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
 
 
 
@@ -67,7 +67,7 @@ Start-PodeServer -Threads 1 {
             Start-Sleep $data.sleepTime
         }
         return @{ InnerValue = $data.Message }
-    } | Set-PodeRouteAsync -ResponseType JSON, YAML
+    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
 
 
 
@@ -80,14 +80,14 @@ Start-PodeServer -Threads 1 {
             Start-Sleep $sleepTime2
         }
         return @{ InnerValue = $Message }
-    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeRouteAsync -ResponseType JSON, YAML
+    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
 
 
 
-    Add-PodeGetTaskRoute -Path '/task' -ResponseType JSON, XML, YAML -In Path -TaskIdName 'pippopppoId'
-    Add-PodeStopTaskRoute -Path '/task' -ResponseType JSON, XML, YAML -In Query -TaskIdName 'pippopppoId'
+    Add-PodeGetTaskRoute -Path '/task' -ResponseContentType JSON,   YAML -In Path #-TaskIdName 'pippopppoId'
+    Add-PodeStopTaskRoute -Path '/task' -ResponseContentType JSON, YAML -In Query #-TaskIdName 'pippopppoId'
 
-
+    Add-PodeQueryTaskRoute -path '/tasks'  -ResponseContentType JSON , YAML   -Payload Body #-Style Form
 
 <#
     Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
@@ -98,7 +98,7 @@ Start-PodeServer -Threads 1 {
             Start-Sleep $global:gSleepTime
         }
         return @{ InnerValue = $global:gMessage }
-    } | Set-PodeRouteAsync -ResponseType JSON, YAML
+    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
 
 #>
 
