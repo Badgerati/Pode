@@ -929,7 +929,7 @@ Describe 'Remove-PodeBodyParser' {
 
     It 'Does nothing if no script set for content-type' {
         $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{
-                    'text/xml' = {}
+                    'application/xml' = {}
                 }
             }
         }
@@ -940,12 +940,12 @@ Describe 'Remove-PodeBodyParser' {
 
     It 'Removes the script for the content-type' {
         $PodeContext = @{ 'Server' = @{ 'BodyParsers' = @{
-                    'text/xml' = {}
+                    'teapplicationxt/xml' = {}
                 }
             }
         }
 
-        { Remove-PodeBodyParser -ContentType 'text/xml' } | Should -Not -Throw
-        $PodeContext.Server.BodyParsers.ContainsKey('text/xml') | Should -Be $false
+        { Remove-PodeBodyParser -ContentType 'application/xml' } | Should -Not -Throw
+        $PodeContext.Server.BodyParsers.ContainsKey('application/xml') | Should -Be $false
     }
 }
