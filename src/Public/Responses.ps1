@@ -766,7 +766,7 @@ A String, PSObject, or HashTable value.
 The path to an XML file.
 
 .PARAMETER ContentType
-Because JSON content has not yet an official content type. one custom can be specified here (Default: 'application/xml' )
+Because XML content has not yet an official content type. one custom can be specified here (Default: 'application/xml' )
 https://www.rfc-editor.org/rfc/rfc3023
 
 .PARAMETER Depth
@@ -883,7 +883,7 @@ A String, PSObject, or HashTable value. For non-string values, they will be conv
 The path to a YAML file.
 
 .PARAMETER ContentType
-Because JSON content has not yet an official content type. one custom can be specified here (Default: 'application/yaml' )
+Because YAML content has not yet an official content type. one custom can be specified here (Default: 'application/yaml' )
 https://www.rfc-editor.org/rfc/rfc9512
 
 .PARAMETER Depth
