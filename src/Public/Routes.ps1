@@ -430,6 +430,8 @@ function Add-PodeRoute {
                     Arguments        = $ArgumentList
                     Method           = $_method
                     Path             = $Path
+                    IsAsync          = $false
+                    AsyncPoolName    = $null
                     OpenApi          = @{
                         Path           = $OpenApiPath
                         Responses      = $DefaultResponse
@@ -1690,6 +1692,18 @@ function Remove-PodeRoute {
     # ensure route does exist
     if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
         return
+    }
+
+    # remove the runspace
+    if ($PodeContext.Server.Routes[$Method][$Path].IsAsync) {
+        $asyncPoolName = $PodeContext.Server.Routes[$Method][$Path].AsyncPoolName
+        if ( $asyncPoolName -and $PodeContext.RunspacePools.AsyncRoutes.ContainsKey($asyncPoolName)) {
+            if (!  $PodeContext.RunspacePools.AsyncRoutes[$asyncPoolName].Pool.IsDisposed) {
+                $PodeContext.RunspacePools.AsyncRoutes[$asyncPoolName].Pool.BeginClose($null, $null)
+                Close-PodeDisposable -Disposable ($PodeContext.RunspacePools.AsyncRoutes[$asyncPoolName].Pool)
+            }
+            $PodeContext.RunspacePools.AsyncRoutes.remove($asyncPoolName)
+        }
     }
 
     # remove the operationId from the openapi operationId list

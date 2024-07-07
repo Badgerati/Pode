@@ -149,7 +149,7 @@ function New-PodeContext {
         Files       = 1
         Tasks       = 2
         WebSockets  = 2
-        AsyncRoutes = 20
+        AsyncRoutes = @{}
     }
 
     # set socket details for pode server
@@ -440,7 +440,7 @@ function New-PodeContext {
         Gui         = $null
         Tasks       = $null
         Files       = $null
-        AsyncRoutes = $null
+        AsyncRoutes = @{}
     }
 
     # threading locks, etc.
@@ -617,10 +617,12 @@ function New-PodeRunspacePool {
     }
 
 
-    $PodeContext.RunspacePools.AsyncRoutes = @{
+    # $PodeContext.RunspacePools.AsyncRoutes =@{}
+
+    <#@{
         Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.AsyncRoutes, $PodeContext.RunspaceState, $Host)
         State = 'Waiting'
-    }
+    }#>
 
     # setup files runspace pool -if we have any file watchers
     if (Test-PodeFileWatchersExist) {
@@ -646,7 +648,8 @@ function New-PodeRunspacePool {
     Opens and initializes runspace pools for various Pode components.
 
 .DESCRIPTION
-    This function opens and initializes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It asynchronously opens the pools and waits for them to be in the 'Opened' state. If any pool fails to open, it reports an error.
+    This function opens and initializes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more.
+    It asynchronously opens the pools and waits for them to be in the 'Opened' state. If any pool fails to open, it reports an error.
 
 .OUTPUTS
     Opens and initializes runspace pools for various Pode components.
@@ -665,11 +668,20 @@ function Open-PodeRunspacePool {
         if ($null -eq $item) {
             continue
         }
-
-        $item.Pool.ThreadOptions = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread
-        $item.Pool.CleanupInterval = [timespan]::FromMinutes(5)
-        $item.Result = $item.Pool.BeginOpen($null, $null)
+        if (  $item.ContainsKey('Pool')) {
+            $item.Pool.ThreadOptions = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread
+            $item.Pool.CleanupInterval = [timespan]::FromMinutes(5)
+            $item.Result = $item.Pool.BeginOpen($null, $null)
+        }
+        else {
+            foreach ($k in $item.Keys) {
+                $item[$k].Pool.ThreadOptions = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread
+                $item[$k].Pool.CleanupInterval = [timespan]::FromMinutes(5)
+                $item[$k].Result = $item[$k].Pool.BeginOpen($null, $null)
+            }
+        }
     }
+
 
     # wait for them all to open
     $queue = @($PodeContext.RunspacePools.Keys)
@@ -681,10 +693,21 @@ function Open-PodeRunspacePool {
                 $queue = ($queue | Where-Object { $_ -ine $key })
                 continue
             }
+            if (  $item.ContainsKey('Pool')) {
+                if ($item.Pool.RunspacePoolStateInfo.State -iin @('Opened', 'Broken')) {
+                    $queue = ($queue | Where-Object { $_ -ine $key })
+                    Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+                }
+            }
+            else {
+                foreach ($k in $item.Keys) {
+                    if ($item[$k].Pool.RunspacePoolStateInfo.State -iin @('Opened', 'Broken')) {
+                        $queue = ($queue | Where-Object { $_ -ine $key })
+                        Write-Verbose "RunspacePool for $($key)[$k]: $($item[$k].Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+                    }
 
-            if ($item.Pool.RunspacePoolStateInfo.State -iin @('Opened', 'Broken')) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+
+                }
             }
         }
 
@@ -699,10 +722,20 @@ function Open-PodeRunspacePool {
         if ($null -eq $item) {
             continue
         }
-
-        if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
-            $item.Pool.EndOpen($item.Result) | Out-Default
-            throw ($PodeLocale.failedToOpenRunspacePoolExceptionMessage -f $key) #"Failed to open RunspacePool: $($key)"
+        if ($item.Pool) {
+            if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
+                $item.Pool.EndOpen($item.Result) | Out-Default
+                throw ($PodeLocale.failedToOpenRunspacePoolExceptionMessage -f $key) #"Failed to open RunspacePool: $($key)"
+            }
+        }
+        else {
+            foreach ($k in $item.Keys) {
+                if ($item[$k].Pool.RunspacePoolStateInfo.State -ieq 'broken') {
+                    $item[$k].Pool.EndOpen($item[$k].Result) | Out-Default
+                    # Failed to open RunspacePool
+                    throw ($PodeLocale.failedToCloseRunspacePoolExceptionMessage -f $key)
+                }
+            }
         }
     }
 
@@ -730,11 +763,23 @@ function Close-PodeRunspacePool {
     # close pools async
     foreach ($key in $PodeContext.RunspacePools.Keys) {
         $item = $PodeContext.RunspacePools[$key]
-        if (($null -eq $item) -or ($item.Pool.IsDisposed)) {
+        if ($null -eq $item  ) {
             continue
         }
-
-        $item.Result = $item.Pool.BeginClose($null, $null)
+        if ( $item.ContainsKey('Pool')) {
+            if ( $item.Pool.IsDisposed) {
+                continue
+            }
+            $item.Result = $item.Pool.BeginClose($null, $null)
+        }
+        else {
+            foreach ($k in $item.Keys) {
+                if ($item[$k].Pool.IsDisposed) {
+                    continue
+                }
+                $item[$k].Result = $item[$k].Pool.BeginClose($null, $null)
+            }
+        }
     }
 
     # wait for them all to close
@@ -743,14 +788,24 @@ function Close-PodeRunspacePool {
     while ($queue.Length -gt 0) {
         foreach ($key in $queue) {
             $item = $PodeContext.RunspacePools[$key]
+
             if ($null -eq $item) {
                 $queue = ($queue | Where-Object { $_ -ine $key })
                 continue
             }
-
-            if ($item.Pool.RunspacePoolStateInfo.State -iin @('Closed', 'Broken')) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+            if ( $item.ContainsKey('Pool')) {
+                if ($item.Pool.RunspacePoolStateInfo.State -iin @('Closed', 'Broken')) {
+                    $queue = ($queue | Where-Object { $_ -ine $key })
+                    Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+                }
+            }
+            else {
+                foreach ($k in $item.Keys) {
+                    if ($item[$k].Pool.RunspacePoolStateInfo.State -iin @('Closed', 'Broken')) {
+                        $queue = ($queue | Where-Object { $_ -ine $key })
+                        Write-Verbose "RunspacePool for $($key)[$k]: $($item[$k].Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
+                    }
+                }
             }
         }
 
@@ -765,11 +820,21 @@ function Close-PodeRunspacePool {
         if ($null -eq $item) {
             continue
         }
-
-        if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
-            $item.Pool.EndClose($item.Result) | Out-Default
-            # Failed to close RunspacePool
-            throw ($PodeLocale.failedToCloseRunspacePoolExceptionMessage -f $key)
+        if ( $item.ContainsKey('Pool')) {
+            if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
+                $item.Pool.EndClose($item.Result) | Out-Default
+                # Failed to close RunspacePool
+                throw ($PodeLocale.failedToCloseRunspacePoolExceptionMessage -f $key)
+            }
+        }
+        else {
+            foreach ($k in $item.Keys) {
+                if ($item[$k].Pool.RunspacePoolStateInfo.State -ieq 'broken') {
+                    $item[$k].Pool.EndClose($item[$k].Result) | Out-Default
+                    # Failed to close RunspacePool
+                    throw ($PodeLocale.failedToCloseRunspacePoolExceptionMessage -f $key)
+                }
+            }
         }
     }
 
@@ -779,8 +844,14 @@ function Close-PodeRunspacePool {
         if (($null -eq $item) -or ($item.Pool.IsDisposed)) {
             continue
         }
-
-        Close-PodeDisposable -Disposable $item.Pool
+        if ( $item.ContainsKey('Pool')) {
+            Close-PodeDisposable -Disposable $item.Pool
+        }
+        else {
+            foreach ($k in $item.Keys) {
+                Close-PodeDisposable -Disposable $item[$k].Pool
+            }
+        }
     }
 
     Write-Verbose "RunspacePools closed [duration: $(([datetime]::Now - $start).TotalSeconds)s]"

@@ -36,17 +36,58 @@ Start-PodeServer -Threads 1 {
         sleepTime = 5
         Message   = 'coming from a PodeState'
     }
+<#
+    # setup session details
+    Enable-PodeSessionMiddleware -Duration 120 -Extend
 
-    Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
+    # setup form auth (<form> in HTML)
+    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+        param($username, $password)
+
+        # here you'd check a real user storage, this is just for example
+        if ($username -eq 'morty' -and $password -eq 'pickle') {
+            return @{
+                User = @{
+                    Name = 'Morty'
+                    Roles = @('Developer')
+                }
+            }
+        }
+
+        return @{ Message = 'Invalid details supplied' }
+    }
+
+    # set RBAC access
+    New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'Rbac' -Match One
+
+
+    # home page:
+    # redirects to login page if not authenticated
+    Add-PodeRoute -Method Get -Path '/' -Authentication Login -ScriptBlock {
+        $session:Views++
+
+        Write-PodeViewResponse -Path 'auth-home' -Data @{
+            Username = $WebEvent.Auth.User.Name
+            Views = $session:Views
+            Expiry = Get-PodeSessionExpiry
+        }
+    }
+
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsing'  -Authentication 'Validate' -Group 'TaskManager' -ScriptBlock {
+        Write-PodeHost "sleepTime=$($using:uSleepTime)"
+        Write-PodeHost "Message=$($using:uMessage)"
+        Start-Sleep ($using:uSleepTime *2)
+        return @{ InnerValue = $using:uMessage }
+    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
+#>
+
+Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
 
         Write-PodeHost "sleepTime=$($using:uSleepTime)"
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
     } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
-
-
-
     Add-PodeRoute -PassThru -Method Put -Path '/asyncState'  -ScriptBlock {
 
         Write-PodeHost "state:sleepTime=$($state:data.sleepTime)"
@@ -55,7 +96,7 @@ Start-PodeServer -Threads 1 {
             Start-Sleep $state:data.sleepTime
         }
         return @{ InnerValue = $state:data.Message }
-    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
+    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML -Threads 5
 
 
 
@@ -84,12 +125,12 @@ Start-PodeServer -Threads 1 {
 
 
 
-    Add-PodeGetTaskRoute -Path '/task' -ResponseContentType JSON,   YAML -In Path #-TaskIdName 'pippopppoId'
+    Add-PodeGetTaskRoute -Path '/task' -ResponseContentType JSON, YAML -In Path #-TaskIdName 'pippopppoId'
     Add-PodeStopTaskRoute -Path '/task' -ResponseContentType JSON, YAML -In Query #-TaskIdName 'pippopppoId'
 
     Add-PodeQueryTaskRoute -path '/tasks'  -ResponseContentType JSON , YAML   -Payload Body #-Style Form
 
-<#
+    <#
     Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
 
         Write-PodeHost "global:gSleepTime=$($global:gSleepTime)"

@@ -16,7 +16,6 @@ function Invoke-PodeInternalAsync {
         [string]
         $Id
     )
-
     try {
         # setup event param
         $parameters = @{
@@ -51,9 +50,8 @@ function Invoke-PodeInternalAsync {
         if ([string]::IsNullOrEmpty($Id)) {
             $Id = New-PodeGuid
         }
-
         $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
-        $runspace = Add-PodeRunspace -Type AsyncRoutes -ScriptBlock (($Task.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
+        $runspace = Add-PodeRunspace -Type AsyncRoutes -SubPool $Task.name -ScriptBlock (($Task.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
 
         if ($Timeout -ge 0) {
             $expireTime = [datetime]::UtcNow.AddSeconds($Timeout)
@@ -64,7 +62,7 @@ function Invoke-PodeInternalAsync {
 
         $PodeContext.AsyncRoutes.Results[$Id] = @{
             ID            = $Id
-            Task          = $Task.Name
+            Name          = $Task.Name
             Runspace      = $runspace
             Result        = $result
             StartingTime  = $null
@@ -125,7 +123,6 @@ function ConvertTo-PodeEnhancedScriptBlock {
     }
 
     $sc = $ScriptBlock.ToString()
-    #  if ($sc.StartsWith('param(')) {
 
     # Split the string into lines
     $lines = $sc -split "`n"
@@ -172,38 +169,30 @@ function Start-PodeAsyncRoutesHousekeeper {
         return
     }
     Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval 30 -ScriptBlock {
-        #  write-podehost 'start __pode_asyncroutes_housekeeper__'
-        #   write-podehost   $PodeContext.AsyncRoutes.Results.Count
         if ($PodeContext.AsyncRoutes.Results.Count -eq 0) {
             return
         }
 
         $now = [datetime]::UtcNow
-        #    write-podehost     $PodeContext.AsyncRoutes.Results.Keys -Explode
         foreach ($key in $PodeContext.AsyncRoutes.Results.Keys.Clone()) {
 
             $result = $PodeContext.AsyncRoutes.Results[$key]
-            #        Write-PodeHost "$($result.ExpireTime) -lt $now= $($result.ExpireTime -lt $now)"
             # has it force expired?
             if ($result.ExpireTime -lt $now) {
                 Close-PodeAsyncRoutesInternal -Result $result
                 continue
             }
-            #       Write-PodeHost       $result.Runspace.Handler -Explode
             # is it completed?
             if (!$result.Runspace.Handler.IsCompleted) {
                 continue
             }
 
-            #        write-podeHost "$($result.CompletedTime.AddMinutes(1)) -lt $now = $($result.CompletedTime.AddMinutes(1) -lt $now)"
             if ($result.CompletedTime.AddMinutes(60) -lt $now) {
-                write-podeHost 'Remove'
                 $null = $PodeContext.AsyncRoutes.Results.Remove($Result.ID)
             }
 
             # is it expired by completion? if so, dispose and remove
             elseif ($result.CompletedTime.AddMinutes(1) -lt $now) {
-                write-podeHost 'Clean only'
                 Close-PodeAsyncRoutesInternal -Result $result
             }
         }
@@ -286,7 +275,7 @@ function Add-PodeAsyncComponentSchema {
             New-PodeOAStringProperty -Name 'CompletedTime' -Format Date-Time -Example '2024-07-02T20:59:23.2174712Z' |
             New-PodeOAStringProperty -Name 'State' -Description 'Order Status' -Required -Example 'Running' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
             New-PodeOAStringProperty -Name 'Error' -Description 'The Error message if any.' |
-            New-PodeOAStringProperty -Name 'Task' -Example 'Get:/path' -Required |
+            New-PodeOAStringProperty -Name 'Name' -Example 'Get:/path' -Required |
             New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name
     }
 
@@ -325,81 +314,72 @@ function Search-PodeAsyncTask {
     )
 
     $matchedElements = @()
+    if ($PodeContext.AsyncRoutes.Results.count -gt 0) {
+        foreach ( $rkey in $PodeContext.AsyncRoutes.Results.keys.Clone()) {
+            $result = $PodeContext.AsyncRoutes.Results[$rkey]
+            $match = $true
 
-    foreach ( $key in $PodeContext.AsyncRoutes.Results.keys.Clone()) {
-        $result = $PodeContext.AsyncRoutes.Results[$key]
-        $match = $false
+            foreach ($key in $Query.Keys) {
+                $queryCondition = $Query[$key]
 
-        foreach ($key in $Query.Keys) {
-            $queryCondition = $Query[$key]
+                if ($queryCondition.ContainsKey('op') -and $queryCondition.ContainsKey('value')) {
+                    if ($result.ContainsKey( $key) -and ($null -ne $result[$key])) {
 
-            if ($queryCondition.ContainsKey('op') -and $queryCondition.ContainsKey('value')) {
-                $operator = $queryCondition['op']
-                $value = $queryCondition['value']
+                        $operator = $queryCondition['op']
+                        $value = $queryCondition['value']
 
-                switch ($operator) {
-                    'GT' {
-                        if ($result[$key] -gt $value) {
-                            $match = $true
-                            break
+                        switch ($operator) {
+                            'GT' {
+                                $match = $match -and ($result[$key] -gt $value)
+                                break
+                            }
+                            'LT' {
+                                $match = $match -and ($result[$key] -lt $value)
+                                break
+                            }
+                            'GE' {
+                                $match = $match -and ($result[$key] -ge $value)
+                                break
+                            }
+                            'LE' {
+                                $match = $match -and ($result[$key] -le $value)
+                                break
+                            }
+                            'EQ' {
+                                $match = $match -and ($result[$key] -eq $value)
+                                break
+                            }
+                            'NE' {
+                                $match = $match -and ($result[$key] -ne $value)
+                                break
+                            }
+                            'NOTLIKE' {
+                                $match = $match -and ($result[$key] -notlike "*$value*")
+                                break
+                            }
+                            'LIKE' {
+                                $match = $match -and ($result[$key] -like "*$value*")
+                                break
+                            }
+                            Default {
+                                $match = $match -and $false
+                                break
+                            }
                         }
                     }
-                    'LT' {
-                        if ($result[$key] -lt $value) {
-                            $match = $true
-                            break
-                        }
-                    }
-                    'GE' {
-                        if ($result[$key] -ge $value) {
-                            $match = $true
-                            break
-                        }
-                    }
-                    'LE' {
-                        if ($result[$key] -le $value) {
-                            $match = $true
-                            break
-                        }
-                    }
-                    'EQ' {
-                        if ($result[$key] -eq $value) {
-                            $match = $true
-                            break
-                        }
-                    }
-                    'NE' {
-                        if ($result[$key] -ne $value) {
-                            $match = $true
-                            break
-                        }
-                    }
-                    'NOTLIKE' {
-                        if ($result[$key] -notlike "*$value*") {
-                            $match = $true
-                            break
-                        }
-                    }
-                    'LIKE' {
-                        if ($result[$key] -like "*$value*") {
-                            $match = $true
-                            break
-                        }
-                    }
-                    Default {
-                        $match = $false
-                        break
+                    else {
+                        $match = $match -and $false
                     }
                 }
+                else {
+                    # The query provided has an invalid format.
+                    throw $PodeLocale.InvalidQueryFormatExceptionMessage
+                }
             }
-            else {
-                # The query provided has an invalid format.
-                throw $PodeLocale.InvalidQueryFormatExceptionMessage
-            }
-        }
 
-        if ($match) {
-            $matchedElements += $result
+            if ($match) {
+                $matchedElements += $result
+            }
         }
     }
     return $matchedElements

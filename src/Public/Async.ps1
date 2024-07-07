@@ -89,7 +89,7 @@ function Add-PodeGetTaskRoute {
                 # ISO 8601 UTC format
                 CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                 StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                Task         = $result.Task
+                Name         = $result.Name
                 State        = $result.State
             }
 
@@ -258,32 +258,48 @@ function Add-PodeStopTaskRoute {
         $responseMediaType = Get-PodeHeader -Name 'Accept'
         if ($PodeContext.AsyncRoutes.Results.ContainsKey($id )) {
             $result = $PodeContext.AsyncRoutes.Results[$id]
-            $result.State = 'Aborted'
-            $result.Error = 'User Aborted!'
-            $result.CompletedTime = [datetime]::UtcNow
-            $taskSummary = @{
-                ID            = $id
-                # ISO 8601 UTC format
-                CreationTime  = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                StartingTime  = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                Task          = $result.Task
-                State         = $result.State
-                # ISO 8601 UTC format
-                CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                Error         = $result.Error
-            }
-            Close-PodeDisposable -Disposable $result.Runspace.Pipeline
-            Close-PodeDisposable -Disposable $Result.Result
+            if (!$result.Runspace.Handler.IsCompleted) {
+                $result.State = 'Aborted'
+                $result.Error = 'User Aborted!'
+                $result.CompletedTime = [datetime]::UtcNow
 
-            switch ($responseMediaType) {
-                'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
-                'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
-                'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
-                default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                $taskSummary = @{
+                    ID            = $id
+                    # ISO 8601 UTC format
+                    CreationTime  = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    Name          = $result.Name
+                    State         = $result.State
+                    # ISO 8601 UTC format
+                    CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    Error         = $result.Error
+                }
+                if ($result.StartingTime ) {
+                    $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                }
+
+                Close-PodeDisposable -Disposable $result.Runspace.Pipeline
+                Close-PodeDisposable -Disposable $Result.Result
+
+                switch ($responseMediaType) {
+                    'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
+                    'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
+                    'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
+                    default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                }
+            }
+            else {
+                $errorMsg = @{ID = $id ; Error = 'Task already completed.' }
+                $statusCode = 402
+                switch ($responseMediaType) {
+                    'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
+                    'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
+                    'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
+                    default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
+                }
             }
         }
         else {
-            $errorMsg = @{ID = $id ; Error = 'No Task Found' }
+            $errorMsg = @{ID = $id ; Error = 'No Task Found.' }
             $statusCode = 402
             switch ($responseMediaType) {
                 'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
@@ -363,6 +379,9 @@ function Add-PodeStopTaskRoute {
 .PARAMETER NoOpenAPI
     If specified, the route will not be included in the OpenAPI documentation.
 
+.PARAMETER Threads
+    Number of parallel threads for this specific route (Default 2)
+
 .INPUTS
     [hashtable[]]
 
@@ -422,7 +441,10 @@ function Set-PodeRouteAsync {
 
         [Parameter(Mandatory = $true, ParameterSetName = 'NoOpenAPI')]
         [switch]
-        $NoOpenAPI
+        $NoOpenAPI,
+
+        [int]
+        $Threads = 2
 
     )
     Begin {
@@ -451,30 +473,42 @@ function Set-PodeRouteAsync {
 
 
         foreach ($r in $Route) {
-            $asyncName = "$($r.Method):$($r.Path)"
+            $r.IsAsync = $true
+            $r.AsyncPoolName = "$($r.Method):$($r.Path)"
             # Store the route's async task definition in Pode context
-            $PodeContext.AsyncRoutes.Items[$asyncName] = @{
-                Name           = $asyncName
+            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
+                Name           = $r.AsyncPoolName
                 Script         = ConvertTo-PodeEnhancedScriptBlock -ScriptBlock $r.Logic
                 UsingVariables = $r.UsingVariables
                 Arguments      = (Protect-PodeValue -Value $r.Arguments -Default @{})
             }
+            #Set thread count
+            $PodeContext.Threads[$r.AsyncPoolName] = $Threads
+            if (! $PodeContext.RunspacePools.AsyncRoutes.ContainsKey($r.AsyncPoolName)) {
+                $PodeContext.RunspacePools.AsyncRoutes[$r.AsyncPoolName] = @{
+                    Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads[$r.AsyncPoolName] , $PodeContext.RunspaceState, $Host)
+                    State = 'Waiting'
+                }
+            }
             # Replace the Route logic with this that allow to execute the original logic asynchronously
             $r.logic = [scriptblock] {
-                param($Timeout, $IdGenerator)
+                param($Timeout, $IdGenerator, $AsyncPoolName)
                 $responseMediaType = Get-PodeHeader -Name 'Accept'
                 $id = (& $IdGenerator)
-                $asyncName = "$($WebEvent.Method):$($WebEvent.Path)"
+
+                write-podehost $WebEvent -Explode
+
+                write-podehost $WebEvent.Auth -Explode
 
                 # Invoke the internal async task
-                $async = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items[$asyncName ] -Timeout $Timeout -ArgumentList @{ WebEvent = $WebEvent; ___async___id___ = $id }
+                $async = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items[$AsyncPoolName] -Timeout $Timeout -ArgumentList @{ WebEvent = $WebEvent; ___async___id___ = $id }
 
                 # Prepare the response
                 $res = @{
                     CreationTime = $async.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                     Id           = $async.ID
                     State        = $async.State
-                    Task         = $async.Task
+                    Name         = $async.Name
                 }
 
                 # Send the response based on the requested media type
@@ -485,8 +519,9 @@ function Set-PodeRouteAsync {
                     default { Write-PodeJsonResponse -Value $res -StatusCode 200 }
                 }
             }
+
             # Set arguments and clear using variables
-            $r.Arguments = (  $AsyncTimeout, $AsyncIdGenerator )
+            $r.Arguments = (  $AsyncTimeout, $AsyncIdGenerator, $r.AsyncPoolName  )
             $r.UsingVariables = $null
 
             # Add OpenAPI documentation if not excluded
@@ -658,41 +693,46 @@ function Add-PodeQueryTaskRoute {
         $responseMediaType = Get-PodeHeader -Name 'Accept'
         $response = @()
         $results = Search-PodeAsyncTask -Query $query
-        foreach ($result in $results) {
-            write-podehost $result -Explode
-            $taskSummary = @{
-                ID           = $result.ID
-                # ISO 8601 UTC format
-                CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                Task         = $result.Task
-                State        = $result.State
-            }
+        if ($results) {
+            foreach ($result in $results) {
 
-            if ($result.Runspace.Handler.IsCompleted) {
-                # ISO 8601 UTC format
-                $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                switch ($result.State.ToLowerInvariant() ) {
-                    'failed' {
-                        $taskSummary.Error = $result.Error
-                        break
-                    }
-                    'completed' {
-                        if ($result.result.Count -gt 0) {
-                            $taskSummary.Result = $result.result[0]
+                $taskSummary = @{
+                    ID           = $result.ID
+                    # ISO 8601 UTC format
+                    CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    Name         = $result.Name
+                    State        = $result.State
+                }
+
+                if ($result.StartingTime) {
+                    $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                }
+
+                if ($result.Runspace.Handler.IsCompleted) {
+                    # ISO 8601 UTC format
+                    $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    switch ($result.State.ToLowerInvariant() ) {
+                        'failed' {
+                            $taskSummary.Error = $result.Error
+                            break
                         }
-                        else {
-                            $result.result = $null
+                        'completed' {
+                            if ($result.result.Count -gt 0) {
+                                $taskSummary.Result = $result.result[0]
+                            }
+                            else {
+                                $result.result = $null
+                            }
+                            break
                         }
-                        break
-                    }
-                    'aborted' {
-                        $taskSummary.Error = $result.Error
-                        break
+                        'aborted' {
+                            $taskSummary.Error = $result.Error
+                            break
+                        }
                     }
                 }
+                $response += $taskSummary
             }
-            $response += $taskSummary
         }
         switch ($responseMediaType) {
             'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 200; break }
@@ -742,7 +782,7 @@ function Add-PodeQueryTaskRoute {
                     op    = 'EQ'
                     value = 'Completed'
                 }
-                'Task'         = @{
+                'Name'         = @{
                     op    = 'LIKE'
                     value = 'Get'
                 }
