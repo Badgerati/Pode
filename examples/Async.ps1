@@ -1,7 +1,7 @@
 param(
     [Parameter()]
     [int]
-    $Port = 8090
+    $Port = 8080
 )
 
 $path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
