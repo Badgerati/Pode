@@ -283,5 +283,7 @@
   adModuleWindowsOnlyExceptionMessage                               = 'Active Directory module only available on Windows OS.'
   requestLoggingAlreadyEnabledExceptionMessage                      = 'Request Logging has already been enabled.'
   invalidAccessControlMaxAgeDurationExceptionMessage                = 'Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.'
+  NonHashtableArrayElementExceptionMessage                          = 'Array contains non-hashtable element.'
+  InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'Input is not a hashtable or an array of hashtables.'
 }
 

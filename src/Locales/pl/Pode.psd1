@@ -283,5 +283,8 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Moduł Active Directory jest dostępny tylko w systemie Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'Rejestrowanie żądań jest już włączone.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Podano nieprawidłowy czas trwania Access-Control-Max-Age: {0}. Powinien być większy niż 0.'
+    NonHashtableArrayElementExceptionMessage                          = 'Tablica zawiera element, który nie jest tabelą skrótów'
+    InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'Dane wejściowe nie są tabelą skrótów ani tablicą tabel skrótów'
+
 }
 

@@ -299,7 +299,7 @@ Describe 'Write-PodeXmlResponse' {
     }
     It 'Returns an empty value for an empty value' {
         $r = Write-PodeXmlResponse -Value ([string]::Empty)
-        $r.Value | Should -Be ([string]::Empty)
+        $r.Value | Should -Be ( '<?xml version="1.0" encoding="UTF-8"?><root/>')
         $r.ContentType | Should -Be $_ContentType
     }
 
@@ -311,6 +311,14 @@ Describe 'Write-PodeXmlResponse' {
 
     It 'Converts and returns a value from a hashtable' {
         $r = Write-PodeXmlResponse -Value @{ 'name' = 'john' }
+         $r.Value   | Should -Be '<?xml version="1.0" encoding="UTF-8"?><root><name>john</name></root>'
+        $r.ContentType | Should -Be $_ContentType
+    }
+
+    It 'Converts and returns a value from a PSCustomObject' {
+        $r = Write-PodeXmlResponse -Value ([PSCustomObject]@{
+            Name =  'john'
+        })
         ($r.Value -ireplace '[\r\n ]', '') | Should -Be '<?xmlversion="1.0"encoding="utf-8"?><Objects><Object><PropertyName="name">john</Property></Object></Objects>'
         $r.ContentType | Should -Be $_ContentType
     }

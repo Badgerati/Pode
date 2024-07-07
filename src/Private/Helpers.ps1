@@ -4023,13 +4023,15 @@ function ConvertTo-PodePSObject {
                 $psObject | Add-Member -MemberType NoteProperty -Name $key -Value $convertedValue
             }
             return $psObject
-        } elseif ($InputObject -is [array]) {
+        }
+        elseif ($InputObject -is [array]) {
             $convertedArray = @()
             foreach ($item in $InputObject) {
                 $convertedArray += ConvertTo-PodePSObject -InputObject $item
             }
             return $convertedArray
-        } else {
+        }
+        else {
             return $InputObject
         }
     }
@@ -4047,6 +4049,9 @@ function ConvertTo-PodePSObject {
 .PARAMETER Value
     The hashtable or array of hashtables to be converted to XML.
 
+.PARAMETER RootLabel
+    The label that reppresent root
+
 .EXAMPLE
     $hashTable = @{ Name = "John"; Age = 30 }
     Convert-PodeHashTableToXml -Value $hashTable
@@ -4055,12 +4060,16 @@ function Convert-PodeHashTableToXml {
     param(
         [Parameter(Mandatory = $true)]
         [object]
-        $Value
+        $Value,
+
+        [string]
+        $RootLabel='root'
     )
 
     # Create a new XML document
     $xmlDocument = New-Object System.Xml.XmlDocument
-    $root = $xmlDocument.CreateElement('root')
+    #'<?xml version="1.0" encoding="UTF-8"?>
+    $root = $xmlDocument.CreateElement( $RootLabel)
     $xmlDocument.AppendChild($root) | Out-Null
 
     # Function to recursively add nodes
@@ -4102,7 +4111,8 @@ function Convert-PodeHashTableToXml {
                 }
             }
             else {
-                throw 'Array contains non-hashtable element'
+                # Array contains non-hashtable element.
+                throw $PodeLocale.NonHashtableArrayElementExceptionMessage
             }
         }
     }
@@ -4112,8 +4122,9 @@ function Convert-PodeHashTableToXml {
         }
     }
     else {
-        throw 'Input is not a hashtable or an array of hashtables'
+        # Input is not a hashtable or an array of hashtables
+        throw $PodeLocale.InputNotHashtableOrArrayOfHashtablesExceptionMessage
     }
 
-    return $xmlDocument.OuterXml
+    return '<?xml version="1.0" encoding="UTF-8"?>'+ $xmlDocument.OuterXml
 }

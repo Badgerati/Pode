@@ -283,5 +283,8 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active DirectoryモジュールはWindowsでのみ利用可能です。'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'リクエストロギングは既に有効になっています。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。'
+    NonHashtableArrayElementExceptionMessage                          = '配列にハッシュテーブルではない要素が含まれています'
+    InputNotHashtableOrArrayOfHashtablesExceptionMessage              = '入力がハッシュテーブルまたはハッシュテーブルの配列ではありません'
+
 }
 

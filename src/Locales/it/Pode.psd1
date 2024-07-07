@@ -283,5 +283,7 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Il modulo Active Directory è disponibile solo su Windows OS.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'La registrazione delle richieste è già abilitata.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durata non valida fornita per Access-Control-Max-Age: {0}. Deve essere maggiore di 0.'
+    NonHashtableArrayElementExceptionMessage                          = "L'array contiene un elemento che non è una tabella hash"
+    InputNotHashtableOrArrayOfHashtablesExceptionMessage              = "L'input non è una tabella hash o un array di tabelle hash"
 }
 

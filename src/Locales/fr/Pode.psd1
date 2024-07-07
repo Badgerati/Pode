@@ -283,5 +283,8 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Le module Active Directory est uniquement disponible sur Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'La journalisation des requêtes est déjà activée.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
+    NonHashtableArrayElementExceptionMessage                          = "Le tableau contient un élément qui n'est pas une table de hachage"
+    InputNotHashtableOrArrayOfHashtablesExceptionMessage              = "L'entrée n'est pas une table de hachage ou un tableau de tables de hachage"
+
 }
 
