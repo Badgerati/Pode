@@ -1674,7 +1674,7 @@ function ConvertTo-PodeResponseContent {
 
     # run action for the content type
     switch ($ContentType) {
-        { $_ -ilike '*/json' } {
+        { $_ -match '^(.*\/)?(.*\+)?json$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-Json -InputObject $InputObject -Compress)
@@ -1689,7 +1689,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_ -ilike '*/yaml' -or $_ -ilike '*/x-yaml' } {
+        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
@@ -1704,7 +1704,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_ -ilike '*/xml' } {
+        { $_ -match '^(.*\/)?(.*\+)?xml$' } {
             if ($InputObject -isnot [string]) {
                 $temp = @(foreach ($item in $InputObject) {
                         New-Object psobject -Property $item
