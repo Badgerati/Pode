@@ -474,7 +474,6 @@ function Set-PodeRouteAsync {
 
         foreach ($r in $Route) {
             $r.IsAsync = $true
-            $r.AsyncPoolName = "$($r.Method):$($r.Path)"
             # Store the route's async task definition in Pode context
             $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
                 Name           = $r.AsyncPoolName

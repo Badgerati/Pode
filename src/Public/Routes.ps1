@@ -431,7 +431,7 @@ function Add-PodeRoute {
                     Method           = $_method
                     Path             = $Path
                     IsAsync          = $false
-                    AsyncPoolName    = $null
+                    AsyncPoolName    =   "__$($_method)$($Path)_$($_endpoint.Name)_".Replace('/','_')
                     OpenApi          = @{
                         Path           = $OpenApiPath
                         Responses      = $DefaultResponse
