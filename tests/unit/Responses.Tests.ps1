@@ -295,7 +295,7 @@ Describe 'Write-PodeCsvResponse' {
 Describe 'Write-PodeXmlResponse' {
     BeforeEach {
         Mock Write-PodeTextResponse { return @{ 'Value' = $Value; 'ContentType' = $ContentType; } }
-        $_ContentType = 'text/xml'
+        $_ContentType = 'application/xml'
     }
     It 'Returns an empty value for an empty value' {
         $r = Write-PodeXmlResponse -Value ([string]::Empty)
