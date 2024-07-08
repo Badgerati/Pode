@@ -198,10 +198,10 @@ public bool CheckValidationResult(
 
     It 'responds with simple payload parameter - xml' {
         if ($UseCurl) {
-            $result = curl -s -X POST "$($Endpoint)/data/payload" -H 'Content-Type: text/xml' -d '<username>rick</username>' -k | ConvertFrom-Json
+            $result = curl -s -X POST "$($Endpoint)/data/payload" -H 'Content-Type: application/xml' -d '<username>rick</username>' -k | ConvertFrom-Json
         }
         else {
-            $result = Invoke-RestMethod -Uri "$($Endpoint)/data/payload" -Method Post -Body '<username>rick</username>' -ContentType 'text/xml' @splatter
+            $result = Invoke-RestMethod -Uri "$($Endpoint)/data/payload" -Method Post -Body '<username>rick</username>' -ContentType 'application/xml' @splatter
         }
         $result.Username | Should -Be 'rick'
     }
