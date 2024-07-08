@@ -1699,43 +1699,43 @@ function ConvertTo-PodeResponseContent {
             return ([string]$InputObject)
         }
 
-        # run action for the content type
-        switch ($ContentType) {
-            { $_ -ilike '*/json' } {
-                if ($InputObject -isnot [string]) {
-                    if ($Depth -le 0) {
-                        return (ConvertTo-Json -InputObject $InputObject -Compress)
-                    }
-                    else {
-                        return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
-                    }
+    # run action for the content type
+    switch ($ContentType) {
+        { $_ -match '^(.*\/)?(.*\+)?json$' } {
+            if ($InputObject -isnot [string]) {
+                if ($Depth -le 0) {
+                    return (ConvertTo-Json -InputObject $InputObject -Compress)
                 }
+                else {
+                    return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
+                }
+            }
 
                 if ([string]::IsNullOrWhiteSpace($InputObject)) {
                     return '{}'
                 }
             }
 
-            { $_ -ilike '*/yaml' -or $_ -ilike '*/x-yaml' } {
-                if ($InputObject -isnot [string]) {
-                    if ($Depth -le 0) {
-                        return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
-                    }
-                    else {
-                        return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
-                    }
+        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+            if ($InputObject -isnot [string]) {
+                if ($Depth -le 0) {
+                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
                 }
+                else {
+                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
+                }
+            }
 
                 if ([string]::IsNullOrWhiteSpace($InputObject)) {
                     return '[]'
                 }
             }
 
-            { $_ -ilike '*/xml' } {
-                if ($InputObject -isnot [string]) {
-                    $temp = @(foreach ($item in $InputObject) {
-                            New-Object psobject -Property $item
-                        })
+        { $_ -match '^(.*\/)?(.*\+)?xml$' } {
+            if ($InputObject -isnot [string]) {
+                $temp = @(foreach ($item in $InputObject) {
+                        New-Object psobject -Property $item
+                    })
 
                     return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
                 }

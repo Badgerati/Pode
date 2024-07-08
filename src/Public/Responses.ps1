@@ -721,6 +721,10 @@ A String, PSObject, or HashTable value. For non-string values, they will be conv
 .PARAMETER Path
 The path to a JSON file.
 
+.PARAMETER ContentType
+Because JSON content has not yet an official content type. one custom can be specified here (Default: 'application/json' )
+https://www.rfc-editor.org/rfc/rfc8259
+
 .PARAMETER Depth
 The Depth to generate the JSON document - the larger this value the worse performance gets.
 
@@ -749,6 +753,12 @@ function Write-PodeJsonResponse {
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
         [string]
         $Path,
+
+        [Parameter()]
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ContentType = 'application/json',
 
         [Parameter(ParameterSetName = 'Value')]
         [ValidateRange(0, 100)]
@@ -799,7 +809,7 @@ function Write-PodeJsonResponse {
             $Value = '{}'
         }
 
-        Write-PodeTextResponse -Value $Value -ContentType 'application/json' -StatusCode $StatusCode
+        Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
     }
 }
 
@@ -816,6 +826,10 @@ A String, PSObject, or HashTable value.
 
 .PARAMETER Path
 The path to an XML file.
+
+.PARAMETER ContentType
+Because XML content has not yet an official content type. one custom can be specified here (Default: 'application/xml' )
+https://www.rfc-editor.org/rfc/rfc3023
 
 .PARAMETER Depth
 The Depth to generate the XML document - the larger this value the worse performance gets.
@@ -870,6 +884,12 @@ function Write-PodeXmlResponse {
         $Depth = 10,
 
         [Parameter()]
+        [ValidatePattern('^\w+\/[\w\.\+-]+$')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ContentType = 'application/xml',
+
+        [Parameter()]
         [int]
         $StatusCode = 200
     )
@@ -907,7 +927,7 @@ function Write-PodeXmlResponse {
             $Value = [string]::Empty
         }
 
-        Write-PodeTextResponse -Value $Value -ContentType 'text/xml' -StatusCode $StatusCode
+        Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
     }
 }
 
@@ -925,7 +945,8 @@ A String, PSObject, or HashTable value. For non-string values, they will be conv
 The path to a YAML file.
 
 .PARAMETER ContentType
-Because JSON content has not yet an official content type. one custom can be specified here (Default: 'application/x-yaml' )
+Because YAML content has not yet an official content type. one custom can be specified here (Default: 'application/yaml' )
+https://www.rfc-editor.org/rfc/rfc9512
 
 .PARAMETER Depth
 The Depth to generate the YAML document - the larger this value the worse performance gets.
@@ -957,7 +978,7 @@ function Write-PodeYamlResponse {
         [ValidatePattern('^\w+\/[\w\.\+-]+$')]
         [ValidateNotNullOrEmpty()]
         [string]
-        $ContentType = 'application/x-yaml',
+        $ContentType = 'application/yaml',
 
 
         [Parameter(ParameterSetName = 'Value')]

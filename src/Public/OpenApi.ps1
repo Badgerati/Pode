@@ -284,7 +284,7 @@ function Enable-PodeOpenApi {
         # write the openapi definition
         if ($format -ieq 'yaml') {
             if ($mode -ieq 'view') {
-                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth) -ContentType 'text/x-yaml; charset=utf-8'
+                Write-PodeTextResponse -Value (ConvertTo-PodeYaml -InputObject $def -depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth) -ContentType 'application/yaml; charset=utf-8' #Changed to be RFC 9512 compliant
             }
             else {
                 Write-PodeYamlResponse -Value $def -Depth $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.depth
