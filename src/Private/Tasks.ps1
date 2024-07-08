@@ -102,7 +102,6 @@ function Invoke-PodeInternalTask {
                 $parameters[$usingVar.NewName] = $usingVar.Value
             }
         }
-        $startingTime = [datetime]::UtcNow
         $name = New-PodeGuid
         $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
         $runspace = Add-PodeRunspace -Type Tasks -ScriptBlock (($Task.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru

@@ -430,8 +430,19 @@ function New-PodeContext {
     $ctx.Server.Endware = @()
 
     # runspace pools
-    $ctx.RunspacePools = @{
-        Main        = $null
+    $ctx.RunspacePools = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+    $null = $ctx.RunspacePools.TryAdd('Main', $null)
+    $null = $ctx.RunspacePools.TryAdd('Web', $null)
+    $null = $ctx.RunspacePools.TryAdd('Smtp', $null)
+    $null = $ctx.RunspacePools.TryAdd('Tcp', $null)
+    $null = $ctx.RunspacePools.TryAdd('Signals', $null)
+    $null = $ctx.RunspacePools.TryAdd('Schedules', $null)
+    $null = $ctx.RunspacePools.TryAdd('Gui', $null)
+    $null = $ctx.RunspacePools.TryAdd('Tasks', $null)
+    $null = $ctx.RunspacePools.TryAdd('Files', $null)
+    $null = $ctx.RunspacePools.TryAdd('AsyncRoutes', $null)
+
+    <#      Main        = $null
         Web         = $null
         Smtp        = $null
         Tcp         = $null
@@ -440,8 +451,8 @@ function New-PodeContext {
         Gui         = $null
         Tasks       = $null
         Files       = $null
-        AsyncRoutes = @{}
-    }
+        AsyncRoutes = $null #[System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+    }#>
 
     # threading locks, etc.
     $ctx.Threading.Lockables = @{
