@@ -141,7 +141,6 @@
         'ConvertFrom-PodeXml',
         'Set-PodeDefaultFolder',
         'Get-PodeDefaultFolder',
-        'Get-PodeUserRequest',
 
         # routes
         'Add-PodeRoute',
@@ -168,10 +167,10 @@
         'Test-PodeSignalRoute',
 
         #Async
-        'Set-PodeRouteAsync',
-        'Add-PodeStopTaskRoute',
-        'Add-PodeGetTaskRoute',
-        'Add-PodeQueryTaskRoute',
+        'Set-PodeAsyncRoute',
+        'Add-PodeAsyncStopRoute',
+        'Add-PodeAsyncGetRoute',
+        'Add-PodeAsyncQueryRoute',
 
         # handlers
         'Add-PodeHandler',

@@ -36,7 +36,7 @@ Start-PodeServer -Threads 1 {
         sleepTime = 5
         Message   = 'coming from a PodeState'
     }
-<#
+    <#
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
@@ -78,16 +78,16 @@ Start-PodeServer -Threads 1 {
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep ($using:uSleepTime *2)
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
+    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
 #>
 
-Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
 
         Write-PodeHost "sleepTime=$($using:uSleepTime)"
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
+    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
     Add-PodeRoute -PassThru -Method Put -Path '/asyncState'  -ScriptBlock {
 
         Write-PodeHost "state:sleepTime=$($state:data.sleepTime)"
@@ -96,7 +96,7 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
             Start-Sleep $state:data.sleepTime
         }
         return @{ InnerValue = $state:data.Message }
-    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML -Threads 5
+    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -Threads 5
 
 
 
@@ -108,7 +108,7 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
             Start-Sleep $data.sleepTime
         }
         return @{ InnerValue = $data.Message }
-    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
+    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
 
 
 
@@ -121,14 +121,14 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
             Start-Sleep $sleepTime2
         }
         return @{ InnerValue = $Message }
-    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
+    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
 
 
 
-    Add-PodeGetTaskRoute -Path '/task' -ResponseContentType JSON, YAML -In Path #-TaskIdName 'pippopppoId'
-    Add-PodeStopTaskRoute -Path '/task' -ResponseContentType JSON, YAML -In Query #-TaskIdName 'pippopppoId'
+    Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType JSON, YAML -In Path #-TaskIdName 'pippopppoId'
+    Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType JSON, YAML -In Query #-TaskIdName 'pippopppoId'
 
-    Add-PodeQueryTaskRoute -path '/tasks'  -ResponseContentType JSON , YAML   -Payload Body #-Style Form
+    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType JSON , YAML   -Payload Body #-Style Form
 
     <#
     Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
@@ -139,7 +139,7 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
             Start-Sleep $global:gSleepTime
         }
         return @{ InnerValue = $global:gMessage }
-    } | Set-PodeRouteAsync -ResponseContentType JSON, YAML
+    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
 
 #>
 

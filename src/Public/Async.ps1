@@ -4,7 +4,7 @@
     Adds a route to get the status and details of an asynchronous task in Pode.
 
 .DESCRIPTION
-    The `Add-PodeGetTaskRoute` function creates a route in Pode that allows retrieving the status
+    The `Add-PodeAsyncGetRoute` function creates a route in Pode that allows retrieving the status
     and details of an asynchronous task. This function supports different methods for task ID
     retrieval (Cookie, Header, Path, Query) and various response types (JSON, XML, YAML). It
     integrates with OpenAPI documentation, providing detailed route information and response schemas.
@@ -40,7 +40,7 @@
 .OUTPUTS
     [hashtable]
 #>
-function Add-PodeGetTaskRoute {
+function Add-PodeAsyncGetRoute {
     [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
     [OutputType([hashtable])]
     param (
@@ -172,7 +172,7 @@ function Add-PodeGetTaskRoute {
     Adds a route to stop an asynchronous task in Pode.
 
 .DESCRIPTION
-    The `Add-PodeStopTaskRoute` function creates a route in Pode that allows the stopping of an
+    The `Add-PodeAsyncStopRoute` function creates a route in Pode that allows the stopping of an
     asynchronous task. This function supports different methods for task ID retrieval (Cookie,
     Header, Path, Query) and various response types (JSON, XML, YAML). It integrates with OpenAPI
     documentation, providing detailed route information and response schemas.
@@ -207,14 +207,14 @@ function Add-PodeGetTaskRoute {
 
 .EXAMPLE
     # Adding a route to stop an asynchronous task with the task ID in the query string
-    Add-PodeStopTaskRoute -Path '/task/stop' -ResponseType YAML -In Query -TaskIdName 'taskId'
+    Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType YAML -In Query -TaskIdName 'taskId'
 
 .EXAMPLE
     #  Adding a route to stop an asynchronous task with the task ID in the URL path
-    Add-PodeStopTaskRoute -Path '/task/stop' -ResponseType JSON, YAML -In Path -TaskIdName 'taskId'
+    Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType JSON, YAML -In Path -TaskIdName 'taskId'
 #>
 
-function Add-PodeStopTaskRoute {
+function Add-PodeAsyncStopRoute {
     [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
     [OutputType([hashtable])]
     param (
@@ -348,7 +348,7 @@ function Add-PodeStopTaskRoute {
     Defines an asynchronous route in Pode with runspace management.
 
 .DESCRIPTION
-    The `Set-PodeRouteAsync` function enables you to define routes in Pode that execute asynchronously,
+    The `Set-PodeAsyncRoute` function enables you to define routes in Pode that execute asynchronously,
     leveraging runspace management for non-blocking operation. This function allows you to specify
     response types (JSON, XML, YAML) and manage asynchronous task parameters such as timeout and
     unique ID generation. It supports the use of arguments, `$using` variables, and state variables.
@@ -398,7 +398,7 @@ function Add-PodeStopTaskRoute {
             Start-Sleep $sleepTime2
         }
         return @{ InnerValue = $Message }
-    } -ArgumentList @{sleepTime2 = 2; Message = 'coming as argument' } | Set-PodeRouteAsync -ResponseType JSON, XML
+    } -ArgumentList @{sleepTime2 = 2; Message = 'coming as argument' } | Set-PodeAsyncRoute -ResponseType JSON, XML
 
 .EXAMPLE
     # Using $using variables
@@ -410,10 +410,10 @@ function Add-PodeStopTaskRoute {
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeRouteAsync
+    } | Set-PodeAsyncRoute
 
 #>
-function Set-PodeRouteAsync {
+function Set-PodeAsyncRoute {
     [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
     [OutputType([hashtable[]])]
     param(
@@ -541,59 +541,12 @@ function Set-PodeRouteAsync {
     }
 }
 
-
-<#
-.SYNOPSIS
-    Retrieves user request data from a Pode web event.
-
-.DESCRIPTION
-    The Get-PodeUserRequest function retrieves data from different parts of a Pode web event based on the specified type.
-    It supports retrieving data from the body, query parameters, headers, and request parameters.
-
-.PARAMETER Type
-    Specifies the type of data to retrieve. Acceptable values are 'Body', 'Query', 'Header', and 'Parameter'.
-
-.PARAMETER Name
-    The name of the query parameter, header, or request parameter to retrieve. This parameter is optional for 'Body' type.
-
-.EXAMPLE
-    Get-PodeUserRequest -Type 'Query' -Name 'username'
-
-    This example retrieves the value of the 'username' query parameter from the Pode web event.
-
-.EXAMPLE
-    Get-PodeUserRequest -Type 'Header' -Name 'Authorization'
-
-    This example retrieves the value of the 'Authorization' header from the Pode web event.
-
-.OUTPUTS
-    Returns the requested data from the Pode web event based on the specified type.
-#>
-
-function  Get-PodeUserRequest {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        [ValidateSet('Body', 'Query', 'Header', 'Parameter')]
-        $Type,
-        [string]
-        $Name
-    )
-    switch ($Type) {
-        'Body' { return $WebEvent.Data }
-        'Query' { return $WebEvent.Query[$Name] }
-        'Header' { return $WebEvent.Request.Headers[$Name] }
-        'Parameter' { return $WebEvent.Parameters[$Name] }
-    }
-}
-
-
 <#
 .SYNOPSIS
     Adds a Pode route for querying task information.
 
 .DESCRIPTION
-    The Add-PodeQueryTaskRoute function creates a Pode route that allows querying task information based on specified parameters.
+    The Add-PodeAsyncQueryRoute function creates a Pode route that allows querying task information based on specified parameters.
     The function supports multiple content types for both requests and responses, and can generate OpenAPI documentation if needed.
 
 .PARAMETER Path
@@ -627,12 +580,12 @@ function  Get-PodeUserRequest {
     Specifies the style of parameter serialization. Acceptable values are 'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
 
 .EXAMPLE
-    Add-PodeQueryTaskRoute -Path '/tasks/query' -ResponseContentType 'JSON' -QueryContentType 'JSON' -Payload 'Body'
+    Add-PodeAsyncQueryRoute -Path '/tasks/query' -ResponseContentType 'JSON' -QueryContentType 'JSON' -Payload 'Body'
 
     This example creates a Pode route at '/tasks/query' that processes query requests with JSON content types and expects the payload in the body.
 
 .EXAMPLE
-    Add-PodeQueryTaskRoute -Path '/tasks/query' -NoOpenAPI -Payload 'Header' -Style 'Simple'
+    Add-PodeAsyncQueryRoute -Path '/tasks/query' -NoOpenAPI -Payload 'Header' -Style 'Simple'
 
     This example creates a Pode route at '/tasks/query' without generating OpenAPI documentation, expects the payload in the header, and uses simple serialization style.
 
@@ -640,7 +593,7 @@ function  Get-PodeUserRequest {
     [hashtable]
 #>
 
-function Add-PodeQueryTaskRoute {
+function Add-PodeAsyncQueryRoute {
     [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
     [OutputType([hashtable])]
     param (
