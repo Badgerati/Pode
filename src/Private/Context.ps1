@@ -617,7 +617,7 @@ function New-PodeRunspacePool {
     }
 
 
-    # $PodeContext.RunspacePools.AsyncRoutes =@{}
+    #$PodeContext.RunspacePools.AsyncRoutes = @{}
 
     <#@{
         Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.AsyncRoutes, $PodeContext.RunspaceState, $Host)

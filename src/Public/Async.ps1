@@ -482,10 +482,10 @@ function Set-PodeRouteAsync {
                 Arguments      = (Protect-PodeValue -Value $r.Arguments -Default @{})
             }
             #Set thread count
-            $PodeContext.Threads[$r.AsyncPoolName] = $Threads
+            $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] = $Threads
             if (! $PodeContext.RunspacePools.AsyncRoutes.ContainsKey($r.AsyncPoolName)) {
                 $PodeContext.RunspacePools.AsyncRoutes[$r.AsyncPoolName] = @{
-                    Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads[$r.AsyncPoolName] , $PodeContext.RunspaceState, $Host)
+                    Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] , $PodeContext.RunspaceState, $Host)
                     State = 'Waiting'
                 }
             }
