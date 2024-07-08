@@ -554,12 +554,9 @@ function Get-PodeSubnetRange {
 function Add-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files', 'AsyncRoutes')]
-        [string]
-        $Type,
 
         [string]
-        $SubPool,
+        $Type,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
@@ -586,21 +583,13 @@ function Add-PodeRunspace {
     try {
         # create powershell pipelines
         $ps = [powershell]::Create()
-        if ($SubPool) {
-            $ps.RunspacePool = $PodeContext.RunspacePools[$Type][$SubPool].Pool
-            # load modules/drives
-            if (!$NoProfile) {
-                $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)' -SubPool '$($SubPool)'")
-            }
-        }
-        else {
-            $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
+        $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
 
-            # load modules/drives
-            if (!$NoProfile) {
-                $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
-            }
+        # load modules/drives
+        if (!$NoProfile) {
+            $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
         }
+
         # load main script
         $null = $ps.AddScript($ScriptBlock)
 
@@ -3956,12 +3945,8 @@ function ConvertTo-PodeYamlInternal {
 function Open-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files', 'AsyncRoutes')]
         [string]
-        $Type,
-
-        [string]
-        $SubPool
+        $Type
     )
 
     try {
@@ -3972,24 +3957,12 @@ function Open-PodeRunspace {
         Add-PodePSDrivesInternal
 
         # Setting the state of the runspace pool to 'Ready', indicating it is ready to process requests.
-        if ( $SubPool) {
-            $PodeContext.RunspacePools[$Type][$SubPool].State = 'Ready'
-        }
-        else {
-            $PodeContext.RunspacePools[$Type].State = 'Ready'
-        }
+        $PodeContext.RunspacePools[$Type].State = 'Ready'
     }
     catch {
         # If an error occurs and the current state is 'waiting', set it to 'Error'.
-        if ( $SubPool) {
-            if ($PodeContext.RunspacePools[$Type][$SubPool].State -ieq 'waiting') {
-                $PodeContext.RunspacePools[$Type][$SubPool].State = 'Error'
-            }
-        }
-        else {
-            if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
-                $PodeContext.RunspacePools[$Type].State = 'Error'
-            }
+        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
+            $PodeContext.RunspacePools[$Type].State = 'Error'
         }
 
         # Outputting the error to the default output stream, including the stack trace.
@@ -4000,6 +3973,7 @@ function Open-PodeRunspace {
         throw
     }
 }
+
 
 <#
 .SYNOPSIS

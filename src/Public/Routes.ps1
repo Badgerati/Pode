@@ -431,7 +431,7 @@ function Add-PodeRoute {
                     Method           = $_method
                     Path             = $Path
                     IsAsync          = $false
-                    AsyncPoolName    =   "__$($_method)$($Path)_$($_endpoint.Name)_".Replace('/','_')
+                    AsyncPoolName    = "__$($_method)$($Path)_$($_endpoint.Name)_".Replace('/', '_')
                     OpenApi          = @{
                         Path           = $OpenApiPath
                         Responses      = $DefaultResponse
@@ -1701,12 +1701,13 @@ function Remove-PodeRoute {
     # remove the runspace
     if ($route.IsAsync) {
         $asyncPoolName = $route.AsyncPoolName
-        if ( $asyncPoolName -and $PodeContext.RunspacePools.AsyncRoutes.ContainsKey($asyncPoolName)) {
-            if (!  $PodeContext.RunspacePools.AsyncRoutes[$asyncPoolName].Pool.IsDisposed) {
-                $PodeContext.RunspacePools.AsyncRoutes[$asyncPoolName].Pool.BeginClose($null, $null)
-                Close-PodeDisposable -Disposable ($PodeContext.RunspacePools.AsyncRoutes[$asyncPoolName].Pool)
+        if ( $asyncPoolName -and $PodeContext.RunspacePools.ContainsKey($asyncPoolName)) {
+            if (!  $PodeContext.RunspacePools[$asyncPoolName].Pool.IsDisposed) {
+                $PodeContext.RunspacePools[$asyncPoolName].Pool.BeginClose($null, $null)
+                Close-PodeDisposable -Disposable ($PodeContext.RunspacePools[$asyncPoolName].Pool)
             }
-            $PodeContext.RunspacePools.AsyncRoutes.remove($asyncPoolName)
+            $v = ''
+            $null = $PodeContext.RunspacePools.TryRemove($asyncPoolName, [ref]$v)
         }
     }
 

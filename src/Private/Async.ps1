@@ -51,7 +51,7 @@ function Invoke-PodeInternalAsync {
             $Id = New-PodeGuid
         }
         $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
-        $runspace = Add-PodeRunspace -Type AsyncRoutes -SubPool $Task.name -ScriptBlock (($Task.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
+        $runspace = Add-PodeRunspace -Type $Task.name -ScriptBlock (($Task.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
 
         if ($Timeout -ge 0) {
             $expireTime = [datetime]::UtcNow.AddSeconds($Timeout)
