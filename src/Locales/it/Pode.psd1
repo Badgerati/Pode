@@ -283,5 +283,6 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Il modulo Active Directory è disponibile solo su Windows OS.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'La registrazione delle richieste è già abilitata.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durata non valida fornita per Access-Control-Max-Age: {0}. Deve essere maggiore di 0.'
-}
+    UnsupportedSerializationTypeExceptionMessage                      = 'Formato di serializzazione non supportato o non riconosciuto.'
 
+}

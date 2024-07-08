@@ -283,5 +283,6 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active DirectoryモジュールはWindowsでのみ利用可能です。'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'リクエストロギングは既に有効になっています。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。'
-}
+    UnsupportedSerializationTypeExceptionMessage                      = 'サポートされていない、または認識されていないシリアル化形式です。'
 
+}

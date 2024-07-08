@@ -1365,3 +1365,399 @@ function ConvertFrom-PodeXml {
     return $oHash
 
 }
+
+
+
+<#
+.SYNOPSIS
+    Converts a hashtable to a serialized string using a specified serialization style.
+
+.DESCRIPTION
+    The ConvertTo-PodeSerializedString function takes a hashtable and converts it to a serialized string
+    according to the specified serialization style. It supports various serialization styles such as
+    'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+    An optional 'Explode' switch can be used to modify the serialization format for certain styles.
+
+.PARAMETER Hashtable
+    The hashtable to be serialized.
+
+.PARAMETER Style
+    The style of serialization to be used. Valid values are 'Simple', 'Label', 'Matrix', 'Query',
+    'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+
+.PARAMETER Explode
+    An optional switch to modify the serialization format for certain styles.
+
+.EXAMPLE
+    $hashtable = @{
+        name = 'value'
+        anotherName = 'anotherValue'
+    }
+    $serialized = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Query'
+    Write-Output $serialized
+
+.EXAMPLE
+    $hashtable = @{
+        name = 'value'
+        anotherName = 'anotherValue'
+    }
+    $serializedExplode = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'DeepObject' -Explode
+    Write-Output $serializedExplode
+#>
+function ConvertTo-PodeSerializedString {
+
+    param (
+        [Parameter(Mandatory, ValueFromPipeline = $true, Position = 0)]
+        [hashtable[]]
+        $Hashtable,
+
+        [Parameter()]
+        [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
+        [string]
+        $Style = 'Simple',
+
+        [Parameter()]
+        [switch]
+        $Explode
+    )
+    begin {
+        $pipelineValue = @()
+    }
+
+    process {
+        $pipelineValue += $_
+    }
+
+    end {
+        if ($pipelineValue.Count -gt 1) {
+            $Hashtables = $pipelineValue
+        }
+        else {
+            $Hashtables = $Hashtable
+        }
+        $serializedArray = @()
+        foreach ( $Hashtable in $Hashtables) {
+            switch ($Style) {
+                'Simple' {
+                    if ($Explode) {
+                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+                    }
+                    else {
+                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ','
+                    }
+                }
+                'Label' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { ".$_.$($Hashtable.""$_"")" }) -join ''
+                }
+                'Matrix' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { ";$_=$($Hashtable.""$_"")" }) -join ''
+                }
+                'Query' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+                }
+                'Form' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+                }
+                'SpaceDelimited' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ' '
+                }
+                'PipeDelimited' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '|'
+                }
+                'DeepObject' {
+                    if ($Explode) {
+                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($Hashtable.""$_"")" }) -join '&'
+                    }
+                    else {
+                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($Hashtable.""$_"")" }) -join ','
+                    }
+                }
+                default {
+                    # Unsupported or unrecognized serialization format
+                    throw ($PodeLocale.UnsupportedSerializationTypeExceptionMessage)
+                }
+            }
+        }
+        return $serializedArray -join '&'
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Converts a serialized string back into a hashtable, automatically detecting the serialization style.
+
+.DESCRIPTION
+    The ConvertFrom-PodeSerializedString function takes a serialized string and converts it back into a hashtable.
+    The function automatically detects the serialization style based on common delimiters and formats, such as
+    'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+
+.PARAMETER SerializedString
+    The serialized string to be converted back into a hashtable.
+
+
+.EXAMPLE
+    # Simple style
+    $serialized = "name=value,anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Label style
+    $serialized = ".name.value.anotherName.anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Matrix style
+    $serialized = ";name=value;anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Query style
+    $serialized = "name=value&anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Form style
+    $serialized = "name=value&anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized
+    Write-Output $hashtable
+
+.EXAMPLE
+    # SpaceDelimited style
+    $serialized = "name=value anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized
+    Write-Output $hashtable
+
+.EXAMPLE
+    # PipeDelimited style
+    $serialized = "name=value|anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized
+    Write-Output $hashtable
+
+.EXAMPLE
+    # DeepObject style
+    $serialized = "name[name]=value,anotherName[anotherName]=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized
+    Write-Output $hashtable
+
+.EXAMPLE
+    # DeepObjectExplode style
+    $serialized = "name[name]=value&anotherName[anotherName]=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized
+    Write-Output $hashtable
+#>
+
+function ConvertFrom-PodeSerializedString {
+    param (
+        [Parameter(Mandatory, ValueFromPipeline = $true, Position = 0)]
+        [string] $SerializedString
+    )
+
+    begin {
+        $Hashtable = @{}
+    }
+
+    process {
+        # Detect serialization style based on common delimiters
+        if ($SerializedString -match '&') {
+            if ($SerializedString -match '\[[^\]]+\]') {
+                $style = 'DeepObjectExplode'
+            }
+            elseif ($SerializedString -match '\[') {
+                $style = 'DeepObject'
+            }
+            else {
+                $style = 'Query'
+            }
+        }
+        elseif ($SerializedString -match ',') {
+            if ($SerializedString -match '\[[^\]]+\]') {
+                $style = 'DeepObject'
+            }
+            else {
+                $style = 'Simple'
+            }
+        }
+        elseif ($SerializedString -match '\|') {
+            $style = 'PipeDelimited'
+        }
+        elseif ($SerializedString -match ' ') {
+            $style = 'SpaceDelimited'
+        }
+        elseif ($SerializedString -match ';') {
+            $style = 'Matrix'
+        }
+        elseif ($SerializedString -match '\.') {
+            $style = 'Label'
+        }
+        else {
+            # Unsupported or unrecognized serialization format
+            throw ($PodeLocale.UnsupportedSerializationTypeExceptionMessage)
+        }
+
+        # Convert serialized string back to hashtable based on detected style
+        switch ($style) {
+            'Simple' {
+                $pairs = $SerializedString -split ','
+                foreach ($pair in $pairs) {
+                    $key, $value = $pair -split '='
+                    $Hashtable[$key] = $value
+                }
+            }
+            'Label' {
+                $regexMatches  = [regex]::Matches($SerializedString, '\.(?<key>.*?)\.(?<value>.*?)(?=\.|$)')
+                foreach ($match in $regexMatches ) {
+                    $key = $match.Groups['key'].Value
+                    $value = $match.Groups['value'].Value
+                    $Hashtable[$key] = $value
+                }
+            }
+            'Matrix' {
+                $pairs = $SerializedString -split ';'
+                foreach ($pair in $pairs) {
+                    if ($pair) {
+                        $key, $value = $pair -split '='
+                        $Hashtable[$key] = $value
+                    }
+                }
+            }
+            'Query' {
+                $pairs = $SerializedString -split '&'
+                foreach ($pair in $pairs) {
+                    $key, $value = $pair -split '='
+                    $Hashtable[$key] = $value
+                }
+            }
+            'Form' {
+                $pairs = $SerializedString -split '&'
+                foreach ($pair in $pairs) {
+                    $key, $value = $pair -split '='
+                    $Hashtable[$key] = $value
+                }
+            }
+            'SpaceDelimited' {
+                $pairs = $SerializedString -split ' '
+                foreach ($pair in $pairs) {
+                    $key, $value = $pair -split '='
+                    $Hashtable[$key] = $value
+                }
+            }
+            'PipeDelimited' {
+                $pairs = $SerializedString -split '\|'
+                foreach ($pair in $pairs) {
+                    $key, $value = $pair -split '='
+                    $Hashtable[$key] = $value
+                }
+            }
+            'DeepObject' {
+                $pairs = $SerializedString -split ','
+                foreach ($pair in $pairs) {
+                    $key, $value = $pair -split '\]\='
+                    $key = $key -replace '\[.*$', ''
+                    $Hashtable[$key] = $value
+                }
+            }
+            'DeepObjectExplode' {
+                $pairs = $SerializedString -split '&'
+                foreach ($pair in $pairs) {
+                    $key, $value = $pair -split '\]\='
+                    $key = $key -replace '\[.*$', ''
+                    $Hashtable[$key] = $value
+                }
+            }
+            default {
+                # Unsupported or unrecognized serialization format
+                throw ($PodeLocale.UnsupportedSerializationTypeExceptionMessage)
+            }
+        }
+    }
+
+    end {
+        return $Hashtable
+    }
+}
+
+
+<#
+.SYNOPSIS
+Retrieves a specific parameter value from the current Pode web event.
+
+.DESCRIPTION
+The `Get-PodeParameter` function extracts and returns the value of a specified parameter from the current Pode web event.
+This function is useful for accessing parameters passed in the body or URL of a web request.
+
+.PARAMETER Name
+The name of the parameter to retrieve.
+
+.EXAMPLE
+Get-PodeParameter -Name 'action'
+
+This command returns the value of the 'action' parameter from the current web event.
+
+.NOTES
+This function should be used within a route's scriptblock in a Pode server.
+#>
+function Get-PodeParameter {
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]
+        $Name
+    )
+    return $WebEvent.Parameters[$Name]
+}
+
+
+<#
+.SYNOPSIS
+Retrieves a specific query parameter value from the current Pode web event.
+
+.DESCRIPTION
+The `Get-PodeQuery` function extracts and returns the value of a specified query parameter from the current Pode web event.
+This function is useful for accessing query parameters passed in the URL of a web request.
+
+.PARAMETER Name
+The name of the query parameter to retrieve.
+
+.EXAMPLE
+Get-PodeQuery -Name 'userId'
+
+This command returns the value of the 'userId' query parameter from the current web event.
+
+.NOTES
+This function should be used within a route's scriptblock in a Pode server.
+#>
+function Get-PodeQuery {
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]
+        $Name
+    )
+    return $WebEvent.Query[$Name]
+}
+
+
+<#
+.SYNOPSIS
+Retrieves the body data from the current Pode web event.
+
+.DESCRIPTION
+The `Get-PodeBody` function extracts and returns the data body of the current Pode web event.
+This function is useful for accessing the main content sent in a web request, including PUT, POST, or any other methods that support a body.
+
+.EXAMPLE
+Get-PodeBody
+
+This command returns the body data of the current web event.
+
+.NOTES
+This function should be used within a route's scriptblock in a Pode server.
+#>
+function Get-PodeBody {
+    if ($WebEvent) {
+        return $WebEvent.Data
+    }
+}
