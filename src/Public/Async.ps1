@@ -379,7 +379,7 @@ function Add-PodeAsyncStopRoute {
 .PARAMETER NoOpenAPI
     If specified, the route will not be included in the OpenAPI documentation.
 
-.PARAMETER Threads
+.PARAMETER MaxThreads
     Number of parallel threads for this specific route (Default 2)
 
 .INPUTS
@@ -444,7 +444,7 @@ function Set-PodeAsyncRoute {
         $NoOpenAPI,
 
         [int]
-        $Threads = 2
+        $MaxThreads = 1
 
     )
     Begin {
@@ -482,7 +482,7 @@ function Set-PodeAsyncRoute {
                 Arguments      = (Protect-PodeValue -Value $r.Arguments -Default @{})
             }
             #Set thread count
-            $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] = $Threads
+            $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] = $MaxThreads
             if (! $PodeContext.RunspacePools.ContainsKey($r.AsyncPoolName)) {
                 $null = $PodeContext.RunspacePools.TryAdd( $r.AsyncPoolName, [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new())
 
@@ -719,6 +719,7 @@ function Add-PodeAsyncQueryRoute {
         Add-PodeAsyncComponentSchema -Name $OATypeName
 
         if (!(Test-PodeOAComponent -Field schemas -Name  $PodeTaskQueryRequestName)) {
+
             New-PodeOAObjectProperty  -AdditionalProperties  (
                 New-PodeOAStringProperty -Name 'op' -Enum  'GT', 'LT', 'GE', 'LE', 'EQ', 'NE', 'LIKE', 'NOTLIKE' -Required |
                     New-PodeOAStringProperty -Name 'value'  -Description 'The value to compare against' -Required |
@@ -760,7 +761,7 @@ function Add-PodeAsyncQueryRoute {
 
         switch ($Payload.ToLowerInvariant()) {
             'body' {
-                $requestBody = New-PodeOARequestBody -Content  (New-PodeOAContentMediaType -MediaType $MediaQueryType  -Content $PodeTaskQueryRequestName -Array ) -Examples $example
+                $requestBody = New-PodeOARequestBody -Content  (New-PodeOAContentMediaType -MediaType $MediaQueryType  -Content $PodeTaskQueryRequestName   ) -Examples $example
                 $route | Set-PodeOARequest  -RequestBody $requestBody
                 break
             }
@@ -776,7 +777,12 @@ function Add-PodeAsyncQueryRoute {
                 break
             }
             'query' {
-                $requestParameter = ConvertTo-PodeOAParameter -In Query -Schema $PodeTaskQueryRequestName -Style $Style -Example $example -Explode
+                if ($Style) {
+                    $requestParameter = ConvertTo-PodeOAParameter -In Query -Schema $PodeTaskQueryRequestName -array -Style $Style -Example $example -Explode
+                }
+                else {
+                    $requestParameter = ConvertTo-PodeOAParameter -In Query  -Schema $PodeTaskQueryRequestName -ContentType $MediaQueryType[0] -Example  $example[0]
+                } 
                 $route | Set-PodeOARequest   -Parameters $requestParameter
             }
         }

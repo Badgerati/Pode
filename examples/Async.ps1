@@ -96,7 +96,7 @@ Start-PodeServer -Threads 1 {
             Start-Sleep $state:data.sleepTime
         }
         return @{ InnerValue = $state:data.Message }
-    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -Threads 5
+    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -MaxThreads 5
 
 
 
@@ -128,7 +128,7 @@ Start-PodeServer -Threads 1 {
     Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType JSON, YAML -In Path #-TaskIdName 'pippopppoId'
     Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType JSON, YAML -In Query #-TaskIdName 'pippopppoId'
 
-    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType JSON , YAML   -Payload Body #-Style Form
+    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType JSON , YAML   -Payload  Body -QueryContentType JSON,YAML
 
     <#
     Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {

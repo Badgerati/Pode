@@ -4075,7 +4075,42 @@ function Resolve-PodeObjectArray {
     $serializedExplode = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'DeepObject' -Explode
     Write-Output $serializedExplode
 #>
+<#
+.SYNOPSIS
+    Converts a hashtable to a serialized string using a specified serialization style.
 
+.DESCRIPTION
+    The ConvertTo-PodeSerializedString function takes a hashtable and converts it to a serialized string
+    according to the specified serialization style. It supports various serialization styles such as
+    'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+    An optional 'Explode' switch can be used to modify the serialization format for certain styles.
+
+.PARAMETER Hashtable
+    The hashtable to be serialized.
+
+.PARAMETER Style
+    The style of serialization to be used. Valid values are 'Simple', 'Label', 'Matrix', 'Query',
+    'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+
+.PARAMETER Explode
+    An optional switch to modify the serialization format for certain styles.
+
+.EXAMPLE
+    $hashtable = @{
+        name = 'value'
+        anotherName = 'anotherValue'
+    }
+    $serialized = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Query'
+    Write-Output $serialized
+
+.EXAMPLE
+    $hashtable = @{
+        name = 'value'
+        anotherName = 'anotherValue'
+    }
+    $serializedExplode = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'DeepObject' -Explode
+    Write-Output $serializedExplode
+#>
 function ConvertTo-PodeSerializedString {
 
     param (
@@ -4102,56 +4137,75 @@ function ConvertTo-PodeSerializedString {
 
     end {
         if ($pipelineValue.Count -gt 1) {
-            $Hashtables = $pipelineValue
-        }
-        else {
-            $Hashtables = $Hashtable
+            $Hashtable = $pipelineValue
         }
         $serializedArray = @()
-        foreach ( $Hashtable in $Hashtables) {
+
+        function SerializeHashtable([hashtable]$hash, $parentKey = '') {
+            $result = [ordered]@{}
+            foreach ($key in $hash.Keys) {
+                $value = $hash[$key]
+                $fullKey = if ($parentKey) { "$parentKey.$key" } else { $key }
+                if ($value -is [hashtable]) {
+                    $nestedResult = SerializeHashtable -hash $value -parentKey $fullKey
+                    foreach ($nestedKey in $nestedResult.Keys) {
+                        $result[$nestedKey] = $nestedResult[$nestedKey]
+                    }
+                }
+                else {
+                    $result[$fullKey] = $value
+                }
+            }
+            return $result
+        }
+
+        foreach ($item in $Hashtable) {
+            $flatHashtable = SerializeHashtable -hash $item
             switch ($Style) {
                 'Simple' {
                     if ($Explode) {
-                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+                        $serializedArray += ($flatHashtable.Keys | ForEach-Object { "$($_)=$($flatHashtable.""$_"")" }) -join '&'
                     }
                     else {
-                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ','
+                        $serializedArray += ($flatHashtable.Keys | ForEach-Object { "$($_)=$($flatHashtable.""$_"")" }) -join ','
                     }
                 }
                 'Label' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { ".${($_)}.${($Hashtable.""$_"")}" }) -join ''
+                    $serializedArray += ($flatHashtable.Keys | ForEach-Object { ".$_.$($flatHashtable.""$_"")" }) -join ''
                 }
                 'Matrix' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { ";${($_)}=${($Hashtable.""$_"")}" }) -join ''
+                    $serializedArray += ($flatHashtable.Keys | ForEach-Object { ";$_=$($flatHashtable.""$_"")" }) -join ''
                 }
                 'Query' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+                    $serializedArray += ($flatHashtable.Keys | ForEach-Object { "$($_)=$($flatHashtable.""$_"")" }) -join '&'
                 }
                 'Form' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+                    $serializedArray += ($flatHashtable.Keys | ForEach-Object { "$($_)=$($flatHashtable.""$_"")" }) -join '&'
                 }
                 'SpaceDelimited' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ' '
+                    $serializedArray += ($flatHashtable.Keys | ForEach-Object { "$($_)=$($flatHashtable.""$_"")" }) -join ' '
                 }
                 'PipeDelimited' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '|'
+                    $serializedArray += ($flatHashtable.Keys | ForEach-Object { "$($_)=$($flatHashtable.""$_"")" }) -join '|'
                 }
                 'DeepObject' {
                     if ($Explode) {
-                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($Hashtable.""$_"")" }) -join '&'
+                        $serializedArray += ($flatHashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($flatHashtable.""$_"")" }) -join '&'
                     }
                     else {
-                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($Hashtable.""$_"")" }) -join ','
+                        $serializedArray += ($flatHashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($flatHashtable.""$_"")" }) -join ','
                     }
                 }
                 default {
                     # Unsupported serialization type
-                    throw ($PodeLocale.UnsupportedSerializationTypeExceptionMessage -f $style)
+                    throw ($PodeLocale.UnsupportedSerializationTypeExceptionMessage -f $Style)
                 }
             }
         }
         return $serializedArray -join '&'
     }
 }
+
+
 
 
