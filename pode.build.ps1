@@ -16,7 +16,10 @@ param(
     $PowerShellVersion = 'lts',
 
     [string]
-    $ReleaseNoteVersion
+    $ReleaseNoteVersion,
+
+    [string]
+    $UICulture = 'en-US'
 )
 
 # Fix for PS7.5 Preview - https://github.com/PowerShell/PowerShell/issues/23868
@@ -26,7 +29,7 @@ $ProgressPreference = 'SilentlyContinue'
 # Dependency Versions
 #>
 $Versions = @{
-    Pester      = '5.5.0'
+    Pester      = '5.6.1'
     MkDocs      = '1.6.0'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
@@ -434,7 +437,7 @@ Task Pack Build, {
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
     # which source folders do we need? create them and copy their contents
-    $folders = @('Private', 'Public', 'Misc', 'Libs')
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales')
     $folders | ForEach-Object {
         New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
         Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
@@ -471,7 +474,13 @@ Task TestNoBuild TestDeps, {
     if (Test-PodeBuildIsWindows) {
         netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
     }
-
+    if ($UICulture -ne ([System.Threading.Thread]::CurrentThread.CurrentUICulture) ) {
+        $originalUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
+        Write-Output "Original UICulture is $originalUICulture"
+        Write-Output "Set UICulture to $UICulture"
+        # set new UICulture
+        [System.Threading.Thread]::CurrentThread.CurrentUICulture = $UICulture
+    }
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
 
     # get default from static property
@@ -491,6 +500,11 @@ Task TestNoBuild TestDeps, {
     }
     else {
         $Script:TestStatus = Invoke-Pester -Configuration $configuration
+    }
+    if ($originalUICulture){
+        Write-Output "Restore UICulture to $originalUICulture"
+        # restore original UICulture
+        [System.Threading.Thread]::CurrentThread.CurrentUICulture = $originalUICulture
     }
 }, PushCodeCoverage, CheckFailedTests
 
@@ -659,7 +673,7 @@ Task Install-Module -If ($Version) Pack, {
     $path = './pkg'
 
     # copy over folders
-    $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses')
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses', 'Locales')
     $folders | ForEach-Object {
         Copy-Item -Path (Join-Path -Path $path -ChildPath $_) -Destination $dest -Force -Recurse | Out-Null
     }

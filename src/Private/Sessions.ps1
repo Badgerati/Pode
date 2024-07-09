@@ -40,7 +40,8 @@ function Get-PodeSessionFullId {
 
 function Set-PodeSession {
     if ($null -eq $WebEvent.Session) {
-        throw 'there is no session available to set on the response'
+        # There is no session available to set on the response
+        throw ($PodeLocale.noSessionToSetOnResponseExceptionMessage)
     }
 
     # convert secret to strict mode
@@ -137,7 +138,8 @@ function Revoke-PodeSession {
 
 function Set-PodeSessionDataHash {
     if ($null -eq $WebEvent.Session) {
-        throw 'No session available to calculate data hash'
+        # No session available to calculate data hash
+        throw ($PodeLocale.noSessionToCalculateDataHashExceptionMessage)
     }
 
     if (($null -eq $WebEvent.Session.Data) -or ($WebEvent.Session.Data.Count -eq 0)) {

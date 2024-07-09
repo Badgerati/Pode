@@ -100,22 +100,22 @@ Some useful links:
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint' -DefinitionTag 'v3.0.3', 'v3.1'
 
     #OpenAPI 3.0
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
-    Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor' -DefinitionTag 'v3.0.3' -EndpointName  'endpoint_v3'
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.0.3'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -DefinitionTag 'v3.0.3'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3.0.3'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3.0.3'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3.0.3'
+    Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -DefinitionTag 'v3.0.3'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3.0.3'
+    Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor' -DefinitionTag 'v3.0.3'
 
     #OpenAPI 3.1
-    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Type ReDoc -Path '/docs/vredoc' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
-    Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3.1'  -EndpointName 'endpoint_v3.1'
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type ReDoc -Path '/docs/vredoc' -DarkMode -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3.1'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs' -DefinitionTag 'v3.1'
 
     # setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
@@ -851,7 +851,7 @@ Some useful links:
                     Write-PodeJsonReWrite-PodeHtmlResponsesponse -Value 'Invalid username supplied' -StatusCode 400
                 }
             } | Set-PodeOARouteInfo -Summary 'Delete user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'deleteUser' -PassThru |
-                Set-PodeOARequest -Parameters   (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be deleted.' -Required | ConvertTo-PodeOAParameter -In Path )  -PassThru |
+                Set-PodeOARequest -Parameters   (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be deleted.' -Required | ConvertTo-PodeOAParameter -In Path ) -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
         }

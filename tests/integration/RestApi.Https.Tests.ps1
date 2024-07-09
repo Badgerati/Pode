@@ -162,7 +162,7 @@ public bool CheckValidationResult(
             $status_code | Should -be 404
         }
         else {
-            { Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop @splatter } | Should -Throw  -ExpectedMessage '*404*'
+            { Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop @splatter } | Should -Throw -ExpectedMessage '*404*'
         }
     }
 
@@ -172,7 +172,7 @@ public bool CheckValidationResult(
             $status_code | Should -be 405
         }
         else {
-            { Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post -ErrorAction Stop @splatter } | Should -Throw  -ExpectedMessage '*405*'
+            { Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post -ErrorAction Stop @splatter } | Should -Throw -ExpectedMessage '*405*'
         }
     }
 
@@ -198,10 +198,10 @@ public bool CheckValidationResult(
 
     It 'responds with simple payload parameter - xml' {
         if ($UseCurl) {
-            $result = curl -s -X POST "$($Endpoint)/data/payload" -H 'Content-Type: text/xml' -d '<username>rick</username>' -k | ConvertFrom-Json
+            $result = curl -s -X POST "$($Endpoint)/data/payload" -H 'Content-Type: application/xml' -d '<username>rick</username>' -k | ConvertFrom-Json
         }
         else {
-            $result = Invoke-RestMethod -Uri "$($Endpoint)/data/payload" -Method Post -Body '<username>rick</username>' -ContentType 'text/xml' @splatter
+            $result = Invoke-RestMethod -Uri "$($Endpoint)/data/payload" -Method Post -Body '<username>rick</username>' -ContentType 'application/xml' @splatter
         }
         $result.Username | Should -Be 'rick'
     }
