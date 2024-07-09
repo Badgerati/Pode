@@ -26,9 +26,16 @@
 
 Pode is a Cross-Platform framework for creating web servers to host [REST APIs](https://badgerati.github.io/Pode/Tutorials/Routes/Overview/), [Web Pages](https://badgerati.github.io/Pode/Tutorials/Routes/Examples/WebPages/), and [SMTP/TCP](https://badgerati.github.io/Pode/Servers/) Servers. Pode also allows you to render dynamic files using [`.pode`](https://badgerati.github.io/Pode/Tutorials/Views/Pode/) files, which are just embedded PowerShell, or other [Third-Party](https://badgerati.github.io/Pode/Tutorials/Views/ThirdParty/) template engines. Plus many more features, including [Azure Functions](https://badgerati.github.io/Pode/Hosting/AzureFunctions/) and [AWS Lambda](https://badgerati.github.io/Pode/Hosting/AwsLambda/) support!
 
-<p align="center">
-    <img src="https://github.com/Badgerati/Pode/blob/develop/images/example_code_readme.svg?raw=true" width="70%" />
-</p>
+```powershell
+
+Start-PodeServer -ScriptBlock {
+    Add-PodeEndPoint -Address localhost -port 32005 -Protocol Http
+    Add-PodeRoute -Method Get -Path '/ping' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{value = 'pong' }
+    }
+}
+
+```
 
 See [here](https://badgerati.github.io/Pode/Getting-Started/FirstApp) for building your first app! Don't know HTML, CSS, or JavaScript? No problem! [Pode.Web](https://github.com/Badgerati/Pode.Web) is currently a work in progress, and lets you build web pages using purely PowerShell!
 
@@ -49,8 +56,9 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Cross-platform using PowerShell Core (with support for PS5)
 * Docker support, including images for ARM/Raspberry Pi
 * Azure Functions, AWS Lambda, and IIS support
-* OpenAPI, Swagger, and ReDoc support
-* Listen on a single or multiple IP address/hostnames
+* OpenAPI specification version 3.0.x and 3.1.0
+* OpenAPI documentation with Swagger, Redoc, RapidDoc, StopLight, OpenAPI-Explorer and RapiPdf
+* Listen on a single or multiple IP(v4/v6) address/hostnames
 * Cross-platform support for HTTP(S), WS(S), SSE, SMTP(S), and TCP(S)
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages
@@ -73,6 +81,8 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Support for File Watchers
 * In-memory caching, with optional support for external providers (such as Redis)
 * (Windows) Open the hosted server as a desktop application
+* FileBrowsing support
+* Localization (i18n) in Arabic, German, Spanish, France, Italian, Japanese, Korean, Polish, Portuguese, and Chinese
 
 ## 📦 Install
 
