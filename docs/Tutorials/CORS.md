@@ -1,5 +1,5 @@
 
-# Cross-Origin Resource Sharing (CORS)
+# CORS
 
 ## What is CORS?
 Cross-Origin Resource Sharing (CORS) is a security feature implemented by web browsers to restrict web pages from making requests to a different domain than the one that served the web page. This is a critical aspect of web security, helping to prevent malicious sites from accessing sensitive data from another domain.
@@ -11,7 +11,7 @@ When developing web applications, you may encounter situations where your web pa
 - Managing credentials in cross-origin requests.
 - Setting the appropriate origins.
 
-## Addressing CORS Challenges with `Set-PodeSecurityAccessControl`
+## Addressing CORS Challenges
 
 Pode simplifies handling CORS by providing the `Set-PodeSecurityAccessControl` function, which allows you to define the necessary headers to manage cross-origin requests effectively.
 
@@ -23,7 +23,7 @@ Pode simplifies handling CORS by providing the `Set-PodeSecurityAccessControl` f
 4. **Access-Control-Max-Age**: Specifies how long the results of a pre-flight request can be cached.
 5. **Access-Control-Allow-Credentials**: Indicates whether credentials are allowed in the request.
 
-### Using `Set-PodeSecurityAccessControl`
+### Setting CORS Headers instead
 
 The `Set-PodeSecurityAccessControl` function allows you to set these headers easily. Here’s how you can address common CORS challenges using this function:
 
