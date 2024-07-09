@@ -61,7 +61,6 @@ Then navigate to `http://127.0.0.1:8000` in your browser.
 * Listen on a single or multiple IP(v4/v6) address/hostnames
 * Cross-platform support for HTTP(S), WS(S), SSE, SMTP(S), and TCP(S)
 * Host REST APIs, Web Pages, and Static Content (with caching)
-* Async REST APIs with optional callback
 * Support for custom error pages
 * Request and Response compression using GZip/Deflate
 * Multi-thread support for incoming requests
