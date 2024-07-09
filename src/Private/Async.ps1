@@ -72,6 +72,7 @@ function Invoke-PodeInternalAsync {
             Timeout       = $Timeout
             State         = 'NotStarted'
             Error         = $null
+            CallbackInfo  = $Task.CallbackInfo
         }
 
         return $PodeContext.AsyncRoutes.Results[$Id]
@@ -89,36 +90,99 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
     $enhancedScriptBlockTemplate = {
         <# Param #>
+        $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
         try {
-            $PodeContext.AsyncRoutes.Results[$___async___id___].StartingTime = [datetime]::UtcNow
+            $asyncResult.StartingTime = [datetime]::UtcNow
             # Set the state to 'Running'
-            $PodeContext.AsyncRoutes.Results[$___async___id___].State = 'Running'
+            $asyncResult.State = 'Running'
 
-            # Original ScriptBlock Start
-            <# ScriptBlock #>
-            # Original ScriptBlock End
-
+            $___result___ = & { # Original ScriptBlock Start
+                <# ScriptBlock #>
+                # Original ScriptBlock End
+            }
+            return $___result___
         }
         catch {
             # Set the state to 'Failed' in case of error
-            $PodeContext.AsyncRoutes.Results[$___async___id___].State = 'Failed'
+            $asyncResult.State = 'Failed'
 
             # Log the error
             $_ | Write-PodeErrorLog
 
             # Store the error in the AsyncRoutes results
-            $PodeContext.AsyncRoutes.Results[$___async___id___].Error = $_
+            $asyncResult.Error = $_
 
             return
         }
         finally {
             # Ensure state is set to 'Completed' if it was still 'Running'
-            if ($PodeContext.AsyncRoutes.Results[$___async___id___].State -eq 'Running') {
-                $PodeContext.AsyncRoutes.Results[$___async___id___].State = 'Completed'
+            if ($asyncResult.State -eq 'Running') {
+                $asyncResult.State = 'Completed'
             }
 
             # Set the completed time
-            $PodeContext.AsyncRoutes.Results[$___async___id___].CompletedTime = [datetime]::UtcNow
+            $asyncResult.CompletedTime = [datetime]::UtcNow
+            function CallBackResolver {
+                param( $Variable)
+                if ( $Variable.StartsWith('$request.header')) {
+                    if ($Variable -match '^[^.]*\.[^.]*\.(.*)') {
+                        return $WebEvent.Request.Headers[$Matches[1]]
+                    }
+                }
+                elseif ( $Variable.StartsWith('$request.query')) {
+                    if ($Variable -match '^[^.]*\.[^.]*\.(.*)') {
+                        return $WebEvent.Query[ $Matches[1]]
+                    }
+                }
+                elseif ( $Variable.StartsWith('$request.body')) {
+                    if ($Variable -match '^[^.]*\.[^.]*#/(.*)') {
+                        return $WebEvent.data.$($Matches[1])
+                    }
+                }
+                return $Variable
+            }
+
+            try {
+                if ($asyncResult.CallbackInfo) {
+                    $callbackUrl = CallBackResolver -Variable $asyncResult.CallbackInfo.UrlField
+                    write-podeHost "callbackUrl=$callbackUrl"
+                    $method = CallBackResolver -Variable $asyncResult.CallbackInfo.Method
+                    write-podeHost "method=$method"
+                    <#   if ( ('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put' ) -icontains $asyncResult.CallbackInfo.Method) {
+                        $method = $asyncResult.CallbackInfo.Method
+                    }
+                    elseif ( $asyncResult.CallbackInfo.Method.StartsWith('$request.header')) {
+                        if ($asyncResult.CallbackInfo.Method -match '^[^.]*\.[^.]*\.(.*)') {
+                            $method = $WebEvent.Request.Headers[$Matches[1]]
+                        }
+                    }
+                    elseif ( $asyncResult.CallbackInfo.Method.StartsWith('$request.query')) {
+                        if ($asyncResult.CallbackInfo.Method -match '^[^.]*\.[^.]*\.(.*)') {
+                            $method = $WebEvent.Query[ $Matches[1]]
+                        }
+                    }
+                    elseif ( $asyncResult.CallbackInfo.Method.StartsWith('$request.body')) {
+                        if ($asyncResult.CallbackInfo.Method -match '^[^.]*\.[^.]*#/(.*)') {
+                            $method = $WebEvent.data.$($Matches[1])
+                        }
+                    }
+                    else {
+                        throw 'Invalid method'
+                    }#>
+
+
+                    if ($asyncResult.CallbackInfo.SendResult) {
+                        Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Body ($___result___ | ConvertTo-Json) -ContentType $asyncResult.CallbackInfo.ContentType
+                    }
+                    else {
+                        Invoke-RestMethod -Uri ($callbackUrl) -Method $method
+                    }
+                }
+            }
+            catch {
+                # Log the error
+                $_ | Write-PodeErrorLog
+            }
         }
     }
 

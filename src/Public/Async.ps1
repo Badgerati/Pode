@@ -444,7 +444,37 @@ function Set-PodeAsyncRoute {
         $NoOpenAPI,
 
         [int]
-        $MaxThreads = 1
+        $MaxThreads = 1,
+
+        [switch]
+        $Callback,
+      <#
+      {$url}	/subscribe	The parent operation URL.
+        {$method}	POST	The method of the callback request.
+        {$request.path.eventType}	myEvent	The event name.
+        {$request.query.param-name}	query-param-value
+        (the p1 query parameter)	The value of the specified query parameter.
+        {$request.header.header-name}	application/json
+        (the Content-Type header)	The specified header of the “subscription” request.
+        {$request.body#/field-name}	callbackUrl	A field in the request body.        If the field is an array, use the syntax like {$request.body#/arrayField/2}.
+        {$response.header.header-name}	http://my.example.com?id=123
+        (the Location header)	The value of the specified response header
+        (the response to the “subscription” request).
+        #>
+        [string]
+        $CallbackUrlField = '$request.body#/callbackUrl',
+
+        [switch]
+        $CallbackSendResult,
+
+        [string]
+        $CallbackContentType = 'application/json',
+
+        [string]
+        $CallbackMethod = 'Post',
+
+        [hashtable]
+        $CallbackHeaderFields = @{}
 
     )
     Begin {
@@ -454,8 +484,17 @@ function Set-PodeAsyncRoute {
         # Determine media types based on ResponseType
         if ($ResponseContentType -icontains 'JSON') { $MediaResponseType += 'application/json' }
         if ($ResponseContentType -icontains 'XML') { $MediaResponseType += 'application/xml' }
-        if ($ResponseContentType -icontains 'YAML') { $MediaResponseType += 'text/yaml' }
+        if ($ResponseContentType -icontains 'YAML') { $MediaResponseType += 'application/yaml' }
 
+        if ( $Callback.IsPresent) {
+            $CallbackInfo = @{
+                UrlField     = $CallbackUrlField
+                ContentType  = $CallbackContentType
+                SendResult   = $CallbackSendResult.ToBool()
+                Method       = $CallbackMethod
+                HeaderFields = $CallbackHeaderFields
+            }
+        }
         # Start the housekeeper for async routes
         Start-PodeAsyncRoutesHousekeeper
     }
@@ -480,6 +519,7 @@ function Set-PodeAsyncRoute {
                 Script         = ConvertTo-PodeEnhancedScriptBlock -ScriptBlock $r.Logic
                 UsingVariables = $r.UsingVariables
                 Arguments      = (Protect-PodeValue -Value $r.Arguments -Default @{})
+                CallbackInfo   = $CallbackInfo
             }
             #Set thread count
             $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] = $MaxThreads
@@ -495,10 +535,6 @@ function Set-PodeAsyncRoute {
                 param($Timeout, $IdGenerator, $AsyncPoolName)
                 $responseMediaType = Get-PodeHeader -Name 'Accept'
                 $id = (& $IdGenerator)
-
-                #  write-podehost $WebEvent -Explode
-
-                #  write-podehost $WebEvent.Auth -Explode
 
                 # Invoke the internal async task
                 $async = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items[$AsyncPoolName] -Timeout $Timeout -ArgumentList @{ WebEvent = $WebEvent; ___async___id___ = $id }
@@ -576,18 +612,10 @@ function Set-PodeAsyncRoute {
 .PARAMETER PassThru
     If set, the route will be returned from the function.
 
-.PARAMETER Style
-    Specifies the style of parameter serialization. Acceptable values are 'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
-
 .EXAMPLE
     Add-PodeAsyncQueryRoute -Path '/tasks/query' -ResponseContentType 'JSON' -QueryContentType 'JSON' -Payload 'Body'
 
     This example creates a Pode route at '/tasks/query' that processes query requests with JSON content types and expects the payload in the body.
-
-.EXAMPLE
-    Add-PodeAsyncQueryRoute -Path '/tasks/query' -NoOpenAPI -Payload 'Header' -Style 'Simple'
-
-    This example creates a Pode route at '/tasks/query' without generating OpenAPI documentation, expects the payload in the header, and uses simple serialization style.
 
 .OUTPUTS
     [hashtable]
@@ -617,23 +645,21 @@ function Add-PodeAsyncQueryRoute {
         [Parameter(Mandatory = $true, ParameterSetName = 'NoOpenAPI')]
         [switch]
         $NoOpenAPI,
+
         [Parameter(ParameterSetName = 'OpenAPI')]
         [string]
         $PodeTaskQueryRequestName = 'PodeTaskQueryRequest',
 
         [Parameter()]
         $TaskIdName = 'taskId',
+
         [string]
         [ValidateSet('Body', 'Header', 'Query' )]
         $Payload = 'Body',
 
         [switch]
-        $PassThru,
+        $PassThru
 
-        [Parameter()]
-        [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
-        [string]
-        $Style
     )
 
     $scriptBlock = {
@@ -748,42 +774,25 @@ function Add-PodeAsyncQueryRoute {
                         New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                     )
                 )
-        if ($MediaQueryType) {
-            $example = [ordered]@{}
+        $example = [ordered]@{}
 
-            foreach ($mt in   $MediaQueryType) {
-                $example += New-PodeOAExample -MediaType $mt -Name $PodeTaskQueryRequestName -Value $exampleHashTable
-            }
-        }
-        if ($Style) {
-            $example = ConvertTo-PodeSerializedString -Hashtable $exampleHashTable -Style $Style -Explode
+        foreach ($mt in   $MediaQueryType) {
+            $example += New-PodeOAExample -MediaType $mt -Name $PodeTaskQueryRequestName -Value $exampleHashTable
         }
 
         switch ($Payload.ToLowerInvariant()) {
             'body' {
-                $requestBody = New-PodeOARequestBody -Content  (New-PodeOAContentMediaType -MediaType $MediaQueryType  -Content $PodeTaskQueryRequestName   ) -Examples $example
-                $route | Set-PodeOARequest  -RequestBody $requestBody
+                $route | Set-PodeOARequest  -RequestBody (
+                    New-PodeOARequestBody -Content  (New-PodeOAContentMediaType -MediaType $MediaQueryType  -Content $PodeTaskQueryRequestName   ) -Examples $example
+                )
                 break
             }
             'header' {
-                if ($Style) {
-                    $requestParameter = ConvertTo-PodeOAParameter -In Header -Schema $PodeTaskQueryRequestName -array -Style $Style -Example $example -Explode
-                }
-                else {
-                    $requestParameter = ConvertTo-PodeOAParameter -In Header -Schema $PodeTaskQueryRequestName -ContentType $MediaQueryType[0] -Example  $example[0]
-                }
-
-                $route | Set-PodeOARequest   -Parameters $requestParameter
+                $route | Set-PodeOARequest   -Parameters (ConvertTo-PodeOAParameter -In Header -Schema $PodeTaskQueryRequestName -ContentType $MediaQueryType[0] -Example  $example[0])
                 break
             }
             'query' {
-                if ($Style) {
-                    $requestParameter = ConvertTo-PodeOAParameter -In Query -Schema $PodeTaskQueryRequestName -array -Style $Style -Example $example -Explode
-                }
-                else {
-                    $requestParameter = ConvertTo-PodeOAParameter -In Query  -Schema $PodeTaskQueryRequestName -ContentType $MediaQueryType[0] -Example  $example[0]
-                } 
-                $route | Set-PodeOARequest   -Parameters $requestParameter
+                $route | Set-PodeOARequest   -Parameters (ConvertTo-PodeOAParameter -In Query  -Schema $PodeTaskQueryRequestName -ContentType $MediaQueryType[0] -Example  $example[0])
             }
         }
     }

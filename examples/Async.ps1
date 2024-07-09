@@ -82,12 +82,15 @@ Start-PodeServer -Threads 1 {
 #>
 
     Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
-
         Write-PodeHost "sleepTime=$($using:uSleepTime)"
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
+    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -Callback -PassThru | Set-PodeOARequest  -RequestBody (
+        New-PodeOARequestBody -Content @{'application/json' = (New-PodeOAStringProperty -Name 'callbackUrl' -Format Uri -Object -Example 'http://localhost:8080/receive/callback') }
+    )
+
+
     Add-PodeRoute -PassThru -Method Put -Path '/asyncState'  -ScriptBlock {
 
         Write-PodeHost "state:sleepTime=$($state:data.sleepTime)"
@@ -128,7 +131,12 @@ Start-PodeServer -Threads 1 {
     Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType JSON, YAML -In Path #-TaskIdName 'pippopppoId'
     Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType JSON, YAML -In Query #-TaskIdName 'pippopppoId'
 
-    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType JSON , YAML   -Payload  Body -QueryContentType JSON,YAML
+    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType JSON , YAML   -Payload  Body -QueryContentType JSON, YAML
+
+    Add-PodeRoute -PassThru -Method Post -path '/receive/callback' -ScriptBlock {
+        write-podehost 'Callback received'
+        write-podehost $WebEvent
+    }
 
     <#
     Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
