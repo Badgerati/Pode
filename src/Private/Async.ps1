@@ -122,60 +122,27 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
             # Set the completed time
             $asyncResult.CompletedTime = [datetime]::UtcNow
-            function CallBackResolver {
-                param( $Variable)
-                if ( $Variable.StartsWith('$request.header')) {
-                    if ($Variable -match '^[^.]*\.[^.]*\.(.*)') {
-                        return $WebEvent.Request.Headers[$Matches[1]]
-                    }
-                }
-                elseif ( $Variable.StartsWith('$request.query')) {
-                    if ($Variable -match '^[^.]*\.[^.]*\.(.*)') {
-                        return $WebEvent.Query[ $Matches[1]]
-                    }
-                }
-                elseif ( $Variable.StartsWith('$request.body')) {
-                    if ($Variable -match '^[^.]*\.[^.]*#/(.*)') {
-                        return $WebEvent.data.$($Matches[1])
-                    }
-                }
-                return $Variable
-            }
 
             try {
                 if ($asyncResult.CallbackInfo) {
-                    $callbackUrl = CallBackResolver -Variable $asyncResult.CallbackInfo.UrlField
-                    write-podeHost "callbackUrl=$callbackUrl"
-                    $method = CallBackResolver -Variable $asyncResult.CallbackInfo.Method
+                    $callbackUrl = (CallBackResolver -Variable $asyncResult.CallbackInfo.UrlField).Value
+                    write-podehost  $callbackUrl -Explode
+                    write-podeHost "$($asyncResult.CallbackInfo.UrlField)=$callbackUrl"
+                    $method = (CallBackResolver -Variable $asyncResult.CallbackInfo.Method -DefaultValue 'Post').Value
                     write-podeHost "method=$method"
-                    <#   if ( ('Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put' ) -icontains $asyncResult.CallbackInfo.Method) {
-                        $method = $asyncResult.CallbackInfo.Method
-                    }
-                    elseif ( $asyncResult.CallbackInfo.Method.StartsWith('$request.header')) {
-                        if ($asyncResult.CallbackInfo.Method -match '^[^.]*\.[^.]*\.(.*)') {
-                            $method = $WebEvent.Request.Headers[$Matches[1]]
+                    $headers = @{}
+                    foreach ($key in $asyncResult.HeaderFields.Keys) {
+                        $value = CallBackResolver -Variable $key -DefaultValue $asyncResult.HeaderFields[$key]
+                        if ($value) {
+                            $headers.$($value.key) = $value.value
                         }
                     }
-                    elseif ( $asyncResult.CallbackInfo.Method.StartsWith('$request.query')) {
-                        if ($asyncResult.CallbackInfo.Method -match '^[^.]*\.[^.]*\.(.*)') {
-                            $method = $WebEvent.Query[ $Matches[1]]
-                        }
-                    }
-                    elseif ( $asyncResult.CallbackInfo.Method.StartsWith('$request.body')) {
-                        if ($asyncResult.CallbackInfo.Method -match '^[^.]*\.[^.]*#/(.*)') {
-                            $method = $WebEvent.data.$($Matches[1])
-                        }
-                    }
-                    else {
-                        throw 'Invalid method'
-                    }#>
-
 
                     if ($asyncResult.CallbackInfo.SendResult) {
-                        Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Body ($___result___ | ConvertTo-Json) -ContentType $asyncResult.CallbackInfo.ContentType
+                        Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body ($___result___ | ConvertTo-Json) -ContentType $asyncResult.CallbackInfo.ContentType
                     }
                     else {
-                        Invoke-RestMethod -Uri ($callbackUrl) -Method $method
+                        Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers
                     }
                 }
             }
@@ -447,4 +414,48 @@ function Search-PodeAsyncTask {
         }
     }
     return $matchedElements
+}
+
+
+function CallBackResolver {
+    param( [string]$Variable, [string]$DefaultValue)
+    if ( $Variable.StartsWith('$request.header')) {
+        if ($Variable -match '^[^.]*\.[^.]*\.(.*)') {
+            $Value = $WebEvent.Request.Headers[$Matches[1]]
+            if ($value) {
+                return @{Key = $Matches[1]; Value = $value }
+            }
+            else {
+                return @{Key = $Matches[1]; Value = $DefaultValue }
+            }
+        }
+    }
+    elseif ( $Variable.StartsWith('$request.query')) {
+        $Value =   $WebEvent.Query[ $Matches[1]]
+        if ($Variable -match '^[^.]*\.[^.]*\.(.*)') {
+            if ($value) {
+                return @{Key = $Matches[1]; Value = $value }
+            }
+            else {
+                return @{Key = $Matches[1]; Value = $DefaultValue }
+            }
+        }
+    }
+    elseif ( $Variable.StartsWith('$request.body')) {
+        if ($Variable -match '^[^.]*\.[^.]*#/(.*)') {
+            $value =$WebEvent.data.$($Matches[1])
+            if ($value) {
+                return @{Key = $Matches[1]; Value = $value }
+            }
+            else {
+                return @{Key = $Matches[1]; Value = $DefaultValue }
+            }
+        }
+    }
+
+    if (! [string]::IsNullOrEmpty( $DefaultValue)) {
+        return  @{Key = $Variable; Value = $DefaultValue }
+    }
+
+    return @{Key = $Variable; Value = $Variable }
 }

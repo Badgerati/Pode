@@ -135,7 +135,7 @@ Start-PodeServer -Threads 1 {
 
     Add-PodeRoute -PassThru -Method Post -path '/receive/callback' -ScriptBlock {
         write-podehost 'Callback received'
-        write-podehost $WebEvent
+        write-podehost $WebEvent.Data -Explode
     }
 
     <#
