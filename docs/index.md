@@ -21,8 +21,9 @@ Pode is a Cross-Platform framework to create web servers that host REST APIs, We
 * Cross-platform using PowerShell Core (with support for PS5)
 * Docker support, including images for ARM/Raspberry Pi
 * Azure Functions, AWS Lambda, and IIS support
-* OpenAPI, Swagger, and ReDoc support
-* Listen on a single or multiple IP address/hostnames
+* OpenAPI specification version 3.0.x and 3.1.0
+* OpenAPI documentation with Swagger, Redoc, RapidDoc, StopLight, OpenAPI-Explorer and RapiPdf
+* Listen on a single or multiple IP(v4/v6) addresses/hostnames
 * Cross-platform support for HTTP(S), WS(S), SSE, SMTP(S), and TCP(S)
 * Host REST APIs, Web Pages, and Static Content (with caching)
 * Support for custom error pages
@@ -45,6 +46,8 @@ Pode is a Cross-Platform framework to create web servers that host REST APIs, We
 * Support for File Watchers
 * In-memory caching, with optional support for external providers (such as Redis)
 * (Windows) Open the hosted server as a desktop application
+* FileBrowsing support
+* Localization (i18n) in Arabic, German, Spanish, France, Italian, Japanese, Korean, Polish, Portuguese, and Chinese
 
 ## 🏢 Companies using Pode
 

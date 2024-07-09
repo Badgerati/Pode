@@ -174,3 +174,17 @@ The following is the structure of the Endpoint object internally, as well as the
 | Protocol      | string       | The protocol of the Endpoint. Such as: HTTP, HTTPS, WS, etc.                    |
 | Type          | string       | The type of the Endpoint. Such as: HTTP, WS, SMTP, TCP                          |
 | Certificate   | hashtable    | Details about the certificate that will be used for SSL Endpoints               |
+
+## Server timeout
+
+The timeout is configurable using the `ReceiveTimeout` property in the `server.psd1` configuration file, the amount of time is in milliseconds. The meaning is that the server will wait for data to be received before timing out. This is useful for controlling how long the server should wait during data reception operations, enhancing the performance and responsiveness.
+
+To set this property, include it in `server.psd1` configuration file as shown below:
+
+```powershell
+@{
+    Server = @{
+        ReceiveTimeout = 5000 # Timeout in milliseconds
+    }
+}
+```
