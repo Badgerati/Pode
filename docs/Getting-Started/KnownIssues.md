@@ -18,13 +18,30 @@ New-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Services\HTTP\Parameters'
 
 ## PowerShell Classes
 
-Pode uses Runspaces to deal with multithreading and other background tasks. Due to this, PowerShell classes do not work as intended and are unsafe to use.
+Pode utilizes Runspaces for multithreading and other background tasks, which makes PowerShell classes behave unpredictably and renders them unsafe to use. This is primarily because an instance of a class created in one Runspace will always be marshaled back to the original Runspace whenever it is accessed again, potentially causing Routes and Middleware to become contaminated.
 
-You can find more information about this issue [here on PowerShell](https://github.com/PowerShell/PowerShell/issues/3651).
+For more details on this issue, you can refer to the [PowerShell GitHub issue](https://github.com/PowerShell/PowerShell/issues/3651).
 
-The crux of the issue is that if you create an instance of a class in one Runspace, then every time you try to use that instance again it will always be marshaled back to the original Runspace. This means Routes and Middleware can become contaminated.
+To avoid these problems, it is recommended to use Hashtables or PSObjects instead.
 
-It's recommended to switch to either Hashtables or PSObjects, but if you need to use classes then the following should let classes work:
+However, if you need to use classes, PowerShell 7.4 introduces the `[NoRunspaceAffinity()]` attribute that makes classes thread-safe by solving this issue.
+
+Here's an example of a class definition with the `[NoRunspaceAffinity()]` attribute:
+
+```powershell
+# Class definition with NoRunspaceAffinity attribute
+[NoRunspaceAffinity()]
+class SafeClass {
+    static [object] ShowRunspaceId($val) {
+        return [PSCustomObject]@{
+            ThreadId   = [Threading.Thread]::CurrentThread.ManagedThreadId
+            RunspaceId = [runspace]::DefaultRunspace.Id
+        }
+    }
+}
+```
+
+If you need to support versions prior to PowerShell 7.4, you can use the following approach:
 
 * Create a module (CreateClassInstanceHelper.psm1) with the content:
 
