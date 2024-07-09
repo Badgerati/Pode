@@ -132,6 +132,9 @@ Above you'll see that the exception supplied to `status` will also be supplied t
 
 Once set to `true`, any available exception details for status codes will be available to error pages - a useful setting to have in a [`server.dev.psd1`](../../../Configuration#environments) file.
 
+!!! important
+    This setting is not recommended for production environments due to the security risk associated with exposing internal exception details.
+
 ### Content Types
 
 Using the `server.psd1` configuration file, you can define which file content types to attempt when generating error pages for routes. You can either:
