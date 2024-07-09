@@ -43,8 +43,6 @@ You can add your routes straight into the [`Start-PodeServer`](../../../Function
 
 The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` property on the `$WebEvent` variable to a route's logic.
 
-Alternatively, you can use the Get-PodeBody function to retrieve the body data.
-
 Depending the the Content-Type supplied, Pode has inbuilt body-parsing logic for JSON, XML, CSV, and Form data.
 
 This example will get the `userId` and "find" user, returning the users data:
@@ -78,39 +76,9 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
 !!! important
     On PowerShell 5 referencing JSON data on `$WebEvent.Data` must be done as `$WebEvent.Data.userId`. This also works in PowerShell 6+, but you can also use `$WebEvent.Data['userId']` on PowerShell 6+.
 
-Alternatively, you can use the Get-PodeBody function to retrieve the body data. This function works similarly to the .Data property on $WebEvent and supports the same content types.
-
-Here is the same example using Get-PodeBody:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Post -Path '/users' -ScriptBlock {
-        # get the body data
-        $body = Get-PodeBody
-
-        # get the user
-        $user = Get-DummyUser -UserId $body.userId
-
-        # return the user
-        Write-PodeJsonResponse -Value @{
-            Username = $user.username
-            Age = $user.age
-        }
-    }
-}
-```
-
 ## Query Strings
 
-The following is an example of using data from a request's payload - i.e., the data in the body of a POST request. To retrieve values from the payload, you can use the `Data` property on the `$WebEvent` variable in a route's logic.
-
-Alternatively, you can use the `Get-PodeBody` function to retrieve the body data.
-
-Depending on the Content-Type supplied, Pode has inbuilt body-parsing logic for JSON, XML, CSV, and Form data.
-
-This example will return a user based on the `userId` supplied:
+The following is an example of using data from a request's query string. To retrieve values from the query string you can use the `.Query` property from the `$WebEvent` variable. This example will return a user based on the `userId` supplied:
 
 ```powershell
 Start-PodeServer {
@@ -135,37 +103,9 @@ The following request will invoke the above route:
 Invoke-WebRequest -Uri 'http://localhost:8080/users?userId=12345' -Method Get
 ```
 
-Alternatively, you can use the Get-PodeQuery function to retrieve the query data. This function works similarly to the `Query` property on `$WebEvent`.
-
-Here is the same example using `Get-PodeQuery`:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Get -Path '/users' -ScriptBlock {
-        # get the query data
-        $userId = Get-PodeQuery -Name 'userId'
-
-        # get the user
-        $user = Get-DummyUser -UserId $userId
-
-        # return the user
-        Write-PodeJsonResponse -Value @{
-            Username = $user.username
-            Age = $user.age
-        }
-    }
-}
-```
-
 ## Parameters
 
-The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters, you can use the `Parameters` property from the `$WebEvent` variable.
-
-Alternatively, you can use the `Get-PodeParameter` function to retrieve the parameter data.
-
-This example will get the `:userId` and "find" user, returning the users data:
+The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters you can use the `.Parameters` property from the `$WebEvent` variable. This example will get the `:userId` and "find" user, returning the users data:
 
 ```powershell
 Start-PodeServer {
@@ -188,142 +128,6 @@ The following request will invoke the above route:
 
 ```powershell
 Invoke-WebRequest -Uri 'http://localhost:8080/users/12345' -Method Get
-```
-
-Alternatively, you can use the Get-PodeParameter function to retrieve the parameter data. This function works similarly to the `Parameters` property on `$WebEvent`.
-
-Here is the same example using Get-PodeParameter:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Get -Path '/users/:userId' -ScriptBlock {
-        # get the parameter data
-        $userId = Get-PodeParameter -Name 'userId'
-
-        # get the user
-        $user = Get-DummyUser -UserId $userId
-
-        # return the user
-        Write-PodeJsonResponse -Value @{
-            Username = $user.username
-            Age = $user.age
-        }
-    }
-}
-```
-
-## Headers
-
-The following is an example of using values supplied in a request's headers. To retrieve values from the headers, you can use the `Headers` property from the `$WebEvent.Request` variable. Alternatively, you can use the Get-PodeHeader function to retrieve the header data.
-
-This example will get the Authorization header and validate the token, returning a success message:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Get -Path '/validate' -ScriptBlock {
-        # get the token
-        $token = $WebEvent.Request.Headers['Authorization']
-
-        # validate the token
-        $isValid = Test-PodeJwt  -payload $token
-
-        # return the result
-        Write-PodeJsonResponse -Value @{
-            Success = $isValid
-        }
-    }
-}
-```
-
-The following request will invoke the above route:
-
-```powershell
-Invoke-WebRequest -Uri 'http://localhost:8080/validate' -Method Get -Headers @{ Authorization = 'Bearer some_token' }
-```
-
-
-Alternatively, you can use the Get-PodeHeader function to retrieve the header data. This function works similarly to the `Headers` property on `$WebEvent.Request`.
-
-Here is the same example using Get-PodeHeader:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Get -Path '/validate' -ScriptBlock {
-        # get the token
-        $token = Get-PodeHeader -Name 'Authorization'
-
-        # validate the token
-        $isValid = Test-PodeJwt  -payload $token
-
-        # return the result
-        Write-PodeJsonResponse -Value @{
-            Success = $isValid
-        }
-    }
-}
-```
-
-
-## Cookies
-
-The following is an example of using values supplied in a request's cookies. To retrieve values from the cookies, you can use the `Cookies` property from the `$WebEvent` variable.
-
-Alternatively, you can use the `Get-PodeCookie` function to retrieve the cookie data.
-
-This example will get the `SessionId` cookie and use it to authenticate the user, returning a success message:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Get -Path '/authenticate' -ScriptBlock {
-        # get the session ID from the cookie
-        $sessionId = $WebEvent.Cookies['SessionId']
-
-        # authenticate the session
-        $isAuthenticated = Authenticate-Session -SessionId $sessionId
-
-        # return the result
-        Write-PodeJsonResponse -Value @{
-            Authenticated = $isAuthenticated
-        }
-    }
-}
-```
-
-The following request will invoke the above route:
-
-```powershell
-Invoke-WebRequest -Uri 'http://localhost:8080/authenticate' -Method Get -Headers @{ Cookie = 'SessionId=abc123' }
-```
-
-Alternatively, you can use the `Get-PodeCookie` function to retrieve the cookie data. This function works similarly to the `Cookies` property on `$WebEvent`.
-
-Here is the same example using `Get-PodeCookie`:
-
-```powershell
-Start-PodeServer {
-    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
-
-    Add-PodeRoute -Method Get -Path '/authenticate' -ScriptBlock {
-        # get the session ID from the cookie
-        $sessionId = Get-PodeCookie -Name 'SessionId'
-
-        # authenticate the session
-        $isAuthenticated = Authenticate-Session -SessionId $sessionId
-
-        # return the result
-        Write-PodeJsonResponse -Value @{
-            Authenticated = $isAuthenticated
-        }
-    }
-}
 ```
 
 ## Script from File
