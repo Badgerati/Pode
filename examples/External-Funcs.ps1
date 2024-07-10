@@ -19,18 +19,16 @@ try {
     # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
-    }
-    else {
+    } else {
         Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
     }
-}
-catch { throw }
+} catch { throw }
 
 # or just:
 # Import-Module Pode
 
 # include the external function module
-Import-PodeModule -Path './modules/external-funcs.psm1'
+Import-PodeModule -Path './modules/External-Funcs.psm1'
 
 # create a server, and start listening on port 8081
 Start-PodeServer {

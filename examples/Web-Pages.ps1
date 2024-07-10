@@ -11,12 +11,10 @@ try {
     # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
-    }
-    else {
+    } else {
         Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
     }
-}
-catch { throw }
+} catch { throw }
 
 # or just:
 # Import-Module Pode
@@ -87,8 +85,7 @@ Start-PodeServer -Threads 1 -Verbose {
     Add-PodeRoute -Method Get -Path '/redirect-port' -ScriptBlock {
         if ($WebEvent.Request.Url.Port -ne 8086) {
             Move-PodeResponseUrl -Port 8086
-        }
-        else {
+        } else {
             Write-PodeJsonResponse -Value @{ 'value' = 'you got redirected!'; }
         }
     }
@@ -113,6 +110,6 @@ Start-PodeServer -Threads 1 -Verbose {
     }
 
     $hmm = 'well well'
-    Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/route_script.ps1'
+    Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/RouteScript.ps1'
 
 }

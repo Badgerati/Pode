@@ -103,6 +103,6 @@ Start-PodeServer -Threads 2 -ListenerType Kestrel {
     }
 
     $hmm = 'well well'
-    Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/route_script.ps1'
+    Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/RouteScript.ps1'
 
 }

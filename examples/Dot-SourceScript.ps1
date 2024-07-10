@@ -34,6 +34,6 @@ catch { throw }
 Start-PodeServer {
 
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-    Use-PodeScript -Path './modules/script1.ps1'
+    Use-PodeScript -Path './modules/Script1.ps1'
 
 }

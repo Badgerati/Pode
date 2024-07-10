@@ -36,7 +36,7 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type Pode
 
     # load file funcs
-    Use-PodeScript -Path ./modules/imported-funcs.ps1
+    Use-PodeScript -Path ./modules/Imported-Funcs.ps1
 
     $innerfoo = 'inner-bar'
     $inner_ken = 'General Kenobi'
