@@ -344,6 +344,75 @@ Task DocsDeps ChocoDeps, {
     Install-PodeBuildModule PlatyPS
 }
 
+Task IndexSamples {
+    $SamplesPath = './examples'
+    $SampleMarkDownPath = './docs/Getting-Started/Samples.md'
+    if ((Test-Path -PathType Container -Path $SamplesPath) ) {
+        $ps1Files = Get-ChildItem -Path $SamplesPath -Recurse -Filter *.ps1
+        $title = "# Pode's Sample Scripts List"
+        $indexContent = "## Index`n"
+        foreach ($file in $ps1Files) {
+            $content = Get-Content -Path  $file.FullName -ErrorAction Stop
+            $synopsis = @()
+            $description = $()
+            $inSynopsis = $false
+            $inDescription = $false
+            $inBlockComment = $false
+            foreach ($line in $content) {
+                $line = $line.Trim()
+                if (! [string]::IsNullOrWhiteSpace($line)) {
+                    if ($inBlockComment) {
+                        if ($line -match '#>') {
+                            $inBlockComment = $false
+                            $inSynopsis = $false
+                            $inDescription = $false
+                            break
+                        }
+                        else {
+                            if ( $line -match '\.SYNOPSIS') {
+                                $inSynopsis = $true
+                                $inDescription = $false
+                            }
+                            elseif ( $line -match '\.DESCRIPTION') {
+                                $inSynopsis = $false
+                                $inDescription = $true
+                            }
+                            elseif ( $line -match '\.PARAMETER' -or $line -match '\.NOTES' -or $line -match '\.EXAMPLE') {
+                                $inSynopsis = $false
+                                $inDescription = $false
+                            }
+                            elseif ( $inDescription) {
+                                $description += $line
+                            }
+                            elseif ( $inSynopsis) {
+                                $synopsis += $line
+                            }
+                        }
+                    }
+                    elseif ($line -match '<#') {
+                        $inBlockComment = $true
+                    }
+                }
+            }
+
+            $header = [PSCustomObject]@{
+                Path        = $file.FullName
+                Synopsis    = ($synopsis -join '`n').Trim()
+                Description = ($description -join '`n').Trim()
+            }
+
+            if ($header.Synopsis -or $header.Description) {
+                $indexContent += "- [$($file.BaseName)](#$($file.BaseName))`n"
+                $markdownContent += "## [$($file.BaseName)](https://github.com/Badgerati/Pode/blob/develop/examples/$($file.Name))`n`n"
+                $markdownContent += "**Synopsis:**`n`n`t$($header.Synopsis)`n`n"
+                $markdownContent += "**Description:**`n`n`t$($header.Description)`n`n"
+            }
+        }
+        Write-Output "Write Markdown document for the sample files to $SampleMarkDownPath"
+        Set-Content -Path $SampleMarkDownPath -Value ( $title + "`n" + $indexContent + "`n" + $markdownContent)
+
+    }
+}
 
 <#
 # Building
@@ -501,7 +570,7 @@ Task TestNoBuild TestDeps, {
     else {
         $Script:TestStatus = Invoke-Pester -Configuration $configuration
     }
-    if ($originalUICulture){
+    if ($originalUICulture) {
         Write-Output "Restore UICulture to $originalUICulture"
         # restore original UICulture
         [System.Threading.Thread]::CurrentThread.CurrentUICulture = $originalUICulture
@@ -545,7 +614,7 @@ Task Docs DocsDeps, DocsHelpBuild, {
 }
 
 # Synopsis: Build the function help documentation
-Task DocsHelpBuild DocsDeps, Build, {
+Task DocsHelpBuild IndexSamples, DocsDeps, Build, {
     # import the local module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
     Import-Module ./src/Pode.psm1 -Force | Out-Null
@@ -599,7 +668,7 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 #>
 
 # Synopsis: Clean the build enviroment
-Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener
+Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
 
 # Synopsis: Clean the Deliverable folder
 Task CleanDeliverable {
@@ -654,7 +723,13 @@ Task CleanListener {
     Write-Host "Cleanup $path done"
 }
 
-
+Task CleanDocs {
+    $path = './docs/Getting-Started/Samples.md'
+    if (Test-Path -Path $path -PathType Leaf) {
+        Write-Host "Removing $path"
+        Remove-Item -Path $path -Force | Out-Null
+    }
+}
 <#
 # Local module management
 #>
