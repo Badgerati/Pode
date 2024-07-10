@@ -86,7 +86,7 @@ Start-PodeServer -Threads 1 {
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -Callback -PassThru | Set-PodeOARequest  -RequestBody (
+    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -Callback -PassThru -CallbackSendResult | Set-PodeOARequest  -RequestBody (
         New-PodeOARequestBody -Content @{'application/json' = (New-PodeOAStringProperty -Name 'callbackUrl' -Format Uri -Object -Example 'http://localhost:8080/receive/callback') }
     )
 

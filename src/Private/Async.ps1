@@ -125,25 +125,31 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
             try {
                 if ($asyncResult.CallbackInfo) {
-                    $callbackUrl = (CallBackResolver -Variable $asyncResult.CallbackInfo.UrlField).Value
-                    write-podehost  $callbackUrl -Explode
-                    write-podeHost "$($asyncResult.CallbackInfo.UrlField)=$callbackUrl"
-                    $method = (CallBackResolver -Variable $asyncResult.CallbackInfo.Method -DefaultValue 'Post').Value
-                    write-podeHost "method=$method"
+                    $callbackUrl = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult.CallbackInfo.UrlField).Value
+                    $method = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult.CallbackInfo.Method -DefaultValue 'Post').Value
+                    $contentType = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult.CallbackInfo.ContentType).Value
                     $headers = @{}
                     foreach ($key in $asyncResult.HeaderFields.Keys) {
-                        $value = CallBackResolver -Variable $key -DefaultValue $asyncResult.HeaderFields[$key]
+                        $value = Convert-PodeCallBackRuntimeExpression -Variable $key -DefaultValue $asyncResult.HeaderFields[$key]
                         if ($value) {
                             $headers.$($value.key) = $value.value
                         }
                     }
-
+                    $body = @{
+                        Url       = $WebEvent.Request.Url
+                        Method    = $WebEvent.Method
+                        EventName = $asyncResult.CallbackInfo.EventName
+                    }
                     if ($asyncResult.CallbackInfo.SendResult) {
-                        Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body ($___result___ | ConvertTo-Json) -ContentType $asyncResult.CallbackInfo.ContentType
+                        $body.Result = $___result___
                     }
-                    else {
-                        Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers
+                    switch ($contentType) {
+                        'application/json' { $cBody = ($body | ConvertTo-Json -depth 10) }
+                        'application/xml' { $cBody = ($body | ConvertTo-Xml -NoTypeInformation ) }
+                        'application/yaml' { $cBody = ($body | ConvertTo-PodeYaml -depth 10) }
                     }
+
+                    Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body $cBody -ContentType $contentType
                 }
             }
             catch {
@@ -416,8 +422,60 @@ function Search-PodeAsyncTask {
     return $matchedElements
 }
 
+<#
+.SYNOPSIS
+    Converts runtime expressions for Pode callback variables.
 
-function CallBackResolver {
+.DESCRIPTION
+    The `Convert-PodeCallBackRuntimeExpression` function processes runtime expressions
+    for Pode callback variables. It interprets variables in headers, query parameters,
+    and body fields from the web event request, providing a default value if the variable
+    is not resolvable. This function is used in the context of OpenAPI callback specifications
+    to dynamically resolve values at runtime.
+
+.PARAMETER Variable
+    The variable expression to be converted. This can be a header, query parameter, or body field.
+    Valid formats include:
+    - $request.header.header-name
+    - $request.query.param-name
+    - $request.body#/field-name
+
+.PARAMETER DefaultValue
+    The default value to be used if the variable cannot be resolved from the request.
+
+.INPUTS
+    [string], [string]
+
+.OUTPUTS
+    [hashtable]
+    The output is a hashtable containing the resolved key and value.
+
+.EXAMPLE
+    # Convert a header variable with a default value
+    $result = Convert-PodeCallBackRuntimeExpression -Variable '$request.header.Content-Type' -DefaultValue 'application/json'
+    Write-Output $result
+
+.EXAMPLE
+    # Convert a query parameter variable with a default value
+    $result = Convert-PodeCallBackRuntimeExpression -Variable '$request.query.userId' -DefaultValue 'unknown'
+    Write-Output $result
+
+.EXAMPLE
+    # Convert a body field variable with a default value
+    $result = Convert-PodeCallBackRuntimeExpression -Variable '$request.body#/user/name' -DefaultValue 'anonymous'
+    Write-Output $result
+
+.NOTES
+    This function is used in the context of OpenAPI callback specifications to dynamically resolve
+    values at runtime. The parameters can accept the following meta values:
+    - $request.query.param-name  : query-param-value
+    - $request.header.header-name: application/json
+    - $request.body#/field-name  : callbackUrl
+
+    If the variable cannot be resolved from the request, the provided default value is used.
+    If no default value is provided and the variable cannot be resolved, the variable itself is returned as the value.
+#>
+function Convert-PodeCallBackRuntimeExpression {
     param( [string]$Variable, [string]$DefaultValue)
     if ( $Variable.StartsWith('$request.header')) {
         if ($Variable -match '^[^.]*\.[^.]*\.(.*)') {
@@ -431,7 +489,7 @@ function CallBackResolver {
         }
     }
     elseif ( $Variable.StartsWith('$request.query')) {
-        $Value =   $WebEvent.Query[ $Matches[1]]
+        $Value = $WebEvent.Query[ $Matches[1]]
         if ($Variable -match '^[^.]*\.[^.]*\.(.*)') {
             if ($value) {
                 return @{Key = $Matches[1]; Value = $value }
@@ -443,7 +501,7 @@ function CallBackResolver {
     }
     elseif ( $Variable.StartsWith('$request.body')) {
         if ($Variable -match '^[^.]*\.[^.]*#/(.*)') {
-            $value =$WebEvent.data.$($Matches[1])
+            $value = $WebEvent.data.$($Matches[1])
             if ($value) {
                 return @{Key = $Matches[1]; Value = $value }
             }

@@ -341,8 +341,6 @@ function Add-PodeAsyncStopRoute {
     }
 }
 
-
-
 <#
 .SYNOPSIS
     Defines an asynchronous route in Pode with runspace management.
@@ -380,7 +378,46 @@ function Add-PodeAsyncStopRoute {
     If specified, the route will not be included in the OpenAPI documentation.
 
 .PARAMETER MaxThreads
-    Number of parallel threads for this specific route (Default 2)
+    Number of parallel threads for this specific route. The default is 2.
+
+.PARAMETER Callback
+    Specifies whether to include callback functionality for the route.
+
+.PARAMETER CallbackUrl
+    Specifies the URL field for the callback. Default is '$request.body#/callbackUrl'.
+    Can accept the following meta values:
+    - $request.query.param-name  : query-param-value
+    - $request.header.header-name: application/json
+    - $request.body#/field-name  : callbackUrl
+
+.PARAMETER CallbackSendResult
+    If specified, sends the result of the callback.
+
+.PARAMETER EventName
+    Specifies the event name for the callback.
+
+.PARAMETER CallbackContentType
+    Specifies the content type for the callback. The default is 'application/json'.
+    Can accept the following meta values:
+    - $request.query.param-name  : query-param-value
+    - $request.header.header-name: application/json
+    - $request.body#/field-name  : callbackUrl
+
+.PARAMETER CallbackMethod
+    Specifies the HTTP method for the callback. The default is 'Post'.
+    Can accept the following meta values:
+    - $request.query.param-name  : query-param-value
+    - $request.header.header-name: application/json
+    - $request.body#/field-name  : callbackUrl
+
+.PARAMETER CallbackHeaderFields
+    Specifies the header fields for the callback as a hashtable. The key can be a string representing
+    the header key or one of the meta values. The value is the header value if it's a standard key or
+    the default value if the meta value is not resolvable.
+    Can accept the following meta values as keys:
+    - $request.query.param-name  : query-param-value
+    - $request.header.header-name: application/json
+    - $request.body#/field-name  : callbackUrl
 
 .INPUTS
     [hashtable[]]
@@ -412,7 +449,13 @@ function Add-PodeAsyncStopRoute {
         return @{ InnerValue = $using:uMessage }
     } | Set-PodeAsyncRoute
 
+.NOTES
+    The parameters CallbackHeaderFields, CallbackMethod, CallbackContentType, and CallbackUrl can accept these meta values:
+    - $request.query.param-name  : query-param-value
+    - $request.header.header-name: application/json
+    - $request.body#/field-name  : callbackUrl
 #>
+
 function Set-PodeAsyncRoute {
     [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
     [OutputType([hashtable[]])]
@@ -448,24 +491,15 @@ function Set-PodeAsyncRoute {
 
         [switch]
         $Callback,
-      <#
-      {$url}	/subscribe	The parent operation URL.
-        {$method}	POST	The method of the callback request.
-        {$request.path.eventType}	myEvent	The event name.
-        {$request.query.param-name}	query-param-value
-        (the p1 query parameter)	The value of the specified query parameter.
-        {$request.header.header-name}	application/json
-        (the Content-Type header)	The specified header of the “subscription” request.
-        {$request.body#/field-name}	callbackUrl	A field in the request body.        If the field is an array, use the syntax like {$request.body#/arrayField/2}.
-        {$response.header.header-name}	http://my.example.com?id=123
-        (the Location header)	The value of the specified response header
-        (the response to the “subscription” request).
-        #>
+
         [string]
-        $CallbackUrlField = '$request.body#/callbackUrl',
+        $CallbackUrl = '$request.body#/callbackUrl',
 
         [switch]
         $CallbackSendResult,
+
+        [string]
+        $EventName,
 
         [string]
         $CallbackContentType = 'application/json',
@@ -487,8 +521,9 @@ function Set-PodeAsyncRoute {
         if ($ResponseContentType -icontains 'YAML') { $MediaResponseType += 'application/yaml' }
 
         if ( $Callback.IsPresent) {
+
             $CallbackInfo = @{
-                UrlField     = $CallbackUrlField
+                UrlField     = $CallbackUrl
                 ContentType  = $CallbackContentType
                 SendResult   = $CallbackSendResult.ToBool()
                 Method       = $CallbackMethod
@@ -510,9 +545,21 @@ function Set-PodeAsyncRoute {
             $Route = $pipelineValue
         }
 
-
         foreach ($r in $Route) {
             $r.IsAsync = $true
+            if ( $Callback.IsPresent) {
+                if ([string]::IsNullOrEmpty($EventName)) {
+                    $CallbackInfo.EventName = $r.Path.Replace('/', '_') + '_Callback'
+                }
+                else {
+                    if ($Route.Count -gt 1) {
+                        $CallbackInfo.EventName = "$EventName_$($r.Path.Replace('/', '_'))"
+                    }
+                    else {
+                        $CallbackInfo.EventName = $EventName
+                    }
+                }
+            }
             # Store the route's async task definition in Pode context
             $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
                 Name           = $r.AsyncPoolName
@@ -566,18 +613,30 @@ function Set-PodeAsyncRoute {
 
                 $route | Set-PodeOARouteInfo -PassThru |
                     Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $MediaResponseType  -Content $OATypeName )
+                if ($Callback) {
+                    $route | Add-PodeOACallBack -Name $CallbackInfo.EventName -Path $CallbackUrl -Method $CallbackMethod -RequestBody (
+                        New-PodeOARequestBody -Content @{ $CallbackContentType = (
+                                New-PodeOAObjectProperty -Name 'Result' |
+                                    New-PodeOAStringProperty -Name 'EventName' -Description 'The event name.' |
+                                    New-PodeOAStringProperty -Name 'Url' -Format Uri -Example 'http://localhost/callback' |
+                                    New-PodeOAStringProperty -Name 'Method' -Example 'Post' |
+                                    New-PodeOAObjectProperty)
+                            }
+                        ) -Response (
+                            New-PodeOAResponse -StatusCode 200 -Description  'Successful operation'
+                        )
+                    }
+                }
+            }
 
+            # Return the route information if PassThru is specified
+            if ($PassThru) {
+                return $Route
             }
         }
-
-        # Return the route information if PassThru is specified
-        if ($PassThru) {
-            return $Route
-        }
     }
-}
 
-<#
+    <#
 .SYNOPSIS
     Adds a Pode route for querying task information.
 
@@ -621,159 +680,159 @@ function Set-PodeAsyncRoute {
     [hashtable]
 #>
 
-function Add-PodeAsyncQueryRoute {
-    [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
-    [OutputType([hashtable])]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Path,
+    function Add-PodeAsyncQueryRoute {
+        [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
+        [OutputType([hashtable])]
+        param (
+            [Parameter(Mandatory = $true)]
+            [string]
+            $Path,
 
-        [string[]]
-        [ValidateSet('JSON', 'XML', 'YAML')]
-        $ResponseContentType = 'JSON',
+            [string[]]
+            [ValidateSet('JSON', 'XML', 'YAML')]
+            $ResponseContentType = 'JSON',
 
 
-        [string[] ]
-        [ValidateSet('JSON', 'XML', 'YAML')]
-        $QueryContentType = 'JSON',
+            [string[] ]
+            [ValidateSet('JSON', 'XML', 'YAML')]
+            $QueryContentType = 'JSON',
 
-        [Parameter(ParameterSetName = 'OpenAPI')]
-        [string]
-        $OATypeName = 'PodeTask',
+            [Parameter(ParameterSetName = 'OpenAPI')]
+            [string]
+            $OATypeName = 'PodeTask',
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'NoOpenAPI')]
-        [switch]
-        $NoOpenAPI,
+            [Parameter(Mandatory = $true, ParameterSetName = 'NoOpenAPI')]
+            [switch]
+            $NoOpenAPI,
 
-        [Parameter(ParameterSetName = 'OpenAPI')]
-        [string]
-        $PodeTaskQueryRequestName = 'PodeTaskQueryRequest',
+            [Parameter(ParameterSetName = 'OpenAPI')]
+            [string]
+            $PodeTaskQueryRequestName = 'PodeTaskQueryRequest',
 
-        [Parameter()]
-        $TaskIdName = 'taskId',
+            [Parameter()]
+            $TaskIdName = 'taskId',
 
-        [string]
-        [ValidateSet('Body', 'Header', 'Query' )]
-        $Payload = 'Body',
+            [string]
+            [ValidateSet('Body', 'Header', 'Query' )]
+            $Payload = 'Body',
 
-        [switch]
-        $PassThru
+            [switch]
+            $PassThru
 
-    )
+        )
 
-    $scriptBlock = {
-        param($Payload)
-        switch ($Payload) {
-            'Body' { $query = $WebEvent.Data }
-            'Query' { $query = $WebEvent.Query[$Name] }
-            'Header' { $query = $WebEvent.Request.Headers['query'] }
-        }
-        $responseMediaType = Get-PodeHeader -Name 'Accept'
-        $response = @()
-        $results = Search-PodeAsyncTask -Query $query
-        if ($results) {
-            foreach ($result in $results) {
+        $scriptBlock = {
+            param($Payload)
+            switch ($Payload) {
+                'Body' { $query = $WebEvent.Data }
+                'Query' { $query = $WebEvent.Query[$Name] }
+                'Header' { $query = $WebEvent.Request.Headers['query'] }
+            }
+            $responseMediaType = Get-PodeHeader -Name 'Accept'
+            $response = @()
+            $results = Search-PodeAsyncTask -Query $query
+            if ($results) {
+                foreach ($result in $results) {
 
-                $taskSummary = @{
-                    ID           = $result.ID
-                    # ISO 8601 UTC format
-                    CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                    Name         = $result.Name
-                    State        = $result.State
-                }
+                    $taskSummary = @{
+                        ID           = $result.ID
+                        # ISO 8601 UTC format
+                        CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                        Name         = $result.Name
+                        State        = $result.State
+                    }
 
-                if ($result.StartingTime) {
-                    $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                }
+                    if ($result.StartingTime) {
+                        $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    }
 
-                if ($result.Runspace.Handler.IsCompleted) {
-                    # ISO 8601 UTC format
-                    $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                    switch ($result.State.ToLowerInvariant() ) {
-                        'failed' {
-                            $taskSummary.Error = $result.Error
-                            break
-                        }
-                        'completed' {
-                            if ($result.result.Count -gt 0) {
-                                $taskSummary.Result = $result.result[0]
+                    if ($result.Runspace.Handler.IsCompleted) {
+                        # ISO 8601 UTC format
+                        $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                        switch ($result.State.ToLowerInvariant() ) {
+                            'failed' {
+                                $taskSummary.Error = $result.Error
+                                break
                             }
-                            else {
-                                $result.result = $null
+                            'completed' {
+                                if ($result.result.Count -gt 0) {
+                                    $taskSummary.Result = $result.result[0]
+                                }
+                                else {
+                                    $result.result = $null
+                                }
+                                break
                             }
-                            break
-                        }
-                        'aborted' {
-                            $taskSummary.Error = $result.Error
-                            break
+                            'aborted' {
+                                $taskSummary.Error = $result.Error
+                                break
+                            }
                         }
                     }
-                }
-                $response += $taskSummary
-            }
-        }
-        switch ($responseMediaType) {
-            'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 200; break }
-            'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 200 ; break }
-            'text/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 200 ; break }
-            default { Write-PodeJsonResponse -Value $response -StatusCode 200 }
-        }
-    }
-    $MediaResponseType = @()
-    if ($ResponseContentType -icontains 'JSON') { $MediaResponseType += 'application/json' }
-    if ($ResponseContentType -icontains 'XML') { $MediaResponseType += 'application/xml' }
-    if ($ResponseContentType -icontains 'YAML') { $MediaResponseType += 'text/yaml' }
-
-    $MediaQueryType = @()
-    if ($QueryContentType -icontains 'JSON') { $MediaQueryType += 'application/json' }
-    if ($QueryContentType -icontains 'XML') { $MediaQueryType += 'application/xml' }
-    if ($QueryContentType -icontains 'YAML') { $MediaQueryType += 'text/yaml' }
-
-    switch ($Payload) {
-        'Body' { $route = Add-PodeRoute -PassThru -Method Post -Path $Path -ScriptBlock $scriptBlock -ArgumentList $Payload }
-        'Header' {
-            $route = Add-PodeRoute -PassThru -Method Get -Path $Path -ScriptBlock $scriptBlock -ArgumentList $Payload
-        }
-        'query' {
-            $route = Add-PodeRoute -PassThru -Method Get -Path $Path -ScriptBlock $scriptBlock -ArgumentList $Payload
-        }
-    }
-
-
-    if (! $NoOpenAPI.IsPresent) {
-        Add-PodeAsyncComponentSchema -Name $OATypeName
-
-        if (!(Test-PodeOAComponent -Field schemas -Name  $PodeTaskQueryRequestName)) {
-
-            New-PodeOAObjectProperty  -AdditionalProperties  (
-                New-PodeOAStringProperty -Name 'op' -Enum  'GT', 'LT', 'GE', 'LE', 'EQ', 'NE', 'LIKE', 'NOTLIKE' -Required |
-                    New-PodeOAStringProperty -Name 'value'  -Description 'The value to compare against' -Required |
-                    New-PodeOAObjectProperty
-                ) | Add-PodeOAComponentSchema -Name $PodeTaskQueryRequestName
-            }
-
-            $exampleHashTable = @{
-                'StartingTime' = @{
-                    op    = 'GT'
-                    value = get-date '2024-07-05 20:20:00Z'
-                }
-                'State'        = @{
-                    op    = 'EQ'
-                    value = 'Completed'
-                }
-                'Name'         = @{
-                    op    = 'LIKE'
-                    value = 'Get'
+                    $response += $taskSummary
                 }
             }
+            switch ($responseMediaType) {
+                'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 200; break }
+                'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 200 ; break }
+                'text/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 200 ; break }
+                default { Write-PodeJsonResponse -Value $response -StatusCode 200 }
+            }
+        }
+        $MediaResponseType = @()
+        if ($ResponseContentType -icontains 'JSON') { $MediaResponseType += 'application/json' }
+        if ($ResponseContentType -icontains 'XML') { $MediaResponseType += 'application/xml' }
+        if ($ResponseContentType -icontains 'YAML') { $MediaResponseType += 'text/yaml' }
 
-            $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $MediaResponseType  -Content $OATypeName -Array) -PassThru |
-                Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
-                    New-PodeOAContentMediaType -MediaType $MediaResponseType -Content (
-                        New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
+        $MediaQueryType = @()
+        if ($QueryContentType -icontains 'JSON') { $MediaQueryType += 'application/json' }
+        if ($QueryContentType -icontains 'XML') { $MediaQueryType += 'application/xml' }
+        if ($QueryContentType -icontains 'YAML') { $MediaQueryType += 'text/yaml' }
+
+        switch ($Payload) {
+            'Body' { $route = Add-PodeRoute -PassThru -Method Post -Path $Path -ScriptBlock $scriptBlock -ArgumentList $Payload }
+            'Header' {
+                $route = Add-PodeRoute -PassThru -Method Get -Path $Path -ScriptBlock $scriptBlock -ArgumentList $Payload
+            }
+            'query' {
+                $route = Add-PodeRoute -PassThru -Method Get -Path $Path -ScriptBlock $scriptBlock -ArgumentList $Payload
+            }
+        }
+
+
+        if (! $NoOpenAPI.IsPresent) {
+            Add-PodeAsyncComponentSchema -Name $OATypeName
+
+            if (!(Test-PodeOAComponent -Field schemas -Name  $PodeTaskQueryRequestName)) {
+
+                New-PodeOAObjectProperty  -AdditionalProperties  (
+                    New-PodeOAStringProperty -Name 'op' -Enum  'GT', 'LT', 'GE', 'LE', 'EQ', 'NE', 'LIKE', 'NOTLIKE' -Required |
+                        New-PodeOAStringProperty -Name 'value'  -Description 'The value to compare against' -Required |
+                        New-PodeOAObjectProperty
+                    ) | Add-PodeOAComponentSchema -Name $PodeTaskQueryRequestName
+                }
+
+                $exampleHashTable = @{
+                    'StartingTime' = @{
+                        op    = 'GT'
+                        value = get-date '2024-07-05 20:20:00Z'
+                    }
+                    'State'        = @{
+                        op    = 'EQ'
+                        value = 'Completed'
+                    }
+                    'Name'         = @{
+                        op    = 'LIKE'
+                        value = 'Get'
+                    }
+                }
+
+                $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $MediaResponseType  -Content $OATypeName -Array) -PassThru |
+                    Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
+                        New-PodeOAContentMediaType -MediaType $MediaResponseType -Content (
+                            New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
+                        )
                     )
-                )
         $example = [ordered]@{}
 
         foreach ($mt in   $MediaQueryType) {
