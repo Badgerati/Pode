@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with EPS view engine.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port, logs requests to the terminal,
+    and uses the EPS renderer for serving web pages.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
     $podePath = Split-Path -Parent -Path $ScriptPath
@@ -14,8 +26,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

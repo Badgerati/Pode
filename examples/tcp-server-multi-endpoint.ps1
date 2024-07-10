@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode TCP server with multiple endpoints and error logging.
+
+.DESCRIPTION
+    This script sets up a Pode TCP server that listens on multiple endpoints, logs errors to the terminal, and handles incoming TCP requests with specific verbs. The server provides handlers for 'HELLO' and 'Quit' verbs and a catch-all handler for unrecognized verbs.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

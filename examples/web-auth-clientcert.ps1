@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with HTTPS and client certificate authentication.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port with HTTPS using a self-signed certificate.
+    It enables client certificate authentication for securing access to the server.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

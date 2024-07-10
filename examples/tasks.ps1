@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with task management and logging.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on port 8081, logs errors to the terminal, and handles both synchronous and asynchronous tasks. The server provides routes to interact with the tasks and demonstrates task invocation and waiting.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

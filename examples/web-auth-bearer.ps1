@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+    A PowerShell script to set up a Pode server with sessionless Bearer authentication for REST APIs.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port, enables sessionless Bearer authentication,
+    and provides an endpoint to get a list of users.
+
+.EXAMPLE
+    Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ Authorization = 'Bearer test-token' }
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -15,8 +30,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-# Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ Authorization = 'Bearer test-token' }
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

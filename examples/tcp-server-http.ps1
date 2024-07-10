@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode TCP server with multiple endpoints and error logging.
+
+.DESCRIPTION
+    This script sets up a Pode TCP server that listens on port 8081, logs errors to the terminal, and handles incoming HTTP requests. The server provides a catch-all handler for HTTP requests and returns a basic HTML response.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

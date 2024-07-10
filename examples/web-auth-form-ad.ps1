@@ -1,3 +1,25 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with Form authentication using Windows Active Directory.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and uses Form authentication
+    with Windows Active Directory for securing access to different pages. The home page view counter
+    is stored in the session data, which is persisted across user sessions.
+
+.NOTES
+    This examples shows how to use session persistant authentication using Windows Active Directory.
+    The example used here is Form authentication, sent from the <form> in HTML.
+
+    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
+    page. Here, you can type the details for a domain user. Clicking 'Login' will take you back to the home
+    page with a greeting and a view counter. Clicking 'Logout' will purge the session and take you back to
+    the login page.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -15,16 +37,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-<#
-This examples shows how to use session persistant authentication using Windows Active Directory.
-The example used here is Form authentication, sent from the <form> in HTML.
-
-Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
-page. Here, you can type the details for a domain user. Clicking 'Login' will take you back to the home
-page with a greeting and a view counter. Clicking 'Logout' will purge the session and take you back to
-the login page.
-#>
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

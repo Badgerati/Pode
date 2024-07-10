@@ -1,3 +1,19 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with various endpoints and error logging.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and provides both HTTP and WebSocket
+    endpoints. It also logs errors and other request details to the terminal.
+
+.PARAMETER Port
+    The port number on which the server will listen. Default is 8091.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

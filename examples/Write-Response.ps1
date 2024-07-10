@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with various routes for different response types.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and provides various routes to
+    retrieve process information in different formats (HTML, Text, CSV, JSON, XML, YAML).
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -115,22 +127,5 @@ Start-PodeServer {
             Select-Object Name, @{e = { [int]($_.WS / 1mb) }; n = 'WS' } |
             Sort-Object WS -Descending | Write-PodeYamlResponse   -StatusCode 200 -ContentType 'text/yaml'
     }
-    Start-Job -ScriptBlock {
-        Start-Sleep -Seconds 5
-        Start-Process http://localhost:8081/html/processesPiped
-        Start-Process http://localhost:8081/html/processes
-        Start-Process http://localhost:8081/text/processesPiped
-        Start-Process http://localhost:8081/text/processes
-        Start-Process http://localhost:8081/csv/processesPiped
-        Start-Process http://localhost:8081/csv/processes
-        Start-Process http://localhost:8081/csv/string
-        Start-Process http://localhost:8081/csv/hash
-        Start-Process http://localhost:8081/json/processesPiped
-        Start-Process http://localhost:8081/json/processes
-        Start-Process http://localhost:8081/xml/processesPiped
-        Start-Process http://localhost:8081/xml/processes
-        Start-Process http://localhost:8081/xml/hash
-        Start-Process http://localhost:8081/yaml/processesPiped
-        Start-Process http://localhost:8081/yaml/processes
-    }
+
 }

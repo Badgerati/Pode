@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with file upload routes.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and provides routes
+    for uploading single and multiple files.
+
+.PARAMETER Port
+    Specifies the port on which the server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [int]
     $Port = 8081

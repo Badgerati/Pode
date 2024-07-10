@@ -1,3 +1,31 @@
+<#
+.SYNOPSIS
+    A PowerShell script to set up a Pode server with JWT authentication and various route configurations.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port, enables request and error logging,
+    and configures JWT authentication. It also defines a route to fetch a list of users, requiring authentication.
+
+.PARAMETER Location
+    The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
+
+    .NOTES
+    -------------
+    None Signed
+    Req: Invoke-RestMethod -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJub25lIn0.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.' }
+    -------------
+
+    -------------
+    Signed
+    Req: Invoke-RestMethod -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJoczI1NiJ9.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.WIOvdwk4mNrNC9EtTcQccmLHJc02gAuonXClHMFOjKM' }
+
+    (add -Secret 'secret' to New-PodeAuthScheme below)
+    -------------
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [Parameter()]
     [ValidateSet('Header', 'Query', 'Cookie')]
@@ -22,18 +50,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-# -------------
-# None Signed
-# Req: Invoke-RestMethod -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJub25lIn0.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.' }
-# -------------
-
-# -------------
-# Signed
-# Req: Invoke-RestMethod -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJoczI1NiJ9.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.WIOvdwk4mNrNC9EtTcQccmLHJc02gAuonXClHMFOjKM' }
-#
-# (add -Secret 'secret' to New-PodeAuthScheme below)
-# -------------
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

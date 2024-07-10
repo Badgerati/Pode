@@ -1,3 +1,19 @@
+<#
+.SYNOPSIS
+    A PowerShell script to set up a Pode server with various lock mechanisms including custom locks, mutexes, and semaphores.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and demonstrates the usage of lockables, mutexes, and semaphores for thread synchronization.
+    It includes routes that showcase the behavior of these synchronization mechanisms in different scopes (self, local, and global).
+    The server provides multiple routes to test custom locks, mutexes, and semaphores by simulating delays and concurrent access.
+
+.PARAMETER Port
+    The port number on which the Pode server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [Parameter()]
     [int]

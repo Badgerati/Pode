@@ -1,3 +1,29 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with Form authentication and RBAC access.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and uses Form authentication
+    for securing access to different pages. Role-based access control (RBAC) is also implemented
+    to restrict access to certain pages based on user roles.
+
+.NOTES
+    This examples shows how to use session persistant authentication with access.
+    The example used here is Form authentication and RBAC access on pages, sent from the <form> in HTML.
+
+    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
+    page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
+    back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
+    take you back to the login page.
+
+    - The Home and Login pages are accessible by all.
+    - The About page is only accessible by Developers (for morty it will load)
+    - The Register page is only accessible by QAs (for morty this will 403)
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -12,19 +38,6 @@ try {
     }
 }
 catch { throw }
-<#
-This examples shows how to use session persistant authentication with access.
-The example used here is Form authentication and RBAC access on pages, sent from the <form> in HTML.
-
-Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
-page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
-back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
-take you back to the login page.
-
-- The Home and Login pages are accessible by all.
-- The About page is only accessible by Developers (for morty it will load)
-- The Register page is only accessible by QAs (for morty this will 403)
-#>
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

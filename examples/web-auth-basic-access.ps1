@@ -1,3 +1,33 @@
+<#
+.SYNOPSIS
+    A PowerShell script to set up a Pode server with basic authentication and role/group-based access control.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port, enables request and error logging,
+    configures basic authentication, and sets up role and group-based access control. It defines various routes
+    with specific access requirements.
+
+.PARAMETER Location
+    The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
+
+.EXAMPLE
+    This example shows how to use sessionless authentication, which will mostly be for
+    REST APIs. The example used here is Basic authentication.
+
+    Calling the '[POST] http://localhost:8081/users-all' endpoint, with an Authorization
+    header of 'Basic bW9ydHk6cGlja2xl' will display the uesrs. Anything else and
+    you'll get a 401 status code back.
+
+    Success:
+    Invoke-RestMethod -Uri http://localhost:8081/users-all -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+
+    Failure:
+    Invoke-RestMethod -Uri http://localhost:8081/users-all -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cmljaw==' }
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -15,21 +45,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-<#
-This example shows how to use sessionless authentication, which will mostly be for
-REST APIs. The example used here is Basic authentication.
-
-Calling the '[POST] http://localhost:8081/users-all' endpoint, with an Authorization
-header of 'Basic bW9ydHk6cGlja2xl' will display the uesrs. Anything else and
-you'll get a 401 status code back.
-
-Success:
-Invoke-RestMethod -Uri http://localhost:8081/users-all -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
-
-Failure:
-Invoke-RestMethod -Uri http://localhost:8081/users-all -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cmljaw==' }
-#>
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

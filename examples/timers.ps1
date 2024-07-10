@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+    A PowerShell script to set up a Pode server with various timer configurations.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and creates multiple timers with different behaviors.
+    It includes routes to create new timers via HTTP requests and invoke existing timers on demand.
+
+.PARAMETER Port
+    The port number on which the Pode server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

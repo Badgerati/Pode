@@ -1,3 +1,32 @@
+<#
+.SYNOPSIS
+    A PowerShell script to set up a Pode server with session-based Basic authentication for REST APIs.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port, enables session-based authentication
+    using headers, and provides login and logout functionality. Authenticated users can access a REST API endpoint
+    to retrieve user information.
+
+.PARAMETER Location
+    The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
+
+.EXAMPLE
+    This example shows how to use session authentication on REST APIs using Headers.
+    The example used here is Basic authentication.
+
+    Login:
+    $session = (Invoke-WebRequest -Uri http://localhost:8081/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }).Headers['pode.sid']
+
+    Users:
+    Invoke-RestMethod -Uri http://localhost:8081/users -Method Post -Headers @{ 'pode.sid' = "$session" }
+
+    Logout:
+    Invoke-WebRequest -Uri http://localhost:8081/logout -Method Post -Headers @{ 'pode.sid' = "$session" }
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -15,20 +44,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-<#
-This example shows how to use session authentication on REST APIs using Headers.
-The example used here is Basic authentication.
-
-Login:
-$session = (Invoke-WebRequest -Uri http://localhost:8081/login -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }).Headers['pode.sid']
-
-Users:
-Invoke-RestMethod -Uri http://localhost:8081/users -Method Post -Headers @{ 'pode.sid' = "$session" }
-
-Logout:
-Invoke-WebRequest -Uri http://localhost:8081/logout -Method Post -Headers @{ 'pode.sid' = "$session" }
-#>
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
