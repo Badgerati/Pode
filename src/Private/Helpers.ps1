@@ -1692,10 +1692,10 @@ function ConvertTo-PodeResponseContent {
         { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
+                    return (ConvertTo-PodeYaml -InputObject $InputObject )
                 }
                 else {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
+                    return (ConvertTo-PodeYaml -InputObject $InputObject -Depth $Depth  )
                 }
             }
 
