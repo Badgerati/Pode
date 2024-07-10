@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with HTTPS and logging.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port with HTTPS protocol using a certificate.
+    It includes request logging and provides a sample route to return a JSON response.
+
+.PARAMETER Port
+    The port number on which the server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with Kestrel listener and file upload functionality.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port using the Kestrel listener type.
+    It serves a web page for file upload and processes file uploads, saving them to the server.
+
+.PARAMETER Port
+    The port number on which the server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [int]
     $Port = 8081

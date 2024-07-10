@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with Digest authentication.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and uses Digest authentication
+    for securing access to the server. The authentication details are checked against predefined user data.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with various routes for static assets and view responses.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port, logs requests and errors to the terminal,
+    and serves static assets as well as view responses using the Pode view engine.
+
+.PARAMETER Port
+    The port number on which the server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [int]
     $Port = 8081

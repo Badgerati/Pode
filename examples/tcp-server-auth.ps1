@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode TCP server with role-based access control and logging.
+
+.DESCRIPTION
+    This script sets up a Pode TCP server that listens on port 8081, logs errors to the terminal, and implements role-based access control. The server provides an endpoint that restricts access based on user roles retrieved from a database.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

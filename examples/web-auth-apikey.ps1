@@ -1,3 +1,22 @@
+<#
+.SYNOPSIS
+    A PowerShell script to set up a Pode server with API key authentication and various route configurations.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port, enables request and error logging,
+    and configures API key authentication. It also defines a route to fetch a list of users, requiring authentication.
+
+.PARAMETER Location
+    The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
+
+.NOTES
+    Use:
+    Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'test-api-key' }
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [Parameter()]
     [ValidateSet('Header', 'Query', 'Cookie')]
@@ -22,8 +41,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-# Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'test-api-key' }
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
