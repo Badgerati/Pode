@@ -1689,7 +1689,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+        { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
@@ -1845,6 +1845,10 @@ function ConvertFrom-PodeRequestContent {
 
         { $_ -ilike '*/xml' } {
             $Result.Data = [xml]($Content)
+        }
+
+        { $_ -ilike '*/yaml' } {
+            $Result.Data = ($Content | ConvertFrom-PodeYaml )
         }
 
         { $_ -ilike '*/csv' } {
@@ -4036,3 +4040,233 @@ function Resolve-PodeObjectArray {
         return New-Object psobject -Property $Property
     }
 }
+
+<#
+.SYNOPSIS
+    Converts a YAML input object into a hashtable, using either the internal converter or an external YAML module if available.
+
+.DESCRIPTION
+    This function processes a YAML input object and converts it into a hashtable. It checks if a YAML module is available for conversion.
+    If the module is available, it uses that for conversion. Otherwise, it falls back to the internal converter.
+
+.PARAMETER InputObject
+    The YAML input object to be converted.
+
+.EXAMPLE
+    $yamlString = @'
+    openapi: 3.0.3
+    info:
+        title: Async test - OpenAPI 3.0
+        version: 0.0.1
+    paths:
+        /task/{taskId}:
+            get:
+                summary: Get Pode Task Info
+    '@
+    $hashtable = ConvertFrom-PodeYaml -InputObject $yamlString
+    # Converts the YAML string to a hashtable.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertFrom-PodeYaml {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
+        $InputObject
+    )
+
+    begin {
+        # Initialize an array to store pipeline objects
+        $pipelineObject = @()
+    }
+
+    process {
+        # Collect objects from the pipeline
+        $pipelineObject += $_
+    }
+
+    end {
+        # If there are multiple pipeline objects, combine them into a single input object
+        if ($pipelineObject.Count -gt 1) {
+            $InputObject = $pipelineObject
+        }
+
+        # Check if the internal YAML converter should be used
+        if ($PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
+            return ConvertFrom-PodeYamlInternal -InputObject $InputObject
+        }
+
+        # Check if a YAML module has been imported, if not, test for available YAML modules
+        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
+            $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
+        }
+
+        # Use the external YAML module if available, otherwise use the internal converter
+        if ($PodeContext.Server.InternalCache.YamlModuleImported) {
+            return ($InputObject | ConvertFrom-Yaml)
+        }
+        else {
+            return ConvertFrom-PodeYamlInternal -InputObject $InputObject
+        }
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Converts a YAML string into a nested ordered hashtable.
+
+.DESCRIPTION
+    This function takes a YAML string as input and converts it into a nested ordered hashtable, preserving
+    the order of keys. It supports conversion of boolean, integer, float, and datetime values.
+
+.PARAMETER InputObject
+    The YAML string to be converted.
+
+.EXAMPLE
+    $yamlString = @'
+    openapi: 3.0.3
+    info:
+        title: Async test - OpenAPI 3.0
+        version: 0.0.1
+    paths:
+        /task/{taskId}:
+            get:
+                summary: Get Pode Task Info
+    '@
+
+    $hashtable = ConvertFrom-PodeYamlInternal -InputObject $yamlString
+    # Converts the YAML string to a nested ordered hashtable.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertFrom-PodeYamlInternal {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$InputObject
+    )
+    # Split the YAML input into lines
+    [string[]]$lines = $InputObject -split "`n"
+    # Initialize the main hashtable as an ordered hashtable
+    $hashtable = [ordered]@{}
+    # Stacks to keep track of current hashtable and indentation levels
+    $stack = [System.Collections.Stack]::new()
+    $indentStack = [System.Collections.Stack]::new()
+    $stack.Push($hashtable)
+    $indentStack.Push(-1)
+
+    # Iterate over each line of the YAML input
+    for ($i = 0; $i -lt $lines.Length; $i++) {
+        $line = $lines[$i]
+        if ($line -match '^(\s*)([^:]+):\s*(.*)$') {
+            $indent = $matches[1].Length
+            $key = $matches[2].Trim()
+            $value = $matches[3].Trim()
+
+            # Pop the stack if the current indentation level is less than or equal to the previous level
+            while (  $indentStack.Peek() -ge $indent) {
+                $null = $indentStack.Pop()
+                $null = $stack.Pop()
+            }
+
+            # Peek the current hashtable from the stack
+            $current = $null = $stack.Peek()
+
+            # If value is empty, create a new nested ordered hashtable
+            if ($value -eq '') {
+                $current[$key] = [ordered]@{}
+                $stack.Push($current[$key])
+                $indentStack.Push($indent)
+            }
+            # Handle inline arrays
+            elseif ($value -match '^\[(.*)\]$') {
+                $current[$key] = ($matches[1] -split ',\s*') -replace '"', ''
+            }
+            # Handle multiline strings
+            elseif ($value -eq '|') {
+                $value = ''
+                while (++$i -lt $lines.Length -and $lines[$i] -match '^\s+(.*)$') {
+                    $value += $matches[1] + "`n"
+                }
+                $i--
+                $current[$key] = $value.TrimEnd()
+            }
+            # Convert and assign the value
+            else {
+                $current[$key] = Convert-PodeStringToType $value
+            }
+        }
+        # Handle list items
+        elseif ($line -match '^\s*-\s*(.*)$') {
+            $value = $matches[1].Trim()
+            if (-not ($current[$key] -is [System.Collections.ArrayList])) {
+                $current[$key] = [System.Collections.ArrayList]::new()
+            }
+            $null = $current[$key].Add((Convert-PodeStringToType $value))
+        }
+    }
+
+    return $hashtable
+}
+
+<#
+.SYNOPSIS
+    Converts a string value to its appropriate data type (bool, int, float, datetime, or string).
+
+.DESCRIPTION
+    This function takes a string value and determines if it can be converted to a boolean, integer, float,
+    or datetime. If none of these conversions apply, it returns the original string.
+
+.PARAMETER value
+    The string value to be converted.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "true"
+    # Converts the string "true" to a boolean $true.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "123"
+    # Converts the string "123" to an integer 123.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "123.45"
+    # Converts the string "123.45" to a float 123.45.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "2021-05-01"
+    # Converts the string "2021-05-01" to a datetime object.
+
+.EXAMPLE
+    $convertedValue = Convert-PodeStringToType -value "some string"
+    # Returns the original string "some string".
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Convert-PodeStringToType($value) {
+    # Convert to boolean if value matches 'true' or 'false'
+    if ($value -match '^(true|false)$') {
+        return [bool]::Parse($value)
+    }
+    # Convert to integer if value matches an integer pattern
+    elseif ($value -match '^-?\d+$') {
+        return [int]::Parse($value)
+    }
+    # Convert to float if value matches a float pattern
+    elseif ($value -match '^-?\d*\.\d+$') {
+        return [float]::Parse($value)
+    }
+    # Convert to datetime if value matches a datetime pattern
+    elseif ($value -match '^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{1,3})?(Z|[+-]\d{2}:\d{2})?)?$') {
+        return [DateTime]::Parse($value)
+    }
+    # Return the original string if no other conversion applies
+    else {
+        return $value
+    }
+}
+
