@@ -1,31 +1,32 @@
 param(
     [int]
-    $Port = 8085
+    $Port = 8081
 )
 
 try {
-    # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
     $podePath = Split-Path -Parent -Path $ScriptPath
-
-    # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }
     else {
         Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
     }
+
+    # you will require the Pode.Kestrel module for this example
+    Import-Module Pode.Kestrel -Force -ErrorAction Stop
 }
 catch { throw }
 
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 8085
-Start-PodeServer -Threads 2 -Verbose {
-    # listen on localhost:8085
+
+# create a server, and start listening on port 8081 using kestrel
+Start-PodeServer -Threads 2 -ListenerType Kestrel {
+    # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http -Name '8090Address'
-    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -Name '8085Address' -RedirectTo '8090Address'
+    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -Name '8081Address' -RedirectTo '8090Address'
 
     # allow the local ip and some other ips
     Add-PodeAccessRule -Access Allow -Type IP -Values @('127.0.0.1', '[::1]')
@@ -35,9 +36,6 @@ Start-PodeServer -Threads 2 -Verbose {
     Add-PodeAccessRule -Access Deny -Type IP -Values 10.10.10.10
     Add-PodeAccessRule -Access Deny -Type IP -Values '10.10.0.0/24'
     Add-PodeAccessRule -Access Deny -Type IP -Values all
-
-    # limit
-    Add-PodeLimitRule -Type IP -Values all -Limit 100 -Seconds 5
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
@@ -59,18 +57,10 @@ Start-PodeServer -Threads 2 -Verbose {
         }
     }
 
-    Use-PodeRoutes -Path './routes'
-
-    # GET request for web page on "localhost:8085/"
+    # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # $WebEvent.Request | Write-PodeLog -Name 'custom'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
-    }
-
-    # Set an output variable
-    Add-PodeRoute -Method Post -Path '/variable' -ScriptBlock {
-        Out-PodeVariable -Name $WebEvent.Data.Name -Value $WebEvent.Data.Value
-        Out-PodeVariable -Name Pode_Complex_Object -Value @{ Name = 'Joe'; Age = 42 }
     }
 
     # GET request throws fake "500" server error status code
@@ -98,8 +88,8 @@ Start-PodeServer -Threads 2 -Verbose {
         Set-PodeResponseAttachment -Path 'Anger.jpg'
     }
 
-    # GET and POST request with parameters
-    Add-PodeRoute -Method Get, Post -Path '/:userId/details' -ScriptBlock {
+    # GET request with parameters
+    Add-PodeRoute -Method Get -Path '/:userId/details' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ 'userId' = $WebEvent.Parameters['userId'] }
     }
 
@@ -113,6 +103,6 @@ Start-PodeServer -Threads 2 -Verbose {
     }
 
     $hmm = 'well well'
-    Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/route_script.ps1'
+    Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/RouteScript.ps1'
 
 }

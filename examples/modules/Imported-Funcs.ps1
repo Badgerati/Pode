@@ -3,4 +3,4 @@ function Write-MyGreeting {
 }
 
 Export-PodeFunction -Name 'Write-MyGreeting'
-Use-PodeScript -Path (Join-Path $PSScriptRoot .\imported-sub-funcs.ps1)
+Use-PodeScript -Path (Join-Path $PSScriptRoot .\Imported-SubFuncs.ps1)
