@@ -1,6 +1,30 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with SMTP and SMTPS protocols.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on SMTP (port 25) and SMTPS (with explicit and implicit TLS).
+    It includes logging for errors and debug information and demonstrates handling incoming SMTP emails with
+    potential attachments.
+
+.EXAMPLE
+    Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -Body 'Hello' -Subject 'Hi there' -Port 25
+
+.EXAMPLE
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
+    Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -Body 'Hello' -Subject 'Hi there' -Port 587 -UseSSL
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
+    # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
     $podePath = Split-Path -Parent -Path $ScriptPath
+
+    # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }
@@ -12,14 +36,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-<#
-Example call:
-Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -Body 'Hello' -Subject 'Hi there' -Port 25
-
-[System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
-Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -Body 'Hello' -Subject 'Hi there' -Port 587 -UseSSL
-#>
 
 # create a server, and start listening on port 25
 Start-PodeServer -Threads 2 {
