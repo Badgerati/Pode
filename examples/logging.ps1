@@ -1,6 +1,23 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with configurable logging, view engine, and various routes.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081, configures a view engine, and allows for different
+    types of request logging (terminal, file, custom). It includes routes for serving a web page, simulating a
+    server error, and downloading a file.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
+    # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
     $podePath = Split-Path -Parent -Path $ScriptPath
+
+    # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }

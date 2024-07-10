@@ -1,6 +1,22 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with HTTP endpoints and request logging.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081 with various HTTP endpoints for GET and POST requests.
+    It includes request logging with batching and dual mode for IPv4/IPv6.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
+    # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
     $podePath = Split-Path -Parent -Path $ScriptPath
+
+    # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }

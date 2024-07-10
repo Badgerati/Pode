@@ -1,6 +1,23 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with OpenAPI 3.0 and 3.1 specifications.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on ports 8081 and 8082 with OpenAPI 3.0 and 3.1 specifications.
+    It includes multiple endpoints, OpenAPI documentation, various route definitions, authentication schemes,
+    and middleware for enhanced API functionality.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
+    # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
     $podePath = Split-Path -Parent -Path $ScriptPath
+
+    # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }

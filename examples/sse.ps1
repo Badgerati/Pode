@@ -1,6 +1,21 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with Server-Sent Events (SSE) and logging.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on port 8081, logs errors to the terminal, and handles Server-Sent Events (SSE) connections. The server sends periodic SSE events and provides routes to interact with SSE connections.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
+    # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
     $podePath = Split-Path -Parent -Path $ScriptPath
+
+    # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }

@@ -1,6 +1,22 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server and use an external module function.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081, imports an external module containing functions,
+    and includes a route that uses a function from the external module to generate a response.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
+    # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
     $podePath = Split-Path -Parent -Path $ScriptPath
+
+    # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }
