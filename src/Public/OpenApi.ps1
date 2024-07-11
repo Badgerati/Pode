@@ -589,7 +589,7 @@ function Add-PodeOAResponse {
         [Alias('HeaderSchemas')]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
-        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] -or $_ -is [ordered] })]
+        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] -or $_ -is [System.Collections.Specialized.OrderedDictionary]})]
         $Headers,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Schema')]
