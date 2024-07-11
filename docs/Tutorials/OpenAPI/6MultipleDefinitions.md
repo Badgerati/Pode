@@ -77,7 +77,7 @@ Rename-PodeOADefinitionTagName -NewTag 'NewDefault'
 In this example, the default definition tag is renamed to `'NewDefault'`.
 
 !!! note
-The `Rename-PodeOADefinitionTagName` function cannot be used inside a `Select-PodeOADefinition` `[Scriptblock]`. Attempting to do so will result in an error.
+    The `Rename-PodeOADefinitionTagName` function cannot be used inside a `Select-PodeOADefinition` `[Scriptblock]`. Attempting to do so will result in an error.
 
 ### OpenAPI example
 
