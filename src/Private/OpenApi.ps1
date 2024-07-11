@@ -622,7 +622,13 @@ function ConvertTo-PodeOASchemaProperty {
         }
         #Fix an issue when additionalProperties has an assigned value of $false
         if ($Property.ContainsKey('additionalProperties')) {
-            $schema['additionalProperties'] = $Property.additionalProperties
+            if ($Property.additionalProperties) {
+                $schema['additionalProperties'] = $Property.additionalProperties | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
+            }
+            else {
+                #the value is $false
+                $schema['additionalProperties'] = $false
+            }
         }
 
         if ($Property.discriminator) {
