@@ -17,7 +17,7 @@ BeforeDiscovery {
             Where-Object {
                 $exclude = $false
                 foreach ($dir in $existingExcludeDirs) {
-                    if ($_.FullName -like "*\$dir\*") {
+                    if ($_.FullName -like "*$([IO.Path]::DirectorySeparatorChar)$dir$([IO.Path]::DirectorySeparatorChar)*") {
                         $exclude = $true
                         break
                     }
