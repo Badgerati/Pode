@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with various routes, middleware, and custom functions.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8090. It demonstrates how to handle GET requests,
+    use middleware, export and use custom functions, and set up timers. The script includes examples of
+    using `$using:` scope for variables in script blocks and middleware.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

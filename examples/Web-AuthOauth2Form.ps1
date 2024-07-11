@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with session persistent authentication using Azure AD and OAuth2.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081. It demonstrates how to use session persistent authentication
+    with Azure AD and OAuth2, using a form for login without redirection. When navigating to 'http://localhost:8081',
+    the user will be redirected to the /login form. Upon successful login, the user will be taken to the home page.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+
+    Note: You'll need to register a new app in Azure, and note your clientId, secret, and tenant in the variables below.
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -15,16 +30,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-<#
-This examples shows how to use session persistant authentication using Azure AD and OAuth2, using a Form with no redirecting.
-
-Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the /login form.
-There, enter you Azure AD email/password, Pode with authenticate and then take you to the home page
-
-Note: You'll need to register a new app in Azure, and note you clientId, secret, and tenant
-      in the variables below.
-#>
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

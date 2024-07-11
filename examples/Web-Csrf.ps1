@@ -1,3 +1,19 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with CSRF protection using either session or cookie-based tokens.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081. It includes CSRF protection, which can be configured
+    to use either session-based tokens or cookie-based global secrets. The script also sets up a basic route for
+    serving an index page with a CSRF token and a POST route to handle form submissions.
+
+.PARAMETER Type
+    Specifies the type of CSRF protection to use. Valid values are 'Cookie' and 'Session'. Default is 'Session'.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [Parameter()]
     [ValidateSet('Cookie', 'Session')]

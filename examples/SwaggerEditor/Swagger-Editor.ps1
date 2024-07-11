@@ -1,6 +1,21 @@
+<#
+.SYNOPSIS
+    Sets up a Pode server to serve the Swagger editor and static files.
+
+.DESCRIPTION
+    This script configures a Pode server to listen on a specified port (default is 8081) and serve the Swagger editor
+    and other static files. It enables request and error logging and sets up a view engine for rendering HTML.
+
+.PARAMETER Port
+    The port number on which the Pode server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [int]
-    $Port = 8080
+    $Port = 8081
 )
 
 try {
@@ -17,10 +32,10 @@ catch { throw }
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
 
-    # listen on localhost:8085
+    # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port $port -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging

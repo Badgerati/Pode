@@ -1,3 +1,17 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with multiple endpoints and request handling.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on multiple local IP addresses on port 8081.
+    It demonstrates how to handle GET requests for a web page, including specific handling for different endpoints,
+    downloading a file, and handling requests with parameters.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+    Administrator privilege required
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -16,14 +30,14 @@ catch { throw }
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 8080 and 8443
+# create a server, and start listening on port 8081
 Start-PodeServer {
 
-    # listen on localhost:8080/8443
-    Add-PodeEndpoint -Address 127.0.0.1 -Port 8080 -Protocol Http -Name 'local1'
-    Add-PodeEndpoint -Address 127.0.0.2 -Port 8080 -Protocol Http -Name 'local2'
-    Add-PodeEndpoint -Address 127.0.0.3 -Port 8080 -Protocol Http -Name 'local3'
-    Add-PodeEndpoint -Address 127.0.0.4 -Port 8080 -Protocol Http -Name 'local4'
+    # listen on localhost:8081
+    Add-PodeEndpoint -Address 127.0.0.1 -Port 8081 -Protocol Http -Name 'local1'
+    Add-PodeEndpoint -Address 127.0.0.2 -Port 8081 -Protocol Http -Name 'local2'
+    Add-PodeEndpoint -Address 127.0.0.3 -Port 8081 -Protocol Http -Name 'local3'
+    Add-PodeEndpoint -Address 127.0.0.4 -Port 8081 -Protocol Http -Name 'local4'
 
     # set view engine to pode
     Set-PodeViewEngine -Type Pode

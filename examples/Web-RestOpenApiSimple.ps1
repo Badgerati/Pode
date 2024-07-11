@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with OpenAPI integration.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on multiple endpoints with OpenAPI documentation.
+    It demonstrates how to handle GET and POST requests, and how to use OpenAPI for documenting APIs.
+    The script includes routes under the '/api' path and provides Swagger and ReDoc viewers.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

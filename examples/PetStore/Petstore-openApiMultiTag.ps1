@@ -1,3 +1,21 @@
+
+<#
+.SYNOPSIS
+    Sets up a Pode server for a Pet Store API with OpenAPI 3.0 and 3.1 specifications.
+
+.DESCRIPTION
+    This script configures a Pode server to serve a Pet Store API using OpenAPI 3.0 and 3.1 specifications.
+    It includes multiple endpoints for managing pets, orders, and users, with support for different authentication
+    methods such as API key, Basic, and OAuth2. The server also supports session persistent authentication using
+    Windows Active Directory and provides OpenAPI documentation viewers.
+
+.PARAMETER Reset
+    Switch parameter to reset the PetData.json file and reinitialize categories, pets, orders, and users.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param (
     [switch]
     $Reset

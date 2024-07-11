@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with multiple endpoints and request handling.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8080 (HTTP) and 8081 (HTTPS).
+    It demonstrates how to handle GET requests for a web page, download a file, and handle requests with parameters.
+    Additionally, it shows how to redirect all HTTP requests to HTTPS.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -16,12 +29,12 @@ catch { throw }
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 8080 and 8443
+# create a server, and start listening on port 8080 and 8081
 Start-PodeServer {
 
-    # listen on localhost:8080/8443
+    # listen on localhost:8080/8081
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Name Endpoint1
-    Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -Name Endpoint2 -SelfSigned
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Https -Name Endpoint2 -SelfSigned
 
     # set view engine to pode
     Set-PodeViewEngine -Type Pode
@@ -43,7 +56,7 @@ Start-PodeServer {
 
     # ALL requests for http only to redirect to https
     Add-PodeRoute -Method * -Path * -EndpointName Endpoint1 -ScriptBlock {
-        Move-PodeResponseUrl -Protocol Https -Port 8443
+        Move-PodeResponseUrl -Protocol Https -Port 8081
     }
 
 }

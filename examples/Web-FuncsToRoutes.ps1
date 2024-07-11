@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with basic authentication and dynamic route generation.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081. It includes basic authentication, error logging,
+    and dynamic route generation for specified commands. Each route requires authentication.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

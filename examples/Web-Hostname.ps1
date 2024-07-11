@@ -1,3 +1,20 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with multiple endpoints.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on multiple endpoints.
+    It demonstrates how to handle GET requests, serve static assets, and download files using Pode's view engine.
+
+.PARAMETER Port
+    The port number on which the server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+    Administrator privilege is required.
+    You will need to add "127.0.0.1 pode.foo.com" to your hosts file.
+#>
 param(
     [int]
     $Port = 8081

@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with session persistent authentication.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8085 with session persistent authentication.
+    It demonstrates a simple server setup with a view counter. Each visit to the root URL ('http://localhost:8085')
+    increments the view counter stored in the session.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

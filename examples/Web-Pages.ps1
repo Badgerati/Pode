@@ -1,6 +1,22 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with various routes, access rules, logging, and request handling.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on multiple endpoints with request redirection.
+    It demonstrates how to handle GET, POST, and other HTTP requests, set up access and limit rules,
+    implement custom logging, and serve web pages using Pode's view engine.
+
+.PARAMETER Port
+    The port number on which the server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [int]
-    $Port = 8085
+    $Port = 8081
 )
 
 try {
@@ -19,11 +35,11 @@ try {
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 -Verbose {
-    # listen on localhost:8085
+    # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http -Name '8090Address'
-    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -Name '8085Address' -RedirectTo '8090Address'
+    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -Name "$($Port)Address" -RedirectTo '8090Address'
 
     # allow the local ip and some other ips
     Add-PodeAccessRule -Access Allow -Type IP -Values @('127.0.0.1', '[::1]')
@@ -59,7 +75,7 @@ Start-PodeServer -Threads 2 -Verbose {
 
     Use-PodeRoutes -Path './routes'
 
-    # GET request for web page on "localhost:8085/"
+    # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # $WebEvent.Request | Write-PodeLog -Name 'custom'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
