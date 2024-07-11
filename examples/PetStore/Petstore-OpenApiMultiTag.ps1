@@ -879,16 +879,14 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
         }
     }
-    $yaml = get-PodeOADefinition -Format Yaml -DefinitionTag  'v3.0.3'
+    $yaml_30 = Get-PodeOADefinition -Format Yaml -DefinitionTag  'v3.0.3'
 
-    $yaml_31 = get-PodeOADefinition -Format Yaml -DefinitionTag  'v3.1'
+    $yaml_31 = Get-PodeOADefinition -Format Yaml -DefinitionTag  'v3.1'
 
-
-
-    #$r= ConvertFrom-PodeXml -node $xmlDoc
-
-    #$pet=$r |convertto-json
-
-    #$Validate = Test-PodeOAJsonSchemaCompliance -Json $pet -SchemaReference 'Pet'
-    # $json=  PodeOADefinition -Format Json
+    Write-PodeHost 'OpenAPI v3.0.3'
+    Write-PodeHost  $yaml_30
+    Write-PodeHost '####################################'
+    Write-PodeHost 'OpenAPI v3.1.0'
+    Write-PodeHost  $yaml_31
+    Write-PodeHost '####################################'
 }
