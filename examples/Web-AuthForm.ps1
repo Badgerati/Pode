@@ -1,3 +1,29 @@
+<#
+.SYNOPSIS
+    Sample script demonstrating session persistent authentication using Pode.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on localhost:8081 and uses session-based authentication
+    for user logins. The authentication is demonstrated using a simple form where users can log in with
+    predefined credentials (username: morty, password: pickle). Upon successful login, users are greeted
+    on the home page, and the view counter is incremented. Users can log out, which will purge the session
+    and redirect them to the login page.
+
+.PARAMETER ScriptPath
+    Path of the script being executed.
+
+.PARAMETER podePath
+    Path of the Pode module.
+
+.EXAMPLE
+    Run this script to start the Pode server and navigate to 'http://localhost:8081' in your browser.
+    You will be redirected to the login page, where you can log in with the credentials provided above.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -15,16 +41,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-<#
-This examples shows how to use session persistant authentication, for things like logins on websites.
-The example used here is Form authentication, sent from the <form> in HTML.
-
-Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
-page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
-back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
-take you back to the login page.
-#>
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

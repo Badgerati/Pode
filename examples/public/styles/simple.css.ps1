@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+    Custom script for index.ps1
+
+.DESCRIPTION
+    Custom script for index.ps1
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 return (. {
     $date = [DateTime]::UtcNow;
 
