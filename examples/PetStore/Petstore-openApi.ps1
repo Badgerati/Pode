@@ -1,12 +1,39 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server for a Pet Store API using OpenAPI 3.0 specifications.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and uses OpenAPI 3.0 specifications
+    for defining the API. It supports multiple endpoints for managing pets, orders, and users with various
+    authentication methods including API key, Basic, and OAuth2.
+
+    This example shows how to use session persistent authentication using Windows Active Directory.
+    The example used here is Form authentication, sent from the <form> in HTML.
+
+    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-redirect you to the '/login'
+    page. Here, you can type the details for a domain user. Clicking 'Login' will take you back to the home
+    page with a greeting and a view counter. Clicking 'Logout' will purge the session and take you back to
+    the login page.
+
+.PARAMETER Reset
+    Switch parameter to reset the PetData.json file and reinitialize categories, pets, orders, and users.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 param (
     [switch]
     $Reset
 )
 
 try {
+    # Determine paths for the Pode module and Pet Store
     $petStorePath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
     $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $petStorePath)
 
+    # Import Pode module from source path or from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
         Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }
@@ -14,14 +41,16 @@ try {
         Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
     }
 
+    # Import additional modules for PetData, Order, and UserData
     Import-Module -Name "$petStorePath/PetData.psm1" -ErrorAction Stop
     Import-Module -Name "$petStorePath/Order.psm1" -ErrorAction Stop
     Import-Module -Name "$petStorePath/UserData.psm1" -ErrorAction Stop
 }
 catch { throw }
 
+# Start Pode server with specified script block
 Start-PodeServer -Threads 1 -ScriptBlock {
-
+    # Define paths for data, images, and certificates
     $script:PetDataPath = Join-Path -Path $PetStorePath -ChildPath 'data'
     If (!(Test-Path -PathType container -Path $script:PetDataPath)) {
         New-Item -ItemType Directory -Path $script:PetDataPath -Force | Out-Null
@@ -37,9 +66,9 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         New-Item -ItemType Directory -Path $script:CertsPath -Force | Out-Null
     }
 
+    # Load data from JSON file or initialize data if Reset switch is present
 
-    #Load data
-    $script:PetDataJson = Join-Path -Path $PetDataPath   -ChildPath 'PetData.json'
+    $script:PetDataJson = Join-Path -Path $PetDataPath -ChildPath 'PetData.json'
     if ($Reset.IsPresent -or !(Test-Path -Path $script:PetDataJson -PathType Leaf )) {
         Initialize-Categories -Reset
         Initialize-Pet -Reset
@@ -52,11 +81,11 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         Initialize-Pet
         Initialize-Order
         Initialize-Users
-        # attempt to re-initialise the state (will do nothing if the file doesn't exist)
+		# attempt to re-initialise the state (will do nothing if the file doesn't exist)
         Restore-PodeState -Path $script:PetDataJson
     }
 
-
+    # Configure Pode server endpoints
     if ((Get-PodeConfig).Protocol -eq 'Https') {
         $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
         $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
@@ -66,24 +95,27 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default
     }
 
+    # Enable error logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    #Configure CORS
-    Set-PodeSecurityAccessControl -Origin '*'  -Duration 7200   -WithOptions   -AuthorizationHeader -autoMethods -AutoHeader -Credentials -CrossDomainXhrRequests  #-Header 'content-type' # -Header   'Accept','Content-Type' ,'Connection' #-Headers '*' 'x-requested-with' ,'crossdomain'#
+    # Configure CORS
+    Set-PodeSecurityAccessControl -Origin '*' -Duration 7200 -WithOptions -AuthorizationHeader -autoMethods -AutoHeader -Credentials -CrossDomainXhrRequests
 
+    # Add static route for images
 
-    #image folder
     Add-PodeStaticRoute -Path '/images' -Source $script:PetImagesPath
 
-
+    # Enable OpenAPI documentation
 
     Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses
 
+    # Add external documentation link for Swagger
     $swaggerDocs = New-PodeOAExternalDoc -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     $swaggerDocs | Add-PodeOAExternalDoc
 
+    # Add OpenAPI information
     $InfoDescription = @'
-This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about Swagger at [http://swagger.io](http://swagger.io).
+This is a sample Pet Store Server based on the OpenAPI 3.0 specification. You can find out more about Swagger at [http://swagger.io](http://swagger.io).
 In the third iteration of the pet store, we've switched to the design first approach!
 You can now help us improve the API whether it's by making changes to the definition itself or to the code.
 That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
@@ -94,11 +126,11 @@ Some useful links:
 '@
 
 
-    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
+    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io'
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
 
-
+    # Enable OpenAPI viewers
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
     Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode
     Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode
@@ -106,26 +138,30 @@ Some useful links:
     Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode
     Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode
 
+    # Enable OpenAPI editor and bookmarks
     Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor'
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
 
-    # setup session details
+    # Setup session details
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
+    # Define access schemes and authentication
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'read:pets' -Description 'read your pets'
     New-PodeAccessScheme -Type Scope | Add-PodeAccess -Name 'write:pets' -Description 'modify pets in your account'
     $clientId = '123123123'
     $clientSecret = '<mysecret>'
 
-    New-PodeAuthScheme  -OAuth2  -ClientId $ClientId -ClientSecret $ClientSecret `
+    # OAuth2 authentication
+    New-PodeAuthScheme -OAuth2 -ClientId $ClientId -ClientSecret $ClientSecret `
         -AuthoriseUrl 'https://petstore3.swagger.io/oauth/authorize' `
         -TokenUrl 'https://petstore3.swagger.io/oauth/token' `
         -Scope 'read:pets', 'write:pets' |
-        Add-PodeAuth -Name 'petstore_auth' -FailureUrl 'https://petstore3.swagger.io/oauth/failure' -SuccessUrl '/'  -ScriptBlock {
+        Add-PodeAuth -Name 'petstore_auth' -FailureUrl 'https://petstore3.swagger.io/oauth/failure' -SuccessUrl '/' -ScriptBlock {
             param($user, $accessToken, $refreshToken)
             return @{ User = $user }
         }
 
+    # API key authentication
     New-PodeAuthScheme -ApiKey -LocationName 'api_key' | Add-PodeAuth -Name 'api_key' -Sessionless -ScriptBlock {
         param($key)
         if ($key) {
@@ -155,6 +191,7 @@ Some useful links:
         }
     }
 
+    # Basic authentication
     New-PodeAuthScheme -Basic -Realm 'PetStore' | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
         param($username, $password)
 
@@ -173,15 +210,17 @@ Some useful links:
         return @{ Message = 'Invalid details supplied' }
     }
 
-    Merge-PodeAuth -Name 'merged_auth' -Authentication   'Basic', 'api_key'  -Valid One
-    Merge-PodeAuth -Name 'merged_auth_All' -Authentication   'Basic', 'api_key'  -Valid All -ScriptBlock {}
-    Merge-PodeAuth -Name 'merged_auth_nokey' -Authentication   'Basic'  -Valid One
+    # Merge authentication schemes
+    Merge-PodeAuth -Name 'merged_auth' -Authentication 'Basic', 'api_key' -Valid One
+    Merge-PodeAuth -Name 'merged_auth_All' -Authentication 'Basic', 'api_key' -Valid All -ScriptBlock {}
+    Merge-PodeAuth -Name 'merged_auth_nokey' -Authentication 'Basic' -Valid One
 
+    # Add OpenAPI tags
     Add-PodeOATag -Name 'user' -Description 'Operations about user'
     Add-PodeOATag -Name 'store' -Description 'Access to Petstore orders' -ExternalDoc $swaggerDocs
     Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc $swaggerDocs
 
-
+    # Define OpenAPI component schemas
     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 -Required |
         New-PodeOAIntProperty -Name 'petId' -Format Int64 -Example 198772 -Required |
         New-PodeOAIntProperty -Name 'quantity' -Format Int32 -Example 7 -Required |
@@ -195,11 +234,11 @@ Some useful links:
         New-PodeOAStringProperty -Name 'city' -Example 'Palo Alto' -Required |
         New-PodeOAStringProperty -Name 'state' -Example 'CA' -Required |
         New-PodeOAStringProperty -Name 'zip' -Example '94031' -Required |
-        New-PodeOAObjectProperty   -XmlName 'address' |
+        New-PodeOAObjectProperty -XmlName 'address' |
         Add-PodeOAComponentSchema -Name 'Address'
 
     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 100000 |
-        New-PodeOAStringProperty -Name 'username' -example  'fehguy' |
+        New-PodeOAStringProperty -Name 'username' -example 'fehguy' |
         New-PodeOASchemaProperty -Name 'Address' -Reference 'Address' -Array -XmlName 'addresses' -XmlWrapped |
         New-PodeOAObjectProperty -XmlName 'customer' |
         Add-PodeOAComponentSchema -Name 'Customer'
@@ -207,7 +246,7 @@ Some useful links:
 
     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 1 |
         New-PodeOAStringProperty -Name 'name' -Example 'Dogs' |
-        New-PodeOAObjectProperty  -XmlName 'category' |
+        New-PodeOAObjectProperty -XmlName 'category' |
         Add-PodeOAComponentSchema -Name 'Category'
 
     New-PodeOAIntProperty -Name 'id'-Format Int64 -Example 10 |
@@ -221,8 +260,6 @@ Some useful links:
         New-PodeOAIntProperty -Name 'userStatus'-Format Int32 -Description 'User Status' -Example 1 |
         New-PodeOAObjectProperty -XmlName 'user' |
         Add-PodeOAComponentSchema -Name 'User'
-
-
 
     New-PodeOAIntProperty -Name 'id'-Format Int64 |
         New-PodeOAStringProperty -Name 'name' |
@@ -238,15 +275,13 @@ Some useful links:
         New-PodeOAObjectProperty -XmlName 'pet' |
         Add-PodeOAComponentSchema -Name 'Pet'
 
-
-
     New-PodeOAIntProperty -Name 'code'-Format Int32 |
         New-PodeOAStringProperty -Name 'type' |
         New-PodeOAStringProperty -Name 'message' |
-        New-PodeOAObjectProperty  -XmlName '##default' |
+        New-PodeOAObjectProperty -XmlName '##default' |
         Add-PodeOAComponentSchema -Name 'ApiResponse'
 
-
+    # Add OpenAPI component request bodies
     Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store' -Content (
         New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet')
 
@@ -255,7 +290,7 @@ Some useful links:
 
 
 
-
+    # Define API routes
     Add-PodeRouteGroup -Path '/api/v3'   -Routes {
         <#
             PUT '/pet'

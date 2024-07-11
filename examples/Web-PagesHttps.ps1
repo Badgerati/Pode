@@ -1,3 +1,28 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with various HTTPS certificate options.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8443 with HTTPS enabled using different certificate options based on the input parameter.
+    It demonstrates how to handle GET requests and serve web pages with Pode's view engine.
+
+.PARAMETER CertType
+    Specifies the type of certificate to use for HTTPS. Valid values are 'SelfSigned', 'CertificateWithPassword', 'Certificate', and 'CertificateThumbprint'.
+    Default is 'SelfSigned'.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+
+.EXAMPLE
+    To use the hostname listener, you'll need to add "pode.foo.com 127.0.0.1" to your hosts file.
+#>
+param(
+    [string]
+    [ValidateSet('SelfSigned', 'CertificateWithPassword', 'Certificate' , 'CertificateThumbprint')]
+    $CertType = 'SelfSigned'
+)
+
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -13,24 +38,28 @@ try {
 }
 catch { throw }
 
+
+
 # or just:
 # Import-Module Pode
-
-# web-pages-https.ps1 example notes:
-# ----------------------------------#
-# to use the hostname listener, you'll need to add "pode.foo.com  127.0.0.1" to your hosts file
-# ----------------------------------
 
 # create a server, flagged to generate a self-signed cert for dev/testing
 Start-PodeServer {
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error
 
     # bind to ip/port and set as https with self-signed cert
-    Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -SelfSigned
-    #Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -Certificate './certs/cert.pem' -CertificateKey './certs/key.pem' -CertificatePassword 'test'
-    #Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -Certificate './certs/cert_nodes.pem' -CertificateKey './certs/key_nodes.pem'
-    #Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -CertificateThumbprint '2A623A8DC46ED42A13B27DD045BFC91FDDAEB957'
-
+    switch ($CertType) {
+        'SelfSigned' {
+            Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -SelfSigned
+        }
+        'CertificateWithPassword' {
+            Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -Certificate './certs/cert.pem' -CertificateKey './certs/key.pem' -CertificatePassword 'test'
+        }
+        'Certificate' {
+            Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -Certificate './certs/cert_nodes.pem' -CertificateKey './certs/key_nodes.pem'
+        }
+        'CertificateThumbprint' { Add-PodeEndpoint -Address localhost -Port 8443 -Protocol Https -CertificateThumbprint '2A623A8DC46ED42A13B27DD045BFC91FDDAEB957' }
+    }
     # set view engine for web pages
     Set-PodeViewEngine -Type Pode
 

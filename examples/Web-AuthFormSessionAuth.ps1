@@ -1,3 +1,19 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with session persistent authentication for logins on websites.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081 with session persistent authentication.
+    It demonstrates a login system using form authentication and session authentication on the main home page route and form authentication on login.
+    Navigating to 'http://localhost:8081' in your browser will redirect you to the '/login' page.
+    You can log in using the username 'morty' and the password 'pickle'. After logging in, you will see a greeting and a view counter.
+    Clicking 'Logout' will purge the session and take you back to the login page.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -15,17 +31,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-<#
-This examples shows how to use session persistant authentication, for things like logins on websites.
-The example used here is Form authentication, sent from the <form> in HTML. But also used is Session Authentication
-on the main home page route and Form Auth on Login.
-
-Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
-page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
-back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
-take you back to the login page.
-#>
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

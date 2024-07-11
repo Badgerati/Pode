@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with error logging and a route to handle gzip'd JSON.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081. It includes error logging and a route to handle POST requests that receive gzip'd JSON data.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

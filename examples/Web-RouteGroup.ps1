@@ -1,3 +1,20 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with middleware and basic authentication.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081. It demonstrates how to use middleware,
+    route groups, and basic authentication. The server includes routes under the '/api' and '/auth' paths,
+    with specific middleware and authentication requirements.
+
+.EXAMPLE
+    # Example of invoking a request to an authenticated route:
+    Invoke-RestMethod -Uri http://localhost:8081/auth/route1 -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -16,11 +33,11 @@ catch { throw }
 
 $message = 'Kenobi'
 
-# create a server, and start listening on port 8090
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
 
-    # listen on localhost:8090
-    Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http
+    # listen on localhost:8081
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     $mid1 = New-PodeMiddleware -ScriptBlock {
@@ -49,7 +66,7 @@ Start-PodeServer -Threads 2 {
     }
 
 
-    # Invoke-RestMethod -Uri http://localhost:8090/auth/route1 -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+    # Invoke-RestMethod -Uri http://localhost:8081/auth/route1 -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
     New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
         param($username, $password)
 

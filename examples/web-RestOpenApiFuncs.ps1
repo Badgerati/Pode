@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with OpenAPI integration and various OpenAPI viewers.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081 with OpenAPI documentation.
+    It demonstrates how to use OpenAPI for documenting APIs and provides various OpenAPI viewers such as Swagger, ReDoc, RapiDoc, StopLight, Explorer, and RapiPdf.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

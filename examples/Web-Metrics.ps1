@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with a route to check server uptime and restart count.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081. It includes a route to check the server's uptime
+    and the number of times the server has restarted.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

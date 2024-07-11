@@ -1,6 +1,22 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with multiple endpoints and request handling.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on multiple endpoints with request redirection.
+    It demonstrates how to handle GET requests and redirect requests from one endpoint to another.
+    The script includes examples of using a parameter for the port number and setting up error logging.
+
+.PARAMETER Port
+    The port number on which the server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [int]
-    $Port = 8085
+    $Port = 8081
 )
 
 try {
@@ -21,20 +37,20 @@ catch { throw }
 # or just:
 # Import-Module Pode
 
-# create a server, and start listening on port 8085
+# create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {
 
-    # listen on localhost:8085
+    # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8090 -Protocol Http -Name '8090Address'
-    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -Name '8085Address' -RedirectTo '8090Address'
+    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -Name '8081Address' -RedirectTo '8090Address'
 
     # log errors to the terminal
-    # New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # set view engine to pode renderer
     Set-PodeViewEngine -Type Pode
 
-    # GET request for web page on "localhost:8085/"
+    # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }

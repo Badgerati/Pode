@@ -1,3 +1,27 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with static file browsing and authentication.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on port 8081. It includes static file browsing
+    with different routes, some of which require authentication. The script also demonstrates
+    how to set up basic authentication using Pode.
+
+    The server includes routes for downloading files, browsing files without downloading, and
+    accessing files with authentication.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+
+.EXAMPLES
+    Access the file browser:
+        Navigate to 'http://localhost:8081/' to browse the files in the specified directory.
+    Download a file:
+        Navigate to 'http://localhost:8081/download' to download files.
+    Access a file with authentication:
+        Navigate to 'http://localhost:8081/auth' and provide the username 'morty' and password 'pickle'.
+#>
 try {
     $FileBrowserPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
     $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $FileBrowserPath)

@@ -1,3 +1,21 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with secret management using Azure Key Vault and a custom vault CLI.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081 with secret management capabilities.
+    It demonstrates how to register secret vaults with Azure Key Vault and a custom CLI, set and get secrets,
+    and manage secrets using Pode routes. Make sure to install the Microsoft.PowerShell.SecretManagement and Microsoft.PowerShell.SecretStore modules.
+    Also, you need to run "Connect-AzAccount" first for Azure Key Vault.
+
+.PARAMETER AzureSubscriptionId
+    The Azure Subscription ID for accessing the Azure Key Vault.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+
 param(
     [Parameter(Mandatory = $true)]
     [string]

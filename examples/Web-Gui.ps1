@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with desktop GUI capabilities.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on ports 8081 and 8091. It includes a route to handle GET requests
+    and sets up the server to run as a desktop GUI application using the Pode view engine.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)

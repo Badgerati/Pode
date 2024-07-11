@@ -1,11 +1,24 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with various routes, tasks, and security.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081. It demonstrates how to handle GET and PUT requests,
+    set up security, define tasks, and use Pode's view engine.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+
+.EXAMPLE
+    To build and start the Docker container, use:
+    docker-compose up --force-recreate --build
+#>
 try {
     Import-Module /usr/local/share/powershell/Modules/Pode/Pode.psm1 -Force -ErrorAction Stop
 }
 catch { throw }
 
-<#
-docker-compose up --force-recreate --build
-#>
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

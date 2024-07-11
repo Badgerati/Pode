@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with Kestrel and various routes, access rules, and custom logging.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on multiple endpoints with request redirection using Kestrel.
+    It demonstrates how to handle GET requests, set up access rules, implement custom logging, and handle various routes including redirects and file downloads.
+
+.PARAMETER Port
+    The port number on which the server will listen. Default is 8081.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [int]
     $Port = 8081

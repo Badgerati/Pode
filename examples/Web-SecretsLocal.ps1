@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with secret management using Microsoft.PowerShell.SecretStore.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081 with secret management capabilities.
+    It demonstrates how to register a secret vault, set and get secrets, and manage secrets using Pode routes.
+    Make sure to install the Microsoft.PowerShell.SecretManagement and Microsoft.PowerShell.SecretStore modules.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -15,9 +28,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-# make sure to install the Microsoft.PowerShell.SecretStore modules!
-# Install-Module Microsoft.PowerShell.SecretManagement, Microsoft.PowerShell.SecretStore
 
 Start-PodeServer -Threads 2 {
     # listen

@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    A sample PowerShell script to set up a Pode server with cookie management and signed cookies.
+
+.DESCRIPTION
+    This script sets up a Pode server listening on port 8081. It includes routes for setting, extending,
+    removing, and checking signed cookies. The server uses a global cookie secret for signing the cookies.
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
