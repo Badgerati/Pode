@@ -345,13 +345,35 @@ Task DocsDeps ChocoDeps, {
 }
 
 Task IndexSamples {
-    $SamplesPath = './examples'
-    $SampleMarkDownPath = './docs/Getting-Started/Samples.md'
-    if ((Test-Path -PathType Container -Path $SamplesPath) ) {
-        $ps1Files = Get-ChildItem -Path $SamplesPath -Recurse -Filter *.ps1
+    $examplesPath = './examples'
+    $sampleMarkDownPath = './docs/Getting-Started/Samples.md'
+    if ((Test-Path -PathType Container -Path $examplesPath) ) {
+
+        $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
+            'Authentication', 'certs', 'logs', 'relative', 'routes'  ) # List of directories to exclude
+
+        # Filter out non-existing directories
+        $existingExcludeDirs = @()
+        foreach ($dir in $excludeDirs) {
+            if (Test-Path -Path (Join-Path -Path $examplesPath -ChildPath $dir)) {
+                $existingExcludeDirs += $dir
+            }
+        }
+        $ps1Files = (Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse |
+                Where-Object {
+                    $exclude = $false
+                    foreach ($dir in $existingExcludeDirs) {
+                        if ($_.FullName -like "*\$dir\*") {
+                            $exclude = $true
+                            break
+                        }
+                    }
+                    -not $exclude
+                })
         $title = "# Pode's Sample Scripts List"
         $indexContent = "## Index`n"
         foreach ($file in $ps1Files) {
+            write-host $file
             $content = Get-Content -Path  $file.FullName -ErrorAction Stop
             $synopsis = @()
             $description = $()
@@ -408,8 +430,8 @@ Task IndexSamples {
                 $markdownContent += "**Description:**`n`n`t$($header.Description)`n`n"
             }
         }
-        Write-Output "Write Markdown document for the sample files to $SampleMarkDownPath"
-        Set-Content -Path $SampleMarkDownPath -Value ( $title + "`n" + $indexContent + "`n" + $markdownContent)
+        Write-Output "Write Markdown document for the sample files to $sampleMarkDownPath"
+        Set-Content -Path $sampleMarkDownPath -Value ( $title + "`n" + $indexContent + "`n" + $markdownContent)
 
     }
 }
