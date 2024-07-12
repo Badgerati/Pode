@@ -1459,7 +1459,7 @@ function ConvertFrom-PodeYaml {
 .DESCRIPTION
     This produces YAML from any object you pass to it.
 
-.PARAMETER Object
+.PARAMETER InputObject
     The object that you want scripted out. This parameter accepts input via the pipeline.
 
 .PARAMETER Depth
