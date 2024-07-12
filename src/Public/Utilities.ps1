@@ -1365,3 +1365,148 @@ function ConvertFrom-PodeXml {
     return $oHash
 
 }
+
+
+
+<#
+.SYNOPSIS
+    Converts a YAML input object into a hashtable, using either the internal converter or an external YAML module if available.
+
+.DESCRIPTION
+    This function processes a YAML input object and converts it into a hashtable. It checks if a YAML module is available for conversion.
+    If the module is available, it uses that for conversion. Otherwise, it falls back to the internal converter.
+
+.PARAMETER InputObject
+    The YAML input object to be converted.
+
+.EXAMPLE
+    $yamlString = @'
+    openapi: 3.0.3
+    info:
+        title: Async test - OpenAPI 3.0
+        version: 0.0.1
+    paths:
+        /task/{taskId}:
+            get:
+                summary: Get Pode Task Info
+    '@
+    $hashtable = ConvertFrom-PodeYaml -InputObject $yamlString
+    # Converts the YAML string to a hashtable.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertFrom-PodeYaml {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
+        [string[]]
+        $InputObject
+    )
+
+    begin {
+        # Initialize an array to store pipeline objects
+        $pipelineObject = @()
+    }
+
+    process {
+        # Collect objects from the pipeline
+        $pipelineObject += $_
+    }
+
+    end {
+        # If there are multiple pipeline objects, combine them into a single input object
+        if ($pipelineObject.Count -gt 1) {
+            $InputObject = $pipelineObject
+        }
+
+        if ( $InputObject.Count -gt 1) {
+            $obj = $InputObject -join "`n"
+        }
+        else {
+            $obj = $InputObject[0]
+        }
+
+        # Check if the internal YAML converter should be used
+        if ($null -eq $PodeContext -or $PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
+            return ConvertFrom-PodeYamlInternal -InputObject $obj
+        }
+
+        # Check if a YAML module has been imported, if not, test for available YAML modules
+        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
+            $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
+        }
+
+        # Use the external YAML module if available, otherwise use the internal converter
+        if ($PodeContext.Server.InternalCache.YamlModuleImported) {
+            return ($obj | ConvertFrom-Yaml)
+        }
+        else {
+            return ConvertFrom-PodeYamlInternal -InputObject $obj
+        }
+    }
+}
+
+
+
+
+<#
+.SYNOPSIS
+    creates a YAML description of the data in the object - based on https://github.com/Phil-Factor/PSYaml
+
+.DESCRIPTION
+    This produces YAML from any object you pass to it.
+
+.PARAMETER Object
+    The object that you want scripted out. This parameter accepts input via the pipeline.
+
+.PARAMETER Depth
+    The depth that you want your object scripted to
+
+.EXAMPLE
+    Get-PodeOpenApiDefinition|ConvertTo-PodeYaml
+#>
+function ConvertTo-PodeYaml {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
+        $InputObject,
+
+        [parameter()]
+        [int]
+        $Depth = 16
+    )
+
+    begin {
+        $pipelineObject = @()
+    }
+
+    process {
+        $pipelineObject += $_
+    }
+
+    end {
+        if ($pipelineObject.Count -gt 1) {
+            $InputObject = $pipelineObject
+        }
+
+        if ($null -eq $PodeContext -or $PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
+            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+        }
+
+        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
+            $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
+        }
+
+        if ($PodeContext.Server.InternalCache.YamlModuleImported) {
+            return ($InputObject | ConvertTo-Yaml)
+        }
+        else {
+            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+        }
+    }
+}
