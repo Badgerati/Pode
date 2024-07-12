@@ -457,6 +457,7 @@ pode build
 pode start
 #>
 function Pode {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
