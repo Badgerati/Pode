@@ -155,6 +155,7 @@ function Enable-PodeOpenApi {
         [switch]
         $EnableSchemaValidation,
 
+        [Parameter()]
         [ValidateRange(1, 100)]
         [int]
         $Depth = 20,

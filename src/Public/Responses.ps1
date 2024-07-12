@@ -779,7 +779,7 @@ The status code to set against the response.
 Switch to handle hashtables without property names.
 
 .PARAMETER RootLabel
-The label that reppresent root
+The label that reppresent root. Used only when $Value is of type hashtable or NoPropertyName is used
 
 .EXAMPLE
 Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
@@ -841,7 +841,7 @@ function Write-PodeXmlResponse {
         $NoPropertyName,
 
         [string]
-        $RootLabel='root'
+        $RootLabel = 'root'
     )
     begin {
         $pipelineValue = @()
@@ -867,21 +867,9 @@ function Write-PodeXmlResponse {
                     $Value = $pipelineValue
                 }
 
-                if ($Value -is [hashtable]) {
-                    $Value = Convert-PodeHashTableToXml -Value $Value -RootLabel $RootLabel
-                }
-                elseif ($NoPropertyName.IsPresent) {
-                    $Value = ConvertTo-Json -InputObject $value -Depth 99 -Compress -AsArray | ConvertFrom-Json -AsHashtable
-                    $Value = Convert-PodeHashTableToXml -Value $Value -RootLabel $RootLabel
-                }
-                elseif ($Value -isnot [string]) {
-                    $Value = ConvertTo-PodePSObject -InputObject $Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
-                }
-            }
-        }
+                $Value = ConvertTo-PodeXml -InputObject $Value -Depth $Depth -NoPropertyName:$NoPropertyName -RootLabel $RootLabel
 
-        if ([string]::IsNullOrWhiteSpace($Value)) {
-            $Value = "<?xml version=""1.0"" encoding=""UTF-8""?><$RootLabel/>"
+            }
         }
 
         Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
@@ -1686,6 +1674,7 @@ function Send-PodeSignal {
         $ClientId,
 
         [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 

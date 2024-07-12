@@ -1653,6 +1653,7 @@ function ConvertTo-PodeResponseContent {
         $ContentType,
 
         [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
@@ -1676,12 +1677,7 @@ function ConvertTo-PodeResponseContent {
     switch ($ContentType) {
         { $_ -match '^(.*\/)?(.*\+)?json$' } {
             if ($InputObject -isnot [string]) {
-                if ($Depth -le 0) {
-                    return (ConvertTo-Json -InputObject $InputObject -Compress)
-                }
-                else {
-                    return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
-                }
+                return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
             }
 
             if ([string]::IsNullOrWhiteSpace($InputObject)) {
@@ -1689,14 +1685,9 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+        { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
-                if ($Depth -le 0) {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
-                }
-                else {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
-                }
+                return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
             }
 
             if ([string]::IsNullOrWhiteSpace($InputObject)) {
@@ -1705,17 +1696,7 @@ function ConvertTo-PodeResponseContent {
         }
 
         { $_ -match '^(.*\/)?(.*\+)?xml$' } {
-            if ($InputObject -isnot [string]) {
-                $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
-                    })
-
-                return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
-            }
-
-            if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                return [string]::Empty
-            }
+            return ConvertTo-PodeXml -InputObject $InputObject -Depth $Depth
         }
 
         { $_ -ilike '*/csv' } {
@@ -3646,11 +3627,12 @@ function ConvertTo-PodeYaml {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
         [AllowNull()]
         $InputObject,
 
-        [parameter()]
+        [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 16
     )
@@ -3723,19 +3705,20 @@ function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $false)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $false)]
         [AllowNull()]
         $InputObject,
 
-        [parameter()]
+        [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
-        [parameter()]
+        [Parameter()]
         [int]
         $NestingLevel = 0,
 
-        [parameter()]
+        [Parameter()]
         [switch]
         $NoNewLine
     )
@@ -4063,7 +4046,7 @@ function Convert-PodeHashTableToXml {
         $Value,
 
         [string]
-        $RootLabel='root'
+        $RootLabel = 'root'
     )
 
     # Create a new XML document
@@ -4126,5 +4109,5 @@ function Convert-PodeHashTableToXml {
         throw $PodeLocale.InputNotHashtableOrArrayOfHashtablesExceptionMessage
     }
 
-    return '<?xml version="1.0" encoding="UTF-8"?>'+ $xmlDocument.OuterXml
+    return '<?xml version="1.0" encoding="UTF-8"?>' + $xmlDocument.OuterXml
 }

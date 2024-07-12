@@ -242,7 +242,8 @@ function Save-PodeState {
         $Include,
 
         [Parameter()]
-        [int16]
+        [ValidateRange(0, 100)]
+        [int]
         $Depth = 10,
 
         [switch]
@@ -340,7 +341,9 @@ function Restore-PodeState {
         [switch]
         $Merge,
 
-        [int16]
+        [Parameter()]
+        [ValidateRange(0, 100)]
+        [int]
         $Depth = 10
     )
 
