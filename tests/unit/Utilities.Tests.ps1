@@ -47,6 +47,12 @@ BeforeAll {
 
         return $true
     }
+
+
+     # Mocking the external function ConvertFrom-Yaml
+     function ConvertFrom-Yaml   {
+        return @{ openapi = '3.0.3'; info = @{ title = 'Async test - OpenAPI 3.0'; version = '0.0.1' }; paths = @{ '/task/{taskId}' = @{ get = @{ summary = 'Get Pode Task Info' } } } }
+    }
 }
 
 Describe 'ConvertTo-PodeYaml Tests' {
@@ -247,7 +253,7 @@ Describe 'ConvertFrom-PodeYaml' {
 
     Context 'When multiple pipeline objects are provided' {
         BeforeAll {
-            $global:PodeContext = @{
+            $PodeContext = @{
                 Server = @{
                     Web           = @{
                         OpenApi = @{
