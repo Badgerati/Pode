@@ -93,6 +93,7 @@ function ConvertTo-PodeEnhancedScriptBlock {
         $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
         try {
             $asyncResult.StartingTime = [datetime]::UtcNow
+            $asyncResult.User = $WebEvent.Auth.User
             # Set the state to 'Running'
             $asyncResult.State = 'Running'
 

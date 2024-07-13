@@ -19,6 +19,7 @@
             Default             = 'application/html'
             Routes              = @{
                 '/john' = 'application/json'
+                '/auth' = 'application/json'
             }
         }
         Compression = @{

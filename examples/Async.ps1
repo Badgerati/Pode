@@ -19,6 +19,9 @@ Start-PodeServer -Threads 1 {
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
+    # request logging
+    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
+
     Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses
 
     Add-PodeOAInfo -Title 'Async test - OpenAPI 3.0' -Version 0.0.1
@@ -36,20 +39,49 @@ Start-PodeServer -Threads 1 {
         sleepTime = 5
         Message   = 'coming from a PodeState'
     }
-    <#
-    # setup session details
-    Enable-PodeSessionMiddleware -Duration 120 -Extend
 
-    # setup form auth (<form> in HTML)
-    New-PodeAuthScheme -Form | Add-PodeAuth -Name 'Login' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+
+     # setup access
+    New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'Rbac'
+    New-PodeAccessScheme -Type Group | Add-PodeAccess -Name 'Gbac'
+
+    # setup a merged access
+    Merge-PodeAccess -Name 'MergedAccess' -Access 'Rbac', 'Gbac' -Valid All
+
+    # setup apikey auth
+    New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
+        param($key)
+
+        # here you'd check a real user storage, this is just for example
+        if ($key -ieq 'test-api-key') {
+            return @{
+                User = @{
+                    ID     = 'M0R7Y302'
+                    Name   = 'Morty'
+                    Type   = 'Human'
+                    Roles  = @('Developer')
+                    Groups = @('Platform')
+                }
+            }
+        }
+
+        return $null
+    }
+
+    # setup basic auth (base64> username:password in header)
+    New-PodeAuthScheme -Basic | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
         param($username, $password)
 
         # here you'd check a real user storage, this is just for example
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{
                 User = @{
-                    Name = 'Morty'
-                    Roles = @('Developer')
+                    Username = 'morty'
+                    ID       = 'M0R7Y302'
+                    Name     = 'Morty'
+                    Type     = 'Human'
+                    Roles    = @('Developer')
+                    Groups   = @('Software')
                 }
             }
         }
@@ -57,29 +89,33 @@ Start-PodeServer -Threads 1 {
         return @{ Message = 'Invalid details supplied' }
     }
 
-    # set RBAC access
-    New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'Rbac' -Match One
+    # merge the auths together
+    Merge-PodeAuth -Name 'MergedAuth' -Authentication 'ApiKey', 'Basic' -Valid All -ScriptBlock {
+        param($results)
 
+        $apiUser = $results['ApiKey'].User
+        $basicUser = $results['Basic'].User
 
-    # home page:
-    # redirects to login page if not authenticated
-    Add-PodeRoute -Method Get -Path '/' -Authentication Login -ScriptBlock {
-        $session:Views++
-
-        Write-PodeViewResponse -Path 'auth-home' -Data @{
-            Username = $WebEvent.Auth.User.Name
-            Views = $session:Views
-            Expiry = Get-PodeSessionExpiry
+        return @{
+            User = @{
+                Username = $basicUser.Username
+                ID       = $apiUser.ID
+                Name     = $apiUser.Name
+                Type     = $apiUser.Type
+                Roles    = @($apiUser.Roles + $basicUser.Roles) | Sort-Object -Unique
+                Groups   = @($apiUser.Groups + $basicUser.Groups) | Sort-Object -Unique
+            }
         }
     }
 
-    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsing'  -Authentication 'Validate' -Group 'TaskManager' -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsing'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
         Write-PodeHost "sleepTime=$($using:uSleepTime)"
         Write-PodeHost "Message=$($using:uMessage)"
+        write-podehost $WebEvent.auth.User -Explode
         Start-Sleep ($using:uSleepTime *2)
         return @{ InnerValue = $using:uMessage }
     } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
-#>
+
 
     Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
         Write-PodeHost "sleepTime=$($using:uSleepTime)"

@@ -86,6 +86,7 @@ function Add-PodeAsyncGetRoute {
             $result = $PodeContext.AsyncRoutes.Results[$id]
             $taskSummary = @{
                 ID           = $result.ID
+                User         = $result.User
                 # ISO 8601 UTC format
                 CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                 StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
@@ -419,6 +420,12 @@ function Add-PodeAsyncStopRoute {
     - $request.header.header-name: application/json
     - $request.body#/field-name  : callbackUrl
 
+.PARAMETER Access
+    Access list
+
+.PARAMETER NoCancellable
+    The Async operation cannot be forcefully terminated
+
 .INPUTS
     [hashtable[]]
 
@@ -508,7 +515,24 @@ function Set-PodeAsyncRoute {
         $CallbackMethod = 'Post',
 
         [hashtable]
-        $CallbackHeaderFields = @{}
+        $CallbackHeaderFields = @{},
+
+        [hashtable]
+        $Access = @{
+            Read  = @{Group = @()
+                Roles      = @()
+                Scopes     = @()
+                User       = @()
+            }
+            Write = @{Group = @()
+                Roles       = @()
+                Scopes      = @()
+                User        = @()
+            }
+        },
+
+        [switch]
+        $NoCancellable
 
     )
     Begin {
@@ -567,6 +591,8 @@ function Set-PodeAsyncRoute {
                 UsingVariables = $r.UsingVariables
                 Arguments      = (Protect-PodeValue -Value $r.Arguments -Default @{})
                 CallbackInfo   = $CallbackInfo
+                Access         = $Access
+                $NoCancellable = $NoCancellable.IsPresent
             }
             #Set thread count
             $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] = $MaxThreads
