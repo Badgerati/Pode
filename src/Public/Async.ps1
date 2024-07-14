@@ -13,6 +13,18 @@
     The URL path for the route. If the `In` parameter is set to 'Path', the `TaskIdName` will be
     appended to this path.
 
+.PARAMETER Middleware
+    An array of ScriptBlocks for optional Middleware.
+
+.PARAMETER EndpointName
+    The EndpointName of an Endpoint(s) this Route should be bound against.
+
+.PARAMETER Authentication
+    The name of an Authentication method which should be used as middleware on this Route.
+
+.PARAMETER Access
+    The name of an Access method which should be used as middleware on this Route.
+
 .PARAMETER ResponseContentType
     Specifies the response type(s) for the route. Valid values are 'JSON', 'XML', and 'YAML'.
     You can specify multiple types. The default is 'JSON'.
@@ -34,6 +46,30 @@
 .PARAMETER PassThru
     If specified, the function returns the route information after processing.
 
+.PARAMETER Role
+    One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+    One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+    One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER User
+    One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER AllowAnon
+    If supplied, the Route will allow anonymous access for non-authenticated users.
+
+.PARAMETER IfExists
+    Specifies what action to take when a Route already exists. (Default: Default)
+
+.PARAMETER OADefinitionTag
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps in distinguishing between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
+
 .INPUTS
     None.
 
@@ -48,9 +84,27 @@ function Add-PodeAsyncGetRoute {
         [string]
         $Path,
 
+        [Parameter()]
+        [object[]]
+        $Middleware,
+
+        [Parameter( )]
+        [AllowNull()]
         [string[]]
-        [ValidateSet('JSON', 'XML', 'YAML')]
-        $ResponseContentType = 'JSON',
+        $EndpointName,
+
+        [Parameter()]
+        [Alias('Auth')]
+        [string]
+        $Authentication,
+
+        [Parameter()]
+        [string]
+        $Access,
+
+        [string[]]
+        [ValidateSet('application/json' , 'application/xml', 'application/yaml')]
+        $ResponseContentType = 'application/json',
 
         [Parameter(ParameterSetName = 'OpenAPI')]
         [string]
@@ -69,7 +123,35 @@ function Add-PodeAsyncGetRoute {
         $TaskIdName = 'taskId',
 
         [switch]
-        $PassThru
+        $PassThru,
+
+        [Parameter()]
+        [string[]]
+        $Role,
+
+        [Parameter()]
+        [string[]]
+        $Group,
+
+        [Parameter()]
+        [string[]]
+        $Scope,
+
+        [Parameter()]
+        [string[]]
+        $User,
+
+        [switch]
+        $AllowAnon,
+
+        [Parameter()]
+        [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+        [string]
+        $IfExists = 'Default',
+
+        [string[]]
+        $OADefinitionTag
+
     )
 
     $scriptBlock = {
@@ -84,78 +166,140 @@ function Add-PodeAsyncGetRoute {
         $responseMediaType = Get-PodeHeader -Name 'Accept'
         if ($PodeContext.AsyncRoutes.Results.ContainsKey($id )) {
             $result = $PodeContext.AsyncRoutes.Results[$id]
+
             $taskSummary = @{
                 ID           = $result.ID
                 User         = $result.User
+                Cancelable   = $result.Cancelable
+                Permission   = $result.Permission
                 # ISO 8601 UTC format
                 CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                 Name         = $result.Name
                 State        = $result.State
             }
 
-            if ($PodeContext.AsyncRoutes.Results[$id].Runspace.Handler.IsCompleted) {
-                # ISO 8601 UTC format
-                $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                switch ($result.State.ToLowerInvariant() ) {
-                    'failed' {
-                        $taskSummary.Error = $result.Error
-                        break
-                    }
-                    'completed' {
-                        if ($result.result.Count -gt 0) {
-                            $taskSummary.Result = $result.result[0]
-                        }
-                        else {
-                            $result.result = $null
-                        }
-                        break
-                    }
-                    'aborted' {
-                        $taskSummary.Error = $result.Error
-                        break
-                    }
+            if ($result.StartingTime) {
+                $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+            }
+            if ($result.User) {
+                if ($WebEvent.Auth.User) {
+                    write-podehost $WebEvent.Auth.User -Explode
+                    $taskSummary.User = $result.User
+                    $taskSummary.Permission = $result.Permission
+                    $authorized = Test-PodeAsyncPermission -Permission $result.Permission.Read -User $WebEvent.Auth.User
+                }
+                else {
+                    $authorized = $false
                 }
             }
+            else {
+                $authorized = $true
+            }
+            if ($authorized) {
+                if ($PodeContext.AsyncRoutes.Results[$id].Runspace.Handler.IsCompleted) {
+                    # ISO 8601 UTC format
+                    $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    switch ($result.State.ToLowerInvariant() ) {
+                        'failed' {
+                            $taskSummary.Error = $result.Error
+                            break
+                        }
+                        'completed' {
+                            if ($result.result.Count -gt 0) {
+                                $taskSummary.Result = $result.result[0]
+                            }
+                            else {
+                                $result.result = $null
+                            }
+                            break
+                        }
+                        'aborted' {
+                            $taskSummary.Error = $result.Error
+                            break
+                        }
+                    }
+                }
 
-            switch ($responseMediaType) {
-                'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
-                'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
-                'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
-                default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                switch ($responseMediaType) {
+                    'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
+                    'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
+                    'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
+                    default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                }
+                return
+            }
+            else {
+                $errorMsg = @{ID = $id ; Error = 'The User is not entitle to this operation' }
+                $statusCode = 401 #'Unauthorized'
             }
         }
         else {
             $errorMsg = @{ID = $id ; Error = 'No Task Found' }
-            $statusCode = 402
-            switch ($responseMediaType) {
-                'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
-                'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
-                'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
-                default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
-            }
+            $statusCode = 404 #'Not Found'
+        }
+        switch ($responseMediaType) {
+            'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
+            'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
+            'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
+            default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
         }
     }
-
-    $MediaResponseType = @()
-    if ($ResponseContentType -icontains 'JSON') { $MediaResponseType += 'application/json' }
-    if ($ResponseContentType -icontains 'XML') { $MediaResponseType += 'application/xml' }
-    if ($ResponseContentType -icontains 'YAML') { $MediaResponseType += 'text/yaml' }
 
     if ($In -eq 'Path') {
         $Path = "$Path/:$TaskIdName"
     }
-    $route = Add-PodeRoute -PassThru -Method Get -Path $Path -ScriptBlock $scriptBlock -ArgumentList $In, $TaskIdName
+
+    $param = @{
+        Method           = 'Get'
+        Path             = $Path
+        ScriptBlock      = $scriptBlock
+        ArgumentList     = ($In, $TaskIdName)
+        ErrorContentType = $ResponseContentType[0]
+        PassThru         = $true
+    }
+    if ($Middleware) {
+        $param.Middleware = $Middleware
+    }
+    if ($EndpointName) {
+        $param.$EndpointName = $EndpointName
+    }
+    if ($Authentication) {
+        $param.Authentication = $Authentication
+    }
+    if ($Access) {
+        $param.Access = $Access
+    }
+    if ($Role) {
+        $param.Role = $Role
+    }
+    if ($Group) {
+        $param.Group = $Group
+    }
+    if ($Scope) {
+        $param.Scope = $Scope
+    }
+    if ($User) {
+        $param.User = $User
+    }
+    if ($AllowAnon.IsPresent) {
+        $param.AllowAnon = $AllowAnon
+    }
+    if ($IfExists.IsPresent) {
+        $param.IfExists = $IfExists
+    }
+
+    $route = Add-PodeRoute @param
 
     if (! $NoOpenAPI.IsPresent) {
-        Add-PodeAsyncComponentSchema -Name $OATypeName
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
+        Add-PodeAsyncComponentSchema -Name $OATypeName -DefinitionTag $DefinitionTag
 
-        $route | Set-PodeOARouteInfo -Summary 'Get Pode Task Info' -PassThru |
+        $route | Set-PodeOARouteInfo -Summary 'Get Pode Task Info' -DefinitionTag $DefinitionTag -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name $TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $In) |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $MediaResponseType  -Content $OATypeName ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $OATypeName ) -PassThru |
             Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
-                New-PodeOAContentMediaType -MediaType $MediaResponseType -Content (
+                New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                     New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                 )
             )
@@ -249,6 +393,8 @@ function Add-PodeAsyncStopRoute {
 
     $scriptBlock = {
         param($In, $TaskIdName)
+
+        # Determine the source of the task ID based on the input parameter
         switch ($In) {
             'Cookie' { $id = Get-PodeCookie -Name $TaskIdName; break }
             'Header' { $id = Get-PodeHeader -Name $TaskIdName; break }
@@ -256,60 +402,92 @@ function Add-PodeAsyncStopRoute {
             'Query' { $id = $WebEvent.Query[$TaskIdName]; break }
         }
 
+        # Get the 'Accept' header from the request to determine response format
         $responseMediaType = Get-PodeHeader -Name 'Accept'
-        if ($PodeContext.AsyncRoutes.Results.ContainsKey($id )) {
+
+        # Check if the task ID exists in the async routes results
+        if ($PodeContext.AsyncRoutes.Results.ContainsKey($id)) {
             $result = $PodeContext.AsyncRoutes.Results[$id]
+
+            # If the task is not completed
             if (!$result.Runspace.Handler.IsCompleted) {
-                $result.State = 'Aborted'
-                $result.Error = 'User Aborted!'
-                $result.CompletedTime = [datetime]::UtcNow
+                # If the task is cancelable
+                if ($result.Cancelable) {
 
-                $taskSummary = @{
-                    ID            = $id
-                    # ISO 8601 UTC format
-                    CreationTime  = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                    Name          = $result.Name
-                    State         = $result.State
-                    # ISO 8601 UTC format
-                    CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                    Error         = $result.Error
+                    if ($result.User -and ($null -eq $User)) {
+                        # If the task is not cancelable, set an error message
+                        $errorMsg = @{ID = $id ; Error = 'This Async operation required authentication.' }
+                        $statusCode = 203 #'Non-Authoritative Information'
+                    }
+                    else {
+                        if ((Test-PodeAsyncPermission -Permission $result.Permission.Write -User $User)) {
+                            # Set the task state to 'Aborted' and log the error and completion time
+                            $result.State = 'Aborted'
+                            $result.Error = 'User Aborted!'
+                            $result.CompletedTime = [datetime]::UtcNow
+
+                            # Create a summary of the task
+                            $taskSummary = @{
+                                ID            = $id
+                                CreationTime  = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                                Name          = $result.Name
+                                State         = $result.State
+                                CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                                Error         = $result.Error
+                            }
+                            # Include the starting time if available
+                            if ($result.StartingTime) {
+                                $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                            }
+
+                            # Close any open resources associated with the task
+                            Close-PodeDisposable -Disposable $result.Runspace.Pipeline
+                            Close-PodeDisposable -Disposable $Result.Result
+
+                            # Respond with the task summary in the appropriate format
+                            switch ($responseMediaType) {
+                                'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
+                                'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
+                                'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
+                                default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                            }
+                            return
+                        }
+                        else {
+                            $errorMsg = @{ID = $id ; Error = 'The User is not entitle to this operation' }
+                            $statusCode = 401 #'Unauthorized'
+                        }
+                    }
                 }
-                if ($result.StartingTime ) {
-                    $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                }
-
-                Close-PodeDisposable -Disposable $result.Runspace.Pipeline
-                Close-PodeDisposable -Disposable $Result.Result
-
-                switch ($responseMediaType) {
-                    'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
-                    'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
-                    'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
-                    default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                else {
+                    # If the task is not cancelable, set an error message
+                    $errorMsg = @{ID = $id ; Error = "The task has the 'NonCancelable' flag." }
+                    $statusCode = 423 #'Locked
                 }
             }
             else {
-                $errorMsg = @{ID = $id ; Error = 'Task already completed.' }
-                $statusCode = 402
-                switch ($responseMediaType) {
-                    'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
-                    'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
-                    'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
-                    default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
-                }
+                # If the task is already completed, set an error message
+                $errorMsg = @{ID = $id ; Error = 'The Task is already completed.' }
+                $statusCode = 410 #'Gone'
             }
         }
         else {
+            # If no task is found, set an error message
             $errorMsg = @{ID = $id ; Error = 'No Task Found.' }
-            $statusCode = 402
+            $statusCode = 404 #'Not Found'
+        }
+
+        # Respond with the error message in the appropriate format
+        if ($errorMsg) {
             switch ($responseMediaType) {
-                'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
+                'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode ; break }
                 'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
                 'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
                 default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
             }
         }
     }
+
 
     $MediaResponseType = @()
     if ($ResponseContentType -icontains 'JSON') { $MediaResponseType += 'application/json' }
@@ -420,14 +598,11 @@ function Add-PodeAsyncStopRoute {
     - $request.header.header-name: application/json
     - $request.body#/field-name  : callbackUrl
 
-.PARAMETER Access
+.PARAMETER Permission
     Access list
 
-.PARAMETER NoCancellable
+.PARAMETER Cancelable
     The Async operation cannot be forcefully terminated
-
-.INPUTS
-    [hashtable[]]
 
 .OUTPUTS
     [hashtable[]]
@@ -518,21 +693,23 @@ function Set-PodeAsyncRoute {
         $CallbackHeaderFields = @{},
 
         [hashtable]
-        $Access = @{
-            Read  = @{Group = @()
+        $Permission = @{},
+
+        <#   @{
+            Read  = @{Groups = @()
                 Roles      = @()
                 Scopes     = @()
-                User       = @()
+                Users       = @()
             }
-            Write = @{Group = @()
+            Write = @{Groups = @()
                 Roles       = @()
                 Scopes      = @()
-                User        = @()
+                Users        = @()
             }
-        },
+        },#>
 
         [switch]
-        $NoCancellable
+        $NotCancelable
 
     )
     Begin {
@@ -545,7 +722,6 @@ function Set-PodeAsyncRoute {
         if ($ResponseContentType -icontains 'YAML') { $MediaResponseType += 'application/yaml' }
 
         if ( $Callback.IsPresent) {
-
             $CallbackInfo = @{
                 UrlField     = $CallbackUrl
                 ContentType  = $CallbackContentType
@@ -554,8 +730,29 @@ function Set-PodeAsyncRoute {
                 HeaderFields = $CallbackHeaderFields
             }
         }
+
+        # Set permission hashtable
+        if ( $Permission.ContainsKey('Read')) {
+            if (! $Permission.Read.ContainsKey('Users')) {
+                $Permission.Read['Users'] = @()
+            }
+        }
+        else {
+            $Permission['Read'] = @{Users = @() }
+        }
+
+        if ( $Permission.ContainsKey('Write')) {
+            if (! $Permission.Write.ContainsKey('Users')) {
+                $Permission.Write['Users'] = @()
+            }
+        }
+        else {
+            $Permission['Write'] = @{Users = @() }
+        }
+
         # Start the housekeeper for async routes
         Start-PodeAsyncRoutesHousekeeper
+
     }
 
     process {
@@ -591,8 +788,8 @@ function Set-PodeAsyncRoute {
                 UsingVariables = $r.UsingVariables
                 Arguments      = (Protect-PodeValue -Value $r.Arguments -Default @{})
                 CallbackInfo   = $CallbackInfo
-                Access         = $Access
-                $NoCancellable = $NoCancellable.IsPresent
+                Cancelable     = -not ($NotCancelable.IsPresent)
+                Permission     = $Permission
             }
             #Set thread count
             $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] = $MaxThreads
@@ -618,6 +815,20 @@ function Set-PodeAsyncRoute {
                     Id           = $async.ID
                     State        = $async.State
                     Name         = $async.Name
+                    Cancelable   = $async.Cancelable
+                }
+
+                if ($async.User) {
+                    $res.User = $async.User
+                    Write-PodeHost $async.Permission.Read -Explode
+                    # Add default permission
+                    if (! ($async.Permission.Read.Users -ccontains $async.User.ID)  ) {
+                        $async.Permission.Read.Users += $async.User.ID
+                    }
+                    if (! ($async.Permission.Write.Users -ccontains $async.User.ID)  ) {
+                        $async.Permission.Write.Users += $async.User.ID
+                    }
+                    $res.Permission = $async.Permission
                 }
 
                 # Send the response based on the requested media type
@@ -673,6 +884,18 @@ function Set-PodeAsyncRoute {
 .PARAMETER Path
     The path for the Pode route.
 
+.PARAMETER Middleware
+    An array of ScriptBlocks for optional Middleware.
+
+.PARAMETER EndpointName
+    The EndpointName of an Endpoint(s) this Route should be bound against.
+
+.PARAMETER Authentication
+    The name of an Authentication method which should be used as middleware on this Route.
+
+.PARAMETER Access
+    The name of an Access method which should be used as middleware on this Route.
+
 .PARAMETER ResponseContentType
     Specifies the content type for the response. Acceptable values are 'JSON', 'XML', and 'YAML'. Defaults to 'JSON'.
 
@@ -697,8 +920,31 @@ function Set-PodeAsyncRoute {
 .PARAMETER PassThru
     If set, the route will be returned from the function.
 
+.PARAMETER Role
+    One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+    One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+    One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER User
+    One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER AllowAnon
+    If supplied, the Route will allow anonymous access for non-authenticated users.
+
+.PARAMETER IfExists
+    Specifies what action to take when a Route already exists. (Default: Default)
+
+.PARAMETER OADefinitionTag
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps in distinguishing between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
-    Add-PodeAsyncQueryRoute -Path '/tasks/query' -ResponseContentType 'JSON' -QueryContentType 'JSON' -Payload 'Body'
+    Add-PodeAsyncQueryRoute -Path '/tasks/query' -ResponseContentType 'application/json' -QueryContentType 'application/json','application/yaml' -Payload 'Body'
 
     This example creates a Pode route at '/tasks/query' that processes query requests with JSON content types and expects the payload in the body.
 
@@ -714,14 +960,31 @@ function Set-PodeAsyncRoute {
             [string]
             $Path,
 
-            [string[]]
-            [ValidateSet('JSON', 'XML', 'YAML')]
-            $ResponseContentType = 'JSON',
+            [Parameter()]
+            [object[]]
+            $Middleware,
 
+            [Parameter( )]
+            [AllowNull()]
+            [string[]]
+            $EndpointName,
+
+            [Parameter()]
+            [Alias('Auth')]
+            [string]
+            $Authentication,
+
+            [Parameter()]
+            [string]
+            $Access,
+
+            [string[]]
+            [ValidateSet('application/json' , 'application/xml', 'application/yaml')]
+            $ResponseContentType = 'application/json',
 
             [string[] ]
-            [ValidateSet('JSON', 'XML', 'YAML')]
-            $QueryContentType = 'JSON',
+            [ValidateSet('application/json' , 'application/xml', 'application/yaml')]
+            $QueryContentType = 'application/json',
 
             [Parameter(ParameterSetName = 'OpenAPI')]
             [string]
@@ -743,7 +1006,34 @@ function Set-PodeAsyncRoute {
             $Payload = 'Body',
 
             [switch]
-            $PassThru
+            $PassThru,
+
+            [Parameter()]
+            [string[]]
+            $Role,
+
+            [Parameter()]
+            [string[]]
+            $Group,
+
+            [Parameter()]
+            [string[]]
+            $Scope,
+
+            [Parameter()]
+            [string[]]
+            $User,
+
+            [switch]
+            $AllowAnon,
+
+            [Parameter()]
+            [ValidateSet('Default', 'Error', 'Overwrite', 'Skip')]
+            [string]
+            $IfExists = 'Default',
+
+            [string[]]
+            $OADefinitionTag
 
         )
 
@@ -756,12 +1046,15 @@ function Set-PodeAsyncRoute {
             }
             $responseMediaType = Get-PodeHeader -Name 'Accept'
             $response = @()
-            $results = Search-PodeAsyncTask -Query $query
+            $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User
             if ($results) {
                 foreach ($result in $results) {
 
                     $taskSummary = @{
                         ID           = $result.ID
+                        User         = $result.User
+                        Cancelable   = $result.Cancelable
+                        Permission   = $result.Permission
                         # ISO 8601 UTC format
                         CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                         Name         = $result.Name
@@ -770,6 +1063,10 @@ function Set-PodeAsyncRoute {
 
                     if ($result.StartingTime) {
                         $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    }
+                    if ($result.User) {
+                        $taskSummary.User = $result.User
+                        $taskSummary.Permission = $result.Permission
                     }
 
                     if ($result.Runspace.Handler.IsCompleted) {
@@ -805,29 +1102,65 @@ function Set-PodeAsyncRoute {
                 default { Write-PodeJsonResponse -Value $response -StatusCode 200 }
             }
         }
-        $MediaResponseType = @()
-        if ($ResponseContentType -icontains 'JSON') { $MediaResponseType += 'application/json' }
-        if ($ResponseContentType -icontains 'XML') { $MediaResponseType += 'application/xml' }
-        if ($ResponseContentType -icontains 'YAML') { $MediaResponseType += 'text/yaml' }
 
-        $MediaQueryType = @()
-        if ($QueryContentType -icontains 'JSON') { $MediaQueryType += 'application/json' }
-        if ($QueryContentType -icontains 'XML') { $MediaQueryType += 'application/xml' }
-        if ($QueryContentType -icontains 'YAML') { $MediaQueryType += 'text/yaml' }
+        $param = @{
+            Path             = $Path
+            ScriptBlock      = $scriptBlock
+            ArgumentList     = $Payload
+            ErrorContentType = $ResponseContentType[0]
+            ContentType      = $QueryContentType[0]
+            PassThru         = $true
+        }
+
+        if ($Middleware) {
+            $param.Middleware = $Middleware
+        }
+        if ($EndpointName) {
+            $param.$EndpointName = $EndpointName
+        }
+        if ($Authentication) {
+            $param.Authentication = $Authentication
+        }
+        if ($Access) {
+            $param.Access = $Access
+        }
+        if ($Role) {
+            $param.Role = $Role
+        }
+        if ($Group) {
+            $param.Group = $Group
+        }
+        if ($Scope) {
+            $param.Scope = $Scope
+        }
+        if ($User) {
+            $param.User = $User
+        }
+        if ($AllowAnon.IsPresent) {
+            $param.AllowAnon = $AllowAnon
+        }
+        if ($IfExists.IsPresent) {
+            $param.IfExists = $IfExists
+        }
 
         switch ($Payload) {
-            'Body' { $route = Add-PodeRoute -PassThru -Method Post -Path $Path -ScriptBlock $scriptBlock -ArgumentList $Payload }
+            'Body' {
+                $param.Method = 'Post'
+            }
             'Header' {
-                $route = Add-PodeRoute -PassThru -Method Get -Path $Path -ScriptBlock $scriptBlock -ArgumentList $Payload
+                $param.Method = 'Get'
             }
             'query' {
-                $route = Add-PodeRoute -PassThru -Method Get -Path $Path -ScriptBlock $scriptBlock -ArgumentList $Payload
+                $param.Method = 'Get'
             }
         }
 
+        $route = Add-PodeRoute @param
+
 
         if (! $NoOpenAPI.IsPresent) {
-            Add-PodeAsyncComponentSchema -Name $OATypeName
+            $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
+            Add-PodeAsyncComponentSchema -Name $OATypeName -DefinitionTag $DefinitionTag
 
             if (!(Test-PodeOAComponent -Field schemas -Name  $PodeTaskQueryRequestName)) {
 
@@ -843,6 +1176,10 @@ function Set-PodeAsyncRoute {
                         op    = 'GT'
                         value = get-date '2024-07-05 20:20:00Z'
                     }
+                    'CreationTime' = @{
+                        op    = 'LE'
+                        value = get-date '2024-07-05 20:20:00Z'
+                    }
                     'State'        = @{
                         op    = 'EQ'
                         value = 'Completed'
@@ -851,33 +1188,41 @@ function Set-PodeAsyncRoute {
                         op    = 'LIKE'
                         value = 'Get'
                     }
+                    'ID'           = @{
+                        op    = 'EQ'
+                        value = 'b143660f-ebeb-49d9-9f92-cd21f3ff559c'
+                    }
+                    'Cancelable'   = @{
+                        op    = 'EQ'
+                        value = $true
+                    }
                 }
 
-                $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $MediaResponseType  -Content $OATypeName -Array) -PassThru |
+                $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -DefinitionTag $DefinitionTag -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $OATypeName -Array) -PassThru |
                     Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
-                        New-PodeOAContentMediaType -MediaType $MediaResponseType -Content (
+                        New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                             New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                         )
                     )
         $example = [ordered]@{}
 
-        foreach ($mt in   $MediaQueryType) {
+        foreach ($mt in   $QueryContentType) {
             $example += New-PodeOAExample -MediaType $mt -Name $PodeTaskQueryRequestName -Value $exampleHashTable
         }
 
         switch ($Payload.ToLowerInvariant()) {
             'body' {
                 $route | Set-PodeOARequest  -RequestBody (
-                    New-PodeOARequestBody -Content  (New-PodeOAContentMediaType -MediaType $MediaQueryType  -Content $PodeTaskQueryRequestName   ) -Examples $example
+                    New-PodeOARequestBody -Content  (New-PodeOAContentMediaType -MediaType $QueryContentType  -Content $PodeTaskQueryRequestName   ) -Examples $example
                 )
                 break
             }
             'header' {
-                $route | Set-PodeOARequest   -Parameters (ConvertTo-PodeOAParameter -In Header -Schema $PodeTaskQueryRequestName -ContentType $MediaQueryType[0] -Example  $example[0])
+                $route | Set-PodeOARequest   -Parameters (ConvertTo-PodeOAParameter -In Header -Schema $PodeTaskQueryRequestName -ContentType $QueryContentType[0] -Example  $example[0])
                 break
             }
             'query' {
-                $route | Set-PodeOARequest   -Parameters (ConvertTo-PodeOAParameter -In Query  -Schema $PodeTaskQueryRequestName -ContentType $MediaQueryType[0] -Example  $example[0])
+                $route | Set-PodeOARequest   -Parameters (ConvertTo-PodeOAParameter -In Query  -Schema $PodeTaskQueryRequestName -ContentType $QueryContentType[0] -Example  $example[0])
             }
         }
     }

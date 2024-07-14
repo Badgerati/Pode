@@ -41,12 +41,49 @@ Start-PodeServer -Threads 1 {
     }
 
 
-     # setup access
+    # setup access
     New-PodeAccessScheme -Type Role | Add-PodeAccess -Name 'Rbac'
     New-PodeAccessScheme -Type Group | Add-PodeAccess -Name 'Gbac'
 
     # setup a merged access
     Merge-PodeAccess -Name 'MergedAccess' -Access 'Rbac', 'Gbac' -Valid All
+
+    $testApiKeyUsers = @{
+        'M0R7Y302' = @{
+            ID     = 'M0R7Y302'
+            Name   = 'Morty'
+            Type   = 'Human'
+            Roles  = @('Manager')
+            Groups = @('Software')
+        }
+        'MINDY021' = @{
+            ID     = 'MINDY021'
+            Name   = 'Mindy'
+            Type   = 'AI'
+            Roles  = @('Developer')
+            Groups = @('Platform')
+        }
+    }
+
+
+    $testBasicUsers = @{
+        'M0R7Y302' = @{
+            ID     = 'M0R7Y302'
+            Name   = 'Morty'
+            Type   = 'Human'
+            Roles  = @('Developer')
+            Groups = @('Platform')
+        }
+        'MINDY021' = @{
+            ID     = 'MINDY021'
+            Name   = 'Mindy'
+            Type   = 'AI'
+            Roles  = @('Developer')
+            Groups = @('Software')
+        }
+    }
+
+
 
     # setup apikey auth
     New-PodeAuthScheme -ApiKey -Location Header | Add-PodeAuth -Name 'ApiKey' -Sessionless -ScriptBlock {
@@ -55,13 +92,12 @@ Start-PodeServer -Threads 1 {
         # here you'd check a real user storage, this is just for example
         if ($key -ieq 'test-api-key') {
             return @{
-                User = @{
-                    ID     = 'M0R7Y302'
-                    Name   = 'Morty'
-                    Type   = 'Human'
-                    Roles  = @('Developer')
-                    Groups = @('Platform')
-                }
+                User = ($using:testApiKeyUsers).M0R7Y302
+            }
+        }
+        if ($key -ieq 'test2-api-key') {
+            return @{
+                User = ($using:testApiKeyUsers).MINDY021
             }
         }
 
@@ -75,14 +111,13 @@ Start-PodeServer -Threads 1 {
         # here you'd check a real user storage, this is just for example
         if ($username -eq 'morty' -and $password -eq 'pickle') {
             return @{
-                User = @{
-                    Username = 'morty'
-                    ID       = 'M0R7Y302'
-                    Name     = 'Morty'
-                    Type     = 'Human'
-                    Roles    = @('Developer')
-                    Groups   = @('Software')
-                }
+                User = ($using:testBasicUsers).M0R7Y302
+            }
+        }
+
+        if ($username -eq 'mindy' -and $password -eq 'pickle') {
+            return @{
+                User = ($using:testBasicUsers).MINDY021
             }
         }
 
@@ -98,23 +133,15 @@ Start-PodeServer -Threads 1 {
 
         return @{
             User = @{
-                Username = $basicUser.Username
-                ID       = $apiUser.ID
-                Name     = $apiUser.Name
-                Type     = $apiUser.Type
-                Roles    = @($apiUser.Roles + $basicUser.Roles) | Sort-Object -Unique
-                Groups   = @($apiUser.Groups + $basicUser.Groups) | Sort-Object -Unique
+                ID     = $apiUser.ID
+                Name   = $apiUser.Name
+                Type   = $apiUser.Type
+                Roles  = @($apiUser.Roles + $basicUser.Roles) | Sort-Object -Unique
+                Groups = @($apiUser.Groups + $basicUser.Groups) | Sort-Object -Unique
             }
         }
     }
 
-    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsing'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
-        Write-PodeHost "sleepTime=$($using:uSleepTime)"
-        Write-PodeHost "Message=$($using:uMessage)"
-        write-podehost $WebEvent.auth.User -Explode
-        Start-Sleep ($using:uSleepTime *2)
-        return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
@@ -163,11 +190,18 @@ Start-PodeServer -Threads 1 {
     } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
 
 
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsing' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
+        Write-PodeHost "sleepTime=$($using:uSleepTime * 200)"
+        Write-PodeHost "Message=$($using:uMessage)"
+        #write-podehost $WebEvent.auth.User -Explode
+        Start-Sleep ($using:uSleepTime * 200)
+        return @{ InnerValue = $using:uMessage }
+    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -NotCancelable
 
-    Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType JSON, YAML -In Path #-TaskIdName 'pippopppoId'
+    Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' #-TaskIdName 'pippopppoId'
     Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType JSON, YAML -In Query #-TaskIdName 'pippopppoId'
 
-    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType JSON , YAML   -Payload  Body -QueryContentType JSON, YAML
+    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'
 
     Add-PodeRoute -PassThru -Method Post -path '/receive/callback' -ScriptBlock {
         write-podehost 'Callback received'

@@ -73,6 +73,13 @@ function Invoke-PodeInternalAsync {
             State         = 'NotStarted'
             Error         = $null
             CallbackInfo  = $Task.CallbackInfo
+            Cancelable    = $Task.Cancelable
+        }
+
+        if ($WebEvent.Auth.User) {
+            $PodeContext.AsyncRoutes.Results[$Id].User = $WebEvent.Auth.User
+            Write-PodeHost $Task.Permission.Read -Explode
+            $PodeContext.AsyncRoutes.Results[$Id].Permission = Copy-PodeDeepClone $Task.Permission
         }
 
         return $PodeContext.AsyncRoutes.Results[$Id]
@@ -93,7 +100,7 @@ function ConvertTo-PodeEnhancedScriptBlock {
         $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
         try {
             $asyncResult.StartingTime = [datetime]::UtcNow
-            $asyncResult.User = $WebEvent.Auth.User
+
             # Set the state to 'Running'
             $asyncResult.State = 'Running'
 
@@ -303,9 +310,13 @@ function Close-PodeAsyncRoutesInternal {
 function Add-PodeAsyncComponentSchema {
     param (
         [string]
-        $Name = 'PodeTask'
+        $Name = 'PodeTask',
+
+        [string[]]
+        $DefinitionTag
     )
-    if (!(Test-PodeOAComponent -Field schemas -Name  $Name)) {
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    if (!(Test-PodeOAComponent -Field schemas -Name  $Name -DefinitionTag $DefinitionTag)) {
         New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required |
             New-PodeOAStringProperty -Name 'CreationTime' -Format Date-Time -Example '2024-07-02T20:58:15.2014422Z' -Required |
             New-PodeOAStringProperty -Name 'StartingTime' -Format Date-Time -Example '2024-07-02T20:58:15.2014422Z' |
@@ -314,7 +325,7 @@ function Add-PodeAsyncComponentSchema {
             New-PodeOAStringProperty -Name 'State' -Description 'Order Status' -Required -Example 'Running' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
             New-PodeOAStringProperty -Name 'Error' -Description 'The Error message if any.' |
             New-PodeOAStringProperty -Name 'Name' -Example 'Get:/path' -Required |
-            New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name
+            New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name -DefinitionTag $DefinitionTag
     }
 
 }
@@ -348,13 +359,25 @@ function Search-PodeAsyncTask {
     param (
         [Parameter(Mandatory = $true)]
         [hashtable]
-        $Query
+        $Query,
+
+        [Parameter( )]
+        [hashtable]
+        $User
     )
 
     $matchedElements = @()
     if ($PodeContext.AsyncRoutes.Results.count -gt 0) {
         foreach ( $rkey in $PodeContext.AsyncRoutes.Results.keys.Clone()) {
             $result = $PodeContext.AsyncRoutes.Results[$rkey]
+
+            if ($result.User -and ($null -eq $User)) {
+                continue
+            }
+            if (! (Test-PodeAsyncPermission -Permission $result.Permission.Read -User $User)) {
+                continue
+            }
+
             $match = $true
 
             foreach ($key in $Query.Keys) {
@@ -517,4 +540,39 @@ function Convert-PodeCallBackRuntimeExpression {
     }
 
     return @{Key = $Variable; Value = $Variable }
+}
+
+
+
+function Test-PodeAsyncPermission {
+    param(
+        [hashtable]
+        $Permission,
+        [hashtable]
+        $User
+    )
+    foreach ($key in $Permission.Keys) {
+        Write-PodeHost "Permission Key=$key"
+
+        if ($User.ContainsKey($key)) {
+            Write-PodeHost "User Key=$key"
+            if (  Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray $User[$key]) {
+                return $true
+            }
+        }
+        elseif ($key -eq 'Users') {
+            write-podehost $Permission[$key] -Explode
+            write-podehost $User.ID
+            if (Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray  $User.ID) {
+                return $true
+                write-podehost $true
+            }
+        }
+    }
+    return $false
+    <#   return (Test-PodeArraysHaveCommonElement -ReferenceArray $Permission.Users -DifferenceArray $User.ID ) -or
+    (Test-PodeArraysHaveCommonElement -ReferenceArray $result.Users -DifferenceArray $User.Username ) -or
+    (Test-PodeArraysHaveCommonElement -ReferenceArray $result.Scopes -DifferenceArray $User.Scopes) -or
+    (Test-PodeArraysHaveCommonElement -ReferenceArray $result.Groups -DifferenceArray $User.Groups) -or
+    (Test-PodeArraysHaveCommonElement -ReferenceArray $result.Roles -DifferenceArray $User.Roles)#>
 }

@@ -1689,7 +1689,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+        { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
@@ -4034,5 +4034,165 @@ function Resolve-PodeObjectArray {
     else {
         # For any other type, convert it to a PowerShell object
         return New-Object psobject -Property $Property
+    }
+}
+
+
+
+<#
+.SYNOPSIS
+    Checks if two arrays have any common elements.
+
+.DESCRIPTION
+    This function takes two arrays as input parameters and checks if they share any common elements.
+    It returns $true if there is at least one common element, and $false otherwise.
+
+.PARAMETER ReferenceArray
+    The first array to compare.
+
+.PARAMETER DifferenceArray
+    The second array to compare.
+
+.EXAMPLE
+    $array1 = @('a', 'b', 'c')
+    $array2 = @('c', 'd', 'e')
+    Test-PodeArraysHaveCommonElement -ReferenceArray $array1 -DifferenceArray $array2
+    # Output: True
+
+.EXAMPLE
+    $array1 = @('a', 'b', 'c')
+    $array2 = @('d', 'e', 'f')
+    Test-PodeArraysHaveCommonElement -ReferenceArray $array1 -DifferenceArray $array2
+    # Output: False
+
+.NOTES
+    Author: Pode Team
+    Date: 2024-07-13
+#>
+function Test-PodeArraysHaveCommonElement {
+    param (
+        [array]$ReferenceArray, # The first array to compare
+        [array]$DifferenceArray    # The second array to compare
+    )
+
+    # Iterate through each item in the DifferenceArray
+    foreach ($item in $DifferenceArray) {
+        # Check if the item exists in the ReferenceArray
+        if ($ReferenceArray -contains $item) {
+            # Return true if a common element is found
+            return $true
+        }
+    }
+    # Return false if no common elements are found
+    return $false
+}
+
+
+<#
+.SYNOPSIS
+    Creates a deep copy of a given hashtable, array, or custom object.
+
+.DESCRIPTION
+    The Copy-PodeDeepClone function recursively clones a hashtable, array, or custom object.
+    It ensures that all nested objects are also cloned, resulting in a completely independent copy.
+
+.PARAMETER InputObject
+    The input object to be cloned. It can be a hashtable, array, or custom object.
+
+.EXAMPLE
+    $originalHashtable = @{
+        Key1 = 'Value1'
+        Key2 = @{
+            SubKey1 = 'SubValue1'
+            SubKey2 = 'SubValue2'
+        }
+        Key3 = @('Item1', 'Item2', @{
+            NestedKey = 'NestedValue'
+        })
+    }
+
+    $clonedHashtable = Copy-PodeDeepClone -InputObject $originalHashtable
+
+    # Modify the cloned hashtable to verify it's a deep copy
+    $clonedHashtable['Key2']['SubKey1'] = 'ModifiedSubValue1'
+    $clonedHashtable['Key3'][2]['NestedKey'] = 'ModifiedNestedValue'
+
+    # Display the original and cloned hashtables to show they are independent
+    "Original Hashtable:"
+    $originalHashtable
+
+    "Cloned Hashtable:"
+    $clonedHashtable
+
+.EXAMPLE
+    # Clone an array
+    $originalArray = @('a', 'b', 'c', 'd')
+    $clonedArray = Copy-PodeDeepClone -InputObject $originalArray
+
+    # Modify the cloned array to verify it's a deep copy
+    $clonedArray[1] = 'modifiedValue'
+
+    # Display the original and cloned arrays to show they are independent
+    "Original Array:"
+    $originalArray
+
+    "Cloned Array:"
+    $clonedArray
+
+.EXAMPLE
+    # Clone a custom object
+    $originalObject = [pscustomobject]@{
+        Name = 'John'
+        Age = 30
+        Address = [pscustomobject]@{
+            Street = '123 Main St'
+            City = 'Anytown'
+        }
+    }
+
+    $clonedObject = Copy-PodeDeepClone -InputObject $originalObject
+
+    # Modify the cloned object to verify it's a deep copy
+    $clonedObject.Address.Street = '456 Elm St'
+
+    # Display the original and cloned objects to show they are independent
+    "Original Object:"
+    $originalObject
+
+    "Cloned Object:"
+    $clonedObject
+
+.NOTES
+    Author: Pode Team
+    Date: 2024-07-13
+#>
+function Copy-PodeDeepClone {
+    param (
+        [psobject]$InputObject
+    )
+
+    if ($InputObject -is [hashtable]) {
+        $clone = @{}
+        foreach ($key in $InputObject.Keys) {
+            $clone[$key] = Copy-PodeDeepClone -InputObject $InputObject[$key]
+        }
+        return $clone
+    }
+    elseif ($InputObject -is [array]) {
+        $clone = @()
+        foreach ($item in $InputObject) {
+            $clone += Copy-PodeDeepClone -InputObject $item
+        }
+        return $clone
+    }
+    elseif ($InputObject -is [pscustomobject]) {
+        $clone = [pscustomobject]@{}
+        foreach ($property in $InputObject.PSObject.Properties) {
+            $clone | Add-Member -MemberType NoteProperty -Name $property.Name -Value (Copy-PodeDeepClone -InputObject $property.Value)
+        }
+        return $clone
+    }
+    else {
+        return $InputObject
     }
 }
