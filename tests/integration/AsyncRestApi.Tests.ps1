@@ -15,7 +15,7 @@ Describe 'ASYNC REST API Requests' {
         $Port = 8080
         $Endpoint = "http://127.0.0.1:$($Port)"
         $scriptPath = "$($PSScriptRoot)\..\..\examples\Async.ps1"
-        invlok
+        
         Start-Process 'pwsh' -ArgumentList "-NoProfile -WindowStyle Hidden -File `"$scriptPath`" -Quiet -Port $Port"  -NoNewWindow
         Start-Sleep -Seconds 10
     }
