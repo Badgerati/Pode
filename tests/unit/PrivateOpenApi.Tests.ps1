@@ -14,7 +14,7 @@ Describe 'PrivateOpenApi' {
         function GetPodeContext {
             return @{
                 Server = @{
-                    Security        = @{
+                    Security               = @{
                         autoheaders = $false
                     }
                     Authentications = @{}
@@ -342,7 +342,6 @@ Describe 'PrivateOpenApi' {
 
             $openApiTable | Should -BeOfType [hashtable]
             $openApiTable.DefinitionTagSelectionStack -is [System.Collections.Generic.Stack[System.Object]] | Should -BeTrue
-            $openApiTable.DefaultDefinitionTag | Should -Be 'default'
             $openApiTable.SelectedDefinitionTag | Should -Be 'default'
             $openApiTable.Definitions | Should -BeOfType [hashtable]
             $openApiTable.Definitions['default'] | Should -BeOfType [hashtable]
@@ -351,8 +350,6 @@ Describe 'PrivateOpenApi' {
         It 'Initializes OpenAPI table with custom definition tag' {
             $customTag = 'api-v1'
             $openApiTable = Initialize-PodeOpenApiTable -DefaultDefinitionTag $customTag
-
-            $openApiTable.DefaultDefinitionTag | Should -Be $customTag
             $openApiTable.SelectedDefinitionTag | Should -Be $customTag
             $openApiTable.Definitions | Should -BeOfType [hashtable]
             $openApiTable.Definitions[$customTag] | Should -BeOfType [hashtable]

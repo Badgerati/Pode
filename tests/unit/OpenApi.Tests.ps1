@@ -3035,6 +3035,75 @@ Describe 'OpenApi' {
         }
     }
 
+    Describe 'Rename-PodeOADefinitionTag' {
+        # Mocking the PodeContext to simulate the environment
+        BeforeEach {
+            $PodeContext = @{
+                Server = @{
+                    OpenAPI = @{
+                        Definitions = @{
+                            'oldTag' = @{
+                                # Mock definition details
+                                Description = 'Old tag description'
+                            }
+                        }
+                        SelectedDefinitionTag = 'oldTag'
+                        DefinitionTagSelectionStack = [System.Collections.Stack]@()
+                    }
+                    Web = @{
+                        OpenApi = @{
+                            DefaultDefinitionTag = 'oldTag'
+                        }
+                    }
+                }
+            }
+        }
+
+        # Test case: Renaming a specific tag
+        It 'Renames a specific OpenAPI definition tag' {
+            Rename-PodeOADefinitionTag -Tag 'oldTag' -NewTag 'newTag'
+
+            # Check if the new tag exists
+            $PodeContext.Server.OpenAPI.Definitions.ContainsKey('newTag') | Should -BeTrue
+            # Check if the old tag is removed
+            $PodeContext.Server.OpenAPI.Definitions.ContainsKey('oldTag') | Should -BeFalse
+            # Check if the selected definition tag is updated
+            $PodeContext.Server.OpenAPI.SelectedDefinitionTag | Should -Be 'newTag'
+        }
+
+        # Test case: Renaming the default tag
+        It 'Renames the default OpenAPI definition tag when Tag parameter is not specified' {
+            Rename-PodeOADefinitionTag -NewTag 'newDefaultTag'
+
+            # Check if the new default tag is set
+            $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag | Should -Be 'newDefaultTag'
+            # Check if the new tag exists
+            $PodeContext.Server.OpenAPI.Definitions.ContainsKey('newDefaultTag') | Should -BeTrue
+            # Check if the old tag is removed
+            $PodeContext.Server.OpenAPI.Definitions.ContainsKey('oldTag') | Should -BeFalse
+        }
+
+        # Test case: Error when new tag already exists
+        It 'Throws an error when the new tag name already exists' {
+            $PodeContext.Server.OpenAPI.Definitions['existingTag'] = @{
+                # Mock definition details
+                Description = 'Existing tag description'
+            }
+
+            { Rename-PodeOADefinitionTag -Tag 'oldTag' -NewTag 'existingTag' } | Should -Throw -ExpectedMessage ($PodeLocale.openApiDefinitionAlreadyExistsExceptionMessage -f 'existingTag')
+        }
+
+        # Test case: Error when used inside Select-PodeOADefinition ScriptBlock
+        It 'Throws an error when used inside a Select-PodeOADefinition ScriptBlock' {
+            $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Push('dummy')
+
+            { Rename-PodeOADefinitionTag -Tag 'oldTag' -NewTag 'newTag' } | Should -Throw  -ExpectedMessage ($PodeLocale.renamePodeOADefinitionTagExceptionMessage)
+
+            # Clear the stack after test
+            $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Clear()
+        }
+    }
+
 
 
     Context 'Pet Object example' {
