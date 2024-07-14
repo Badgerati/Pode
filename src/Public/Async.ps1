@@ -838,7 +838,7 @@ function Add-PodeAsyncQueryRoute {
         }
     }
 
-.PARAMETER Cancelable
+.PARAMETER NotCancelable
     The Async operation cannot be forcefully terminated
 
 .OUTPUTS
