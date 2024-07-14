@@ -56,6 +56,29 @@ The default `Definition Tag` is named "default". This can be changed using the `
 }
 ```
 
+### Renaming a Definition Tag
+
+A Definition Tag can be renamed at any time using the `Rename-PodeOADefinitionTagName` function. This allows you to update the tag name for an existing OpenAPI definition, ensuring your tags remain organized and meaningful.
+
+```powershell
+Rename-PodeOADefinitionTagName -Tag 'v.3' -NewTag 'v.3.0.3'
+```
+
+In this example, the tag `'v.3'` is renamed to `'v.3.0.3'`.
+
+### Renaming the Default Definition Tag
+
+You can also rename the default `Definition Tag` without specifying the `Tag` parameter. This updates the default tag to the new name provided.
+
+```powershell
+Rename-PodeOADefinitionTagName -NewTag 'NewDefault'
+```
+
+In this example, the default definition tag is renamed to `'NewDefault'`.
+
+!!! note
+    The `Rename-PodeOADefinitionTagName` function cannot be used inside a `Select-PodeOADefinition` `[Scriptblock]`. Attempting to do so will result in an error.
+
 ### OpenAPI example
 
 A simple OpenAPI definition
