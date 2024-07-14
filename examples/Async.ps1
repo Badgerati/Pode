@@ -1,11 +1,25 @@
 param(
     [Parameter()]
     [int]
-    $Port = 8080
+    $Port = 8080,
+    [switch]
+    $Quiet
 )
 
-$path = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
+try {
+    # Determine the script path and Pode module path
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+
+    # Import the Pode module from the source path if it exists, otherwise from installed modules
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
+    }
+}
+catch { throw }
 
 # or just:
 # Import-Module Pode
@@ -14,13 +28,13 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 # Demostrates Lockables, Mutexes, and Semaphores
 #>
 
-Start-PodeServer -Threads 1 {
+Start-PodeServer -Threads 1 -Quiet:$Quiet {
 
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
     # request logging
-    New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -Terminal  | Enable-PodeRequestLogging
 
     Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses
 
@@ -223,6 +237,9 @@ Start-PodeServer -Threads 1 {
         write-podehost $WebEvent.Data -Explode
     }
 
+    Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
+        Close-PodeServer
+    }
     <#
     Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
 

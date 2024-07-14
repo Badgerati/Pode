@@ -685,20 +685,15 @@ function Test-PodeAsyncPermission {
         $User
     )
     foreach ($key in $Permission.Keys) {
-        Write-PodeHost "Permission Key=$key"
 
         if ($User.ContainsKey($key)) {
-            Write-PodeHost "User Key=$key"
             if (  Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray $User[$key]) {
                 return $true
             }
         }
         elseif ($key -eq 'Users') {
-            write-podehost $Permission[$key] -Explode
-            write-podehost $User.ID
             if (Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray  $User.ID) {
                 return $true
-                write-podehost $true
             }
         }
     }
@@ -727,7 +722,6 @@ function Get-PodeAsyncSetScriptBlock {
 
         if ($async.User) {
             $res.User = $async.User
-            Write-PodeHost $async.Permission.Read -Explode
             # Add default permission
             if (! ($async.Permission.Read.Users -ccontains $async.User)  ) {
                 $async.Permission.Read.Users += $async.User
