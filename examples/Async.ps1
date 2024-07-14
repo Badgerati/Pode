@@ -3,7 +3,9 @@ param(
     [int]
     $Port = 8080,
     [switch]
-    $Quiet
+    $Quiet,
+    [switch]
+    $DisableTermination
 )
 
 try {
@@ -28,7 +30,7 @@ catch { throw }
 # Demostrates Lockables, Mutexes, and Semaphores
 #>
 
-Start-PodeServer -Threads 1 -Quiet:$Quiet {
+Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination {
 
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -47,8 +49,8 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet {
     $uSleepTime = 5
     $uMessage = 'coming from using'
 
-    $global:gMessage = 'coming from global'
-    $global:gSleepTime = 3
+  #  $global:gMessage = 'coming from global'
+ #   $global:gSleepTime = 3
     Set-PodeState -Name 'data' -Value @{
         sleepTime = 5
         Message   = 'coming from a PodeState'

@@ -15,8 +15,14 @@ Describe 'ASYNC REST API Requests' {
         $Port = 8080
         $Endpoint = "http://127.0.0.1:$($Port)"
         $scriptPath = "$($PSScriptRoot)\..\..\examples\Async.ps1"
-        
-        Start-Process 'pwsh' -ArgumentList "-NoProfile -WindowStyle Hidden -File `"$scriptPath`" -Quiet -Port $Port"  -NoNewWindow
+        if ($PSVersionTable.PsVersion -gt [version]'6.0') {
+            Start-Process 'pwsh' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
+
+            #  Invoke-Command -FilePath $scriptPath -ArgumentList  'Quiet', "Port $Port", 'DisableTermination'
+        }
+        else {
+            Start-Process 'powershell' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
+        }
         Start-Sleep -Seconds 10
     }
 
