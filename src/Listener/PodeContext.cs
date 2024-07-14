@@ -282,6 +282,7 @@ namespace Pode
                 State = PodeContextState.Receiving;
                 try
                 {
+                    PodeHelpers.WriteErrorMessage($"Receiving request", Listener, PodeLoggingLevel.Verbose, this);
                     var close = await Request.Receive(ContextTimeoutToken.Token);
                     SetContextType();
                     EndReceive(close);
