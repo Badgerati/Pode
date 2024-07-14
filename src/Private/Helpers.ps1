@@ -4066,8 +4066,7 @@ function Resolve-PodeObjectArray {
     # Output: False
 
 .NOTES
-    Author: Pode Team
-    Date: 2024-07-13
+    This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeArraysHaveCommonElement {
     param (
@@ -4163,8 +4162,7 @@ function Test-PodeArraysHaveCommonElement {
     $clonedObject
 
 .NOTES
-    Author: Pode Team
-    Date: 2024-07-13
+    This is an internal function and may change in future releases of Pode.
 #>
 function Copy-PodeDeepClone {
     param (

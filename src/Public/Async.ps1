@@ -1,76 +1,76 @@
 
 <#
 .SYNOPSIS
-Adds a route to get the status and details of an asynchronous task in Pode.
+    Adds a route to get the status and details of an asynchronous task in Pode.
 
 .DESCRIPTION
-The `Add-PodeAsyncGetRoute` function creates a route in Pode that allows retrieving the status
-and details of an asynchronous task. This function supports different methods for task ID
-retrieval (Cookie, Header, Path, Query) and various response types (JSON, XML, YAML). It
-integrates with OpenAPI documentation, providing detailed route information and response schemas.
+    The `Add-PodeAsyncGetRoute` function creates a route in Pode that allows retrieving the status
+    and details of an asynchronous task. This function supports different methods for task ID
+    retrieval (Cookie, Header, Path, Query) and various response types (JSON, XML, YAML). It
+    integrates with OpenAPI documentation, providing detailed route information and response schemas.
 
 .PARAMETER Path
-The URL path for the route. If the `In` parameter is set to 'Path', the `TaskIdName` will be
-appended to this path.
+    The URL path for the route. If the `In` parameter is set to 'Path', the `TaskIdName` will be
+    appended to this path.
 
 .PARAMETER Middleware
-An array of ScriptBlocks for optional Middleware.
+    An array of ScriptBlocks for optional Middleware.
 
 .PARAMETER EndpointName
-The EndpointName of an Endpoint(s) this Route should be bound against.
+    The EndpointName of an Endpoint(s) this Route should be bound against.
 
 .PARAMETER Authentication
-The name of an Authentication method which should be used as middleware on this Route.
+    The name of an Authentication method which should be used as middleware on this Route.
 
 .PARAMETER Access
-The name of an Access method which should be used as middleware on this Route.
+    The name of an Access method which should be used as middleware on this Route.
 
 .PARAMETER ResponseContentType
-Specifies the response type(s) for the route. Valid values are 'JSON', 'XML', and 'YAML'.
-You can specify multiple types. The default is 'JSON'.
+    Specifies the response type(s) for the route. Valid values are 'application/json' , 'application/xml', 'application/yaml'.
+    You can specify multiple types. The default is 'application/json'.
 
 .PARAMETER OATypeName
-The type name for OpenAPI documentation. The default is 'PodeTask'. This parameter is only used
-if the route is included in OpenAPI documentation.
+    The type name for OpenAPI documentation. The default is 'PodeTask'. This parameter is only used
+    if the route is included in OpenAPI documentation.
 
 .PARAMETER NoOpenAPI
-If specified, the route will not be included in the OpenAPI documentation.
+    If specified, the route will not be included in the OpenAPI documentation.
 
 .PARAMETER In
-Specifies where to retrieve the task ID from. Valid values are 'Cookie', 'Header', 'Path', and
-'Query'. The default is 'Query'.
+    Specifies where to retrieve the task ID from. Valid values are 'Cookie', 'Header', 'Path', and
+    'Query'. The default is 'Query'.
 
 .PARAMETER TaskIdName
-The name of the parameter that contains the task ID. The default is 'taskId'.
+    The name of the parameter that contains the task ID. The default is 'taskId'.
 
 .PARAMETER PassThru
-If specified, the function returns the route information after processing.
+    If specified, the function returns the route information after processing.
 
 .PARAMETER Role
-One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER Group
-One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER Scope
-One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER User
-One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER AllowAnon
-If supplied, the Route will allow anonymous access for non-authenticated users.
+    If supplied, the Route will allow anonymous access for non-authenticated users.
 
 .PARAMETER IfExists
-Specifies what action to take when a Route already exists. (Default: Default)
+    Specifies what action to take when a Route already exists. (Default: Default)
 
 .PARAMETER OADefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps in distinguishing between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .OUTPUTS
-[hashtable]
+    [hashtable]
 #>
 function Add-PodeAsyncGetRoute {
     [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
@@ -220,49 +220,84 @@ function Add-PodeAsyncGetRoute {
 
 <#
 .SYNOPSIS
-Adds a route to stop an asynchronous task in Pode.
+    Adds a route to stop an asynchronous task in Pode.
 
 .DESCRIPTION
-The `Add-PodeAsyncStopRoute` function creates a route in Pode that allows the stopping of an
-asynchronous task. This function supports different methods for task ID retrieval (Cookie,
-Header, Path, Query) and various response types (JSON, XML, YAML). It integrates with OpenAPI
-documentation, providing detailed route information and response schemas.
+    The `Add-PodeAsyncStopRoute` function creates a route in Pode that allows the stopping of an
+    asynchronous task. This function supports different methods for task ID retrieval (Cookie,
+    Header, Path, Query) and various response types (JSON, XML, YAML). It integrates with OpenAPI
+    documentation, providing detailed route information and response schemas.
 
 .PARAMETER Path
-The URL path for the route. If the `In` parameter is set to 'Path', the `TaskIdName` will be
-appended to this path.
+    The URL path for the route. If the `In` parameter is set to 'Path', the `TaskIdName` will be
+    appended to this path.
+
+.PARAMETER Middleware
+    An array of ScriptBlocks for optional Middleware.
+
+.PARAMETER EndpointName
+    The EndpointName of an Endpoint(s) this Route should be bound against.
+
+.PARAMETER Authentication
+    The name of an Authentication method which should be used as middleware on this Route.
+
+.PARAMETER Access
+    The name of an Access method which should be used as middleware on this Route.
 
 .PARAMETER ResponseContentType
-Specifies the response type(s) for the route. Valid values are 'JSON', 'XML', and 'YAML'.
-You can specify multiple types. The default is 'JSON'.
+    Specifies the response type(s) for the route. Valid values are 'application/json' , 'application/xml', 'application/yaml'.
+    You can specify multiple types. The default is 'application/json'.
 
 .PARAMETER OATypeName
-The type name for OpenAPI documentation. The default is 'PodeTask'. This parameter is only used
-if the route is included in OpenAPI documentation.
+    The type name for OpenAPI documentation. The default is 'PodeTask'. This parameter is only used
+    if the route is included in OpenAPI documentation.
 
 .PARAMETER NoOpenAPI
-If specified, the route will not be included in the OpenAPI documentation.
+    If specified, the route will not be included in the OpenAPI documentation.
 
 .PARAMETER In
-Specifies where to retrieve the task ID from. Valid values are 'Cookie', 'Header', 'Path', and
-'Query'. The default is 'Query'.
+    Specifies where to retrieve the task ID from. Valid values are 'Cookie', 'Header', 'Path', and
+    'Query'. The default is 'Query'.
 
 .PARAMETER TaskIdName
-The name of the parameter that contains the task ID. The default is 'taskId'.
+    The name of the parameter that contains the task ID. The default is 'taskId'.
 
 .PARAMETER PassThru
-If specified, the function returns the route information after processing.
+    If specified, the function returns the route information after processing.
+
+.PARAMETER Role
+    One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Group
+    One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER Scope
+    One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER User
+    One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
+
+.PARAMETER AllowAnon
+    If supplied, the Route will allow anonymous access for non-authenticated users.
+
+.PARAMETER IfExists
+    Specifies what action to take when a Route already exists. (Default: Default)
+
+.PARAMETER OADefinitionTag
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps in distinguishing between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .OUTPUTS
-[hashtable]
+    [hashtable]
 
 .EXAMPLE
-# Adding a route to stop an asynchronous task with the task ID in the query string
-Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType YAML -In Query -TaskIdName 'taskId'
+    # Adding a route to stop an asynchronous task with the task ID in the query string
+    Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType YAML -In Query -TaskIdName 'taskId'
 
 .EXAMPLE
-#  Adding a route to stop an asynchronous task with the task ID in the URL path
-Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType JSON, YAML -In Path -TaskIdName 'taskId'
+    #  Adding a route to stop an asynchronous task with the task ID in the URL path
+    Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType JSON, YAML -In Path -TaskIdName 'taskId'
 #>
 
 function Add-PodeAsyncStopRoute {
@@ -411,81 +446,83 @@ function Add-PodeAsyncStopRoute {
 
 <#
 .SYNOPSIS
-Adds a Pode route for querying task information.
+    Adds a Pode route for querying task information.
 
 .DESCRIPTION
-The Add-PodeAsyncQueryRoute function creates a Pode route that allows querying task information based on specified parameters.
-The function supports multiple content types for both requests and responses, and can generate OpenAPI documentation if needed.
+    The Add-PodeAsyncQueryRoute function creates a Pode route that allows querying task information based on specified parameters.
+    The function supports multiple content types for both requests and responses, and can generate OpenAPI documentation if needed.
 
 .PARAMETER Path
-The path for the Pode route.
+    The path for the Pode route.
 
 .PARAMETER Middleware
-An array of ScriptBlocks for optional Middleware.
+    An array of ScriptBlocks for optional Middleware.
 
 .PARAMETER EndpointName
-The EndpointName of an Endpoint(s) this Route should be bound against.
+    The EndpointName of an Endpoint(s) this Route should be bound against.
 
 .PARAMETER Authentication
-The name of an Authentication method which should be used as middleware on this Route.
+    The name of an Authentication method which should be used as middleware on this Route.
 
 .PARAMETER Access
-The name of an Access method which should be used as middleware on this Route.
+    The name of an Access method which should be used as middleware on this Route.
 
 .PARAMETER ResponseContentType
-Specifies the content type for the response. Acceptable values are 'JSON', 'XML', and 'YAML'. Defaults to 'JSON'.
+    Specifies the response type(s) for the route. Valid values are 'application/json' , 'application/xml', 'application/yaml'.
+    You can specify multiple types. The default is 'application/json'.
 
 .PARAMETER QueryContentType
-Specifies the content type for the query. Acceptable values are 'JSON', 'XML', and 'YAML'. Defaults to 'JSON'.
+    Specifies the response type(s) for the query. Valid values are 'application/json' , 'application/xml', 'application/yaml'.
+    You can specify multiple types. The default is 'application/json'.
 
 .PARAMETER OATypeName
-The OpenAPI type name. Defaults to 'PodeTask'. This parameter is used only if OpenAPI documentation is generated.
+    The OpenAPI type name. Defaults to 'PodeTask'. This parameter is used only if OpenAPI documentation is generated.
 
 .PARAMETER NoOpenAPI
-Switch to indicate that no OpenAPI documentation should be generated. If this switch is set, OpenAPI parameters are ignored.
+    Switch to indicate that no OpenAPI documentation should be generated. If this switch is set, OpenAPI parameters are ignored.
 
 .PARAMETER PodeTaskQueryRequestName
-The name of the Pode task query request in the OpenAPI schema. Defaults to 'PodeTaskQueryRequest'.
+    The name of the Pode task query request in the OpenAPI schema. Defaults to 'PodeTaskQueryRequest'.
 
 .PARAMETER TaskIdName
-The name of the task ID parameter. Defaults to 'taskId'.
+    The name of the task ID parameter. Defaults to 'taskId'.
 
 .PARAMETER Payload
-Specifies where the payload is located. Acceptable values are 'Body', 'Header', and 'Query'. Defaults to 'Body'.
+    Specifies where the payload is located. Acceptable values are 'Body', 'Header', and 'Query'. Defaults to 'Body'.
 
 .PARAMETER PassThru
-If set, the route will be returned from the function.
+    If set, the route will be returned from the function.
 
 .PARAMETER Role
-One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Roles that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER Group
-One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Groups that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER Scope
-One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Scopes that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER User
-One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
+    One or more optional Users that will be authorised to access this Route, when using Authentication with an Access method.
 
 .PARAMETER AllowAnon
-If supplied, the Route will allow anonymous access for non-authenticated users.
+    If supplied, the Route will allow anonymous access for non-authenticated users.
 
 .PARAMETER IfExists
-Specifies what action to take when a Route already exists. (Default: Default)
+    Specifies what action to take when a Route already exists. (Default: Default)
 
 .PARAMETER OADefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps in distinguishing between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-Add-PodeAsyncQueryRoute -Path '/tasks/query' -ResponseContentType 'application/json' -QueryContentType 'application/json','application/yaml' -Payload 'Body'
+    Add-PodeAsyncQueryRoute -Path '/tasks/query' -ResponseContentType 'application/json' -QueryContentType 'application/json','application/yaml' -Payload 'Body'
 
-This example creates a Pode route at '/tasks/query' that processes query requests with JSON content types and expects the payload in the body.
+    This example creates a Pode route at '/tasks/query' that processes query requests with JSON content types and expects the payload in the body.
 
 .OUTPUTS
-[hashtable]
+    [hashtable]
 #>
 
 function Add-PodeAsyncQueryRoute {
@@ -720,8 +757,8 @@ function Add-PodeAsyncQueryRoute {
     the `Method`, `Path`, and `Logic` keys at a minimum.
 
 .PARAMETER ResponseContentType
-    Specifies the response type(s) for the asynchronous route. Valid values are 'JSON', 'XML',
-    and 'YAML'. You can specify multiple types. The default is 'JSON'.
+    Specifies the response type(s) for the route. Valid values are 'application/json' , 'application/xml', 'application/yaml'.
+    You can specify multiple types. The default is 'application/json'.
 
 .PARAMETER AsyncTimeout
     Defines the timeout period for the asynchronous task in seconds. The default value is -1,

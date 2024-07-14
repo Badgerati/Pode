@@ -1,4 +1,51 @@
 
+<#
+.SYNOPSIS
+    Invokes an asynchronous task within the Pode framework.
+
+.DESCRIPTION
+    The `Invoke-PodeInternalAsync` function sets up and starts an asynchronous task in Pode. It handles the creation
+    of parameters, initialization of runspaces, and tracking of task execution state, results, and errors.
+
+.PARAMETER Task
+    The task to be executed asynchronously. This parameter is mandatory.
+
+.PARAMETER ArgumentList
+    A hashtable of additional arguments to pass to the task. This parameter is optional.
+
+.PARAMETER Timeout
+    The timeout period in seconds for the task. If set to -1, the task will not expire. This parameter is optional.
+
+.PARAMETER Id
+    A custom identifier for the task. If not provided, a new GUID will be generated. This parameter is optional.
+
+.OUTPUTS
+    [hashtable] - Returns a hashtable containing details about the asynchronous task, including its ID, runspace,
+    result, state, and any errors.
+
+.EXAMPLE
+    $task = @{
+        Name = "ExampleTask"
+        Script = {
+            param($param1, $param2)
+            # Task code here
+        }
+        Arguments = @{
+            param1 = "value1"
+            param2 = "value2"
+        }
+        UsingVariables = @()
+        CallbackInfo = $null
+        Cancelable = $false
+    }
+
+    $result = Invoke-PodeInternalAsync -Task $task -Timeout 300
+
+.NOTES
+    - The function handles the creation and management of asynchronous tasks in Pode.
+    - It sets up the parameters, initializes the runspace, and tracks the task's state, results, and any errors.
+    - This is an internal function and may change in future releases of Pode.
+#>
 function Invoke-PodeInternalAsync {
     param(
         [Parameter(Mandatory = $true)]
@@ -77,7 +124,7 @@ function Invoke-PodeInternalAsync {
         }
 
         if ($WebEvent.Auth.User) {
-            $PodeContext.AsyncRoutes.Results[$Id].User = $WebEvent.Auth.User
+            $PodeContext.AsyncRoutes.Results[$Id].User = $WebEvent.Auth.User.ID
             $PodeContext.AsyncRoutes.Results[$Id].Permission = Copy-PodeDeepClone $Task.Permission
         }
 
@@ -88,6 +135,36 @@ function Invoke-PodeInternalAsync {
     }
 }
 
+<#
+.SYNOPSIS
+    Converts a provided script block into an enhanced script block for asynchronous execution in Pode.
+
+.DESCRIPTION
+    The `ConvertTo-PodeEnhancedScriptBlock` function takes a given script block and wraps it with additional code
+    to manage asynchronous execution within the Pode framework. It handles setting up the execution state,
+    logging errors, and invoking callback URLs with results.
+
+.PARAMETER ScriptBlock
+    The original script block to be converted into an enhanced script block.
+
+.RETURNS
+    [ScriptBlock] - Returns the enhanced script block suitable for asynchronous execution in Pode.
+
+.EXAMPLE
+    $originalScriptBlock = {
+        param($param1, $param2)
+        # Script block code here
+    }
+
+    $enhancedScriptBlock = ConvertTo-PodeEnhancedScriptBlock -ScriptBlock $originalScriptBlock
+
+    # Now you can use $enhancedScriptBlock for asynchronous execution in Pode.
+
+.NOTES
+    - The enhanced script block manages state transitions, error logging, and optional callback invocations.
+    - It supports additional parameters for WebEvent and Async ID.
+    - This is an internal function and may change in future releases of Pode.
+#>
 
 function ConvertTo-PodeEnhancedScriptBlock {
     param (
@@ -207,6 +284,24 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
 
 
+<#
+.SYNOPSIS
+    Starts the housekeeper for Pode asynchronous routes.
+
+.DESCRIPTION
+    The `Start-PodeAsyncRoutesHousekeeper` function sets up a timer that periodically cleans up expired or completed asynchronous routes
+    in Pode. It ensures that any expired or completed routes are properly handled and removed from the context.
+
+.PARAMETER None
+    This function does not take any parameters.
+
+.NOTES
+    - The timer is named '__pode_asyncroutes_housekeeper__' and runs at an interval of 30 seconds.
+    - The timer checks for forced expiry, completion, and completion expiry of asynchronous routes.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 
 function Start-PodeAsyncRoutesHousekeeper {
     if (Test-PodeTimer -Name '__pode_asyncroutes_housekeeper__') {
@@ -265,8 +360,8 @@ function Start-PodeAsyncRoutesHousekeeper {
 
     This example demonstrates how to use the Close-PodeAsyncRoutesInternal function to clean up resources in the provided result hashtable.
 
-.OUTPUTS
-    None
+.NOTES
+    This is an internal function and may change in future releases of Pode.
 #>
 function Close-PodeAsyncRoutesInternal {
     param(
@@ -303,8 +398,8 @@ function Close-PodeAsyncRoutesInternal {
 
     This example creates an OpenAPI component schema named 'CustomTask' with the specified properties if it does not already exist.
 
-.OUTPUTS
-    None
+.NOTES
+    This is an internal function and may change in future releases of Pode.
 #>
 function Add-PodeAsyncComponentSchema {
     param (
@@ -353,6 +448,9 @@ function Add-PodeAsyncComponentSchema {
 
 .OUTPUTS
     Returns an array of hashtables representing the matched tasks.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
 #>
 function Search-PodeAsyncTask {
     param (
@@ -542,6 +640,42 @@ function Convert-PodeCallBackRuntimeExpression {
 }
 
 
+<#
+.SYNOPSIS
+    Tests if a user has the required asynchronous permissions based on provided permissions hashtable.
+
+.DESCRIPTION
+    The `Test-PodeAsyncPermission` function checks if a user has the required permissions specified in the provided hashtable.
+    It iterates through the keys in the permission hashtable and checks if the user has the necessary permissions.
+
+.PARAMETER Permission
+    A hashtable containing the permissions to be checked.
+
+.PARAMETER User
+    A hashtable containing the user information and their permissions.
+
+.RETURNS
+    [Boolean] - Returns $true if the user has the required permissions, otherwise $false.
+
+.EXAMPLE
+    $permissions = @{
+        Read = @("file1", "file2")
+        Write = @("file3")
+        Users = @("user1", "user2")
+    }
+
+    $user = @{
+        Read = @("file1")
+        Write = @("file3")
+        ID = "user1"
+    }
+
+    $result = Test-PodeAsyncPermission -Permission $permissions -User $user
+    Write-Output $result
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 
 function Test-PodeAsyncPermission {
     param(
@@ -572,7 +706,7 @@ function Test-PodeAsyncPermission {
 }
 
 
-function Get-PodeAsyncSetScriptBlock{
+function Get-PodeAsyncSetScriptBlock {
 
     return [scriptblock] {
         param($Timeout, $IdGenerator, $AsyncPoolName)
@@ -595,11 +729,11 @@ function Get-PodeAsyncSetScriptBlock{
             $res.User = $async.User
             Write-PodeHost $async.Permission.Read -Explode
             # Add default permission
-            if (! ($async.Permission.Read.Users -ccontains $async.User.ID)  ) {
-                $async.Permission.Read.Users += $async.User.ID
+            if (! ($async.Permission.Read.Users -ccontains $async.User)  ) {
+                $async.Permission.Read.Users += $async.User
             }
-            if (! ($async.Permission.Write.Users -ccontains $async.User.ID)  ) {
-                $async.Permission.Write.Users += $async.User.ID
+            if (! ($async.Permission.Write.Users -ccontains $async.User)  ) {
+                $async.Permission.Write.Users += $async.User
             }
             $res.Permission = $async.Permission
         }
@@ -615,99 +749,99 @@ function Get-PodeAsyncSetScriptBlock{
 }
 
 function Get-PodeAsyncGetScriptBlock {
-return [scriptblock] {
-    param($In, $TaskIdName)
-    switch ($In) {
-        'Cookie' { $id = Get-PodeCookie -Name $TaskIdName; break }
-        'Header' { $id = Get-PodeHeader -Name $TaskIdName; break }
-        'Path' { $id = $WebEvent.Parameters[$TaskIdName]; break }
-        'Query' { $id = $WebEvent.Query[$TaskIdName]; break }
-    }
-
-    $responseMediaType = Get-PodeHeader -Name 'Accept'
-    if ($PodeContext.AsyncRoutes.Results.ContainsKey($id )) {
-        $result = $PodeContext.AsyncRoutes.Results[$id]
-
-        $taskSummary = @{
-            ID           = $result.ID
-            User         = $result.User
-            Cancelable   = $result.Cancelable
-            Permission   = $result.Permission
-            # ISO 8601 UTC format
-            CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-            Name         = $result.Name
-            State        = $result.State
+    return [scriptblock] {
+        param($In, $TaskIdName)
+        switch ($In) {
+            'Cookie' { $id = Get-PodeCookie -Name $TaskIdName; break }
+            'Header' { $id = Get-PodeHeader -Name $TaskIdName; break }
+            'Path' { $id = $WebEvent.Parameters[$TaskIdName]; break }
+            'Query' { $id = $WebEvent.Query[$TaskIdName]; break }
         }
 
-        if ($result.StartingTime) {
-            $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-        }
-        if ($result.User) {
-            if ($WebEvent.Auth.User) {
-                $taskSummary.User = $result.User
-                $taskSummary.Permission = $result.Permission
-                $authorized = Test-PodeAsyncPermission -Permission $result.Permission.Read -User $WebEvent.Auth.User
-            }
-            else {
-                $authorized = $false
-            }
-        }
-        else {
-            $authorized = $true
-        }
-        if ($authorized) {
-            if ($PodeContext.AsyncRoutes.Results[$id].Runspace.Handler.IsCompleted) {
+        $responseMediaType = Get-PodeHeader -Name 'Accept'
+        if ($PodeContext.AsyncRoutes.Results.ContainsKey($id )) {
+            $result = $PodeContext.AsyncRoutes.Results[$id]
+
+            $taskSummary = @{
+                ID           = $result.ID
+                # User         = $result.User
+                Cancelable   = $result.Cancelable
+                Permission   = $result.Permission
                 # ISO 8601 UTC format
-                $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                switch ($result.State.ToLowerInvariant() ) {
-                    'failed' {
-                        $taskSummary.Error = $result.Error
-                        break
-                    }
-                    'completed' {
-                        if ($result.result.Count -gt 0) {
-                            $taskSummary.Result = $result.result[0]
-                        }
-                        else {
-                            $result.result = $null
-                        }
-                        break
-                    }
-                    'aborted' {
-                        $taskSummary.Error = $result.Error
-                        break
-                    }
+                CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                Name         = $result.Name
+                State        = $result.State
+            }
+
+            if ($result.StartingTime) {
+                $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+            }
+            if ($result.User) {
+                if ($WebEvent.Auth.User) {
+                    $taskSummary.User = $result.User
+                    $taskSummary.Permission = $result.Permission
+                    $authorized = Test-PodeAsyncPermission -Permission $result.Permission.Read -User $WebEvent.Auth.User
+                }
+                else {
+                    $authorized = $false
                 }
             }
-
-            switch ($responseMediaType) {
-                'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
-                'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
-                'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
-                default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+            else {
+                $authorized = $true
             }
-            return
+            if ($authorized) {
+                if ($PodeContext.AsyncRoutes.Results[$id].Runspace.Handler.IsCompleted) {
+                    # ISO 8601 UTC format
+                    $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    switch ($result.State.ToLowerInvariant() ) {
+                        'failed' {
+                            $taskSummary.Error = $result.Error
+                            break
+                        }
+                        'completed' {
+                            if ($result.result.Count -gt 0) {
+                                $taskSummary.Result = $result.result[0]
+                            }
+                            else {
+                                $result.result = $null
+                            }
+                            break
+                        }
+                        'aborted' {
+                            $taskSummary.Error = $result.Error
+                            break
+                        }
+                    }
+                }
+
+                switch ($responseMediaType) {
+                    'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
+                    'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
+                    'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
+                    default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                }
+                return
+            }
+            else {
+                $errorMsg = @{ID = $id ; Error = 'The User is not entitle to this operation' }
+                $statusCode = 401 #'Unauthorized'
+            }
         }
         else {
-            $errorMsg = @{ID = $id ; Error = 'The User is not entitle to this operation' }
-            $statusCode = 401 #'Unauthorized'
+            $errorMsg = @{ID = $id ; Error = 'No Task Found' }
+            $statusCode = 404 #'Not Found'
+        }
+        switch ($responseMediaType) {
+            'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
+            'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
+            'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
+            default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
         }
     }
-    else {
-        $errorMsg = @{ID = $id ; Error = 'No Task Found' }
-        $statusCode = 404 #'Not Found'
-    }
-    switch ($responseMediaType) {
-        'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
-        'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
-        'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
-        default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
-    }
-}
 }
 
 function Get-PodeAsyncStopScriptBlock {
-    return [scriptblock]{
+    return [scriptblock] {
         param($In, $TaskIdName)
 
         # Determine the source of the task ID based on the input parameter
@@ -806,7 +940,7 @@ function Get-PodeAsyncStopScriptBlock {
 }
 
 function Get-PodeAsyncQueryScriptBlock {
-    return [scriptblock]{
+    return [scriptblock] {
         param($Payload)
         switch ($Payload) {
             'Body' { $query = $WebEvent.Data }
@@ -821,7 +955,6 @@ function Get-PodeAsyncQueryScriptBlock {
 
                 $taskSummary = @{
                     ID           = $result.ID
-                    User         = $result.User
                     Cancelable   = $result.Cancelable
                     Permission   = $result.Permission
                     # ISO 8601 UTC format
