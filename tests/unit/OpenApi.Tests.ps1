@@ -3035,7 +3035,7 @@ Describe 'OpenApi' {
         }
     }
 
-    Describe 'Rename-PodeOADefinitionTagName' {
+    Describe 'Rename-PodeOADefinitionTag' {
         # Mocking the PodeContext to simulate the environment
         BeforeEach {
             $PodeContext = @{
@@ -3061,7 +3061,7 @@ Describe 'OpenApi' {
 
         # Test case: Renaming a specific tag
         It 'Renames a specific OpenAPI definition tag' {
-            Rename-PodeOADefinitionTagName -Tag 'oldTag' -NewTag 'newTag'
+            Rename-PodeOADefinitionTag -Tag 'oldTag' -NewTag 'newTag'
 
             # Check if the new tag exists
             $PodeContext.Server.OpenAPI.Definitions.ContainsKey('newTag') | Should -BeTrue
@@ -3073,7 +3073,7 @@ Describe 'OpenApi' {
 
         # Test case: Renaming the default tag
         It 'Renames the default OpenAPI definition tag when Tag parameter is not specified' {
-            Rename-PodeOADefinitionTagName -NewTag 'newDefaultTag'
+            Rename-PodeOADefinitionTag -NewTag 'newDefaultTag'
 
             # Check if the new default tag is set
             $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag | Should -Be 'newDefaultTag'
@@ -3090,14 +3090,14 @@ Describe 'OpenApi' {
                 Description = 'Existing tag description'
             }
 
-            { Rename-PodeOADefinitionTagName -Tag 'oldTag' -NewTag 'existingTag' } | Should -Throw -ExpectedMessage ($PodeLocale.openApiDefinitionAlreadyExistsExceptionMessage -f 'existingTag')
+            { Rename-PodeOADefinitionTag -Tag 'oldTag' -NewTag 'existingTag' } | Should -Throw -ExpectedMessage ($PodeLocale.openApiDefinitionAlreadyExistsExceptionMessage -f 'existingTag')
         }
 
         # Test case: Error when used inside Select-PodeOADefinition ScriptBlock
         It 'Throws an error when used inside a Select-PodeOADefinition ScriptBlock' {
             $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Push('dummy')
 
-            { Rename-PodeOADefinitionTagName -Tag 'oldTag' -NewTag 'newTag' } | Should -Throw  -ExpectedMessage ($PodeLocale.renamePodeOADefinitionTagNameExceptionMessage)
+            { Rename-PodeOADefinitionTag -Tag 'oldTag' -NewTag 'newTag' } | Should -Throw  -ExpectedMessage ($PodeLocale.renamePodeOADefinitionTagExceptionMessage)
 
             # Clear the stack after test
             $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Clear()

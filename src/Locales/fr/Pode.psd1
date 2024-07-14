@@ -284,6 +284,6 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = 'La journalisation des requêtes est déjà activée.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La définition OpenAPI nommée {0} existe déjà.'
-    renamePodeOADefinitionTagNameExceptionMessage                     = "Rename-PodeOADefinitionTagName ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
+    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
 }
 

@@ -3441,12 +3441,12 @@ The current tag name of the OpenAPI definition. If not specified, the default de
 The new tag name for the OpenAPI definition. This parameter is mandatory.
 
 .EXAMPLE
-Rename-PodeOADefinitionTagName -Tag 'oldTag' -NewTag 'newTag'
+Rename-PodeOADefinitionTag -Tag 'oldTag' -NewTag 'newTag'
 
 Rename a specific OpenAPI definition tag
 
 .EXAMPLE
-Rename-PodeOADefinitionTagName -NewTag 'newDefaultTag'
+Rename-PodeOADefinitionTag -NewTag 'newDefaultTag'
 
 Rename the default OpenAPI definition tag
 
@@ -3456,7 +3456,7 @@ This function will throw an error if:
 - The new tag name already exists.
 - The current tag name does not exist.
 #>
-function Rename-PodeOADefinitionTagName {
+function Rename-PodeOADefinitionTag {
     param (
         [Parameter(Mandatory = $false)]
         [string]$Tag,
@@ -3466,7 +3466,7 @@ function Rename-PodeOADefinitionTagName {
 
     # Check if the function is being used inside a Select-PodeOADefinition ScriptBlock
     if ($PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Count -gt 0) {
-        throw ($PodeLocale.renamePodeOADefinitionTagNameExceptionMessage)
+        throw ($PodeLocale.renamePodeOADefinitionTagExceptionMessage)
     }
 
     # Check if the new tag name already exists in the OpenAPI definitions
