@@ -1121,7 +1121,6 @@ function Protect-PodePermissionsPolicyKeyword {
     return "$($Name)=($($values -join ' '))"
 }
 
-
 <#
 .SYNOPSIS
 Sets the Content Security Policy (CSP) header for a Pode web server.
@@ -1155,7 +1154,6 @@ Set-PodeSecurityContentSecurityPolicyInternal -Params $policyParams -Append
 .NOTES
 This is an internal function and may change in future releases of Pode.
 #>
-
 function Set-PodeSecurityContentSecurityPolicyInternal {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
     [CmdletBinding()]
@@ -1187,7 +1185,7 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
         Protect-PodeContentSecurityKeyword -Name 'frame-ancestors' -Value $Params.FrameAncestor -Append:$Append
     )
 
-    if ($Params.Sandbox -ine 'None') {
+    if (![string]::IsNullOrWhiteSpace($Params.Sandbox) -and ($Params.Sandbox -ine 'None')) {
         $values += "sandbox $($Params.Sandbox.ToLowerInvariant())".Trim()
     }
 
@@ -1204,7 +1202,6 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
 
     # Add the Content Security Policy header to the response or relevant context. This cmdlet
     # sets the HTTP header with the name 'Content-Security-Policy' and the constructed value.
-
     Add-PodeSecurityHeader -Name 'Content-Security-Policy' -Value $value
 
     # this is done to explicitly disable XSS auditors in modern browsers
@@ -1216,7 +1213,6 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
         Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '0'
     }
 }
-
 
 <#
 .SYNOPSIS
@@ -1249,8 +1245,7 @@ Set-PodeSecurityPermissionsPolicy -Params $policyParams -Append
 .NOTES
 This is an internal function and may change in future releases of Pode.
 #>
-
-function Set-PodeSecurityPermissionsPolicy {
+function Set-PodeSecurityPermissionsPolicyInternal {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
     [CmdletBinding()]
     param(
@@ -1289,9 +1284,9 @@ function Set-PodeSecurityPermissionsPolicy {
         Protect-PodePermissionsPolicyKeyword -Name 'publickey-credentials-get' -Value $Params.PublicKeyCredentials  -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'speaker-selection' -Value $Params.Speakers  -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'sync-xhr' -Value $Params.SyncXhr -Append:$Append
-        Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $Params.UnoptimisedImages -Append $Append
-        Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $Params.UnsizedMedia -Append $Append
-        Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Params.Usb -Append $Append
+        Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $Params.UnoptimisedImages -Append:$Append
+        Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $Params.UnsizedMedia -Append:$Append
+        Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Params.Usb -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'screen-wake-lock' -Value $Params.ScreenWakeLake -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'web-share' -Value $Params.WebShare -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $Params.XrSpatialTracking -Append:$Append
@@ -1302,7 +1297,6 @@ function Set-PodeSecurityPermissionsPolicy {
     # operator is faster because it is a direct array operation that internally skips the overhead of
     # piping through a cmdlet and processing each item individually.
     $values = ($values -ne $null)
-
     $value = ($values -join ', ')
 
     # Add the constructed Permissions Policy header to the response or relevant context. This cmdlet
