@@ -1421,6 +1421,8 @@ function Test-PodeAuthInternal {
 
     # did the auth force a redirect?
     if ($result.Redirected) {
+        $success = Get-PodeAuthSuccessInfo -Name $Name
+        Set-PodeAuthRedirectUrl -UseOrigin:($success.UseOrigin)
         return $false
     }
 
@@ -1650,9 +1652,6 @@ function Set-PodeAuthStatus {
     # get auth method
     $auth = $PodeContext.Server.Authentications.Methods[$Name]
 
-    # cookie redirect name
-    $redirectCookie = 'pode.redirecturl'
-
     # get Success object from auth
     $success = Get-PodeAuthSuccessInfo -Name $Name
 
@@ -1671,10 +1670,7 @@ function Set-PodeAuthStatus {
 
         # check if we have a failure url redirect
         if (!$NoFailureRedirect -and ![string]::IsNullOrWhiteSpace($failure.Url)) {
-            if ($success.UseOrigin -and ($WebEvent.Method -ieq 'get')) {
-                $null = Set-PodeCookie -Name $redirectCookie -Value $WebEvent.Request.Url.PathAndQuery
-            }
-
+            Set-PodeAuthRedirectUrl -UseOrigin:($success.UseOrigin)
             Move-PodeResponseUrl -Url $failure.Url
         }
         else {
@@ -1685,20 +1681,12 @@ function Set-PodeAuthStatus {
     }
 
     # if no statuscode, success, so check if we have a success url redirect (but only for auto-login routes)
-    if ((!$NoSuccessRedirect -or $LoginRoute) -and ![string]::IsNullOrWhiteSpace($success.Url)) {
-        $url = $success.Url
-
-        if ($success.UseOrigin) {
-            $tmpUrl = Get-PodeCookieValue -Name $redirectCookie
-            Remove-PodeCookie -Name $redirectCookie
-
-            if (![string]::IsNullOrWhiteSpace($tmpUrl)) {
-                $url = $tmpUrl
-            }
+    if (!$NoSuccessRedirect -or $LoginRoute) {
+        $url = Get-PodeAuthRedirectUrl -Url $success.Url -UseOrigin:($success.UseOrigin)
+        if (![string]::IsNullOrWhiteSpace($url)) {
+            Move-PodeResponseUrl -Url $url
+            return $false
         }
-
-        Move-PodeResponseUrl -Url $url
-        return $false
     }
 
     return $true
@@ -2313,4 +2301,39 @@ function Get-PodeAuthADProvider {
 
     # ds
     return 'DirectoryServices'
+}
+
+function Set-PodeAuthRedirectUrl {
+    param(
+        [switch]
+        $UseOrigin
+    )
+
+    if ($UseOrigin -and ($WebEvent.Method -ieq 'get')) {
+        $null = Set-PodeCookie -Name 'pode.redirecturl' -Value $WebEvent.Request.Url.PathAndQuery
+    }
+}
+
+function Get-PodeAuthRedirectUrl {
+    param(
+        [Parameter()]
+        [string]
+        $Url,
+
+        [switch]
+        $UseOrigin
+    )
+
+    if (!$UseOrigin) {
+        return $Url
+    }
+
+    $tmpUrl = Get-PodeCookieValue -Name 'pode.redirecturl'
+    Remove-PodeCookie -Name 'pode.redirecturl'
+
+    if (![string]::IsNullOrWhiteSpace($tmpUrl)) {
+        $Url = $tmpUrl
+    }
+
+    return $Url
 }

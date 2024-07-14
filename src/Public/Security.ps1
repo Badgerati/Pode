@@ -761,7 +761,7 @@ function Set-PodeSecurityPermissionsPolicy {
         $XrSpatialTracking
     )
 
-    Set-PodeSecurityPermissionsPolicy -Params $PSBoundParameters
+    Set-PodeSecurityPermissionsPolicyInternal -Params $PSBoundParameters
 }
 
 <#
@@ -988,7 +988,7 @@ function Add-PodeSecurityPermissionsPolicy {
         $XrSpatialTracking
     )
 
-    Set-PodeSecurityPermissionsPolicy -Params $PSBoundParameters -Append
+    Set-PodeSecurityPermissionsPolicyInternal -Params $PSBoundParameters -Append
 }
 
 <#
