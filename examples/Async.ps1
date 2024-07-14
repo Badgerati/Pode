@@ -61,7 +61,7 @@ Start-PodeServer -Threads 1 {
             Name   = 'Mindy'
             Type   = 'AI'
             Roles  = @('Developer')
-            Groups = @('Platform')
+            Groups = @('Support')
         }
     }
 
@@ -144,29 +144,31 @@ Start-PodeServer -Threads 1 {
 
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/asyncUsing'    -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsing' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'   -ScriptBlock {
+        Write-PodeHost '/auth/asyncUsing'
         Write-PodeHost "sleepTime=$($using:uSleepTime)"
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -Callback -PassThru -CallbackSendResult | Set-PodeOARequest  -RequestBody (
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Callback -PassThru -CallbackSendResult | Set-PodeOARequest  -RequestBody (
         New-PodeOARequestBody -Content @{'application/json' = (New-PodeOAStringProperty -Name 'callbackUrl' -Format Uri -Object -Example 'http://localhost:8080/receive/callback') }
     )
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/asyncState'  -ScriptBlock {
-
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncState' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
+        Write-PodeHost '/auth/asyncState'
         Write-PodeHost "state:sleepTime=$($state:data.sleepTime)"
         Write-PodeHost "state:MessageTest=$($state:data.Message)"
         for ($i = 0; $i -lt 20; $i++) {
             Start-Sleep $state:data.sleepTime
         }
         return @{ InnerValue = $state:data.Message }
-    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -MaxThreads 5
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxThreads 5
 
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/asyncStateNoColumn'    -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncStateNoColumn'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Support'   -ScriptBlock {
+        Write-PodeHost '/auth/asyncStateNoColumn'
         $data = Get-PodeState -Name 'data'
         Write-PodeHost 'data:'
         Write-PodeHost $data -Explode -ShowType
@@ -174,32 +176,45 @@ Start-PodeServer -Threads 1 {
             Start-Sleep $data.sleepTime
         }
         return @{ InnerValue = $data.Message }
-    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
 
 
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/asyncParam'   -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncParam'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
         param($sleepTime2, $Message)
+        Write-PodeHost '/auth/asyncParam'
         Write-PodeHost "sleepTime2=$sleepTime2"
         Write-PodeHost "Message=$Message"
+
         for ($i = 0; $i -lt 20; $i++) {
             Start-Sleep $sleepTime2
         }
         return @{ InnerValue = $Message }
-    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
+    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsing' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingNotCancelable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
+        Write-PodeHost '/auth/asyncUsingNotCancelable'
         Write-PodeHost "sleepTime=$($using:uSleepTime * 200)"
         Write-PodeHost "Message=$($using:uMessage)"
         #write-podehost $WebEvent.auth.User -Explode
         Start-Sleep ($using:uSleepTime * 200)
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML -NotCancelable
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -NotCancelable
+
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingNCancelable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
+        Write-PodeHost '/auth/asyncUsingNCancelable'
+        Write-PodeHost "sleepTime=$($using:uSleepTime * 200)"
+        Write-PodeHost "Message=$($using:uMessage)"
+        #write-podehost $WebEvent.auth.User -Explode
+        Start-Sleep ($using:uSleepTime * 200)
+        return @{ InnerValue = $using:uMessage }
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
+
 
     Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' #-TaskIdName 'pippopppoId'
-    Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType JSON, YAML -In Query #-TaskIdName 'pippopppoId'
+    Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Query -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' #-TaskIdName 'pippopppoId'
 
     Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'
 
@@ -217,7 +232,7 @@ Start-PodeServer -Threads 1 {
             Start-Sleep $global:gSleepTime
         }
         return @{ InnerValue = $global:gMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType JSON, YAML
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
 
 #>
 

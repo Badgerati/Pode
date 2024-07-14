@@ -78,7 +78,6 @@ function Invoke-PodeInternalAsync {
 
         if ($WebEvent.Auth.User) {
             $PodeContext.AsyncRoutes.Results[$Id].User = $WebEvent.Auth.User
-            Write-PodeHost $Task.Permission.Read -Explode
             $PodeContext.AsyncRoutes.Results[$Id].Permission = Copy-PodeDeepClone $Task.Permission
         }
 
@@ -570,9 +569,307 @@ function Test-PodeAsyncPermission {
         }
     }
     return $false
-    <#   return (Test-PodeArraysHaveCommonElement -ReferenceArray $Permission.Users -DifferenceArray $User.ID ) -or
-    (Test-PodeArraysHaveCommonElement -ReferenceArray $result.Users -DifferenceArray $User.Username ) -or
-    (Test-PodeArraysHaveCommonElement -ReferenceArray $result.Scopes -DifferenceArray $User.Scopes) -or
-    (Test-PodeArraysHaveCommonElement -ReferenceArray $result.Groups -DifferenceArray $User.Groups) -or
-    (Test-PodeArraysHaveCommonElement -ReferenceArray $result.Roles -DifferenceArray $User.Roles)#>
+}
+
+
+function Get-PodeAsyncSetScriptBlock{
+
+    return [scriptblock] {
+        param($Timeout, $IdGenerator, $AsyncPoolName)
+        $responseMediaType = Get-PodeHeader -Name 'Accept'
+        $id = (& $IdGenerator)
+
+        # Invoke the internal async task
+        $async = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items[$AsyncPoolName] -Timeout $Timeout -ArgumentList @{ WebEvent = $WebEvent; ___async___id___ = $id }
+
+        # Prepare the response
+        $res = @{
+            CreationTime = $async.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+            Id           = $async.ID
+            State        = $async.State
+            Name         = $async.Name
+            Cancelable   = $async.Cancelable
+        }
+
+        if ($async.User) {
+            $res.User = $async.User
+            Write-PodeHost $async.Permission.Read -Explode
+            # Add default permission
+            if (! ($async.Permission.Read.Users -ccontains $async.User.ID)  ) {
+                $async.Permission.Read.Users += $async.User.ID
+            }
+            if (! ($async.Permission.Write.Users -ccontains $async.User.ID)  ) {
+                $async.Permission.Write.Users += $async.User.ID
+            }
+            $res.Permission = $async.Permission
+        }
+
+        # Send the response based on the requested media type
+        switch ($responseMediaType) {
+            'application/xml' { Write-PodeXmlResponse -Value $res -StatusCode 200; break }
+            'application/json' { Write-PodeJsonResponse -Value $res -StatusCode 200 ; break }
+            'text/yaml' { Write-PodeYamlResponse -Value $res -StatusCode 200 ; break }
+            default { Write-PodeJsonResponse -Value $res -StatusCode 200 }
+        }
+    }
+}
+
+function Get-PodeAsyncGetScriptBlock {
+return [scriptblock] {
+    param($In, $TaskIdName)
+    switch ($In) {
+        'Cookie' { $id = Get-PodeCookie -Name $TaskIdName; break }
+        'Header' { $id = Get-PodeHeader -Name $TaskIdName; break }
+        'Path' { $id = $WebEvent.Parameters[$TaskIdName]; break }
+        'Query' { $id = $WebEvent.Query[$TaskIdName]; break }
+    }
+
+    $responseMediaType = Get-PodeHeader -Name 'Accept'
+    if ($PodeContext.AsyncRoutes.Results.ContainsKey($id )) {
+        $result = $PodeContext.AsyncRoutes.Results[$id]
+
+        $taskSummary = @{
+            ID           = $result.ID
+            User         = $result.User
+            Cancelable   = $result.Cancelable
+            Permission   = $result.Permission
+            # ISO 8601 UTC format
+            CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+            Name         = $result.Name
+            State        = $result.State
+        }
+
+        if ($result.StartingTime) {
+            $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+        }
+        if ($result.User) {
+            if ($WebEvent.Auth.User) {
+                $taskSummary.User = $result.User
+                $taskSummary.Permission = $result.Permission
+                $authorized = Test-PodeAsyncPermission -Permission $result.Permission.Read -User $WebEvent.Auth.User
+            }
+            else {
+                $authorized = $false
+            }
+        }
+        else {
+            $authorized = $true
+        }
+        if ($authorized) {
+            if ($PodeContext.AsyncRoutes.Results[$id].Runspace.Handler.IsCompleted) {
+                # ISO 8601 UTC format
+                $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                switch ($result.State.ToLowerInvariant() ) {
+                    'failed' {
+                        $taskSummary.Error = $result.Error
+                        break
+                    }
+                    'completed' {
+                        if ($result.result.Count -gt 0) {
+                            $taskSummary.Result = $result.result[0]
+                        }
+                        else {
+                            $result.result = $null
+                        }
+                        break
+                    }
+                    'aborted' {
+                        $taskSummary.Error = $result.Error
+                        break
+                    }
+                }
+            }
+
+            switch ($responseMediaType) {
+                'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
+                'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
+                'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
+                default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+            }
+            return
+        }
+        else {
+            $errorMsg = @{ID = $id ; Error = 'The User is not entitle to this operation' }
+            $statusCode = 401 #'Unauthorized'
+        }
+    }
+    else {
+        $errorMsg = @{ID = $id ; Error = 'No Task Found' }
+        $statusCode = 404 #'Not Found'
+    }
+    switch ($responseMediaType) {
+        'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
+        'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
+        'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
+        default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
+    }
+}
+}
+
+function Get-PodeAsyncStopScriptBlock {
+    return [scriptblock]{
+        param($In, $TaskIdName)
+
+        # Determine the source of the task ID based on the input parameter
+        switch ($In) {
+            'Cookie' { $id = Get-PodeCookie -Name $TaskIdName; break }
+            'Header' { $id = Get-PodeHeader -Name $TaskIdName; break }
+            'Path' { $id = $WebEvent.Parameters[$TaskIdName]; break }
+            'Query' { $id = $WebEvent.Query[$TaskIdName]; break }
+        }
+
+        # Get the 'Accept' header from the request to determine response format
+        $responseMediaType = Get-PodeHeader -Name 'Accept'
+
+        # Check if the task ID exists in the async routes results
+        if ($PodeContext.AsyncRoutes.Results.ContainsKey($id)) {
+            $result = $PodeContext.AsyncRoutes.Results[$id]
+
+            # If the task is not completed
+            if (!$result.Runspace.Handler.IsCompleted) {
+                # If the task is cancelable
+                if ($result.Cancelable) {
+
+                    if ($result.User -and ($null -eq $WebEvent.Auth.User)) {
+                        # If the task is not cancelable, set an error message
+                        $errorMsg = @{ID = $id ; Error = 'This Async operation required authentication.' }
+                        $statusCode = 203 #'Non-Authoritative Information'
+                    }
+                    else {
+                        if ((Test-PodeAsyncPermission -Permission $result.Permission.Write -User $WebEvent.Auth.User)) {
+                            # Set the task state to 'Aborted' and log the error and completion time
+                            $result.State = 'Aborted'
+                            $result.Error = 'User Aborted!'
+                            $result.CompletedTime = [datetime]::UtcNow
+
+                            # Create a summary of the task
+                            $taskSummary = @{
+                                ID            = $id
+                                CreationTime  = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                                Name          = $result.Name
+                                State         = $result.State
+                                CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                                Error         = $result.Error
+                            }
+                            # Include the starting time if available
+                            if ($result.StartingTime) {
+                                $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                            }
+
+                            # Close any open resources associated with the task
+                            Close-PodeDisposable -Disposable $result.Runspace.Pipeline
+                            Close-PodeDisposable -Disposable $Result.Result
+
+                            # Respond with the task summary in the appropriate format
+                            switch ($responseMediaType) {
+                                'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
+                                'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
+                                'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
+                                default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                            }
+                            return
+                        }
+                        else {
+                            $errorMsg = @{ID = $id ; Error = 'The User is not entitle to this operation' }
+                            $statusCode = 401 #'Unauthorized'
+                        }
+                    }
+                }
+                else {
+                    # If the task is not cancelable, set an error message
+                    $errorMsg = @{ID = $id ; Error = "The task has the 'NonCancelable' flag." }
+                    $statusCode = 423 #'Locked
+                }
+            }
+            else {
+                # If the task is already completed, set an error message
+                $errorMsg = @{ID = $id ; Error = 'The Task is already completed.' }
+                $statusCode = 410 #'Gone'
+            }
+        }
+        else {
+            # If no task is found, set an error message
+            $errorMsg = @{ID = $id ; Error = 'No Task Found.' }
+            $statusCode = 404 #'Not Found'
+        }
+
+        # Respond with the error message in the appropriate format
+        if ($errorMsg) {
+            switch ($responseMediaType) {
+                'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode ; break }
+                'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
+                'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
+                default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
+            }
+        }
+    }
+}
+
+function Get-PodeAsyncQueryScriptBlock {
+    return [scriptblock]{
+        param($Payload)
+        switch ($Payload) {
+            'Body' { $query = $WebEvent.Data }
+            'Query' { $query = $WebEvent.Query[$Name] }
+            'Header' { $query = $WebEvent.Request.Headers['query'] }
+        }
+        $responseMediaType = Get-PodeHeader -Name 'Accept'
+        $response = @()
+        $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User
+        if ($results) {
+            foreach ($result in $results) {
+
+                $taskSummary = @{
+                    ID           = $result.ID
+                    User         = $result.User
+                    Cancelable   = $result.Cancelable
+                    Permission   = $result.Permission
+                    # ISO 8601 UTC format
+                    CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    Name         = $result.Name
+                    State        = $result.State
+                }
+
+                if ($result.StartingTime) {
+                    $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                }
+                if ($result.User) {
+                    $taskSummary.User = $result.User
+                    $taskSummary.Permission = $result.Permission
+                }
+
+                if ($result.Runspace.Handler.IsCompleted) {
+                    # ISO 8601 UTC format
+                    $taskSummary.CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                    switch ($result.State.ToLowerInvariant() ) {
+                        'failed' {
+                            $taskSummary.Error = $result.Error
+                            break
+                        }
+                        'completed' {
+                            if ($result.result.Count -gt 0) {
+                                $taskSummary.Result = $result.result[0]
+                            }
+                            else {
+                                $result.result = $null
+                            }
+                            break
+                        }
+                        'aborted' {
+                            $taskSummary.Error = $result.Error
+                            break
+                        }
+                    }
+                }
+                $response += $taskSummary
+            }
+        }
+        switch ($responseMediaType) {
+            'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 200; break }
+            'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 200 ; break }
+            'text/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 200 ; break }
+            default { Write-PodeJsonResponse -Value $response -StatusCode 200 }
+        }
+    }
+
 }
