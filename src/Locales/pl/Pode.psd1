@@ -281,9 +281,10 @@
     sseFailedToBroadcastExceptionMessage                              = 'SSE nie udało się przesłać z powodu zdefiniowanego poziomu przesyłania SSE dla {0}: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Moduł Active Directory jest dostępny tylko w systemie Windows.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Podano nieprawidłowy czas trwania Access-Control-Max-Age: {0}. Powinien być większy niż 0.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'Definicja OpenAPI o nazwie {0} już istnieje.'
+    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag nie może być używany wewnątrz 'ScriptBlock' Select-PodeOADefinition."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     loggingAlreadyEnabledExceptionMessage                             = "Rejestrowanie '{0}' jest już włączone."
     invalidEncodingExceptionMessage                                   = 'Nieprawidłowe kodowanie: {0}'
     syslogProtocolExceptionMessage                                    = 'Protokół Syslog może używać tylko RFC3164 lub RFC5424.'
 }
-

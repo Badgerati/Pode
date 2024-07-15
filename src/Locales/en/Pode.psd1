@@ -281,6 +281,8 @@
     sseFailedToBroadcastExceptionMessage                              = 'SSE failed to broadcast due to defined SSE broadcast level for {0}: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory module only available on Windows OS.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI definition named {0} already exists.'
+    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
     loggingAlreadyEnabledExceptionMessage                             = "Logging '{0}' has already been enabled."
     invalidEncodingExceptionMessage                                   = 'Invalid encoding: {0}'

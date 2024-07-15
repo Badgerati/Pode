@@ -281,10 +281,11 @@
     sseFailedToBroadcastExceptionMessage                              = '{0}のSSEブロードキャストレベルが定義されているため、SSEのブロードキャストに失敗しました: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Active DirectoryモジュールはWindowsでのみ利用可能です。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
+    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     loggingAlreadyEnabledExceptionMessage                             = "ログ記録 '{0}' は既に有効になっています。"
     invalidEncodingExceptionMessage                                   = '無効なエンコーディング: {0}'
     syslogProtocolExceptionMessage                                    = 'SyslogプロトコルはRFC3164またはRFC5424のみを使用できます。'
-    
-}
 
+}

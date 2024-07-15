@@ -281,6 +281,8 @@
     sseFailedToBroadcastExceptionMessage                              = 'SSE no pudo transmitir debido al nivel de transmisión SSE definido para {0}: {1}.'
     adModuleWindowsOnlyExceptionMessage                               = 'El módulo de Active Directory solo está disponible en Windows.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duración inválida para Access-Control-Max-Age proporcionada: {0}. Debe ser mayor que 0.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'La definición de OpenAPI con el nombre {0} ya existe.'
+    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag no se puede usar dentro de un 'ScriptBlock' de Select-PodeOADefinition."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La función '{0}' no acepta una matriz como entrada de canalización."
     loggingAlreadyEnabledExceptionMessage                             = "El registro '{0}' ya ha sido habilitado."
     invalidEncodingExceptionMessage                                   = 'Codificación inválida: {0}'
