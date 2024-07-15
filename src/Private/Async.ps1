@@ -107,7 +107,22 @@ function Invoke-PodeInternalAsync {
             $expireTime = [datetime]::MaxValue
         }
 
-        $PodeContext.AsyncRoutes.Results[$Id] = @{
+        #  $dctResult = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
+        $dctResult = @{}
+        $dctResult['ID'] = $Id
+        $dctResult['Name'] = $Task.Name
+        $dctResult['Runspace'] = $runspace
+        $dctResult['Result'] = $result
+        $dctResult['StartingTime'] = $null
+        $dctResult['CreationTime'] = $creationTime
+        $dctResult['CompletedTime'] = $null
+        $dctResult['ExpireTime'] = $expireTime
+        $dctResult['Timeout'] = $Timeout
+        $dctResult['State'] = 'NotStarted'
+        $dctResult['Error'] = $null
+        $dctResult['CallbackInfo'] = $Task.CallbackInfo
+        $dctResult['Cancelable'] = $Task.Cancelable
+        <#  @{
             ID            = $Id
             Name          = $Task.Name
             Runspace      = $runspace
@@ -122,13 +137,13 @@ function Invoke-PodeInternalAsync {
             CallbackInfo  = $Task.CallbackInfo
             Cancelable    = $Task.Cancelable
         }
-
+#>
         if ($WebEvent.Auth.User) {
-            $PodeContext.AsyncRoutes.Results[$Id].User = $WebEvent.Auth.User.ID
-            $PodeContext.AsyncRoutes.Results[$Id].Permission = Copy-PodeDeepClone $Task.Permission
+            $dctResult['User'] = $WebEvent.Auth.User.ID
+            $dctResult['Permission'] = Copy-PodeDeepClone $Task.Permission
         }
-
-        return $PodeContext.AsyncRoutes.Results[$Id]
+        $PodeContext.AsyncRoutes.Results[$Id] = $dctResult
+        return $dctResult
     }
     catch {
         $_ | Write-PodeErrorLog
@@ -209,6 +224,9 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
             try {
                 if ($asyncResult.CallbackInfo) {
+                    $asyncResult.CallbackInfoState = 'Running'
+                    $asyncResult.CallbackTentative = 0
+
                     $callbackUrl = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult.CallbackInfo.UrlField).Value
                     $method = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult.CallbackInfo.Method -DefaultValue 'Post').Value
                     $contentType = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult.CallbackInfo.ContentType).Value
@@ -232,13 +250,24 @@ function ConvertTo-PodeEnhancedScriptBlock {
                         'application/xml' { $cBody = ($body | ConvertTo-Xml -NoTypeInformation ) }
                         'application/yaml' { $cBody = ($body | ConvertTo-PodeYaml -depth 10) }
                     }
-
-                    Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body $cBody -ContentType $contentType
+                    $asyncResult.callbackUrl = $callbackUrl
+                    for ($i = 0; $i -le 3; $i++) {
+                        try {
+                            $null = Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body $cBody -ContentType $contentType
+                            $asyncResult.CallbackInfoState = 'Completed'
+                        }
+                        catch {
+                            $_ | Write-PodeErrorLog
+                            $asyncResult.CallbackInfoState = 'Failed'
+                            $asyncResult.CallbackTentative++
+                        }
+                    }
                 }
             }
             catch {
                 # Log the error
                 $_ | Write-PodeErrorLog
+                $asyncResult.CallbackInfoState = 'Failed'
             }
         }
     }
@@ -292,8 +321,11 @@ function ConvertTo-PodeEnhancedScriptBlock {
     The `Start-PodeAsyncRoutesHousekeeper` function sets up a timer that periodically cleans up expired or completed asynchronous routes
     in Pode. It ensures that any expired or completed routes are properly handled and removed from the context.
 
-.PARAMETER None
-    This function does not take any parameters.
+.PARAMETER ClosingAfterMinutes
+    Specifies the number of minutes after completion when the route should be considered expired and closed. Default is 5 minutes.
+
+.PARAMETER RemoveAfterMinutes
+    Specifies the number of minutes after completion when the route should be removed from the context. Default is 60 minutes.
 
 .NOTES
     - The timer is named '__pode_asyncroutes_housekeeper__' and runs at an interval of 30 seconds.
@@ -302,8 +334,14 @@ function ConvertTo-PodeEnhancedScriptBlock {
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-
 function Start-PodeAsyncRoutesHousekeeper {
+    param(
+        [int]
+        $ClosingAfterMinutes = 5,
+        [int]
+        $RemoveAfterMinutes = 60
+
+    )
     if (Test-PodeTimer -Name '__pode_asyncroutes_housekeeper__') {
         return
     }
@@ -331,7 +369,7 @@ function Start-PodeAsyncRoutesHousekeeper {
             }
 
             # is it expired by completion? if so, dispose and remove
-            elseif ($result.CompletedTime.AddMinutes(1) -lt $now) {
+            elseif ($result.CompletedTime.AddMinutes(5) -lt $now) {
                 Close-PodeAsyncRoutesInternal -Result $result
             }
         }
@@ -411,14 +449,31 @@ function Add-PodeAsyncComponentSchema {
     )
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     if (!(Test-PodeOAComponent -Field schemas -Name  $Name -DefinitionTag $DefinitionTag)) {
-        New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required |
-            New-PodeOAStringProperty -Name 'CreationTime' -Format Date-Time -Example '2024-07-02T20:58:15.2014422Z' -Required |
-            New-PodeOAStringProperty -Name 'StartingTime' -Format Date-Time -Example '2024-07-02T20:58:15.2014422Z' |
-            New-PodeOAStringProperty -Name 'Result'   -Example '@{s=7}' |
-            New-PodeOAStringProperty -Name 'CompletedTime' -Format Date-Time -Example '2024-07-02T20:59:23.2174712Z' |
-            New-PodeOAStringProperty -Name 'State' -Description 'Order Status' -Required -Example 'Running' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
+
+        $permissionContent = New-PodeOAStringProperty -Name 'Groups' -Array -Example 'group1', 'group2' |
+            New-PodeOAStringProperty -Name 'Roles' -Array -Example 'reviewer', 'taskadmin' |
+            New-PodeOAStringProperty -Name 'Scopes' -Array -Example 'scope1', 'scope2', 'scope3' |
+            New-PodeOAStringProperty -Name 'Users' -Array -Example 'id0001', 'id0005', 'id0231'
+
+        New-PodeOAStringProperty -Name 'ID' -Format Uuid  -Description 'The async operation unique inentifier.'  -Required |
+            New-PodeOAStringProperty -Name 'User' -Description 'The async operation owner.' |
+            New-PodeOAStringProperty -Name 'CreationTime' -Format Date-Time -Description 'The async operation creation time.' -Example '2024-07-02T20:58:15.2014422Z' -Required |
+            New-PodeOAStringProperty -Name 'StartingTime' -Format Date-Time -Description 'The async operation starting time.' -Example '2024-07-02T20:58:15.2014422Z' |
+            New-PodeOAStringProperty -Name 'Result'   -Example '{result = 7 , numOfIteration = 3 }' |
+            New-PodeOAStringProperty -Name 'CompletedTime' -Format Date-Time -Description 'The async operation completition time.' -Example '2024-07-02T20:59:23.2174712Z' |
+            New-PodeOAStringProperty -Name 'State' -Description 'The async operation status' -Required -Example 'Running' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
             New-PodeOAStringProperty -Name 'Error' -Description 'The Error message if any.' |
-            New-PodeOAStringProperty -Name 'Name' -Example 'Get:/path' -Required |
+            New-PodeOAStringProperty -Name 'Name' -Example '__Get_path_endpoint1_' -Description 'The async operation name.' -Required |
+            New-PodeOABoolProperty -Name 'Cancelable'  -Description 'The async operation can be forcefully terminated' -Required |
+            New-PodeOAObjectProperty -Name 'Permission' -Description 'The permission governing the async operation.' -Properties (
+                ($permissionContent | New-PodeOAObjectProperty -Name 'Read'),
+                ($permissionContent | New-PodeOAObjectProperty -Name 'Write')
+            ) |
+            New-PodeOAStringProperty -Name 'CallbackInfoState' -Description 'The Callback operation status' -Example 'Completed' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
+            New-PodeOAIntProperty -Name 'CallbackTentative' -Description 'The Callback tentative number' |
+            New-PodeOAObjectProperty -Name 'CallbackInfo' -Description 'Callback information' -Properties (
+                New-PodeOAStringProperty -Name 'UrlField' -Description 'The URL Field.'  -Example  '$request.body#/callbackUrl'
+            ) |
             New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name -DefinitionTag $DefinitionTag
     }
 
@@ -654,20 +709,30 @@ function Convert-PodeCallBackRuntimeExpression {
 .PARAMETER User
     A hashtable containing the user information and their permissions.
 
-.RETURNS
+.OUTPUTS
     [Boolean] - Returns $true if the user has the required permissions, otherwise $false.
 
 .EXAMPLE
-    $permissions = @{
-        Read = @("file1", "file2")
-        Write = @("file3")
-        Users = @("user1", "user2")
-    }
 
     $user = @{
-        Read = @("file1")
-        Write = @("file3")
-        ID = "user1"
+        ID = 'user002'
+        Groups = @('group3')
+        Roles = @{'taskadmin'}
+    }
+
+    $permissions = @{
+        Read  = @{
+            Groups     = @('group1','group2')
+            Roles      = @('reviewer','taskadmin')
+            Scopes     = @()
+            Users      = @('user001')
+        }
+        Write = @{
+            Groups      = @()
+            Roles       = @('taskadmin')
+            Scopes      = @()
+            Users       = @('user001')
+        }
     }
 
     $result = Test-PodeAsyncPermission -Permission $permissions -User $user
@@ -758,17 +823,20 @@ function Get-PodeAsyncGetScriptBlock {
 
             $taskSummary = @{
                 ID           = $result.ID
-                # User         = $result.User
                 Cancelable   = $result.Cancelable
-                Permission   = $result.Permission
                 # ISO 8601 UTC format
                 CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                 Name         = $result.Name
                 State        = $result.State
             }
-
+            if ( $result.Permission) {
+                $taskSummary.Permission = $result.Permission
+            }
             if ($result.StartingTime) {
                 $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+            }
+            if ($result.CallbackInfo) {
+                $taskSummary.CallbackInfo = $result.CallbackInfo
             }
             if ($result.User) {
                 if ($WebEvent.Auth.User) {
@@ -790,6 +858,11 @@ function Get-PodeAsyncGetScriptBlock {
                     switch ($result.State.ToLowerInvariant() ) {
                         'failed' {
                             $taskSummary.Error = $result.Error
+                            if ($result.CallbackInfoState) {
+                                $taskSummary.CallbackTentative = $result.CallbackTentative
+                                $taskSummary.CallbackInfoState = $result.CallbackInfoState
+                                $taskSummary.CallbackUrl = $result.CallbackUrl
+                            }
                             break
                         }
                         'completed' {
@@ -797,7 +870,12 @@ function Get-PodeAsyncGetScriptBlock {
                                 $taskSummary.Result = $result.result[0]
                             }
                             else {
-                                $result.result = $null
+                                $taskSummary.Result = ''
+                            }
+                            if ($result.CallbackInfoState) {
+                                $taskSummary.CallbackTentative = $result.CallbackTentative
+                                $taskSummary.CallbackInfoState = $result.CallbackInfoState
+                                $taskSummary.CallbackUrl = $result.CallbackUrl
                             }
                             break
                         }
@@ -878,6 +956,16 @@ function Get-PodeAsyncStopScriptBlock {
                                 State         = $result.State
                                 CompletedTime = $result.CompletedTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                                 Error         = $result.Error
+                                Cancelable    = $result.Cancelable
+                            }
+                            if ( $result.Permission) {
+                                $taskSummary.Permission = $result.Permission
+                            }
+                            if ($result.CallbackInfo) {
+                                $taskSummary.CallbackInfo = $result.CallbackInfo
+                            }
+                            if ($result.User) {
+                                $taskSummary.User = $result.User
                             }
                             # Include the starting time if available
                             if ($result.StartingTime) {
@@ -950,15 +1038,19 @@ function Get-PodeAsyncQueryScriptBlock {
                 $taskSummary = @{
                     ID           = $result.ID
                     Cancelable   = $result.Cancelable
-                    Permission   = $result.Permission
                     # ISO 8601 UTC format
                     CreationTime = $result.CreationTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                     Name         = $result.Name
                     State        = $result.State
                 }
-
+                if ( $result.Permission) {
+                    $taskSummary.Permission = $result.Permission
+                }
                 if ($result.StartingTime) {
                     $taskSummary.StartingTime = $result.StartingTime.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+                }
+                if ($result.CallbackInfo) {
+                    $taskSummary.CallbackInfo = $result.CallbackInfo
                 }
                 if ($result.User) {
                     $taskSummary.User = $result.User
@@ -971,6 +1063,11 @@ function Get-PodeAsyncQueryScriptBlock {
                     switch ($result.State.ToLowerInvariant() ) {
                         'failed' {
                             $taskSummary.Error = $result.Error
+                            if ($result.CallbackInfoState) {
+                                $taskSummary.CallbackTentative = $result.CallbackTentative
+                                $taskSummary.CallbackInfoState = $result.CallbackInfoState
+                                $taskSummary.CallbackUrl = $result.CallbackUrl
+                            }
                             break
                         }
                         'completed' {
@@ -978,7 +1075,12 @@ function Get-PodeAsyncQueryScriptBlock {
                                 $taskSummary.Result = $result.result[0]
                             }
                             else {
-                                $result.result = $null
+                                $taskSummary.Result = ''
+                            }
+                            if ($result.CallbackInfoState) {
+                                $taskSummary.CallbackTentative = $result.CallbackTentative
+                                $taskSummary.CallbackInfoState = $result.CallbackInfoState
+                                $taskSummary.CallbackUrl = $result.CallbackUrl
                             }
                             break
                         }

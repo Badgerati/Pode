@@ -1009,6 +1009,7 @@ function Set-PodeAsyncRoute {
                 Cancelable     = -not ($NotCancelable.IsPresent)
                 Permission     = $Permission
             }
+
             #Set thread count
             $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] = $MaxThreads
             if (! $PodeContext.RunspacePools.ContainsKey($r.AsyncPoolName)) {
