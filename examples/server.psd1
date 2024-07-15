@@ -25,6 +25,9 @@
         Compression = @{
             Enable = $false
         }
+        OpenApi     = @{
+            UsePodeYamlInternal = $true
+        }
     }
     Server = @{
         FileMonitor = @{

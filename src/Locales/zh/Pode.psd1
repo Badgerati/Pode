@@ -283,6 +283,8 @@
     adModuleWindowsOnlyExceptionMessage                               = '仅支持 Windows 的 Active Directory 模块。'
     requestLoggingAlreadyEnabledExceptionMessage                      = '请求日志记录已启用。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '提供的 Access-Control-Max-Age 时长无效：{0}。应大于 0。'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
+    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
     UnsupportedSerializationTypeExceptionMessage                      = '不支持的序列化类型: {0}'
     GetRequestBodyNotAllowedExceptionMessage                          = 'GET操作不能包含请求主体。'
     InvalidQueryFormatExceptionMessage                                = '提供的查询格式无效。'

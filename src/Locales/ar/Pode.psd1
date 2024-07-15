@@ -286,6 +286,6 @@
     UnsupportedSerializationTypeExceptionMessage                      = 'نوع التسلسل غير مدعوم: {0}'
     GetRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات GET على محتوى الطلب.'
     InvalidQueryFormatExceptionMessage                                = 'الاستعلام المقدم له تنسيق غير صالح.'
-
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
+    renamePodeOADefinitionTagExceptionMessage                     = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
 }
-

@@ -283,6 +283,8 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Le module Active Directory est uniquement disponible sur Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'La journalisation des requêtes est déjà activée.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'La définition OpenAPI nommée {0} existe déjà.'
+    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
     UnsupportedSerializationTypeExceptionMessage                      = 'Type de sérialisation non pris en charge : {0}'
     GetRequestBodyNotAllowedExceptionMessage                          = 'Les opérations GET ne peuvent pas avoir de corps de requête.'
     InvalidQueryFormatExceptionMessage                                = 'La requête fournie a un format invalide.'

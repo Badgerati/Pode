@@ -184,7 +184,7 @@ function Enable-PodeOpenApi {
         # WARNING: Title, Version, and Description on 'Enable-PodeOpenApi' are deprecated. Please use 'Add-PodeOAInfo' instead
         Write-PodeHost $PodeLocale.deprecatedTitleVersionDescriptionWarningMessage -ForegroundColor Yellow
     }
-    if ( $DefinitionTag -ine $PodeContext.Server.OpenAPI.DefaultDefinitionTag ) {
+    if ( $DefinitionTag -ine $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag) {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag] = Get-PodeOABaseObject
     }
     $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.enableMinimalDefinitions = !$DisableMinimalDefinitions.IsPresent
@@ -1000,7 +1000,7 @@ function Test-PodeOAJsonSchemaCompliance {
         }
     }
     else {
-        $DefinitionTag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag
+        $DefinitionTag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag
     }
 
     if ($Json -isnot [string]) {
@@ -3257,9 +3257,6 @@ New-PodeOAServerEndpoint -Url 'https://myserver.io/api' -Description 'My test se
 
 .EXAMPLE
 New-PodeOAServerEndpoint -Url '/api' -Description 'My local server'
-
-
-}
 #>
 function New-PodeOAServerEndpoint {
     param (
@@ -3296,8 +3293,6 @@ function New-PodeOAServerEndpoint {
         }
     }
 }
-
-
 
 <#
 .SYNOPSIS
@@ -3375,7 +3370,6 @@ function Add-PodeOAWebhook {
     }
 }
 
-
 <#
 .SYNOPSIS
 Select a group of OpenAPI Definions for modification.
@@ -3417,8 +3411,6 @@ function Select-PodeOADefinition {
         [Parameter(Mandatory = $true)]
         [scriptblock]
         $Scriptblock
-
-
     )
 
     if (Test-PodeIsEmpty $Scriptblock) {
@@ -3426,7 +3418,7 @@ function Select-PodeOADefinition {
         throw ($PodeLocale.noScriptBlockSuppliedExceptionMessage)
     }
     if (Test-PodeIsEmpty -Value $Tag) {
-        $Tag = $PodeContext.Server.OpenAPI.DefaultDefinitionTag
+        $Tag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag
     }
     else {
         $Tag = Test-PodeOADefinitionTag -Tag $Tag
@@ -3441,6 +3433,77 @@ function Select-PodeOADefinition {
     $PodeContext.Server.OpenAPI.SelectedDefinitionTag = $PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Pop()
 
 }
+
+<#
+.SYNOPSIS
+Renames an existing OpenAPI definition tag in Pode.
+
+.DESCRIPTION
+This function renames an existing OpenAPI definition tag to a new tag name.
+If the specified tag is the default definition tag, it updates the default tag as well.
+It ensures that the new tag name does not already exist and that the function is not used within a Select-PodeOADefinition ScriptBlock.
+
+.PARAMETER Tag
+The current tag name of the OpenAPI definition. If not specified, the default definition tag is used.
+
+.PARAMETER NewTag
+The new tag name for the OpenAPI definition. This parameter is mandatory.
+
+.EXAMPLE
+Rename-PodeOADefinitionTag -Tag 'oldTag' -NewTag 'newTag'
+
+Rename a specific OpenAPI definition tag
+
+.EXAMPLE
+Rename-PodeOADefinitionTag -NewTag 'newDefaultTag'
+
+Rename the default OpenAPI definition tag
+
+.NOTES
+This function will throw an error if:
+- It is used inside a Select-PodeOADefinition ScriptBlock.
+- The new tag name already exists.
+- The current tag name does not exist.
+#>
+function Rename-PodeOADefinitionTag {
+    param (
+        [Parameter(Mandatory = $false)]
+        [string]$Tag,
+        [Parameter(Mandatory = $true)]
+        [string]$NewTag
+    )
+
+    # Check if the function is being used inside a Select-PodeOADefinition ScriptBlock
+    if ($PodeContext.Server.OpenApi.DefinitionTagSelectionStack.Count -gt 0) {
+        throw ($PodeLocale.renamePodeOADefinitionTagExceptionMessage)
+    }
+
+    # Check if the new tag name already exists in the OpenAPI definitions
+    if ($PodeContext.Server.OpenAPI.Definitions.ContainsKey($NewTag)) {
+        throw ($PodeLocale.openApiDefinitionAlreadyExistsExceptionMessage -f $NewTag )
+    }
+
+    # If the Tag parameter is null or whitespace, use the default definition tag
+    if ([string]::IsNullOrWhiteSpace($Tag)) {
+        $Tag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag
+        $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag = $NewTag # Update the default definition tag
+    }
+    else {
+        # Test if the specified tag exists in the OpenAPI definitions
+        Test-PodeOADefinitionTag -Tag $Tag
+    }
+
+    # Rename the definition tag in the OpenAPI definitions
+    $PodeContext.Server.OpenAPI.Definitions[$NewTag] = $PodeContext.Server.OpenAPI.Definitions[$Tag]
+    $PodeContext.Server.OpenAPI.Definitions.Remove($Tag)
+
+    # Update the selected definition tag if it matches the old tag
+    if ($PodeContext.Server.OpenAPI.SelectedDefinitionTag -eq $Tag) {
+        $PodeContext.Server.OpenAPI.SelectedDefinitionTag = $NewTag
+    }
+}
+
+
 
 <#
 .SYNOPSIS
