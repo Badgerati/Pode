@@ -1297,10 +1297,8 @@ function Initialize-PodeOpenApiTable {
         DefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
     }
 
-    #$OpenAPI['DefaultDefinitionTag'] = $DefaultDefinitionTag
-
     # Set the currently selected definition tag
-    $OpenAPI['SelectedDefinitionTag'] = $DefaultDefinitionTag #$OpenAPI['DefaultDefinitionTag']
+    $OpenAPI['SelectedDefinitionTag'] = $DefaultDefinitionTag
 
     # Initialize the Definitions dictionary with a base OpenAPI object for the selected definition tag
     $OpenAPI['Definitions'] = @{ $OpenAPI['SelectedDefinitionTag'] = Get-PodeOABaseObject }

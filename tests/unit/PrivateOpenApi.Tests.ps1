@@ -350,7 +350,6 @@ Describe 'PrivateOpenApi' {
         It 'Initializes OpenAPI table with custom definition tag' {
             $customTag = 'api-v1'
             $openApiTable = Initialize-PodeOpenApiTable -DefaultDefinitionTag $customTag
-
             $openApiTable.SelectedDefinitionTag | Should -Be $customTag
             $openApiTable.Definitions | Should -BeOfType [hashtable]
             $openApiTable.Definitions[$customTag] | Should -BeOfType [hashtable]
