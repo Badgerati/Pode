@@ -22,8 +22,6 @@ Describe 'ASYNC REST API Requests' {
         $scriptPath = "$($PSScriptRoot)\..\..\examples\Async.ps1"
         if ($PSVersionTable.PsVersion -gt [version]'6.0') {
             Start-Process 'pwsh' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
-
-            #  Invoke-Command -FilePath $scriptPath -ArgumentList  'Quiet', "Port $Port", 'DisableTermination'
         }
         else {
             Start-Process 'powershell' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
@@ -252,7 +250,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Count | Should -Be 7
             $response.state.where({ $_ -eq 'Aborted' }).count | Should -Be 1
             $response.where({ $_.Name -eq '__Put_auth_asyncUsingCancelable__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({$_.Name -eq '__Put_auth_asyncUsing__'}).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.Name -eq '__Put_auth_asyncUsing__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncUsingNotCancelable__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncWaitForever__' }).State | Should -Be 'Aborted'
             $response.where({ $_.Name -eq '__Put_auth_asyncParam__' }).Result.InnerValue | Should -Be 'comming as argument'
@@ -269,7 +267,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Count | Should -Be 5
             $response.state.where({ $_ -eq 'Aborted' }).count | Should -Be 0
             $response.where({ $_.Name -eq '__Put_auth_asyncUsingCancelable__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({$_.Name -eq '__Put_auth_asyncUsing__'}).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.Name -eq '__Put_auth_asyncUsing__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncUsingNotCancelable__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncParam__' }).Result.InnerValue | Should -Be 'comming as argument'
             $response.where({ $_.Name -eq '__Put_auth_asyncState__' }).Result.InnerValue | Should -Be 'coming from a PodeState'

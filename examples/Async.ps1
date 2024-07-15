@@ -33,10 +33,10 @@ catch { throw }
 Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination {
 
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
-    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -name 'async' -File  -Path "$ScriptPath/logs" | Enable-PodeErrorLogging
 
     # request logging
-    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+    # New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 
     Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses
 
@@ -158,8 +158,6 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         }
     }
 
-
-
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsing' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'   -ScriptBlock {
         Write-PodeHost '/auth/asyncUsing'
         Write-PodeHost "sleepTime=$($using:uSleepTime)"
@@ -212,7 +210,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingNotCancelable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
         Write-PodeHost '/auth/asyncUsingNotCancelable'
-        Write-PodeHost "sleepTime=$($using:uSleepTime * 10)"
+        Write-PodeHost "sleepTime=$($using:uSleepTime * 5)"
         Write-PodeHost "Message=$($using:uMessage)"
         #write-podehost $WebEvent.auth.User -Explode
         Start-Sleep ($using:uSleepTime * 10)
@@ -221,7 +219,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingCancelable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
         Write-PodeHost '/auth/asyncUsingCancelable'
-        Write-PodeHost "sleepTime=$($using:uSleepTime * 10)"
+        Write-PodeHost "sleepTime=$($using:uSleepTime * 5)"
         Write-PodeHost "Message=$($using:uMessage)"
         #write-podehost $WebEvent.auth.User -Explode
         Start-Sleep ($using:uSleepTime * 10)
@@ -248,7 +246,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
     Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
         Close-PodeServer
-    }
+    } -PassThru| Set-PodeOARouteInfo -Summary 'Shutdown the server'
     <#
     Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
 
