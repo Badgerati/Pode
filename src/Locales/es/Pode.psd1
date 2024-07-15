@@ -283,5 +283,7 @@
     adModuleWindowsOnlyExceptionMessage                               = 'El módulo de Active Directory solo está disponible en Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'El registro de solicitudes ya está habilitado.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duración inválida para Access-Control-Max-Age proporcionada: {0}. Debe ser mayor que 0.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'La definición de OpenAPI con el nombre {0} ya existe.'
+    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag no se puede usar dentro de un 'ScriptBlock' de Select-PodeOADefinition."
     UnsupportedSerializationTypeExceptionMessage                      = 'Formato de serialización no soportado o no reconocido.'
 }
