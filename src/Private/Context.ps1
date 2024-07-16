@@ -124,8 +124,8 @@ function New-PodeContext {
 
     $ctx.AsyncRoutes = @{
         Enabled = $true
-        Items   = @{}
-        Results = @{}
+        Items   = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+        Results = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
     }
 
     $ctx.Fim = @{

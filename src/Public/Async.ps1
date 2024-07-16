@@ -1013,10 +1013,10 @@ function Set-PodeAsyncRoute {
             #Set thread count
             $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] = $MaxThreads
             if (! $PodeContext.RunspacePools.ContainsKey($r.AsyncPoolName)) {
-                $null = $PodeContext.RunspacePools[$r.AsyncPoolName] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                $PodeContext.RunspacePools[$r.AsyncPoolName] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
 
-                $null = $PodeContext.RunspacePools[$r.AsyncPoolName]['Pool'] = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] , $PodeContext.RunspaceState, $Host)
-                $null = $PodeContext.RunspacePools[$r.AsyncPoolName]['State'] = 'Waiting'
+                $PodeContext.RunspacePools[$r.AsyncPoolName]['Pool'] = [runspacefactory]::CreateRunspacePool(2, $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] , $PodeContext.RunspaceState, $Host)
+                $PodeContext.RunspacePools[$r.AsyncPoolName]['State'] = 'Waiting'
 
             }
             # Replace the Route logic with this that allow to execute the original logic asynchronously

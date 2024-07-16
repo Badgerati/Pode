@@ -201,7 +201,7 @@ function ConvertTo-PodeEnhancedScriptBlock {
                 <# ScriptBlock #>
                 # Original ScriptBlock End
             }
-            return $___result___
+           # return $___result___
         }
         catch {
             # Set the state to 'Failed' in case of error
