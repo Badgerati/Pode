@@ -760,7 +760,7 @@ function Add-PodeAsyncQueryRoute {
     Specifies the response type(s) for the route. Valid values are 'application/json' , 'application/xml', 'application/yaml'.
     You can specify multiple types. The default is 'application/json'.
 
-.PARAMETER AsyncTimeout
+.PARAMETER Timeout
     Defines the timeout period for the asynchronous task in seconds. The default value is -1,
     indicating no timeout.
 
@@ -888,7 +888,7 @@ function Set-PodeAsyncRoute {
         $ResponseContentType = 'application/json',
 
         [int]
-        $AsyncTimeout = -1,
+        $Timeout = -1,
 
         [string]
         $AsyncIdGenerator = 'New-PodeGuid',
@@ -905,7 +905,10 @@ function Set-PodeAsyncRoute {
         $NoOpenAPI,
 
         [int]
-        $MaxThreads = 2,
+        $MaxRunspaces = 2,
+
+        [int]
+        $MinRunspaces = 1,
 
         [switch]
         $Callback,
@@ -1008,14 +1011,16 @@ function Set-PodeAsyncRoute {
                 CallbackInfo   = $CallbackInfo
                 Cancelable     = -not ($NotCancelable.IsPresent)
                 Permission     = $Permission
+                MinRunspaces   = $MinRunspaces
+                MaxRunspaces   = $MaxRunspaces
             }
 
             #Set thread count
-            $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] = $MaxThreads
+               $PodeContext.Threads.AsyncRoutes+=  $MaxRunspaces
             if (! $PodeContext.RunspacePools.ContainsKey($r.AsyncPoolName)) {
                 $PodeContext.RunspacePools[$r.AsyncPoolName] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
 
-                $PodeContext.RunspacePools[$r.AsyncPoolName]['Pool'] = [runspacefactory]::CreateRunspacePool(2, $PodeContext.Threads.AsyncRoutes[$r.AsyncPoolName] , $PodeContext.RunspaceState, $Host)
+                $PodeContext.RunspacePools[$r.AsyncPoolName]['Pool'] = [runspacefactory]::CreateRunspacePool($MinRunspaces, $MaxRunspaces, $PodeContext.RunspaceState, $Host)
                 $PodeContext.RunspacePools[$r.AsyncPoolName]['State'] = 'Waiting'
 
             }
@@ -1023,7 +1028,7 @@ function Set-PodeAsyncRoute {
             $r.logic = Get-PodeAsyncSetScriptBlock
 
             # Set arguments and clear using variables
-            $r.Arguments = (  $AsyncTimeout, $AsyncIdGenerator, $r.AsyncPoolName  )
+            $r.Arguments = (  $Timeout, $AsyncIdGenerator, $r.AsyncPoolName  )
             $r.UsingVariables = $null
 
             # Add OpenAPI documentation if not excluded

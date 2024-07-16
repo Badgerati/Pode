@@ -123,22 +123,6 @@ function Invoke-PodeInternalAsync {
         $dctResult['Error'] = $null
         $dctResult['CallbackInfo'] = $Task.CallbackInfo
         $dctResult['Cancelable'] = $Task.Cancelable
-        <#  @{
-            ID            = $Id
-            Name          = $Task.Name
-            Runspace      = $runspace
-            Result        = $result
-            StartingTime  = $null
-            CreationTime  = $creationTime
-            CompletedTime = $null
-            ExpireTime    = $expireTime
-            Timeout       = $Timeout
-            State         = 'NotStarted'
-            Error         = $null
-            CallbackInfo  = $Task.CallbackInfo
-            Cancelable    = $Task.Cancelable
-        }
-#>
         if ($WebEvent.Auth.User) {
             $dctResult['User'] = $WebEvent.Auth.User.ID
             $dctResult['Permission'] = Copy-PodeDeepClone $Task.Permission
@@ -201,7 +185,7 @@ function ConvertTo-PodeEnhancedScriptBlock {
                 <# ScriptBlock #>
                 # Original ScriptBlock End
             }
-           # return $___result___
+            # return $___result___
         }
         catch {
             # Set the state to 'Failed' in case of error
@@ -258,6 +242,7 @@ function ConvertTo-PodeEnhancedScriptBlock {
                     $asyncResult['callbackUrl'] = $callbackUrl
                     for ($i = 0; $i -le 3; $i++) {
                         try {
+                            $asyncResult['CallbackTentative'] = $asyncResult['CallbackTentative'] + 1
                             $null = Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body $cBody -ContentType $contentType
                             $asyncResult['CallbackInfoState'] = 'Completed'
                             break
@@ -265,7 +250,6 @@ function ConvertTo-PodeEnhancedScriptBlock {
                         catch {
                             $_ | Write-PodeErrorLog
                             $asyncResult['CallbackInfoState'] = 'Failed'
-                            $asyncResult['CallbackTentative'] = $asyncResult['CallbackTentative'] + 1
                         }
                     }
                 }
@@ -327,8 +311,8 @@ function ConvertTo-PodeEnhancedScriptBlock {
     The `Start-PodeAsyncRoutesHousekeeper` function sets up a timer that periodically cleans up expired or completed asynchronous routes
     in Pode. It ensures that any expired or completed routes are properly handled and removed from the context.
 
-.PARAMETER ClosingAfterMinutes
-    Specifies the number of minutes after completion when the route should be considered expired and closed. Default is 5 minutes.
+.PARAMETER Interval
+    Specifies the frequence of the scheduler
 
 .PARAMETER RemoveAfterMinutes
     Specifies the number of minutes after completion when the route should be removed from the context. Default is 60 minutes.
@@ -342,41 +326,63 @@ function ConvertTo-PodeEnhancedScriptBlock {
 #>
 function Start-PodeAsyncRoutesHousekeeper {
     param(
+        [Parameter()]
         [int]
-        $ClosingAfterMinutes = 5,
-        [int]
-        $RemoveAfterMinutes = 60
+        $RemoveAfterMinutes = 5,
 
+        [Parameter()]
+        [int]
+        $Interval = 30
     )
+
     if (Test-PodeTimer -Name '__pode_asyncroutes_housekeeper__') {
         return
     }
-    Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval 30 -ScriptBlock {
+    Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval $Interval -ArgumentList $RemoveAfterMinutes -ScriptBlock {
+        param ( $RemoveAfterMinutes)
         if ($PodeContext.AsyncRoutes.Results.Count -eq 0) {
             return
         }
 
         $now = [datetime]::UtcNow
         foreach ($key in $PodeContext.AsyncRoutes.Results.Keys.Clone()) {
-
             $result = $PodeContext.AsyncRoutes.Results[$key]
-            # has it force expired?
-            if ($result['ExpireTime'] -lt $now) {
-                Close-PodeAsyncRoutesInternal -Result $result
-                continue
-            }
-            # is it completed?
-            if (!$result['Runspace'].Handler.IsCompleted) {
-                continue
-            }
-            if ($result['CompletedTime']) {
-                if ($result['CompletedTime'].AddMinutes(60) -lt $now) {
-                    $null = $PodeContext.AsyncRoutes.Results.Remove($result['ID'])
-                }
 
-                # is it expired by completion? if so, dispose and remove
-                elseif ($result['CompletedTime'].AddMinutes(5) -lt $now) {
-                    Close-PodeAsyncRoutesInternal -Result $result
+            if ($result) {
+                # has it force expired?
+                if (($result['ExpireTime'] -lt $now ) -and (! $result['CompletedTime']) ) {
+                    $result['CompletedTime'] = $now
+                    $result['State'] = 'Aborted'
+                    $result['Error'] = 'Timeout'
+                    Close-PodeDisposable -Disposable $Result.Runspace.Pipeline
+                    $v = 0
+                    $Result.TryRemove('Runspace', [ref]$v)
+                    #   Close-PodeAsyncRoutesInternal -Result $result
+                    continue
+                }
+                # is it completed?
+                if (!$result['Runspace'].Handler.IsCompleted) {
+                    continue
+                }
+                if ($result['CompletedTime']) {
+
+                    if ($result['CompletedTime'].AddMinutes($RemoveAfterMinutes) -lt $now) {
+                        $($result['CompletedTime'].AddMinutes($RemoveAfterMinutes))
+                        Close-PodeDisposable -Disposable $Result.Result
+                        $null = $PodeContext.AsyncRoutes.Results.Remove($result['ID'])
+                    }
+
+                    if ( $Result.ContainsKey('Runspace')) {
+                        Close-PodeDisposable -Disposable $Result.Runspace.Pipeline
+                        $v = 0
+                        write-podehost  "remove=$($Result.TryRemove('Runspace', [ref]$v))"
+                        Write-PodeHost $Result -Explode -ShowType
+                    }
+                    # is it expired by completion? if so, dispose and remove
+                    #   elseif ($result['CompletedTime'].AddSeconds($ClosingAfterSeconds) -lt $now) {
+                    #        write-podehost 'Close-PodeAsyncRoutesInternal'
+                    #      Close-PodeAsyncRoutesInternal -Result $result
+                    #     }
                 }
             }
         }

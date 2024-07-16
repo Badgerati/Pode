@@ -174,6 +174,17 @@ Describe 'ASYNC REST API Requests' {
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancelable | Should -Be $true
         }
+
+        It 'Create Async operation /asyncWaitForeverTimeout' {
+            $response = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForeverTimeout' -Method Put -Headers $mortyCommonHeaders
+
+            # Assertions to validate the response
+            $response | Should -Not -BeNullOrEmpty
+            $response.User | Should -Be 'M0R7Y302'
+            $response.Name | Should -Be '__Put_auth_asyncWaitForeverTimeout__'
+            $response.State | Should -BeIn @('NotStarted', 'Running')
+            $response.Cancelable | Should -Be $false
+        }
     }
 
     Describe -Name 'Get Async Operation' {
@@ -213,11 +224,7 @@ Describe 'ASYNC REST API Requests' {
 
     Describe -Name 'Query Async Operation' {
         it 'Get Query Async Operation as Mindy' {
-            $body = @{'CreationTime' = @{
-                    'value' = get-date '2024-07-05T13:20:00-07:00'
-                    'op'    = 'GE'
-                }
-            } | ConvertTo-Json
+            $body = @{} | ConvertTo-Json
             $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body $body -Headers $mindyCommonHeaders
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
@@ -226,25 +233,22 @@ Describe 'ASYNC REST API Requests' {
         }
 
         it 'Get Query Async Operation as Morty' {
-            $body = @{'CreationTime' = @{
-                    'value' = get-date '2024-07-05T13:20:00-07:00'
-                    'op'    = 'GE'
-                }
-            } | ConvertTo-Json
+            $body = @{} | ConvertTo-Json
             $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body $body -Headers $mortyCommonHeaders
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
-            $response.Count | Should -Be 5
+            $response.Count | Should -Be 6
             $response.state.where({ $_ -eq 'Aborted' }).count | Should -Be 0
         }
     }
 
     Describe -Name 'Waiting for results ' {
         it 'Wendy results' {
+            $counter = 0
             do {
                 $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
                 Start-Sleep 2
-            } until ($response.state.where({ $_ -eq 'Running' -or $_ -eq 'NotStarted' }).count -eq 0)
+            } until (($response.state.where({ $_ -eq 'Running' -or $_ -eq 'NotStarted' }).count -eq 0) -or (++$counter -gt 60))
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.Count | Should -Be 7
@@ -258,10 +262,16 @@ Describe 'ASYNC REST API Requests' {
             $response.where({ $_.Name -eq '__Put_auth_asyncState__' }).Result.InnerValue | Should -Be 'coming from a PodeState'
         }
         it 'Morty results' {
+            $counter = 0
             do {
-                $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mortyCommonHeaders
+                $body = @{'Name' = @{
+                        'value' = '__Put_auth_asyncWaitForeverTimeout__'
+                        'op'    = 'NE'
+                    }
+                } | ConvertTo-Json
+                $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body $body -Headers $mortyCommonHeaders
                 Start-Sleep 2
-            } until ($response.state.where({ $_ -eq 'Running' -or $_ -eq 'NotStarted' }).count -eq 0)
+            } until (($response.state.where({ $_ -eq 'Running' -or $_ -eq 'NotStarted' }).count -eq 0) -or (++$counter -gt 60))
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.Count | Should -Be 5
@@ -271,6 +281,21 @@ Describe 'ASYNC REST API Requests' {
             $response.where({ $_.Name -eq '__Put_auth_asyncUsingNotCancelable__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncParam__' }).Result.InnerValue | Should -Be 'comming as argument'
             $response.where({ $_.Name -eq '__Put_auth_asyncState__' }).Result.InnerValue | Should -Be 'coming from a PodeState'
+        }
+
+        it 'Timeout' {
+            do {
+                $body = @{'Name' = @{
+                        'value' = '__Put_auth_asyncWaitForeverTimeout__'
+                        'op'    = 'EQ'
+                    }
+                } | ConvertTo-Json
+                $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body $body -Headers $mortyCommonHeaders
+            } until ($response.state.where({ $_ -eq 'Aborted' }).count -eq 1)
+            # Assertions to validate the response
+            $response | Should -Not -BeNullOrEmpty
+            $response.Count | Should -Be 1
+            $response.state.where({ $_ -eq 'Aborted' }).count | Should -Be 1
         }
 
     }

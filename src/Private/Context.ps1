@@ -149,7 +149,7 @@ function New-PodeContext {
         Files      = 1
         Tasks      = 2
         WebSockets = 2
-        AsyncRoutes = @{}
+        AsyncRoutes = 0
     }
 
     # set socket details for pode server

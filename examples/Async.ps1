@@ -8,6 +8,37 @@ param(
     $DisableTermination
 )
 
+
+
+<#
+$mortyCommonHeaders = @{
+  'accept'        = 'application/json'
+  'X-API-KEY'     = 'test-api-key'
+  'Authorization' = 'Basic bW9ydHk6cGlja2xl'
+}
+
+$response_asyncUsingNotCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancelable' -Method Put -Headers $mortyCommonHeaders
+$response_asyncUsingCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancelable' -Method Put -Headers $mortyCommonHeaders
+
+$body = @{
+  callbackUrl = 'http://localhost:8080/receive/callback'
+} | ConvertTo-Json
+
+$headersWithContentType = $mortyCommonHeaders.Clone()
+$headersWithContentType['Content-Type'] = 'application/json'
+
+$response_asyncUsing = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsing' -Method Put -Headers $headersWithContentType -Body $body
+
+$response_asyncState = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncState' -Method Put -Headers $mortyCommonHeaders
+
+$response_asyncParam = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncParam' -Method Put -Headers $mortyCommonHeaders
+
+$response_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForeverTimeout' -Method Put -Headers $mortyCommonHeaders
+
+#>
+
+
+
 try {
     # Determine the script path and Pode module path
     $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
@@ -164,7 +195,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Callback -PassThru -CallbackSendResult | Set-PodeOARequest  -RequestBody (
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Callback -PassThru -CallbackSendResult -Timeout 300 | Set-PodeOARequest  -RequestBody (
         New-PodeOARequestBody -Content @{'application/json' = (New-PodeOAStringProperty -Name 'callbackUrl' -Format Uri -Object -Example 'http://localhost:8080/receive/callback') }
     )
 
@@ -177,7 +208,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
             Start-Sleep $state:data.sleepTime
         }
         return @{ InnerValue = $state:data.Message }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxThreads 5
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 
 
@@ -190,7 +221,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
             Start-Sleep $data.sleepTime
         }
         return @{ InnerValue = $data.Message }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 
 
@@ -205,7 +236,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
             Start-Sleep $sleepTime2
         }
         return @{ InnerValue = $Message }
-    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxThreads 4
+    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingNotCancelable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
@@ -215,7 +246,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         #write-podehost $WebEvent.auth.User -Explode
         Start-Sleep ($using:uSleepTime * 10)
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -NotCancelable
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -NotCancelable -Timeout 300
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingCancelable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
         Write-PodeHost '/auth/asyncUsingCancelable'
@@ -226,11 +257,20 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         return @{ InnerValue = $using:uMessage }
     } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
 
+
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncWaitForever' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
         while ($true) {
             Start-Sleep 2
         }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
+
+
+
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncWaitForeverTimeout' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
+        while ($true) {
+            Start-Sleep 2
+        }
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 40 -NotCancelable
 
 
 
@@ -246,7 +286,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
     Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
         Close-PodeServer
-    } -PassThru| Set-PodeOARouteInfo -Summary 'Shutdown the server'
+    } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server'
     <#
     Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
 
