@@ -890,8 +890,9 @@ function Set-PodeAsyncRoute {
         [int]
         $Timeout = -1,
 
+        [Parameter()]
         [string]
-        $AsyncIdGenerator = 'New-PodeGuid',
+        $AsyncIdGenerator,
 
         [Parameter(ParameterSetName = 'OpenAPI')]
         [string]
@@ -1016,7 +1017,7 @@ function Set-PodeAsyncRoute {
             }
 
             #Set thread count
-               $PodeContext.Threads.AsyncRoutes+=  $MaxRunspaces
+            $PodeContext.Threads.AsyncRoutes += $MaxRunspaces
             if (! $PodeContext.RunspacePools.ContainsKey($r.AsyncPoolName)) {
                 $PodeContext.RunspacePools[$r.AsyncPoolName] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
 

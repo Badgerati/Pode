@@ -17,6 +17,12 @@ $mortyCommonHeaders = @{
   'Authorization' = 'Basic bW9ydHk6cGlja2xl'
 }
 
+$mindyCommonHeaders = @{
+            'accept'        = 'application/json'
+            'X-API-KEY'     = 'test2-api-key'
+            'Authorization' = 'Basic bWluZHk6cGlja2xl'
+}
+
 $response_asyncUsingNotCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancelable' -Method Put -Headers $mortyCommonHeaders
 $response_asyncUsingCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancelable' -Method Put -Headers $mortyCommonHeaders
 
@@ -34,6 +40,10 @@ $response_asyncState = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncS
 $response_asyncParam = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncParam' -Method Put -Headers $mortyCommonHeaders
 
 $response_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForeverTimeout' -Method Put -Headers $mortyCommonHeaders
+
+
+
+$response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
 
 #>
 
@@ -287,6 +297,10 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
     Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
         Close-PodeServer
     } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server'
+
+    Add-PodeRoute  -Method 'Get' -Path '/hello' -ScriptBlock {
+        Write-PodeJsonResponse -Value @{'message' = 'Hello!' } -StatusCode 200
+    } -PassThru | Set-PodeOARouteInfo -Summary 'Hello from the server'
     <#
     Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
 

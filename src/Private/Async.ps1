@@ -93,10 +93,7 @@ function Invoke-PodeInternalAsync {
         }
 
         $creationTime = [datetime]::UtcNow
-        # $name = New-PodeGuid
-        if ([string]::IsNullOrEmpty($Id)) {
-            $Id = New-PodeGuid
-        }
+
         $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
         $runspace = Add-PodeRunspace -Type $Task.name -ScriptBlock (($Task.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
 
@@ -112,7 +109,6 @@ function Invoke-PodeInternalAsync {
         $dctResult['ID'] = $Id
         $dctResult['Name'] = $Task.Name
         $dctResult['Runspace'] = $runspace
-        #$dctResult['Result'] = $result
         $dctResult['Output'] = $result
         $dctResult['StartingTime'] = $null
         $dctResult['CreationTime'] = $creationTime
@@ -174,90 +170,107 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
     $enhancedScriptBlockTemplate = {
         <# Param #>
-        $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
-        try {
-            $asyncResult['StartingTime'] = [datetime]::UtcNow
-
-            # Set the state to 'Running'
-            $asyncResult['State'] = 'Running'
-
-            $___result___ = & { # Original ScriptBlock Start
-                <# ScriptBlock #>
-                # Original ScriptBlock End
-            }
-            # return $___result___
+        # sometime the key is not available when the process start. workaround wait 2 secs
+        if (!$PodeContext.AsyncRoutes.Results.ContainsKey($___async___id___)) {
+            Start-Sleep 2
         }
-        catch {
-            # Set the state to 'Failed' in case of error
-            $asyncResult['State'] = 'Failed'
-
-            # Log the error
-            $_ | Write-PodeErrorLog
-
-            # Store the error in the AsyncRoutes results
-            $asyncResult['Error'] = $_
-
-        }
-        finally {
-            # Set the completed time
-            $asyncResult['CompletedTime'] = [datetime]::UtcNow
-            # Ensure state is set to 'Completed' if it was still 'Running'
-            if ($asyncResult.State -eq 'Running') {
-                $asyncResult['State'] = 'Completed'
-            }
-
-            if ($___result___) {
-                $asyncResult['Result'] = $___result___
-            }
-
+        if ($PodeContext.AsyncRoutes.Results.ContainsKey($___async___id___)) {
+            $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
             try {
-                if ($asyncResult.CallbackInfo) {
+                $asyncResult['StartingTime'] = [datetime]::UtcNow
 
-                    $asyncResult['CallbackTentative'] = 0
+                # Set the state to 'Running'
+                $asyncResult['State'] = 'Running'
 
-                    $callbackUrl = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult['CallbackInfo'].UrlField).Value
-                    $method = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult['CallbackInfo'].Method -DefaultValue 'Post').Value
-                    $contentType = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult['CallbackInfo'].ContentType).Value
-                    $headers = @{}
-                    foreach ($key in $asyncResult['CallbackInfo'].HeaderFields.Keys) {
-                        $value = Convert-PodeCallBackRuntimeExpression -Variable $key -DefaultValue $asyncResult.HeaderFields[$key]
-                        if ($value) {
-                            $headers.$($value.key) = $value.value
+                $___result___ = & { # Original ScriptBlock Start
+                    <# ScriptBlock #>
+                    # Original ScriptBlock End
+                }
+                # return $___result___
+                # Set the completed time
+                $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
+            }
+            catch {
+                $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
+                # Set the state to 'Failed' in case of error
+                $asyncResult['State'] = 'Failed'
+
+                # Log the error
+                $_ | Write-PodeErrorLog
+
+                # Store the error in the AsyncRoutes results
+                $asyncResult['Error'] = $_
+
+            }
+            finally {
+                $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
+                # Ensure state is set to 'Completed' if it was still 'Running'
+                if ($asyncResult.State -eq 'Running') {
+                    $asyncResult['State'] = 'Completed'
+                }
+
+                if ($___result___) {
+                    $asyncResult['Result'] = $___result___
+                }
+
+                try {
+                    if ($asyncResult.CallbackInfo) {
+
+                        $asyncResult['CallbackTentative'] = 0
+
+                        $callbackUrl = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult['CallbackInfo'].UrlField).Value
+                        $method = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult['CallbackInfo'].Method -DefaultValue 'Post').Value
+                        $contentType = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult['CallbackInfo'].ContentType).Value
+                        $headers = @{}
+                        foreach ($key in $asyncResult['CallbackInfo'].HeaderFields.Keys) {
+                            $value = Convert-PodeCallBackRuntimeExpression -Variable $key -DefaultValue $asyncResult.HeaderFields[$key]
+                            if ($value) {
+                                $headers.$($value.key) = $value.value
+                            }
                         }
-                    }
-                    $body = @{
-                        Url       = $WebEvent.Request.Url
-                        Method    = $WebEvent.Method
-                        EventName = $asyncResult['CallbackInfo'].EventName
-                    }
-                    if ($asyncResult['CallbackInfo'].SendResult) {
-                        $body.Result = $___result___
-                    }
-                    switch ($contentType) {
-                        'application/json' { $cBody = ($body | ConvertTo-Json -depth 10) }
-                        'application/xml' { $cBody = ($body | ConvertTo-Xml -NoTypeInformation ) }
-                        'application/yaml' { $cBody = ($body | ConvertTo-PodeYaml -depth 10) }
-                    }
-
-                    $asyncResult['callbackUrl'] = $callbackUrl
-                    for ($i = 0; $i -le 3; $i++) {
-                        try {
-                            $asyncResult['CallbackTentative'] = $asyncResult['CallbackTentative'] + 1
-                            $null = Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body $cBody -ContentType $contentType
-                            $asyncResult['CallbackInfoState'] = 'Completed'
-                            break
+                        $body = @{
+                            Url       = $WebEvent.Request.Url
+                            Method    = $WebEvent.Method
+                            EventName = $asyncResult['CallbackInfo'].EventName
                         }
-                        catch {
-                            $_ | Write-PodeErrorLog
-                            $asyncResult['CallbackInfoState'] = 'Failed'
+                        if ($asyncResult['CallbackInfo'].SendResult) {
+                            $body.Result = $___result___
+                        }
+                        switch ($contentType) {
+                            'application/json' { $cBody = ($body | ConvertTo-Json -depth 10) }
+                            'application/xml' { $cBody = ($body | ConvertTo-Xml -NoTypeInformation ) }
+                            'application/yaml' { $cBody = ($body | ConvertTo-PodeYaml -depth 10) }
+                        }
+
+                        $asyncResult['callbackUrl'] = $callbackUrl
+                        for ($i = 0; $i -le 3; $i++) {
+                            try {
+                                $asyncResult['CallbackTentative'] = $asyncResult['CallbackTentative'] + 1
+                                $null = Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body $cBody -ContentType $contentType
+                                $asyncResult['CallbackInfoState'] = 'Completed'
+                                break
+                            }
+                            catch {
+                                $_ | Write-PodeErrorLog
+                                $asyncResult['CallbackInfoState'] = 'Failed'
+                            }
                         }
                     }
                 }
+                catch {
+                    # Log the error
+                    $_ | Write-PodeErrorLog
+                    $asyncResult['CallbackInfoState'] = 'Failed'
+                }
+            }
+        }
+        else {
+            try {
+                throw "Async $___async___id___ doesn't exist."
             }
             catch {
                 # Log the error
                 $_ | Write-PodeErrorLog
-                $asyncResult['CallbackInfoState'] = 'Failed'
             }
         }
     }
@@ -350,18 +363,24 @@ function Start-PodeAsyncRoutesHousekeeper {
 
             if ($result) {
                 # has it force expired?
-                if (($result['ExpireTime'] -lt $now ) -and (! $result['CompletedTime']) ) {
-                    $result['CompletedTime'] = $now
-                    $result['State'] = 'Aborted'
-                    $result['Error'] = 'Timeout'
-                    Close-PodeDisposable -Disposable $Result.Runspace.Pipeline
-                    $v = 0
-                    $Result.TryRemove('Runspace', [ref]$v)
+                if (($result['ExpireTime'] -lt $now ) -and ((!$result['Runspace'].Handler.IsCompleted)) ) {
+                    try {
+                        # write-podehost 'Start expire'
+                        $result['CompletedTime'] = $now
+                        $result['State'] = 'Aborted'
+                        $result['Error'] = 'Timeout'
+                        $result['Runspace'].Pipeline.Dispose()
+                        #  write-podehost $result['Runspace'].Handler -Explode
+                        #  write-podehost 'End expire'
+                    }
+                    catch {
+                        $_ | Write-PodeErrorLog
+                    }
                     #   Close-PodeAsyncRoutesInternal -Result $result
-                    continue
+
                 }
                 # is it completed?
-                if (!$result['Runspace'].Handler.IsCompleted) {
+                <#     if (!$result['Runspace'].Handler.IsCompleted) {
                     continue
                 }
                 if ($result['CompletedTime']) {
@@ -383,55 +402,13 @@ function Start-PodeAsyncRoutesHousekeeper {
                     #        write-podehost 'Close-PodeAsyncRoutesInternal'
                     #      Close-PodeAsyncRoutesInternal -Result $result
                     #     }
-                }
+                }#>
             }
         }
 
         $result = $null
     }
 }
-
-<#
-.SYNOPSIS
-    Closes and cleans up resources for asynchronous Pode routes.
-
-.DESCRIPTION
-    The Close-PodeAsyncRoutesInternal function is used to close and clean up disposable resources associated with asynchronous Pode routes.
-    It ensures that runspaces and results are properly disposed of and removed from the provided result hashtable.
-
-.PARAMETER Result
-    A hashtable containing the resources to be disposed of. The hashtable should contain 'Runspace' and 'Result' keys.
-
-.EXAMPLE
-    $result = @{
-        Runspace = [some runspace object]
-        Result   = [some result object]
-    }
-    Close-PodeAsyncRoutesInternal -Result $result
-
-    This example demonstrates how to use the Close-PodeAsyncRoutesInternal function to clean up resources in the provided result hashtable.
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-#>
-function Close-PodeAsyncRoutesInternal {
-    param(
-        [Parameter()]
-        [System.Collections.Concurrent.ConcurrentDictionary]
-        $Result
-    )
-
-    if ($null -eq $Result) {
-        return
-    }
-
-    Close-PodeDisposable -Disposable $Result.Runspace.Pipeline
-    Close-PodeDisposable -Disposable $Result.Result
-    $Result.Remove('Runspace')
-    $Result.Remove('Result')
-
-}
-
 
 <#
 .SYNOPSIS
@@ -784,8 +761,12 @@ function Get-PodeAsyncSetScriptBlock {
     return [scriptblock] {
         param($Timeout, $IdGenerator, $AsyncPoolName)
         $responseMediaType = Get-PodeHeader -Name 'Accept'
-        $id = (& $IdGenerator)
-
+        if ($IdGenerator) {
+            $id = (& $IdGenerator)
+        }
+        else {
+            $id = New-PodeGuid
+        }
         # Invoke the internal async task
         $async = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items[$AsyncPoolName] -Timeout $Timeout -ArgumentList @{ WebEvent = $WebEvent; ___async___id___ = $id }
 
@@ -887,9 +868,6 @@ function Get-PodeAsyncGetScriptBlock {
                             break
                         }
                         'completed' {
-                            write-podehost "$async['Name'] $($async['Result'].Count) Elements"
-                            write-podehost  $async['Result'] -Explode -ShowType
-
                             $taskSummary.Result = $async['Result']
                             if ($async['CallbackInfoState']) {
                                 $taskSummary.CallbackTentative = $async['CallbackTentative']
