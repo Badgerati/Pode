@@ -761,8 +761,9 @@ function Add-PodeAsyncQueryRoute {
     You can specify multiple types. The default is 'application/json'.
 
 .PARAMETER Timeout
-    Defines the timeout period for the asynchronous task in seconds. The default value is -1,
-    indicating no timeout.
+    Defines the timeout period for the asynchronous task in seconds.
+    The default value is 28800 (8 hours).
+    -1 indicating no timeout.
 
 .PARAMETER AsyncIdGenerator
     Specifies the function to generate unique IDs for asynchronous tasks. The default
@@ -897,7 +898,7 @@ function Set-PodeAsyncRoute {
         $ResponseContentType = 'application/json',
 
         [int]
-        $Timeout = -1,
+        $Timeout = 28800,
 
         [Parameter()]
         [string]
@@ -1076,10 +1077,10 @@ function Set-PodeAsyncRoute {
                         Add-PodeOACallBack -Name $CallbackInfo.EventName -Path $CallbackUrl -Method $CallbackMethod -RequestBody (
                             New-PodeOARequestBody -Content @{ $CallbackContentType = (
                                     New-PodeOAObjectProperty -Name 'Result' |
-                                        New-PodeOAStringProperty -Name 'EventName' -Description 'The event name.' -Required  |
+                                        New-PodeOAStringProperty -Name 'EventName' -Description 'The event name.' -Required |
                                         New-PodeOAStringProperty -Name 'Url' -Format Uri -Example 'http://localhost/callback' -Required |
                                         New-PodeOAStringProperty -Name 'Method' -Example 'Post' -Required |
-                                        New-PodeOAStringProperty -Name 'State' -Description 'The parent async operation status' -Required -Example 'Complete' -Enum @('NotStarted', 'Running', 'Failed', 'Completed')|
+                                        New-PodeOAStringProperty -Name 'State' -Description 'The parent async operation status' -Required -Example 'Complete' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
                                         New-PodeOAObjectProperty -Name 'Result' -Description 'The parent result' -NoProperties |
                                         New-PodeOAStringProperty -Name 'Error' -Description 'The parent error' |
                                         New-PodeOAObjectProperty

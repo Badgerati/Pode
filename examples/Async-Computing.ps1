@@ -160,7 +160,7 @@ Export-ModuleMember -Function SumOfSquaresModule
 
     Start-PodeServer -Threads 30 -Quiet:$Quiet -DisableTermination:$DisableTermination {
         Import-PodeModule -Path $SumOfSquaresModulefilePath
-        Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
+        Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -DualMode
         # request logging
         New-PodeLoggingMethod -name 'async_computing_error' -File  -Path "$ScriptPath/logs" | Enable-PodeErrorLogging
 
