@@ -284,8 +284,9 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = 'Rejestrowanie żądań jest już włączone.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Podano nieprawidłowy czas trwania Access-Control-Max-Age: {0}. Powinien być większy niż 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'Definicja OpenAPI o nazwie {0} już istnieje.'
-    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag nie może być używany wewnątrz 'ScriptBlock' Select-PodeOADefinition."
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag nie może być używany wewnątrz 'ScriptBlock' Select-PodeOADefinition."
     UnsupportedSerializationTypeExceptionMessage                      = 'Nieobsługiwany typ serializacji: {0}'
     GetRequestBodyNotAllowedExceptionMessage                          = 'Operacje GET nie mogą mieć treści żądania.'
     InvalidQueryFormatExceptionMessage                                = 'Podane zapytanie ma nieprawidłowy format.'
+    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} nie istnieje.'
 }

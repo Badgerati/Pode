@@ -188,10 +188,13 @@ function ConvertTo-PodeEnhancedScriptBlock {
                 }
                 # return $___result___
                 # Set the completed time
-                $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
+                # $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
+                $asyncResult['CompletedTime'] = [datetime]::UtcNow
             }
             catch {
-                $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
+                if (! $asyncResult.ContainsKey('CompletedTime')) {
+                    $asyncResult['CompletedTime'] = [datetime]::UtcNow
+                }
                 # Set the state to 'Failed' in case of error
                 $asyncResult['State'] = 'Failed'
 
@@ -203,7 +206,11 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
             }
             finally {
-                $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
+                # $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
+                if (! $asyncResult.ContainsKey('CompletedTime')) {
+                    $asyncResult['CompletedTime'] = [datetime]::UtcNow
+                    write-podehost "Finally) CompletedTime=$($asyncResult['CompletedTime'])"
+                }
                 # Ensure state is set to 'Completed' if it was still 'Running'
                 if ($asyncResult.State -eq 'Running') {
                     $asyncResult['State'] = 'Completed'
@@ -266,7 +273,7 @@ function ConvertTo-PodeEnhancedScriptBlock {
         }
         else {
             try {
-                throw "Async $___async___id___ doesn't exist."
+                throw ($PodeLocale.asyncIdDoesNotExistExceptionMessage -f $___async___id___)
             }
             catch {
                 # Log the error
@@ -519,7 +526,6 @@ function Search-PodeAsyncTask {
             if (! (Test-PodeAsyncPermission -Permission $result.Permission.Read -User $User)) {
                 continue
             }
-
             $match = $true
 
             foreach ($key in $Query.Keys) {
@@ -739,20 +745,23 @@ function Test-PodeAsyncPermission {
         [hashtable]
         $User
     )
-    foreach ($key in $Permission.Keys) {
+    if ($User) {
+        foreach ($key in $Permission.Keys) {
 
-        if ($User.ContainsKey($key)) {
-            if (  Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray $User[$key]) {
-                return $true
+            if ($User.ContainsKey($key)) {
+                if (  Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray $User[$key]) {
+                    return $true
+                }
+            }
+            elseif ($key -eq 'Users') {
+                if (Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray  $User.ID) {
+                    return $true
+                }
             }
         }
-        elseif ($key -eq 'Users') {
-            if (Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray  $User.ID) {
-                return $true
-            }
-        }
+        return $false
     }
-    return $false
+    return $true
 }
 
 
@@ -855,8 +864,6 @@ function Get-PodeAsyncGetScriptBlock {
             }
             if ($authorized) {
                 if ($async['Runspace'].Handler.IsCompleted) {
-                    # ISO 8601 UTC format
-                    $taskSummary.CompletedTime = $async['CompletedTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                     switch ($async['State'].ToLowerInvariant() ) {
                         'failed' {
                             $taskSummary.Error = $async['Error']
@@ -881,6 +888,11 @@ function Get-PodeAsyncGetScriptBlock {
                             break
                         }
                     }
+                    if (! $taskSummary.ContainsKey('CompletedTime')) {
+                        Start-Sleep 1
+                    }
+                    # ISO 8601 UTC format
+                    $taskSummary.CompletedTime = $async['CompletedTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
                 }
 
                 switch ($responseMediaType) {
@@ -1028,7 +1040,9 @@ function Get-PodeAsyncQueryScriptBlock {
         }
         $responseMediaType = Get-PodeHeader -Name 'Accept'
         $response = @()
+
         $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User
+
         if ($results) {
             foreach ($async in $results) {
                 #    $response += Get-PodeAsyncSummary -Async $async

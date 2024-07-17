@@ -287,5 +287,6 @@
     GetRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات GET على محتوى الطلب.'
     InvalidQueryFormatExceptionMessage                                = 'الاستعلام المقدم له تنسيق غير صالح.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
-    renamePodeOADefinitionTagExceptionMessage                     = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
+    renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
+    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} غير موجود.'
 }

@@ -778,8 +778,11 @@ function Add-PodeAsyncQueryRoute {
 .PARAMETER NoOpenAPI
     If specified, the route will not be included in the OpenAPI documentation.
 
-.PARAMETER MaxThreads
-    Number of parallel threads for this specific route. The default is 2.
+.PARAMETER MaxRunspaces
+    The maximum number of Runspaces that can exist in this route. The default is 2.
+
+.PARAMETER MinRunspaces
+    The minimum number of Runspaces that exist in this route. The default is 1.
 
 .PARAMETER Callback
     Specifies whether to include callback functionality for the route.
@@ -905,9 +908,13 @@ function Set-PodeAsyncRoute {
         [switch]
         $NoOpenAPI,
 
+        [Parameter()]
+        [ValidateRange(1, 100)]
         [int]
         $MaxRunspaces = 2,
 
+        [Parameter()]
+        [ValidateRange(1, 100)]
         [int]
         $MinRunspaces = 1,
 
