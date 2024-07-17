@@ -21,17 +21,17 @@ Describe 'ASYNC REST API Requests' {
         $Endpoint = "http://127.0.0.1:$($Port)"
         $scriptPath = "$($PSScriptRoot)\..\..\examples\Async.ps1"
         if ($PSVersionTable.PsVersion -gt [version]'6.0') {
-          Start-Process 'pwsh' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
+            Start-Process 'pwsh' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
         }
         else {
-          Start-Process 'powershell' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
+            Start-Process 'powershell' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
         }
         Start-Sleep -Seconds 5
     }
 
     AfterAll {
         Start-Sleep -Seconds 10
-     #   Invoke-RestMethod -Uri "$($Endpoint)/close" -Method Post | Out-Null
+        Invoke-RestMethod -Uri "$($Endpoint)/close" -Method Post | Out-Null
 
     }
 
