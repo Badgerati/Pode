@@ -83,10 +83,11 @@ if ($Client) {
             End   = ($i + $using:StepSize)
 
         }
-        if ($squareHeader.End -le [int]::MaxValue ) {
-            Write-Host  "$_/$using:totalSteps) $($using:StepSize+$i)"
+        if ($squareHeader.End -le [int]::MaxValue) {
+            Write-Output "[$_]/using:totalSteps) [$using:StepSize+$i]"
             Invoke-RestMethod -Uri "http://localhost:$($using:Port)/$($using:Endpoint)" -Method Get -Headers $squareHeader
         }
+
     } -ThrottleLimit $ThrottleLimit
 
     $squaretask += $jobs
