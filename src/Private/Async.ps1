@@ -123,7 +123,7 @@ function Invoke-PodeInternalAsync {
             $dctResult['User'] = $WebEvent.Auth.User.ID
             $dctResult['Permission'] = Copy-PodeDeepClone $Task.Permission
         }
-
+        $dctResult['EnableSse'] = $Task.EnableSse
         $PodeContext.AsyncRoutes.Results[$Id] = $dctResult
         return $dctResult
     }
@@ -182,13 +182,21 @@ function ConvertTo-PodeEnhancedScriptBlock {
                 # Set the state to 'Running'
                 $asyncResult['State'] = 'Running'
 
+                if ($asyncResult.EnableSse) {
+                    if ($asyncResult.SseGroup) {
+                        ConvertTo-PodeSseConnection -Name $___async___id___ -Scope Local -Group $asyncResult.SseGroup
+                    }
+                    else {
+                        ConvertTo-PodeSseConnection -Name $___async___id___ -Scope Local
+                    }
+                }
+
                 $___result___ = & { # Original ScriptBlock Start
                     <# ScriptBlock #>
                     # Original ScriptBlock End
                 }
                 # return $___result___
                 # Set the completed time
-                # $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
                 $asyncResult['CompletedTime'] = [datetime]::UtcNow
             }
             catch {
@@ -206,11 +214,11 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
             }
             finally {
-                # $null = $asyncResult.TryAdd('CompletedTime', [datetime]::UtcNow)
+                # Set the completed time
                 if (! $asyncResult.ContainsKey('CompletedTime')) {
                     $asyncResult['CompletedTime'] = [datetime]::UtcNow
-                    write-podehost "Finally) CompletedTime=$($asyncResult['CompletedTime'])"
                 }
+
                 # Ensure state is set to 'Completed' if it was still 'Running'
                 if ($asyncResult.State -eq 'Running') {
                     $asyncResult['State'] = 'Completed'
@@ -239,10 +247,19 @@ function ConvertTo-PodeEnhancedScriptBlock {
                             Url       = $WebEvent.Request.Url
                             Method    = $WebEvent.Method
                             EventName = $asyncResult['CallbackInfo'].EventName
+                            State     = $asyncResult['State']
                         }
-                        if ($asyncResult['CallbackInfo'].SendResult) {
-                            $body.Result = $___result___
+                        switch ( $asyncResult['State'] ) {
+                            'Failed' {
+                                $body.Error = $asyncResult['Error']
+                            }
+                            'Completed' {
+                                if ($asyncResult['CallbackInfo'].SendResult -and $___result___) {
+                                    $body.Result = $___result___
+                                }
+                            }
                         }
+
                         switch ($contentType) {
                             'application/json' { $cBody = ($body | ConvertTo-Json -depth 10) }
                             'application/xml' { $cBody = ($body | ConvertTo-Xml -NoTypeInformation ) }
@@ -268,6 +285,23 @@ function ConvertTo-PodeEnhancedScriptBlock {
                     # Log the error
                     $_ | Write-PodeErrorLog
                     $asyncResult['CallbackInfoState'] = 'Failed'
+                }
+
+                if ($asyncResult.EnableSse) {
+                    switch ( $asyncResult['State'] ) {
+                        'Failed' {
+                            Send-PodeSseEvent -FromEvent -Data @{State = 'Failed'; Error = $asyncResult['Error'] }
+                        }
+                        'Completed' {
+                            if ($___result___) {
+                                Send-PodeSseEvent -FromEvent -Data @{State = 'Completed'; Result = $___result___ }
+                            }
+                            else {
+                                Send-PodeSseEvent -FromEvent -Data @{State = 'Completed' }
+                            }
+                        }
+                        Default {}
+                    }
                 }
             }
         }
@@ -360,6 +394,7 @@ function Start-PodeAsyncRoutesHousekeeper {
     }
     Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval $Interval -ArgumentList $RemoveAfterMinutes -ScriptBlock {
         param ( $RemoveAfterMinutes)
+        Write-PodeHost "RemoveAfterMinutes=$RemoveAfterMinutes"
         if ($PodeContext.AsyncRoutes.Results.Count -eq 0) {
             return
         }
@@ -367,18 +402,27 @@ function Start-PodeAsyncRoutesHousekeeper {
         $now = [datetime]::UtcNow
         foreach ($key in $PodeContext.AsyncRoutes.Results.Keys.Clone()) {
             $result = $PodeContext.AsyncRoutes.Results[$key]
-
             if ($result) {
-                # has it force expired?
-                if (($result['ExpireTime'] -lt $now ) -and ((!$result['Runspace'].Handler.IsCompleted)) ) {
+                if ( $result['Runspace'].Handler.IsCompleted) {
                     try {
-                        # write-podehost 'Start expire'
+                        if ($result['CompletedTime'] -and $result['CompletedTime'].AddMinutes($RemoveAfterMinutes) -lt $now) {
+                            $result['Runspace'].Pipeline.Dispose()
+                            $v = 0
+                            $removed = $PodeContext.AsyncRoutes.Results.TryRemove($key, [ref]$v)
+                            Write-Verbose "Key $key Removed:$removed"
+                        }
+                    }
+                    catch {
+                        $_ | Write-PodeErrorLog
+                    }
+                }
+                # has it force expired?
+                elseif ($result['ExpireTime'] -lt $now  ) {
+                    try {
                         $result['CompletedTime'] = $now
                         $result['State'] = 'Aborted'
                         $result['Error'] = 'Timeout'
                         $result['Runspace'].Pipeline.Dispose()
-                        #  write-podehost $result['Runspace'].Handler -Explode
-                        #  write-podehost 'End expire'
                     }
                     catch {
                         $_ | Write-PodeErrorLog
@@ -386,33 +430,8 @@ function Start-PodeAsyncRoutesHousekeeper {
                     #   Close-PodeAsyncRoutesInternal -Result $result
 
                 }
-                # is it completed?
-                <#     if (!$result['Runspace'].Handler.IsCompleted) {
-                    continue
-                }
-                if ($result['CompletedTime']) {
-
-                    if ($result['CompletedTime'].AddMinutes($RemoveAfterMinutes) -lt $now) {
-                        $($result['CompletedTime'].AddMinutes($RemoveAfterMinutes))
-                        Close-PodeDisposable -Disposable $Result.Result
-                        $null = $PodeContext.AsyncRoutes.Results.Remove($result['ID'])
-                    }
-
-                    if ( $Result.ContainsKey('Runspace')) {
-                        Close-PodeDisposable -Disposable $Result.Runspace.Pipeline
-                        $v = 0
-                        write-podehost  "remove=$($Result.TryRemove('Runspace', [ref]$v))"
-                        Write-PodeHost $Result -Explode -ShowType
-                    }
-                    # is it expired by completion? if so, dispose and remove
-                    #   elseif ($result['CompletedTime'].AddSeconds($ClosingAfterSeconds) -lt $now) {
-                    #        write-podehost 'Close-PodeAsyncRoutesInternal'
-                    #      Close-PodeAsyncRoutesInternal -Result $result
-                    #     }
-                }#>
             }
         }
-
         $result = $null
     }
 }

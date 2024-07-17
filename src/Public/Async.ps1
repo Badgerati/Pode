@@ -844,6 +844,12 @@ function Add-PodeAsyncQueryRoute {
 .PARAMETER NotCancelable
     The Async operation cannot be forcefully terminated
 
+.PARAMETER EnableSse
+    Enables Server Sent Events (SSE) support on the Async operation.
+
+.PARAMETER SseGroup
+    An optional Group for this SSE connection, to enable broadcasting events to all connections for an SSE connection name in a Group.
+
 .OUTPUTS
     [hashtable[]]
 
@@ -918,32 +924,49 @@ function Set-PodeAsyncRoute {
         [int]
         $MinRunspaces = 1,
 
+        [Parameter()]
         [switch]
         $Callback,
 
+        [Parameter()]
         [string]
         $CallbackUrl = '$request.body#/callbackUrl',
 
+        [Parameter()]
         [switch]
         $CallbackSendResult,
 
+        [Parameter()]
         [string]
         $EventName,
 
+        [Parameter()]
         [string]
         $CallbackContentType = 'application/json',
 
+        [Parameter()]
         [string]
         $CallbackMethod = 'Post',
 
+        [Parameter()]
         [hashtable]
         $CallbackHeaderFields = @{},
 
+        [Parameter()]
         [hashtable]
         $Permission = @{},
 
+        [Parameter()]
         [switch]
-        $NotCancelable
+        $NotCancelable,
+
+        [Parameter()]
+        [switch]
+        $EnableSse,
+
+        [Parameter()]
+        [string]
+        $SseGroup
 
     )
     Begin {
@@ -1021,6 +1044,8 @@ function Set-PodeAsyncRoute {
                 Permission     = $Permission
                 MinRunspaces   = $MinRunspaces
                 MaxRunspaces   = $MaxRunspaces
+                EnableSse      = $EnableSse.IsPresent
+                SseGroup       = $SseGroup
             }
 
             #Set thread count
@@ -1051,9 +1076,12 @@ function Set-PodeAsyncRoute {
                         Add-PodeOACallBack -Name $CallbackInfo.EventName -Path $CallbackUrl -Method $CallbackMethod -RequestBody (
                             New-PodeOARequestBody -Content @{ $CallbackContentType = (
                                     New-PodeOAObjectProperty -Name 'Result' |
-                                        New-PodeOAStringProperty -Name 'EventName' -Description 'The event name.' |
-                                        New-PodeOAStringProperty -Name 'Url' -Format Uri -Example 'http://localhost/callback' |
-                                        New-PodeOAStringProperty -Name 'Method' -Example 'Post' |
+                                        New-PodeOAStringProperty -Name 'EventName' -Description 'The event name.' -Required  |
+                                        New-PodeOAStringProperty -Name 'Url' -Format Uri -Example 'http://localhost/callback' -Required |
+                                        New-PodeOAStringProperty -Name 'Method' -Example 'Post' -Required |
+                                        New-PodeOAStringProperty -Name 'State' -Description 'The parent async operation status' -Required -Example 'Complete' -Enum @('NotStarted', 'Running', 'Failed', 'Completed')|
+                                        New-PodeOAObjectProperty -Name 'Result' -Description 'The parent result' -NoProperties |
+                                        New-PodeOAStringProperty -Name 'Error' -Description 'The parent error' |
                                         New-PodeOAObjectProperty
                                     )
                                 }

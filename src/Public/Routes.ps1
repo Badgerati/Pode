@@ -1709,6 +1709,11 @@ function Remove-PodeRoute {
             $v = ''
             $null = $PodeContext.RunspacePools.TryRemove($asyncPoolName, [ref]$v)
         }
+        if ( $PodeContext.AsyncRoutes.Items.ContainsKey($asyncPoolName)) {
+            $PodeContext.Threads.AsyncRoutes -= $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].MaxRunspaces
+            $v = ''
+            $null = $PodeContext.AsyncRoutes.TryRemove($Items, [ref]$v)
+        }
     }
 
     # remove the operationId from the openapi operationId list

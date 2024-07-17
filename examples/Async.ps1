@@ -88,9 +88,9 @@ catch { throw }
 # Demostrates Lockables, Mutexes, and Semaphores
 #>
 
-Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination {
+Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination  {
 
-    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -DualMode
     New-PodeLoggingMethod -name 'async' -File  -Path "$ScriptPath/logs" | Enable-PodeErrorLogging
 
     # request logging
