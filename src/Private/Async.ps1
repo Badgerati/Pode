@@ -202,7 +202,7 @@ function ConvertTo-PodeEnhancedScriptBlock {
                 $_ | Write-PodeErrorLog
 
                 # Store the error in the AsyncRoutes results
-                $asyncResult['Error'] = $_
+                $asyncResult['Error'] = $_.ToString()
 
             }
             finally {
