@@ -1,3 +1,61 @@
+<#
+.SYNOPSIS
+    A script to either run a Pode server with various endpoints or to send multiple REST requests to the server.
+
+.DESCRIPTION
+    This script sets up a Pode server with multiple endpoints demonstrating asynchronous operations and authorization.
+    It also includes examples of how to send REST requests to the server.
+
+.PARAMETER Port
+    The port on which the Pode server will listen. Default is 8080.
+
+.PARAMETER Quiet
+    Suppresses output when the server is running.
+
+.PARAMETER DisableTermination
+    Prevents the server from being terminated.
+
+.EXAMPLE
+    .\PodeServer.ps1 -Port 9090 -Quiet -DisableTermination
+
+.EXAMPLE
+    # Example of using the endpoints with Invoke-RestMethod
+    $mortyCommonHeaders = @{
+        'accept'        = 'application/json'
+        'X-API-KEY'     = 'test-api-key'
+        'Authorization' = 'Basic bW9ydHk6cGlja2xl'
+    }
+
+    $mindyCommonHeaders = @{
+        'accept'        = 'application/json'
+        'X-API-KEY'     = 'test2-api-key'
+        'Authorization' = 'Basic bWluZHk6cGlja2xl'
+    }
+
+    $response_asyncUsingNotCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancelable' -Method Put -Headers $mortyCommonHeaders
+    $response_asyncUsingCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancelable' -Method Put -Headers $mortyCommonHeaders
+
+    $body = @{
+        callbackUrl = 'http://localhost:8080/receive/callback'
+    } | ConvertTo-Json
+
+    $headersWithContentType = $mortyCommonHeaders.Clone()
+    $headersWithContentType['Content-Type'] = 'application/json'
+
+    $response_asyncUsing = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsing' -Method Put -Headers $headersWithContentType -Body $body
+
+    $response_asyncState = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncState' -Method Put -Headers $mortyCommonHeaders
+
+    $response_asyncParam = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncParam' -Method Put -Headers $mortyCommonHeaders
+
+    $response_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForeverTimeout' -Method Put -Headers $mortyCommonHeaders
+
+    $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 param(
     [Parameter()]
     [int]
@@ -7,47 +65,6 @@ param(
     [switch]
     $DisableTermination
 )
-
-
-
-<#
-$mortyCommonHeaders = @{
-  'accept'        = 'application/json'
-  'X-API-KEY'     = 'test-api-key'
-  'Authorization' = 'Basic bW9ydHk6cGlja2xl'
-}
-
-$mindyCommonHeaders = @{
-            'accept'        = 'application/json'
-            'X-API-KEY'     = 'test2-api-key'
-            'Authorization' = 'Basic bWluZHk6cGlja2xl'
-}
-
-$response_asyncUsingNotCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancelable' -Method Put -Headers $mortyCommonHeaders
-$response_asyncUsingCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancelable' -Method Put -Headers $mortyCommonHeaders
-
-$body = @{
-  callbackUrl = 'http://localhost:8080/receive/callback'
-} | ConvertTo-Json
-
-$headersWithContentType = $mortyCommonHeaders.Clone()
-$headersWithContentType['Content-Type'] = 'application/json'
-
-$response_asyncUsing = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsing' -Method Put -Headers $headersWithContentType -Body $body
-
-$response_asyncState = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncState' -Method Put -Headers $mortyCommonHeaders
-
-$response_asyncParam = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncParam' -Method Put -Headers $mortyCommonHeaders
-
-$response_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForeverTimeout' -Method Put -Headers $mortyCommonHeaders
-
-
-
-$response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
-
-#>
-
-
 
 try {
     # Determine the script path and Pode module path
