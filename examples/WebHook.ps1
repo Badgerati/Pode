@@ -7,6 +7,30 @@
     subscribing to webhook events, and unsubscribing from webhook events. It also defines
     an OpenAPI specification for the server and enables Swagger documentation.
 
+.EXAMPLE
+    To run the sample: ./WebHook.ps1
+
+    OpenAPI Info:
+    Specification: http://localhost:8081/docs/openapi/v3.1
+    Documentation: http://localhost:8081/docs/v3.1
+
+    Invoke-RestMethod -Uri http://localhost:8081/store -Method Post -Header  @{
+        'accept' = 'application/json'
+        'Content-Type' = 'application/json'
+    } -Body (@{ "value"= "arm";"key"="cpu"}| ConvertTo-Json)
+
+    Invoke-RestMethod -Uri http://localhost:8081/subscribe -Method Post -Header  @{
+        'accept' = 'application/json'
+        'Content-Type' = 'application/json'
+    } -Body (@{ url = 'http://example.com/webhook' } | ConvertTo-Json)
+
+    Invoke-RestMethod -Uri http://localhost:8081/unsubscribe -Method Post -Header  @{
+        'accept' = 'application/json'
+        'Content-Type' = 'application/json'
+    } -Body (@{ url = 'http://example.com/webhook' } | ConvertTo-Json)
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/WebHook.ps1
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -30,8 +54,8 @@ catch { throw }
 
 # Define the server configuration
 Start-PodeServer {
-    # Listen on port 8080
-    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
+    # Listen on port 8081
+    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
     # Initialize a hashtable to store subscriptions
     Set-PodeState -Name 'subscriptions' -Value @{} | Out-Null
