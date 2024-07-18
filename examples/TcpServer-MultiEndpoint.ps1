@@ -5,6 +5,12 @@
 .DESCRIPTION
     This script sets up a Pode TCP server that listens on multiple endpoints, logs errors to the terminal, and handles incoming TCP requests with specific verbs. The server provides handlers for 'HELLO' and 'Quit' verbs and a catch-all handler for unrecognized verbs.
 
+.EXAMPLE
+    To run the sample: ./TcpServer-MultiEndpoint.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/TcpServer-MultiEndpoint.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

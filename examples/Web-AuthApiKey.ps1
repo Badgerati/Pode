@@ -9,6 +9,14 @@
 .PARAMETER Location
     The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
 
+.EXAMPLE
+    To run the sample: ./Web-AuthApiKey.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthApiKey.ps1
+
 .NOTES
     Use:
     Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'test-api-key' }

@@ -7,6 +7,29 @@
     It includes routes that showcase the behavior of these synchronization mechanisms in different scopes (self, local, and global).
     The server provides multiple routes to test custom locks, mutexes, and semaphores by simulating delays and concurrent access.
 
+.EXAMPLE
+    To run the sample: ./Threading.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/lock/custom/route1 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/lock/custom/route2 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/lock/global/route1 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/lock/global/route2 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/mutex/self/route1 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/mutex/self/route2 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/mutex/local/route1 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/mutex/local/route2 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/mutex/global/route1 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/mutex/global/route2 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/semaphore/self/route1 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/semaphore/self/route2 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/semaphore/local/route1 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/semaphore/local/route2 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/semaphore/global/route1 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/semaphore/global/route2 -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Threading.ps1
+
 .PARAMETER Port
     The port number on which the Pode server will listen. Default is 8081.
 
@@ -45,7 +68,6 @@ Start-PodeServer -Threads 2 {
 
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
-
 
     # custom locks
     New-PodeLockable -Name 'TestLock'
@@ -125,7 +147,6 @@ Start-PodeServer -Threads 2 {
         Use-PodeMutex -Name 'GlobalMutex' -ScriptBlock {}
         Write-PodeJsonResponse -Value @{ Route = 2; Thread = $ThreadId }
     }
-
 
     # self semaphore
     New-PodeSemaphore -Name 'SelfSemaphore'

@@ -11,6 +11,8 @@
     The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
 
 .EXAMPLE
+    To run the sample: ./Web-AuthBasicAdhoc.ps1
+
     This example shows how to use sessionless authentication, which will mostly be for
     REST APIs. The example used here is adhoc Basic authentication.
 
@@ -23,6 +25,9 @@
 
     Failure:
     Invoke-RestMethod -Uri http://localhost:8081/users -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cmljaw==' }
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthBasicAdhoc.ps1
 
 .NOTES
     Author: Pode Team

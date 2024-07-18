@@ -6,6 +6,14 @@
     This script sets up a Pode server listening on port 8081 with the ability to create new schedules dynamically via an API route.
     The server is configured with schedule pooling enabled, and includes an endpoint to create a new schedule that runs every minute.
 
+.EXAMPLE
+    To run the sample: ./Schedules-Routes.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/api/schedule -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Schedules-Routes.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

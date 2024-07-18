@@ -8,6 +8,14 @@
     multiple cron expressions, and scheduling at specific times.
     Additionally, it includes a route to invoke a schedule's logic ad-hoc with arguments.
 
+.EXAMPLE
+    To run the sample: ./Schedules.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/api/run -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Schedules.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -39,11 +47,11 @@ Start-PodeServer {
     # schedule minutely using predefined cron
     $message = 'Hello, world!'
     Add-PodeSchedule -Name 'predefined' -Cron '@minutely' -Limit 2 -ScriptBlock {
-        param($Event, $Message1, $Message2)
+        param($TriggeredEvent, $Message1, $Message2)
         $using:message | Out-Default
         Get-PodeSchedule -Name 'predefined' | Out-Default
-        "Last: $($Event.Sender.LastTriggerTime)" | Out-Default
-        "Next: $($Event.Sender.NextTriggerTime)" | Out-Default
+        "Last: $($TriggeredEvent.Sender.LastTriggerTime)" | Out-Default
+        "Next: $($TriggeredEvent.Sender.NextTriggerTime)" | Out-Default
         "Message1: $($Message1)" | Out-Default
         "Message2: $($Message2)" | Out-Default
     }

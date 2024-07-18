@@ -7,6 +7,17 @@
     and includes a scheduled task. The server has two routes: one for a simple JSON response and another to
     invoke a task that demonstrates delayed execution.
 
+.EXAMPLE
+    To run the sample: ./IIS-Example.ps1
+
+
+    Invoke-RestMethod -Uri http://localhost:8081 -Method Get
+
+    Invoke-RestMethod -Uri http://localhost:8081/run-task -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/IIS-Example.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

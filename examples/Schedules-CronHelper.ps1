@@ -6,6 +6,14 @@
     This script sets up a Pode server listening on port 8081 with a scheduled task that runs every 2 minutes.
     It includes an endpoint for GET requests.
 
+.EXAMPLE
+    To run the sample: ./Schedules-CronHelper.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081 -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Schedules-CronHelper.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

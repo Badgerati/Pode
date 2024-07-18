@@ -6,6 +6,14 @@
     This script sets up a Pode server listening on port 8081, uses Pode's view engine for rendering
     web pages, and configures the server to monitor file changes and restart automatically.
 
+.EXAMPLE
+    To run the sample: ./File-Monitoring.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081 -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/File-Monitoring.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

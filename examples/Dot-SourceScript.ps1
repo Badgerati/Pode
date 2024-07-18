@@ -7,6 +7,12 @@
     script for additional logic. It imports the Pode module from the source path if available,
     otherwise from the installed modules.
 
+.EXAMPLE
+    To run the sample: ./Dot-SourceScript.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Dot-SourceScript.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

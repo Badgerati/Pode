@@ -5,6 +5,16 @@
 .DESCRIPTION
     This script sets up a Pode server that listens on port 8081, logs errors to the terminal, and handles both synchronous and asynchronous tasks. The server provides routes to interact with the tasks and demonstrates task invocation and waiting.
 
+.EXAMPLE
+    To run the sample: ./Tasks.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/api/task/sync -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/api/task/sync2 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/api/task/async -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Tasks.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

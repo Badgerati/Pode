@@ -8,6 +8,8 @@
     and returns the test results as an XML response.
 
 .EXAMPLE
+    To run the sample: ./Nunit-RestApi.ps1
+
     A typical request to "localhost:8087/api/nunit/run-rest" looks as follows:
 
     {
@@ -18,6 +20,8 @@
         "categories": {}
     }
 
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Nunit-RestApi.ps1
 .NOTES
     Author: Pode Team
     License: MIT License

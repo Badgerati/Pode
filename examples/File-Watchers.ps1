@@ -7,6 +7,12 @@
     to monitor changes in PowerShell script files (*.ps1) within the script directory. The server
     logs file change events and outputs them to the terminal.
 
+.EXAMPLE
+    To run the sample: ./File-Watchers.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/File-Watchers.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

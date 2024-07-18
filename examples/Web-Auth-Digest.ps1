@@ -6,6 +6,14 @@
     This script sets up a Pode server that listens on a specified port and uses Digest authentication
     for securing access to the server. The authentication details are checked against predefined user data.
 
+.EXAMPLE
+    To run the sample: ./Web-Auth-Digest.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Auth-Digest.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

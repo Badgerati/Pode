@@ -7,6 +7,12 @@
     that execute at each interval. The handlers include logging messages to the terminal and using
     lock mechanisms.
 
+.EXAMPLE
+    To run the sample: ./Looping-Service.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Looping-Service.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

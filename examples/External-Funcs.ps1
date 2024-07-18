@@ -6,6 +6,14 @@
     This script sets up a Pode server listening on port 8081, imports an external module containing functions,
     and includes a route that uses a function from the external module to generate a response.
 
+.EXAMPLE
+    To run the sample: ./External-Funcs.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081 -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/External-Funcs.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
