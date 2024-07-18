@@ -7,6 +7,14 @@
     It demonstrates a simple server setup with a view counter. Each visit to the root URL ('http://localhost:8085')
     increments the view counter stored in the session.
 
+.EXAMPLE
+    To run the sample: ./Web-Sessions.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Sessions.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

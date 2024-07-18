@@ -169,6 +169,16 @@ Describe 'Examples Script Headers' {
             $hasNotes = $content -match '\.NOTES\s+([^\#]*?)Author:\s*Pode Team\s*License:\s*MIT License'
             $hasNotes | Should -Be $true
         }
+
+    <#     It 'should have a .LINK section' {
+            $hasDescription = $content -match '\.LINK\s+([^\#]*)'
+            $hasDescription | Should -Be $true
+        }
+
+        It 'should have a .EXAMPLE section' {
+            $hasDescription = $content -match '\.EXAMPLE\s+([^\#]*)'
+            $hasDescription | Should -Be $true
+        }#>
     }
 
 }

@@ -7,6 +7,19 @@
     It demonstrates how to handle GET requests for a web page, including specific handling for different endpoints,
     downloading a file, and handling requests with parameters.
 
+.EXAMPLE
+    To run the sample: ./Web-RouteListenNames.ps1
+
+    Invoke-RestMethod -Uri http://127.0.0.1:8081/ -Method Get
+    Invoke-RestMethod -Uri http://127.0.0.2:8081/ -Method Get
+    Invoke-RestMethod -Uri http://127.0.0.3:8081/ -Method Get
+    Invoke-RestMethod -Uri http://127.0.0.4:8081/ -Method Get
+    Invoke-RestMethod -Uri http://127.0.0.2:8081/download -Method Get
+    Invoke-RestMethod -Uri http://127.0.0.3:8081/testuser/details -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-RouteListenNames.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

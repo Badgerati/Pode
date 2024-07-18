@@ -14,9 +14,16 @@
     Path of the Pode module.
 
 .EXAMPLE
+    To run the sample: ./Web-SignalConnection.ps1
     Run this script to start the Pode server and navigate to 'http://localhost:8081' in your browser.
     The server supports WebSocket connections and includes routes for connecting and resetting
     WebSocket connections.
+
+    Invoke-RestMethod -Uri http://localhost:8081/connect/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/reset/ -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-SignalConnection.ps1
 
 .NOTES
     Author: Pode Team

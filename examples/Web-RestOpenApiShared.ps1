@@ -7,6 +7,20 @@
     It demonstrates how to handle GET and POST requests, use OpenAPI for documenting APIs, and implement basic authentication.
     The script includes routes under the '/api' path and provides various OpenAPI viewers such as Swagger, ReDoc, RapiDoc, StopLight, Explorer, and RapiPdf.
 
+.EXAMPLE
+    To run the sample: ./Web-RestOpenApiShared.ps1
+
+    OpenAPI Info:
+    Specification:
+        . http://localhost:8080/openapi
+        . http://localhost:8081/openapi
+    Documentation:
+        . http://localhost:8080/bookmarks
+        . http://localhost:8081/bookmarks
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-RestOpenApiShared.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -32,7 +46,10 @@ Start-PodeServer {
 
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 
-    Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
+    Enable-PodeOpenApi  -DisableMinimalDefinitions
+
+    Add-PodeOAInfo  -Title 'OpenAPI Example'
+
     Enable-PodeOAViewer -Type Swagger
     Enable-PodeOAViewer -Type ReDoc
     Enable-PodeOAViewer -Type RapiDoc

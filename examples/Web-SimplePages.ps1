@@ -9,6 +9,17 @@
 .PARAMETER Port
     The port number on which the server will listen. Default is 8081.
 
+.EXAMPLE
+    To run the sample: ./Web-SimplePages.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/Processes/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/Services/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/Index/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/File/ -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-SimplePages.ps1
+    
 .NOTES
     Author: Pode Team
     License: MIT License

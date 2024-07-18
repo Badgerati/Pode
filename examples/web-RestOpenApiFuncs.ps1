@@ -6,6 +6,17 @@
     This script sets up a Pode server listening on port 8081 with OpenAPI documentation.
     It demonstrates how to use OpenAPI for documenting APIs and provides various OpenAPI viewers such as Swagger, ReDoc, RapiDoc, StopLight, Explorer, and RapiPdf.
 
+.EXAMPLE
+    To run the sample: ./Web-RestOpenApi.ps1
+
+    OpenAPI Info:
+    Specification: 
+        http://localhost:8081/openapi
+    Documentation:
+        http://localhost:8081/docs
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-RestOpenApi.ps1
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -28,7 +39,8 @@ catch { throw }
 Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
 
-    Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
+    Enable-PodeOpenApi -DisableMinimalDefinitions
+    Add-PodeOAInfo -Title 'OpenAPI Example'
     Enable-PodeOpenApiViewer -Type Swagger -Path '/docs/swagger'
     Enable-PodeOpenApiViewer -Type ReDoc  -Path '/docs/redoc'
     Enable-PodeOpenApiViewer -Type RapiDoc  -Path '/docs/rapidoc'
