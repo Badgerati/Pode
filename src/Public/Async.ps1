@@ -975,7 +975,7 @@ function Set-PodeAsyncRoute {
         $pipelineValue = @()
 
         if ( $Callback.IsPresent) {
-            $CallbackInfo = @{
+            $CallbackSettings = @{
                 UrlField     = $CallbackUrl
                 ContentType  = $CallbackContentType
                 SendResult   = $CallbackSendResult.ToBool()
@@ -1023,30 +1023,30 @@ function Set-PodeAsyncRoute {
             $r.IsAsync = $true
             if ( $Callback.IsPresent) {
                 if ([string]::IsNullOrEmpty($EventName)) {
-                    $CallbackInfo.EventName = $r.Path.Replace('/', '_') + '_Callback'
+                    $CallbackSettings.EventName = $r.Path.Replace('/', '_') + '_Callback'
                 }
                 else {
                     if ($Route.Count -gt 1) {
-                        $CallbackInfo.EventName = "$EventName_$($r.Path.Replace('/', '_'))"
+                        $CallbackSettings.EventName = "$EventName_$($r.Path.Replace('/', '_'))"
                     }
                     else {
-                        $CallbackInfo.EventName = $EventName
+                        $CallbackSettings.EventName = $EventName
                     }
                 }
             }
             # Store the route's async task definition in Pode context
             $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
-                Name           = $r.AsyncPoolName
-                Script         = ConvertTo-PodeEnhancedScriptBlock -ScriptBlock $r.Logic
-                UsingVariables = $r.UsingVariables
-                Arguments      = (Protect-PodeValue -Value $r.Arguments -Default @{})
-                CallbackInfo   = $CallbackInfo
-                Cancelable     = -not ($NotCancelable.IsPresent)
-                Permission     = $Permission
-                MinRunspaces   = $MinRunspaces
-                MaxRunspaces   = $MaxRunspaces
-                EnableSse      = $EnableSse.IsPresent
-                SseGroup       = $SseGroup
+                Name             = $r.AsyncPoolName
+                Script           = ConvertTo-PodeEnhancedScriptBlock -ScriptBlock $r.Logic
+                UsingVariables   = $r.UsingVariables
+                Arguments        = (Protect-PodeValue -Value $r.Arguments -Default @{})
+                CallbackSettings = $CallbackSettings
+                Cancelable       = -not ($NotCancelable.IsPresent)
+                Permission       = $Permission
+                MinRunspaces     = $MinRunspaces
+                MaxRunspaces     = $MaxRunspaces
+                EnableSse        = $EnableSse.IsPresent
+                SseGroup         = $SseGroup
             }
 
             #Set thread count
@@ -1074,7 +1074,7 @@ function Set-PodeAsyncRoute {
                     Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $OATypeName )
                 if ($Callback) {
                     $route |
-                        Add-PodeOACallBack -Name $CallbackInfo.EventName -Path $CallbackUrl -Method $CallbackMethod -RequestBody (
+                        Add-PodeOACallBack -Name $CallbackSettings.EventName -Path $CallbackUrl -Method $CallbackMethod -RequestBody (
                             New-PodeOARequestBody -Content @{ $CallbackContentType = (
                                     New-PodeOAObjectProperty -Name 'Result' |
                                         New-PodeOAStringProperty -Name 'EventName' -Description 'The event name.' -Required |
@@ -1098,4 +1098,145 @@ function Set-PodeAsyncRoute {
             return $Route
         }
     }
+}
+
+
+
+<#
+.SYNOPSIS
+    Retrieves asynchronous Pode route operations based on specified query conditions.
+
+.DESCRIPTION
+    The Get-PodeQueryAsyncRouteOperation function acts as a public interface for searching asynchronous Pode route operations.
+    It utilizes the Search-PodeAsyncTask function to perform the search based on the specified query conditions.
+
+.PARAMETER Query
+    A hashtable containing the query conditions. Each key in the hashtable represents a field to search on,
+    and the value is another hashtable containing 'op' (operator) and 'value' (comparison value).
+
+.EXAMPLE
+    $query = @{
+        'State' = @{ 'op' = 'EQ'; 'value' = 'Running' }
+        'CreationTime' = @{ 'op' = 'GT'; 'value' = (Get-Date).AddHours(-1) }
+    }
+    $results = Get-PodeQueryAsyncRouteOperation -Query $query
+
+    This example retrieves route operations that are in the 'Running' state and were created within the last hour.
+
+.OUTPUTS
+    Returns an array of hashtables representing the matched route operations.
+#>
+function Get-PodeQueryAsyncRouteOperation {
+    param (
+        [Parameter(Mandatory = $true)]
+        [hashtable]
+        $Query
+    )
+
+    return Search-PodeAsyncTask -Query $Query | Export-PodeAsyncInfo
+}
+
+
+<#
+.SYNOPSIS
+    Retrieves detailed information about a specific asynchronous Pode route operation by its ID.
+
+.DESCRIPTION
+    The Get-PodeAsyncRouteOperation function fetches the details of an asynchronous Pode route operation based on the provided ID.
+    If the operation exists, it returns the detailed information using the Export-PodeAsyncInfo function.
+    If the operation does not exist, it throws an exception with an appropriate error message.
+
+.PARAMETER Id
+    A string representing the ID (typically a UUID) of the asynchronous route operation to retrieve. This parameter is mandatory.
+
+.EXAMPLE
+    $operationId = '123e4567-e89b-12d3-a456-426614174000'
+    $operationDetails = Get-PodeAsyncRouteOperation -Id $operationId
+
+    This example retrieves the details of the asynchronous route operation with the ID '123e4567-e89b-12d3-a456-426614174000'.
+
+.OUTPUTS
+    Returns a hashtable representing the detailed information of the specified asynchronous route operation.
+#>
+function Get-PodeAsyncRouteOperation {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Id
+    )
+    if ($PodeContext.AsyncRoutes.Results.ContainsKey($Id )) {
+        return  $PodeContext.AsyncRoutes.Results[$Id] | Export-PodeAsyncInfo
+    }
+    throw ($PodeLocale.asyncRouteOperationDoesNotExistExceptionMessage -f $Id)
+}
+
+<#
+.SYNOPSIS
+    Aborts a specific asynchronous Pode route operation by its ID.
+
+.DESCRIPTION
+    The Stop-PodeAsyncRouteOperation function stops an asynchronous Pode route operation based on the provided ID.
+    It sets the operation's state to 'Aborted', records an error message, and marks the completion time.
+    The function then disposes of the associated runspace pipeline and calls Close-AsyncScript to finalize the operation.
+    If the operation does not exist, it throws an exception with an appropriate error message.
+
+.PARAMETER Id
+    A string representing the ID (typically a UUID) of the asynchronous route operation to abort. This parameter is mandatory.
+
+.EXAMPLE
+    $operationId = '123e4567-e89b-12d3-a456-426614174000'
+    $operationDetails = Stop-PodeAsyncRouteOperation -Id $operationId
+
+    This example aborts the asynchronous route operation with the ID '123e4567-e89b-12d3-a456-426614174000' and retrieves the updated operation details.
+
+.OUTPUTS
+    Returns a hashtable representing the detailed information of the aborted asynchronous route operation.
+#>
+function Stop-PodeAsyncRouteOperation {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Id
+    )
+    if ($PodeContext.AsyncRoutes.Results.ContainsKey($Id )) {
+        $async = $PodeContext.AsyncRoutes.Results[$Id]
+        $async['State'] = 'Aborted'
+        $async['Error'] = 'Aborted by System'
+        $async['CompletedTime'] = [datetime]::UtcNow
+        $async['Runspace'].Pipeline.Dispose()
+        Close-AsyncScript -AsyncResult $async
+        return  Export-PodeAsyncInfo -Async $async
+    }
+    throw ($PodeLocale.asyncRouteOperationDoesNotExistExceptionMessage -f $Id)
+}
+
+<#
+.SYNOPSIS
+    Checks if a specific asynchronous Pode route operation exists by its ID.
+
+.DESCRIPTION
+    The Test-PodeAsyncRouteOperation function checks the Pode context to determine if an asynchronous route operation with the specified ID exists.
+    It returns a boolean value indicating whether the operation is present in the Pode context.
+
+.PARAMETER Id
+    A string representing the ID (typically a UUID) of the asynchronous route operation to check. This parameter is mandatory.
+
+.EXAMPLE
+    $operationId = '123e4567-e89b-12d3-a456-426614174000'
+    $exists = Test-PodeAsyncRouteOperation -Id $operationId
+
+    This example checks if the asynchronous route operation with the ID '123e4567-e89b-12d3-a456-426614174000' exists and returns true or false.
+
+.OUTPUTS
+    Returns a boolean value:
+    - $true if the asynchronous route operation exists.
+    - $false if the asynchronous route operation does not exist.
+#>
+function Test-PodeAsyncRouteOperation {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Id
+    )
+    return ($PodeContext.AsyncRoutes.Results.ContainsKey($Id ))
 }

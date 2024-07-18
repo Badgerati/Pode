@@ -289,4 +289,5 @@
     GetRequestBodyNotAllowedExceptionMessage                          = 'GET-Operationen können keinen Anforderungstext haben.'
     InvalidQueryFormatExceptionMessage                                = 'Die angegebene Abfrage hat ein ungültiges Format.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} existiert nicht.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Keine Async-Route-Operation mit der Id {0} existiert.'
 }

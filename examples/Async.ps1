@@ -52,6 +52,28 @@
 
     $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mortyCommonHeaders
 
+
+
+$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForever' -Method Put -Headers $mindyCommonHeaders
+
+    $response_Mindy_asyncUsingNotCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancelable' -Method Put -Headers $mindyCommonHeaders
+    $response_Mindy_asyncUsingCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancelable' -Method Put -Headers $mindyCommonHeaders
+    $response_Mindy_asyncStateNoColumn = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncStateNoColumn' -Method Put -Headers $mindyCommonHeaders
+
+    $headersWithContentType = $mindyCommonHeaders.Clone()
+    $headersWithContentType['Content-Type'] = 'application/json'
+    $response_Mindy_asyncUsing = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsing' -Method Put -Headers $headersWithContentType -Body $body
+
+    $response_Mindy_asyncState = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncState' -Method Put -Headers $mindyCommonHeaders
+
+    $response_Mindy_asyncParam = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncParam' -Method Put -Headers $mindyCommonHeaders
+
+    $response_Mindy_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForeverTimeout' -Method Put -Headers $mindyCommonHeaders
+
+$response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
+
+$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri "http://localhost:8080/task?taskId=$($response_Mindy_asyncWaitForever.ID)" -Method Delete -Headers $mindyCommonHeaders
+
 .NOTES
     Author: Pode Team
     License: MIT License

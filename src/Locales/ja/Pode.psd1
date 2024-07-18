@@ -289,4 +289,5 @@
     GetRequestBodyNotAllowedExceptionMessage                          = 'GET操作にはリクエストボディを含めることはできません。'
     InvalidQueryFormatExceptionMessage                                = '提供されたクエリには無効な形式があります。'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} は存在しません.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id {0} の非同期ルート操作は存在しません.'
 }

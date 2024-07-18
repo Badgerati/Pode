@@ -289,4 +289,6 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
     renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} غير موجود.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'لا توجد عملية مسار غير متزامن بالمعرف {0}.'
+
 }

@@ -171,6 +171,10 @@
         'Add-PodeAsyncStopRoute',
         'Add-PodeAsyncGetRoute',
         'Add-PodeAsyncQueryRoute',
+        'Stop-PodeAsyncRouteOperation',
+        'Get-PodeAsyncRouteOperation',
+        'Get-PodeQueryAsyncRouteOperation',
+        'Test-PodeAsyncRouteOperation',
 
         # handlers
         'Add-PodeHandler',

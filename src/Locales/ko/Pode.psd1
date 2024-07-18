@@ -289,4 +289,5 @@
     GetRequestBodyNotAllowedExceptionMessage                          = 'GET 작업에는 요청 본문이 있을 수 없습니다.'
     InvalidQueryFormatExceptionMessage                                = '제공된 쿼리의 형식이 잘못되었습니다.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} 존재하지 않습니다.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id {0}의 비동기 경로 작업이 존재하지 않습니다.'
 }

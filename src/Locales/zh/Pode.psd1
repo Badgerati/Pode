@@ -289,5 +289,5 @@
     GetRequestBodyNotAllowedExceptionMessage                          = 'GET操作不能包含请求主体。'
     InvalidQueryFormatExceptionMessage                                = '提供的查询格式无效。'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} 不存在.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id 为 {0} 的异步路由操作不存在.'
 }
-

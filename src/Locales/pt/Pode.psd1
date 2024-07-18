@@ -289,4 +289,5 @@
     GetRequestBodyNotAllowedExceptionMessage                          = 'As operações GET não podem ter um corpo de solicitação.'
     InvalidQueryFormatExceptionMessage                                = 'A consulta fornecida tem um formato inválido.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} não existe.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Nenhuma operação de Rota Assíncrona existe com o Id {0}.'
 }

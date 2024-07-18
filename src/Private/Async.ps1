@@ -35,7 +35,7 @@
             param2 = "value2"
         }
         UsingVariables = @()
-        CallbackInfo = $null
+        CallbackSettings = $null
         Cancelable = $false
     }
 
@@ -117,13 +117,17 @@ function Invoke-PodeInternalAsync {
         $dctResult['Timeout'] = $Timeout
         $dctResult['State'] = 'NotStarted'
         $dctResult['Error'] = $null
-        $dctResult['CallbackInfo'] = $Task.CallbackInfo
+        $dctResult['CallbackSettings'] = $Task.CallbackSettings
         $dctResult['Cancelable'] = $Task.Cancelable
+        $dctResult['EnableSse'] = $Task.EnableSse
+        $dctResult['SseGroup'] = $Task.SseGroup
+
         if ($WebEvent.Auth.User) {
             $dctResult['User'] = $WebEvent.Auth.User.ID
             $dctResult['Permission'] = Copy-PodeDeepClone $Task.Permission
         }
-        $dctResult['EnableSse'] = $Task.EnableSse
+        $dctResult['Url'] = $WebEvent.Request.Url
+        $dctResult['Method'] = $WebEvent.Method
         $PodeContext.AsyncRoutes.Results[$Id] = $dctResult
         return $dctResult
     }
@@ -165,7 +169,9 @@ function Invoke-PodeInternalAsync {
 
 function ConvertTo-PodeEnhancedScriptBlock {
     param (
-        [ScriptBlock]$ScriptBlock
+        [Parameter(Mandatory = $true)]
+        [ScriptBlock]
+        $ScriptBlock
     )
 
     $enhancedScriptBlockTemplate = {
@@ -182,9 +188,9 @@ function ConvertTo-PodeEnhancedScriptBlock {
                 # Set the state to 'Running'
                 $asyncResult['State'] = 'Running'
 
-                if ($asyncResult.EnableSse) {
-                    if ($asyncResult.SseGroup) {
-                        ConvertTo-PodeSseConnection -Name $___async___id___ -Scope Local -Group $asyncResult.SseGroup
+                if ($asyncResult['EnableSse']) {
+                    if ($asyncResult.ContainsKey('SseGroup')) {
+                        ConvertTo-PodeSseConnection -Name $___async___id___ -Scope Local -Group $asyncResult['SseGroup']
                     }
                     else {
                         ConvertTo-PodeSseConnection -Name $___async___id___ -Scope Local
@@ -195,7 +201,9 @@ function ConvertTo-PodeEnhancedScriptBlock {
                     <# ScriptBlock #>
                     # Original ScriptBlock End
                 }
-                # return $___result___
+                if ($___result___) {
+                    $asyncResult['Result'] = $___result___
+                }
                 # Set the completed time
                 $asyncResult['CompletedTime'] = [datetime]::UtcNow
             }
@@ -214,95 +222,7 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
             }
             finally {
-                # Set the completed time
-                if (! $asyncResult.ContainsKey('CompletedTime')) {
-                    $asyncResult['CompletedTime'] = [datetime]::UtcNow
-                }
-
-                # Ensure state is set to 'Completed' if it was still 'Running'
-                if ($asyncResult.State -eq 'Running') {
-                    $asyncResult['State'] = 'Completed'
-                }
-
-                if ($___result___) {
-                    $asyncResult['Result'] = $___result___
-                }
-
-                try {
-                    if ($asyncResult.CallbackInfo) {
-
-                        $asyncResult['CallbackTentative'] = 0
-
-                        $callbackUrl = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult['CallbackInfo'].UrlField).Value
-                        $method = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult['CallbackInfo'].Method -DefaultValue 'Post').Value
-                        $contentType = (Convert-PodeCallBackRuntimeExpression -Variable $asyncResult['CallbackInfo'].ContentType).Value
-                        $headers = @{}
-                        foreach ($key in $asyncResult['CallbackInfo'].HeaderFields.Keys) {
-                            $value = Convert-PodeCallBackRuntimeExpression -Variable $key -DefaultValue $asyncResult.HeaderFields[$key]
-                            if ($value) {
-                                $headers.$($value.key) = $value.value
-                            }
-                        }
-                        $body = @{
-                            Url       = $WebEvent.Request.Url
-                            Method    = $WebEvent.Method
-                            EventName = $asyncResult['CallbackInfo'].EventName
-                            State     = $asyncResult['State']
-                        }
-                        switch ( $asyncResult['State'] ) {
-                            'Failed' {
-                                $body.Error = $asyncResult['Error']
-                            }
-                            'Completed' {
-                                if ($asyncResult['CallbackInfo'].SendResult -and $___result___) {
-                                    $body.Result = $___result___
-                                }
-                            }
-                        }
-
-                        switch ($contentType) {
-                            'application/json' { $cBody = ($body | ConvertTo-Json -depth 10) }
-                            'application/xml' { $cBody = ($body | ConvertTo-Xml -NoTypeInformation ) }
-                            'application/yaml' { $cBody = ($body | ConvertTo-PodeYaml -depth 10) }
-                        }
-
-                        $asyncResult['callbackUrl'] = $callbackUrl
-                        for ($i = 0; $i -le 3; $i++) {
-                            try {
-                                $asyncResult['CallbackTentative'] = $asyncResult['CallbackTentative'] + 1
-                                $null = Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body $cBody -ContentType $contentType
-                                $asyncResult['CallbackInfoState'] = 'Completed'
-                                break
-                            }
-                            catch {
-                                $_ | Write-PodeErrorLog
-                                $asyncResult['CallbackInfoState'] = 'Failed'
-                            }
-                        }
-                    }
-                }
-                catch {
-                    # Log the error
-                    $_ | Write-PodeErrorLog
-                    $asyncResult['CallbackInfoState'] = 'Failed'
-                }
-
-                if ($asyncResult.EnableSse) {
-                    switch ( $asyncResult['State'] ) {
-                        'Failed' {
-                            Send-PodeSseEvent -FromEvent -Data @{State = 'Failed'; Error = $asyncResult['Error'] }
-                        }
-                        'Completed' {
-                            if ($___result___) {
-                                Send-PodeSseEvent -FromEvent -Data @{State = 'Completed'; Result = $___result___ }
-                            }
-                            else {
-                                Send-PodeSseEvent -FromEvent -Data @{State = 'Completed' }
-                            }
-                        }
-                        Default {}
-                    }
-                }
+                Complete-PodeAsyncScriptFinally -AsyncResult $asyncResult
             }
         }
         else {
@@ -352,9 +272,139 @@ function ConvertTo-PodeEnhancedScriptBlock {
 
     $enhancedScriptBlockContent = $enhancedScriptBlockTemplate.ToString().Replace('<# ScriptBlock #>', $remainingString.ToString()).Replace('<# Param #>', $param)
 
-    [ScriptBlock]::Create($enhancedScriptBlockContent)
+    return [ScriptBlock]::Create($enhancedScriptBlockContent)
 }
 
+
+<#
+.SYNOPSIS
+    Closes an asynchronous script execution, setting its state to 'Completed' and handling callback invocations.
+
+.DESCRIPTION
+    The `Complete-PodeAsyncScriptFinally` function finalizes an asynchronous script's execution by setting its state to 'Completed' if it is still running and logs the completion time. It also manages callbacks by sending requests to a specified callback URL with appropriate headers and content types. If Server-Sent Events (SSE) are enabled, the function will send events based on the execution state.
+
+.PARAMETER AsyncResult
+    A [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] that contains the results and state information of the asynchronous script.
+
+.EXAMPLE
+    $asyncResult = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
+    $webEvent = @{
+        Request = @{
+            Url = 'http://example.com/request'
+        }
+        Method = 'GET'
+    }
+    Complete-PodeAsyncScriptFinally -AsyncResult $asyncResult -WebEvent $webEvent
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Complete-PodeAsyncScriptFinally {
+    param (
+        [Parameter(Mandatory = $true)]
+        [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]
+        $AsyncResult
+    )
+    # Set the completed time
+    if (! $AsyncResult.ContainsKey('CompletedTime')) {
+        $AsyncResult['CompletedTime'] = [datetime]::UtcNow
+    }
+
+    # Ensure state is set to 'Completed' if it was still 'Running'
+    if ($AsyncResult.State -eq 'Running') {
+        $AsyncResult['State'] = 'Completed'
+    }
+
+    try {
+        if ($AsyncResult.CallbackSettings) {
+
+            $callbackUrl = (Convert-PodeCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].UrlField).Value
+            $method = (Convert-PodeCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].Method -DefaultValue 'Post').Value
+            $contentType = (Convert-PodeCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].ContentType).Value
+            $headers = @{}
+            foreach ($key in $AsyncResult['CallbackSettings'].HeaderFields.Keys) {
+                $value = Convert-PodeCallBackRuntimeExpression -Variable $key -DefaultValue $AsyncResult.HeaderFields[$key]
+                if ($value) {
+                    $headers.$($value.key) = $value.value
+                }
+            }
+
+            $body = @{
+                Url       = $AsyncResult['Url']
+                Method    = $AsyncResult['Method']
+                EventName = $AsyncResult['CallbackSettings'].EventName
+                State     = $AsyncResult['State']
+            }
+            switch ( $AsyncResult['State'] ) {
+                'Failed' {
+                    $body.Error = $AsyncResult['Error']
+                }
+                'Completed' {
+                    if ($AsyncResult['CallbackSettings'].SendResult -and $AsyncResult['Result']) {
+                        $body.Result = $AsyncResult['Result']
+                    }
+                }
+                'Aborted' {
+                    $body.Error = $AsyncResult['Error']
+                }
+            }
+
+            switch ($contentType) {
+                'application/json' { $cBody = ($body | ConvertTo-Json -depth 10) }
+                'application/xml' { $cBody = ($body | ConvertTo-Xml -NoTypeInformation ) }
+                'application/yaml' { $cBody = ($body | ConvertTo-PodeYaml -depth 10) }
+            }
+            $AsyncResult['CallbackUrl'] = $callbackUrl
+            $AsyncResult['CallbackInfoState'] = 'Running'
+            $AsyncResult['CallbackTentative'] = 0
+            for ($i = 0; $i -le 3; $i++) {
+                try {
+                    $AsyncResult['CallbackTentative'] = $AsyncResult['CallbackTentative'] + 1
+                    $null = Invoke-RestMethod -Uri ($callbackUrl) -Method $method -Headers $headers -Body $cBody -ContentType $contentType
+                    $AsyncResult['CallbackInfoState'] = 'Completed'
+                    break
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                    $AsyncResult['CallbackInfoState'] = 'Failed'
+                    Start-Sleep -Seconds 2
+                }
+            }
+        }
+    }
+    catch {
+        # Log the error
+        $_ | Write-PodeErrorLog
+        $AsyncResult['CallbackInfoState'] = 'Failed'
+    }
+
+    if ($AsyncResult.EnableSse) {
+        try {
+            switch ( $AsyncResult['State'] ) {
+                'Failed' {
+                    Send-PodeSseEvent -FromEvent -Data @{State = $AsyncResult['State'] ; Error = $AsyncResult['Error'] }
+                }
+                'Completed' {
+                    if ($AsyncResult['Result']) {
+                        Send-PodeSseEvent -FromEvent -Data @{State = $AsyncResult['State'] ; Result = $AsyncResult['Result'] }
+                    }
+                    else {
+                        Send-PodeSseEvent -FromEvent -Data @{State = 'Completed' }
+                    }
+                }
+                'Aborted' {
+                    Send-PodeSseEvent -FromEvent -Data @{State = $AsyncResult['State'] ; Error = $AsyncResult['Error'] }
+                }
+            }
+            $AsyncResult['SeeEventInfoState'] = 'Completed'
+        }
+        catch {
+            # Log the error
+            $_ | Write-PodeErrorLog
+            $AsyncResult['SeeEventInfoState'] = 'Failed'
+        }
+    }
+}
 
 
 <#
@@ -394,7 +444,6 @@ function Start-PodeAsyncRoutesHousekeeper {
     }
     Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval $Interval -ArgumentList $RemoveAfterMinutes -ScriptBlock {
         param ( $RemoveAfterMinutes)
-        Write-PodeHost "RemoveAfterMinutes=$RemoveAfterMinutes"
         if ($PodeContext.AsyncRoutes.Results.Count -eq 0) {
             return
         }
@@ -423,11 +472,11 @@ function Start-PodeAsyncRoutesHousekeeper {
                         $result['State'] = 'Aborted'
                         $result['Error'] = 'Timeout'
                         $result['Runspace'].Pipeline.Dispose()
+                        Complete-PodeAsyncScriptFinally -AsyncResult $result
                     }
                     catch {
                         $_ | Write-PodeErrorLog
                     }
-                    #   Close-PodeAsyncRoutesInternal -Result $result
 
                 }
             }
@@ -485,12 +534,17 @@ function Add-PodeAsyncComponentSchema {
                 ($permissionContent | New-PodeOAObjectProperty -Name 'Read'),
                 ($permissionContent | New-PodeOAObjectProperty -Name 'Write')
             ) |
-            New-PodeOAStringProperty -Name 'CallbackInfoState' -Description 'The Callback operation status' -Example 'Completed' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
-            New-PodeOAIntProperty -Name 'CallbackTentative' -Description 'The Callback tentative number' |
-            New-PodeOAObjectProperty -Name 'CallbackInfo' -Description 'Callback information' -Properties (
-                New-PodeOAStringProperty -Name 'UrlField' -Description 'The URL Field.'  -Example  '$request.body#/callbackUrl'
-            ) |
-            New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name -DefinitionTag $DefinitionTag
+            New-PodeOAObjectProperty -Name 'Permission' -Description 'The Callback operation result' -Properties (
+                New-PodeOAStringProperty -Name 'State' -Description 'Operation status' -Example 'Completed' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
+                    New-PodeOAIntProperty -Name 'Tentative' -Description 'Number of tentatives' |
+                    New-PodeOAStringProperty -Name 'Url' -Format Uri -Description 'The callback URL' -Example 'Completed'
+                ) |
+                New-PodeOAObjectProperty -Name 'CallbackSettings' -Description 'Callback Configuration' -Properties (
+                    New-PodeOAStringProperty -Name 'UrlField' -Description 'The URL Field.'  -Example  '$request.body#/callbackUrl' |
+                        New-PodeOABoolProperty -Name 'SendResult' -Description 'Send the result.' |
+                        New-PodeOAStringProperty -Name 'Method' -Description 'Http Method.' -Enum @('Post', 'Put')
+                    ) |
+                    New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name -DefinitionTag $DefinitionTag
     }
 
 }
@@ -502,11 +556,17 @@ function Add-PodeAsyncComponentSchema {
 .DESCRIPTION
     The Search-PodeAsyncTask function searches the Pode context for asynchronous tasks that match the specified query conditions.
     It supports comparison operators such as greater than (GT), less than (LT), greater than or equal (GE), less than or equal (LE),
-    equal (EQ), not equal (NE), like (LIKE), and not like (NOTLIKE).
+    equal (EQ), not equal (NE), like (LIKE), and not like (NOTLIKE). Additionally, it can check user permissions if specified.
 
 .PARAMETER Query
     A hashtable containing the query conditions. Each key in the hashtable represents a field to search on,
     and the value is another hashtable containing 'op' (operator) and 'value' (comparison value).
+
+.PARAMETER User
+    An optional hashtable representing the user details. This is used when checking permissions on tasks.
+
+.PARAMETER CheckPermission
+    A switch to indicate whether to check permissions on tasks. If specified, the function will filter tasks based on the user's permissions.
 
 .EXAMPLE
     $query = @{
@@ -516,6 +576,18 @@ function Add-PodeAsyncComponentSchema {
     $results = Search-PodeAsyncTask -Query $query
 
     This example searches for tasks that are in the 'Running' state and were created within the last hour.
+
+.EXAMPLE
+    $user = @{
+        'Name' = 'AdminUser'
+        'Roles' = @('Admin', 'User')
+    }
+    $query = @{
+        'State' = @{ 'op' = 'EQ'; 'value' = 'Completed' }
+    }
+    $results = Search-PodeAsyncTask -Query $query -User $user -CheckPermission
+
+    This example searches for tasks that are in the 'Completed' state and checks if the specified user has permission to view them.
 
 .OUTPUTS
     Returns an array of hashtables representing the matched tasks.
@@ -531,7 +603,10 @@ function Search-PodeAsyncTask {
 
         [Parameter( )]
         [hashtable]
-        $User
+        $User,
+
+        [switch]
+        $CheckPermission
     )
 
     $matchedElements = @()
@@ -539,11 +614,13 @@ function Search-PodeAsyncTask {
         foreach ( $rkey in $PodeContext.AsyncRoutes.Results.keys.Clone()) {
             $result = $PodeContext.AsyncRoutes.Results[$rkey]
 
-            if ($result.User -and ($null -eq $User)) {
-                continue
-            }
-            if (! (Test-PodeAsyncPermission -Permission $result.Permission.Read -User $User)) {
-                continue
+            if ($CheckPermission.IsPresent) {
+                if ($result.User -and ($null -eq $User)) {
+                    continue
+                }
+                if (! (Test-PodeAsyncPermission -Permission $result.Permission.Read -User $User)) {
+                    continue
+                }
             }
             $match = $true
 
@@ -823,7 +900,7 @@ function Get-PodeAsyncSetScriptBlock {
         switch ($responseMediaType) {
             'application/xml' { Write-PodeXmlResponse -Value $res -StatusCode 200; break }
             'application/json' { Write-PodeJsonResponse -Value $res -StatusCode 200 ; break }
-            'text/yaml' { Write-PodeYamlResponse -Value $res -StatusCode 200 ; break }
+            'appication/yaml' { Write-PodeYamlResponse -Value $res -StatusCode 200 ; break }
             default { Write-PodeJsonResponse -Value $res -StatusCode 200 }
         }
     }
@@ -842,36 +919,8 @@ function Get-PodeAsyncGetScriptBlock {
         $responseMediaType = Get-PodeHeader -Name 'Accept'
         if ($PodeContext.AsyncRoutes.Results.ContainsKey($id )) {
             $async = $PodeContext.AsyncRoutes.Results[$id]
-            <#            if ($async['User']) {
-                $authorized = Test-PodeAsyncPermission -Permission $async['Permission'].Read -User $WebEvent.Auth.User
-            }
-            else {
-                $authorized = $true
-            }
-            if ($authorized) {
-                $taskSummary = Get-PodeAsyncSummary -Async $async
-#>
-            $taskSummary = @{
-                ID           = $async['ID']
-                Cancelable   = $async['Cancelable']
-                # ISO 8601 UTC format
-                CreationTime = $async['CreationTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                Name         = $async['Name']
-                State        = $async['State']
-            }
-            if ( $async['Permission']) {
-                $taskSummary.Permission = $async['Permission']
-            }
-            if ($async['StartingTime']) {
-                $taskSummary.StartingTime = $async['StartingTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-            }
-            if ($async['CallbackInfo']) {
-                $taskSummary.CallbackInfo = $async['CallbackInfo']
-            }
             if ($async['User']) {
                 if ($WebEvent.Auth.User) {
-                    $taskSummary.User = $async['User']
-                    $taskSummary.Permission = $async['Permission']
                     $authorized = Test-PodeAsyncPermission -Permission $async['Permission'].Read -User $WebEvent.Auth.User
                 }
                 else {
@@ -882,43 +931,14 @@ function Get-PodeAsyncGetScriptBlock {
                 $authorized = $true
             }
             if ($authorized) {
-                if ($async['Runspace'].Handler.IsCompleted) {
-                    switch ($async['State'].ToLowerInvariant() ) {
-                        'failed' {
-                            $taskSummary.Error = $async['Error']
-                            if ($async['CallbackInfoState']) {
-                                $taskSummary.CallbackTentative = $async['CallbackTentative']
-                                $taskSummary.CallbackInfoState = $async['CallbackInfoState']
-                                $taskSummary.CallbackUrl = $async['CallbackUrl']
-                            }
-                            break
-                        }
-                        'completed' {
-                            $taskSummary.Result = $async['Result']
-                            if ($async['CallbackInfoState']) {
-                                $taskSummary.CallbackTentative = $async['CallbackTentative']
-                                $taskSummary.CallbackInfoState = $async['CallbackInfoState']
-                                $taskSummary.CallbackUrl = $async['CallbackUrl']
-                            }
-                            break
-                        }
-                        'aborted' {
-                            $taskSummary.Error = $async['Error']
-                            break
-                        }
-                    }
-                    if (! $taskSummary.ContainsKey('CompletedTime')) {
-                        Start-Sleep 1
-                    }
-                    # ISO 8601 UTC format
-                    $taskSummary.CompletedTime = $async['CompletedTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                }
+                # Create a summary of the task for export
+                $export = Export-PodeAsyncInfo -Async $async
 
                 switch ($responseMediaType) {
-                    'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
-                    'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
-                    'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
-                    default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                    'application/xml' { Write-PodeXmlResponse -Value $export -StatusCode 200; break }
+                    'application/json' { Write-PodeJsonResponse -Value $export -StatusCode 200 ; break }
+                    'appication/yaml' { Write-PodeYamlResponse -Value $export -StatusCode 200 ; break }
+                    default { Write-PodeJsonResponse -Value $export -StatusCode 200 }
                 }
                 return
             }
@@ -928,13 +948,13 @@ function Get-PodeAsyncGetScriptBlock {
             }
         }
         else {
-            $errorMsg = @{ID = $id ; Error = 'No Task Found' }
+            $errorMsg = @{ID = $id ; Error = 'No Async Route operation Found' }
             $statusCode = 404 #'Not Found'
         }
         switch ($responseMediaType) {
             'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode; break }
             'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
-            'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
+            'appication/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
             default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
         }
     }
@@ -975,41 +995,18 @@ function Get-PodeAsyncStopScriptBlock {
                             $async['State'] = 'Aborted'
                             $async['Error'] = 'User Aborted!'
                             $async['CompletedTime'] = [datetime]::UtcNow
+                            $async['Runspace'].Pipeline.Dispose()
+                            Complete-PodeAsyncScriptFinally -AsyncResult $async
 
                             # Create a summary of the task
-                            $taskSummary = @{
-                                ID            = $id
-                                CreationTime  = $async['CreationTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                                Name          = $async['Name']
-                                State         = $async['State']
-                                CompletedTime = $async['CompletedTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                                Error         = $async['Error']
-                                Cancelable    = $async['Cancelable']
-                            }
-                            if ( $async['Permission']) {
-                                $taskSummary.Permission = $async['Permission']
-                            }
-                            if ($async['CallbackInfo']) {
-                                $taskSummary.CallbackInfo = $async['CallbackInfo']
-                            }
-                            if ($async['User']) {
-                                $taskSummary.User = $async['User']
-                            }
-                            # Include the starting time if available
-                            if ($async['StartingTime']) {
-                                $taskSummary.StartingTime = $async['StartingTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                            }
-
-                            # Close any open resources associated with the task
-                            Close-PodeDisposable -Disposable $async['Runspace'].Pipeline
-                            Close-PodeDisposable -Disposable $async['Result']
+                            $export = Export-PodeAsyncInfo -Async $async
 
                             # Respond with the task summary in the appropriate format
                             switch ($responseMediaType) {
-                                'application/xml' { Write-PodeXmlResponse -Value $taskSummary -StatusCode 200; break }
-                                'application/json' { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 ; break }
-                                'text/yaml' { Write-PodeYamlResponse -Value $taskSummary -StatusCode 200 ; break }
-                                default { Write-PodeJsonResponse -Value $taskSummary -StatusCode 200 }
+                                'application/xml' { Write-PodeXmlResponse -Value $export -StatusCode 200; break }
+                                'application/json' { Write-PodeJsonResponse -Value $export -StatusCode 200 ; break }
+                                'appication/yaml' { Write-PodeYamlResponse -Value $export -StatusCode 200 ; break }
+                                default { Write-PodeJsonResponse -Value $export -StatusCode 200 }
                             }
                             return
                         }
@@ -1042,10 +1039,97 @@ function Get-PodeAsyncStopScriptBlock {
             switch ($responseMediaType) {
                 'application/xml' { Write-PodeXmlResponse -Value $errorMsg -StatusCode $statusCode ; break }
                 'application/json' { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode ; break }
-                'text/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
+                'appication/yaml' { Write-PodeYamlResponse -Value $errorMsg -StatusCode $statusCode ; break }
                 default { Write-PodeJsonResponse -Value $errorMsg -StatusCode $statusCode }
             }
         }
+    }
+}
+
+<#
+.SYNOPSIS
+    Exports the detailed information of an asynchronous operation to a hashtable.
+
+.DESCRIPTION
+    The `Export-PodeAsyncInfo` function extracts and formats information from an asynchronous operation encapsulated in a [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] object. It includes details such as ID, creation time, state, user, permissions, and callback settings, among others. The function returns a hashtable with this information, suitable for logging or further processing.
+
+.PARAMETER Async
+    A [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] containing the asynchronous operation's details. This parameter is mandatory.
+
+.EXAMPLE
+    $asyncInfo = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
+    $exportedInfo = Export-PodeAsyncInfo -Async $asyncInfo
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Export-PodeAsyncInfo {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]
+        $Async
+    )
+    process {
+        $export = @{
+            ID           = $Async['ID']
+            Cancelable   = $Async['Cancelable']
+            # ISO 8601 UTC format
+            CreationTime = $Async['CreationTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+            Name         = $Async['Name']
+            State        = $Async['State']
+        }
+        if ( $Async.ContainsKey('Permission')) {
+            $export.Permission = $Async['Permission']
+        }
+        if ($Async['StartingTime']) {
+            $export.StartingTime = $Async['StartingTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+        }
+        if ( $Async['CallbackSettings']) {
+            $export.CallbackSettings = $Async['CallbackSettings']
+        }
+        if ($Async.ContainsKey('User')) {
+            $export.User = $Async['User']
+        }
+        if ($Async.ContainsKey('Permission')) {
+            $export.Permission = $Async['Permission']
+        }
+        if ( $Async['EnableSse']) {
+            $export.EnableSse = $Async['EnableSse']
+        }
+        if ($Async['Runspace'].Handler.IsCompleted) {
+            switch ($Async['State'].ToLowerInvariant() ) {
+                'failed' {
+                    $export.Error = $Async['Error']
+                    break
+                }
+                'completed' {
+                    $export.Result = $Async['Result']
+                    break
+                }
+                'aborted' {
+                    $export.Error = $Async['Error']
+                    break
+                }
+            }
+            if ($Async.ContainsKey('CallbackTentative') -and $Async['CallbackTentative'] -gt 0) {
+                $export.CallbackInfo = @{
+                    Tentative = $Async['CallbackTentative']
+                    State     = $Async['CallbackInfoState']
+                    Url       = $Async['CallbackUrl']
+                }
+            }
+            if ($Async.ContainsKey('SeeEventInfoState')) {
+                $export.SeeEventInfoState = $Async['SeeEventInfoState']
+            }
+            if (! $Async.ContainsKey('CompletedTime')) {
+                Start-Sleep 1
+            }
+            if ($Async.ContainsKey('CompletedTime')) {
+                # ISO 8601 UTC format
+                $export.CompletedTime = $Async['CompletedTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+            }
+        }
+        return $export
     }
 }
 
@@ -1060,131 +1144,18 @@ function Get-PodeAsyncQueryScriptBlock {
         $responseMediaType = Get-PodeHeader -Name 'Accept'
         $response = @()
 
-        $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User
+        $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User -CheckPermission
 
         if ($results) {
             foreach ($async in $results) {
-                #    $response += Get-PodeAsyncSummary -Async $async
-                $taskSummary = @{
-                    ID           = $async['ID']
-                    Cancelable   = $async['Cancelable']
-                    # ISO 8601 UTC format
-                    CreationTime = $async['CreationTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                    Name         = $async['Name']
-                    State        = $async['State']
-                }
-                if ( $async['Permission']) {
-                    $taskSummary.Permission = $async['Permission']
-                }
-                if ($async['StartingTime']) {
-                    $taskSummary.StartingTime = $async['StartingTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                }
-                if ($async['CallbackInfo']) {
-                    $taskSummary.CallbackInfo = $async['CallbackInfo']
-                }
-                if ($async['User']) {
-                    $taskSummary.User = $async['User']
-                    $taskSummary.Permission = $async['Permission']
-                }
-
-                if ($async['Runspace'].Handler.IsCompleted) {
-                    switch ($async['State'].ToLowerInvariant() ) {
-                        'failed' {
-                            $taskSummary.Error = $async['Error']
-                            if ($async['CallbackInfoState']) {
-                                $taskSummary.CallbackTentative = $async['CallbackTentative']
-                                $taskSummary.CallbackInfoState = $async['CallbackInfoState']
-                                $taskSummary.CallbackUrl = $async['CallbackUrl']
-                            }
-                            break
-                        }
-                        'completed' {
-                            $taskSummary.Result = $async['Result']
-                            if ($async['CallbackInfoState']) {
-                                $taskSummary.CallbackTentative = $async['CallbackTentative']
-                                $taskSummary.CallbackInfoState = $async['CallbackInfoState']
-                                $taskSummary.CallbackUrl = $async['CallbackUrl']
-                            }
-                            break
-                        }
-                        'aborted' {
-                            $taskSummary.Error = $async['Error']
-                            break
-                        }
-                    }
-                    if ($async['CompletedTime']) {
-                        # ISO 8601 UTC format
-                        $taskSummary.CompletedTime = $async['CompletedTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-                    }
-                }
-
-                $response += $taskSummary
+                $response += Export-PodeAsyncInfo -Async $async
             }
         }
         switch ($responseMediaType) {
             'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 200; break }
             'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 200 ; break }
-            'text/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 200 ; break }
+            'appication/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 200 ; break }
             default { Write-PodeJsonResponse -Value $response -StatusCode 200 }
         }
-    }
-
-}
-
-
-
-function Get-PodeAsyncSummary {
-    param(
-        $Async
-    )
-    $asyncSummary = @{
-        ID           = $Async['ID']
-        Cancelable   = $Async['Cancelable']
-        # ISO 8601 UTC format
-        CreationTime = $Async['CreationTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-        Name         = $Async['Name']
-        State        = $Async['State']
-    }
-    if ( $Async['Permission']) {
-        $asyncSummary.Permission = $Async['Permission']
-    }
-    if ($Async['StartingTime']) {
-        $asyncSummary.StartingTime = $Async['StartingTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
-    }
-    if ($Async['CallbackInfo']) {
-        $asyncSummary.CallbackInfo = $Async['CallbackInfo']
-    }
-    if ($Async['User']) {
-        $asyncSummary.User = $Async['User']
-        $asyncSummary.Permission = $Async['Permission']
-    }
-
-    if ($Async['Runspace'].Handler.IsCompleted) {
-        switch ($Async['State'].ToLowerInvariant() ) {
-            'failed' {
-                $asyncSummary.Error = $Async['Error']
-                if ($Async['CallbackInfoState']) {
-                    $asyncSummary.CallbackTentative = $Async['CallbackTentative']
-                    $asyncSummary.CallbackInfoState = $Async['CallbackInfoState']
-                    $asyncSummary.CallbackUrl = $Async['CallbackUrl']
-                }
-                break
-            }
-            'completed' {
-                $asyncSummary.Result = $Async['Result']
-                if ($Async['CallbackInfoState']) {
-                    $asyncSummary.CallbackTentative = $Async['CallbackTentative']
-                    $asyncSummary.CallbackInfoState = $Async['CallbackInfoState']
-                    $asyncSummary.CallbackUrl = $Async['CallbackUrl']
-                }
-                break
-            }
-            'aborted' {
-                $asyncSummary.Error = $Async['Error']
-                break
-            }
-        }
-        # ISO 8601 UTC format
-        $asyncSummary.CompletedTime = $Async['CompletedTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
     }
 }
