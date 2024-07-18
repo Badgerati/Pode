@@ -7,6 +7,20 @@
     It demonstrates how to handle GET and POST requests, and how to use OpenAPI for documenting APIs.
     The script includes routes under the '/api' path and provides Swagger and ReDoc viewers.
 
+.EXAMPLE
+    To run the sample: ./Web-RestOpenApiSimple.ps1
+
+    OpenAPI Info:
+    Specification:
+        . http://localhost:8080/openapi
+        . http://localhost:8081/openapi
+    Documentation:
+        . http://localhost:8080/bookmarks
+        . http://localhost:8081/bookmarks
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-RestOpenApiSimple.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -30,7 +44,10 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http -Name 'user'
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Name 'admin'
 
-    Enable-PodeOpenApi -Title 'OpenAPI Example' -RouteFilter '/api/*' -RestrictRoutes
+    Enable-PodeOpenApi -DisableMinimalDefinitions
+
+    Add-PodeOAInfo  -Title 'OpenAPI Example'
+
     Enable-PodeOAViewer -Type Swagger -DarkMode
     Enable-PodeOAViewer -Type ReDoc
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
@@ -48,28 +65,28 @@ Start-PodeServer {
     Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Parameters['userId'] }
     } -PassThru | Set-PodeOARouteInfo -PassThru |
-    Set-PodeOARequest -Parameters @(
+        Set-PodeOARequest -Parameters @(
             (New-PodeOAIntProperty -Name 'userId' -Enum @(100, 300, 999) -Required | ConvertTo-PodeOAParameter -In Path)
-    )
+        )
 
 
     Add-PodeRoute -Method Get -Path '/api/users' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Name = 'Rick'; UserId = $WebEvent.Query['userId'] }
     } -PassThru | Set-PodeOARouteInfo -PassThru |
-    Set-PodeOARequest -Parameters @(
+        Set-PodeOARequest -Parameters @(
             (New-PodeOAIntProperty -Name 'userId' -Required | ConvertTo-PodeOAParameter -In Query)
-    )
+        )
 
 
     Add-PodeRoute -Method Post -Path '/api/users' -ScriptBlock {
         Write-PodeJsonResponse -Value @{ Name = $WebEvent.Data.Name; UserId = $WebEvent.Data.UserId }
     } -PassThru | Set-PodeOARouteInfo -PassThru |
-    Set-PodeOARequest -RequestBody (
-        New-PodeOARequestBody -Required -ContentSchemas @{
-            'application/json' = (New-PodeOAObjectProperty -Properties @(
+        Set-PodeOARequest -RequestBody (
+            New-PodeOARequestBody -Required -ContentSchemas @{
+                'application/json' = (New-PodeOAObjectProperty -Properties @(
                     (New-PodeOAStringProperty -Name 'Name' -MaxLength 5 -Pattern '[a-zA-Z]+'),
                     (New-PodeOAIntProperty -Name 'UserId')
-                ))
-        }
-    )
+                    ))
+            }
+        )
 }

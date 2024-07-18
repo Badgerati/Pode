@@ -8,8 +8,17 @@
     with specific middleware and authentication requirements.
 
 .EXAMPLE
-    # Example of invoking a request to an authenticated route:
+    To run the sample: ./Web-RouteGroup.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/api/route1 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/api/inner/route2 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/api/inner/route3 -Method Get
     Invoke-RestMethod -Uri http://localhost:8081/auth/route1 -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+    Invoke-RestMethod -Uri http://localhost:8081/auth/route2 -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+    Invoke-RestMethod -Uri http://localhost:8081/auth/route3 -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-RouteGroup.ps1
 
 .NOTES
     Author: Pode Team

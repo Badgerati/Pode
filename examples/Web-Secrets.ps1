@@ -11,6 +11,23 @@
 .PARAMETER AzureSubscriptionId
     The Azure Subscription ID for accessing the Azure Key Vault.
 
+.EXAMPLE
+    To run the sample: ./Web-Secrets.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/custom/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/custom/ -Method Post -body (@{value = 'my value'}| ConvertTo-Json)
+    Invoke-RestMethod -Uri http://localhost:8081/custom/somekey -Method Get
+
+    Invoke-RestMethod -Uri http://localhost:8081/module/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/module/ -Method Post -body (@{value = 'my value'}| ConvertTo-Json)
+
+    Invoke-RestMethod -Uri http://localhost:8081/adhoc/mykey -Method Post -body (@{value = 'my value'}| ConvertTo-Json)
+    Invoke-RestMethod -Uri http://localhost:8081/adhoc/mykey -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/adhoc/mykey -Method Delete
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Secrets.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

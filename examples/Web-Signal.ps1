@@ -9,6 +9,14 @@
 .PARAMETER Port
     The port number on which the server will listen. Default is 8091.
 
+.EXAMPLE
+    To run the sample: ./Web-Signal.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Signal.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

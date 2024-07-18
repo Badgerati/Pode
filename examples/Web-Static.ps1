@@ -9,6 +9,16 @@
 .PARAMETER Port
     The port number on which the server will listen. Default is 8081.
 
+.EXAMPLE
+    To run the sample: ./Web-Static.ps1
+
+    Connect by browser to:
+        http://localhost:8081/
+        http://localhost:8081/download
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Static.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

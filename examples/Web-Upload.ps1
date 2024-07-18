@@ -9,6 +9,18 @@
 .PARAMETER Port
     Specifies the port on which the server will listen. Default is 8081.
 
+.EXAMPLE
+    To run the sample: ./Web-Upload.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/upload -Method Post
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+
+    Invoke-RestMethod -Uri http://localhost:8081/upload-multi -Method Post
+    Invoke-RestMethod -Uri http://localhost:8081/multi -Method Get
+
+#.LINK doesn't work
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Upload.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

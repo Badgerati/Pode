@@ -6,6 +6,12 @@
     This script sets up a Pode server that listens on a specified port, logs requests to the terminal,
     and uses the PSHTML renderer for serving web pages.
 
+.EXAMPLE
+    To run the sample: ./Web-TpPSHTML.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-TpPSHTML.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

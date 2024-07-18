@@ -7,6 +7,17 @@
     It demonstrates how to handle GET requests for a web page, download a file, handle requests with parameters,
     and redirect requests from one endpoint to another.
 
+.EXAMPLE
+    To run the sample: ./Web-RouteEndpoints.ps1
+
+    Invoke-RestMethod -Uri http://127.0.0.1:8081/ -Method Get
+    Invoke-RestMethod -Uri http://127.0.0.1:8081/download -Method Get
+    Invoke-RestMethod -Uri http://127.0.0.1:8081/testuser/details -Method Get
+    Invoke-RestMethod -Uri http://127.0.0.2:8082/something -Method Patch
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-RouteEndpoints.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
