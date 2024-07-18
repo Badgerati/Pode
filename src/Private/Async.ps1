@@ -905,7 +905,29 @@ function Get-PodeAsyncSetScriptBlock {
         }
     }
 }
+<#
+.SYNOPSIS
+    Retrieves a script block for handling asynchronous GET requests in Pode.
 
+.DESCRIPTION
+    This function returns a script block designed to process asynchronous GET requests in a Pode web server.
+    The script block checks for task identifiers in different parts of the request (cookies, headers, path parameters, query parameters)
+    and retrieves the corresponding async route result. It handles authorization, formats the response based on the Accept header,
+    and returns the appropriate response.
+
+    PARAMETER In
+        The source of the task identifier, such as 'Cookie', 'Header', 'Path', or 'Query'.
+
+    PARAMETER TaskIdName
+        The name of the task identifier to be retrieved from the specified source.
+
+.EXAMPLE
+    $scriptBlock = Get-PodeAsyncGetScriptBlock
+    # Use the returned script block in an async GET route in Pode
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Get-PodeAsyncGetScriptBlock {
     return [scriptblock] {
         param($In, $TaskIdName)
@@ -960,6 +982,30 @@ function Get-PodeAsyncGetScriptBlock {
     }
 }
 
+
+<#
+.SYNOPSIS
+    Retrieves a script block for handling the stopping of asynchronous tasks in Pode.
+
+.DESCRIPTION
+    This function returns a script block designed to stop asynchronous tasks in a Pode web server.
+    The script block checks for task identifiers in different parts of the request (cookies, headers, path parameters, query parameters)
+    and retrieves the corresponding async route result. It handles authorization, cancels the task if it is cancelable and not completed,
+    and formats the response based on the Accept header.
+
+    PARAMETER In
+        The source of the task identifier, such as 'Cookie', 'Header', 'Path', or 'Query'.
+
+    PARAMETER TaskIdName
+        The name of the task identifier to be retrieved from the specified source.
+
+.EXAMPLE
+    $scriptBlock = Get-PodeAsyncStopScriptBlock
+    # Use the returned script block in an async stop route in Pode
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Get-PodeAsyncStopScriptBlock {
     return [scriptblock] {
         param($In, $TaskIdName)
