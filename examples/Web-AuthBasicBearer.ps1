@@ -7,7 +7,12 @@
     and provides an endpoint to get a list of users.
 
 .EXAMPLE
+    To run the sample: ./Web-AuthBasicBearer.ps1
+
     Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ Authorization = 'Bearer test-token' }
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthBasicBearer.ps1
 
 .NOTES
     Author: Pode Team

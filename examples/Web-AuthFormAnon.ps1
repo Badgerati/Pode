@@ -9,6 +9,18 @@
     the password 'pickle'. After logging in, you will see a greeting and a view counter. Clicking 'Logout'
     will purge the session and take you back to the login page.
 
+.EXAMPLE
+    To run the sample: ./Web-AuthFormAnon.ps1
+
+    With Authentication
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+
+    Anonymous
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormAnon.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

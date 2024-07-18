@@ -7,7 +7,9 @@
     for securing access to different pages. Role-based access control (RBAC) is also implemented
     to restrict access to certain pages based on user roles.
 
-.NOTES
+.EXAMPLE
+    To run the sample: ./Web-AuthFormAccess.ps1
+
     This examples shows how to use session persistant authentication with access.
     The example used here is Form authentication and RBAC access on pages, sent from the <form> in HTML.
 
@@ -19,6 +21,9 @@
     - The Home and Login pages are accessible by all.
     - The About page is only accessible by Developers (for morty it will load)
     - The Register page is only accessible by QAs (for morty this will 403)
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormAccess.ps1
 
 .NOTES
     Author: Pode Team

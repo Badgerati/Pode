@@ -16,8 +16,13 @@
     Path of the Pode module.
 
 .EXAMPLE
+    To run the sample: ./Web-AuthForm.ps1
+
     Run this script to start the Pode server and navigate to 'http://localhost:8081' in your browser.
     You will be redirected to the login page, where you can log in with the credentials provided above.
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthForm.ps1
 
 .NOTES
     Author: Pode Team
