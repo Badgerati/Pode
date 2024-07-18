@@ -11,6 +11,8 @@
     The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
 
 .EXAMPLE
+    To run the sample: ./Web-AuthBasicHeader.ps1
+
     This example shows how to use session authentication on REST APIs using Headers.
     The example used here is Basic authentication.
 
@@ -22,6 +24,9 @@
 
     Logout:
     Invoke-WebRequest -Uri http://localhost:8081/logout -Method Post -Headers @{ 'pode.sid' = "$session" }
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthBasicHeader.ps1
 
 .NOTES
     Author: Pode Team

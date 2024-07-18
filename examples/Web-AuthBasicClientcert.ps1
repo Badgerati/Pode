@@ -6,6 +6,12 @@
     This script sets up a Pode server that listens on a specified port with HTTPS using a self-signed certificate.
     It enables client certificate authentication for securing access to the server.
 
+    .EXAMPLE
+    To run the sample: ./Web-AuthBasicClientcert.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthBasicClientcert.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

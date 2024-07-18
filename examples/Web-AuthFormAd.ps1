@@ -7,7 +7,9 @@
     with Windows Active Directory for securing access to different pages. The home page view counter
     is stored in the session data, which is persisted across user sessions.
 
-.NOTES
+.EXAMPLE
+    To run the sample: ./Web-AuthFormAd.ps1
+
     This examples shows how to use session persistant authentication using Windows Active Directory.
     The example used here is Form authentication, sent from the <form> in HTML.
 
@@ -15,6 +17,9 @@
     page. Here, you can type the details for a domain user. Clicking 'Login' will take you back to the home
     page with a greeting and a view counter. Clicking 'Logout' will purge the session and take you back to
     the login page.
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormAd.ps1
 
 .NOTES
     Author: Pode Team
