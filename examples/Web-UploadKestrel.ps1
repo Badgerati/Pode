@@ -9,6 +9,15 @@
 .PARAMETER Port
     The port number on which the server will listen. Default is 8081.
 
+.EXAMPLE
+    To run the sample: ./Web-UploadKestrel.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/upload -Method Post
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-UploadKestrel.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

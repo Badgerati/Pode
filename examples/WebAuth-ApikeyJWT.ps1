@@ -20,7 +20,16 @@
     Req: Invoke-RestMethod -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'eyJhbGciOiJoczI1NiJ9.eyJ1c2VybmFtZSI6Im1vcnR5Iiwic3ViIjoiMTIzIn0.WIOvdwk4mNrNC9EtTcQccmLHJc02gAuonXClHMFOjKM' }
 
     (add -Secret 'secret' to New-PodeAuthScheme below)
+
     -------------
+
+.EXAMPLE
+    To run the sample: ./WebAuth-ApikeyJWT.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/WebAuth-ApikeyJWT.ps1
 
 .NOTES
     Author: Pode Team
