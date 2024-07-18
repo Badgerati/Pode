@@ -11,11 +11,13 @@
     The location where the API key is expected. Valid values are 'Header', 'Query', and 'Cookie'. Default is 'Header'.
 
 .EXAMPLE
+    To run the sample: ./Web-AuthBasicAccess.ps1
+
     This example shows how to use sessionless authentication, which will mostly be for
     REST APIs. The example used here is Basic authentication.
 
     Calling the '[POST] http://localhost:8081/users-all' endpoint, with an Authorization
-    header of 'Basic bW9ydHk6cGlja2xl' will display the uesrs. Anything else and
+    header of 'Basic bW9ydHk6cGlja2xl' will display the users. Anything else and
     you'll get a 401 status code back.
 
     Success:
@@ -23,6 +25,9 @@
 
     Failure:
     Invoke-RestMethod -Uri http://localhost:8081/users-all -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cmljaw==' }
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Dot-SourceScript.ps1
 
 .NOTES
     Author: Pode Team

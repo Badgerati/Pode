@@ -7,6 +7,16 @@
     types of request logging (terminal, file, custom). It includes routes for serving a web page, simulating a
     server error, and downloading a file.
 
+.EXAMPLE
+    To run the sample: ./Logging.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/error -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/download -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Logging.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

@@ -5,6 +5,16 @@
 .DESCRIPTION
     This script sets up a Pode server that listens on port 8081, logs errors to the terminal, and handles Server-Sent Events (SSE) connections. The server sends periodic SSE events and provides routes to interact with SSE connections.
 
+.EXAMPLE
+    To run the sample: ./Sse.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/data -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/sse -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Sse.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

@@ -8,11 +8,17 @@
     potential attachments.
 
 .EXAMPLE
+    To run the sample: ./Mail-Server.ps1
+
     Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -Body 'Hello' -Subject 'Hi there' -Port 25
 
 .EXAMPLE
+    To run the sample: ./Mail-Server.ps1
     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
     Send-MailMessage -SmtpServer localhost -To 'to@pode.com' -From 'from@pode.com' -Body 'Hello' -Subject 'Hi there' -Port 587 -UseSSL
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Mail-Server.ps1
 
 .NOTES
     Author: Pode Team

@@ -6,6 +6,17 @@
     This script sets up a Pode server listening on port 8081 with various HTTP endpoints for GET and POST requests.
     It includes request logging with batching and dual mode for IPv4/IPv6.
 
+.EXAMPLE
+    To run the sample: ./Rest-Api.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/api/test -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/api/test -Method Post
+    Invoke-RestMethod -Uri http://localhost:8081/api/users/usertest -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/api/users/usertest/message -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Rest-Api.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

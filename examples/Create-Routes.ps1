@@ -6,6 +6,12 @@
     This script sets up a Pode server listening on port 8081 with various routes demonstrating different
     approaches to route creation. These include using script blocks, file paths, and direct script inclusion.
 
+.EXAMPLE
+    To run the sample: ./Create-Routes.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Create-Routes.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

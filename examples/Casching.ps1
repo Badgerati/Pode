@@ -7,6 +7,12 @@
     It checks for the existence of the `redis-cli` command and sets up a Pode server with routes
     that demonstrate caching with Redis.
 
+.EXAMPLE
+    To run the sample: ./Casching.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Casching.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

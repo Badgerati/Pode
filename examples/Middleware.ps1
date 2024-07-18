@@ -7,6 +7,15 @@
     and rate limiting for incoming requests. It includes middleware for route-specific logic, blocking
     specific user agents, and rejecting requests from certain IP addresses.
 
+.EXAMPLE
+    To run the sample: ./Middleware.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/alive -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Middleware.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

@@ -7,6 +7,12 @@
     The server provides handlers for 'HELLO', 'HELLO2', 'HELLO3', 'QUIT', and a catch-all handler for unrecognized verbs.
     It also demonstrates reading client input and responding accordingly.
 
+.EXAMPLE
+    To run the sample: ./Tcp-Server.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Tcp-Server.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

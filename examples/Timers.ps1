@@ -6,6 +6,15 @@
     This script sets up a Pode server that listens on a specified port and creates multiple timers with different behaviors.
     It includes routes to create new timers via HTTP requests and invoke existing timers on demand.
 
+.EXAMPLE
+    To run the sample: ./Timers.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/api/timer -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/api/run -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Timers.ps1
+
 .PARAMETER Port
     The port number on which the Pode server will listen. Default is 8081.
 

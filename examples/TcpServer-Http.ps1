@@ -5,6 +5,12 @@
 .DESCRIPTION
     This script sets up a Pode TCP server that listens on port 8081, logs errors to the terminal, and handles incoming HTTP requests. The server provides a catch-all handler for HTTP requests and returns a basic HTML response.
 
+.EXAMPLE
+    To run the sample: ./TcpServer-Http.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/TcpServer-Http.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

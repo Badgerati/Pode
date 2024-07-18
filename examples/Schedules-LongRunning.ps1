@@ -6,6 +6,12 @@
     This script sets up a Pode server listening on port 8081 with multiple scheduled tasks. Each task runs every minute
     and sleeps for a random duration between 5 and 40 seconds. The maximum concurrency for schedules is set to 30.
 
+.EXAMPLE
+    To run the sample: ./Schedules-LongRunning.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Schedules-LongRunning.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

@@ -6,6 +6,12 @@
     This script sets up a Pode server, enables terminal logging for errors, and writes a "hello, world!" message to the terminal.
     The server runs the logic once and then exits.
 
+.EXAMPLE
+    To run the sample: ./OneOff-Script.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/OneOff-Script.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

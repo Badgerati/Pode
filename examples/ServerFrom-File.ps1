@@ -5,6 +5,12 @@
 .DESCRIPTION
     This script sets up a Pode server using a server definition from an external script file. The server listens on port 8081, logs errors to the terminal, uses the Pode view engine, and includes a timer and a route for HTTP GET requests.
 
+.EXAMPLE
+    To run the sample: ./ServerFrom-File.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/ServerFrom-File.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

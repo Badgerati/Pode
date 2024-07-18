@@ -5,6 +5,16 @@
 .DESCRIPTION
     This script sets up a Pode server that listens on port 8081, logs requests and errors to the terminal, and manages state using timers and routes. The server initializes state from a JSON file, updates state periodically using timers, and provides routes to interact with the state.
 
+.EXAMPLE
+    To run the sample: ./Shared-State.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/array -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/array3 -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/array -Method Delete
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Shared-State.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
