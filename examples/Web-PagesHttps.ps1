@@ -10,12 +10,17 @@
     Specifies the type of certificate to use for HTTPS. Valid values are 'SelfSigned', 'CertificateWithPassword', 'Certificate', and 'CertificateThumbprint'.
     Default is 'SelfSigned'.
 
+.EXAMPLE
+     To run the sample: ./Web-PagesHttps.ps1
+
+    Invoke-RestMethod -Uri https://localhost:8443/ -Method Get
+    Invoke-RestMethod -Uri https://localhost:8443/error -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-PagesHttps.ps1
 .NOTES
     Author: Pode Team
     License: MIT License
-
-.EXAMPLE
-    To use the hostname listener, you'll need to add "pode.foo.com 127.0.0.1" to your hosts file.
 #>
 param(
     [string]

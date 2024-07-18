@@ -7,7 +7,7 @@
     and provides an endpoint to get user information.
 
 .EXAMPLE
-    To run the sample: ./Web-AuthBasicBasic.ps1
+    To run the sample: ./Web-AuthBasic.ps1
 
     This example shows how to use sessionless authentication, which will mostly be for
     REST APIs. The example used here is Basic authentication.
@@ -23,7 +23,7 @@
     Invoke-RestMethod -Uri http://localhost:8081/users -Method Post -Headers @{ Authorization = 'Basic bW9ydHk6cmljaw==' }
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthBasicBasic.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthBasic.ps1
 
 .NOTES
     Author: Pode Team

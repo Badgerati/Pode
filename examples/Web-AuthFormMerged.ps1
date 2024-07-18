@@ -4,10 +4,21 @@
 
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081 with session persistent authentication.
-    It demonstrates a login system using form authentication. Navigating to 'http://localhost:8081' in
-    your browser will redirect you to the '/login' page. You can log in using the username 'morty' and
-    the password 'pickle'. After logging in, you will see a greeting and a view counter. Clicking 'Logout'
-    will purge the session and take you back to the login page.
+    It demonstrates a login system using form authentication.
+
+.EXAMPLE
+    To run the sample: ./Web-AuthFormMerged.ps1
+
+    This examples shows how to use session persistant authentication, for things like logins on websites.
+    The example used here is Form authentication, sent from the <form> in HTML.
+
+    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
+    page. Here, you can type the username (morty) and the password (pickle); clicking 'Login' will take you
+    back to the home page with a greeting and a view counter. Clicking 'Logout' will purge the session and
+    take you back to the login page.
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormMerged.ps1
 
 .NOTES
     Author: Pode Team

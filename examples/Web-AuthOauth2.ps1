@@ -4,14 +4,22 @@
 
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081. It demonstrates how to use session persistent authentication
-    with Azure AD and OAuth2. When navigating to 'http://localhost:8081', the user will be redirected to Azure for login.
-    Upon successful login, the user will be redirected back to the home page.
+    with Azure AD and OAuth2.
+
+.EXAMPLE
+    To run the sample: ./Web-AuthOauth2.ps1
+
+    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to Azure.
+    There, login to Azure and you'll be redirected back to the home page
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthOauth2.ps1
 
 .NOTES
     Author: Pode Team
     License: MIT License
 
-    Note: You'll need to register a new app in Azure, and note your clientId, secret, and tenant in the variables below.
+    Important!!! You'll need to register a new app in Azure, and note your clientId, secret, and tenant in the variables below.
 #>
 try {
     # Determine the script path and Pode module path
@@ -63,7 +71,7 @@ Start-PodeServer -Threads 2 {
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
             Username = $WebEvent.Auth.User.name
-            Views = $WebEvent.Session.Data.Views
+            Views    = $WebEvent.Session.Data.Views
         }
     }
 

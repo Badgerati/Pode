@@ -4,14 +4,22 @@
 
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081. It demonstrates how to use session persistent authentication
-    with Azure AD and OAuth2, using a form for login without redirection. When navigating to 'http://localhost:8081',
-    the user will be redirected to the /login form. Upon successful login, the user will be taken to the home page.
+    with Azure AD and OAuth2, using a form for login without redirection.
+
+.EXAMPLE
+    To run the sample: ./Web-AuthFormCreds.ps1
+
+    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the /login form.
+    There, enter you Azure AD email/password, Pode with authenticate and then take you to the home page
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormCreds.ps1
 
 .NOTES
     Author: Pode Team
     License: MIT License
 
-    Note: You'll need to register a new app in Azure, and note your clientId, secret, and tenant in the variables below.
+    Important!!! You'll need to register a new app in Azure, and note your clientId, secret, and tenant in the variables below.
 #>
 try {
     # Determine the script path and Pode module path
@@ -64,7 +72,7 @@ Start-PodeServer -Threads 2 {
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
             Username = $WebEvent.Auth.User.name
-            Views = $WebEvent.Session.Data.Views
+            Views    = $WebEvent.Session.Data.Views
         }
     }
 

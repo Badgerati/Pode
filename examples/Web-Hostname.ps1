@@ -9,6 +9,15 @@
 .PARAMETER Port
     The port number on which the server will listen. Default is 8081.
 
+.EXAMPLE
+    To run the sample: ./Web-Hostname.ps1
+
+    Invoke-RestMethod -Uri http://pode3.foo.com:8081/ -Method Get
+    Invoke-RestMethod -Uri http://pode3.foo.com:8081/download -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Hostname.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -68,5 +77,4 @@ Start-PodeServer -Threads 2 {
     Add-PodeRoute -Method Get -Path '/download' -ScriptBlock {
         Set-PodeResponseAttachment -Path '/assets/images/Fry.png'
     }
-
 }

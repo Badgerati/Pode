@@ -10,6 +10,15 @@
 .PARAMETER Type
     Specifies the type of CSRF protection to use. Valid values are 'Cookie' and 'Session'. Default is 'Session'.
 
+.EXAMPLE
+    To run the sample: ./Web-Csrf.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/token -Method Post
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Csrf.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

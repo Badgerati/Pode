@@ -6,6 +6,12 @@
     This script sets up a Pode server listening on ports 8081 and 8091. It includes a route to handle GET requests
     and sets up the server to run as a desktop GUI application using the Pode view engine.
 
+.EXAMPLE
+    To run the sample: ./Web-Gui.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Gui.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

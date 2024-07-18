@@ -6,6 +6,16 @@
     This script sets up a Pode server listening on port 8081. It includes routes for setting, extending,
     removing, and checking signed cookies. The server uses a global cookie secret for signing the cookies.
 
+.EXAMPLE
+    To run the sample: ./Web-Cookies.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/remove -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/check -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Cookies.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

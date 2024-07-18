@@ -8,11 +8,17 @@
     specific roles and groups to access.
 
 .EXAMPLE
+    To run the sample: ./Web-AuthMerged.ps1
+
     Success:
         Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'test-api-key'; Authorization = 'Basic bW9ydHk6cGlja2xl' }
 
     Failure:
         Invoke-RestMethod -Method Get -Uri 'http://localhost:8081/users' -Headers @{ 'X-API-KEY' = 'test-api-key'; Authorization = 'Basic bW9ydHk6cmljaw=='
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthMerged.ps1
+    
 .NOTES
     Author: Pode Team
     License: MIT License
