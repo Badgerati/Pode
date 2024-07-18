@@ -151,10 +151,12 @@ function Add-PodeAsyncGetRoute {
 
     )
 
-    if ($In -eq 'Path') {
+     # Append task ID to path if the task ID is in the path
+     if ($In -eq 'Path') {
         $Path = "$Path/:$TaskIdName"
     }
 
+    # Define the parameters for the route
     $param = @{
         Method           = 'Get'
         Path             = $Path
@@ -163,11 +165,13 @@ function Add-PodeAsyncGetRoute {
         ErrorContentType = $ResponseContentType[0]
         PassThru         = $true
     }
+
+    # Add optional parameters to the route
     if ($Middleware) {
         $param.Middleware = $Middleware
     }
     if ($EndpointName) {
-        $param.$EndpointName = $EndpointName
+        $param.EndpointName = $EndpointName
     }
     if ($Authentication) {
         $param.Authentication = $Authentication
@@ -194,8 +198,10 @@ function Add-PodeAsyncGetRoute {
         $param.IfExists = $IfExists
     }
 
+    # Add the route to Pode
     $route = Add-PodeRoute @param
 
+    # Generate OpenAPI documentation if not disabled
     if (! $NoOpenAPI.IsPresent) {
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
         Add-PodeAsyncComponentSchema -Name $OATypeName -DefinitionTag $DefinitionTag
@@ -203,17 +209,17 @@ function Add-PodeAsyncGetRoute {
         $route | Set-PodeOARouteInfo -Summary 'Get Pode Task Info' -DefinitionTag $DefinitionTag -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name $TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $In) |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $OATypeName ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName) -PassThru |
             Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
                 New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                     New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                 )
             )
-
     }
-    # return the routes?
+
+    # Return the route if PassThru is specified
     if ($PassThru) {
-        return $Route
+        return $route
     }
 }
 
@@ -312,7 +318,7 @@ function Add-PodeAsyncStopRoute {
         [object[]]
         $Middleware,
 
-        [Parameter( )]
+        [Parameter()]
         [AllowNull()]
         [string[]]
         $EndpointName,
@@ -327,7 +333,7 @@ function Add-PodeAsyncStopRoute {
         $Access,
 
         [string[]]
-        [ValidateSet('application/json' , 'application/xml', 'application/yaml')]
+        [ValidateSet('application/json', 'application/xml', 'application/yaml')]
         $ResponseContentType = 'application/json',
 
         [Parameter(ParameterSetName = 'OpenAPI')]
@@ -378,9 +384,12 @@ function Add-PodeAsyncStopRoute {
         $OADefinitionTag
     )
 
+    # Append task ID to path if the task ID is in the path
     if ($In -eq 'Path') {
         $Path = "$Path/:$TaskIdName"
     }
+
+    # Define the parameters for the route
     $param = @{
         Method           = 'Delete'
         Path             = $Path
@@ -389,11 +398,13 @@ function Add-PodeAsyncStopRoute {
         ErrorContentType = $ResponseContentType[0]
         PassThru         = $true
     }
+
+    # Add optional parameters to the route
     if ($Middleware) {
         $param.Middleware = $Middleware
     }
     if ($EndpointName) {
-        $param.$EndpointName = $EndpointName
+        $param.EndpointName = $EndpointName
     }
     if ($Authentication) {
         $param.Authentication = $Authentication
@@ -420,8 +431,10 @@ function Add-PodeAsyncStopRoute {
         $param.IfExists = $IfExists
     }
 
+    # Add the route to Pode
     $route = Add-PodeRoute @param
 
+    # Generate OpenAPI documentation if not disabled
     if (! $NoOpenAPI.IsPresent) {
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
         Add-PodeAsyncComponentSchema -Name $OATypeName -DefinitionTag $DefinitionTag
@@ -429,7 +442,7 @@ function Add-PodeAsyncStopRoute {
         $route | Set-PodeOARouteInfo -Summary 'Stop Pode Task' -DefinitionTag $DefinitionTag -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name $TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $In) |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $OATypeName ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName) -PassThru |
             Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
                 New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                     New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
@@ -437,9 +450,9 @@ function Add-PodeAsyncStopRoute {
             )
     }
 
-    # return the routes?
+    # Return the route if PassThru is specified
     if ($PassThru) {
-        return $Route
+        return $route
     }
 }
 
@@ -611,7 +624,8 @@ function Add-PodeAsyncQueryRoute {
 
     )
 
-    $param = @{
+     # Define the parameters for the route
+     $param = @{
         Path             = $Path
         ScriptBlock      = Get-PodeAsyncQueryScriptBlock
         ArgumentList     = $Payload
@@ -620,11 +634,12 @@ function Add-PodeAsyncQueryRoute {
         PassThru         = $true
     }
 
+    # Add optional parameters to the route
     if ($Middleware) {
         $param.Middleware = $Middleware
     }
     if ($EndpointName) {
-        $param.$EndpointName = $EndpointName
+        $param.EndpointName = $EndpointName
     }
     if ($Authentication) {
         $param.Authentication = $Authentication
@@ -651,6 +666,7 @@ function Add-PodeAsyncQueryRoute {
         $param.IfExists = $IfExists
     }
 
+    # Determine the HTTP method based on the payload location
     switch ($Payload) {
         'Body' {
             $param.Method = 'Post'
@@ -658,84 +674,89 @@ function Add-PodeAsyncQueryRoute {
         'Header' {
             $param.Method = 'Get'
         }
-        'query' {
+        'Query' {
             $param.Method = 'Get'
         }
     }
 
+    # Add the route to Pode
     $route = Add-PodeRoute @param
 
+    # Generate OpenAPI documentation if not disabled
     if (! $NoOpenAPI.IsPresent) {
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
         Add-PodeAsyncComponentSchema -Name $OATypeName -DefinitionTag $DefinitionTag
 
-        if (!(Test-PodeOAComponent -Field schemas -Name  $PodeTaskQueryRequestName)) {
+        if (!(Test-PodeOAComponent -Field schemas -Name $PodeTaskQueryRequestName)) {
+            New-PodeOAObjectProperty -AdditionalProperties (
+                New-PodeOAStringProperty -Name 'op' -Enum 'GT', 'LT', 'GE', 'LE', 'EQ', 'NE', 'LIKE', 'NOTLIKE' -Required |
+                New-PodeOAStringProperty -Name 'value' -Description 'The value to compare against' -Required |
+                New-PodeOAObjectProperty
+            ) | Add-PodeOAComponentSchema -Name $PodeTaskQueryRequestName
+        }
 
-            New-PodeOAObjectProperty  -AdditionalProperties  (
-                New-PodeOAStringProperty -Name 'op' -Enum  'GT', 'LT', 'GE', 'LE', 'EQ', 'NE', 'LIKE', 'NOTLIKE' -Required |
-                    New-PodeOAStringProperty -Name 'value'  -Description 'The value to compare against' -Required |
-                    New-PodeOAObjectProperty
-                ) | Add-PodeOAComponentSchema -Name $PodeTaskQueryRequestName
+        # Define an example hashtable for the OpenAPI request
+        $exampleHashTable = @{
+            'StartingTime' = @{
+                op    = 'GT'
+                value = (Get-Date '2024-07-05T20:20:00Z')
             }
-
-            $exampleHashTable = @{
-                'StartingTime' = @{
-                    op    = 'GT'
-                    value = get-date '2024-07-05 20:20:00Z'
-                }
-                'CreationTime' = @{
-                    op    = 'LE'
-                    value = get-date '2024-07-05 20:20:00Z'
-                }
-                'State'        = @{
-                    op    = 'EQ'
-                    value = 'Completed'
-                }
-                'Name'         = @{
-                    op    = 'LIKE'
-                    value = 'Get'
-                }
-                'ID'           = @{
-                    op    = 'EQ'
-                    value = 'b143660f-ebeb-49d9-9f92-cd21f3ff559c'
-                }
-                'Cancelable'   = @{
-                    op    = 'EQ'
-                    value = $true
-                }
+            'CreationTime' = @{
+                op    = 'LE'
+                value = (Get-Date '2024-07-05T20:20:00Z')
             }
+            'State' = @{
+                op    = 'EQ'
+                value = 'Completed'
+            }
+            'Name' = @{
+                op    = 'LIKE'
+                value = 'Get'
+            }
+            'ID' = @{
+                op    = 'EQ'
+                value = 'b143660f-ebeb-49d9-9f92-cd21f3ff559c'
+            }
+            'Cancelable' = @{
+                op    = 'EQ'
+                value = $true
+            }
+        }
 
-            $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -DefinitionTag $DefinitionTag -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $OATypeName -Array) -PassThru |
-                Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
-                    New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
-                        New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
-                    )
+        # Add OpenAPI route information and responses
+        $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -DefinitionTag $DefinitionTag -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName -Array) -PassThru |
+            Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
+                New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
+                    New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                 )
-        $example = [ordered]@{}
+            )
 
-        foreach ($mt in   $QueryContentType) {
+        # Define examples for different media types
+        $example = [ordered]@{}
+        foreach ($mt in $QueryContentType) {
             $example += New-PodeOAExample -MediaType $mt -Name $PodeTaskQueryRequestName -Value $exampleHashTable
         }
 
+        # Set the OpenAPI request based on the payload location
         switch ($Payload.ToLowerInvariant()) {
             'body' {
-                $route | Set-PodeOARequest  -RequestBody (
-                    New-PodeOARequestBody -Content  (New-PodeOAContentMediaType -MediaType $QueryContentType  -Content $PodeTaskQueryRequestName   ) -Examples $example
+                $route | Set-PodeOARequest -RequestBody (
+                    New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType $QueryContentType -Content $PodeTaskQueryRequestName) -Examples $example
                 )
-                break
             }
             'header' {
-                $route | Set-PodeOARequest   -Parameters (ConvertTo-PodeOAParameter -In Header -Schema $PodeTaskQueryRequestName -ContentType $QueryContentType[0] -Example  $example[0])
-                break
+                $route | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Header -Schema $PodeTaskQueryRequestName -ContentType $QueryContentType[0] -Example $example[0])
             }
             'query' {
-                $route | Set-PodeOARequest   -Parameters (ConvertTo-PodeOAParameter -In Query  -Schema $PodeTaskQueryRequestName -ContentType $QueryContentType[0] -Example  $example[0])
+                $route | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Query -Schema $PodeTaskQueryRequestName -ContentType $QueryContentType[0] -Example $example[0])
             }
         }
     }
-    # return the routes?
+
+    # Return the route if PassThru is specified
     if ($PassThru) {
-        return $Route
+        return $route
     }
 }
 
