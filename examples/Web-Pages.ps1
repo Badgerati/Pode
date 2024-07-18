@@ -10,6 +10,22 @@
 .PARAMETER Port
     The port number on which the server will listen. Default is 8081.
 
+.EXAMPLE
+    To run the sample: ./Web-Pages.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/variable -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/error -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/redirect -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/redirect-port -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/download -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/testuser/details -Method Post
+    Invoke-RestMethod -Uri http://localhost:8081/all -Method Merge
+    Invoke-RestMethod -Uri http://localhost:8081//api/test/hello -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Pages.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -125,7 +141,7 @@ Start-PodeServer -Threads 2 -Verbose {
         Write-PodeJsonResponse -Value @{ 'value' = 'works for every hello route' }
     }
 
-    $hmm = 'well well'
+    $script:hmm = 'well well'
     Add-PodeRoute -Method Get -Path '/script' -FilePath './modules/RouteScript.ps1'
 
 }

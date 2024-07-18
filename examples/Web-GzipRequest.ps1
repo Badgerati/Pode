@@ -5,6 +5,14 @@
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081. It includes error logging and a route to handle POST requests that receive gzip'd JSON data.
 
+.EXAMPLE
+    To run the sample: ./Web-GzipRequest.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/users -Method Post
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-GzipRequest.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

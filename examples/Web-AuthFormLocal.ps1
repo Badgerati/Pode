@@ -5,9 +5,19 @@
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081 with session persistent authentication.
     It demonstrates a login system using form authentication against Windows Local users.
+
+.EXAMPLE
+    To run the sample: ./Web-AuthFormLocal.ps1
+
+    This examples shows how to use session persistant authentication using Windows Local users.
+    The example used here is Form authentication, sent from the <form> in HTML.
+
     Navigating to 'http://localhost:8081' in your browser will redirect you to the '/login' page.
     You can log in using the details for a domain user. After logging in, you will see a greeting and a view counter.
     Clicking 'Logout' will purge the session and take you back to the login page.
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormLocal.ps1
 
 .NOTES
     Author: Pode Team

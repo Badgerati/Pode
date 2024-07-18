@@ -6,6 +6,14 @@
     This script sets up a Pode server listening on port 8081. It includes a route to check the server's uptime
     and the number of times the server has restarted.
 
+.EXAMPLE
+    To run the sample: ./Web-Metrics.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/uptime -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Metrics.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

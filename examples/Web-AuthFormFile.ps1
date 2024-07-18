@@ -5,13 +5,23 @@
 .DESCRIPTION
     This script sets up a Pode server listening on port 8081 with session persistent authentication.
     It demonstrates a login system using form authentication against a user file.
-    Navigating to 'http://localhost:8081' in your browser will redirect you to the '/login' page.
-    You can log in using the details from the JSON file. After logging in, you will see a greeting and a view counter.
-    Clicking 'Logout' will purge the session and take you back to the login page.
 
-    Example credentials:
+.EXAMPLE
+    To run the sample: ./Web-AuthFormFile.ps1
+
+    This examples shows how to use session persistant authentication using a user file.
+    The example used here is Form authentication, sent from the <form> in HTML.
+
+    Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
+    page. Here, you can type the details for a user in the json file. Clicking 'Login' will take you back to the home
+    page with a greeting and a view counter. Clicking 'Logout' will purge the session and take you back to
+    the login page.
+
     username = r.sanchez
     password = pickle
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthFormFile.ps1
 
 .NOTES
     Author: Pode Team
@@ -35,19 +45,6 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-
-<#
-This examples shows how to use session persistant authentication using a user file.
-The example used here is Form authentication, sent from the <form> in HTML.
-
-Navigating to the 'http://localhost:8081' endpoint in your browser will auto-rediect you to the '/login'
-page. Here, you can type the details for a user in the json file. Clicking 'Login' will take you back to the home
-page with a greeting and a view counter. Clicking 'Logout' will purge the session and take you back to
-the login page.
-
-username = r.sanchez
-password = pickle
-#>
 
 # create a server, and start listening on port 8081
 Start-PodeServer -Threads 2 {

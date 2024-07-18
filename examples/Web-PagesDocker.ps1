@@ -6,13 +6,16 @@
     This script sets up a Pode server listening on port 8081. It demonstrates how to handle GET and PUT requests,
     set up security, define tasks, and use Pode's view engine.
 
-.NOTES
-    Author: Pode Team
-    License: MIT License
-
 .EXAMPLE
     To build and start the Docker container, use:
     docker-compose up --force-recreate --build
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Cookies.ps1
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
 #>
 try {
     Import-Module /usr/local/share/powershell/Modules/Pode/Pode.psm1 -Force -ErrorAction Stop

@@ -6,6 +6,16 @@
     This script sets up a Pode server listening on port 8081. It includes basic authentication, error logging,
     and dynamic route generation for specified commands. Each route requires authentication.
 
+.EXAMPLE
+    To run the sample: ./Web-FuncsToRoutes.ps1
+
+    Invoke-RestMethod -Uri http://localhost:8081/Get-ChildItem -Method Get -ContentType 'application/json' -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+    Invoke-RestMethod -Uri http://localhost:8081/Get-Host -Method Get -ContentType 'application/json' -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+    Invoke-RestMethod -Uri http://localhost:8081/Invoke-Expression -Method Post -ContentType 'application/json' -Headers @{ Authorization = 'Basic bW9ydHk6cGlja2xl' }
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-FuncsToRoutes.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
