@@ -253,7 +253,7 @@ Export-ModuleMember -Function SumOfSquaresModule
             [double]$sum = $sumEnd - $sumStart
             Write-PodeHost "Result of Start=$start End=$end is $sum"
             return $sum
-        } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 2 -MinRunspaces 2 -PassThru | Set-PodeOARouteInfo -Summary 'Caluclate sum of squares'  -PassThru |
+        } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 50 -MinRunspaces 5 -PassThru | Set-PodeOARouteInfo -Summary 'Caluclate sum of squares'  -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
                 (  New-PodeOANumberProperty -Name 'Start' -Format Double -Description 'Start' -Required | ConvertTo-PodeOAParameter -In Header),
                  (   New-PodeOANumberProperty -Name 'End' -Format Double -Description 'End' -Required | ConvertTo-PodeOAParameter -In Header)
@@ -284,7 +284,7 @@ public class MathOperations
             $sum = [MathOperations]::SumOfSquares($Start, $End)
             Write-PodeHost "Result of Start=$start End=$end is $sum"
             return $sum
-        } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 100 -MinRunspaces 5 -PassThru | Set-PodeOARouteInfo -Summary 'Caluclate sum of squares'  -PassThru |
+        } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 200 -MinRunspaces 5 -PassThru | Set-PodeOARouteInfo -Summary 'Caluclate sum of squares'  -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
                 (  New-PodeOANumberProperty -Name 'Start' -Format Double -Description 'Start' -Required | ConvertTo-PodeOAParameter -In Header),
                  (   New-PodeOANumberProperty -Name 'End' -Format Double -Description 'End' -Required | ConvertTo-PodeOAParameter -In Header)
@@ -301,7 +301,7 @@ public class MathOperations
             }
             Write-PodeHost "Result of Start=$start End=$end is $sum"
             return $sum
-        } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 99 -MinRunspaces 5 -PassThru | Set-PodeOARouteInfo -Summary 'Caluclate sum of square roots'  -PassThru |
+        } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 10 -MinRunspaces 5 -PassThru | Set-PodeOARouteInfo -Summary 'Caluclate sum of square roots'  -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
           (  New-PodeOANumberProperty -Name 'Start' -Format Double -Description 'Start' -Required | ConvertTo-PodeOAParameter -In Header),
              (   New-PodeOANumberProperty -Name 'End' -Format Double -Description 'End' -Required | ConvertTo-PodeOAParameter -In Header)
@@ -321,18 +321,6 @@ public class MathOperations
         Add-PodeRoute  -Method 'Get' -Path '/hello' -ScriptBlock {
             Write-PodeJsonResponse -Value @{'message' = 'Hello!' } -StatusCode 200
         } -PassThru | Set-PodeOARouteInfo -Summary 'Hello from the server'
-        <#
-    Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
-
-        Write-PodeHost "global:gSleepTime=$($global:gSleepTime)"
-        Write-PodeHost "global:gMessage=$($global:gMessage)"
-        for ($i = 0; $i -lt 20; $i++) {
-            Start-Sleep $global:gSleepTime
-        }
-        return @{ InnerValue = $global:gMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
-
-#>
 
     }
 }
