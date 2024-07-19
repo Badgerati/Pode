@@ -6,6 +6,40 @@
     This script sets up a Pode server that listens on a specified port and provides various routes to
     retrieve process information in different formats (HTML, Text, CSV, JSON, XML, YAML).
 
+.EXAMPLE
+    To run the sample: ./Write-Response.ps1
+
+    # HTML responses
+    Invoke-RestMethod -Uri http://localhost:8081/html/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/html/processesPiped -Method Get
+
+    # Text responses
+    Invoke-RestMethod -Uri http://localhost:8081/text/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/text/processesPiped -Method Get
+
+    # CSV responses
+    Invoke-RestMethod -Uri http://localhost:8081/csv/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/csv/processesPiped -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/csv/string -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/csv/hash -Method Get
+
+    # JSON responses
+    Invoke-RestMethod -Uri http://localhost:8081/json/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/json/processesPiped -Method Get
+
+    # XML responses
+    Invoke-RestMethod -Uri http://localhost:8081/xml/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/xml/processesPiped -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/xml/hash -Method Get
+
+    # YAML responses
+    Invoke-RestMethod -Uri http://localhost:8081/yaml/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/yaml/processesPiped -Method Get
+
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Write-Response.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

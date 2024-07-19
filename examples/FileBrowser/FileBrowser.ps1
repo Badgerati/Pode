@@ -10,17 +10,22 @@
     The server includes routes for downloading files, browsing files without downloading, and
     accessing files with authentication.
 
-.NOTES
-    Author: Pode Team
-    License: MIT License
+.EXAMPLE
+    To run the sample: ./FileBrowser/FileBrowser.ps1
 
-.EXAMPLES
     Access the file browser:
         Navigate to 'http://localhost:8081/' to browse the files in the specified directory.
     Download a file:
         Navigate to 'http://localhost:8081/download' to download files.
     Access a file with authentication:
         Navigate to 'http://localhost:8081/auth' and provide the username 'morty' and password 'pickle'.
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/FileBrowser/FileBrowser.ps1
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
 #>
 try {
     $FileBrowserPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
