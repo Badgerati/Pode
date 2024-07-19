@@ -170,7 +170,7 @@ Describe 'Examples Script Headers' {
             $hasNotes | Should -Be $true
         }
 
-    <#     It 'should have a .LINK section' {
+        It 'should have a .LINK section' {
             $hasDescription = $content -match '\.LINK\s+([^\#]*)'
             $hasDescription | Should -Be $true
         }
@@ -178,7 +178,7 @@ Describe 'Examples Script Headers' {
         It 'should have a .EXAMPLE section' {
             $hasDescription = $content -match '\.EXAMPLE\s+([^\#]*)'
             $hasDescription | Should -Be $true
-        }#>
+        }
     }
 
 }

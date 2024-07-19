@@ -7,6 +7,33 @@
     use middleware, export and use custom functions, and set up timers. The script includes examples of
     using `$using:` scope for variables in script blocks and middleware.
 
+.EXAMPLE
+    To run the sample: ./Web-PagesUsing.ps1
+
+    # Root route
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+
+    # Random route
+    Invoke-RestMethod -Uri http://localhost:8081/random -Method Get
+
+    # Inner function route
+    Invoke-RestMethod -Uri http://localhost:8081/inner-func -Method Get
+
+    # Outer function route
+    Invoke-RestMethod -Uri http://localhost:8081/outer-func -Method Get
+
+    # Greetings route
+    Invoke-RestMethod -Uri http://localhost:8081/greetings -Method Get
+
+    # Sub-greetings route
+    Invoke-RestMethod -Uri http://localhost:8081/sub-greetings -Method Get
+
+    # Timer route
+    Invoke-RestMethod -Uri http://localhost:8081/timer -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-PagesUsing.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License

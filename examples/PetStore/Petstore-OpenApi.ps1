@@ -18,6 +18,17 @@
 .PARAMETER Reset
     Switch parameter to reset the PetData.json file and reinitialize categories, pets, orders, and users.
 
+.EXAMPLE
+    To run the sample: ./PetStore/Petstore-OpenApi.ps1
+
+    OpenAPI Info:
+    Specification:
+        http://localhost:8081/openapi
+    Documentation:
+        http://localhost:8081/docs
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/PetStore/Petstore-OpenApi.ps1
 .NOTES
     Author: Pode Team
     License: MIT License

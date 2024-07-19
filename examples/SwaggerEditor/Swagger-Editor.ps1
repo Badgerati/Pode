@@ -9,6 +9,15 @@
 .PARAMETER Port
     The port number on which the Pode server will listen. Default is 8081.
 
+.EXAMPLE
+    To run the sample: ./SwaggerEditor/Swagger-Editor.ps1
+
+    Use a browser to access  http://127.0.0.1:8081/
+
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/SwaggerEditor/Swagger-Editor.ps1
+
 .NOTES
     Author: Pode Team
     License: MIT License
@@ -44,7 +53,6 @@ Start-PodeServer -Threads 2 {
     Set-PodeViewEngine -Type HTML
 
     # STATIC asset folder route
-    Add-PodeStaticRoute -Path '/editor/swagger-editor-dist' -Source "$($path)/src/Misc/swagger-editor-dist" -FileBrowser
     Add-PodeStaticRoute -Path '/editor' -Source './www' -Defaults @('index.html') -FileBrowser
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Move-PodeResponseUrl -Url '/editor/index.html'
