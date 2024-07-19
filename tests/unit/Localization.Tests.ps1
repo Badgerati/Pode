@@ -61,8 +61,8 @@ Describe 'Localization Check' {
 
     Describe  'Verifying Language [<_>]' -ForEach  ($languageDirs) {
 
-        BeforeAll {
-            $content = Import-LocalizedData -FileName 'Pode.psd1' -BaseDirectory $localizationDir -UICulture $_.Name
+        BeforeAll { 
+            $content = Import-LocalizedData -FileName 'Pode.psd1' -BaseDirectory $localizationDir -UICulture (Split-Path $_ -Leaf)
         }
         it 'Language resource file exist' {
             Test-Path -Path "$($_)/Pode.psd1" | Should -BeTrue
