@@ -290,4 +290,6 @@
     InvalidQueryFormatExceptionMessage                                = '제공된 쿼리의 형식이 잘못되었습니다.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} 존재하지 않습니다.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id {0}의 비동기 경로 작업이 존재하지 않습니다.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "스크립트에 '{0}' 명령을 포함할 수 없습니다."
+    invalidQueryElementExceptionMessage                               = '제공된 쿼리가 잘못되었습니다. {0} 는 쿼리에 대한 유효한 요소가 아닙니다.'
 }

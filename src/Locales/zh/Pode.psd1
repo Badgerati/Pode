@@ -290,4 +290,6 @@
     InvalidQueryFormatExceptionMessage                                = '提供的查询格式无效。'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} 不存在.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id 为 {0} 的异步路由操作不存在.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "脚本不允许包含命令 '{0}'。"
+    invalidQueryElementExceptionMessage                               = '提供的查询无效。 {0} 不是查询的有效元素。'
 }

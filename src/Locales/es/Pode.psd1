@@ -290,5 +290,7 @@
     InvalidQueryFormatExceptionMessage                                = 'La consulta proporcionada tiene un formato no válido.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} no existe.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'No existe ninguna operación de ruta asíncrona con Id {0}.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "El script no puede contener el comando '{0}'."
+    invalidQueryElementExceptionMessage                               = 'La consulta proporcionada no es válida. {0} no es un elemento válido para una consulta.'
 }
 

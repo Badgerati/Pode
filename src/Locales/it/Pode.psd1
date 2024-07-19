@@ -290,4 +290,6 @@
     InvalidQueryFormatExceptionMessage                                = 'La query fornita ha un formato non valido.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} non esiste.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = "Nessuna operazione di percorso asincrono esiste con l'Id {0}."
+    scriptContainsDisallowedCommandExceptionMessage                   = "Lo script non può contenere il comando '{0}'."
+    invalidQueryElementExceptionMessage                               = 'La query fornita non è valida. {0} non è un elemento valido per una query.'
 }

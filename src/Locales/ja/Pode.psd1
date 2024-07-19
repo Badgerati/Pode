@@ -290,4 +290,6 @@
     InvalidQueryFormatExceptionMessage                                = '提供されたクエリには無効な形式があります。'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} は存在しません.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id {0} の非同期ルート操作は存在しません.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "スクリプトにコマンド '{0}' を含めることはできません。"
+    invalidQueryElementExceptionMessage                               = '提供されたクエリは無効です。 {0} はクエリの有効な要素ではありません。'
 }

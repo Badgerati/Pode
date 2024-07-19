@@ -290,4 +290,6 @@
   InvalidQueryFormatExceptionMessage                                = 'The query provided has an invalid format.'
   asyncIdDoesNotExistExceptionMessage                               = "Async {0} doesn't exist."
   asyncRouteOperationDoesNotExistExceptionMessage                   = 'No Async Route operation exists with Id {0}.'
+  scriptContainsDisallowedCommandExceptionMessage                   = "Script is not allowed to contain the command '{0}'."
+  invalidQueryElementExceptionMessage                               = 'The query provided is invalid. {0} is not a valid element for a query.'
 }

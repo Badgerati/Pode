@@ -290,4 +290,6 @@
     InvalidQueryFormatExceptionMessage                                = 'Podane zapytanie ma nieprawidłowy format.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} nie istnieje.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Operacja Async Route z Id {0} nie istnieje.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "Skrypt nie może zawierać polecenia '{0}'."
+    invalidQueryElementExceptionMessage                               = 'Podane zapytanie jest nieprawidłowe. {0} nie jest prawidłowym elementem zapytania.'
 }

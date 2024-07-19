@@ -290,4 +290,6 @@
     InvalidQueryFormatExceptionMessage                                = 'Die angegebene Abfrage hat ein ungültiges Format.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} existiert nicht.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Keine Async-Route-Operation mit der Id {0} existiert.'
-}
+    scriptContainsDisallowedCommandExceptionMessage = "Das Skript darf den Befehl '{0}' nicht enthalten."
+    invalidQueryElementExceptionMessage = "Die bereitgestellte Abfrage ist ungültig. {0} ist kein gültiges Element für eine Abfrage."
+    }

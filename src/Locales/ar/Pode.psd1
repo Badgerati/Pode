@@ -290,5 +290,7 @@
     renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} غير موجود.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'لا توجد عملية مسار غير متزامن بالمعرف {0}.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "لا يُسمح للبرنامج النصي باحتواء الأمر '{0}'."
+    invalidQueryElementExceptionMessage                               = 'الاستعلام المقدم غير صالح. {0} ليس عنصرًا صالحًا للاستعلام.'
 
 }

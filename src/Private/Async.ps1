@@ -13,8 +13,6 @@
 .PARAMETER ArgumentList
     A hashtable of additional arguments to pass to the task. This parameter is optional.
 
-.PARAMETER Timeout
-    The timeout period in seconds for the task. If set to -1, the task will not expire. This parameter is optional.
 
 .PARAMETER Id
     A custom identifier for the task. If not provided, a new GUID will be generated. This parameter is optional.
@@ -39,7 +37,7 @@
         Cancelable = $false
     }
 
-    $result = Invoke-PodeInternalAsync -Task $task -Timeout 300
+    $result = Invoke-PodeInternalAsync -Task $task -Id 73c6a5b3-2f7d-4b9e-a1ca-e8f87dd9d45
 
 .NOTES
     - The function handles the creation and management of asynchronous tasks in Pode.
@@ -55,17 +53,13 @@ function Invoke-PodeInternalAsync {
         [hashtable]
         $ArgumentList = $null,
 
-        [Parameter()]
-        [int]
-        $Timeout = -1,
-
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [string]
         $Id
     )
     try {
-          # Setup event parameters
-          $parameters = @{
+        # Setup event parameters
+        $parameters = @{
             Event = @{
                 Lockable = $PodeContext.Threading.Lockables.Global
                 Sender   = $Task
@@ -100,8 +94,8 @@ function Invoke-PodeInternalAsync {
         $runspace = Add-PodeRunspace -Type $Task.Name -ScriptBlock (($Task.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
 
         # Set the expiration time based on the timeout value
-        if ($Timeout -ge 0) {
-            $expireTime = [datetime]::UtcNow.AddSeconds($Timeout)
+        if ($Task.Timeout -ge 0) {
+            $expireTime = [datetime]::UtcNow.AddSeconds($Task.Timeout)
         }
         else {
             $expireTime = [datetime]::MaxValue
@@ -117,13 +111,13 @@ function Invoke-PodeInternalAsync {
         $dctResult['CreationTime'] = $creationTime
         $dctResult['CompletedTime'] = $null
         $dctResult['ExpireTime'] = $expireTime
-        $dctResult['Timeout'] = $Timeout
         $dctResult['State'] = 'NotStarted'
         $dctResult['Error'] = $null
         $dctResult['CallbackSettings'] = $Task.CallbackSettings
         $dctResult['Cancelable'] = $Task.Cancelable
         $dctResult['EnableSse'] = $Task.EnableSse
         $dctResult['SseGroup'] = $Task.SseGroup
+        $dctResult['Timeout'] = $Task.Timeout
 
         # Add user information if available
         if ($WebEvent.Auth.User) {
@@ -255,14 +249,19 @@ function ConvertTo-PodeEnhancedScriptBlock {
     # Initialize variables
     $paramLineIndex = $null
     $parameters = ''
-
+    $paramFound = $false
     # Find the line containing 'param' and extract parameters
     for ($i = 0; $i -lt $lines.Length; $i++) {
-        if ($lines[$i] -match '^\s*param\((.*)\)\s*$') {
+        # Check for the blocked commands using a single regex
+        if ($lines[$i] -match 'Write-Pode.*Response') {
+            throw  ($PodeLocale.scriptContainsDisallowedCommandExceptionMessage -f $matches[0].Trim())
+        }
+        if ((! $paramFound) -and ($lines[$i] -match '^\s*param\((.*)\)\s*$')) {
             $parameters = $matches[1].Trim()
             $paramLineIndex = $i
-            break
+            $paramFound = $true
         }
+
     }
 
     # Remove the line containing 'param'
@@ -672,6 +671,11 @@ function Search-PodeAsyncTask {
 
             # Iterate through each query condition
             foreach ($key in $Query.Keys) {
+                # Check the variable name
+                if (! (('ID', 'Name', 'Runspace', 'Output', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancelable', 'EnableSse', 'SseGroup', 'Timeout', 'User', 'Url', 'Method') -contains $key)) {
+                    # The query provided is invalid.{0} is not a valid element for a query.
+                    throw ($PodeLocale.invalidQueryElementExceptionMessage -f $key)
+                }
                 $queryCondition = $Query[$key]
 
                 # Ensure the query condition has both 'op' and 'value' keys
@@ -962,7 +966,7 @@ function Test-PodeAsyncPermission {
 function Get-PodeAsyncSetScriptBlock {
     # This function returns a script block that handles async route operations
     return [scriptblock] {
-        param($Timeout, $IdGenerator, $AsyncPoolName)
+        param( $IdGenerator, $AsyncPoolName)
 
         # Get the 'Accept' header from the request to determine the response format
         $responseMediaType = Get-PodeHeader -Name 'Accept'
@@ -976,7 +980,7 @@ function Get-PodeAsyncSetScriptBlock {
         }
 
         # Invoke the internal async task
-        $async = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items[$AsyncPoolName] -Timeout $Timeout -ArgumentList @{ WebEvent = $WebEvent; ___async___id___ = $id }
+        $async = Invoke-PodeInternalAsync -Id $id -Task $PodeContext.AsyncRoutes.Items[$AsyncPoolName] -ArgumentList @{ WebEvent = $WebEvent; ___async___id___ = $id }
 
         # Prepare the response
         $res = @{
@@ -1353,23 +1357,33 @@ function Get-PodeAsyncQueryScriptBlock {
         # Get the 'Accept' header from the request to determine the response format
         $responseMediaType = Get-PodeHeader -Name 'Accept'
         $response = @()  # Initialize an empty array to hold the response
+        try {
+            # Search for async tasks based on the query and user, checking permissions
+            $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User -CheckPermission
 
-        # Search for async tasks based on the query and user, checking permissions
-        $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User -CheckPermission
+            # If results are found, export async task information for each result
+            if ($results) {
+                foreach ($async in $results) {
+                    $response += Export-PodeAsyncInfo -Async $async
+                }
+            }
 
-        # If results are found, export async task information for each result
-        if ($results) {
-            foreach ($async in $results) {
-                $response += Export-PodeAsyncInfo -Async $async
+            # Respond with the results in the appropriate format
+            switch ($responseMediaType) {
+                'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 200; break }
+                'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 200 ; break }
+                'application/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 200 ; break }
+                default { Write-PodeJsonResponse -Value $response -StatusCode 200 }
             }
         }
-
-        # Respond with the results in the appropriate format
-        switch ($responseMediaType) {
-            'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 200; break }
-            'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 200 ; break }
-            'application/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 200 ; break }
-            default { Write-PodeJsonResponse -Value $response -StatusCode 200 }
+        catch {
+            $response = @{'Error' = $_.tostring() }
+            switch ($responseMediaType) {
+                'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 402; break }
+                'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 402 ; break }
+                'application/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 402 ; break }
+                default { Write-PodeJsonResponse -Value $response -StatusCode 402 }
+            }
         }
     }
 }
