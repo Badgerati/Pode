@@ -40,7 +40,7 @@ Set-PodeResponseAttachment -Path '/assets/data.txt' -EndpointName 'Example'
 function Set-PodeResponseAttachment {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Path,
 
@@ -56,15 +56,15 @@ function Set-PodeResponseAttachment {
         $FileBrowser
 
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -152,13 +152,13 @@ function Write-PodeTextResponse {
         [switch]
         $Cache
     )
-    Begin {
+    begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
-    }Process {
+    }process {
         # Add the current piped-in value to the array
         $pipelineValue += $_
-    }End {
+    }end {
         # Set Value to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Value = $pipelineValue -join "`n"
@@ -369,7 +369,7 @@ Write-PodeFileResponse -Path 'C:/Files/' -FileBrowser
 function Write-PodeFileResponse {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [ValidateNotNull()]
         [string]
         $Path,
@@ -395,15 +395,15 @@ function Write-PodeFileResponse {
         [switch]
         $FileBrowser
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -436,20 +436,20 @@ Generates and serves an HTML page that lists the contents of the './static' dire
 function Write-PodeDirectoryResponse {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [ValidateNotNull()]
         [string]
         $Path
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -505,17 +505,17 @@ function Write-PodeCsvResponse {
         $StatusCode = 200
     )
 
-    Begin {
+    begin {
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
         }
     }
 
-    End {
+    end {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
@@ -591,17 +591,17 @@ function Write-PodeHtmlResponse {
         $StatusCode = 200
     )
 
-    Begin {
+    begin {
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
         }
     }
 
-    End {
+    end {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
@@ -671,15 +671,15 @@ function Write-PodeMarkdownResponse {
         [switch]
         $AsHtml
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -774,17 +774,17 @@ function Write-PodeJsonResponse {
         $NoCompress
 
     )
-    Begin {
+    begin {
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
         }
     }
 
-    End {
+    end {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
                 if (Test-PodePath $Path) {
@@ -893,17 +893,17 @@ function Write-PodeXmlResponse {
         [int]
         $StatusCode = 200
     )
-    Begin {
+    begin {
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         if ($PSCmdlet.ParameterSetName -eq 'Value' -and $_) {
             $pipelineValue += $_
         }
     }
 
-    End {
+    end {
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
@@ -991,17 +991,17 @@ function Write-PodeYamlResponse {
         $StatusCode = 200
     )
 
-    Begin {
+    begin {
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
         }
     }
 
-    End {
+    end {
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'file' {
@@ -1065,7 +1065,7 @@ Write-PodeViewResponse -Path 'login' -FlashMessages
 function Write-PodeViewResponse {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Path,
 
@@ -1084,15 +1084,15 @@ function Write-PodeViewResponse {
         [switch]
         $FlashMessages
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -1367,17 +1367,17 @@ function Write-PodeTcpClient {
         [string]
         $Message
     )
-    Begin {
+    begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         # Add the current piped-in value to the array
         $pipelineValue += $_
     }
 
-    End {
+    end {
         # Set Route to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Message = $pipelineValue -join "`n"
@@ -1670,7 +1670,7 @@ function Use-PodePartialView {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
         [string]
         $Path,
 
@@ -1681,15 +1681,15 @@ function Use-PodePartialView {
         [string]
         $Folder
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -1756,7 +1756,7 @@ Send-PodeSignal -Value @{ Data = @(123, 100, 101) } -Path '/response-charts'
 function Send-PodeSignal {
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0 )]
         $Value,
 
         [Parameter()]
@@ -1779,15 +1779,15 @@ function Send-PodeSignal {
         [switch]
         $IgnoreEvent
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }

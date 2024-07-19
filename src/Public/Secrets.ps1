@@ -660,7 +660,7 @@ function Update-PodeSecret {
         $Name,
 
         #> byte[], string, securestring, pscredential, hashtable
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true )]
         [object]
         $InputObject,
 
@@ -668,7 +668,7 @@ function Update-PodeSecret {
         [hashtable]
         $Metadata
     )
-    Begin {
+    begin {
         # has the secret been mounted?
         if (!(Test-PodeSecret -Name $Name)) {
             # No Secret named has been mounted
@@ -683,7 +683,7 @@ function Update-PodeSecret {
         $pipelineValue += $_
     }
 
-    End {
+    end {
         # Set InputObject to the array of values
         if ($pipelineValue.Count -gt 1) {
             $InputObject = $pipelineValue
@@ -905,7 +905,7 @@ function Set-PodeSecret {
         $Vault,
 
         #> byte[], string, securestring, pscredential, hashtable
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [object]
         $InputObject,
 
@@ -917,7 +917,7 @@ function Set-PodeSecret {
         [object[]]
         $ArgumentList
     )
-    Begin {
+    begin {
         # has the vault been registered?
         if (!(Test-PodeSecretVault -Name $Vault)) {
             # No Secret Vault with the name has been registered
@@ -932,7 +932,7 @@ function Set-PodeSecret {
         $pipelineValue += $_
     }
 
-    End {
+    end {
         # Set InputObject to the array of values
         if ($pipelineValue.Count -gt 1) {
             $InputObject = $pipelineValue

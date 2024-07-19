@@ -39,7 +39,7 @@ function Lock-PodeObject {
     [CmdletBinding(DefaultParameterSetName = 'Object')]
     [OutputType([object])]
     param(
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Object')]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Object')]
         [object]
         $Object,
 
@@ -61,15 +61,15 @@ function Lock-PodeObject {
         [switch]
         $CheckGlobal
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -230,7 +230,7 @@ Enter-PodeLockable -Name 'LockName' -Timeout 5000
 function Enter-PodeLockable {
     [CmdletBinding(DefaultParameterSetName = 'Object')]
     param(
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Object')]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Object')]
         [object]
         $Object,
 
@@ -245,15 +245,15 @@ function Enter-PodeLockable {
         [switch]
         $CheckGlobal
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -316,7 +316,7 @@ Exit-PodeLockable -Name 'LockName'
 function Exit-PodeLockable {
     [CmdletBinding(DefaultParameterSetName = 'Object')]
     param(
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Object')]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Object')]
         [object]
         $Object,
 
@@ -324,15 +324,15 @@ function Exit-PodeLockable {
         [string]
         $Name
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }

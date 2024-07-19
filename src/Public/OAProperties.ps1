@@ -174,7 +174,7 @@ New-PodeOAMultiTypeProperty -Name 'password' -type string,object -Format Passwor
 function New-PodeOAMultiTypeProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -330,7 +330,7 @@ function New-PodeOAMultiTypeProperty {
         [hashtable]
         $DiscriminatorMapping
     )
-    Begin {
+    begin {
         $param = New-PodeOAPropertyInternal   -Params $PSBoundParameters
 
         if ($type -contains 'string') {
@@ -392,7 +392,7 @@ function New-PodeOAMultiTypeProperty {
         }
     }
 
-    End {
+    end {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -401,6 +401,7 @@ function New-PodeOAMultiTypeProperty {
         }
     }
 }
+
 <#
 .SYNOPSIS
 Creates a new OpenAPI integer property.
@@ -541,7 +542,7 @@ function New-PodeOAIntProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true)]
         [hashtable[]]
         $ParamsList,
 
@@ -656,7 +657,7 @@ function New-PodeOAIntProperty {
         [int]
         $MaxItems
     )
-    Begin {
+    begin {
         $param = New-PodeOAPropertyInternal -type 'integer' -Params $PSBoundParameters
 
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
@@ -667,7 +668,7 @@ function New-PodeOAIntProperty {
         }
     }
 
-    End {
+    end {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -800,7 +801,7 @@ New-PodeOANumberProperty -Name 'gravity' -Default 9.8
 function New-PodeOANumberProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -915,7 +916,7 @@ function New-PodeOANumberProperty {
         [int]
         $MaxItems
     )
-    Begin {
+    begin {
         $param = New-PodeOAPropertyInternal -type 'number' -Params $PSBoundParameters
 
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
@@ -926,7 +927,7 @@ function New-PodeOANumberProperty {
         }
     }
 
-    End {
+    end {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -1055,7 +1056,7 @@ New-PodeOAStringProperty -Name 'password' -Format Password
 function New-PodeOAStringProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1168,7 +1169,7 @@ function New-PodeOAStringProperty {
         [int]
         $MaxItems
     )
-    Begin {
+    begin {
         if (![string]::IsNullOrWhiteSpace($CustomFormat)) {
             $_format = $CustomFormat
         }
@@ -1189,7 +1190,7 @@ function New-PodeOAStringProperty {
         }
     }
 
-    End {
+    end {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -1301,7 +1302,7 @@ function New-PodeOABoolProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true)]
         [hashtable[]]
         $ParamsList,
 
@@ -1391,7 +1392,7 @@ function New-PodeOABoolProperty {
         [int]
         $MaxItems
     )
-    Begin {
+    begin {
         $param = New-PodeOAPropertyInternal -type 'boolean' -Params $PSBoundParameters
 
         if ($Default) {
@@ -1412,7 +1413,7 @@ function New-PodeOABoolProperty {
         }
     }
 
-    End {
+    end {
         if ($collectedInput) {
             return $collectedInput + $param
         }
@@ -1547,7 +1548,7 @@ function New-PodeOAObjectProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow = $true , Position = 0 )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1645,7 +1646,7 @@ function New-PodeOAObjectProperty {
         [hashtable]
         $DiscriminatorMapping
     )
-    Begin {
+    begin {
         $param = New-PodeOAPropertyInternal -type 'object' -Params $PSBoundParameters
         if ($NoProperties) {
             if ($Properties -or $MinProperties -or $MaxProperties) {
@@ -1689,7 +1690,7 @@ function New-PodeOAObjectProperty {
         }
     }
 
-    End {
+    end {
         if ($PropertiesFromPipeline) {
             return $param
         }
@@ -1754,7 +1755,7 @@ function Merge-PodeOAProperty {
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1773,7 +1774,7 @@ function Merge-PodeOAProperty {
         [hashtable]
         $DiscriminatorMapping
     )
-    Begin {
+    begin {
 
         $param = [ordered]@{}
         switch ($type.ToLower()) {
@@ -1827,7 +1828,7 @@ function Merge-PodeOAProperty {
         }
     }
 
-    End {
+    end {
         return $param
     }
 }
@@ -2008,7 +2009,7 @@ function New-PodeOAComponentSchemaProperty {
         [int]
         $MaxItems
     )
-    Begin {
+    begin {
         $param = New-PodeOAPropertyInternal -type 'schema' -Params $PSBoundParameters
         if (! $param.Name) {
             $param.Name = $Reference
@@ -2021,7 +2022,7 @@ function New-PodeOAComponentSchemaProperty {
             $collectedInput.AddRange($ParamsList)
         }
     }
-    End {
+    end {
         if ($collectedInput) {
             return $collectedInput + $param
         }

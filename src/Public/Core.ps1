@@ -130,15 +130,15 @@ function Start-PodeServer {
         [switch]
         $EnableBreakpoints
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -651,16 +651,16 @@ function Show-PodeGui {
         [switch]
         $HideFromTaskbar
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
 
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }

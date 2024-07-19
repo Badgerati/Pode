@@ -1,6 +1,6 @@
 function Initialize-PodeSecretVault {
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig,
 
@@ -8,14 +8,14 @@ function Initialize-PodeSecretVault {
         [scriptblock]
         $ScriptBlock
     )
-    Process {
+    process {
         $null = Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Splat -Arguments @($VaultConfig.Parameters)
     }
 }
 
 function Register-PodeSecretManagementVault {
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig,
 
@@ -27,15 +27,15 @@ function Register-PodeSecretManagementVault {
         [string]
         $ModuleName
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -132,7 +132,7 @@ function Register-PodeSecretManagementVault {
 
 function Register-PodeSecretCustomVault {
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig,
 
@@ -156,7 +156,7 @@ function Register-PodeSecretCustomVault {
         [scriptblock]
         $UnregisterScriptBlock
     )
-    Process {
+    process {
         # unlock secret with no script?
         if ($VaultConfig.Unlock.Enabled -and (Test-PodeIsEmpty $UnlockScriptBlock)) {
             # Unlock secret supplied for custom Secret Vault type, but not Unlock ScriptBlock supplied
@@ -176,12 +176,12 @@ function Register-PodeSecretCustomVault {
 
 function Unlock-PodeSecretManagementVault {
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig
     )
 
-    Process {
+    process {
         # do we need to unlock the vault?
         if (!$VaultConfig.Unlock.Enabled) {
             return $null
@@ -201,11 +201,11 @@ function Unlock-PodeSecretManagementVault {
 
 function Unlock-PodeSecretCustomVault {
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $VaultConfig
     )
-    Process {
+    process {
         # do we need to unlock the vault?
         if (!$VaultConfig.Unlock.Enabled) {
             return
@@ -242,7 +242,7 @@ function Unregister-PodeSecretManagementVault {
         [hashtable]
         $VaultConfig
     )
-    Process {
+    process {
         # do we need to unregister the vault?
         if ($VaultConfig.AutoImported) {
             return
@@ -259,7 +259,7 @@ function Unregister-PodeSecretCustomVault {
         [hashtable]
         $VaultConfig
     )
-    Process {
+    process {
         # do we need to unregister the vault?
         if ($VaultConfig.AutoImported) {
             return

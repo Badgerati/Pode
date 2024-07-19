@@ -129,7 +129,7 @@ function Add-PodeOAComponentSchema {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [Alias('Schema')]
         [hashtable]
         $Component,
@@ -140,15 +140,15 @@ function Add-PodeOAComponentSchema {
         [string[]]
         $DefinitionTag
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -230,22 +230,22 @@ function Add-PodeOAComponentHeader {
         [string]
         $Description,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Schema,
 
         [string[]]
         $DefinitionTag
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -314,7 +314,7 @@ function Add-PodeOAComponentRequestBody {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [Alias('ContentSchemas')]
         [hashtable]
         $Content,
@@ -330,15 +330,15 @@ function Add-PodeOAComponentRequestBody {
         [string[]]
         $DefinitionTag
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -399,22 +399,22 @@ function Add-PodeOAComponentParameter {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Parameter,
 
         [string[]]
         $DefinitionTag
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }

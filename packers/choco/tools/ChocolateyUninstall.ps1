@@ -3,7 +3,7 @@ function Remove-PodeModule($path)
     $path = Join-Path $path 'Pode'
     if (Test-Path $path)
     {
-        Write-PodeHost "Deleting module directory: $($path)"
+        Write-Output "Deleting module directory: $($path)"
         Remove-Item -Path $path -Recurse -Force | Out-Null
         if (!$?) {
             throw "Failed to delete: $path"

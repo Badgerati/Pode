@@ -1943,7 +1943,7 @@ ConvertTo-PodeRoute -Commands @('Invoke-Pester') -Module Pester
 function ConvertTo-PodeRoute {
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0 )]
         [string[]]
         $Commands,
 
@@ -1998,7 +1998,7 @@ function ConvertTo-PodeRoute {
         [switch]
         $NoOpenApi
     )
-    Begin {
+    begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -2008,7 +2008,7 @@ function ConvertTo-PodeRoute {
         $pipelineValue += $_
     }
 
-    End {
+    end {
         # Set InputObject to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Commands = $pipelineValue

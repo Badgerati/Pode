@@ -143,7 +143,7 @@ Invoke-PodeTask -Name 'Example1' | Wait-PodeTask -Timeout 3
 function Invoke-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -158,7 +158,7 @@ function Invoke-PodeTask {
         [switch]
         $Wait
     )
-    Process {
+    process {
         # ensure the task exists
         if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
             # Task does not exist
@@ -194,11 +194,11 @@ Remove-PodeTask -Name 'Example1'
 function Remove-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name
     )
-    Process {
+    process {
         $null = $PodeContext.Tasks.Items.Remove($Name)
     }
 }
@@ -242,7 +242,7 @@ Edit-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeNewLogic }
 function Edit-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -254,7 +254,7 @@ function Edit-PodeTask {
         [hashtable]
         $ArgumentList
     )
-    Process {
+    process {
         # ensure the task exists
         if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
             # Task does not exist
@@ -363,11 +363,11 @@ Invoke-PodeTask -Name 'Example1' | Close-PodeTask
 function Close-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Task
     )
-    Process {
+    process {
         Close-PodeTaskInternal -Result $Task
     }
 }
@@ -389,11 +389,11 @@ function Test-PodeTaskCompleted {
     [CmdletBinding()]
     [OutputType([bool])]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Task
     )
-    Process {
+    process {
         return [bool]$Task.Runspace.Handler.IsCompleted
     }
 }
@@ -421,22 +421,22 @@ function Wait-PodeTask {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         $Task,
 
         [Parameter()]
         [int]
         $Timeout = -1
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }

@@ -359,15 +359,15 @@ function Add-PodeBodyParser {
         [scriptblock]
         $ScriptBlock
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -409,7 +409,7 @@ function Remove-PodeBodyParser {
         $ContentType
     )
 
-    Process {
+    process {
         # if there's no parser for the type, return
         if (!$PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
             return
@@ -461,7 +461,7 @@ function Add-PodeMiddleware {
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Input', ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ParameterSetName = 'Input')]
         [hashtable]
         $InputObject,
 
@@ -473,15 +473,15 @@ function Add-PodeMiddleware {
         [object[]]
         $ArgumentList
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -546,7 +546,7 @@ function New-PodeMiddleware {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -558,15 +558,15 @@ function New-PodeMiddleware {
         [object[]]
         $ArgumentList
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }

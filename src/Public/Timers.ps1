@@ -155,7 +155,7 @@ Invoke-PodeTimer -Name 'timer-name'
 function Invoke-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -163,7 +163,7 @@ function Invoke-PodeTimer {
         [object[]]
         $ArgumentList = $null
     )
-    Process {
+    process {
         # ensure the timer exists
         if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
             # Timer 'Name' does not exist
@@ -191,11 +191,11 @@ Remove-PodeTimer -Name 'SaveState'
 function Remove-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name
     )
-    Process {
+    process {
         $null = $PodeContext.Timers.Items.Remove($Name)
     }
 }
@@ -242,7 +242,7 @@ Edit-PodeTimer -Name 'Hello' -Interval 10
 function Edit-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -258,10 +258,10 @@ function Edit-PodeTimer {
         [object[]]
         $ArgumentList
     )
-    Process {
+    process {
         # ensure the timer exists
         if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-            # Timer 'Name' does not exist 
+            # Timer 'Name' does not exist
             throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
         }
 

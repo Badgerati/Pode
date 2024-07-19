@@ -1,32 +1,32 @@
 <#
 .SYNOPSIS
-Converts content into an OpenAPI schema object format.
+    Converts content into an OpenAPI schema object format.
 
 .DESCRIPTION
-The ConvertTo-PodeOAObjectSchema function takes a hashtable representing content and converts it into a format suitable for OpenAPI schema objects.
-It validates the content types, processes array structures, and converts each property or reference into the appropriate OpenAPI schema format.
-The function is designed to handle complex content structures for OpenAPI documentation within the Pode framework.
+    The ConvertTo-PodeOAObjectSchema function takes a hashtable representing content and converts it into a format suitable for OpenAPI schema objects.
+    It validates the content types, processes array structures, and converts each property or reference into the appropriate OpenAPI schema format.
+    The function is designed to handle complex content structures for OpenAPI documentation within the Pode framework.
 
 .PARAMETER Content
-A hashtable representing the content to be converted into an OpenAPI schema object. The content can include various types and structures.
+    A hashtable representing the content to be converted into an OpenAPI schema object. The content can include various types and structures.
 
 .PARAMETER Properties
-A switch to indicate if the content represents properties of an object schema.
+    A switch to indicate if the content represents properties of an object schema.
 
 .PARAMETER DefinitionTag
-A string representing the definition tag to be used in the conversion process. This tag is essential for correctly formatting the content according to OpenAPI specifications.
+    A string representing the definition tag to be used in the conversion process. This tag is essential for correctly formatting the content according to OpenAPI specifications.
 
 .EXAMPLE
-$schemaObject = ConvertTo-PodeOAObjectSchema -Content $myContent -DefinitionTag 'myTag'
+    $schemaObject = ConvertTo-PodeOAObjectSchema -Content $myContent -DefinitionTag 'myTag'
 
-Converts a hashtable of content into an OpenAPI schema object using the definition tag 'myTag'.
+    Converts a hashtable of content into an OpenAPI schema object using the definition tag 'myTag'.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function ConvertTo-PodeOAObjectSchema {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter( Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Content,
 
@@ -39,16 +39,16 @@ function ConvertTo-PodeOAObjectSchema {
         $DefinitionTag
 
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
 
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -251,26 +251,26 @@ function Test-PodeOAComponentSchemaJson {
 
 <#
 .SYNOPSIS
-Tests if a given name exists in the external path keys of OpenAPI definitions for specified definition tags.
+    Tests if a given name exists in the external path keys of OpenAPI definitions for specified definition tags.
 
 .DESCRIPTION
-The Test-PodeOAComponentExternalPath function iterates over a list of definition tags and checks if a given name
-is present in the external path keys of OpenAPI definitions within the Pode server context. This function is typically
-used to validate if a specific component name is already defined in the external paths of the OpenAPI documentation.
+    The Test-PodeOAComponentExternalPath function iterates over a list of definition tags and checks if a given name
+    is present in the external path keys of OpenAPI definitions within the Pode server context. This function is typically
+    used to validate if a specific component name is already defined in the external paths of the OpenAPI documentation.
 
 .PARAMETER Name
-The name of the external path component to be checked within the OpenAPI definitions.
+    The name of the external path component to be checked within the OpenAPI definitions.
 
 .PARAMETER DefinitionTag
-An array of definition tags against which the existence of the name will be checked in the OpenAPI definitions.
+    An array of definition tags against which the existence of the name will be checked in the OpenAPI definitions.
 
 .EXAMPLE
-$exists = Test-PodeOAComponentExternalPath -Name 'MyComponentName' -DefinitionTag @('tag1', 'tag2')
+    $exists = Test-PodeOAComponentExternalPath -Name 'MyComponentName' -DefinitionTag @('tag1', 'tag2')
 
-Checks if 'MyComponentName' exists in the external path keys of OpenAPI definitions for 'tag1' and 'tag2'.
+    Checks if 'MyComponentName' exists in the external path keys of OpenAPI definitions for 'tag1' and 'tag2'.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeOAComponentExternalPath {
     param(
@@ -299,27 +299,27 @@ function Test-PodeOAComponentExternalPath {
 
 <#
 .SYNOPSIS
-Converts a property into an OpenAPI 'Of' property structure based on a given definition tag.
+    Converts a property into an OpenAPI 'Of' property structure based on a given definition tag.
 
 .DESCRIPTION
-The ConvertTo-PodeOAOfProperty function is used to convert a given property into one of the OpenAPI 'Of' properties:
-allOf, oneOf, or anyOf. These structures are used in OpenAPI documentation to define complex types. The function
-constructs the appropriate structure based on the type of the property and the definition tag provided.
+    The ConvertTo-PodeOAOfProperty function is used to convert a given property into one of the OpenAPI 'Of' properties:
+    allOf, oneOf, or anyOf. These structures are used in OpenAPI documentation to define complex types. The function
+    constructs the appropriate structure based on the type of the property and the definition tag provided.
 
 .PARAMETER Property
-A hashtable representing the property to be converted. It should contain the type (allOf, oneOf, or anyOf) and
-potentially a list of schemas.
+    A hashtable representing the property to be converted. It should contain the type (allOf, oneOf, or anyOf) and
+    potentially a list of schemas.
 
 .PARAMETER DefinitionTag
-A mandatory string parameter specifying the definition tag in OpenAPI documentation, used for validating components.
+    A mandatory string parameter specifying the definition tag in OpenAPI documentation, used for validating components.
 
 .EXAMPLE
-$ofProperty = ConvertTo-PodeOAOfProperty -Property $myProperty -DefinitionTag 'myTag'
+    $ofProperty = ConvertTo-PodeOAOfProperty -Property $myProperty -DefinitionTag 'myTag'
 
-Converts a given property into an OpenAPI 'Of' structure using the specified definition tag.
+    Converts a given property into an OpenAPI 'Of' structure using the specified definition tag.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function ConvertTo-PodeOAOfProperty {
     param (
@@ -393,7 +393,7 @@ function ConvertTo-PodeOAOfProperty {
 #>
 function ConvertTo-PodeOASchemaProperty {
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Property,
 
@@ -404,16 +404,16 @@ function ConvertTo-PodeOASchemaProperty {
         [string]
         $DefinitionTag
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
 
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -644,13 +644,13 @@ function ConvertTo-PodeOASchemaProperty {
                 $schema['minProperties'] = $Property.minProperties
             }
 
-        if ($Property.maxProperties) {
-            $schema['maxProperties'] = $Property.maxProperties
-        }
-        #Fix an issue when additionalProperties has an assigned value of $false
-        if ($Property.ContainsKey('additionalProperties')) {
-            $schema['additionalProperties'] = $Property.additionalProperties
-        }
+            if ($Property.maxProperties) {
+                $schema['maxProperties'] = $Property.maxProperties
+            }
+            #Fix an issue when additionalProperties has an assigned value of $false
+            if ($Property.ContainsKey('additionalProperties')) {
+                $schema['additionalProperties'] = $Property.additionalProperties
+            }
 
             if ($Property.discriminator) {
                 $schema['discriminator'] = $Property.discriminator
@@ -1217,24 +1217,24 @@ function ConvertTo-PodeOAPropertyFromCmdletParameter {
 
 <#
 .SYNOPSIS
-Creates a base OpenAPI object structure.
+    Creates a base OpenAPI object structure.
 
 .DESCRIPTION
-The Get-PodeOABaseObject function generates a foundational structure for an OpenAPI object.
-This structure includes empty ordered dictionaries for info, paths, webhooks, components, and other OpenAPI elements.
-It is used as a base template for building OpenAPI documentation in the Pode framework.
+    The Get-PodeOABaseObject function generates a foundational structure for an OpenAPI object.
+    This structure includes empty ordered dictionaries for info, paths, webhooks, components, and other OpenAPI elements.
+    It is used as a base template for building OpenAPI documentation in the Pode framework.
 
 .OUTPUTS
-Hashtable
-Returns a hashtable representing the base structure of an OpenAPI object.
+    Hashtable
+    Returns a hashtable representing the base structure of an OpenAPI object.
 
 .EXAMPLE
-$baseObject = Get-PodeOABaseObject
+    $baseObject = Get-PodeOABaseObject
 
-This example creates a base OpenAPI object structure.
+    This example creates a base OpenAPI object structure.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeOABaseObject {
     # Returns a base template for an OpenAPI object
@@ -1375,7 +1375,7 @@ function Set-PodeOAAuth {
         [switch]
         $AllowAnon
     )
-    Begin {
+    begin {
         # Validate the existence of specified authentication methods
         foreach ($n in @($Name)) {
             if (!(Test-PodeAuthExists -Name $n)) {
@@ -1518,7 +1518,7 @@ function Resolve-PodeOAReference {
         $DefinitionTag
     )
 
-    Begin {
+    begin {
         # Initialize schema storage and a list to track keys that need resolution
         $Schemas = $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaJson
         $Keys = @()
@@ -1611,7 +1611,7 @@ function Resolve-PodeOAReference {
         }
     }
 
-    End {
+    end {
         # Return the fully resolved component schema
         return $ComponentSchema
     }
@@ -1619,30 +1619,30 @@ function Resolve-PodeOAReference {
 
 <#
 .SYNOPSIS
-Creates a new OpenAPI property object based on provided parameters.
+    Creates a new OpenAPI property object based on provided parameters.
 
 .DESCRIPTION
-The New-PodeOAPropertyInternal function constructs an OpenAPI property object using parameters like type, name,
-description, and various other attributes. It is used internally for building OpenAPI documentation elements in the Pode framework.
+    The New-PodeOAPropertyInternal function constructs an OpenAPI property object using parameters like type, name,
+    description, and various other attributes. It is used internally for building OpenAPI documentation elements in the Pode framework.
 
 .PARAMETER Type
-The type of the property. This parameter is optional if the type is specified in the Params hashtable.
+    The type of the property. This parameter is optional if the type is specified in the Params hashtable.
 
 .PARAMETER Params
-A hashtable containing various attributes of the property such as name, description, format, and constraints like
-required, readOnly, writeOnly, etc.
+    A hashtable containing various attributes of the property such as name, description, format, and constraints like
+    required, readOnly, writeOnly, etc.
 
 .OUTPUTS
-System.Collections.Specialized.OrderedDictionary
-An ordered dictionary representing the constructed OpenAPI property object.
+    System.Collections.Specialized.OrderedDictionary
+    An ordered dictionary representing the constructed OpenAPI property object.
 
 .EXAMPLE
-$property = New-PodeOAPropertyInternal -Type 'string' -Params $myParams
+    $property = New-PodeOAPropertyInternal -Type 'string' -Params $myParams
 
-Demonstrates how to create an OpenAPI property object of type 'string' using the specified parameters.
+    Demonstrates how to create an OpenAPI property object of type 'string' using the specified parameters.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function New-PodeOAPropertyInternal {
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
@@ -1766,23 +1766,23 @@ function New-PodeOAPropertyInternal {
 
 <#
 .SYNOPSIS
-Converts header properties to a format compliant with OpenAPI specifications.
+    Converts header properties to a format compliant with OpenAPI specifications.
 
 .DESCRIPTION
-The ConvertTo-PodeOAHeaderProperty function is designed to take an array of hashtables representing header properties and
-convert them into a structure suitable for OpenAPI documentation. It ensures that each header property includes a name and
-schema definition and can handle additional attributes like description.
+    The ConvertTo-PodeOAHeaderProperty function is designed to take an array of hashtables representing header properties and
+    convert them into a structure suitable for OpenAPI documentation. It ensures that each header property includes a name and
+    schema definition and can handle additional attributes like description.
 
 .PARAMETER Headers
-An array of hashtables, where each hashtable represents a header property with attributes like name, type, description, etc.
+    An array of hashtables, where each hashtable represents a header property with attributes like name, type, description, etc.
 
 .EXAMPLE
-$headerProperties = ConvertTo-PodeOAHeaderProperty -Headers $myHeaders
+    $headerProperties = ConvertTo-PodeOAHeaderProperty -Headers $myHeaders
 
-This example demonstrates how to convert an array of header properties into a format suitable for OpenAPI documentation.
+    This example demonstrates how to convert an array of header properties into a format suitable for OpenAPI documentation.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function ConvertTo-PodeOAHeaderProperty {
     param (
@@ -1791,7 +1791,7 @@ function ConvertTo-PodeOAHeaderProperty {
         $Headers
     )
 
-    Begin {
+    begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
 
@@ -1803,7 +1803,7 @@ function ConvertTo-PodeOAHeaderProperty {
         $pipelineValue += $_
     }
 
-    End {
+    end {
         # Set Headers to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Headers = $pipelineValue
@@ -1840,27 +1840,27 @@ function ConvertTo-PodeOAHeaderProperty {
 
 <#
 .SYNOPSIS
-Creates a new OpenAPI callback component for a given definition tag.
+    Creates a new OpenAPI callback component for a given definition tag.
 
 .DESCRIPTION
-The New-PodeOAComponentCallBackInternal function constructs an OpenAPI callback component based on provided parameters.
-This function is designed for internal use within the Pode framework to define callbacks in OpenAPI documentation.
-It handles the creation of callback structures including the path, HTTP method, request bodies, and responses
-based on the given definition tag.
+    The New-PodeOAComponentCallBackInternal function constructs an OpenAPI callback component based on provided parameters.
+    This function is designed for internal use within the Pode framework to define callbacks in OpenAPI documentation.
+    It handles the creation of callback structures including the path, HTTP method, request bodies, and responses
+    based on the given definition tag.
 
 .PARAMETER Params
-A hashtable containing parameters for the callback component, such as Method, Path, RequestBody, and Responses.
+    A hashtable containing parameters for the callback component, such as Method, Path, RequestBody, and Responses.
 
 .PARAMETER DefinitionTag
-A mandatory string parameter that specifies the definition tag in OpenAPI documentation.
+    A mandatory string parameter that specifies the definition tag in OpenAPI documentation.
 
 .EXAMPLE
-$callback = New-PodeOAComponentCallBackInternal -Params $myParams -DefinitionTag 'myTag'
+    $callback = New-PodeOAComponentCallBackInternal -Params $myParams -DefinitionTag 'myTag'
 
-This example demonstrates how to create an OpenAPI callback component for 'myTag' using the provided parameters.
+    This example demonstrates how to create an OpenAPI callback component for 'myTag' using the provided parameters.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function New-PodeOAComponentCallBackInternal {
     param(
@@ -1898,33 +1898,30 @@ function New-PodeOAComponentCallBackInternal {
 
 }
 
-
-
-
 <#
 .SYNOPSIS
-Creates a new OpenAPI response object based on provided parameters and a definition tag.
+        Creates a new OpenAPI response object based on provided parameters and a definition tag.
 
-.DESCRIPTION
-The New-PodeOResponseInternal function constructs an OpenAPI response object using provided parameters.
-It sets a description for the status code, references existing components if specified,
-and builds content-type and header schemas. This function is intended for internal use within the
-Pode framework for API documentation purposes.
+    .DESCRIPTION
+        The New-PodeOResponseInternal function constructs an OpenAPI response object using provided parameters.
+        It sets a description for the status code, references existing components if specified,
+        and builds content-type and header schemas. This function is intended for internal use within the
+        Pode framework for API documentation purposes.
 
-.PARAMETER Params
-A hashtable containing parameters for building the OpenAPI response object, including description,
-status code, content, headers, links, and reference to existing components.
+    .PARAMETER Params
+        A hashtable containing parameters for building the OpenAPI response object, including description,
+        status code, content, headers, links, and reference to existing components.
 
-.PARAMETER DefinitionTag
-A mandatory string parameter that specifies the definition tag in OpenAPI documentation.
+    .PARAMETER DefinitionTag
+        A mandatory string parameter that specifies the definition tag in OpenAPI documentation.
 
-.EXAMPLE
-$response = New-PodeOResponseInternal -Params $myParams -DefinitionTag 'myTag'
+    .EXAMPLE
+        $response = New-PodeOResponseInternal -Params $myParams -DefinitionTag 'myTag'
 
-This example demonstrates how to create an OpenAPI response object for 'myTag' using the provided parameters.
+        This example demonstrates how to create an OpenAPI response object for 'myTag' using the provided parameters.
 
-.NOTES
-This is an internal function and may change in future releases of Pode.
+    .NOTES
+        This is an internal function and may change in future releases of Pode.
 #>
 function New-PodeOResponseInternal {
     param(
@@ -2010,24 +2007,24 @@ function New-PodeOResponseInternal {
 
 <#
 .SYNOPSIS
-Creates a new OpenAPI response link object.
+    Creates a new OpenAPI response link object.
 
 .DESCRIPTION
-The New-PodeOAResponseLinkInternal function generates an OpenAPI response link object from provided parameters.
-This includes setting up descriptions, operation IDs, references, parameters, and request bodies for the link.
-This function is designed for internal use within the Pode framework to facilitate the creation of response
-link objects in OpenAPI documentation.
+    The New-PodeOAResponseLinkInternal function generates an OpenAPI response link object from provided parameters.
+    This includes setting up descriptions, operation IDs, references, parameters, and request bodies for the link.
+    This function is designed for internal use within the Pode framework to facilitate the creation of response
+    link objects in OpenAPI documentation.
 
 .PARAMETER Params
-A hashtable of parameters for the OpenAPI response link.
+    A hashtable of parameters for the OpenAPI response link.
 
 .EXAMPLE
-$link = New-PodeOAResponseLinkInternal -Params $myParams
+    $link = New-PodeOAResponseLinkInternal -Params $myParams
 
-Generates a new OpenAPI response link object using the provided parameters in $myParams.
+    Generates a new OpenAPI response link object using the provided parameters in $myParams.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function New-PodeOAResponseLinkInternal {
     param(
@@ -2129,33 +2126,33 @@ function Test-PodeOADefinitionInternal {
 
 <#
 .SYNOPSIS
-Check the OpenAPI component exist (Internal Function)
+    Check the OpenAPI component exist (Internal Function)
 
 .DESCRIPTION
-Check the OpenAPI component exist (Internal Function)
+    Check the OpenAPI component exist (Internal Function)
 
 .PARAMETER Field
-The component type
+    The component type
 
 .PARAMETER Name
-The component Name
+    The component Name
 
 .PARAMETER DefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps in distinguishing between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps in distinguishing between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .PARAMETER ThrowException
-Generate an exception if the component doesn't exist
+    Generate an exception if the component doesn't exist
 
 .PARAMETER PostValidation
-Postpone the check before the server start
+    Postpone the check before the server start
 
 .EXAMPLE
-Test-PodeOAComponentInternal -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
+    Test-PodeOAComponentInternal -Field 'responses' -Name 'myresponse' -DefinitionTag 'default'
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeOAComponentInternal {
     param(

@@ -287,15 +287,15 @@ function New-PodeAuthScheme {
         [string]
         $Secret
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -605,16 +605,16 @@ function New-PodeAuthAzureADScheme {
         [switch]
         $UsePKCE
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
 
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -780,16 +780,16 @@ function Add-PodeAuth {
         [switch]
         $SuccessUseOrigin
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
 
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -1316,16 +1316,16 @@ function Add-PodeAuthWindowsAd {
         [switch]
         $KeepCredential
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
 
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -1407,6 +1407,7 @@ function Add-PodeAuthWindowsAd {
         }
     }
 }
+
 <#
 .SYNOPSIS
 Adds the inbuilt Session Authentication method for verifying an authenticated session is present on Requests.
@@ -1637,8 +1638,8 @@ function Add-PodeAuthMiddleware {
     }
 
     Get-PodeAuthMiddlewareScript |
-    New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
-    Add-PodeMiddleware -Name $Name -Route $Route
+        New-PodeMiddleware -ArgumentList @{ Name = $Authentication } |
+        Add-PodeMiddleware -Name $Name -Route $Route
 
     Set-PodeOAGlobalAuth -DefinitionTag $DefinitionTag -Name $Authentication -Route $Route
 }
@@ -1921,16 +1922,16 @@ function Add-PodeAuthUserFile {
         [switch]
         $SuccessUseOrigin
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
 
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -2096,16 +2097,16 @@ function Add-PodeAuthWindowsLocal {
         [switch]
         $SuccessUseOrigin
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
 
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -2478,16 +2479,16 @@ function ConvertFrom-PodeOIDCDiscovery {
         [switch]
         $UsePKCE
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
 
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }

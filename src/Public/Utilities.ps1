@@ -94,19 +94,19 @@ function Start-PodeStopwatch {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -252,7 +252,7 @@ Add-PodeEndware -ScriptBlock { /* logic */ }
 function Add-PodeEndware {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -260,15 +260,15 @@ function Add-PodeEndware {
         [object[]]
         $ArgumentList
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -796,21 +796,21 @@ The object to output.
 function Out-PodeHost {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [object]
         $InputObject
     )
-    Begin {
+    begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         # Add the current piped-in value to the array
         $pipelineValue += $_
     }
 
-    End {
+    end {
         if ($PodeContext.Server.Quiet) {
             return
         }
@@ -849,6 +849,9 @@ Show the object content
 .PARAMETER ShowType
 Show the Object Type
 
+.PARAMETER Label
+Show a label for the object
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
@@ -873,19 +876,23 @@ function Write-PodeHost {
 
         [Parameter( Mandatory = $false, ParameterSetName = 'object')]
         [switch]
-        $ShowType
+        $ShowType,
+
+        [Parameter( Mandatory = $false, ParameterSetName = 'object')]
+        [string]
+        $Label
     )
-    Begin {
+    begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         # Add the current piped-in value to the array
         $pipelineValue += $_
     }
 
-    End {
+    end {
         if ($PodeContext.Server.Quiet) {
             return
         }
@@ -907,6 +914,10 @@ function Write-PodeHost {
                     $Object = "`tTypeName: $type`n$Object"
                 }
             }
+            if ($Label) {
+                $Object = "`tName: $Label $Object"
+            }
+
         }
 
         if ($ForegroundColor) {
@@ -1023,21 +1034,21 @@ function Out-PodeVariable {
         [string]
         $Name,
 
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(Position = 0, ValueFromPipeline = $true)]
         [object]
         $Value
     )
-    Begin {
+    begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         # Add the current piped-in value to the array
         $pipelineValue += $_
     }
 
-    End {
+    end {
         # Set Value to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Value = $pipelineValue
@@ -1367,26 +1378,30 @@ Outputs an ordered hashtable representing the XML node structure.
 
 .NOTES
 This cmdlet is useful for transforming XML data into a structure that's easier to manipulate in PowerShell scripts.
-
-.LINK
-https://badgerati.github.io/Pode/Functions/Utility/ConvertFrom-PodeXml
-
 #>
 function ConvertFrom-PodeXml {
     [CmdletBinding()]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param
     (
-        [Parameter(Mandatory = $true, ValueFromPipeline)]
-        [System.Xml.XmlNode]$node, #we are working through the nodes
-        [string]$Prefix = '', #do we indicate an attribute with a prefix?
-        $ShowDocElement = $false, #Do we show the document element?,
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [System.Xml.XmlNode]$node,
+
+        [Parameter()]
+        [string]
+        $Prefix = '',
+
+        [Parameter()]
+        [switch]
+        $ShowDocElement,
+
+        [Parameter()]
         [switch]
         $KeepAttributes
     )
-    Process {
+    process {
         #if option set, we skip the Document element
-        if ($node.DocumentElement -and !($ShowDocElement))
+        if ($node.DocumentElement -and !($ShowDocElement.IsPresent))
         { $node = $node.DocumentElement }
         $oHash = [ordered] @{ } # start with an ordered hashtable.
         #The order of elements is always significant regardless of what they are

@@ -28,7 +28,7 @@ function Set-PodeState {
         [string]
         $Name,
 
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0)]
         [object]
         $Value,
 
@@ -37,7 +37,7 @@ function Set-PodeState {
         $Scope
     )
 
-    Begin {
+    begin {
         if ($null -eq $PodeContext.Server.State) {
             # Pode has not been initialized
             throw ($PodeLocale.podeNotInitializedExceptionMessage)
@@ -51,12 +51,12 @@ function Set-PodeState {
         $pipelineValue = @()
     }
 
-    Process {
+    process {
         # Add the current piped-in value to the array
         $pipelineValue += $_
     }
 
-    End {
+    end {
         # Set Value to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Value = $pipelineValue

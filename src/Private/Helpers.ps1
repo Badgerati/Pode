@@ -1157,7 +1157,7 @@ function Remove-PodeEmptyItemsFromArray {
         [Parameter(ValueFromPipeline = $true)]
         $Array
     )
-    Begin {
+    begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -1165,7 +1165,7 @@ function Remove-PodeEmptyItemsFromArray {
         # Add the current piped-in value to the array
         $pipelineValue += $_
     }
-    End {
+    end {
         # Set Array to the array of values
         if ($pipelineValue.Count -gt 1) {
             $Array = $pipelineValue
@@ -1184,15 +1184,15 @@ function Remove-PodeNullKeysFromHashtable {
         [hashtable]
         $Hashtable
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -1672,7 +1672,7 @@ function New-PodeRequestException {
 
 function ConvertTo-PodeResponseContent {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(Position = 0, ValueFromPipeline = $true)]
         $InputObject,
 
         [Parameter()]
@@ -1699,43 +1699,43 @@ function ConvertTo-PodeResponseContent {
             return ([string]$InputObject)
         }
 
-    # run action for the content type
-    switch ($ContentType) {
-        { $_ -match '^(.*\/)?(.*\+)?json$' } {
-            if ($InputObject -isnot [string]) {
-                if ($Depth -le 0) {
-                    return (ConvertTo-Json -InputObject $InputObject -Compress)
+        # run action for the content type
+        switch ($ContentType) {
+            { $_ -match '^(.*\/)?(.*\+)?json$' } {
+                if ($InputObject -isnot [string]) {
+                    if ($Depth -le 0) {
+                        return (ConvertTo-Json -InputObject $InputObject -Compress)
+                    }
+                    else {
+                        return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
+                    }
                 }
-                else {
-                    return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
-                }
-            }
 
                 if ([string]::IsNullOrWhiteSpace($InputObject)) {
                     return '{}'
                 }
             }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
-            if ($InputObject -isnot [string]) {
-                if ($Depth -le 0) {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
+            { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
+                if ($InputObject -isnot [string]) {
+                    if ($Depth -le 0) {
+                        return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
+                    }
+                    else {
+                        return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
+                    }
                 }
-                else {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
-                }
-            }
 
                 if ([string]::IsNullOrWhiteSpace($InputObject)) {
                     return '[]'
                 }
             }
 
-        { $_ -match '^(.*\/)?(.*\+)?xml$' } {
-            if ($InputObject -isnot [string]) {
-                $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
-                    })
+            { $_ -match '^(.*\/)?(.*\+)?xml$' } {
+                if ($InputObject -isnot [string]) {
+                    $temp = @(foreach ($item in $InputObject) {
+                            New-Object psobject -Property $item
+                        })
 
                     return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
                 }
@@ -3319,15 +3319,15 @@ function Clear-PodeHashtableInnerKey {
         [hashtable]
         $InputObject
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -3695,7 +3695,7 @@ function ConvertTo-PodeYaml {
         $Depth = 16
     )
 
-    Begin {
+    begin {
         $pipelineObject = @()
     }
 

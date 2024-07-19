@@ -105,7 +105,7 @@ function Set-PodeCache {
         [string]
         $Key,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [object]
         $InputObject,
 
@@ -118,7 +118,7 @@ function Set-PodeCache {
         $Storage = $null
     )
 
-    Begin {
+    begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -128,7 +128,7 @@ function Set-PodeCache {
         $pipelineValue += $_
     }
 
-    End {
+    end {
         # If there are multiple piped-in values, set InputObject to the array of values
         if ($pipelineValue.Count -gt 1) {
             $InputObject = $pipelineValue

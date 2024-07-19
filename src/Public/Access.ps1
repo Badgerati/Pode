@@ -172,15 +172,15 @@ function Add-PodeAccess {
         [string]
         $Match = 'One'
     )
-    Begin {
+    begin {
         $pipelineItemCount = 0
     }
 
-    Process {
+    process {
         $pipelineItemCount++
     }
 
-    End {
+    end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
@@ -316,7 +316,7 @@ function Add-PodeAccessCustom {
         $Value
     )
 
-    Begin {
+    begin {
         $routes = @()
     }
 
@@ -324,7 +324,7 @@ function Add-PodeAccessCustom {
         $routes += $Route
     }
 
-    End {
+    end {
         foreach ($r in $routes) {
             if ($r.AccessMeta.Custom.ContainsKey($Name)) {
                 throw ($PodeLocale.routeAlreadyContainsCustomAccessExceptionMessage -f $r.Method, $r.Path, $Name) #"Route '[$($r.Method)] $($r.Path)' already contains Custom Access with name '$($Name)'"
@@ -394,9 +394,7 @@ function Test-PodeAccessExists {
         [string]
         $Name
     )
-    process {
-        return $PodeContext.Server.Authorisations.Methods.ContainsKey($Name)
-    }
+    return $PodeContext.Server.Authorisations.Methods.ContainsKey($Name)
 }
 
 <#
@@ -683,8 +681,8 @@ function Add-PodeAccessMiddleware {
     }
 
     Get-PodeAccessMiddlewareScript |
-    New-PodeMiddleware -ArgumentList @{ Name = $Access } |
-    Add-PodeMiddleware -Name $Name -Route $Route
+        New-PodeMiddleware -ArgumentList @{ Name = $Access } |
+        Add-PodeMiddleware -Name $Name -Route $Route
 }
 
 <#
