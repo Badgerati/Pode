@@ -287,5 +287,5 @@
     loggingAlreadyEnabledExceptionMessage                             = "日志记录 '{0}' 已启用。"
     invalidEncodingExceptionMessage                                   = '无效的编码: {0}'
     syslogProtocolExceptionMessage                                    = 'Syslog 协议只能使用 RFC3164 或 RFC5424。'
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
+    definitionTagChangeNotAllowedExceptionMessage                      = 'Route的定义标签无法更改。'
 }

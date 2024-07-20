@@ -287,5 +287,5 @@
     loggingAlreadyEnabledExceptionMessage                             = "로그 '{0}'이(가) 이미 활성화되었습니다."
     invalidEncodingExceptionMessage                                   = '잘못된 인코딩: {0}'
     syslogProtocolExceptionMessage                                    = 'Syslog 프로토콜은 RFC3164 또는 RFC5424만 사용할 수 있습니다.'
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
+    definitionTagChangeNotAllowedExceptionMessage                      = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
 }

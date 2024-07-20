@@ -287,5 +287,5 @@
     loggingAlreadyEnabledExceptionMessage                             = "Das Logging '{0}' wurde bereits aktiviert."
     invalidEncodingExceptionMessage                                   = 'Ungültige Codierung: {0}'
     syslogProtocolExceptionMessage                                    = 'Das Syslog-Protokoll kann nur RFC3164 oder RFC5424 verwenden.'
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitionstag für eine Route kann nicht geändert werden.'
+    definitionTagChangeNotAllowedExceptionMessage                      = 'Definitionstag für eine Route kann nicht geändert werden.'
 }

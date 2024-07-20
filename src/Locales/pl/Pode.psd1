@@ -287,6 +287,6 @@
     loggingAlreadyEnabledExceptionMessage                             = "Rejestrowanie '{0}' jest już włączone."
     invalidEncodingExceptionMessage                                   = 'Nieprawidłowe kodowanie: {0}'
     syslogProtocolExceptionMessage                                    = 'Protokół Syslog może używać tylko RFC3164 lub RFC5424.'
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Tag definicji dla Route nie może zostać zmieniony.'
+    definitionTagChangeNotAllowedExceptionMessage                      = 'Tag definicji dla Route nie może zostać zmieniony.'
 }
 

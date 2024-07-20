@@ -1579,7 +1579,7 @@ function Set-PodeOARouteInfo {
         if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
             if ($r.OpenApi.IsDefTagConfigured ) {
                 # Definition Tag for a Route cannot be changed.
-                throw ($PodeLocale.DefinitionTagChangeNotAllowedExceptionMessage)
+                throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage )
             }
             else {
                 $r.OpenApi.DefinitionTag = $DefinitionTag
