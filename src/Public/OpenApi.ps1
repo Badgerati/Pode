@@ -592,7 +592,7 @@ function Add-PodeOAResponse {
         [Alias('HeaderSchemas')]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
-        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] -or $_ -is [ordered] })]
+        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] -or $_ -is [System.Collections.Specialized.OrderedDictionary] })]
         $Headers,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Schema')]
@@ -894,10 +894,6 @@ function New-PodeOARequestBody {
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    if ($Example -and $Examples) {
-        # Parameters 'Examples' and 'Example' are mutually exclusive
-        throw ($PodeLocale.parametersMutuallyExclusiveExceptionMessage -f 'Example', 'Examples')
-    }
     $result = @{}
     foreach ($tag in $DefinitionTag) {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -1314,6 +1310,12 @@ function ConvertTo-PodeOAParameter {
                 $prop['allowReserved'] = $AllowReserved.IsPresent
             }
 
+            if ($Example ) {
+                $prop.example = $Example
+            }
+            elseif ($Examples) {
+                $prop.examples = $Examples
+            }
         }
     }
     elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
@@ -1574,8 +1576,16 @@ function Set-PodeOARouteInfo {
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     foreach ($r in @($Route)) {
-
-        $r.OpenApi.DefinitionTag = $DefinitionTag
+        if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
+            if ($r.OpenApi.IsDefTagConfigured ) {
+                # Definition Tag for a Route cannot be changed.
+                throw ($PodeLocale.DefinitionTagChangeNotAllowedExceptionMessage)
+            }
+            else {
+                $r.OpenApi.DefinitionTag = $DefinitionTag
+                $r.OpenApi.IsDefTagConfigured = $true
+            }
+        }
 
         if ($Summary) {
             $r.OpenApi.Summary = $Summary

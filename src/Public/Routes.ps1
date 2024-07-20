@@ -434,14 +434,15 @@ function Add-PodeRoute {
                     Method           = $_method
                     Path             = $Path
                     OpenApi          = @{
-                        Path           = $OpenApiPath
-                        Responses      = $DefaultResponse
-                        Parameters     = $null
-                        RequestBody    = $null
-                        CallBacks      = @{}
-                        Authentication = @()
-                        Servers        = @()
-                        DefinitionTag  = $DefinitionTag
+                        Path               = $OpenApiPath
+                        Responses          = $DefaultResponse
+                        Parameters         = $null
+                        RequestBody        = $null
+                        CallBacks          = @{}
+                        Authentication     = @()
+                        Servers            = @()
+                        DefinitionTag      = $DefinitionTag
+                        IsDefTagConfigured = ($null -ne $OADefinitionTag) #Definition Tag has been configured (Not default)
                     }
                     IsStatic         = $false
                     Metrics          = @{
@@ -1713,11 +1714,16 @@ function Remove-PodeRoute {
         return
     }
 
+    # select the candidate route for deletion
+    $route = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
+            $_.Endpoint.Name -ine $EndpointName
+        })
+
     # remove the operationId from the openapi operationId list
-    if ($PodeContext.Server.Routes[$Method][$Path].OpenAPI) {
-        foreach ( $tag  in  $PodeContext.Server.Routes[$Method][$Path].OpenAPI.DefinitionTag) {
-            if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId)) {
-                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId }
+    if ($route.OpenAPI) {
+        foreach ( $tag  in  $route.OpenAPI.DefinitionTag) {
+            if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $route.OpenAPI.OperationId)) {
+                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $route.OpenAPI.OperationId }
             }
         }
     }

@@ -287,4 +287,5 @@
     loggingAlreadyEnabledExceptionMessage                             = "تم تمكين تسجيل '{0}' بالفعل."
     invalidEncodingExceptionMessage                                   = 'ترميز غير صالح: {0}'
     syslogProtocolExceptionMessage                                    = 'يمكن لبروتوكول Syslog استخدام RFC3164 أو RFC5424 فقط.'
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
 }
