@@ -329,6 +329,11 @@ function Complete-PodeAsyncScriptFinally {
         $AsyncResult['State'] = 'Completed'
     }
 
+    # Ensure Progress is set to 100 if in use
+    if ($AsyncResult.ContainsKey('Progress')) {
+        $AsyncResult['Progress'] = 100
+    }
+
     try {
         if ($AsyncResult['CallbackSettings']) {
 
@@ -662,7 +667,7 @@ function Search-PodeAsyncTask {
                 if ($result.User -and ($null -eq $User)) {
                     continue
                 }
-                if (! (Test-PodeAsyncPermission -Permission $result.Permission.Read -User $User)) {
+                if ($result.Permission -and (! (Test-PodeAsyncPermission -Permission $result.Permission.Read -User $User))) {
                     continue
                 }
             }
@@ -1276,6 +1281,11 @@ function Export-PodeAsyncInfo {
         # Include SSE setting if it exists
         if ($Async['EnableSse']) {
             $export.EnableSse = $Async['EnableSse']
+        }
+
+        # Include Progress setting if it exists
+        if ($Async.ContainsKey('Progress')) {
+            $export.Progress = [math]::Round($Async['Progress'], 2)
         }
 
         # If the task is completed, include the result or error based on the state

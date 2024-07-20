@@ -110,7 +110,7 @@ catch { throw }
 # Demostrates Lockables, Mutexes, and Semaphores
 #>
 
-Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination  {
+Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination {
 
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -DualMode
     New-PodeLoggingMethod -name 'async' -File  -Path "$ScriptPath/logs" | Enable-PodeErrorLogging
@@ -321,6 +321,44 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         }
     } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 40 -NotCancelable
 
+
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncProgressByTimer' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
+        Set-PodeAsyncProgress -DurationSeconds 60 -IntervalSeconds 1
+        for ($i = 0 ; $i -lt 60 ; $i++) {
+            Start-Sleep 1
+        }
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
+
+
+
+
+    Add-PodeRoute -PassThru -Method Get -path '/SumOfSquareRoot' -ScriptBlock {
+        $start = [int]( Get-PodeHeader -Name 'Start')
+        $end = [int]( Get-PodeHeader -Name 'End')
+        Write-PodeHost "Start=$start End=$end"
+        Set-PodeAsyncProgress -Start $start -End $End -UseDecimalProgress -MaxProgress 80
+        [double]$sum = 0.0
+        for ($i = $Start; $i -le $End; $i++) {
+            $sum += [math]::Sqrt($i )
+            Set-PodeAsyncProgress -Tick
+            #   Write-PodeHost  (Get-PodeAsyncProgress)
+        }
+        Write-PodeHost  (Get-PodeAsyncProgress)
+        Set-PodeAsyncProgress -Start $start -End $End -Steps 4
+        for ($i = $Start; $i -le $End; $i += 4) {
+            $sum += [math]::Sqrt($i )
+            Set-PodeAsyncProgress -Tick
+            #   Write-PodeHost  (Get-PodeAsyncProgress)
+        }
+
+        Write-PodeHost  (Get-PodeAsyncProgress)
+        Write-PodeHost "Result of Start=$start End=$end is $sum"
+        return $sum
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 10 -MinRunspaces 5 -PassThru | Set-PodeOARouteInfo -Summary 'Caluclate sum of square roots'  -PassThru |
+        Set-PodeOARequest -PassThru -Parameters (
+      (  New-PodeOANumberProperty -Name 'Start' -Format Double -Description 'Start' -Required | ConvertTo-PodeOAParameter -In Header),
+         (   New-PodeOANumberProperty -Name 'End' -Format Double -Description 'End' -Required | ConvertTo-PodeOAParameter -In Header)
+        ) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  @{ 'application/json' = New-PodeOANumberProperty -Name 'Result' -Format Double -Description 'Result' -Required -Object }
 
 
     Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' #-TaskIdName 'pippopppoId'
