@@ -327,7 +327,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         for ($i = 0 ; $i -lt 60 ; $i++) {
             Start-Sleep 1
         }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300 -MaxRunspaces 10
 
 
 

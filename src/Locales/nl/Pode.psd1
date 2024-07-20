@@ -292,5 +292,7 @@
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Er bestaat geen Async Route-operatie met Id {0}.'
     scriptContainsDisallowedCommandExceptionMessage                   = "Script mag het commando '{0}' niet bevatten."
     invalidQueryElementExceptionMessage                               = 'De opgegeven query is ongeldig. {0} is geen geldig element voor een query.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress kan alleen worden gebruikt binnen een Async Route Scriptblock.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'Een voortgangslimiet kan niet lager zijn dan de huidige voortgang.'
 }
 

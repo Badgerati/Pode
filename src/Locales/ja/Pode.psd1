@@ -292,4 +292,6 @@
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id {0} の非同期ルート操作は存在しません.'
     scriptContainsDisallowedCommandExceptionMessage                   = "スクリプトにコマンド '{0}' を含めることはできません。"
     invalidQueryElementExceptionMessage                               = '提供されたクエリは無効です。 {0} はクエリの有効な要素ではありません。'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgressは、非同期ルートスクリプトブロック内でのみ使用できます。'
+    progressLimitLowerThanCurrentExceptionMessage                     = '進行状況の制限は、現在の進行状況より低くすることはできません。'
 }

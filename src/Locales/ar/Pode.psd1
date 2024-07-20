@@ -292,5 +292,6 @@
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'لا توجد عملية مسار غير متزامن بالمعرف {0}.'
     scriptContainsDisallowedCommandExceptionMessage                   = "لا يُسمح للبرنامج النصي باحتواء الأمر '{0}'."
     invalidQueryElementExceptionMessage                               = 'الاستعلام المقدم غير صالح. {0} ليس عنصرًا صالحًا للاستعلام.'
-
+    setPodeAsyncProgressExceptionMessage                              = 'يمكن استخدام Set-PodeAsyncProgress فقط داخل كتلة نصية لمسار غير متزامن.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'لا يمكن أن يكون حد التقدم أقل من التقدم الحالي.'
 }

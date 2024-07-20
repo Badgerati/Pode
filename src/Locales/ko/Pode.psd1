@@ -292,4 +292,6 @@
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id {0}의 비동기 경로 작업이 존재하지 않습니다.'
     scriptContainsDisallowedCommandExceptionMessage                   = "스크립트에 '{0}' 명령을 포함할 수 없습니다."
     invalidQueryElementExceptionMessage                               = '제공된 쿼리가 잘못되었습니다. {0} 는 쿼리에 대한 유효한 요소가 아닙니다.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress는 비동기 경로 스크립트 블록 내에서만 사용할 수 있습니다.'
+    progressLimitLowerThanCurrentExceptionMessage                     = '진행 한도는 현재 진행보다 낮을 수 없습니다.'
 }

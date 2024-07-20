@@ -290,6 +290,8 @@
     InvalidQueryFormatExceptionMessage                                = 'Die angegebene Abfrage hat ein ungültiges Format.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} existiert nicht.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Keine Async-Route-Operation mit der Id {0} existiert.'
-    scriptContainsDisallowedCommandExceptionMessage = "Das Skript darf den Befehl '{0}' nicht enthalten."
-    invalidQueryElementExceptionMessage = "Die bereitgestellte Abfrage ist ungültig. {0} ist kein gültiges Element für eine Abfrage."
-    }
+    scriptContainsDisallowedCommandExceptionMessage                   = "Das Skript darf den Befehl '{0}' nicht enthalten."
+    invalidQueryElementExceptionMessage                               = 'Die bereitgestellte Abfrage ist ungültig. {0} ist kein gültiges Element für eine Abfrage.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress kann nur innerhalb eines Async-Route-Skriptblocks verwendet werden.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'Ein Fortschrittslimit darf nicht niedriger als der aktuelle Fortschritt sein.'
+}

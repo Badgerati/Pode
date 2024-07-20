@@ -431,6 +431,13 @@ function Complete-PodeAsyncScriptFinally {
             $AsyncResult['SeeEventInfoState'] = 'Failed'
         }
     }
+
+    # Ensure Progress is set to 100 if in use
+    #     if ($AsyncResult.ContainsKey('Progress')){ #-and ($AsyncResult['Progress'] -ne 100)) {
+    #     Start-Sleep -Milliseconds 1000
+    #   write-podehost "fix the progress  $($AsyncResult['Progress']) = 100"
+    #    $AsyncResult['Progress'] = 100
+    #   }
 }
 
 
@@ -677,7 +684,7 @@ function Search-PodeAsyncTask {
             # Iterate through each query condition
             foreach ($key in $Query.Keys) {
                 # Check the variable name
-                if (! (('ID', 'Name', 'Runspace', 'Output', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancelable', 'EnableSse', 'SseGroup', 'Timeout', 'User', 'Url', 'Method') -contains $key)) {
+                if (! (('ID', 'Name', 'Runspace', 'Output', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancelable', 'EnableSse', 'SseGroup', 'Timeout', 'User', 'Url', 'Method', 'Progress') -contains $key)) {
                     # The query provided is invalid.{0} is not a valid element for a query.
                     throw ($PodeLocale.invalidQueryElementExceptionMessage -f $key)
                 }

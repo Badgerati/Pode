@@ -292,5 +292,7 @@
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'No existe ninguna operación de ruta asíncrona con Id {0}.'
     scriptContainsDisallowedCommandExceptionMessage                   = "El script no puede contener el comando '{0}'."
     invalidQueryElementExceptionMessage                               = 'La consulta proporcionada no es válida. {0} no es un elemento válido para una consulta.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress solo se puede usar dentro de un Scriptblock de Ruta Asíncrona.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'Un límite de progreso no puede ser inferior al progreso actual.'
 }
 

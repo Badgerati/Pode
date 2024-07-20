@@ -1264,48 +1264,100 @@ function Test-PodeAsyncRouteOperation {
 }
 
 
+<#
+.SYNOPSIS
+    Manages the progress of an asynchronous task within Pode routes.
 
+.DESCRIPTION
+    This function updates the progress of an asynchronous task in Pode. It supports different parameter sets:
+    - StartEnd: Defines progress between a start and end value.
+    - Tick: Increments the progress by a predefined tick value.
+    - TimeBased: Updates progress based on a specified duration and interval.
+    - SetValue: Allows setting the progress to a specific value.
+
+.PARAMETER Start
+    The start value for progress calculation (used in StartEnd parameter set).
+
+.PARAMETER End
+    The end value for progress calculation (used in StartEnd parameter set).
+
+.PARAMETER Steps
+    The number of steps between the start and end values (used in StartEnd parameter set).
+
+.PARAMETER MaxProgress
+    The maximum progress value (default is 100).
+
+.PARAMETER Tick
+    A switch to increment the progress by the predefined tick value.
+
+.PARAMETER UseDecimalProgress
+    A switch to use decimal values for progress.
+
+.PARAMETER IntervalSeconds
+    The interval in seconds for time-based progress updates (default is 5 seconds).
+
+.PARAMETER DurationSeconds
+    The total duration in seconds for time-based progress updates.
+
+.PARAMETER Value
+    The value to set the progress to (used in SetValue parameter set).
+
+.EXAMPLE
+    Set-PodeAsyncProgress -Start 0 -End 100 -Steps 10 -MaxProgress 100
+
+.EXAMPLE
+    Set-PodeAsyncProgress -Tick
+
+.EXAMPLE
+    Set-PodeAsyncProgress -IntervalSeconds 5 -DurationSeconds 300 -MaxProgress 100
+
+.EXAMPLE
+    Set-PodeAsyncProgress -Value 50
+
+.NOTES
+    This function can only be used inside an Async Route Scriptblock in Pode.
+#>
 function Set-PodeAsyncProgress {
     [CmdletBinding(DefaultParameterSetName = 'StartEnd')]
     param (
         [Parameter(Mandatory = $true, ParameterSetName = 'StartEnd')]
-        [double]
-        $Start,
+        [double] $Start,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'StartEnd')]
-        [double]
-        $End,
+        [double] $End,
 
         [Parameter(ParameterSetName = 'StartEnd')]
         [double] $Steps = 1,
 
-        [Parameter( ParameterSetName = 'TimeBased')]
-        [Parameter( ParameterSetName = 'StartEnd')]
+        [Parameter(ParameterSetName = 'TimeBased')]
+        [Parameter(ParameterSetName = 'StartEnd')]
         [ValidateRange(1, 100)]
-        [double]
-        $MaxProgress = 100,
+        [double] $MaxProgress = 100,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Tick')]
-        [switch]
-        $Tick,
+        [switch] $Tick,
 
-        [Parameter( ParameterSetName = 'TimeBased')]
-        [Parameter( ParameterSetName = 'StartEnd')]
-        [switch]
-        $UseDecimalProgress,
+        [Parameter(ParameterSetName = 'TimeBased')]
+        [Parameter(ParameterSetName = 'StartEnd')]
+        [Parameter(ParameterSetName = 'SetValue')]
+        [switch] $UseDecimalProgress,
 
-        [Parameter( ParameterSetName = 'TimeBased')]
+        [Parameter(ParameterSetName = 'TimeBased')]
         [int] $IntervalSeconds = 5,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'TimeBased')]
-        [int] $DurationSeconds
+        [int] $DurationSeconds,
 
-
+        [Parameter(Mandatory = $true, ParameterSetName = 'SetValue')]
+        [double] $Value
     )
+
+    # Ensure this function is used within an async route
     if ($___async___id___) {
         $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
 
-        if ($PSCmdlet.ParameterSetName -ne 'Tick' ) {
+        # Initialize progress if not already set, for non-tick operations
+        if ($PSCmdlet.ParameterSetName -ne 'Tick' -and $PSCmdlet.ParameterSetName -ne 'SetValue') {
             if (!$asyncResult.ContainsKey('Progress')) {
                 if ( $UseDecimalProgress.IsPresent) {
                     $asyncResult['Progress'] = [double] 0
@@ -1316,7 +1368,9 @@ function Set-PodeAsyncProgress {
             }
 
             if ($MaxProgress -le $asyncResult['Progress']) {
-                throw ('A Progress limit cannot be lower of the current progress.')
+                \
+                # A Progress limit cannot be lower than the current progress.
+                throw $PodeLocale.progressLimitLowerThanCurrentExceptionMessage
             }
         }
 
@@ -1330,14 +1384,13 @@ function Set-PodeAsyncProgress {
                 else {
                     $asyncResult['TickToProgress'] = [Math]::Floor(($MaxProgress - $asyncResult['Progress']) / $totalTicks)
                 }
-                write-podehost "TickProgress = $( $asyncResult['TickToProgress'] )"
             }
             'Tick' {
                 # Increment progress by TickToProgress value
                 $asyncResult['Progress'] = $asyncResult['Progress'] + $asyncResult['TickToProgress']
 
                 # Ensure Progress does not exceed the specified limit
-                if ($asyncResult['Progress'] -ge $MaxProgress ) {
+                if ($asyncResult['Progress'] -ge $MaxProgress) {
                     if ($asyncResult['Progress'] -is [double]) {
                         $asyncResult['Progress'] = $MaxProgress - 0.01
                     }
@@ -1359,37 +1412,42 @@ function Set-PodeAsyncProgress {
                 # Start the scheduler
                 $timer = [System.Timers.Timer]::new()
                 $timer.Interval = $IntervalSeconds * 1000
-                #   $timer.AutoReset = $true
                 $eventName = "TimerEvent_$___async___id___"
-                Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdentifier $eventName   -MessageData @{AsyncResult = $asyncResult; MaxProgress = $MaxProgress; eventName = $eventName ; timer = $timer } -Action {
+                $null = Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdentifier $eventName -MessageData @{AsyncResult = $asyncResult; MaxProgress = $MaxProgress; EventName = $eventName; Timer = $timer } -Action {
                     $asyncResult = $Event.MessageData.AsyncResult
                     $MaxProgress = $Event.MessageData.MaxProgress
 
+                    # Increment progress by TickToProgress value
                     $asyncResult['Progress'] = $asyncResult['Progress'] + $asyncResult['TickToProgress']
 
+                    # Check if progress has reached or exceeded MaxProgress
                     if ($asyncResult['Progress'] -gt $MaxProgress) {
-
-                        $Event.MessageData.timer.Stop()
-
-                        if ($asyncResult['Progress'] -is [double]) {
-                            $asyncResult['Progress'] = $MaxProgress - 0.01
-                        }
-                        else {
-                            $asyncResult['Progress'] = $MaxProgress - 1
-                        }
-                        $Event.MessageData.timer.Dispose()
-                        Unregister-Event -SourceIdentifier $Event.MessageData.eventName
+                        $Event.MessageData.Timer.Stop()
+                        $asyncResult['Progress'] = $MaxProgress
+                        $Event.MessageData.Timer.Dispose()
+                        Unregister-Event -SourceIdentifier $Event.MessageData.EventName
                     }
                 }
                 $timer.Enabled = $true
             }
+            'SetValue' {
+                if ( $UseDecimalProgress.IsPresent -or ($Value % 1 -ne 0) ) {
+                    $asyncResult['Progress'] = $Value
+                }
+                else {
+                    $asyncResult['Progress'] = [int]$Value
+                }
+            }
         }
-
 
     }
     else {
-        throw ('Set-PodeAsyncProgress can only be used inside an Async Route Scriptblock.')
+        # Set-PodeAsyncProgress can only be used inside an Async Route Scriptblock.
+        throw $PodeLocale.setPodeAsyncProgressExceptionMessage
+
+
     }
+
 }
 
 
