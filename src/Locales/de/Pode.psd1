@@ -288,4 +288,5 @@
     NonHashtableArrayElementExceptionMessage                          = 'Array enthält ein Nicht-Hashtable-Element'
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'Eingabe ist kein Hashtable oder Array von Hashtables'
 
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitionstag für eine Route kann nicht geändert werden.'
 }

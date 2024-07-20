@@ -288,5 +288,5 @@
     NonHashtableArrayElementExceptionMessage                          = 'La matriz contiene un elemento que no es una tabla hash'
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'La entrada no es una tabla hash ni una matriz de tablas hash'
 
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'La etiqueta de definición para una Route no se puede cambiar.'
 }
-

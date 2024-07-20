@@ -288,4 +288,5 @@
     NonHashtableArrayElementExceptionMessage                          = '배열에 해시 테이블 요소가 포함되어 있지 않습니다'
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = '입력이 해시 테이블 또는 해시 테이블 배열이 아닙니다'
 
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
 }

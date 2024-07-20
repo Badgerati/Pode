@@ -288,4 +288,6 @@
     NonHashtableArrayElementExceptionMessage                          = 'Tablica zawiera element, który nie jest tabelą skrótów'
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'Dane wejściowe nie są tabelą skrótów ani tablicą tabel skrótów'
 
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Tag definicji dla Route nie może zostać zmieniony.'
 }
+

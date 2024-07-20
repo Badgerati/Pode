@@ -288,4 +288,5 @@
     NonHashtableArrayElementExceptionMessage                          = 'يحتوي المصفوفة على عنصر غير جدول تجزئة'
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'المدخلات ليست جدول تجزئة أو مصفوفة من جداول التجزئة'
 
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
 }

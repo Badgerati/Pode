@@ -288,5 +288,6 @@
     NonHashtableArrayElementExceptionMessage                          = "Le tableau contient un élément qui n'est pas une table de hachage"
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = "L'entrée n'est pas une table de hachage ou un tableau de tables de hachage"
 
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
 }
 
