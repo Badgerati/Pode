@@ -285,7 +285,7 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ongeldige Access-Control-Max-Age duur opgegeven: {0}. Moet groter zijn dan 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
-    UnsupportedSerializationTypeExceptionMessage                      = 'Niet-ondersteund of niet-herkend serialisatieformaat.'
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
+    unsupportedSerializationTypeExceptionMessage                      = 'Niet-ondersteund of niet-herkend serialisatieformaat.'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
 }
 

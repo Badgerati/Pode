@@ -1474,7 +1474,7 @@ function ConvertTo-PodeSerializedString {
                 }
                 default {
                     # Unsupported or unrecognized serialization format
-                    throw ($PodeLocale.UnsupportedSerializationTypeExceptionMessage)
+                    throw ($PodeLocale.unsupportedSerializationTypeExceptionMessage)
                 }
             }
         }
@@ -1596,7 +1596,7 @@ function ConvertFrom-PodeSerializedString {
         }
         else {
             # Unsupported or unrecognized serialization format
-            throw ($PodeLocale.UnsupportedSerializationTypeExceptionMessage)
+            throw ($PodeLocale.unsupportedSerializationTypeExceptionMessage)
         }
 
         # Convert serialized string back to hashtable based on detected style
@@ -1671,7 +1671,7 @@ function ConvertFrom-PodeSerializedString {
             }
             default {
                 # Unsupported or unrecognized serialization format
-                throw ($PodeLocale.UnsupportedSerializationTypeExceptionMessage)
+                throw ($PodeLocale.unsupportedSerializationTypeExceptionMessage)
             }
         }
     }

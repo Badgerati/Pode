@@ -284,7 +284,7 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = 'O registro de solicitações já está habilitado.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duração inválida fornecida para Access-Control-Max-Age: {0}. Deve ser maior que 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'A definição OpenAPI com o nome {0} já existe.'
-    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag não pode ser usado dentro de um 'ScriptBlock' Select-PodeOADefinition."
-    UnsupportedSerializationTypeExceptionMessage = "Formato de serialização não suportado ou não reconhecido."
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag não pode ser usado dentro de um 'ScriptBlock' Select-PodeOADefinition."
+    unsupportedSerializationTypeExceptionMessage                      = 'Formato de serialização não suportado ou não reconhecido.'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
 }

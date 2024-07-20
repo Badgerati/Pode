@@ -122,7 +122,7 @@ Describe 'ConvertFrom-PodeSerializedString' {
 
     It 'should throw an error for unsupported serialization format' {
         $serialized = 'unsupportedFormat'
-        { ConvertFrom-PodeSerializedString -SerializedString $serialized } | Should -Throw ($PodeLocale.UnsupportedSerializationTypeExceptionMessage)
+        { ConvertFrom-PodeSerializedString -SerializedString $serialized } | Should -Throw ($PodeLocale.unsupportedSerializationTypeExceptionMessage)
     }
 }
 
