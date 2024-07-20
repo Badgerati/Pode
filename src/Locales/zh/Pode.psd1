@@ -284,14 +284,15 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = '请求日志记录已启用。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '提供的 Access-Control-Max-Age 时长无效：{0}。应大于 0。'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
-    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
-    UnsupportedSerializationTypeExceptionMessage                      = '不支持的序列化类型: {0}'
-    GetRequestBodyNotAllowedExceptionMessage                          = 'GET操作不能包含请求主体。'
-    InvalidQueryFormatExceptionMessage                                = '提供的查询格式无效。'
-    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} 不存在.'
-    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id 为 {0} 的异步路由操作不存在.'
-    scriptContainsDisallowedCommandExceptionMessage                   = "脚本不允许包含命令 '{0}'。"
-    invalidQueryElementExceptionMessage                               = '提供的查询无效。 {0} 不是查询的有效元素。'
-    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress只能在异步路由脚本块中使用。'
-    progressLimitLowerThanCurrentExceptionMessage                     = '进度限制不能低于当前进度。'
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
+    UnsupportedSerializationTypeExceptionMessage                      = 'Unsupported serialization type: {0}'
+    GetRequestBodyNotAllowedExceptionMessage                          = 'GET operations cannot have a Request Body.'
+    InvalidQueryFormatExceptionMessage                                = 'The query provided has an invalid format.'
+    asyncIdDoesNotExistExceptionMessage                               = "Async {0} doesn't exist."
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'No Async Route operation exists with Id {0}.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "Script is not allowed to contain the command '{0}'."
+    invalidQueryElementExceptionMessage                               = 'The query provided is invalid. {0} is not a valid element for a query.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress can only be used inside an Async Route Scriptblock.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'A Progress limit cannot be lower than the current progress.'
 }

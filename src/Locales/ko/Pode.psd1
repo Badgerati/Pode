@@ -285,6 +285,7 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = '잘못된 Access-Control-Max-Age 기간이 제공되었습니다: {0}. 0보다 커야 합니다.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '이름이 {0}인 OpenAPI 정의가 이미 존재합니다.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag은 Select-PodeOADefinition 'ScriptBlock' 내에서 사용할 수 없습니다."
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
     UnsupportedSerializationTypeExceptionMessage                      = '지원되지 않는 직렬화 유형: {0}'
     GetRequestBodyNotAllowedExceptionMessage                          = 'GET 작업에는 요청 본문이 있을 수 없습니다.'
     InvalidQueryFormatExceptionMessage                                = '제공된 쿼리의 형식이 잘못되었습니다.'

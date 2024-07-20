@@ -433,14 +433,15 @@ function Add-PodeRoute {
                     IsAsync          = $false
                     AsyncPoolName    = "__$($_method)$($Path)_$($_endpoint.Name)_".Replace('/', '_')
                     OpenApi          = @{
-                        Path           = $OpenApiPath
-                        Responses      = $DefaultResponse
-                        Parameters     = $null
-                        RequestBody    = $null
-                        CallBacks      = @{}
-                        Authentication = @()
-                        Servers        = @()
-                        DefinitionTag  = $DefinitionTag
+                        Path               = $OpenApiPath
+                        Responses          = $DefaultResponse
+                        Parameters         = $null
+                        RequestBody        = $null
+                        CallBacks          = @{}
+                        Authentication     = @()
+                        Servers            = @()
+                        DefinitionTag      = $DefinitionTag
+                        IsDefTagConfigured = ($null -ne $OADefinitionTag) #Definition Tag has been configured (Not default)
                     }
                     IsStatic         = $false
                     Metrics          = @{
@@ -1715,6 +1716,33 @@ function Remove-PodeRoute {
             $null = $PodeContext.AsyncRoutes.TryRemove($Items, [ref]$v)
         }
     }
+
+    $route = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
+            $_.Endpoint.Name -ine $EndpointName
+        })
+
+    # remove the runspace
+    if ($route.IsAsync) {
+        $asyncPoolName = $route.AsyncPoolName
+        if ( $asyncPoolName -and $PodeContext.RunspacePools.ContainsKey($asyncPoolName)) {
+            if (!  $PodeContext.RunspacePools[$asyncPoolName].Pool.IsDisposed) {
+                $PodeContext.RunspacePools[$asyncPoolName].Pool.BeginClose($null, $null)
+                Close-PodeDisposable -Disposable ($PodeContext.RunspacePools[$asyncPoolName].Pool)
+            }
+            $v = ''
+            $null = $PodeContext.RunspacePools.TryRemove($asyncPoolName, [ref]$v)
+        }
+        if ( $PodeContext.AsyncRoutes.Items.ContainsKey($asyncPoolName)) {
+            $PodeContext.Threads.AsyncRoutes -= $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].MaxRunspaces
+            $v = ''
+            $null = $PodeContext.AsyncRoutes.TryRemove($Items, [ref]$v)
+        }
+    }
+
+    # select the candidate route for deletion
+    $route = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
+            $_.Endpoint.Name -ine $EndpointName
+        })
 
     # remove the operationId from the openapi operationId list
     if ($route.OpenAPI) {

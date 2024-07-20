@@ -294,4 +294,5 @@
   invalidQueryElementExceptionMessage                               = 'The query provided is invalid. {0} is not a valid element for a query.'
   setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress can only be used inside an Async Route Scriptblock.'
   progressLimitLowerThanCurrentExceptionMessage                     = 'A Progress limit cannot be lower than the current progress.'
+  DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
 }

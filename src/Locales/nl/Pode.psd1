@@ -294,5 +294,6 @@
     invalidQueryElementExceptionMessage                               = 'De opgegeven query is ongeldig. {0} is geen geldig element voor een query.'
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress kan alleen worden gebruikt binnen een Async Route Scriptblock.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Een voortgangslimiet kan niet lager zijn dan de huidige voortgang.'
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
 }
 
