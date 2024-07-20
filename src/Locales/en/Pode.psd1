@@ -18,7 +18,6 @@
     invalidHostnameSuppliedExceptionMessage                           = 'Invalid hostname supplied: {0}'
     authMethodAlreadyDefinedExceptionMessage                          = 'Authentication method already defined: {0}'
     csrfCookieRequiresSecretExceptionMessage                          = "When using cookies for CSRF, a Secret is required. You can either supply a Secret or set the Cookie global secret - (Set-PodeCookieSecret '<value>' -Global)"
-    nonEmptyScriptBlockRequiredForAuthMethodExceptionMessage          = 'A non-empty ScriptBlock is required for the authentication method.'
     nonEmptyScriptBlockRequiredForPageRouteExceptionMessage           = 'A non-empty ScriptBlock is required to create a Page Route.'
     noPropertiesMutuallyExclusiveExceptionMessage                     = "The parameter 'NoProperties' is mutually exclusive with 'Properties', 'MinProperties' and 'MaxProperties'"
     incompatiblePodeDllExceptionMessage                               = 'An existing incompatible Pode.DLL version {0} is loaded. Version {1} is required. Open a new PowerShell/pwsh session and retry.'
@@ -222,6 +221,7 @@
     infoVersionMandatoryMessage                                       = 'info.version is mandatory.'
     cannotUnlockNullObjectExceptionMessage                            = 'Cannot unlock an object that is null.'
     nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage          = 'A non-empty ScriptBlock is required for the Custom authentication scheme.'
+    nonEmptyScriptBlockRequiredForAuthMethodExceptionMessage          = 'A non-empty ScriptBlock is required for the authentication method.'
     validationOfOneOfSchemaNotSupportedExceptionMessage               = "Validation of a schema that includes 'oneof' is not supported."
     routeParameterCannotBeNullExceptionMessage                        = "The parameter 'Route' cannot be null."
     cacheStorageAlreadyExistsExceptionMessage                         = "Cache Storage with name '{0}' already exists."

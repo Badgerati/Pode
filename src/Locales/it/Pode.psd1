@@ -284,7 +284,7 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = 'La registrazione delle richieste è già abilitata.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durata non valida fornita per Access-Control-Max-Age: {0}. Deve essere maggiore di 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La definizione OpenAPI denominata {0} esiste già.'
-    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag non può essere utilizzato all'interno di un 'ScriptBlock' di Select-PodeOADefinition."
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag non può essere utilizzato all'interno di un 'ScriptBlock' di Select-PodeOADefinition."
     NonHashtableArrayElementExceptionMessage                          = "L'array contiene un elemento che non è una tabella hash"
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = "L'input non è una tabella hash o un array di tabelle hash"
     DefinitionTagChangeNotAllowedExceptionMessage                     = 'Il tag di definizione per una Route non può essere cambiato.'

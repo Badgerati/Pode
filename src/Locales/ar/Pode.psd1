@@ -284,9 +284,8 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = 'تم تمكين تسجيل الطلبات بالفعل.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
-    renamePodeOADefinitionTagExceptionMessage                     = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
+    renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
     NonHashtableArrayElementExceptionMessage                          = 'يحتوي المصفوفة على عنصر غير جدول تجزئة'
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'المدخلات ليست جدول تجزئة أو مصفوفة من جداول التجزئة'
-
     DefinitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
 }
