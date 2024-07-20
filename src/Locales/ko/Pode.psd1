@@ -286,4 +286,5 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '이름이 {0}인 OpenAPI 정의가 이미 존재합니다.'
     renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag은 Select-PodeOADefinition 'ScriptBlock' 내에서 사용할 수 없습니다."
     fileAlreadyPresentExceptionMessage                                = '{0}이(가) 이미 존재합니다. 덮어쓰려면 -Force를 사용하십시오.'
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
 }

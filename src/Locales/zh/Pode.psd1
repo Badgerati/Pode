@@ -286,5 +286,5 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
     renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
     fileAlreadyPresentExceptionMessage                                = '{0} 已存在。使用 -Force 覆盖它。'
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
 }
-
