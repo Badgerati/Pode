@@ -18,7 +18,7 @@
     A custom identifier for the task. If not provided, a new GUID will be generated. This parameter is optional.
 
 .OUTPUTS
-    [hashtable] - Returns a hashtable containing details about the asynchronous task, including its ID, runspace,
+    [hashtable] - Returns a hashtable containing details about the asynchronous task, including its Id, runspace,
     result, state, and any errors.
 
 .EXAMPLE
@@ -103,7 +103,7 @@ function Invoke-PodeInternalAsync {
 
         # Initialize the result hashtable
         $dctResult = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
-        $dctResult['ID'] = $Id
+        $dctResult['Id'] = $Id
         $dctResult['Name'] = $Task.Name
         $dctResult['Runspace'] = $runspace
         $dctResult['Output'] = $result
@@ -121,7 +121,7 @@ function Invoke-PodeInternalAsync {
 
         # Add user information if available
         if ($WebEvent.Auth.User) {
-            $dctResult['User'] = $WebEvent.Auth.User.ID
+            $dctResult['User'] = $WebEvent.Auth.User.Id
             $dctResult['Permission'] = Copy-PodeDeepClone $Task.Permission
         }
 
@@ -166,7 +166,7 @@ function Invoke-PodeInternalAsync {
 
 .NOTES
     - The enhanced script block manages state transitions, error logging, and optional callback invocations.
-    - It supports additional parameters for WebEvent and Async ID.
+    - It supports additional parameters for WebEvent and Async Id.
     - This is an internal function and may change in future releases of Pode.
 #>
 
@@ -538,7 +538,7 @@ function Start-PodeAsyncRoutesHousekeeper {
 
 .DESCRIPTION
     The Add-PodeAsyncComponentSchema function creates an OpenAPI component schema for Pode asynchronous tasks if it does not already exist.
-    This schema includes properties such as ID, CreationTime, StartingTime, Result, CompletedTime, State, Error, and Task.
+    This schema includes properties such as Id, CreationTime, StartingTime, Result, CompletedTime, State, Error, and Task.
 
 .PARAMETER Name
     The name of the OpenAPI component schema. Defaults to 'PodeTask'.
@@ -573,7 +573,7 @@ function Add-PodeAsyncComponentSchema {
             New-PodeOAStringProperty -Name 'Users' -Array -Example 'id0001', 'id0005', 'id0231'
 
         # Create the component schema
-        New-PodeOAStringProperty -Name 'ID' -Format Uuid -Description 'The async operation unique identifier.' -Required |
+        New-PodeOAStringProperty -Name 'Id' -Format Uuid -Description 'The async operation unique identifier.' -Required |
             New-PodeOAStringProperty -Name 'User' -Description 'The async operation owner.' |
             New-PodeOAStringProperty -Name 'CreationTime' -Format Date-Time -Description 'The async operation creation time.' -Example '2024-07-02T20:58:15.2014422Z' -Required |
             New-PodeOAStringProperty -Name 'StartingTime' -Format Date-Time -Description 'The async operation starting time.' -Example '2024-07-02T20:58:15.2014422Z' |
@@ -686,7 +686,7 @@ function Search-PodeAsyncTask {
             # Iterate through each query condition
             foreach ($key in $Query.Keys) {
                 # Check the variable name
-                if (! (('ID', 'Name', 'Runspace', 'Output', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancelable', 'EnableSse', 'SseGroup', 'Timeout', 'User', 'Url', 'Method', 'Progress') -contains $key)) {
+                if (! (('Id', 'Name', 'Runspace', 'Output', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancelable', 'EnableSse', 'SseGroup', 'Timeout', 'User', 'Url', 'Method', 'Progress') -contains $key)) {
                     # The query provided is invalid.{0} is not a valid element for a query.
                     throw ($PodeLocale.invalidQueryElementExceptionMessage -f $key)
                 }
@@ -890,7 +890,7 @@ function Convert-PodeCallBackRuntimeExpression {
 .EXAMPLE
 
     $user = @{
-        ID = 'user002'
+        Id = 'user002'
         Groups = @('group3')
         Roles = @{'taskadmin'}
     }
@@ -936,9 +936,9 @@ function Test-PodeAsyncPermission {
                     return $true
                 }
             }
-            # Special case for 'Users' key, checking if the user's ID is in the permission list
+            # Special case for 'Users' key, checking if the user's Id is in the permission list
             elseif ($key -eq 'Users') {
-                if (Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray $User.ID) {
+                if (Test-PodeArraysHaveCommonElement -ReferenceArray $Permission[$key] -DifferenceArray $User.Id) {
                     return $true
                 }
             }
@@ -957,15 +957,15 @@ function Test-PodeAsyncPermission {
 
 .DESCRIPTION
     This function returns a script block designed to handle asynchronous route operations in a Pode web server.
-    It generates an ID for the async task, invokes the internal async task, and prepares the response based on the Accept header.
-    The response includes details such as creation time, ID, state, name, and cancelable status. If the task involves a user,
+    It generates an Id for the async task, invokes the internal async task, and prepares the response based on the Accept header.
+    The response includes details such as creation time, Id, state, name, and cancelable status. If the task involves a user,
     it adds default read and write permissions for the user.
 
 .PARAMETER Timeout
     The timeout value for the asynchronous task.
 
 .PARAMETER IdGenerator
-    A script block that generates a custom ID for the asynchronous task. If not provided, a new GUID is generated.
+    A script block that generates a custom Id for the asynchronous task. If not provided, a new GUID is generated.
 
 .PARAMETER AsyncPoolName
     The name of the async pool containing the task to be invoked.
@@ -985,7 +985,7 @@ function Get-PodeAsyncSetScriptBlock {
         # Get the 'Accept' header from the request to determine the response format
         $responseMediaType = Get-PodeHeader -Name 'Accept'
 
-        # Generate an ID for the async task, using the provided IdGenerator or a new GUID
+        # Generate an Id for the async task, using the provided IdGenerator or a new GUID
         if ($IdGenerator) {
             $id = (& $IdGenerator)
         }
@@ -999,7 +999,7 @@ function Get-PodeAsyncSetScriptBlock {
         # Prepare the response
         $res = @{
             CreationTime = $async['CreationTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')  # Format creation time in ISO 8601 UTC format
-            Id           = $async['ID']                                                    # Task ID
+            Id           = $async['Id']                                                    # Task Id
             State        = $async['State']                                                 # Task state
             Name         = $async['Name']                                                  # Task name
             Cancelable   = $async['Cancelable']                                            # Task cancelable status
@@ -1099,13 +1099,13 @@ function Get-PodeAsyncGetScriptBlock {
             }
             else {
                 # If not authorized, return an error response
-                $errorMsg = @{ID = $id ; Error = 'The User is not entitle to this operation' }
+                $errorMsg = @{Id = $id ; Error = 'The User is not entitle to this operation' }
                 $statusCode = 401 #'Unauthorized'
             }
         }
         else {
             # If no async route operation is found, return a not found error response
-            $errorMsg = @{ID = $id ; Error = 'No Async Route operation Found' }
+            $errorMsg = @{Id = $id ; Error = 'No Async Route operation Found' }
             $statusCode = 404 #'Not Found'
         }
         switch ($responseMediaType) {
@@ -1146,7 +1146,7 @@ function Get-PodeAsyncStopScriptBlock {
     return [scriptblock] {
         param($In, $TaskIdName)
 
-        # Determine the source of the task ID based on the input parameter
+        # Determine the source of the task Id based on the input parameter
         switch ($In) {
             'Cookie' { $id = Get-PodeCookie -Name $TaskIdName; break }
             'Header' { $id = Get-PodeHeader -Name $TaskIdName; break }
@@ -1157,7 +1157,7 @@ function Get-PodeAsyncStopScriptBlock {
         # Get the 'Accept' header from the request to determine response format
         $responseMediaType = Get-PodeHeader -Name 'Accept'
 
-        # Check if the task ID exists in the async routes results
+        # Check if the task Id exists in the async routes results
         if ($PodeContext.AsyncRoutes.Results.ContainsKey($id)) {
             $async = $PodeContext.AsyncRoutes.Results[$id]
 
@@ -1168,7 +1168,7 @@ function Get-PodeAsyncStopScriptBlock {
 
                     if ($async['User'] -and ($null -eq $WebEvent.Auth.User)) {
                         # If the task is not cancelable, set an error message
-                        $errorMsg = @{ID = $id ; Error = 'This Async operation required authentication.' }
+                        $errorMsg = @{Id = $id ; Error = 'This Async operation required authentication.' }
                         $statusCode = 203 #'Non-Authoritative Information'
                     }
                     else {
@@ -1193,26 +1193,26 @@ function Get-PodeAsyncStopScriptBlock {
                             return
                         }
                         else {
-                            $errorMsg = @{ID = $id ; Error = 'The User is not entitle to this operation' }
+                            $errorMsg = @{Id = $id ; Error = 'The User is not entitle to this operation' }
                             $statusCode = 401 #'Unauthorized'
                         }
                     }
                 }
                 else {
                     # If the task is not cancelable, set an error message
-                    $errorMsg = @{ID = $id ; Error = "The task has the 'NonCancelable' flag." }
+                    $errorMsg = @{Id = $id ; Error = "The task has the 'NonCancelable' flag." }
                     $statusCode = 423 #'Locked
                 }
             }
             else {
                 # If the task is already completed, set an error message
-                $errorMsg = @{ID = $id ; Error = 'The Task is already completed.' }
+                $errorMsg = @{Id = $id ; Error = 'The Task is already completed.' }
                 $statusCode = 410 #'Gone'
             }
         }
         else {
             # If no task is found, set an error message
-            $errorMsg = @{ID = $id ; Error = 'No Task Found.' }
+            $errorMsg = @{Id = $id ; Error = 'No Task Found.' }
             $statusCode = 404 #'Not Found'
         }
 
@@ -1233,7 +1233,7 @@ function Get-PodeAsyncStopScriptBlock {
     Exports the detailed information of an asynchronous operation to a hashtable.
 
 .DESCRIPTION
-    The `Export-PodeAsyncInfo` function extracts and formats information from an asynchronous operation encapsulated in a [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] object. It includes details such as ID, creation time, state, user, permissions, and callback settings, among others. The function returns a hashtable with this information, suitable for logging or further processing.
+    The `Export-PodeAsyncInfo` function extracts and formats information from an asynchronous operation encapsulated in a [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] object. It includes details such as Id, creation time, state, user, permissions, and callback settings, among others. The function returns a hashtable with this information, suitable for logging or further processing.
 
 .PARAMETER Async
     A [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] containing the asynchronous operation's details. This parameter is mandatory.
@@ -1254,7 +1254,7 @@ function Export-PodeAsyncInfo {
     process {
         # Initialize a hashtable to store the exported information
         $export = @{
-            ID           = $Async['ID']
+            Id           = $Async['Id']
             Cancelable   = $Async['Cancelable']
             # Format creation time in ISO 8601 UTC format
             CreationTime = $Async['CreationTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')

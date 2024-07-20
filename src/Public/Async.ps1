@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     The `Add-PodeAsyncGetRoute` function creates a route in Pode that allows retrieving the status
-    and details of an asynchronous task. This function supports different methods for task ID
+    and details of an asynchronous task. This function supports different methods for task Id
     retrieval (Cookie, Header, Path, Query) and various response types (JSON, XML, YAML). It
     integrates with OpenAPI documentation, providing detailed route information and response schemas.
 
@@ -37,11 +37,11 @@
     If specified, the route will not be included in the OpenAPI documentation.
 
 .PARAMETER In
-    Specifies where to retrieve the task ID from. Valid values are 'Cookie', 'Header', 'Path', and
+    Specifies where to retrieve the task Id from. Valid values are 'Cookie', 'Header', 'Path', and
     'Query'. The default is 'Query'.
 
 .PARAMETER TaskIdName
-    The name of the parameter that contains the task ID. The default is 'taskId'.
+    The name of the parameter that contains the task Id. The default is 'taskId'.
 
 .PARAMETER PassThru
     If specified, the function returns the route information after processing.
@@ -151,7 +151,7 @@ function Add-PodeAsyncGetRoute {
 
     )
 
-    # Append task ID to path if the task ID is in the path
+    # Append task Id to path if the task Id is in the path
     if ($In -eq 'Path') {
         $Path = "$Path/:$TaskIdName"
     }
@@ -210,9 +210,9 @@ function Add-PodeAsyncGetRoute {
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name $TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $In) |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName) -PassThru |
-            Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
+            Add-PodeOAResponse -StatusCode 402 -Description 'Invalid Id supplied' -Content (
                 New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
-                    New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
+                    New-PodeOAStringProperty -Name 'Id' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                 )
             )
     }
@@ -230,7 +230,7 @@ function Add-PodeAsyncGetRoute {
 
 .DESCRIPTION
     The `Add-PodeAsyncStopRoute` function creates a route in Pode that allows the stopping of an
-    asynchronous task. This function supports different methods for task ID retrieval (Cookie,
+    asynchronous task. This function supports different methods for task Id retrieval (Cookie,
     Header, Path, Query) and various response types (JSON, XML, YAML). It integrates with OpenAPI
     documentation, providing detailed route information and response schemas.
 
@@ -262,11 +262,11 @@ function Add-PodeAsyncGetRoute {
     If specified, the route will not be included in the OpenAPI documentation.
 
 .PARAMETER In
-    Specifies where to retrieve the task ID from. Valid values are 'Cookie', 'Header', 'Path', and
+    Specifies where to retrieve the task Id from. Valid values are 'Cookie', 'Header', 'Path', and
     'Query'. The default is 'Query'.
 
 .PARAMETER TaskIdName
-    The name of the parameter that contains the task ID. The default is 'taskId'.
+    The name of the parameter that contains the task Id. The default is 'taskId'.
 
 .PARAMETER PassThru
     If specified, the function returns the route information after processing.
@@ -298,11 +298,11 @@ function Add-PodeAsyncGetRoute {
     [hashtable]
 
 .EXAMPLE
-    # Adding a route to stop an asynchronous task with the task ID in the query string
+    # Adding a route to stop an asynchronous task with the task Id in the query string
     Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType YAML -In Query -TaskIdName 'taskId'
 
 .EXAMPLE
-    #  Adding a route to stop an asynchronous task with the task ID in the URL path
+    #  Adding a route to stop an asynchronous task with the task Id in the URL path
     Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType JSON, YAML -In Path -TaskIdName 'taskId'
 #>
 
@@ -384,7 +384,7 @@ function Add-PodeAsyncStopRoute {
         $OADefinitionTag
     )
 
-    # Append task ID to path if the task ID is in the path
+    # Append task Id to path if the task Id is in the path
     if ($In -eq 'Path') {
         $Path = "$Path/:$TaskIdName"
     }
@@ -443,9 +443,9 @@ function Add-PodeAsyncStopRoute {
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name $TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $In) |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName) -PassThru |
-            Add-PodeOAResponse -StatusCode 402 -Description 'Invalid ID supplied' -Content (
+            Add-PodeOAResponse -StatusCode 402 -Description 'Invalid Id supplied' -Content (
                 New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
-                    New-PodeOAStringProperty -Name 'ID' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
+                    New-PodeOAStringProperty -Name 'Id' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                 )
             )
     }
@@ -498,7 +498,7 @@ function Add-PodeAsyncStopRoute {
     The name of the Pode task query request in the OpenAPI schema. Defaults to 'PodeTaskQueryRequest'.
 
 .PARAMETER TaskIdName
-    The name of the task ID parameter. Defaults to 'taskId'.
+    The name of the task Id parameter. Defaults to 'taskId'.
 
 .PARAMETER Payload
     Specifies where the payload is located. Acceptable values are 'Body', 'Header', and 'Query'. Defaults to 'Body'.
@@ -713,7 +713,7 @@ function Add-PodeAsyncQueryRoute {
                     op    = 'LIKE'
                     value = 'Get'
                 }
-                'ID'           = @{
+                'Id'           = @{
                     op    = 'EQ'
                     value = 'b143660f-ebeb-49d9-9f92-cd21f3ff559c'
                 }
@@ -771,7 +771,7 @@ function Add-PodeAsyncQueryRoute {
     The `Set-PodeAsyncRoute` function enables you to define routes in Pode that execute asynchronously,
     leveraging runspace management for non-blocking operation. This function allows you to specify
     response types (JSON, XML, YAML) and manage asynchronous task parameters such as timeout and
-    unique ID generation. It supports the use of arguments, `$using` variables, and state variables.
+    unique Id generation. It supports the use of arguments, `$using` variables, and state variables.
 
 .PARAMETER Route
     A hashtable array that contains route definitions. Each hashtable should include
@@ -787,7 +787,7 @@ function Add-PodeAsyncQueryRoute {
     -1 indicating no timeout.
 
 .PARAMETER AsyncIdGenerator
-    Specifies the function to generate unique IDs for asynchronous tasks. The default
+    Specifies the function to generate unique Ids for asynchronous tasks. The default
     is 'New-PodeGuid'.
 
 .PARAMETER OATypeName
@@ -1161,21 +1161,21 @@ function Get-PodeQueryAsyncRouteOperation {
 
 <#
 .SYNOPSIS
-    Retrieves detailed information about a specific asynchronous Pode route operation by its ID.
+    Retrieves detailed information about a specific asynchronous Pode route operation by its Id.
 
 .DESCRIPTION
-    The Get-PodeAsyncRouteOperation function fetches the details of an asynchronous Pode route operation based on the provided ID.
+    The Get-PodeAsyncRouteOperation function fetches the details of an asynchronous Pode route operation based on the provided Id.
     If the operation exists, it returns the detailed information using the Export-PodeAsyncInfo function.
     If the operation does not exist, it throws an exception with an appropriate error message.
 
 .PARAMETER Id
-    A string representing the ID (typically a UUID) of the asynchronous route operation to retrieve. This parameter is mandatory.
+    A string representing the Id (typically a UUID) of the asynchronous route operation to retrieve. This parameter is mandatory.
 
 .EXAMPLE
     $operationId = '123e4567-e89b-12d3-a456-426614174000'
     $operationDetails = Get-PodeAsyncRouteOperation -Id $operationId
 
-    This example retrieves the details of the asynchronous route operation with the ID '123e4567-e89b-12d3-a456-426614174000'.
+    This example retrieves the details of the asynchronous route operation with the Id '123e4567-e89b-12d3-a456-426614174000'.
 
 .OUTPUTS
     Returns a hashtable representing the detailed information of the specified asynchronous route operation.
@@ -1194,22 +1194,22 @@ function Get-PodeAsyncRouteOperation {
 
 <#
 .SYNOPSIS
-    Aborts a specific asynchronous Pode route operation by its ID.
+    Aborts a specific asynchronous Pode route operation by its Id.
 
 .DESCRIPTION
-    The Stop-PodeAsyncRouteOperation function stops an asynchronous Pode route operation based on the provided ID.
+    The Stop-PodeAsyncRouteOperation function stops an asynchronous Pode route operation based on the provided Id.
     It sets the operation's state to 'Aborted', records an error message, and marks the completion time.
     The function then disposes of the associated runspace pipeline and calls Close-AsyncScript to finalize the operation.
     If the operation does not exist, it throws an exception with an appropriate error message.
 
 .PARAMETER Id
-    A string representing the ID (typically a UUID) of the asynchronous route operation to abort. This parameter is mandatory.
+    A string representing the Id (typically a UUID) of the asynchronous route operation to abort. This parameter is mandatory.
 
 .EXAMPLE
     $operationId = '123e4567-e89b-12d3-a456-426614174000'
     $operationDetails = Stop-PodeAsyncRouteOperation -Id $operationId
 
-    This example aborts the asynchronous route operation with the ID '123e4567-e89b-12d3-a456-426614174000' and retrieves the updated operation details.
+    This example aborts the asynchronous route operation with the Id '123e4567-e89b-12d3-a456-426614174000' and retrieves the updated operation details.
 
 .OUTPUTS
     Returns a hashtable representing the detailed information of the aborted asynchronous route operation.
@@ -1234,20 +1234,20 @@ function Stop-PodeAsyncRouteOperation {
 
 <#
 .SYNOPSIS
-    Checks if a specific asynchronous Pode route operation exists by its ID.
+    Checks if a specific asynchronous Pode route operation exists by its Id.
 
 .DESCRIPTION
-    The Test-PodeAsyncRouteOperation function checks the Pode context to determine if an asynchronous route operation with the specified ID exists.
+    The Test-PodeAsyncRouteOperation function checks the Pode context to determine if an asynchronous route operation with the specified Id exists.
     It returns a boolean value indicating whether the operation is present in the Pode context.
 
 .PARAMETER Id
-    A string representing the ID (typically a UUID) of the asynchronous route operation to check. This parameter is mandatory.
+    A string representing the Id (typically a UUID) of the asynchronous route operation to check. This parameter is mandatory.
 
 .EXAMPLE
     $operationId = '123e4567-e89b-12d3-a456-426614174000'
     $exists = Test-PodeAsyncRouteOperation -Id $operationId
 
-    This example checks if the asynchronous route operation with the ID '123e4567-e89b-12d3-a456-426614174000' exists and returns true or false.
+    This example checks if the asynchronous route operation with the Id '123e4567-e89b-12d3-a456-426614174000' exists and returns true or false.
 
 .OUTPUTS
     Returns a boolean value:

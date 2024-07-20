@@ -72,7 +72,7 @@ $response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080
 
 $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
 
-$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri "http://localhost:8080/task?taskId=$($response_Mindy_asyncWaitForever.ID)" -Method Delete -Headers $mindyCommonHeaders
+$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri "http://localhost:8080/task?taskId=$($response_Mindy_asyncWaitForever.Id)" -Method Delete -Headers $mindyCommonHeaders
 
 .NOTES
     Author: Pode Team
@@ -146,14 +146,14 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
     $testApiKeyUsers = @{
         'M0R7Y302' = @{
-            ID     = 'M0R7Y302'
+            Id     = 'M0R7Y302'
             Name   = 'Morty'
             Type   = 'Human'
             Roles  = @('Manager')
             Groups = @('Software')
         }
         'MINDY021' = @{
-            ID     = 'MINDY021'
+            Id     = 'MINDY021'
             Name   = 'Mindy'
             Type   = 'AI'
             Roles  = @('Developer')
@@ -164,14 +164,14 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
     $testBasicUsers = @{
         'M0R7Y302' = @{
-            ID     = 'M0R7Y302'
+            Id     = 'M0R7Y302'
             Name   = 'Morty'
             Type   = 'Human'
             Roles  = @('Developer')
             Groups = @('Platform')
         }
         'MINDY021' = @{
-            ID     = 'MINDY021'
+            Id     = 'MINDY021'
             Name   = 'Mindy'
             Type   = 'AI'
             Roles  = @('Developer')
@@ -229,7 +229,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
         return @{
             User = @{
-                ID     = $apiUser.ID
+                Id     = $apiUser.Id
                 Name   = $apiUser.Name
                 Type   = $apiUser.Type
                 Roles  = @($apiUser.Roles + $basicUser.Roles) | Sort-Object -Unique
