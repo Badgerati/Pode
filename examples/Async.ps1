@@ -323,8 +323,8 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncProgressByTimer' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
-        Set-PodeAsyncProgress -DurationSeconds 60 -IntervalSeconds 1
-        for ($i = 0 ; $i -lt 60 ; $i++) {
+        Set-PodeAsyncProgress -DurationSeconds 30 -IntervalSeconds 1
+        for ($i = 0 ; $i -lt 30 ; $i++) {
             Start-Sleep 1
         }
     } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300 -MaxRunspaces 10
@@ -378,17 +378,5 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
     Add-PodeRoute  -Method 'Get' -Path '/hello' -ScriptBlock {
         Write-PodeJsonResponse -Value @{'message' = 'Hello!' } -StatusCode 200
     } -PassThru | Set-PodeOARouteInfo -Summary 'Hello from the server'
-    <#
-    Add-PodeRoute -PassThru -Method Put -Path '/asyncglobal'    -ScriptBlock {
-
-        Write-PodeHost "global:gSleepTime=$($global:gSleepTime)"
-        Write-PodeHost "global:gMessage=$($global:gMessage)"
-        for ($i = 0; $i -lt 20; $i++) {
-            Start-Sleep $global:gSleepTime
-        }
-        return @{ InnerValue = $global:gMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
-
-#>
 
 }

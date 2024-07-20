@@ -329,6 +329,14 @@ function Complete-PodeAsyncScriptFinally {
         $AsyncResult['State'] = 'Completed'
     }
 
+
+    if ($AsyncResult['Timer']) {
+        $AsyncResult['Timer'].Stop()
+        $AsyncResult['Timer'].Dispose()
+        Unregister-Event -SourceIdentifier $asyncResult['eventName']
+        $AsyncResult.Remove('Timer')
+    }
+
     # Ensure Progress is set to 100 if in use
     if ($AsyncResult.ContainsKey('Progress')) {
         $AsyncResult['Progress'] = 100
@@ -432,12 +440,6 @@ function Complete-PodeAsyncScriptFinally {
         }
     }
 
-    # Ensure Progress is set to 100 if in use
-    #     if ($AsyncResult.ContainsKey('Progress')){ #-and ($AsyncResult['Progress'] -ne 100)) {
-    #     Start-Sleep -Milliseconds 1000
-    #   write-podehost "fix the progress  $($AsyncResult['Progress']) = 100"
-    #    $AsyncResult['Progress'] = 100
-    #   }
 }
 
 
@@ -1297,16 +1299,18 @@ function Export-PodeAsyncInfo {
 
         # If the task is completed, include the result or error based on the state
         if ($Async['Runspace'].Handler.IsCompleted) {
-            switch ($Async['State'].ToLowerInvariant()) {
-                'failed' {
+            switch ($Async['State'] ) {
+                'Failed' {
                     $export.Error = $Async['Error']
                     break
                 }
-                'completed' {
-                    $export.Result = $Async['Result']
+                'Completed' {
+                    if ($Async['Result']) {
+                        $export.Result = $Async['Result']
+                    }
                     break
                 }
-                'aborted' {
+                'Aborted' {
                     $export.Error = $Async['Error']
                     break
                 }

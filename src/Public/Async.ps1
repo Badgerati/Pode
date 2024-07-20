@@ -1410,10 +1410,10 @@ function Set-PodeAsyncProgress {
                 }
 
                 # Start the scheduler
-                $timer = [System.Timers.Timer]::new()
-                $timer.Interval = $IntervalSeconds * 1000
-                $eventName = "TimerEvent_$___async___id___"
-                $null = Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdentifier $eventName -MessageData @{AsyncResult = $asyncResult; MaxProgress = $MaxProgress; EventName = $eventName; Timer = $timer } -Action {
+                $asyncResult['eventName'] = "TimerEvent_$___async___id___"
+                $asyncResult['Timer'] = [System.Timers.Timer]::new()
+                $asyncResult['Timer'].Interval = $IntervalSeconds * 1000
+                $null = Register-ObjectEvent -InputObject $asyncResult['Timer'] -EventName Elapsed -SourceIdentifier  $asyncResult['eventName'] -MessageData @{AsyncResult = $asyncResult; MaxProgress = $MaxProgress } -Action {
                     $asyncResult = $Event.MessageData.AsyncResult
                     $MaxProgress = $Event.MessageData.MaxProgress
 
@@ -1422,13 +1422,19 @@ function Set-PodeAsyncProgress {
 
                     # Check if progress has reached or exceeded MaxProgress
                     if ($asyncResult['Progress'] -gt $MaxProgress) {
-                        $Event.MessageData.Timer.Stop()
-                        $asyncResult['Progress'] = $MaxProgress
-                        $Event.MessageData.Timer.Dispose()
-                        Unregister-Event -SourceIdentifier $Event.MessageData.EventName
+                        $asyncResult['Timer'].Stop()
+                        if ($asyncResult['Progress'] -is [double]) {
+                            $asyncResult['Progress'] = $MaxProgress - 0.01
+                        }
+                        else {
+                            $asyncResult['Progress'] = $MaxProgress - 1
+                        }
+                        $asyncResult['Timer'].Dispose()
+                        Unregister-Event -SourceIdentifier $asyncResult['eventName']
+                        $AsyncResult.Remove('Timer')
                     }
                 }
-                $timer.Enabled = $true
+                $asyncResult['Timer'].Enabled = $true
             }
             'SetValue' {
                 if ( $UseDecimalProgress.IsPresent -or ($Value % 1 -ne 0) ) {
