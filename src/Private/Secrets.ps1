@@ -525,7 +525,7 @@ function Protect-PodeSecretValueType {
         $Value = [string]::Empty
     }
 
-    if ($Value -is [ordered]) {
+    if ($Value -is [System.Collections.Specialized.OrderedDictionary]) {
         $Value = [hashtable]$Value
     }
 
