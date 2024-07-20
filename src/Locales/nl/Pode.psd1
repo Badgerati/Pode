@@ -286,7 +286,6 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
     fileAlreadyPresentExceptionMessage                                = '{0} is al aanwezig. Gebruik -Force om te overschrijven.'
-
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
+    definitionTagChangeNotAllowedExceptionMessage                      = 'Definitietag voor een route kan niet worden gewijzigd.'
 }
 

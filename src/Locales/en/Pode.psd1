@@ -284,9 +284,8 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = 'Request Logging has already been enabled.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI definition named {0} already exists.'
-    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
-    fileAlreadyPresentExceptionMessage                                = '{0} already present. Use -Force to overwrite.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
+    fileAlreadyPresentExceptionMessage                                = '{0} already present. Use -Force to overwrite.'
+    definitionTagChangeNotAllowedExceptionMessage                      = 'Definition Tag for a Route cannot be changed.'
 }
 

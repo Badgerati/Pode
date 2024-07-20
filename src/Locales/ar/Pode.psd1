@@ -284,7 +284,7 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = 'تم تمكين تسجيل الطلبات بالفعل.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
-    renamePodeOADefinitionTagExceptionMessage                     = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
+    renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
     fileAlreadyPresentExceptionMessage                                = '{0} موجود بالفعل. استخدم -Force للكتابة فوقه.'
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
+    definitionTagChangeNotAllowedExceptionMessage                      = 'لا يمكن تغيير علامة التعريف لمسار.'
 }
