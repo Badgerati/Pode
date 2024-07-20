@@ -286,5 +286,6 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
     UnsupportedSerializationTypeExceptionMessage                      = 'Niet-ondersteund of niet-herkend serialisatieformaat.'
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
 }
 

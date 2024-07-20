@@ -286,4 +286,5 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
     renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
     UnsupportedSerializationTypeExceptionMessage                      = '不支持或无法识别的序列化格式。'
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
 }

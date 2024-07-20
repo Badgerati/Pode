@@ -286,4 +286,5 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
     renamePodeOADefinitionTagExceptionMessage                     = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
     UnsupportedSerializationTypeExceptionMessage                      = 'تنسيق التسلسل غير مدعوم أو غير معروف.'
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
 }

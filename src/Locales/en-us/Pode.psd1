@@ -286,4 +286,5 @@
   openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI definition named {0} already exists.'
   renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
   UnsupportedSerializationTypeExceptionMessage                      = 'Unsupported or unrecognized serialization format.'
+  DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
 }

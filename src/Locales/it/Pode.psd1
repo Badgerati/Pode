@@ -287,4 +287,5 @@
     renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag non può essere utilizzato all'interno di un 'ScriptBlock' di Select-PodeOADefinition."
     UnsupportedSerializationTypeExceptionMessage                      = 'Formato di serializzazione non supportato o non riconosciuto.'
 
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Il tag di definizione per una Route non può essere cambiato.'
 }
