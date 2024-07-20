@@ -294,5 +294,5 @@
     invalidQueryElementExceptionMessage                               = 'La query fornita non è valida. {0} non è un elemento valido per una query.'
     setPodeAsyncProgressExceptionMessage                              = "Set-PodeAsyncProgress può essere utilizzato solo all'interno di uno Scriptblock di un percorso asincrono."
     progressLimitLowerThanCurrentExceptionMessage                     = "Un limite di progresso non può essere inferiore all'attuale progresso."
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Il tag di definizione per una Route non può essere cambiato.'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Il tag di definizione per una Route non può essere cambiato.'
 }

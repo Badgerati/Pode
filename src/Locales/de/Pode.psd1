@@ -294,5 +294,5 @@
     invalidQueryElementExceptionMessage                               = 'Die bereitgestellte Abfrage ist ungültig. {0} ist kein gültiges Element für eine Abfrage.'
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress kann nur innerhalb eines Async-Route-Skriptblocks verwendet werden.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Ein Fortschrittslimit darf nicht niedriger als der aktuelle Fortschritt sein.'
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitionstag für eine Route kann nicht geändert werden.'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Definitionstag für eine Route kann nicht geändert werden.'
 }

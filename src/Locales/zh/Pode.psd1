@@ -285,7 +285,7 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = '提供的 Access-Control-Max-Age 时长无效：{0}。应大于 0。'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
     UnsupportedSerializationTypeExceptionMessage                      = 'Unsupported serialization type: {0}'
     GetRequestBodyNotAllowedExceptionMessage                          = 'GET operations cannot have a Request Body.'
     InvalidQueryFormatExceptionMessage                                = 'The query provided has an invalid format.'
