@@ -286,4 +286,6 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
     renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
 }
+

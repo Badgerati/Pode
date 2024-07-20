@@ -644,13 +644,19 @@ function ConvertTo-PodeOASchemaProperty {
                 $schema['minProperties'] = $Property.minProperties
             }
 
-            if ($Property.maxProperties) {
-                $schema['maxProperties'] = $Property.maxProperties
+        if ($Property.maxProperties) {
+            $schema['maxProperties'] = $Property.maxProperties
+        }
+        #Fix an issue when additionalProperties has an assigned value of $false
+        if ($Property.ContainsKey('additionalProperties')) {
+            if ($Property.additionalProperties) {
+                $schema['additionalProperties'] = $Property.additionalProperties | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
             }
-            #Fix an issue when additionalProperties has an assigned value of $false
-            if ($Property.ContainsKey('additionalProperties')) {
-                $schema['additionalProperties'] = $Property.additionalProperties
+            else {
+                #the value is $false
+                $schema['additionalProperties'] = $false
             }
+        }
 
             if ($Property.discriminator) {
                 $schema['discriminator'] = $Property.discriminator
@@ -1968,7 +1974,7 @@ function New-PodeOResponseInternal {
         $_headers = $null
         if ($null -ne $Params.Headers) {
             if ($Params.Headers -is [System.Object[]] -or $Params.Headers -is [string] -or $Params.Headers -is [string[]]) {
-                if ($Params.Headers -is [System.Object[]] -and $Params.Headers.Count -gt 0 -and ($Params.Headers[0] -is [hashtable] -or $Params.Headers[0] -is [ordered])) {
+                if ($Params.Headers -is [System.Object[]] -and $Params.Headers.Count -gt 0 -and ($Params.Headers[0] -is [hashtable] -or $Params.Headers[0] -is [System.Collections.Specialized.OrderedDictionary])) {
                     $_headers = ConvertTo-PodeOAHeaderProperty -Headers $Params.Headers
                 }
                 else {

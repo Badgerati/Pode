@@ -831,8 +831,8 @@ Test-PodeOAVersion -Version 3.1 -DefinitionTag 'default'
 function Test-PodeOAVersion {
     param (
         [Parameter(Mandatory = $true)]
-        [ValidateSet( 3.1 , 3.0 )]
-        [decimal]
+        [ValidateSet( '3.1' , '3.0' )]
+        [string]
         $Version,
 
         [Parameter(Mandatory = $true)]

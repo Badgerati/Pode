@@ -2193,9 +2193,11 @@ Describe 'OpenApi' {
                         '200'     = @{ description = 'OK' }
                         'default' = @{ description = 'Internal server error' }
                     }
-                    Parameters     = $null
-                    RequestBody    = $null
-                    Authentication = @()
+                    Parameters          = $null
+                    RequestBody         = $null
+                    Authentication      = @()
+                    DefinitionTag       = @('Default')
+                    IsDefTagConfigured  = $false
                 }
             }
 

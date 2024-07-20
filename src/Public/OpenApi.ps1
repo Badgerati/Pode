@@ -589,7 +589,7 @@ function Add-PodeOAResponse {
         [Alias('HeaderSchemas')]
         [AllowEmptyString()]
         [ValidateNotNullOrEmpty()]
-        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] -or $_ -is [ordered] })]
+        [ValidateScript({ $_ -is [string] -or $_ -is [string[]] -or $_ -is [hashtable] -or $_ -is [System.Collections.Specialized.OrderedDictionary] })]
         $Headers,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Schema')]
@@ -913,10 +913,6 @@ function New-PodeOARequestBody {
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    if ($Example -and $Examples) {
-        # Parameters 'Examples' and 'Example' are mutually exclusive
-        throw ($PodeLocale.parametersMutuallyExclusiveExceptionMessage -f 'Example', 'Examples')
-    }
     $result = @{}
     foreach ($tag in $DefinitionTag) {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -1345,21 +1341,27 @@ function ConvertTo-PodeOAParameter {
                     $prop['allowReserved'] = $AllowReserved.IsPresent
                 }
 
+            if ($Example ) {
+                $prop.example = $Example
+            }
+            elseif ($Examples) {
+                $prop.examples = $Examples
             }
         }
-        elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
-            # return a reference
-            Test-PodeOAComponentInternal -Field parameters -DefinitionTag $DefinitionTag -Name $Reference -PostValidation
-            $prop = [ordered]@{
-                '$ref' = "#/components/parameters/$Reference"
-            }
-            foreach ($tag in $DefinitionTag) {
-                if ($PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters.$Reference.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-                    Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Reference -Append
-                }
+    }
+    elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
+        # return a reference
+        Test-PodeOAComponentInternal -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
+        $prop = [ordered]@{
+            '$ref' = "#/components/parameters/$Reference"
+        }
+        foreach ($tag in $DefinitionTag) {
+            if ($PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters.$Reference.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Reference -Append
             }
         }
-        else {
+    }
+    else {
 
             if (!$Name ) {
                 if ($Property.name) {
@@ -1612,9 +1614,17 @@ function Set-PodeOARouteInfo {
 
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-        foreach ($r in $Route) {
-
-            $r.OpenApi.DefinitionTag = $DefinitionTag
+    foreach ($r in @($Route)) {
+        if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
+            if ($r.OpenApi.IsDefTagConfigured ) {
+                # Definition Tag for a Route cannot be changed.
+                throw ($PodeLocale.DefinitionTagChangeNotAllowedExceptionMessage)
+            }
+            else {
+                $r.OpenApi.DefinitionTag = $DefinitionTag
+                $r.OpenApi.IsDefTagConfigured = $true
+            }
+        }
 
             if ($OperationId) {
                 if ($Route.Count -gt 1) {
