@@ -2255,7 +2255,7 @@ Describe 'OpenApi' {
                         Parameters     = $null
                         RequestBody    = $null
                         Authentication = @()
-                        DefinitionTag  = 'default'
+                        DefinitionTag  = @('Default')
                     }
                 },
                 @{
@@ -2268,7 +2268,7 @@ Describe 'OpenApi' {
                         Parameters     = $null
                         RequestBody    = $null
                         Authentication = @()
-                        DefinitionTag  = 'default'
+                        DefinitionTag  = @('Default')
                     }
                 })
 
