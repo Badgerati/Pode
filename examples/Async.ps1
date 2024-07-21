@@ -373,7 +373,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
     Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
         Close-PodeServer
-    } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server'
+    } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
 
     Add-PodeRoute  -Method 'Get' -Path '/hello' -ScriptBlock {
         Write-PodeJsonResponse -Value @{'message' = 'Hello!' } -StatusCode 200

@@ -541,7 +541,7 @@ function Start-PodeAsyncRoutesHousekeeper {
     This schema includes properties such as Id, CreationTime, StartingTime, Result, CompletedTime, State, Error, and Task.
 
 .PARAMETER Name
-    The name of the OpenAPI component schema. Defaults to 'PodeTask'.
+    The name of the OpenAPI component schema. Defaults to 'AsyncTask'.
 
 .EXAMPLE
     Add-PodeAsyncComponentSchema -Name 'CustomTask'
@@ -554,7 +554,7 @@ function Start-PodeAsyncRoutesHousekeeper {
 function Add-PodeAsyncComponentSchema {
     param (
         [string]
-        $Name = 'PodeTask',
+        $Name = 'AsyncTask',
 
         [string[]]
         $DefinitionTag

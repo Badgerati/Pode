@@ -30,7 +30,7 @@
     You can specify multiple types. The default is 'application/json'.
 
 .PARAMETER OATypeName
-    The type name for OpenAPI documentation. The default is 'PodeTask'. This parameter is only used
+    The type name for OpenAPI documentation. The default is 'AsyncTask'. This parameter is only used
     if the route is included in OpenAPI documentation.
 
 .PARAMETER NoOpenAPI
@@ -104,7 +104,7 @@ function Add-PodeAsyncGetRoute {
 
         [Parameter(ParameterSetName = 'OpenAPI')]
         [string]
-        $OATypeName = 'PodeTask',
+        $OATypeName = 'AsyncTask',
 
         [Parameter(Mandatory = $true, ParameterSetName = 'NoOpenAPI')]
         [switch]
@@ -255,7 +255,7 @@ function Add-PodeAsyncGetRoute {
     You can specify multiple types. The default is 'application/json'.
 
 .PARAMETER OATypeName
-    The type name for OpenAPI documentation. The default is 'PodeTask'. This parameter is only used
+    The type name for OpenAPI documentation. The default is 'AsyncTask'. This parameter is only used
     if the route is included in OpenAPI documentation.
 
 .PARAMETER NoOpenAPI
@@ -338,7 +338,7 @@ function Add-PodeAsyncStopRoute {
 
         [Parameter(ParameterSetName = 'OpenAPI')]
         [string]
-        $OATypeName = 'PodeTask',
+        $OATypeName = 'AsyncTask',
 
         [Parameter(Mandatory = $true, ParameterSetName = 'NoOpenAPI')]
         [switch]
@@ -489,13 +489,13 @@ function Add-PodeAsyncStopRoute {
     You can specify multiple types. The default is 'application/json'.
 
 .PARAMETER OATypeName
-    The OpenAPI type name. Defaults to 'PodeTask'. This parameter is used only if OpenAPI documentation is generated.
+    The OpenAPI type name. Defaults to 'AsyncTask'. This parameter is used only if OpenAPI documentation is generated.
 
 .PARAMETER NoOpenAPI
     Switch to indicate that no OpenAPI documentation should be generated. If this switch is set, OpenAPI parameters are ignored.
 
-.PARAMETER PodeTaskQueryRequestName
-    The name of the Pode task query request in the OpenAPI schema. Defaults to 'PodeTaskQueryRequest'.
+.PARAMETER AsyncTaskQueryRequestName
+    The name of the Pode task query request in the OpenAPI schema. Defaults to 'AsyncTaskQueryRequest'.
 
 .PARAMETER TaskIdName
     The name of the task Id parameter. Defaults to 'taskId'.
@@ -574,7 +574,7 @@ function Add-PodeAsyncQueryRoute {
 
         [Parameter(ParameterSetName = 'OpenAPI')]
         [string]
-        $OATypeName = 'PodeTask',
+        $OATypeName = 'AsyncTask',
 
         [Parameter(Mandatory = $true, ParameterSetName = 'NoOpenAPI')]
         [switch]
@@ -582,7 +582,7 @@ function Add-PodeAsyncQueryRoute {
 
         [Parameter(ParameterSetName = 'OpenAPI')]
         [string]
-        $PodeTaskQueryRequestName = 'PodeTaskQueryRequest',
+        $AsyncTaskQueryRequestName = 'AsyncTaskQueryRequest',
 
         [Parameter()]
         $TaskIdName = 'taskId',
@@ -687,12 +687,12 @@ function Add-PodeAsyncQueryRoute {
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
         Add-PodeAsyncComponentSchema -Name $OATypeName -DefinitionTag $DefinitionTag
 
-        if (!(Test-PodeOAComponent -Field schemas -Name $PodeTaskQueryRequestName)) {
+        if (!(Test-PodeOAComponent -Field schemas -Name $AsyncTaskQueryRequestName)) {
             New-PodeOAObjectProperty -AdditionalProperties (
                 New-PodeOAStringProperty -Name 'op' -Enum 'GT', 'LT', 'GE', 'LE', 'EQ', 'NE', 'LIKE', 'NOTLIKE' -Required |
                     New-PodeOAStringProperty -Name 'value' -Description 'The value to compare against' -Required |
                     New-PodeOAObjectProperty
-                ) | Add-PodeOAComponentSchema -Name $PodeTaskQueryRequestName
+                ) | Add-PodeOAComponentSchema -Name $AsyncTaskQueryRequestName
             }
 
             # Define an example hashtable for the OpenAPI request
@@ -735,21 +735,21 @@ function Add-PodeAsyncQueryRoute {
         # Define examples for different media types
         $example = [ordered]@{}
         foreach ($mt in $QueryContentType) {
-            $example += New-PodeOAExample -MediaType $mt -Name $PodeTaskQueryRequestName -Value $exampleHashTable
+            $example += New-PodeOAExample -MediaType $mt -Name $AsyncTaskQueryRequestName -Value $exampleHashTable
         }
 
         # Set the OpenAPI request based on the payload location
         switch ($Payload.ToLowerInvariant()) {
             'body' {
                 $route | Set-PodeOARequest -RequestBody (
-                    New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType $QueryContentType -Content $PodeTaskQueryRequestName) -Examples $example
+                    New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType $QueryContentType -Content $AsyncTaskQueryRequestName) -Examples $example
                 )
             }
             'header' {
-                $route | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Header -Schema $PodeTaskQueryRequestName -ContentType $QueryContentType[0] -Example $example[0])
+                $route | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Header -Schema $AsyncTaskQueryRequestName -ContentType $QueryContentType[0] -Example $example[0])
             }
             'query' {
-                $route | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Query -Schema $PodeTaskQueryRequestName -ContentType $QueryContentType[0] -Example $example[0])
+                $route | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Query -Schema $AsyncTaskQueryRequestName -ContentType $QueryContentType[0] -Example $example[0])
             }
         }
     }
@@ -791,7 +791,7 @@ function Add-PodeAsyncQueryRoute {
     is 'New-PodeGuid'.
 
 .PARAMETER OATypeName
-    The type name for OpenAPI documentation. The default is 'PodeTask'. This parameter
+    The type name for OpenAPI documentation. The default is 'AsyncTask'. This parameter
     is only used if the route is included in OpenAPI documentation.
 
 .PARAMETER PassThru
@@ -927,7 +927,7 @@ function Set-PodeAsyncRoute {
 
         [Parameter(ParameterSetName = 'OpenAPI')]
         [string]
-        $OATypeName = 'PodeTask',
+        $OATypeName = 'AsyncTask',
 
         [switch]
         $PassThru,
@@ -1457,8 +1457,29 @@ function Set-PodeAsyncProgress {
 }
 
 
+<#
+.SYNOPSIS
+    Retrieves the current progress of an asynchronous route in Pode.
 
+.DESCRIPTION
+    The `Get-PodeAsyncProgress` function returns the current progress of an asynchronous route in Pode.
+    It retrieves the progress based on the asynchronous route ID (`$___async___id___`).
+    If called outside of an asynchronous route script block, an error is thrown.
 
+.EXAMPLE
+    # Example usage inside an async route scriptblock
+    route -PassThru -Method Get '/process' {
+        # Perform some work and update progress
+        Set-PodeAsyncCounter -Value 40
+        # Retrieve the current progress
+        $progress = Get-PodeAsyncProgress
+        Write-PodeHost "Current Progress: $progress"
+    } |Set-PodeAsyncRoute -ResponseContentType 'application/json'
+
+    .NOTES
+    This function should only be used inside an asynchronous route scriptblock.
+
+#>
 function Get-PodeAsyncProgress {
     if ($___async___id___) {
         return $PodeContext.AsyncRoutes.Results[$___async___id___]['Progress']
