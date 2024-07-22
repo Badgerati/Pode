@@ -451,46 +451,28 @@ function Complete-PodeAsyncScriptFinally {
     The `Start-PodeAsyncRoutesHousekeeper` function sets up a timer that periodically cleans up expired or completed asynchronous routes
     in Pode. It ensures that any expired or completed routes are properly handled and removed from the context.
 
-.PARAMETER Interval
-    Specifies the frequence of the scheduler
-
-.PARAMETER RemoveAfterMinutes
-    Specifies the number of minutes after completion when the route should be removed from the context. Default is 60 minutes.
-
 .NOTES
-    - The timer is named '__pode_asyncroutes_housekeeper__' and runs at an interval of 30 seconds.
+    - The timer is named '__pode_asyncroutes_housekeeper__' and runs at an HousekeepingInterval of 30 seconds.
     - The timer checks for forced expiry, completion, and completion expiry of asynchronous routes.
 
-.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Start-PodeAsyncRoutesHousekeeper {
-    param(
-        [Parameter()]
-        [int]
-        $RemoveAfterMinutes = 5,
-
-        [Parameter()]
-        [int]
-        $Interval = 30
-    )
 
     # Check if the timer already exists
     if (Test-PodeTimer -Name '__pode_asyncroutes_housekeeper__') {
         return
     }
 
-    # Add a new timer with the specified interval and script block
-    Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval $Interval -ArgumentList $RemoveAfterMinutes -ScriptBlock {
-        param ($RemoveAfterMinutes)
-
+    # Add a new timer with the specified $Context.Server.AsyncRoute.TimerInterval and script block
+    Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval  $PodeContext.Server.HouseKeeping.AsyncRoutes.TimerInterval  -ScriptBlock {
         # Return if there are no async route results
         if ($PodeContext.AsyncRoutes.Results.Count -eq 0) {
             return
         }
 
         $now = [datetime]::UtcNow
-
+        $RetentionMinutes= $PodeContext.Server.HouseKeeping.AsyncRoutes.RetentionMinutes
         # Iterate over the keys of the async route results
         foreach ($key in $PodeContext.AsyncRoutes.Results.Keys.Clone()) {
             $result = $PodeContext.AsyncRoutes.Results[$key]
@@ -500,7 +482,7 @@ function Start-PodeAsyncRoutesHousekeeper {
                 if ($result['Runspace'].Handler.IsCompleted) {
                     try {
                         # Remove the task if it is past the removal time
-                        if ($result['CompletedTime'] -and $result['CompletedTime'].AddMinutes($RemoveAfterMinutes) -lt $now) {
+                        if ($result['CompletedTime'] -and $result['CompletedTime'].AddMinutes($RetentionMinutes) -le $now) {
                             $result['Runspace'].Pipeline.Dispose()
                             $v = 0
                             $removed = $PodeContext.AsyncRoutes.Results.TryRemove($key, [ref]$v)

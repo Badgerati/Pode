@@ -144,11 +144,11 @@ function New-PodeContext {
 
     # set thread counts
     $ctx.Threads = @{
-        General    = $Threads
-        Schedules  = 10
-        Files      = 1
-        Tasks      = 2
-        WebSockets = 2
+        General     = $Threads
+        Schedules   = 10
+        Files       = 1
+        Tasks       = 2
+        WebSockets  = 2
         AsyncRoutes = 0
     }
 
@@ -194,6 +194,17 @@ function New-PodeContext {
         'Views'  = 'views'
         'Public' = 'public'
         'Errors' = 'errors'
+    }
+
+    $ctx.Server.HouseKeeping = @{
+        AsyncRoutes = @{
+            TimerInterval    = 30
+            RetentionMinutes = 10
+        }
+        Tasks       = @{
+            TimerInterval    = 30
+            RetentionMinutes = 1
+        }
     }
 
     # check if there is any global configuration
@@ -431,28 +442,16 @@ function New-PodeContext {
 
     # runspace pools
     $ctx.RunspacePools = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-    $null = $ctx.RunspacePools.TryAdd('Main', $null)
-    $null = $ctx.RunspacePools.TryAdd('Web', $null)
-    $null = $ctx.RunspacePools.TryAdd('Smtp', $null)
-    $null = $ctx.RunspacePools.TryAdd('Tcp', $null)
-    $null = $ctx.RunspacePools.TryAdd('Signals', $null)
-    $null = $ctx.RunspacePools.TryAdd('Schedules', $null)
-    $null = $ctx.RunspacePools.TryAdd('Gui', $null)
-    $null = $ctx.RunspacePools.TryAdd('Tasks', $null)
-    $null = $ctx.RunspacePools.TryAdd('Files', $null)
+    $ctx.RunspacePools['Main'] = $null
+    $ctx.RunspacePools['Web'] = $null
+    $ctx.RunspacePools['Smtp'] = $null
+    $ctx.RunspacePools['Tcp'] = $null
+    $ctx.RunspacePools['Signals'] = $null
+    $ctx.RunspacePools['Schedules'] = $null
+    $ctx.RunspacePools['Gui'] = $null
+    $ctx.RunspacePools['Tasks'] = $null
+    $ctx.RunspacePools['Files'] = $null
 
-    <#
-        Main        = $null
-        Web         = $null
-        Smtp        = $null
-        Tcp         = $null
-        Signals     = $null
-        Schedules   = $null
-        Gui         = $null
-        Tasks       = $null
-        Files       = $null
-        AsyncRoutes = $null
-    }#>
 
     # threading locks, etc.
     $ctx.Threading.Lockables = @{
@@ -913,6 +912,17 @@ function Set-PodeServerConfiguration {
     $Context.Server.Debug = @{
         Breakpoints = @{
             Enabled = [bool]$Configuration.Debug.Breakpoints.Enable
+        }
+    }
+
+    $Context.Server.HouseKeeping = @{
+        AsyncRoutes = @{
+            TimerInterval    = Protect-PodeValue -Value $Configuration.HouseKeeping.AsyncRoutes.TimerInterval -Default $Context.Server.HouseKeeping.AsyncRoutes.TimerInterval
+            RetentionMinutes = Protect-PodeValue -Value $Configuration.HouseKeeping.AsyncRoutes.RetentionMinutes -Default $Context.Server.HouseKeeping.AsyncRoutes.RetentionMinutes
+        }
+        Tasks       = @{
+            TimerInterval    = Protect-PodeValue -Value $Configuration.HouseKeeping.Tasks.TimerInterval -Default $Context.Server.Tasks.AsyncRoute.TimerInterval
+            RetentionMinutes = Protect-PodeValue -Value $Configuration.HouseKeeping.Tasks.RetentionMinutes -Default $Context.Server.Tasks.AsyncRoute.RetentionMinutes
         }
     }
 }
