@@ -726,7 +726,7 @@ function Add-PodeAsyncQueryRoute {
             # Add OpenAPI route information and responses
             $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -DefinitionTag $DefinitionTag -PassThru |
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName -Array) -PassThru |
-                Add-PodeOAResponse -StatusCode 402 -Description 'Invalid Query supplied' -Content (
+                Add-PodeOAResponse -StatusCode 402 -Description 'Invalid filter supplied' -Content (
                     New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                         New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                     )
@@ -1132,16 +1132,16 @@ function Set-PodeAsyncRoute {
     The Get-PodeQueryAsyncRouteOperation function acts as a public interface for searching asynchronous Pode route operations.
     It utilizes the Search-PodeAsyncTask function to perform the search based on the specified query conditions.
 
-.PARAMETER Query
+.PARAMETER Filter
     A hashtable containing the query conditions. Each key in the hashtable represents a field to search on,
     and the value is another hashtable containing 'op' (operator) and 'value' (comparison value).
 
 .EXAMPLE
-    $query = @{
+    $filter = @{
         'State' = @{ 'op' = 'EQ'; 'value' = 'Running' }
         'CreationTime' = @{ 'op' = 'GT'; 'value' = (Get-Date).AddHours(-1) }
     }
-    $results = Get-PodeQueryAsyncRouteOperation -Query $query
+    $results = Get-PodeQueryAsyncRouteOperation -Filter $filter
 
     This example retrieves route operations that are in the 'Running' state and were created within the last hour.
 
@@ -1152,10 +1152,10 @@ function Get-PodeQueryAsyncRouteOperation {
     param (
         [Parameter(Mandatory = $true)]
         [hashtable]
-        $Query
+        $Filter
     )
 
-    return Search-PodeAsyncTask -Query $Query | Export-PodeAsyncInfo
+    return Search-PodeAsyncTask -Query $Filter | Export-PodeAsyncInfo
 }
 
 
@@ -1468,7 +1468,7 @@ function Set-PodeAsyncProgress {
 
 .EXAMPLE
     # Example usage inside an async route scriptblock
-    route -PassThru -Method Get '/process' {
+    Add-PodeRoute -PassThru -Method Get '/process' {
         # Perform some work and update progress
         Set-PodeAsyncCounter -Value 40
         # Retrieve the current progress

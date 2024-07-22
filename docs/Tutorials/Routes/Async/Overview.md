@@ -155,7 +155,7 @@ When a route is invoked, it automatically creates a runspace to execute the scri
 
 - **Automatic OpenAPI Definition**: Routes defined with `Set-PodeAsyncRoute` can automatically generate OpenAPI documentation. This includes response types and callback details, making it easier to document and share your API.
 
-## Utility Functions for Managing Async Tasks
+## Functions for Managing Async Tasks
 
 ### Add-PodeAsyncGetRoute
 
@@ -308,27 +308,3 @@ $queryBody = @{
 
 Invoke-RestMethod -Uri "http://localhost:8080/tasks/query" -Method Post -Body ($queryBody | ConvertTo-Json) -ContentType "application/json"
 ```
-
-### Get-PodeQueryAsyncRouteOperation
-
-Acts as a public interface for searching asynchronous Pode route operations based on specified query conditions.
-
-### Get-PodeAsyncRouteOperation
-
-Fetches details of an asynchronous Pode route operation by its ID.
-
-### Stop-PodeAsyncRouteOperation
-
-Aborts a specific asynchronous Pode route operation by its ID, setting its state to 'Aborted' and disposing of the associated runspace.
-
-### Test-PodeAsyncRouteOperation
-
-Checks if a specific asynchronous Pode route operation exists by its ID, returning a boolean value.
-
-### Set-PodeAsyncProgress
-
-Manages the progress of an asynchronous task within Pode routes.
-
-### Get-PodeAsyncProgress
-
-Retrieves the current progress of an asynchronous route in Pode.

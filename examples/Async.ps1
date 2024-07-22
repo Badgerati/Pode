@@ -341,14 +341,12 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         for ($i = $Start; $i -le $End; $i++) {
             $sum += [math]::Sqrt($i )
             Set-PodeAsyncProgress -Tick
-            #   Write-PodeHost  (Get-PodeAsyncProgress)
         }
         Write-PodeHost  (Get-PodeAsyncProgress)
         Set-PodeAsyncProgress -Start $start -End $End -Steps 4
         for ($i = $Start; $i -le $End; $i += 4) {
             $sum += [math]::Sqrt($i )
             Set-PodeAsyncProgress -Tick
-            #   Write-PodeHost  (Get-PodeAsyncProgress)
         }
 
         Write-PodeHost  (Get-PodeAsyncProgress)
