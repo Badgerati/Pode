@@ -186,6 +186,7 @@ function ConvertTo-PodeEnhancedScriptBlock {
         }
         if ($PodeContext.AsyncRoutes.Results.ContainsKey($___async___id___)) {
             $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
+            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "$($asyncResult.Name)_$___async___id___"
             try {
                 $asyncResult['StartingTime'] = [datetime]::UtcNow
 
@@ -466,6 +467,7 @@ function Start-PodeAsyncRoutesHousekeeper {
 
     # Add a new timer with the specified $Context.Server.AsyncRoute.TimerInterval and script block
     Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval  $PodeContext.Server.HouseKeeping.AsyncRoutes.TimerInterval  -ScriptBlock {
+        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "__pode_asyncroutes_housekeeper__"
         # Return if there are no async route results
         if ($PodeContext.AsyncRoutes.Results.Count -eq 0) {
             return
