@@ -4065,10 +4065,10 @@ function Set-PodeCurrentRunspaceName {
     )
 
     # Get the current runspace
-    #   $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+    $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
 
     # Set the name of the current runspace
-    #  $currentRunspace.Name = $Name
+    $currentRunspace.Name = $Name
 }
 
 <#
