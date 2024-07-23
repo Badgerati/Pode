@@ -130,8 +130,11 @@ function Start-PodeServer {
         [switch]
         $EnableBreakpoints
     )
-    $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
-    $currentRunspace.Name = 'MainRunspace'
+    # Store the name of the current runspace
+    $previousRunspaceName = Get-CurrentRunspaceName
+    # Sets the name of the current runspace
+    Set-CurrentRunspaceName -Name 'PodeServer'
+
     # ensure the session is clean
     $PodeContext = $null
     $ShowDoneMessage = $true
@@ -233,8 +236,8 @@ function Start-PodeServer {
         # clean the runspaces and tokens
         Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
 
-        # clean the session
-        $PodeContext = $null
+        # Restore the name of the current runspace
+        Set-CurrentRunspaceName -Name $previousRunspaceName
     }
 }
 

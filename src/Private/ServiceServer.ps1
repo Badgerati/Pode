@@ -11,8 +11,9 @@ function Start-PodeServiceServer {
 
     # script for the looping server
     $serverScript = {
-        $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
-        $currentRunspace.Name = "ServiceServer"
+        # Sets the name of the current runspace
+        Set-CurrentRunspaceName -Name 'ServiceServer'
+
         try {
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 # the event object

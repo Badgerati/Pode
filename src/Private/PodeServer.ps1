@@ -114,7 +114,9 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
-            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "HttpEndpoint_$ThreadId"
+            # Sets the name of the current runspace
+            Set-CurrentRunspaceName -Name "HttpEndpoint_$ThreadId"
+
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     # get request and response
@@ -292,7 +294,9 @@ function Start-PodeWebServer {
                 [Parameter(Mandatory = $true)]
                 $Listener
             )
-            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = 'WsEndpoint'
+            # Sets the name of the current runspace
+            Set-CurrentRunspaceName -Name 'WsEndpoint'
+
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
@@ -370,7 +374,9 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
-            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "WsEndpoint_$ThreadId"
+            # Sets the name of the current runspace
+            Set-CurrentRunspaceName -Name "WsEndpoint_$ThreadId"
+
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
@@ -451,7 +457,9 @@ function Start-PodeWebServer {
             [string]
             $WaitType
         )
-  ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = $WaitType
+        # Sets the name of the current runspace
+        Set-CurrentRunspaceName -Name "$($WaitType)_KeepAlive"
+
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Seconds 1

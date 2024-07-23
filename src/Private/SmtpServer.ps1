@@ -88,6 +88,8 @@ function Start-PodeSmtpServer {
             [int]
             $ThreadId
         )
+        # Sets the name of the current runspace
+        Set-CurrentRunspaceName -Name "SMTPEndpoint_$ThreadId"
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -187,6 +189,8 @@ function Start-PodeSmtpServer {
             [ValidateNotNull()]
             $Listener
         )
+        # Sets the name of the current runspace
+        Set-CurrentRunspaceName -Name 'SMTPEndpoint_KeepAlive'
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {

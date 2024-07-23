@@ -41,6 +41,9 @@ function Start-PodeScheduleRunspace {
     }
 
     $script = {
+        # Sets the name of the current runspace
+        Set-CurrentRunspaceName -Name 'Scheduler_Trigger'
+
         # select the schedules that trigger on-start
         $_now = [DateTime]::Now
 

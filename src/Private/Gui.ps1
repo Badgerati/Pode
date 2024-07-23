@@ -12,6 +12,9 @@ function Start-PodeGuiRunspace {
     }
 
     $script = {
+        # Sets the name of the current runspace
+        Set-CurrentRunspaceName -Name 'PodeGui'
+
         try {
             # if there are multiple endpoints, flag warning we're only using the first - unless explicitly set
             if ($null -eq $PodeContext.Server.Gui.Endpoint) {

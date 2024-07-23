@@ -1689,7 +1689,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+        { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
@@ -4035,4 +4035,62 @@ function Resolve-PodeObjectArray {
         # For any other type, convert it to a PowerShell object
         return New-Object psobject -Property $Property
     }
+}
+
+
+<#
+.SYNOPSIS
+    Sets the name of the current runspace.
+
+.DESCRIPTION
+    The Set-CurrentRunspaceName function assigns a specified name to the current runspace.
+    This can be useful for identifying and managing the runspace in scripts and during debugging.
+
+.PARAMETER Name
+    The name to assign to the current runspace. This parameter is mandatory.
+
+.EXAMPLE
+    Set-CurrentRunspaceName -Name "MyRunspace"
+    This command sets the name of the current runspace to "MyRunspace".
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+
+function Set-CurrentRunspaceName {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    # Get the current runspace
+    $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+
+    # Set the name of the current runspace
+    $currentRunspace.Name = $Name
+}
+
+<#
+.SYNOPSIS
+    Retrieves the name of the current PowerShell runspace.
+
+.DESCRIPTION
+    The Get-CurrentRunspaceName function retrieves the name of the current PowerShell runspace.
+    This can be useful for debugging or logging purposes to identify the runspace in use.
+
+.EXAMPLE
+    Get-CurrentRunspaceName
+    Returns the name of the current runspace.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+
+function Get-CurrentRunspaceName {
+    # Get the current runspace
+    $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+
+    # Get the name of the current runspace
+    return $currentRunspace.Name
 }
