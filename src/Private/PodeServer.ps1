@@ -453,12 +453,10 @@ function Start-PodeWebServer {
         param(
             [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
-            $Listener,
-            [string]
-            $WaitType
+            $Listener
         )
         # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name "$($WaitType)_KeepAlive"
+        Set-PodeCurrentRunspaceName -Name "Listener_KeepAlive"
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -483,7 +481,7 @@ function Start-PodeWebServer {
         $waitType = 'Signals'
     }
 
-    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener; 'Type' = $waitType } -NoProfile
+    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener} -NoProfile
 
     # browse to the first endpoint, if flagged
     if ($Browse) {
