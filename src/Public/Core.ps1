@@ -130,7 +130,8 @@ function Start-PodeServer {
         [switch]
         $EnableBreakpoints
     )
-
+    $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+    $currentRunspace.Name = 'MainRunspace'
     # ensure the session is clean
     $PodeContext = $null
     $ShowDoneMessage = $true
@@ -186,7 +187,6 @@ function Start-PodeServer {
         if (!(Test-PodeServerKeepOpen)) {
             return
         }
-
         # sit here waiting for termination/cancellation, or to restart the server
         while (!(Test-PodeTerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
             Start-Sleep -Seconds 1

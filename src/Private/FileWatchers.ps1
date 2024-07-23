@@ -60,7 +60,7 @@ function Start-PodeFileWatcherRunspace {
             [int]
             $ThreadId
         )
-
+        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "FileWatcher_$ThreadId"
         try {
             while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 $evt = (Wait-PodeTask -Task $Watcher.GetFileEventAsync($PodeContext.Tokens.Cancellation.Token))

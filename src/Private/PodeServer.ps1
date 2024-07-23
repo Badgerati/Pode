@@ -114,7 +114,7 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
-
+            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "HttpEndpoint_$ThreadId"
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     # get request and response
@@ -292,7 +292,7 @@ function Start-PodeWebServer {
                 [Parameter(Mandatory = $true)]
                 $Listener
             )
-
+            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = 'WsEndpoint'
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     $message = (Wait-PodeTask -Task $Listener.GetServerSignalAsync($PodeContext.Tokens.Cancellation.Token))
@@ -370,7 +370,7 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
-
+            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "WsEndpoint_$ThreadId"
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                     $context = (Wait-PodeTask -Task $Listener.GetClientSignalAsync($PodeContext.Tokens.Cancellation.Token))
@@ -447,9 +447,11 @@ function Start-PodeWebServer {
         param(
             [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
-            $Listener
+            $Listener,
+            [string]
+            $WaitType
         )
-
+  ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = $WaitType
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Seconds 1
@@ -473,7 +475,7 @@ function Start-PodeWebServer {
         $waitType = 'Signals'
     }
 
-    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener; 'Type' = $waitType } -NoProfile
 
     # browse to the first endpoint, if flagged
     if ($Browse) {

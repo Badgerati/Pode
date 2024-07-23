@@ -19,6 +19,8 @@ function Start-PodeTimerRunspace {
     }
 
     $script = {
+        $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
+        $currentRunspace.Name = 'TimerRunspace'
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             $_now = [DateTime]::Now
 
