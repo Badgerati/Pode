@@ -174,3 +174,33 @@ The steps to attach to the Pode process are as follows:
 5. You'll also be able to query variables as well, such as `$WebEvent` and other variables you might have created.
 
 6. When you are done debugging the current request, hit the `d` key.
+
+
+
+## Customizing and Managing Runspace Names
+
+### Distinguishing Runspace Names in Pode
+
+In Pode, internal runspaces are automatically assigned distinct names. This naming convention helps in identifying and managing these runspaces efficiently during debugging and monitoring. However, this is not the case for runspaces created by user tasks and schedules (excluding AsyncTask). These user-created runspaces typically have names in the `Runspace<number>` format, which can make it challenging to distinguish between different runspaces.
+
+### Customizing Runspace Names
+
+To provide clarity and better manageability, you can set custom names for runspaces within your Pode tasks or schedules. This can be achieved using the `Set-PodeCurrentRunspaceName` cmdlet. By assigning meaningful names to your runspaces, you can easily identify and work with them, especially during debugging or performance monitoring.
+
+Another useful cmdlet is `Get-PodeCurrentRunspaceName`, which retrieves the current runspace's name. This can be helpful if you need to log or display the runspace name dynamically.
+
+### Example
+
+Here is an example demonstrating how to set a custom name for a runspace in a Pode task:
+
+```powershell
+Add-PodeTask -Name 'Test2' -ScriptBlock {
+    param($value)
+    # Set a custom name for the current runspace
+    Set-PodeCurrentRunspaceName -Name 'Test2'
+    Start-Sleep -Seconds 10
+    "A $($value) is never late, it arrives exactly when it means to" | Out-Default
+}
+```
+
+In this example, the `Set-PodeCurrentRunspaceName` cmdlet is used to assign the name 'Test2' to the runspace executing the task. This makes it easier to identify the runspace in logs or during debugging sessions.
