@@ -210,11 +210,10 @@ function Add-PodeAsyncGetRoute {
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name $TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $In) |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName) -PassThru |
-            Add-PodeOAResponse -StatusCode 402 -Description 'Invalid Id supplied' -Content (
+            Add-PodeOAResponse -StatusCode 4XX -Description 'Client error. The request contains bad syntax or cannot be fulfilled.' -Content (
                 New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                     New-PodeOAStringProperty -Name 'Id' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
-                )
-            )
+                ))
     }
 
     # Return the route if PassThru is specified
@@ -443,7 +442,7 @@ function Add-PodeAsyncStopRoute {
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name $TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $In) |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName) -PassThru |
-            Add-PodeOAResponse -StatusCode 402 -Description 'Invalid Id supplied' -Content (
+            Add-PodeOAResponse -StatusCode 4XX -Description 'Client error. The request contains bad syntax or cannot be fulfilled.' -Content (
                 New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                     New-PodeOAStringProperty -Name 'Id' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                 )
@@ -688,49 +687,83 @@ function Add-PodeAsyncQueryRoute {
         Add-PodeAsyncComponentSchema -Name $OATypeName -DefinitionTag $DefinitionTag
 
         if (!(Test-PodeOAComponent -Field schemas -Name $AsyncTaskQueryRequestName)) {
-            New-PodeOAObjectProperty -AdditionalProperties (
-                New-PodeOAStringProperty -Name 'op' -Enum 'GT', 'LT', 'GE', 'LE', 'EQ', 'NE', 'LIKE', 'NOTLIKE' -Required |
-                    New-PodeOAStringProperty -Name 'value' -Description 'The value to compare against' -Required |
-                    New-PodeOAObjectProperty
-                ) | Add-PodeOAComponentSchema -Name $AsyncTaskQueryRequestName
-            }
 
-            # Define an example hashtable for the OpenAPI request
-            $exampleHashTable = @{
-                'StartingTime' = @{
-                    op    = 'GT'
-                    value = (Get-Date '2024-07-05T20:20:00Z')
-                }
-                'CreationTime' = @{
-                    op    = 'LE'
-                    value = (Get-Date '2024-07-05T20:20:00Z')
-                }
-                'State'        = @{
-                    op    = 'EQ'
-                    value = 'Completed'
-                }
-                'Name'         = @{
-                    op    = 'LIKE'
-                    value = 'Get'
-                }
-                'Id'           = @{
-                    op    = 'EQ'
-                    value = 'b143660f-ebeb-49d9-9f92-cd21f3ff559c'
-                }
-                'Cancelable'   = @{
-                    op    = 'EQ'
-                    value = $true
-                }
-            }
 
-            # Add OpenAPI route information and responses
-            $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -DefinitionTag $DefinitionTag -PassThru |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName -Array) -PassThru |
-                Add-PodeOAResponse -StatusCode 402 -Description 'Invalid filter supplied' -Content (
-                    New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
-                        New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
-                    )
+            New-PodeOAStringProperty -Name 'op' -Enum 'GT', 'LT', 'GE', 'LE', 'EQ', 'NE', 'LIKE', 'NOTLIKE' -Required |
+                New-PodeOAStringProperty -Name 'value' -Description 'The value to compare against' -Required |
+                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'StringQueryParameter'
+
+
+            New-PodeOAStringProperty -Name 'op' -Enum   'EQ', 'NE'  -Required |
+                New-PodeOAStringProperty -Name 'value' -Description 'The value to compare against' -Required |
+                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'BooleanQueryParameter'
+
+   <#         Merge-PodeOAProperty -Type OneOf -ObjectDefinitions (
+                   (New-PodeOAStringProperty -Format Date-Time -Object),
+                  (New-PodeOANumberProperty -Format Float -Object)
+             ) | New-PodeOAObjectProperty|Add-PodeOAComponentSchema -Name 'cccc'
+#>
+            New-PodeOAStringProperty -Name 'op' -Enum 'GT', 'LT', 'GE', 'LE', 'EQ', 'NE'  -Required |
+                New-PodeOAStringProperty -Name 'value' -Description 'The value to compare against' -Required |
+                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'ComparableQueryParameter'
+
+            # Define AsyncTaskQueryRequest using pipelining
+            New-PodeOASchemaProperty -Name 'Id' -Reference 'StringQueryParameter' |
+                New-PodeOASchemaProperty -Name 'Name' -Reference 'StringQueryParameter' |
+                New-PodeOASchemaProperty -Name 'StartingTime' -Reference 'ComparableQueryParameter' |
+                New-PodeOASchemaProperty -Name 'CreationTime' -Reference 'ComparableQueryParameter' |
+                New-PodeOASchemaProperty -Name 'CompletedTime' -Reference 'ComparableQueryParameter' |
+                New-PodeOASchemaProperty -Name 'ExpireTime' -Reference 'ComparableQueryParameter' |
+                New-PodeOASchemaProperty -Name 'State' -Reference 'StringQueryParameter' |
+                New-PodeOASchemaProperty -Name 'Error' -Reference 'StringQueryParameter' |
+                New-PodeOASchemaProperty -Name 'CallbackSettings' -Reference 'StringQueryParameter' |
+                New-PodeOASchemaProperty -Name 'Cancelable' -Reference 'BooleanQueryParameter' |
+                New-PodeOASchemaProperty -Name 'SseEnabled' -Reference 'BooleanQueryParameter' |
+                New-PodeOASchemaProperty -Name 'SseGroup' -Reference 'StringQueryParameter' |
+                New-PodeOASchemaProperty -Name 'User' -Reference 'StringQueryParameter' |
+                New-PodeOASchemaProperty -Name 'Url' -Reference 'StringQueryParameter' |
+                New-PodeOASchemaProperty -Name 'Method' -Reference 'StringQueryParameter' |
+                New-PodeOASchemaProperty -Name 'Progress' -Reference 'ComparableQueryParameter' |
+                New-PodeOAObjectProperty |
+                Add-PodeOAComponentSchema -Name $AsyncTaskQueryRequestName
+        }
+
+        # Define an example hashtable for the OpenAPI request
+        $exampleHashTable = @{
+            'StartingTime' = @{
+                op    = 'GT'
+                value = (Get-Date '2024-07-05T20:20:00Z')
+            }
+            'CreationTime' = @{
+                op    = 'LE'
+                value = (Get-Date '2024-07-05T20:20:00Z')
+            }
+            'State'        = @{
+                op    = 'EQ'
+                value = 'Completed'
+            }
+            'Name'         = @{
+                op    = 'LIKE'
+                value = 'Get'
+            }
+            'Id'           = @{
+                op    = 'EQ'
+                value = 'b143660f-ebeb-49d9-9f92-cd21f3ff559c'
+            }
+            'Cancelable'   = @{
+                op    = 'EQ'
+                value = $true
+            }
+        }
+
+        # Add OpenAPI route information and responses
+        $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -DefinitionTag $DefinitionTag -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName -Array) -PassThru |
+            Add-PodeOAResponse -StatusCode 402 -Description 'Invalid filter supplied' -Content (
+                New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
+                    New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                 )
+            )
 
         # Define examples for different media types
         $example = [ordered]@{}

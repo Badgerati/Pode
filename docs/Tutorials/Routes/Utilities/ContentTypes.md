@@ -18,7 +18,7 @@ Start-PodeServer {
         Write-PodeJsonResponse -Value @{}
     }
 
-    Add-PodeRoute -Method Get -Path '/api/xml' -ContentType 'text/xml' -ScriptBlock {
+    Add-PodeRoute -Method Get -Path '/api/xml' -ContentType 'application/xml' -ScriptBlock {
         Write-PodeXmlResponse -Value @{}
     }
 

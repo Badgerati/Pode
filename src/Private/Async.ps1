@@ -472,7 +472,7 @@ function Start-PodeAsyncRoutesHousekeeper {
         }
 
         $now = [datetime]::UtcNow
-        $RetentionMinutes= $PodeContext.Server.HouseKeeping.AsyncRoutes.RetentionMinutes
+        $RetentionMinutes = $PodeContext.Server.HouseKeeping.AsyncRoutes.RetentionMinutes
         # Iterate over the keys of the async route results
         foreach ($key in $PodeContext.AsyncRoutes.Results.Keys.Clone()) {
             $result = $PodeContext.AsyncRoutes.Results[$key]
@@ -559,12 +559,14 @@ function Add-PodeAsyncComponentSchema {
             New-PodeOAStringProperty -Name 'User' -Description 'The async operation owner.' |
             New-PodeOAStringProperty -Name 'CreationTime' -Format Date-Time -Description 'The async operation creation time.' -Example '2024-07-02T20:58:15.2014422Z' -Required |
             New-PodeOAStringProperty -Name 'StartingTime' -Format Date-Time -Description 'The async operation starting time.' -Example '2024-07-02T20:58:15.2014422Z' |
-            New-PodeOAStringProperty -Name 'Result' -Example '{result = 7 , numOfIteration = 3 }' |
+            New-PodeOAStringProperty -Name 'Result' -Example '{result ="Anything is good" , numOfIteration = 3 }' |
             New-PodeOAStringProperty -Name 'CompletedTime' -Format Date-Time -Description 'The async operation completion time.' -Example '2024-07-02T20:59:23.2174712Z' |
             New-PodeOAStringProperty -Name 'State' -Description 'The async operation status' -Required -Example 'Running' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
             New-PodeOAStringProperty -Name 'Error' -Description 'The error message if any.' |
             New-PodeOAStringProperty -Name 'Name' -Example '__Get_path_endpoint1_' -Description 'The async operation name.' -Required |
             New-PodeOABoolProperty -Name 'Cancelable' -Description 'The async operation can be forcefully terminated' -Required |
+            New-PodeOABoolProperty -Name 'SseEnabled' -Description 'The async operation is using SSE.' |
+            New-PodeOANumberProperty -Name 'Progress' -Description 'The async operation percentage progress' -Minimum 0 -Maximum 100 |
             New-PodeOAObjectProperty -Name 'Permission' -Description 'The permission governing the async operation.' -Properties (
                 ($permissionContent | New-PodeOAObjectProperty -Name 'Read'),
                 ($permissionContent | New-PodeOAObjectProperty -Name 'Write')
@@ -575,9 +577,11 @@ function Add-PodeAsyncComponentSchema {
                     New-PodeOAStringProperty -Name 'Url' -Format Uri -Description 'The callback URL' -Example 'Completed'
                 ) |
                 New-PodeOAObjectProperty -Name 'CallbackSettings' -Description 'Callback Configuration' -Properties (
-                    New-PodeOAStringProperty -Name 'UrlField' -Description 'The URL Field.' -Example '$request.body#/callbackUrl' |
-                        New-PodeOABoolProperty -Name 'SendResult' -Description 'Send the result.' |
-                        New-PodeOAStringProperty -Name 'Method' -Description 'HTTP Method.' -Enum @('Post', 'Put')
+                    New-PodeOAStringProperty -Name 'UrlField' -Description 'The URL Field.' -Example '$request.body#/callbackUrl' -Required |
+                        New-PodeOABoolProperty -Name 'SendResult' -Description 'Send the result.' -Required |
+                        New-PodeOAStringProperty -Name 'Method' -Description 'HTTP Method.' -Enum @('Post', 'Put') -Required |
+                        New-PodeOAStringProperty -Name 'ContentType' -Description 'ContentType.' -Enum @('application/json' , 'application/xml', 'application/yaml') -Required |
+                        New-PodeOAObjectProperty -Name 'HeaderFields' -AdditionalProperties (New-PodeOAStringProperty) -NoProperties
                     ) |
                     New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name -DefinitionTag $DefinitionTag
     }
@@ -668,7 +672,7 @@ function Search-PodeAsyncTask {
             # Iterate through each query condition
             foreach ($key in $Query.Keys) {
                 # Check the variable name
-                if (! (('Id', 'Name', 'Runspace', 'Output', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancelable', 'EnableSse', 'SseGroup', 'Timeout', 'User', 'Url', 'Method', 'Progress') -contains $key)) {
+                if (! (('Id', 'Name', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancelable', 'SseEnabled', 'SseGroup', 'User', 'Url', 'Method', 'Progress') -contains $key)) {
                     # The query provided is invalid.{0} is not a valid element for a query.
                     throw ($PodeLocale.invalidQueryElementExceptionMessage -f $key)
                 }
@@ -1240,6 +1244,7 @@ function Export-PodeAsyncInfo {
             Cancelable   = $Async['Cancelable']
             # Format creation time in ISO 8601 UTC format
             CreationTime = $Async['CreationTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+            ExpireTime   = $Async['ExpireTime'].ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
             Name         = $Async['Name']
             State        = $Async['State']
         }
@@ -1271,7 +1276,7 @@ function Export-PodeAsyncInfo {
 
         # Include SSE setting if it exists
         if ($Async['EnableSse']) {
-            $export.EnableSse = $Async['EnableSse']
+            $export.SseEnabled = $Async['EnableSse']
         }
 
         # Include Progress setting if it exists

@@ -75,54 +75,41 @@ When a route is invoked, it automatically creates a runspace to execute the scri
 
 #### `AsyncTask` Object Definition
 
-- **User** - The async operation owner.
-
-- **CompletedTime** - The async operation completion time.
-
-- **State*** - The async operation status.
-  - Possible values: `NotStarted`, `Running`, `Failed`, `Completed`
-
-- **CallbackInfo** - The Callback operation result.
-  - **State** - Operation status.
-    - Possible values: `NotStarted`, `Running`, `Failed`, `Completed`
-  - **Tentative** - Number of tentatives.
-  - **Url** - The callback URL.
-
-- **StartingTime** - The async operation starting time.
-
-- **Cancelable*** - The async operation can be forcefully terminated.
-
-- **CreationTime*** - The async operation creation time.
-
-- **Id*** - The async operation unique identifier.
-
-- **Permission** - The permission governing the async operation.
-  - **Write** - Write permission
-    - **Users**
-    - **Groups**
-    - **Roles**
-    - **Scopes**
-  - **Read** - Read permission
-    - **Users**
-    - **Groups**
-    - **Roles**
-    - **Scopes**
-
-- **Error** - The error message, if any.
-
-- **CallbackSettings** - Callback Configuration.
-  - **UrlField**
-  - **Method** - HTTP Method.
-    - Possible values: `Post`, `Put`
-  - **SendResult** - Send the result.
-
-- **Result** - The result of the async operation.
-
-- **Name*** - The async operation name.
-
-- **Progress** - Represents the task activity progress.
+| Name                            | Type    | Description                                                                                 |
+|---------------------------------|---------|---------------------------------------------------------------------------------------------|
+| **User**                        | string  | The async operation owner.                                                                  |
+| **CompletedTime**               | date    | The async operation completion time.                                                        |
+| **State***                      | string  | The async operation status. Possible values: `NotStarted`, `Running`, `Failed`, `Completed` |
+| **CallbackInfo**                | object  | The Callback operation result.                                                              |
+| **CallbackInfo.State**          | string  | Operation status. Possible values: `NotStarted`, `Running`, `Failed`, `Completed`           |
+| **CallbackInfo.Tentative**      | integer | Number of tentatives.                                                                       |
+| **CallbackInfo.Url**            | string  | The callback URL.                                                                           |
+| **StartingTime**                | date    | The async operation starting time.                                                          |
+| **Cancelable***                 | boolean | The async operation can be forcefully terminated.                                           |
+| **CreationTime***               | string  | The async operation creation time.                                                          |
+| **Id***                         | string  | The async operation unique identifier.                                                      |
+| **Permission**                  | object  | The permission governing the async operation.                                               |
+| **Permission.Write**            | object  | Write permission.                                                                           |
+| **Permission.Write.Users**      | array   | Users with write permission.                                                                |
+| **Permission.Write.Groups**     | array   | Groups with write permission.                                                               |
+| **Permission.Write.Roles**      | array   | Roles with write permission.                                                                |
+| **Permission.Write.Scopes**     | array   | Scopes with write permission.                                                               |
+| **Permission.Read**             | object  | Read permission.                                                                            |
+| **Permission.Read.Users**       | array   | Users with read permission.                                                                 |
+| **Permission.Read.Groups**      | array   | Groups with read permission.                                                                |
+| **Permission.Read.Roles**       | array   | Roles with read permission.                                                                 |
+| **Permission.Read.Scopes**      | array   | Scopes with read permission.                                                                |
+| **Error**                       | string  | The error message, if any.                                                                  |
+| **CallbackSettings**            | object  | Callback Configuration.                                                                     |
+| **CallbackSettings.UrlField**   | string  | The URL Field.                                                                              |
+| **CallbackSettings.Method**     | string  | HTTP Method. Possible values: `Post`, `Put`                                                 |
+| **CallbackSettings.SendResult** | boolean | Send the result.                                                                            |
+| **Result**                      | string  | The result of the async operation.                                                          |
+| **Name***                       | string  | The async operation name.                                                                   |
+| **Progress**                    | number  | Represents the task activity progress.                                                      |
 
 **Note**: Properties marked with `*` are always available.
+
 
 ## Features
 
@@ -308,3 +295,5 @@ $queryBody = @{
 
 Invoke-RestMethod -Uri "http://localhost:8080/tasks/query" -Method Post -Body ($queryBody | ConvertTo-Json) -ContentType "application/json"
 ```
+
+

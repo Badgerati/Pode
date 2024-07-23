@@ -68,17 +68,18 @@ A "path" like `Server.Ssl.Protocols` looks like the below in the file:
 }
 ```
 
-| Path                             | Description                                                                 | Docs                                                                    |
-| -------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Server.Ssl.Protocols             | Indicates the SSL Protocols that should be used                             | [link](../Certificates)                                                 |
-| Server.Request                   | Defines request timeout and maximum body size                               | [link](../RequestLimits)                                                |
-| Server.AutoImport                | Defines the AutoImport scoping rules for Modules, SnapIns and Functions     | [link](../Scoping)                                                      |
-| Server.Logging                   | Defines extra configuration for Logging, like masking sensitive data        | [link](../Logging/Overview)                                             |
-| Server.Root                      | Overrides root path of the server                                           | [link](../Misc/ServerRoot)                                              |
-| Server.Restart                   | Defines configuration for automatically restarting the server               | [link](../Restarting/Types/AutoRestarting)                              |
-| Server.FileMonitor               | Defines configuration for restarting the server based on file updates       | [link](../Restarting/Types/FileMonitoring)                              |
-| Server.ReceiveTimeout            | Define the amount of time a Receive method call will block waiting for data | [link](../Endpoints/Basic/StaticContent/#server-timeout)                |
-| Server.DefaultFolders            | Set the Default Folders paths                                               | [link](../Routes/Utilities/StaticContent/#changing-the-default-folders) |
+| Path                  | Description                                                                 | Docs                                                                    |
+|-----------------------|-----------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| Server.Ssl.Protocols  | Indicates the SSL Protocols that should be used                             | [link](../Certificates)                                                 |
+| Server.Request        | Defines request timeout and maximum body size                               | [link](../RequestLimits)                                                |
+| Server.AutoImport     | Defines the AutoImport scoping rules for Modules, SnapIns and Functions     | [link](../Scoping)                                                      |
+| Server.Logging        | Defines extra configuration for Logging, like masking sensitive data        | [link](../Logging/Overview)                                             |
+| Server.Root           | Overrides root path of the server                                           | [link](../Misc/ServerRoot)                                              |
+| Server.Restart        | Defines configuration for automatically restarting the server               | [link](../Restarting/Types/AutoRestarting)                              |
+| Server.FileMonitor    | Defines configuration for restarting the server based on file updates       | [link](../Restarting/Types/FileMonitoring)                              |
+| Server.ReceiveTimeout | Define the amount of time a Receive method call will block waiting for data | [link](../Endpoints/Basic/StaticContent/#server-timeout)                |
+| Server.DefaultFolders | Set the Default Folders paths                                               | [link](../Routes/Utilities/StaticContent/#changing-the-default-folders) |
+| Server.HouseKeeping            | Set the House Keeping retension and frequency for Tasks and AsyncTask | [link](../Routes/Utilities/StaticContent/#changing-the-default-folders)
 | Web.OpenApi.DefaultDefinitionTag | Define the primary tag name for OpenAPI ( `default` is the default)         | [link](../OpenAPI/Overview)                                             |
 | Web.OpenApi.UsePodeYamlInternal  | Force the use of the internal YAML converter (`False` is the default)       |                                                                         |
 | Web.Static.ValidateLast          | Changes the way routes are processed.                                       | [link](../Routes/Utilities/StaticContent)                               |
