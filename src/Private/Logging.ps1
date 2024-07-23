@@ -822,6 +822,7 @@ function Start-PodeLoggingRunspace {
     }
 
     $script = {
+        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = 'LoggingRunspace'
         $log = @{}
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             if ($PodeContext.LogsToProcess.Count -ge $PodeContext.Server.Logging.QueueLimit) {
