@@ -11,8 +11,9 @@ function Start-PodeTaskHousekeeper {
         if ($PodeContext.Tasks.Results.Count -eq 0) {
             return
         }
-        $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
-        $currentRunspace.Name = '__pode_task_housekeeper__'
+        # Sets the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name '__pode_task_housekeeper__'
+
         $now = [datetime]::UtcNow
 
         foreach ($key in $PodeContext.Tasks.Results.Keys.Clone()) {

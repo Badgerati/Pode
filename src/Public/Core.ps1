@@ -190,6 +190,7 @@ function Start-PodeServer {
         if (!(Test-PodeServerKeepOpen)) {
             return
         }
+
         # sit here waiting for termination/cancellation, or to restart the server
         while (!(Test-PodeTerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
             Start-Sleep -Seconds 1
@@ -235,6 +236,9 @@ function Start-PodeServer {
 
         # clean the runspaces and tokens
         Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
+
+        # clean the session
+        $PodeContext = $null
 
         # Restore the name of the current runspace
         Set-PodeCurrentRunspaceName -Name $previousRunspaceName
