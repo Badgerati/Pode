@@ -115,7 +115,7 @@ function Start-PodeWebServer {
                 $ThreadId
             )
             # Sets the name of the current runspace
-            Set-CurrentRunspaceName -Name "HttpEndpoint_$ThreadId"
+            Set-PodeCurrentRunspaceName -Name "HttpEndpoint_$ThreadId"
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -295,7 +295,7 @@ function Start-PodeWebServer {
                 $Listener
             )
             # Sets the name of the current runspace
-            Set-CurrentRunspaceName -Name 'WsEndpoint'
+            Set-PodeCurrentRunspaceName -Name 'WsEndpoint'
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -375,7 +375,7 @@ function Start-PodeWebServer {
                 $ThreadId
             )
             # Sets the name of the current runspace
-            Set-CurrentRunspaceName -Name "WsEndpoint_$ThreadId"
+            Set-PodeCurrentRunspaceName -Name "WsEndpoint_$ThreadId"
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -458,7 +458,7 @@ function Start-PodeWebServer {
             $WaitType
         )
         # Sets the name of the current runspace
-        Set-CurrentRunspaceName -Name "$($WaitType)_KeepAlive"
+        Set-PodeCurrentRunspaceName -Name "$($WaitType)_KeepAlive"
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {

@@ -61,7 +61,7 @@ function Start-PodeFileWatcherRunspace {
             $ThreadId
         )
         # Sets the name of the current runspace
-        Set-CurrentRunspaceName -Name "FileWatcher_$ThreadId"
+        Set-PodeCurrentRunspaceName -Name "FileWatcher_$ThreadId"
 
         try {
             while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -145,7 +145,7 @@ function Start-PodeFileWatcherRunspace {
             $Watcher
         )
         # Sets the name of the current runspace
-        Set-CurrentRunspaceName -Name 'FileWatcher_KeepAlive'
+        Set-PodeCurrentRunspaceName -Name 'FileWatcher_KeepAlive'
 
         try {
             while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
