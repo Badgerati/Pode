@@ -212,7 +212,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'De mapnaam Views bestaat al: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Geen naam opgegeven voor een WebSocket om te resetten.'
     mergeDefaultAuthNotInListExceptionMessage                         = "De standaardauthenticatie '{0}' staat niet in de opgegeven authenticatielijst."
-    descriptionRequiredExceptionMessage                               = 'Een beschrijving is vereist.'
+    descriptionRequiredExceptionMessage                               = 'Een beschrijving is vereist voor Pad:{0} Antwoord:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'De paginanaam moet een geldige alfanumerieke waarde zijn: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'De standaardwaarde is geen boolean en maakt geen deel uit van de enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'Het OpenApi-component schema {0} bestaat niet.'
@@ -285,6 +285,6 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ongeldige Access-Control-Max-Age duur opgegeven: {0}. Moet groter zijn dan 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
 }
 
