@@ -602,7 +602,7 @@ function Add-PodeAsyncQueryRoute {
     $param = @{
         Path             = $Path
         ScriptBlock      = Get-PodeAsyncQueryScriptBlock
-        ArgumentList     = $Payload
+        ArgumentList     = @($Payload, $DefinitionTag)
         ErrorContentType = $ResponseContentType[0]
         ContentType      = $QueryContentType[0]
         PassThru         = $true
@@ -742,7 +742,7 @@ function Add-PodeAsyncQueryRoute {
         # Add OpenAPI route information and responses
         $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -DefinitionTag $DefinitionTag -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $OATypeName -Array) -PassThru |
-            Add-PodeOAResponse -StatusCode 402 -Description 'Invalid filter supplied' -Content (
+            Add-PodeOAResponse -StatusCode 422 -Description 'Invalid filter supplied' -Content (
                 New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                     New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($OATypeName)Error"
                 )

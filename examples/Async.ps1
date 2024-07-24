@@ -118,7 +118,8 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
     # request logging
     # New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses -EnableSchemaValidation
+
+    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses -EnableSchemaValidation:$($PSVersionTable.PSVersion -ge [version]'6.1.0')
 
     Add-PodeOAInfo -Title 'Async test - OpenAPI 3.0' -Version 0.0.1
 

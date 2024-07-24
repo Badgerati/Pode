@@ -1355,7 +1355,7 @@ function Export-PodeAsyncInfo {
 #>
 function Get-PodeAsyncQueryScriptBlock {
     return [scriptblock] {
-        param($Payload)
+        param($Payload,$DefinitionTag)
 
         # Determine the source of the query based on the payload parameter
         switch ($Payload) {
@@ -1368,8 +1368,14 @@ function Get-PodeAsyncQueryScriptBlock {
         $responseMediaType = Get-PodeHeader -Name 'Accept'
         $response = @()  # Initialize an empty array to hold the response
         try {
-            $validation = Test-PodeOAJsonSchemaCompliance -Json $query -SchemaReference 'AsyncTaskQueryRequest'
-            if ($validation.result) {
+            if ($PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaValidation) {
+                $validation = Test-PodeOAJsonSchemaCompliance -Json $query -SchemaReference 'AsyncTaskQueryRequest'
+                $validated = $validation.result
+            }
+            else {
+                $validated = $true
+            }
+            if ($validated) {
                 # Search for async tasks based on the query and user, checking permissions
                 $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User -CheckPermission
 
@@ -1401,10 +1407,10 @@ function Get-PodeAsyncQueryScriptBlock {
         catch {
             $response = @{'Error' = $_.tostring() }
             switch ($responseMediaType) {
-                'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 402; break }
-                'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 402 ; break }
-                'application/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 402 ; break }
-                default { Write-PodeJsonResponse -Value $response -StatusCode 402 }
+                'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 422; break }
+                'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 422 ; break }
+                'application/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 422 ; break }
+                default { Write-PodeJsonResponse -Value $response -StatusCode 422 }
             }
         }
     }
