@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'O nome da pasta Views já existe: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Nenhum nome fornecido para redefinir o WebSocket.'
     mergeDefaultAuthNotInListExceptionMessage                         = "A Autenticação MergeDefault '{0}' não está na lista de Autenticação fornecida."
-    descriptionRequiredExceptionMessage                               = 'É necessária uma descrição.'
+    descriptionRequiredExceptionMessage                               = 'Uma descrição é necessária para o Caminho:{0} Resposta:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'O nome da página deve ser um valor alfanumérico válido: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'O valor padrão não é booleano e não faz parte do enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'O esquema do componente OpenApi {0} não existe.'
@@ -285,5 +285,5 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duração inválida fornecida para Access-Control-Max-Age: {0}. Deve ser maior que 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'A definição OpenAPI com o nome {0} já existe.'
     renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag não pode ser usado dentro de um 'ScriptBlock' Select-PodeOADefinition."
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
 }

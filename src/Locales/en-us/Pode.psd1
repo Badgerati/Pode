@@ -211,7 +211,7 @@
   viewsFolderNameAlreadyExistsExceptionMessage                      = 'The Views folder name already exists: {0}'
   noNameForWebSocketResetExceptionMessage                           = 'No Name for a WebSocket to reset supplied.'
   mergeDefaultAuthNotInListExceptionMessage                         = "The MergeDefault Authentication '{0}' is not in the Authentication list supplied."
-  descriptionRequiredExceptionMessage                               = 'A Description is required.'
+  descriptionRequiredExceptionMessage                               = 'A Description is required for Path:{0} Response:{1}'
   pageNameShouldBeAlphaNumericExceptionMessage                      = 'The Page name should be a valid Alphanumeric value: {0}'
   defaultValueNotBooleanOrEnumExceptionMessage                      = 'The default value is not a boolean and is not part of the enum.'
   openApiComponentSchemaDoesNotExistExceptionMessage                = "The OpenApi component schema {0} doesn't exist."
@@ -285,5 +285,5 @@
   invalidAccessControlMaxAgeDurationExceptionMessage                = 'Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.'
   openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI definition named {0} already exists.'
   renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
-  DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
+  definitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
 }
