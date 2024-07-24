@@ -467,7 +467,7 @@ function Start-PodeAsyncRoutesHousekeeper {
 
     # Add a new timer with the specified $Context.Server.AsyncRoute.TimerInterval and script block
     Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval  $PodeContext.Server.HouseKeeping.AsyncRoutes.TimerInterval  -ScriptBlock {
-        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "__pode_asyncroutes_housekeeper__"
+        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = '__pode_asyncroutes_housekeeper__'
         # Return if there are no async route results
         if ($PodeContext.AsyncRoutes.Results.Count -eq 0) {
             return
@@ -1368,22 +1368,34 @@ function Get-PodeAsyncQueryScriptBlock {
         $responseMediaType = Get-PodeHeader -Name 'Accept'
         $response = @()  # Initialize an empty array to hold the response
         try {
-            # Search for async tasks based on the query and user, checking permissions
-            $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User -CheckPermission
+            $validation = Test-PodeOAJsonSchemaCompliance -Json $query -SchemaReference 'AsyncTaskQueryRequest'
+            if ($validation.result) {
+                # Search for async tasks based on the query and user, checking permissions
+                $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User -CheckPermission
 
-            # If results are found, export async task information for each result
-            if ($results) {
-                foreach ($async in $results) {
-                    $response += Export-PodeAsyncInfo -Async $async
+                # If results are found, export async task information for each result
+                if ($results) {
+                    foreach ($async in $results) {
+                        $response += Export-PodeAsyncInfo -Async $async
+                    }
+                }
+
+                # Respond with the results in the appropriate format
+                switch ($responseMediaType) {
+                    'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 200; break }
+                    'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 200 ; break }
+                    'application/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 200 ; break }
+                    default { Write-PodeJsonResponse -Value $response -StatusCode 200 }
                 }
             }
-
-            # Respond with the results in the appropriate format
-            switch ($responseMediaType) {
-                'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 200; break }
-                'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 200 ; break }
-                'application/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 200 ; break }
-                default { Write-PodeJsonResponse -Value $response -StatusCode 200 }
+            else {
+                $response = @{'Error' = $validation.message }
+                switch ($responseMediaType) {
+                    'application/xml' { Write-PodeXmlResponse -Value $response -StatusCode 406; break }
+                    'application/json' { Write-PodeJsonResponse -Value $response -StatusCode 406 ; break }
+                    'application/yaml' { Write-PodeYamlResponse -Value $response -StatusCode 406 ; break }
+                    default { Write-PodeJsonResponse -Value $response -StatusCode 406 }
+                }
             }
         }
         catch {
@@ -1398,3 +1410,49 @@ function Get-PodeAsyncQueryScriptBlock {
     }
 }
 
+<#
+.SYNOPSIS
+    set variable
+
+.DESCRIPTION
+    The Get-PodeQueryAsyncRouteOperation function acts as a public interface for searching asynchronous Pode route operations.
+    It utilizes the Search-PodeAsyncTask function to perform the search based on the specified query conditions.
+
+.PARAMETER OATypeName
+    The type name for OpenAPI documentation. The default is 'AsyncTask'. This parameter is only used
+    if the route is included in OpenAPI documentation.
+
+.PARAMETER TaskIdName
+    The name of the parameter that contains the task Id. The default is 'taskId'.
+
+.PARAMETER AsyncTaskQueryRequestName
+    The name of the Pode task query request in the OpenAPI schema. Defaults to 'AsyncTaskQueryRequest'.
+#>
+function Set-PodeOAAsyncRouteObjectName {
+    param(
+        [string]
+        $OATypeName = 'AsyncTask',
+
+        [Parameter()]
+        [string]
+        $TaskIdName = 'taskId',
+
+        [Parameter()]
+        [string]
+        $AsyncTaskQueryRequestName = 'AsyncTaskQueryRequest',
+
+        [Parameter(ParameterSetName = 'OpenAPI')]
+        [string[]]
+        $OADefinitionTag
+    )
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
+
+    foreach ($tag in $DefinitionTag) {
+        # Store the OATypeName name
+        $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.OATypeName = $OATypeName
+        # Store the TaskIdName name
+        $PodeContext.ServerOpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.TaskIdName = $TaskIdName
+        # Store the AsyncTaskQueryRequestName name
+        $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.AsyncTaskQueryRequestName = $AsyncTaskQueryRequestName
+    }
+}

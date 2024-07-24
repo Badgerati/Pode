@@ -118,7 +118,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
     # request logging
     # New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses
+    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses -EnableSchemaValidation
 
     Add-PodeOAInfo -Title 'Async test - OpenAPI 3.0' -Version 0.0.1
 
@@ -375,6 +375,6 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
     Add-PodeRoute  -Method 'Get' -Path '/hello' -ScriptBlock {
         Write-PodeJsonResponse -Value @{'message' = 'Hello!' } -StatusCode 200
-    } -PassThru | Set-PodeOARouteInfo -Summary 'Hello from the server'
+    } -PassThru | Set-PodeOARouteInfo -Summary 'Hello from the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
 
 }

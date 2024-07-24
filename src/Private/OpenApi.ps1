@@ -1259,6 +1259,12 @@ function Get-PodeOABaseObject {
                 'default' = @{ description = 'Internal server error' }
             }
             operationId      = @()
+            #Async Route OpenAPI names
+            AsyncRoute       = @{
+                OATypeName            = 'AsyncTask'
+                TaskIdName            = 'taskId'
+                AsyncTaskQueryRequestName = 'AsyncTaskQueryRequest'
+            }
         }
     }
 }
@@ -1300,14 +1306,13 @@ function Initialize-PodeOpenApiTable {
     # Initialization of the OpenAPI table with default settings
     $OpenAPI = @{
         DefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
+
+        # Set the currently selected definition tag
+        'SelectedDefinitionTag'     = $DefaultDefinitionTag
+
+        # Initialize the Definitions dictionary with a base OpenAPI object for the selected definition tag
+        'Definitions'               = @{  $DefaultDefinitionTag = Get-PodeOABaseObject }
     }
-
-    # Set the currently selected definition tag
-    $OpenAPI['SelectedDefinitionTag'] = $DefaultDefinitionTag
-
-    # Initialize the Definitions dictionary with a base OpenAPI object for the selected definition tag
-    $OpenAPI['Definitions'] = @{ $OpenAPI['SelectedDefinitionTag'] = Get-PodeOABaseObject }
-
     # Return the initialized OpenAPI table
     return $OpenAPI
 }
