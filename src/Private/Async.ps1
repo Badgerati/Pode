@@ -734,7 +734,7 @@ function Search-PodeAsyncTask {
                 }
                 else {
                     # The query provided has an invalid format.
-                    throw $PodeLocale.InvalidQueryFormatExceptionMessage
+                    throw $PodeLocale.invalidQueryFormatExceptionMessage
                 }
             }
 
@@ -1355,7 +1355,7 @@ function Export-PodeAsyncInfo {
 #>
 function Get-PodeAsyncQueryScriptBlock {
     return [scriptblock] {
-        param($Payload,$DefinitionTag)
+        param($Payload, $DefinitionTag)
 
         # Determine the source of the query based on the payload parameter
         switch ($Payload) {

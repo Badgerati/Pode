@@ -285,9 +285,8 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La définition OpenAPI nommée {0} existe déjà.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
-    UnsupportedSerializationTypeExceptionMessage                      = 'Type de sérialisation non pris en charge : {0}'
-    GetRequestBodyNotAllowedExceptionMessage                          = 'Les opérations GET ne peuvent pas avoir de corps de requête.'
-    InvalidQueryFormatExceptionMessage                                = 'La requête fournie a un format invalide.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'Les opérations GET ne peuvent pas avoir de corps de requête.'
+    invalidQueryFormatExceptionMessage                                = 'La requête fournie a un format invalide.'
     asyncIdDoesNotExistExceptionMessage                               = "Async {0} n'existe pas."
     asyncRouteOperationDoesNotExistExceptionMessage                   = "Aucune opération de route asynchrone n'existe avec l'Id {0}."
     scriptContainsDisallowedCommandExceptionMessage                   = "Le script ne peut pas contenir la commande '{0}'."
@@ -295,5 +294,6 @@
     setPodeAsyncProgressExceptionMessage                              = "Set-PodeAsyncProgress ne peut être utilisé qu'à l'intérieur d'un Scriptblock de Route Asynchrone."
     progressLimitLowerThanCurrentExceptionMessage                     = 'Une limite de progression ne peut pas être inférieure à la progression actuelle.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} varie entre différentes définitions OpenAPI.'
 }
 

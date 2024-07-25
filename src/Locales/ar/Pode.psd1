@@ -283,9 +283,8 @@
     adModuleWindowsOnlyExceptionMessage                               = 'وحدة Active Directory متاحة فقط على نظام Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'تم تمكين تسجيل الطلبات بالفعل.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.'
-    UnsupportedSerializationTypeExceptionMessage                      = 'نوع التسلسل غير مدعوم: {0}'
-    GetRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات GET على محتوى الطلب.'
-    InvalidQueryFormatExceptionMessage                                = 'الاستعلام المقدم له تنسيق غير صالح.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات GET على محتوى الطلب.'
+    invalidQueryFormatExceptionMessage                                = 'الاستعلام المقدم له تنسيق غير صالح.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
     renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} غير موجود.'
@@ -295,4 +294,5 @@
     setPodeAsyncProgressExceptionMessage                              = 'يمكن استخدام Set-PodeAsyncProgress فقط داخل كتلة نصية لمسار غير متزامن.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'لا يمكن أن يكون حد التقدم أقل من التقدم الحالي.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} يختلف بين تعريفات OpenAPI المختلفة.'
 }

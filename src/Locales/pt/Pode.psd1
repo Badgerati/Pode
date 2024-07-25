@@ -286,13 +286,13 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'A definição OpenAPI com o nome {0} já existe.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag não pode ser usado dentro de um 'ScriptBlock' Select-PodeOADefinition."
     definitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
-    UnsupportedSerializationTypeExceptionMessage                      = 'Tipo de serialização não suportado: {0}'
-    GetRequestBodyNotAllowedExceptionMessage                          = 'As operações GET não podem ter um corpo de solicitação.'
-    InvalidQueryFormatExceptionMessage                                = 'A consulta fornecida tem um formato inválido.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'As operações GET não podem ter um corpo de solicitação.'
+    invalidQueryFormatExceptionMessage                                = 'A consulta fornecida tem um formato inválido.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} não existe.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Nenhuma operação de Rota Assíncrona existe com o Id {0}.'
     scriptContainsDisallowedCommandExceptionMessage                   = "O script não pode conter o comando '{0}'."
     invalidQueryElementExceptionMessage                               = 'A consulta fornecida é inválida. {0} não é um elemento válido para uma consulta.'
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress só pode ser usado dentro de um Scriptblock de Rota Assíncrona.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Um limite de progresso não pode ser inferior ao progresso atual.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} varia entre diferentes definições OpenAPI.'
 }

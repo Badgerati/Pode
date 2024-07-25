@@ -285,9 +285,8 @@
   invalidAccessControlMaxAgeDurationExceptionMessage                = 'Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.'
   openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI definition named {0} already exists.'
   renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
-  UnsupportedSerializationTypeExceptionMessage                      = 'Unsupported serialization type: {0}'
-  GetRequestBodyNotAllowedExceptionMessage                          = 'GET operations cannot have a Request Body.'
-  InvalidQueryFormatExceptionMessage                                = 'The query provided has an invalid format.'
+  getRequestBodyNotAllowedExceptionMessage                          = 'GET operations cannot have a Request Body.'
+  invalidQueryFormatExceptionMessage                                = 'The query provided has an invalid format.'
   asyncIdDoesNotExistExceptionMessage                               = "Async {0} doesn't exist."
   asyncRouteOperationDoesNotExistExceptionMessage                   = 'No Async Route operation exists with Id {0}.'
   scriptContainsDisallowedCommandExceptionMessage                   = "Script is not allowed to contain the command '{0}'."
@@ -295,4 +294,6 @@
   setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress can only be used inside an Async Route Scriptblock.'
   progressLimitLowerThanCurrentExceptionMessage                     = 'A Progress limit cannot be lower than the current progress.'
   definitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
+  openApiDefinitionsMismatchExceptionMessage                        = '{0} varies between different OpenAPI definitions.'
+
 }

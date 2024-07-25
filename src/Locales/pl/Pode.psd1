@@ -286,13 +286,13 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'Definicja OpenAPI o nazwie {0} już istnieje.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag nie może być używany wewnątrz 'ScriptBlock' Select-PodeOADefinition."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Tag definicji dla Route nie może zostać zmieniony.'
-    UnsupportedSerializationTypeExceptionMessage                      = 'Nieobsługiwany typ serializacji: {0}'
-    GetRequestBodyNotAllowedExceptionMessage                          = 'Operacje GET nie mogą mieć treści żądania.'
-    InvalidQueryFormatExceptionMessage                                = 'Podane zapytanie ma nieprawidłowy format.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'Operacje GET nie mogą mieć treści żądania.'
+    invalidQueryFormatExceptionMessage                                = 'Podane zapytanie ma nieprawidłowy format.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} nie istnieje.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Operacja Async Route z Id {0} nie istnieje.'
     scriptContainsDisallowedCommandExceptionMessage                   = "Skrypt nie może zawierać polecenia '{0}'."
     invalidQueryElementExceptionMessage                               = 'Podane zapytanie jest nieprawidłowe. {0} nie jest prawidłowym elementem zapytania.'
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress można używać tylko wewnątrz bloku skryptowego Async Route.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Limit postępu nie może być niższy niż obecny postęp.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} różni się między różnymi definicjami OpenAPI.'
 }
