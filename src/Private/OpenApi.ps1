@@ -1324,7 +1324,7 @@ function Initialize-PodeOpenApiTable {
     )
     # Initialization of the OpenAPI table with default settings
     $OpenAPI = @{
-        DefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
+        DefinitionTagSelectionStack = [System.Collections.Generic.Stack[System.Object]]::new()
     }
 
     # Set the currently selected definition tag
