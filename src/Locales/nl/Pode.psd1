@@ -294,5 +294,6 @@
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress kan alleen worden gebruikt binnen een Async Route Scriptblock.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Een voortgangslimiet kan niet lager zijn dan de huidige voortgang.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} verschilt tussen verschillende OpenAPI-definities.'
 }
 

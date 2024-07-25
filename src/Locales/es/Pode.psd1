@@ -294,4 +294,5 @@
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress solo se puede usar dentro de un Scriptblock de Ruta Asíncrona.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Un límite de progreso no puede ser inferior al progreso actual.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'La etiqueta de definición para una Route no se puede cambiar.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} varía entre diferentes definiciones de OpenAPI.'
 }
