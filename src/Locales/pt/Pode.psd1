@@ -286,7 +286,6 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'A definição OpenAPI com o nome {0} já existe.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag não pode ser usado dentro de um 'ScriptBlock' Select-PodeOADefinition."
     definitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
-    getRequestBodyNotAllowedExceptionMessage                          = 'As operações GET não podem ter um corpo de solicitação.'
     invalidQueryFormatExceptionMessage                                = 'A consulta fornecida tem um formato inválido.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} não existe.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Nenhuma operação de Rota Assíncrona existe com o Id {0}.'

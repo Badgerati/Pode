@@ -285,7 +285,6 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ongeldige Access-Control-Max-Age duur opgegeven: {0}. Moet groter zijn dan 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
-    getRequestBodyNotAllowedExceptionMessage                          = 'GET-operaties kunnen geen Request Body hebben.'
     invalidQueryFormatExceptionMessage                                = 'De opgegeven query heeft een ongeldig formaat.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} bestaat niet.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Er bestaat geen Async Route-operatie met Id {0}.'

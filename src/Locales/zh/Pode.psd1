@@ -286,7 +286,6 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
-    getRequestBodyNotAllowedExceptionMessage                          = 'GET 操作不能包含请求体。'
     invalidQueryFormatExceptionMessage                                = '提供的查询格式无效。'
     asyncIdDoesNotExistExceptionMessage                               = '异步 {0} 不存在。'
     asyncRouteOperationDoesNotExistExceptionMessage                   = '不存在 ID 为 {0} 的异步路由操作。'
