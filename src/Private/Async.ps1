@@ -652,7 +652,6 @@ function Search-PodeAsyncTask {
 
     # Initialize an array to store the matched elements
     $matchedElements = @()
-
     # Check if there are any async route results to search
     if ($PodeContext.AsyncRoutes.Results.count -gt 0) {
         # Clone the keys of the results to iterate over them
@@ -1416,26 +1415,84 @@ function Get-PodeAsyncQueryScriptBlock {
     }
 }
 
+
 <#
 .SYNOPSIS
-    set variable
+    Retrieves the asynchronous route OpenAPI schema names.
 
 .DESCRIPTION
-    The Get-PodeQueryAsyncRouteOperation function acts as a public interface for searching asynchronous Pode route operations.
-    It utilizes the Search-PodeAsyncTask function to perform the search based on the specified query conditions.
+    The Get-PodeAsyncRouteOAName function is used to fetch the schema names for asynchronous Pode route operations from the OpenAPI definitions.
+    It checks for consistency across multiple OpenAPI definition tags and throws an exception if there are mismatches in the schema names.
+
+.PARAMETER Tag
+    An array of OpenAPI definition tags to be checked.
+
+.THROWS
+    An exception if there are mismatches in the schema names across different OpenAPI definitions.
+#>
+function Get-PodeAsyncRouteOAName {
+    param (
+        [string[]]
+        $Tag
+    )
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $Tag
+
+    if ($DefinitionTag.Count -gt 1) {
+
+        for ( $i = 1 ; $i -lt $DefinitionTag.Count ; $i++) {
+
+            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.OATypeName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.OATypeName) {
+                # varies between different OpenAPI definitions.
+                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'OATypeName')
+            }
+
+            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryParameter -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryParameter) {
+                # varies between different OpenAPI definitions.
+                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryParameter')
+            }
+
+            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryRequestName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryRequestName) {
+                # varies between different OpenAPI definitions.
+                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryRequestName')
+            }
+
+            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.TaskIdName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.TaskIdName) {
+                # varies between different OpenAPI definitions.
+                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'TaskIdName')
+            }
+
+        }
+        return $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute
+    }
+    else {
+        return $PodeContext.Server.OpenApi.Definitions[$DefinitionTag].hiddenComponents.AsyncRoute
+    }
+}
+
+
+
+<#
+.SYNOPSIS
+    Retrieves the schema names for asynchronous Pode route operations.
+
+.DESCRIPTION
+    The Get-PodeOAAsyncRouteSchemaNameInternal function is designed to return a hashtable containing schema names for asynchronous Pode route operations.
+    It includes the type names and parameter names that are used for OpenAPI documentation.
 
 .PARAMETER OATypeName
-    The type name for OpenAPI documentation. The default is 'AsyncTask'. This parameter is only used
-    if the route is included in OpenAPI documentation.
+    The type name for OpenAPI documentation. The default is 'AsyncTask'.
 
 .PARAMETER TaskIdName
     The name of the parameter that contains the task Id. The default is 'taskId'.
 
-.PARAMETER AsyncTaskQueryRequestName
+.PARAMETER QueryRequestName
     The name of the Pode task query request in the OpenAPI schema. Defaults to 'AsyncTaskQueryRequest'.
+
+.PARAMETER QueryParameterName
+    The name of the query parameter in the OpenAPI schema. Defaults to 'QueryParameter'.
 #>
-function Set-PodeOAAsyncRouteObjectName {
-    param(
+function Get-PodeOAAsyncRouteSchemaNameInternal {
+    param (
         [string]
         $OATypeName = 'AsyncTask',
 
@@ -1445,20 +1502,21 @@ function Set-PodeOAAsyncRouteObjectName {
 
         [Parameter()]
         [string]
-        $AsyncTaskQueryRequestName = 'AsyncTaskQueryRequest',
+        $QueryRequestName = 'AsyncTaskQueryRequest',
 
-        [Parameter(ParameterSetName = 'OpenAPI')]
-        [string[]]
-        $OADefinitionTag
+        [Parameter()]
+        [string]
+        $QueryParameterName = 'QueryParameter'
     )
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
-
-    foreach ($tag in $DefinitionTag) {
+    return @{
         # Store the OATypeName name
-        $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.OATypeName = $OATypeName
+        OATypeName         = $OATypeName
         # Store the TaskIdName name
-        $PodeContext.ServerOpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.TaskIdName = $TaskIdName
-        # Store the AsyncTaskQueryRequestName name
-        $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.AsyncTaskQueryRequestName = $AsyncTaskQueryRequestName
+        TaskIdName         = $TaskIdName
+        # Store the QueryRequestName name
+        QueryRequestName   = $QueryRequestName
+        # Store the QueryParameterName name
+        QueryParameterName = $QueryParameterName
     }
 }
+
