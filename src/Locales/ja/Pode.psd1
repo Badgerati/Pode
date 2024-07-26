@@ -286,7 +286,6 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
-    getRequestBodyNotAllowedExceptionMessage                          = 'GET操作にはリクエストボディを含めることはできません。'
     invalidQueryFormatExceptionMessage                                = '提供されたクエリには無効な形式があります。'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} は存在しません.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id {0} の非同期ルート操作は存在しません.'

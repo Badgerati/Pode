@@ -285,7 +285,6 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duración inválida para Access-Control-Max-Age proporcionada: {0}. Debe ser mayor que 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La definición de OpenAPI con el nombre {0} ya existe.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag no se puede usar dentro de un 'ScriptBlock' de Select-PodeOADefinition."
-    getRequestBodyNotAllowedExceptionMessage                          = 'Las operaciones GET no pueden tener un cuerpo de solicitud.'
     invalidQueryFormatExceptionMessage                                = 'La consulta proporcionada tiene un formato no válido.'
     asyncIdDoesNotExistExceptionMessage                               = 'Async {0} no existe.'
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'No existe ninguna operación de ruta asíncrona con Id {0}.'
@@ -294,4 +293,5 @@
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress solo se puede usar dentro de un Scriptblock de Ruta Asíncrona.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Un límite de progreso no puede ser inferior al progreso actual.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'La etiqueta de definición para una Route no se puede cambiar.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} varía entre diferentes definiciones de OpenAPI.'
 }

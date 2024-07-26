@@ -118,7 +118,6 @@ function Invoke-PodeInternalTask {
             Task          = $Task.Name
             Runspace      = $runspace
             Result        = $result
-            startingTime  = $startingTime
             CompletedTime = $null
             ExpireTime    = $expireTime
             Timeout       = $Timeout
