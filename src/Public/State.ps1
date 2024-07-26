@@ -204,7 +204,7 @@ function Remove-PodeState {
 
     $value = $PodeContext.Server.State[$Name].Value
     $null = $PodeContext.Server.State.Remove($Name)
- 
+
     return $value
 }
 
@@ -262,9 +262,11 @@ function Save-PodeState {
         $Include,
 
         [Parameter()]
-        [int16]
+        [ValidateRange(0, 100)]
+        [int]
         $Depth = 10,
 
+        [Parameter()]
         [switch]
         $Compress
     )
@@ -363,9 +365,12 @@ function Restore-PodeState {
         [string]
         $Path,
 
+        [Parameter()]
         [switch]
         $Merge,
 
+        [Parameter()]
+        [ValidateRange(0, 100)]
         [int16]
         $Depth = 10
     )
