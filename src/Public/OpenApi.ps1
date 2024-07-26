@@ -118,9 +118,11 @@ function Enable-PodeOpenApi {
         [string]
         $RouteFilter = '/*',
 
+        [Parameter()]
         [string[]]
         $EndpointName,
 
+        [Parameter()]
         [object[]]
         $Middleware,
 
@@ -144,21 +146,26 @@ function Enable-PodeOpenApi {
         [switch]
         $RestrictRoutes,
 
+        [Parameter()]
         [ValidateSet('View', 'Download')]
         [String]
         $Mode = 'view',
 
+        [Parameter()]
         [ValidateSet('Json', 'Json-Compress', 'Yaml')]
         [String]
         $MarkupLanguage = 'Json',
 
+        [Parameter()]
         [switch]
         $EnableSchemaValidation,
 
+        [Parameter()]
         [ValidateRange(1, 100)]
         [int]
         $Depth = 20,
 
+        [Parameter()]
         [switch]
         $DisableMinimalDefinitions,
 
@@ -170,6 +177,7 @@ function Enable-PodeOpenApi {
         [switch]
         $NoDefaultResponses,
 
+        [Parameter()]
         [string]
         $DefinitionTag
 
