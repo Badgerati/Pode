@@ -821,7 +821,7 @@ function Start-PodeLoggingRunspace {
         return
     }
 
-    $script = {
+    $scriptBlock = {
         ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = 'LoggingRunspace'
         $log = @{}
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -887,7 +887,7 @@ function Start-PodeLoggingRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Logs -ScriptBlock $script
+    Add-PodeRunspace -Type Logs -ScriptBlock $scriptBlock
 }
 
 <#

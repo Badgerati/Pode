@@ -8,7 +8,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 Start-PodeServer -Threads 2 {
 
     # add two endpoints
-    Add-PodeEndpoint -Address localhost -Port 9000 -Protocol Tcp
+    Add-PodeEndpoint -Address * -Port 9000 -Protocol Tcp
 
     # enable logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
