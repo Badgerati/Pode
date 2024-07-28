@@ -132,9 +132,16 @@ function New-PodeContext {
 
     # basic logging setup
     $ctx.Server.Logging = @{
-        Enabled    = $true
-        Types      = @{}
-        QueueLimit = 500
+        Enabled     = $true
+        Types       = @{}
+        Masking = @{
+            Patterns   = @(
+                '(?<keep_before>Password=)\w+'
+            )
+            Mask       = '--MASKED--'
+        }
+        QueueLimit  = 500
+        ScriptBlock = @{}
     }
 
     # set thread counts
@@ -854,16 +861,13 @@ function Set-PodeServerConfiguration {
     }
 
     # logging
-    $Context.Server.Logging = @{
-        Enabled     = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
-        Masking     = @{
-            Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
-            Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
-        }
-        Types       = @{}
-        QueueLimit  = (Protect-PodeValue -Value $Configuration.Logging.QueueLimit $Context.Server.Logging.QueueLimit)
-        ScriptBlock = @{}
+    $Context.Server.Logging.Enabled = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
+    $Context.Server.Logging.Masking = @{
+        Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
+        Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
     }
+    $Context.Server.Logging.QueueLimit = (Protect-PodeValue -Value $Configuration.Logging.QueueLimit $Context.Server.Logging.QueueLimit)
+
 
     # sockets
     if (!(Test-PodeIsEmpty $Configuration.Ssl.Protocols)) {
