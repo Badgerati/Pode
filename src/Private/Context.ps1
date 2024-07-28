@@ -77,6 +77,7 @@ function New-PodeContext {
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
+        Add-Member -MemberType NoteProperty -Name LogsToMethod -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Threading -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
@@ -409,7 +410,7 @@ function New-PodeContext {
 
     # requests that should be logged
     $ctx.LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-
+    $ctx.LogsToMethod = [System.Collections.Concurrent.ConcurrentDictionary[string, System.Collections.Concurrent.ConcurrentQueue[hashtable]]]::new()
     # middleware that needs to run
     $ctx.Server.Middleware = @()
     $ctx.Server.BodyParsers = @{}
@@ -795,6 +796,7 @@ function New-PodeStateContext {
             Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
             Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
             Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
+            Add-Member -MemberType NoteProperty -Name LogsToMethod -Value $Context.LogsToMethod -PassThru |
             Add-Member -MemberType NoteProperty -Name Threading -Value $Context.Threading -PassThru |
             Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
 }
@@ -853,13 +855,14 @@ function Set-PodeServerConfiguration {
 
     # logging
     $Context.Server.Logging = @{
-        Enabled    = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
-        Masking    = @{
+        Enabled     = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
+        Masking     = @{
             Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
             Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
         }
-        Types      = @{}
-        QueueLimit = (Protect-PodeValue -Value $Configuration.Logging.QueueLimit $Context.Server.Logging.QueueLimit)
+        Types       = @{}
+        QueueLimit  = (Protect-PodeValue -Value $Configuration.Logging.QueueLimit $Context.Server.Logging.QueueLimit)
+        ScriptBlock = @{}
     }
 
     # sockets

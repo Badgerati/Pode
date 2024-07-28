@@ -44,6 +44,9 @@ The maximum size of a log file, before Pode starts writing to a new log file.
 .PARAMETER Custom
 If supplied, will allow you to create a Custom Logging output method.
 
+.PARAMETER UseRunspace
+If supplied, the Custom Logging output method will use its own separated runspace
+
 .PARAMETER ScriptBlock
 The ScriptBlock that defines how to output a log item.
 
@@ -190,6 +193,10 @@ function New-PodeLoggingMethod {
         [switch]
         $Custom,
 
+        [Parameter(ParameterSetName = 'Custom')]
+        [switch]
+        $UseRunspace,
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
@@ -316,6 +323,7 @@ function New-PodeLoggingMethod {
 
     # batch details
     $batchInfo = @{
+        Id         = New-PodeGuid
         Size       = $Batch
         Timeout    = $BatchTimeout
         LastUpdate = $null
@@ -326,7 +334,10 @@ function New-PodeLoggingMethod {
     # return info on appropriate logging type
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'terminal' {
+            $methodId = New-PodeGuid
+            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingTerminalMethod)
             return @{
+                Id          = $methodId
                 ScriptBlock = (Get-PodeLoggingTerminalMethod)
                 Batch       = $batchInfo
                 Arguments   = @{
@@ -338,10 +349,12 @@ function New-PodeLoggingMethod {
 
         'file' {
             $Path = (Protect-PodeValue -Value $Path -Default './logs')
-            $Path = (Get-PodeRelativePath -Path $Path -JoinRoot)
+            $Path = (Get-PodeRelativePath -Path $Path -JoinRoot -Resolve)
             $null = New-Item -Path $Path -ItemType Directory -Force
-
+            $methodId = New-PodeGuid
+            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingFileMethod)
             return @{
+                Id          = $methodId
                 ScriptBlock = (Get-PodeLoggingFileMethod)
                 Batch       = $batchInfo
                 Arguments   = @{
@@ -371,7 +384,10 @@ function New-PodeLoggingMethod {
                 $null = [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName)
             }
 
+            $methodId = New-PodeGuid
+            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingEventViewerMethod)
             return @{
+                Id          = $methodId
                 ScriptBlock = (Get-PodeLoggingEventViewerMethod)
                 Batch       = $batchInfo
                 Arguments   = @{
@@ -393,7 +409,10 @@ function New-PodeLoggingMethod {
                 throw ($PodeLocale.invalidEncodingExceptionMessage -f $Encoding)
             }
 
+            $methodId = New-PodeGuid
+            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingSysLogMethod)
             return @{
+                Id          = $methodId
                 ScriptBlock = (Get-PodeLoggingSysLogMethod)
                 Batch       = $batchInfo
                 Arguments   = @{
@@ -414,7 +433,10 @@ function New-PodeLoggingMethod {
         }
 
         'restful' {
+            $methodId = New-PodeGuid
+            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingRestfulMethod)
             return @{
+                Id          = $methodId
                 ScriptBlock = (Get-PodeLoggingRestfulMethod)
                 Batch       = $batchInfo
                 Arguments   = @{
@@ -433,9 +455,38 @@ function New-PodeLoggingMethod {
         }
 
         'custom' {
-            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $methodId = New-PodeGuid
+            if ($UseRunspace.IsPresent) {
+                $enanchedScriptBlock = {
+                    param($MethodId)
 
+                    ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingCustomMethod_$MethodId"
+
+                    $log = @{}
+                    while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                        Start-Sleep -Milliseconds 100
+
+                        if ($PodeContext.LogsToMethod[$MethodId].TryDequeue([ref]$log)) {
+                            if ($null -ne $log) {
+                                $item = $log.Result
+                                $options = $log.Options
+                                $rawItem = $log.RawItems
+                                # Original ScriptBlock Start
+                                <# ScriptBlock #>
+                                # Original ScriptBlock End
+                            }
+                        }
+                    }
+                }
+                $PodeContext.Server.Logging.ScriptBlock[$methodId] = [ScriptBlock]::Create( $enanchedScriptBlock.ToString().Replace('<# ScriptBlock #>', $ScriptBlock.ToString()))
+                $usingVars = $null
+            }
+            else {
+                $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+                $PodeContext.Server.Logging.ScriptBlock[$methodId] = $null
+            }
             return @{
+                Id             = $methodId
                 ScriptBlock    = $ScriptBlock
                 UsingVariables = $usingVars
                 Batch          = $batchInfo

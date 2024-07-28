@@ -1,7 +1,7 @@
 param(
-    [ValidateSet('Terminal', 'File', 'mylog', 'Syslog')]
+    [ValidateSet('Terminal', 'File', 'mylog', 'Syslog','EventViewer','Custom')]
     [string[]]
-    $LoggingType = @('Syslog', 'Terminal'),
+    $LoggingType = @('Terminal','file', 'Custom'),
 
     [switch]
     $Raw
@@ -39,8 +39,15 @@ Start-PodeServer -browse {
     if ( $LoggingType -icontains 'custom') {
         $logging += New-PodeLoggingMethod -Custom -ScriptBlock {
             param($item)
-            # send request row to S3
+            $item|Out-File './examples/logs/custom.log' -Append
         }
+
+        $logging += New-PodeLoggingMethod -Custom -UseRunspace -ScriptBlock {
+            $item|Out-File './examples/logs/customWithRunspace.log' -Append
+        }
+    }
+    if ( $LoggingType -icontains 'eventviewer') {
+        $logging += New-PodeLoggingMethod -EventViewer
     }
 
     if ( $LoggingType -icontains 'syslog') {
