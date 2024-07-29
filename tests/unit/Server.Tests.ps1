@@ -125,7 +125,9 @@ Describe 'Restart-PodeInternalServer' {
                     key = @{}
                 }
                 Logging         = @{
-                    Types = @{ 'key' = 'value' }
+                    Type          = @{ 'key' = 'value' }
+                    LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+                    Method        = @{ 'key' = 'value' }
                 }
                 Middleware      = @{ 'key' = 'value' }
                 Endpoints       = @{ 'key' = 'value' }
@@ -243,7 +245,7 @@ Describe 'Restart-PodeInternalServer' {
         Restart-PodeInternalServer | Out-Null
 
         $PodeContext.Server.Routes['GET'].Count | Should -Be 0
-        $PodeContext.Server.Logging.Types.Count | Should -Be 0
+        $PodeContext.Server.Logging.Type.Count | Should -Be 0
         $PodeContext.Server.Middleware.Count | Should -Be 0
         $PodeContext.Server.Endware.Count | Should -Be 0
         $PodeContext.Server.Sessions.Count | Should -Be 0

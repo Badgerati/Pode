@@ -336,7 +336,10 @@ function New-PodeLoggingMethod {
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'terminal' {
             $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingTerminalMethod)
+            $PodeContext.Server.Logging.Method[$methodId] = @{
+                ScriptBlock = (Get-PodeLoggingTerminalMethod)
+                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+            }
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
@@ -353,7 +356,10 @@ function New-PodeLoggingMethod {
             $Path = (Get-PodeRelativePath -Path $Path -JoinRoot -Resolve)
             $null = New-Item -Path $Path -ItemType Directory -Force
             $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingFileMethod)
+            $PodeContext.Server.Logging.Method[$methodId] = @{
+                ScriptBlock = (Get-PodeLoggingFileMethod)
+                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+            }
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
@@ -386,7 +392,10 @@ function New-PodeLoggingMethod {
             }
 
             $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingEventViewerMethod)
+            $PodeContext.Server.Logging.Method[$methodId] = @{
+                ScriptBlock = (Get-PodeLoggingEventViewerMethod)
+                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+            }
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
@@ -411,7 +420,10 @@ function New-PodeLoggingMethod {
             }
 
             $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingSysLogMethod)
+            $PodeContext.Server.Logging.Method[$methodId] = @{
+                ScriptBlock = (Get-PodeLoggingSysLogMethod)
+                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+            }
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
@@ -435,7 +447,10 @@ function New-PodeLoggingMethod {
 
         'restful' {
             $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingRestfulMethod)
+            $PodeContext.Server.Logging.Method[$methodId] = @{
+                ScriptBlock = (Get-PodeLoggingRestfulMethod)
+                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+            }
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
@@ -467,7 +482,7 @@ function New-PodeLoggingMethod {
                     while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                         Start-Sleep -Milliseconds 100
 
-                        if ($PodeContext.Server.Logging.LogsToMethod[$MethodId].TryDequeue([ref]$log)) {
+                        if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
                             if ($null -ne $log) {
                                 $item = $log.item
                                 $options = $log.options
@@ -484,7 +499,11 @@ function New-PodeLoggingMethod {
                         }
                     }
                 }
-                $PodeContext.Server.Logging.ScriptBlock[$methodId] = [ScriptBlock]::Create( $enanchedScriptBlock.ToString().Replace('<# ScriptBlock #>', $ScriptBlock.ToString()))
+
+                $PodeContext.Server.Logging.Method[$methodId] = @{
+                    ScriptBlock = [ScriptBlock]::Create( $enanchedScriptBlock.ToString().Replace('<# ScriptBlock #>', $ScriptBlock.ToString()))
+                    Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+                }
 
                 return @{
                     Id            = $methodId
@@ -498,7 +517,10 @@ function New-PodeLoggingMethod {
             }
             else {
                 $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-                $PodeContext.Server.Logging.ScriptBlock[$methodId] = $ScriptBlock
+                $PodeContext.Server.Logging.Method[$methodId] = @{
+                    ScriptBlock = $ScriptBlock
+                    Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+                }
                 return @{
                     Id             = $methodId
                     ScriptBlock    = $ScriptBlock
@@ -566,7 +588,7 @@ function Enable-PodeRequestLogging {
         $name = Get-PodeRequestLoggingName
 
         # error if it's already enabled
-        if ($PodeContext.Server.Logging.Types.Contains($name)) {
+        if ($PodeContext.Server.Logging.Type.Contains($name)) {
             # Request Logging has already been enabled
             throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f 'Request')
         }
@@ -578,7 +600,7 @@ function Enable-PodeRequestLogging {
     }
     process {
         # ensure the Method contains a scriptblock
-        if (! $PodeContext.Server.Logging.ScriptBlock.ContainsKey( $_.Id)) {
+        if (! $PodeContext.Server.Logging.Method.ContainsKey( $_.Id)) {
             # The supplied output Method for Request Logging requires a valid ScriptBlock
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Request')
         }
@@ -591,7 +613,7 @@ function Enable-PodeRequestLogging {
         }
 
         # add the request logger
-        $PodeContext.Server.Logging.Types[$name] = @{
+        $PodeContext.Server.Logging.Type[$name] = @{
             Method      = $Method
             ScriptBlock = (Get-PodeLoggingInbuiltType -Type Requests)
             Properties  = @{
@@ -667,7 +689,7 @@ function Enable-PodeErrorLogging {
 
         $name = Get-PodeErrorLoggingName
         # error if it's already enabled
-        if ($PodeContext.Server.Logging.Types.Contains($Name)) {
+        if ($PodeContext.Server.Logging.Type.Contains($Name)) {
             # Error Logging has already been enabled
             throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f 'Error')
         }
@@ -679,7 +701,7 @@ function Enable-PodeErrorLogging {
 
     process {
         # ensure the Method contains a scriptblock
-        if (! $PodeContext.Server.Logging.ScriptBlock.ContainsKey( $_.Id)) {
+        if (! $PodeContext.Server.Logging.Method.ContainsKey( $_.Id)) {
             # The supplied output Method for Error Logging requires a valid ScriptBlock
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Error')
         }
@@ -693,7 +715,7 @@ function Enable-PodeErrorLogging {
         }
 
         # add the error logger
-        $PodeContext.Server.Logging.Types[$name] = @{
+        $PodeContext.Server.Logging.Type[$name] = @{
             Method      = $Method
             ScriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
             Arguments   = @{
@@ -751,7 +773,7 @@ function Enable-PodeGeneralLogging {
     begin {
         $pipelineMethods = @()
         # error if it's already enabled
-        if ($PodeContext.Server.Logging.Types.Contains($Name)) {
+        if ($PodeContext.Server.Logging.Type.Contains($Name)) {
             throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f $Name)
         }
 
@@ -759,7 +781,7 @@ function Enable-PodeGeneralLogging {
 
     process {
         # ensure the Method contains a scriptblock
-        if (! $PodeContext.Server.Logging.ScriptBlock.ContainsKey( $_.Id)) {
+        if (! $PodeContext.Server.Logging.Method.ContainsKey( $_.Id)) {
             # The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock.
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
         }
@@ -772,7 +794,7 @@ function Enable-PodeGeneralLogging {
         }
 
         # add the error logger
-        $PodeContext.Server.Logging.Types[$Name] = @{
+        $PodeContext.Server.Logging.Type[$Name] = @{
             Method      = $Method
             ScriptBlock = (Get-PodeLoggingInbuiltType -Type General)
             Arguments   = @{
@@ -843,14 +865,14 @@ function Enable-PodeTraceLogging {
         $pipelineMethods = @()
         $name = Get-PodeMainLoggingName
         # error if it's already enabled
-        if ($PodeContext.Server.Logging.Types.Contains($name)) {
+        if ($PodeContext.Server.Logging.Type.Contains($name)) {
             throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f $name)
         }
     }
 
     process {
         # ensure the Method contains a scriptblock
-        if (! $PodeContext.Server.Logging.ScriptBlock.ContainsKey( $_.Id)) {
+        if (! $PodeContext.Server.Logging.Method.ContainsKey( $_.Id)) {
             # The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock.
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Main')
         }
@@ -864,7 +886,7 @@ function Enable-PodeTraceLogging {
         }
 
         # add the error logger
-        $PodeContext.Server.Logging.Types[$name] = @{
+        $PodeContext.Server.Logging.Type[$name] = @{
             Method      = $Method
             ScriptBlock = (Get-PodeLoggingInbuiltType -Type Main)
             Arguments   = @{
@@ -978,7 +1000,7 @@ function Add-PodeLogger {
         Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
         # ensure the name doesn't already exist
-        if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
+        if ($PodeContext.Server.Logging.Type.ContainsKey($Name)) {
             # Logging method already defined
             throw ($PodeLocale.loggingMethodAlreadyDefinedExceptionMessage -f $Name)
         }
@@ -993,7 +1015,7 @@ function Add-PodeLogger {
         $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
         # add logging method to server
-        $PodeContext.Server.Logging.Types[$Name] = @{
+        $PodeContext.Server.Logging.Type[$Name] = @{
             Method         = $Method
             ScriptBlock    = $ScriptBlock
             UsingVariables = $usingVars
@@ -1028,9 +1050,9 @@ function Remove-PodeLogger {
         Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
         # Check if the specified logging type exists
-        if ($PodeContext.Server.Logging.Types.Contains($Name)) {
+        if ($PodeContext.Server.Logging.Type.Contains($Name)) {
             # Retrieve the method associated with the logging type
-            $method = $PodeContext.Server.Logging.Types[$Name].Method
+            $method = $PodeContext.Server.Logging.Type[$Name].Method
 
             # Remove the logger name from the method's logger collection
             if ($method.Logger.Count -eq 1) {
@@ -1043,26 +1065,22 @@ function Remove-PodeLogger {
             # Check if there are no more loggers associated with the method
             if ($method.Logger.Count -eq 0) {
                 # If the method's runspace is still active, stop and dispose of it
-                if ($PodeContext.Server.Logging.Runspace.ContainsKey($method.Id)) {
-                    $PodeContext.Server.Logging.Runspace[$method.Id].Pipeline.Stop()
-                    $PodeContext.Server.Logging.Runspace[$method.Id].Pipeline.Dispose()
-                    $PodeContext.Server.Logging.Runspace.Remove($method.Id)
+                if ($PodeContext.Server.Logging.Method.ContainsKey($method.Id)) {
+                    $PodeContext.Server.Logging.Method[$method.Id].Runspace.Pipeline.Stop()
+                    $PodeContext.Server.Logging.Method[$method.Id].Runspace.Pipeline.Dispose()
 
                     # Decrease the maximum runspaces for the 'logs' pool if applicable
                     $maxRunspaces = $PodeContext.RunspacePools['logs'].Pool.GetMaxRunspaces
                     if ($maxRunspaces -gt 1) {
                         $PodeContext.RunspacePools['logs'].Pool.SetMaxRunspaces($maxRunspaces - 1)
                     }
-                }
-
-                # Remove the method's script block if it exists
-                if ($PodeContext.Server.Logging.ScriptBlock.ContainsKey($method.Id)) {
-                    $PodeContext.Server.Logging.ScriptBlock.Remove($method.Id)
+                    # Remove the method's script block if it exists
+                    $PodeContext.Server.Logging.Method.Remove($method.Id)
                 }
             }
 
             # Finally, remove the logging type from the Types collection
-            $null = $PodeContext.Server.Logging.Types.Remove($Name)
+            $null = $PodeContext.Server.Logging.Type.Remove($Name)
         }
     }
 }
@@ -1084,7 +1102,7 @@ function Clear-PodeLoggers {
     # Record the operation on the trace log
     Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
-    $PodeContext.Server.Logging.Types.Clear()
+    $PodeContext.Server.Logging.Type.Clear()
 }
 
 <#
@@ -1169,7 +1187,7 @@ function Write-PodeErrorLog {
         # add general info
         $item['Server'] = $PodeContext.Server.ComputerName
         $item['Level'] = $Level
-        if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
+        if ($PodeContext.Server.Logging.Type[$Name].Method.Arguments.AsUTC) {
             $Item.Date = [datetime]::UtcNow
         }
         else {
@@ -1273,7 +1291,7 @@ function Write-PodeLog {
                 break
             }
         }
-        $log = $PodeContext.Server.Logging.Types[$Name]
+        $log = $PodeContext.Server.Logging.Type[$Name]
         if ($log.Standard) {
             $logItem.Item.Server = $PodeContext.Server.ComputerName
 

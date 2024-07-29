@@ -209,7 +209,7 @@ function Start-PodeInternalServer {
                     }
                 }
             }
-
+            $PodeContext.Server.Started = $true
         }
     }
     catch {
@@ -249,7 +249,10 @@ function Restart-PodeInternalServer {
 
         $PodeContext.Server.Views.Clear()
         $PodeContext.Timers.Items.Clear()
-        $PodeContext.Server.Logging.Types.Clear()
+        $PodeContext.Server.Logging.Type.Clear()
+        $PodeContext.Server.Logging.Method.Clear()
+        $PodeContext.Server.Logging.LogsToProcess.Clear()
+
 
         # clear schedules
         $PodeContext.Schedules.Items.Clear()

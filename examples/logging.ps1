@@ -58,13 +58,10 @@ Start-PodeServer -browse {
         throw 'No logging selected'
     }
 
-    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging -Raw:$Raw
-
-
-#    $logging | Enable-PodeTraceLogging -Raw:$Raw
- #   $logging | Enable-PodeRequestLogging -Raw:$Raw
- #   $logging | Enable-PodeErrorLogging -Raw:$Raw
-  #  $logging | Enable-PodeGeneralLogging -Name 'mylog' -Raw:$Raw
+    $logging | Enable-PodeTraceLogging -Raw:$Raw
+    $logging | Enable-PodeRequestLogging -Raw:$Raw
+    $logging | Enable-PodeErrorLogging -Raw:$Raw
+    $logging | Enable-PodeGeneralLogging -Name 'mylog' -Raw:$Raw
 
     Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8085/"

@@ -1,5 +1,54 @@
 using namespace Pode
+<#
+.SYNOPSIS
+    Initializes a new Pode context with various server configurations.
 
+.DESCRIPTION
+    This function creates and initializes a new Pode context object with server configurations, including threading, schedules, tasks, logging, and more.
+    It ensures that essential configurations are set, and it can run in different environments such as serverless or IIS.
+
+.PARAMETER ScriptBlock
+    The script block to be executed within the Pode context.
+
+.PARAMETER FilePath
+    The file path to the script block.
+
+.PARAMETER Threads
+    The number of threads to be used. Default is 1.
+
+.PARAMETER Interval
+    The interval for server operations. Default is 0.
+
+.PARAMETER ServerRoot
+    The root path for the server.
+
+.PARAMETER Name
+    The name of the server. If not provided, a random name will be generated.
+
+.PARAMETER ServerlessType
+    Specifies if the server is running in a serverless context.
+
+.PARAMETER StatusPageExceptions
+    Configuration for displaying exceptions on the status page.
+
+.PARAMETER ListenerType
+    The type of listener to be used by the server.
+
+.PARAMETER EnablePool
+    An array of pools to enable, such as 'timers', 'tasks', 'schedules', and 'websockets'.
+
+.PARAMETER DisableTermination
+    A switch to disable server termination.
+
+.PARAMETER Quiet
+    A switch to enable quiet mode, suppressing certain outputs.
+
+.PARAMETER EnableBreakpoints
+    A switch to enable debugging breakpoints.
+
+.EXAMPLE
+    $context = New-PodeContext -ScriptBlock $script -FilePath 'path/to/file' -Threads 4 -ServerRoot 'path/to/root'
+#>
 function New-PodeContext {
     [CmdletBinding()]
     param(
@@ -93,6 +142,8 @@ function New-PodeContext {
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+    # set to True after the server is started
+    $ctx.Server.Started = $false
 
     # list of created listeners/receivers
     $ctx.Listeners = @()
@@ -131,19 +182,12 @@ function New-PodeContext {
     # basic logging setup
     $ctx.Server.Logging = @{
         Enabled       = $true
-        Types         = @{}
-        Masking       = @{
-            Patterns = @(
-                '(?<keep_before>Password=)\w+'
-            )
-            Mask     = '--MASKED--'
-        }
+        Type         = @{}
+        Masking       = @{}
         QueueLimit    = 500
-        ScriptBlock   = @{}
         # requests that should be logged
         LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-        LogsToMethod  = [System.Collections.Concurrent.ConcurrentDictionary[string, System.Collections.Concurrent.ConcurrentQueue[hashtable]]]::new()
-        Runspace      = @{}
+        Method=@{}
     }
 
     # set thread counts

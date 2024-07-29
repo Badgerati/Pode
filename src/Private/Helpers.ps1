@@ -554,7 +554,7 @@ function Get-PodeSubnetRange {
 function Add-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files','Logs')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files', 'Logs')]
         [string]
         $Type,
 
@@ -881,6 +881,56 @@ function Close-PodeServerInternal {
     if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
         Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
     }
+}
+
+<#
+.SYNOPSIS
+    Waits for the Pode server to start within a specified timeout period.
+
+.DESCRIPTION
+    This function waits for the Pode server to start by checking the server status at regular intervals.
+    If the server does not start within the specified timeout period, the function returns $false. Otherwise, it returns $true.
+    If the server is already started, it immediately returns $true.
+
+.PARAMETER CheckInterval
+    The interval in milliseconds between checks to see if the server has started. Default is 1000 milliseconds (1 second).
+
+.PARAMETER Timeout
+    The maximum amount of time in milliseconds to wait for the server to start. Default is 120000 milliseconds (120 seconds).
+
+.EXAMPLE
+    $result = Wait-PodeServerToStart -CheckInterval 1000 -Timeout 30000
+    if (-not $result) {
+        Write-Warning "The server did not start within the specified timeout period."
+    }
+#>
+function Wait-PodeServerToStart {
+    param (
+        [int]
+        $CheckInterval = 1000,
+        [int]
+        $Timeout = 120000
+    )
+
+    # Return immediately if the server is already started
+    if ($PodeContext.Server.Started) {
+        return $true
+    }
+    # Create a stopwatch to track the elapsed time
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
+    # Wait for the server to start before processing logs or timeout
+    while ( -not $PodeContext.Server.Started ) {
+        if ($stopwatch.ElapsedMilliseconds -ge $Timeout) {
+            return $false # Return false if timeout is reached
+        }
+        Start-Sleep -Milliseconds $CheckInterval
+    }
+
+    # Stop the stopwatch
+    $stopwatch.Stop()
+
+    return $true # Return true if the server started
 }
 
 function New-PodePSDrive {
@@ -1689,7 +1739,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+        { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
@@ -4091,7 +4141,7 @@ function Invoke-PodeHandleFailure {
         'halt' {
             # Report on console and halt
             Write-PodeHost $Message -ForegroundColor Red
-            Write-PodeHost "Pode Server shutting down." -ForegroundColor Red
+            Write-PodeHost 'Pode Server shutting down.' -ForegroundColor Red
             Close-PodeServer
         }
     }

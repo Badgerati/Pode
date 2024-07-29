@@ -8,19 +8,19 @@ BeforeAll {
 }
 Describe 'Get-PodeLogger' {
     It 'Returns null as the logger does not exist' {
-        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{}; } }; }
+        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Type' = @{}; } }; }
         Get-PodeLogger -Name 'test' | Should -Be $null
     }
 
     It 'Returns terminal logger for name' {
-        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = $null }; } }; }
+        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Type' = @{ 'test' = $null }; } }; }
         $result = (Get-PodeLogger -Name 'test')
 
         $result | Should -Be $null
     }
 
     It 'Returns custom logger for name' {
-        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Types' = @{ 'test' = { Write-PodeHost 'hello' } }; } }; }
+        $PodeContext = @{ 'Server' = @{ 'Logging' = @{ 'Type' = @{ 'test' = { Write-PodeHost 'hello' } }; } }; }
         $result = (Get-PodeLogger -Name 'test')
 
         $result | Should -Not -Be $null
@@ -34,7 +34,7 @@ Describe 'Write-PodeLog' {
             Server = @{
                 Logging = @{
                     LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-                    Types         = @{
+                    Type          = @{
                         test = @{
                             Standard = $false
                         }
@@ -67,7 +67,7 @@ Describe 'Write-PodeErrorLog' {
             Server = @{
                 Logging = @{
                     LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-                    Types         = @{
+                    Type          = @{
                         test = @{
                             Standard = $false
                         }
