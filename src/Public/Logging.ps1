@@ -1007,7 +1007,7 @@ function Add-PodeLogger {
 Removes a configured Logging method.
 
 .DESCRIPTION
-Removes a configured Logging method.
+Removes a configured Logging method by its name. This function handles the removal of the logging method and ensures that any associated runspaces and script blocks are properly disposed of if they are no longer in use.
 
 .PARAMETER Name
 The Name of the Logging method.
@@ -1025,30 +1025,42 @@ function Remove-PodeLogger {
     Process {
         # Record the operation on the trace log
         Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
+        # Check if the specified logging type exists
         if ($PodeContext.Server.Logging.Types.Contains($Name)) {
-            # remove this logger from the method
+            # Retrieve the method associated with the logging type
             $method = $PodeContext.Server.Logging.Types[$Name].Method
-            if ( $method.Logger.Count -eq 1) {
+
+            # Remove the logger name from the method's logger collection
+            if ($method.Logger.Count -eq 1) {
                 $method.Logger = @()
             }
             else {
                 $method.Logger = $method.Logger | Where-Object { $_ -ne $Name }
             }
+
+            # Check if there are no more loggers associated with the method
             if ($method.Logger.Count -eq 0) {
-                # Method not anymore in use
+                # If the method's runspace is still active, stop and dispose of it
                 if ($PodeContext.Server.Logging.Runspace.ContainsKey($method.Id)) {
                     $PodeContext.Server.Logging.Runspace[$method.Id].Pipeline.Stop()
                     $PodeContext.Server.Logging.Runspace[$method.Id].Pipeline.Dispose()
                     $PodeContext.Server.Logging.Runspace.Remove($method.Id)
+
+                    # Decrease the maximum runspaces for the 'logs' pool if applicable
                     $maxRunspaces = $PodeContext.RunspacePools['logs'].Pool.GetMaxRunspaces
                     if ($maxRunspaces -gt 1) {
                         $PodeContext.RunspacePools['logs'].Pool.SetMaxRunspaces($maxRunspaces - 1)
                     }
                 }
+
+                # Remove the method's script block if it exists
                 if ($PodeContext.Server.Logging.ScriptBlock.ContainsKey($method.Id)) {
                     $PodeContext.Server.Logging.ScriptBlock.Remove($method.Id)
                 }
             }
+
+            # Finally, remove the logging type from the Types collection
             $null = $PodeContext.Server.Logging.Types.Remove($Name)
         }
     }

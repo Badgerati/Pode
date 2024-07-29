@@ -20,7 +20,7 @@ Describe 'Start-PodeInternalServer' {
         Mock Invoke-PodeScriptBlock { }
         Mock New-PodeRunspaceState { }
         Mock New-PodeRunspacePool { }
-        Mock Start-PodeLoggingRunspace { }
+        Mock Start-PodeLoggerDispatcher { }
         Mock Start-PodeTimerRunspace { }
         Mock Start-PodeScheduleRunspace { }
         Mock Start-PodeGuiRunspace { }

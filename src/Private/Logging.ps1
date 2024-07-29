@@ -45,28 +45,28 @@ function Get-PodeLoggingTerminalMethod {
         }
     }
 }
-
 <#
 .SYNOPSIS
-Defines the method for writing log messages to a file.
+    Defines the method for writing log messages to a file.
 
 .DESCRIPTION
-This internal function handles writing log messages to a file, managing file rotation based on size and date, and removing old log files beyond a specified retention period.
-It includes error handling based on user-defined actions.
+    This internal function handles writing log messages to a file, managing file rotation based on size and date, and removing old log files beyond a specified retention period.
+    It includes error handling based on user-defined actions.
 
 .PARAMETER item
-The log item to be written to the file.
+    The log item to be written to the file.
 
 .PARAMETER options
-A hashtable containing options for the file logging method including Path, Name, MaxDays, MaxSize, Date, FileId, and FailureAction.
+    A hashtable containing options for the file logging method including Path, Name, MaxDays, MaxSize, Date, FileId, and FailureAction.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeLoggingFileMethod {
     return {
         param($MethodId)
 
+        # Set the name of the default runspace
         ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingFileMethod_$MethodId"
         $log = @{}
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -78,26 +78,25 @@ function Get-PodeLoggingFileMethod {
                     try {
                         $item = $log.item
                         $options = $log.options
-                        # $rawItem= $log.rawItem
 
-                        # check if it's an array from batching
+                        # Check if the item is an array from batching
                         if ($item -is [array]) {
                             $item = ($item -join [System.Environment]::NewLine)
                         }
 
-                        # mask values
+                        # Mask values
                         $item = ($item | Protect-PodeLogItem)
 
-                        # variables
+                        # Variables
                         $date = [DateTime]::Now.ToString('yyyy-MM-dd')
 
-                        # do we need to reset the fileId?
+                        # Reset the fileId if the date has changed
                         if ($options.Date -ine $date) {
                             $options.Date = $date
                             $options.FileId = 0
                         }
 
-                        # get the fileId
+                        # Get the fileId if it hasn't been set
                         if ($options.FileId -eq 0) {
                             $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_*.log")
                             $options.FileId = (@(Get-ChildItem -Path $path)).Length
@@ -107,6 +106,8 @@ function Get-PodeLoggingFileMethod {
                         }
 
                         $id = "$($options.FileId)".PadLeft(3, '0')
+
+                        # Check if file size exceeds MaxSize and increment fileId if necessary
                         if ($options.MaxSize -gt 0) {
                             $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
                             if ((Get-Item -Path $path -Force).Length -ge $options.MaxSize) {
@@ -115,13 +116,13 @@ function Get-PodeLoggingFileMethod {
                             }
                         }
 
-                        # get the file to write to
+                        # Get the file to write to
                         $path = [System.IO.Path]::Combine($options.Path, "$($options.Name)_$($date)_$($id).log")
 
-                        # write the item to the file
+                        # Write the item to the file
                         $item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
 
-                        # if set, remove log files beyond days set (ensure this is only run once a day)
+                        # Remove log files beyond the MaxDays retention period, ensuring this runs once a day
                         if (($options.MaxDays -gt 0) -and ($options.NextClearDown -lt [DateTime]::Now.Date)) {
                             $date = [DateTime]::Now.Date.AddDays(-$options.MaxDays)
 
@@ -133,10 +134,9 @@ function Get-PodeLoggingFileMethod {
                         }
                     }
                     catch {
-                        Invoke-PodeHandleFailure -Message "Failed to Log a message: $_" -FailureAction $options.FailureAction
+                        Invoke-PodeHandleFailure -Message "Failed to log a message: $_" -FailureAction $options.FailureAction
                     }
                 }
-
             }
         }
     }
@@ -145,31 +145,31 @@ function Get-PodeLoggingFileMethod {
 
 <#
 .SYNOPSIS
-Handles the sending of log messages to a Syslog server using various transport protocols.
+    Handles the sending of log messages to a Syslog server using various transport protocols.
 
 .DESCRIPTION
-This function defines the logic for sending log messages to a Syslog server using different transport protocols including UDP, TCP, TLS, Splunk, and VMware LogInsight.
-It supports both RFC 3164 and RFC 5424 formats and includes error handling based on user-defined actions.
-
+    This function defines the logic for sending log messages to a Syslog server using different transport protocols including UDP, TCP, TLS, Splunk, and VMware LogInsight.
+    It supports both RFC 3164 and RFC 5424 formats and includes error handling based on user-defined actions.
 
 .NOTES
-This is an internal function and may change in future releases of Pode.
+    This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeLoggingSysLogMethod {
     return {
         param($MethodId)
 
+        # Helper function to sanitize and return a default value if the input is null or whitespace
         function sg($value) {
             if ([string]::IsNullOrWhiteSpace($value)) {
                 return '-'
             }
-
             return $value
         }
 
+        # Set the name of the default runspace
         ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingSysLogMethod_$MethodId"
         $log = @{}
-        $socketCreated=$false
+        $socketCreated = $false
         try {
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Milliseconds 100
@@ -185,6 +185,8 @@ function Get-PodeLoggingSysLogMethod {
                     if ($rawItem -isnot [array]) {
                         $rawItem = @($rawItem)
                     }
+
+                    # Create the socket if it hasn't been created already
                     if (!$socketCreated) {
                         switch ($options.Transport.ToUpperInvariant()) {
                             'UDP' {
@@ -223,7 +225,7 @@ function Get-PodeLoggingSysLogMethod {
                                 $udpClient = New-Object System.Net.Sockets.UdpClient
                             }
                         }
-                        $socketCreated=$true
+                        $socketCreated = $true
                     }
 
                     for ($i = 0; $i -lt $item.Length; $i++) {
@@ -267,16 +269,16 @@ function Get-PodeLoggingSysLogMethod {
                             'RFC3164' {
                                 # Set the max message length per RFC 3164 section 4.1
                                 $MaxLength = 1024
-                                # Assemble the full syslog formatted Message
+                                # Assemble the full syslog formatted message
                                 $timestamp = $rawItem[$i].Date.ToString('MMM dd HH:mm:ss')
                                 $fullSyslogMessage = "<$priority>$timestamp $($PodeContext.Server.ComputerName) $($options.Source)[$processId]: $message"
                                 break
                             }
                             'RFC5424' {
-                                $processId = 1# $PID
+                                $processId = $PID
                                 $timestamp = $rawItem[$i].Date.ToString('yyyy-MM-ddTHH:mm:ss.ffffffK')
 
-                                # Assemble the full syslog formatted Message
+                                # Assemble the full syslog formatted message
                                 $fullSyslogMessage = "<$priority>1 $timestamp $($PodeContext.Server.ComputerName) $($options.Source) $processId - - $message"
 
                                 # Set the max message length per RFC 5424 section 6.1
@@ -335,6 +337,7 @@ function Get-PodeLoggingSysLogMethod {
             }
         }
         finally {
+            # Close the sockets and cleanup
             switch ($options.Transport.ToUpperInvariant()) {
                 'UDP' {
                     # Close the UDP client
@@ -353,11 +356,10 @@ function Get-PodeLoggingSysLogMethod {
                     if ($tcpClient) { $tcpClient.Close() }
                 }
             }
-            $socketCreated=$false
+            $socketCreated = $false
         }
     }
 }
-
 <#
 .SYNOPSIS
 Defines the method for sending log messages to a Restful API endpoint.
@@ -372,7 +374,8 @@ function Get-PodeLoggingRestfulMethod {
     return {
         param($MethodId)
 
-        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingRestfulMethod _$MethodId"
+        # Set the name of the default runspace
+        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingRestfulMethod_$MethodId"
         $log = @{}
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             Start-Sleep -Milliseconds 100
@@ -383,6 +386,7 @@ function Get-PodeLoggingRestfulMethod {
                     $options = $log.options
                     $rawItem = $log.rawItem
 
+                    # Ensure item and rawItem are arrays
                     if ($item -isnot [array]) {
                         $item = @($item)
                     }
@@ -397,6 +401,7 @@ function Get-PodeLoggingRestfulMethod {
                             # Construct the Splunk API URL
                             $url = "$($options.BaseUrl)/services/collector"
 
+                            # Set the headers for Splunk
                             $headers = @{
                                 'Authorization' = "Splunk $($options.Token)"
                                 'Content-Type'  = 'application/json'
@@ -421,41 +426,44 @@ function Get-PodeLoggingRestfulMethod {
                                         severity = $severity
                                     }
                                 }
-
-                                $Body = $items -join ' '
-
-                                try {
-                                    Invoke-RestMethod -Uri $splunkUrl -Method Post -Headers $headers -Body $body -SkipCertificateCheck:$options.SkipCertificateCheck
-                                }
-                                catch {
-                                    Invoke-PodeHandleFailure -Message "Failed to send log to Splunk: $_" -FailureAction $options.FailureAction
-                                }
-
-                                break
                             }
+
+                            $body = $items -join ' '
+
+                            # Send the message to Splunk
+                            try {
+                                Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $body -SkipCertificateCheck:$options.SkipCertificateCheck
+                            }
+                            catch {
+                                Invoke-PodeHandleFailure -Message "Failed to send log to Splunk: $_" -FailureAction $options.FailureAction
+                            }
+
+                            break
                         }
 
                         'LogInsight' {
                             # Construct the Log Insight API URL
                             $url = "$($options.BaseUrl)/api/v1/messages/ingest/$($options.Id)"
 
+                            # Set the headers for Log Insight
                             $headers = @{
                                 'Content-Type' = 'application/json'
                             }
                             $messages = @()
                             for ($i = 0; $i -lt $item.Length; $i++) {
                                 $messages += @{
-                                    text      = $message
+                                    text      = ($item[$i] | Protect-PodeLogItem)
                                     timestamp = [math]::Round(($rawItem[$i].Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)
                                 }
                             }
+
                             # Define the message payload
                             $payload = @{
                                 messages = $messages
                             }
 
                             # Convert payload to JSON
-                            $body = $payload | ConvertTo-Json   -Compress
+                            $body = $payload | ConvertTo-Json -Compress
 
                             # Send the message to Log Insight
                             try {
@@ -488,6 +496,7 @@ function Get-PodeLoggingEventViewerMethod {
     return {
         param($MethodId)
 
+        # Set the name of the default runspace
         ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingEventViewerMethod_$MethodId"
         $log = @{}
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -498,6 +507,8 @@ function Get-PodeLoggingEventViewerMethod {
                     $item = $log.item
                     $options = $log.options
                     $rawItem = $log.rawItem
+
+                    # Ensure item and rawItem are arrays
                     if ($item -isnot [array]) {
                         $item = @($item)
                     }
@@ -507,18 +518,19 @@ function Get-PodeLoggingEventViewerMethod {
                     }
 
                     for ($i = 0; $i -lt $item.Length; $i++) {
-                        # convert log level - info if no level present
+                        # Convert log level to Event Viewer entry type - default to 'Information' if no level present
                         $entryType = ConvertTo-PodeEventViewerLevel -Level $rawItem[$i].Level
 
-                        # create log instance
+                        # Create EventInstance for the log entry
                         $entryInstance = [System.Diagnostics.EventInstance]::new($options.ID, 0, $entryType)
 
-                        # create event log
+                        # Create EventLog object and set the log name and source
                         $entryLog = [System.Diagnostics.EventLog]::new()
                         $entryLog.Log = $options.LogName
                         $entryLog.Source = $options.Source
 
                         try {
+                            # Mask values and write the event to the Event Viewer
                             $message = ($item[$i] | Protect-PodeLogItem)
                             $entryLog.WriteEvent($entryInstance, $message)
                         }
@@ -531,6 +543,7 @@ function Get-PodeLoggingEventViewerMethod {
         }
     }
 }
+
 <#
 .SYNOPSIS
 Converts a log level string to a corresponding EventLogEntryType.
@@ -570,6 +583,22 @@ function ConvertTo-PodeEventViewerLevel {
     return [System.Diagnostics.EventLogEntryType]::Information
 }
 
+<#
+.SYNOPSIS
+Gets the script block for a specified inbuilt logging type.
+
+.DESCRIPTION
+This function returns a script block that formats log entries for a specified inbuilt logging type in Pode. The supported types are 'Errors', 'Requests', 'General', and 'Main'. Each type has its own formatting logic.
+
+.PARAMETER Type
+The type of logging to get the script block for. Must be one of 'Errors', 'Requests', 'General', or 'Main'.
+
+.EXAMPLE
+$script = Get-PodeLoggingInbuiltType -Type 'Requests'
+
+.EXAMPLE
+$script = Get-PodeLoggingInbuiltType -Type 'Errors'
+#>
 function Get-PodeLoggingInbuiltType {
     param(
         [Parameter(Mandatory = $true)]
@@ -583,25 +612,25 @@ function Get-PodeLoggingInbuiltType {
             $script = {
                 param($item, $options)
 
-                # just return the item if Raw is set
+                # Just return the item if Raw is set
                 if ($options.Raw) {
                     return $item
                 }
 
+                # Helper function to sanitize and return a default value if the input is null or whitespace
                 function sg($value) {
                     if ([string]::IsNullOrWhiteSpace($value)) {
                         return '-'
                     }
-
                     return $value
                 }
 
                 switch ($options.LogFormat.ToLowerInvariant()) {
                     'extended' {
-                        return "$($item.Date.ToString('yyyy-MM-dd')) $($item.Date.ToString('HH:mm:ss')) $(sg $item.Host) $(sg $item.User) $(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Query)  $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Agent)`""
+                        return "$($item.Date.ToString('yyyy-MM-dd')) $($item.Date.ToString('HH:mm:ss')) $(sg $item.Host) $(sg $item.User) $(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Query) $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Agent)`""
                     }
                     'common' {
-                        # build the url with http method
+                        # Build the URL with HTTP method
                         $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
                         $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
                         return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size)"
@@ -611,12 +640,11 @@ function Get-PodeLoggingInbuiltType {
                     }
                     # Combined is the default
                     default {
-                        # build the url with http method
+                        # Build the URL with HTTP method
                         $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
                         $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
-                        # build and return the request row
+                        # Build and return the request row
                         return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
-
                     }
                 }
                 return $item
@@ -627,17 +655,17 @@ function Get-PodeLoggingInbuiltType {
             $script = {
                 param($item, $options)
 
-                # do nothing if the error level isn't present
+                # Do nothing if the error level isn't present
                 if (@($options.Levels) -inotcontains $item.Level) {
                     return
                 }
 
-                # just return the item if Raw is set
+                # Just return the item if Raw is set
                 if ($options.Raw) {
                     return $item
                 }
 
-                # build the exception details
+                # Build the exception details
                 $row = @(
                     "Date: $($item.Date.ToString($options.DataFormat))",
                     "Level: $($item.Level)",
@@ -648,18 +676,21 @@ function Get-PodeLoggingInbuiltType {
                     "StackTrace: $($item.StackTrace)"
                 )
 
-                # join the details and return
+                # Join the details and return
                 return "$($row -join "`n")`n"
             }
         }
+
         'general' {
             $script = {
                 param($item, $options)
-                # do nothing if the error level isn't present
+
+                # Do nothing if the error level isn't present
                 if (@($options.Levels) -inotcontains $item.Level) {
                     return
                 }
-                # just return the item if Raw is set
+
+                # Just return the item if Raw is set
                 if ($options.Raw) {
                     return $item
                 }
@@ -667,13 +698,16 @@ function Get-PodeLoggingInbuiltType {
                 return "[$($item.Date.ToString($options.DataFormat))] $($item.Level) $( $item.Tag) $($item.ThreadId) $($item.Message)"
             }
         }
+
         'main' {
             $script = {
                 param($item, $options)
-                # just return the item if Raw is set
+
+                # Just return the item if Raw is set
                 if ($options.Raw) {
                     return $item
                 }
+
                 return "[$($item.Date.ToString($options.DataFormat))] $($item.Level) $( $item.Tag) $($item.ThreadId) $($item.Message)"
             }
         }
@@ -682,17 +716,60 @@ function Get-PodeLoggingInbuiltType {
     return $script
 }
 
+<#
+.SYNOPSIS
+Gets the name of the request logger.
+
+.DESCRIPTION
+This function returns the name of the logger used for logging requests in Pode.
+
+.RETURNS
+[string] - The name of the request logger.
+
+.EXAMPLE
+Get-PodeRequestLoggingName
+#>
 function Get-PodeRequestLoggingName {
+    # Return the name of the request logger
     return '__pode_log_requests__'
 }
 
+<#
+.SYNOPSIS
+Gets the name of the error logger.
+
+.DESCRIPTION
+This function returns the name of the logger used for logging errors in Pode.
+
+.RETURNS
+[string] - The name of the error logger.
+
+.EXAMPLE
+Get-PodeErrorLoggingName
+#>
 function Get-PodeErrorLoggingName {
+    # Return the name of the error logger
     return '__pode_log_errors__'
 }
 
+<#
+.SYNOPSIS
+Gets the name of the main logger.
+
+.DESCRIPTION
+This function returns the name of the main logger used in Pode.
+
+.RETURNS
+[string] - The name of the main logger.
+
+.EXAMPLE
+Get-PodeMainLoggingName
+#>
 function Get-PodeMainLoggingName {
+    # Return the name of the main logger
     return '__pode_log_main__'
 }
+
 
 <#
 .SYNOPSIS
@@ -722,8 +799,22 @@ function Get-PodeLogger {
     return $PodeContext.Server.Logging.Types[$Name]
 }
 
+<#
+.SYNOPSIS
+Tests if a specified logger is a standard logger.
 
+.DESCRIPTION
+This function checks if the specified logger is configured as a standard logger in the Pode context.
 
+.PARAMETER Name
+The name of the logger to test.
+
+.OUTPUTS
+[bool] - Returns $true if the logger is a standard logger, otherwise $false.
+
+.EXAMPLE
+Test-PodeStandardLogger -Name 'MyLogger'
+#>
 function Test-PodeStandardLogger {
     [CmdletBinding()]
     [OutputType([bool])]
@@ -733,9 +824,23 @@ function Test-PodeStandardLogger {
         $Name
     )
 
+    # Check if the specified logger is a standard logger
     return $PodeContext.Server.Logging.Types[$Name].Standard
 }
 
+<#
+.SYNOPSIS
+Tests if a specified logger is enabled.
+
+.DESCRIPTION
+This function checks if the specified logger is enabled by testing if logging is enabled in the Pode context and if the logger exists.
+
+.PARAMETER Name
+The name of the logger to test.
+
+.EXAMPLE
+Test-PodeLoggerEnabled -Name 'MyLogger'
+#>
 function Test-PodeLoggerEnabled {
     param(
         [Parameter(Mandatory = $true)]
@@ -743,6 +848,7 @@ function Test-PodeLoggerEnabled {
         $Name
     )
 
+    # Check if logging is enabled and if the specified logger exists
     return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
 }
 
@@ -766,14 +872,56 @@ function Get-PodeErrorLoggingLevel {
     return (Get-PodeLogger -Name (Get-PodeErrorLoggingName)).Arguments.Levels
 }
 
+<#
+.SYNOPSIS
+Tests if error logging is enabled.
+
+.DESCRIPTION
+This function checks if error logging is enabled by testing the logger configuration for error logging.
+
+.EXAMPLE
+Test-PodeErrorLoggingEnabled
+#>
 function Test-PodeErrorLoggingEnabled {
+    # Get the name of the error logger and test if it is enabled
     return (Test-PodeLoggerEnabled -Name (Get-PodeErrorLoggingName))
 }
 
+<#
+.SYNOPSIS
+Tests if request logging is enabled.
+
+.DESCRIPTION
+This function checks if request logging is enabled by testing the logger configuration for request logging.
+
+.EXAMPLE
+Test-PodeRequestLoggingEnabled
+#>
 function Test-PodeRequestLoggingEnabled {
+    # Get the name of the request logger and test if it is enabled
     return (Test-PodeLoggerEnabled -Name (Get-PodeRequestLoggingName))
 }
 
+
+<#
+.SYNOPSIS
+Writes a log entry for a Pode web request.
+
+.DESCRIPTION
+This function writes a log entry for a Pode web request. It logs details about the request and response, including method, resource, status code, and user information. The log entry is enqueued for processing if logging is enabled.
+
+.PARAMETER Request
+The Pode web request object.
+
+.PARAMETER Response
+The Pode web response object.
+
+.PARAMETER Path
+The path of the request.
+
+.EXAMPLE
+Write-PodeRequestLog -Request $webEvent.Request -Response $webEvent.Response -Path $webEvent.Path
+#>
 function Write-PodeRequestLog {
     param(
         [Parameter(Mandatory = $true)]
@@ -787,12 +935,13 @@ function Write-PodeRequestLog {
         $Path
     )
 
-    # do nothing if logging is disabled, or request logging isn't setup
+    # Do nothing if logging is disabled, or request logging isn't set up
     $name = Get-PodeRequestLoggingName
     if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }
 
+    # Determine the current date and time, respecting the AsUTC setting
     if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
         $date = [datetime]::UtcNow
     }
@@ -800,12 +949,12 @@ function Write-PodeRequestLog {
         $date = [datetime]::Now
     }
 
-    # build a request object
+    # Build a request object
     $item = @{
         Host            = $Request.RemoteEndPoint.Address.IPAddressToString
         RfcUserIdentity = '-'
         User            = '-'
-        Date            = $Date
+        Date            = $date
         Request         = @{
             Method   = $Request.HttpMethod.ToUpperInvariant()
             Resource = $Path
@@ -822,12 +971,12 @@ function Write-PodeRequestLog {
         Level           = 'info'
     }
 
-    # set size if >0
+    # Set size if >0
     if ($Response.ContentLength64 -gt 0) {
         $item.Response.Size = $Response.ContentLength64
     }
 
-    # set username - dot spaces
+    # Set username - dot spaces
     if (Test-PodeAuthUser -IgnoreSession) {
         $userProps = (Get-PodeLogger -Name $name).Properties.Username.Split('.')
 
@@ -840,13 +989,28 @@ function Write-PodeRequestLog {
             $item.User = $user -ireplace '\s+', '.'
         }
     }
-    # add the item to be processed
+
+    # Add the item to be processed
     $null = $PodeContext.Server.Logging.LogsToProcess.Enqueue(@{
             Name = $name
             Item = $item
         })
 }
 
+
+<#
+.SYNOPSIS
+Adds request logging endware to a Pode web event.
+
+.DESCRIPTION
+This function adds endware to a Pode web event for logging request and response details. It checks if request logging is enabled and configured before attaching the logging logic to the web event's end handler.
+
+.PARAMETER WebEvent
+The Pode web event to which the logging endware will be added.
+
+.EXAMPLE
+Add-PodeRequestLogEndware -WebEvent $webEvent
+#>
 function Add-PodeRequestLogEndware {
     param(
         [Parameter(Mandatory = $true)]
@@ -854,13 +1018,13 @@ function Add-PodeRequestLogEndware {
         $WebEvent
     )
 
-    # do nothing if logging is disabled, or request logging isn't setup
+    # Do nothing if logging is disabled, or request logging isn't set up
     $name = Get-PodeRequestLoggingName
     if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }
 
-    # add the request logging endware
+    # Add the request logging endware
     $WebEvent.OnEnd += @{
         Logic = {
             Write-PodeRequestLog -Request $WebEvent.Request -Response $WebEvent.Response -Path $WebEvent.Path
@@ -868,16 +1032,38 @@ function Add-PodeRequestLogEndware {
     }
 }
 
+<#
+.SYNOPSIS
+Tests if any loggers are configured or if logging is enabled.
+
+.DESCRIPTION
+This function checks if any loggers are configured or if logging is enabled within the Pode context. It returns a boolean value indicating the presence of configured loggers or the status of logging.
+
+.EXAMPLE
+Test-PodeLoggersExist
+#>
 function Test-PodeLoggersExist {
+    # Check if the logging context or logging types are null
     if (($null -eq $PodeContext.Server.Logging) -or ($null -eq $PodeContext.Server.Logging.Types)) {
         return $false
     }
 
+    # Return true if there are any logging types configured or if logging is enabled
     return (($PodeContext.Server.Logging.Types.Count -gt 0) -or ($PodeContext.Server.Logging.Enabled))
 }
 
+<#
+.SYNOPSIS
+Starts the Pode logger dispatcher which processes and dispatches log entries.
+
+.DESCRIPTION
+This function initializes and starts a logger dispatcher runspace that processes log entries from a queue and dispatches them to the appropriate logging methods. It handles batching of log entries and ensures that log entries are processed in a timely manner.
+
+.EXAMPLE
+Start-PodeLoggerDispatcher
+#>
 function Start-PodeLoggerDispatcher {
-    # skip if there are no loggers configured, or logging is disabled
+    # Skip if there are no loggers configured, or logging is disabled
     if (!(Test-PodeLoggersExist)) {
         return
     }
@@ -885,51 +1071,54 @@ function Start-PodeLoggerDispatcher {
     $scriptBlock = {
         ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = 'LoggerDispatcher'
         $log = @{}
+
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            # Check if the log queue has reached its limit
             if ($PodeContext.Server.Logging.LogsToProcess.Count -ge $PodeContext.Server.Logging.QueueLimit) {
                 Invoke-PodeHandleFailure -Message "Reached the log Queue Limit of $($PodeContext.Server.Logging.QueueLimit)" -FailureAction $logger.Method.Arguments.FailureAction
             }
-            if ($PodeContext.Server.Logging.LogsToProcess.TryDequeue([ref]$log)) {
 
-                # if the log is null, check batch then sleep and skip
+            # Try to dequeue a log entry
+            if ($PodeContext.Server.Logging.LogsToProcess.TryDequeue([ref]$log)) {
+                # If the log is null, check batch then sleep and skip
                 if ($null -eq $log) {
                     Start-Sleep -Milliseconds 100
                     continue
                 }
 
-                # run the log item through the appropriate method
+                # Run the log item through the appropriate method
                 $logger = $PodeContext.Server.Logging.Types[$log.Name]
                 $now = [datetime]::Now
 
-                # convert to log item into a writable format
+                # Convert the log item into a writable format
                 $rawItem = $log.Item
                 $_args = @($log.Item) + @($logger.Arguments)
 
                 $item = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
 
-                # check batching
+                # Check batching
                 $batch = $logger.Method.Batch
                 if ($batch.Size -gt 1) {
-                    # add current item to batch
+                    # Add current item to batch
                     $batch.Items += $item
                     $batch.RawItems += $log.Item
                     $batch.LastUpdate = $now
 
-                    # if the current amount of items matches the batch, write
+                    # If the current amount of items matches the batch size, write
                     $item = $null
                     if ($batch.Items.Length -ge $batch.Size) {
                         $item = $batch.Items
                         $rawItem = $batch.RawItems
                     }
 
-                    # if we're writing, reset the items
+                    # If we're writing, reset the items
                     if ($null -ne $item) {
                         $batch.Items = @()
                         $batch.RawItems = @()
                     }
                 }
 
-                # send the writable log item off to the log writer
+                # Send the writable log item off to the log writer
                 if ($null -ne $item) {
                     foreach ($method in $logger.Method) {
                         $_args = @{
@@ -947,28 +1136,32 @@ function Start-PodeLoggerDispatcher {
                     }
                 }
 
-                # small sleep to lower cpu usage
+                # Small sleep to lower CPU usage
                 Start-Sleep -Milliseconds 100
             }
             else {
+                # Check the logger batch
                 Test-PodeLoggerBatch
                 Start-Sleep -Seconds 5
             }
-
         }
     }
+
+    # Retrieve unique method IDs
     $uniqueMethodIds = ($PodeContext.Server.Logging.Types.values.Method.Id | Select-Object -Unique)
     if ($uniqueMethodIds.Count -gt 0) {
-        if ( $PodeContext.RunspacePools['logs'].Pool.SetMaxRunspaces($uniqueMethodIds.Count + 1)) {
+        # Set maximum runspaces for the logs pool
+        if ($PodeContext.RunspacePools['logs'].Pool.SetMaxRunspaces($uniqueMethodIds.Count + 1)) {
             foreach ($methodId in $uniqueMethodIds) {
                 if ($null -ne $PodeContext.Server.Logging.ScriptBlock[$methodId]) {
                     $PodeContext.Server.Logging.LogsToMethod[$methodId] = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-                    $PodeContext.Server.Logging.Runspace[$methodId] =Add-PodeRunspace -PassThru -Type Logs -ScriptBlock $PodeContext.Server.Logging.ScriptBlock[$methodId] -Parameters @{MethodId = $methodId }
+                    $PodeContext.Server.Logging.Runspace[$methodId] = Add-PodeRunspace -PassThru -Type Logs -ScriptBlock $PodeContext.Server.Logging.ScriptBlock[$methodId] -Parameters @{ MethodId = $methodId }
                 }
             }
         }
-
     }
+
+    # Add the logger dispatcher runspace
     Add-PodeRunspace -Type Logs -ScriptBlock $scriptBlock
 }
 
@@ -1003,7 +1196,29 @@ function Test-PodeLoggerBatch {
     }
 }
 
+<#
+.SYNOPSIS
+    Writes an entry to the Pode trace log.
 
+.DESCRIPTION
+    Writes an entry to the Pode trace log. The entry can be based on either an operation and its parameters or a custom message.
+    This function handles the formatting of log entries and enqueues them for processing.
+
+.PARAMETER Operation
+    The operation being logged.
+
+.PARAMETER Parameters
+    A hashtable of parameters associated with the operation.
+
+.PARAMETER Message
+    A custom message to log.
+
+.EXAMPLE
+    Write-PodeTraceLog -Operation 'Remove-PodeLogger' -Parameters @{ Name = 'LogName' }
+
+.EXAMPLE
+    Write-PodeTraceLog -Message 'Custom log message.'
+#>
 function Write-PodeTraceLog {
     [CmdletBinding(DefaultParameterSetName = 'Parameter')]
     param(
@@ -1020,12 +1235,13 @@ function Write-PodeTraceLog {
         $Message
     )
 
-    # do nothing if logging is disabled, or error logging isn't setup
+    # Do nothing if logging is disabled, or error logging isn't set up
     $name = Get-PodeMainLoggingName
     if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }
 
+    # Determine the parameter set and build the log message
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'parameter' {
             $Message = if ($Parameters) {
@@ -1052,7 +1268,6 @@ function Write-PodeTraceLog {
                             "$($_.Key)=$($_.Value)"
                         }
                     }) -join ', '
-
                 "Operation $Operation invoked with parameters: $paramString"
             }
             else {
@@ -1067,6 +1282,7 @@ function Write-PodeTraceLog {
         }
     }
 
+    # Determine the current date and time, respecting the AsUTC setting
     if ($PodeContext.Server.Logging.Types[$Name].Method.Arguments.AsUTC) {
         $date = [datetime]::UtcNow
     }
@@ -1074,7 +1290,7 @@ function Write-PodeTraceLog {
         $date = [datetime]::Now
     }
 
-    # build   object for what we need
+    # Build the log item
     $item = @{
         Parameters = $Parameters
         Message    = $Message
@@ -1086,10 +1302,9 @@ function Write-PodeTraceLog {
         ThreadId   = [System.Threading.Thread]::CurrentThread.ManagedThreadId
     }
 
-    # add the item to be processed
+    # Add the log item to the processing queue
     $null = $PodeContext.Server.Logging.LogsToProcess.Enqueue(@{
             Name = $name
             Item = $item
         })
-
 }
