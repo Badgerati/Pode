@@ -38,8 +38,8 @@ Start-PodeServer -browse {
 
     if ( $LoggingType -icontains 'custom') {
         $logging += New-PodeLoggingMethod -Custom -ScriptBlock {
-            param($item)
-            $item|Out-File './examples/logs/custom.log' -Append
+            param($Itemsss,$options,$RawItems)
+            $Itemsss|Out-File './examples/logs/customLegacy.log' -Append
         }
 
         $logging += New-PodeLoggingMethod -Custom -UseRunspace -ScriptBlock {

@@ -64,7 +64,7 @@ function Start-PodeInternalServer {
 
         if (!$PodeContext.Server.IsServerless) {
             # start runspace for loggers
-            Start-PodeLoggingRunspace
+            Start-PodeLoggerDispatcher
 
             # start runspace for timers
             Start-PodeTimerRunspace

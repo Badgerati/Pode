@@ -337,10 +337,9 @@ function New-PodeLoggingMethod {
             $methodId = New-PodeGuid
             $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingTerminalMethod)
             return @{
-                Id          = $methodId
-                ScriptBlock = (Get-PodeLoggingTerminalMethod)
-                Batch       = $batchInfo
-                Arguments   = @{
+                Id        = $methodId
+                Batch     = $batchInfo
+                Arguments = @{
                     DataFormat = $DataFormat
                     AsUTC      = $AsUTC
                 }
@@ -354,10 +353,9 @@ function New-PodeLoggingMethod {
             $methodId = New-PodeGuid
             $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingFileMethod)
             return @{
-                Id          = $methodId
-                ScriptBlock = (Get-PodeLoggingFileMethod)
-                Batch       = $batchInfo
-                Arguments   = @{
+                Id        = $methodId
+                Batch     = $batchInfo
+                Arguments = @{
                     Name          = $Name
                     Path          = $Path
                     MaxDays       = $MaxDays
@@ -387,10 +385,9 @@ function New-PodeLoggingMethod {
             $methodId = New-PodeGuid
             $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingEventViewerMethod)
             return @{
-                Id          = $methodId
-                ScriptBlock = (Get-PodeLoggingEventViewerMethod)
-                Batch       = $batchInfo
-                Arguments   = @{
+                Id        = $methodId
+                Batch     = $batchInfo
+                Arguments = @{
                     LogName       = $EventLogName
                     Source        = $Source
                     ID            = $EventID
@@ -412,10 +409,9 @@ function New-PodeLoggingMethod {
             $methodId = New-PodeGuid
             $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingSysLogMethod)
             return @{
-                Id          = $methodId
-                ScriptBlock = (Get-PodeLoggingSysLogMethod)
-                Batch       = $batchInfo
-                Arguments   = @{
+                Id        = $methodId
+                Batch     = $batchInfo
+                Arguments = @{
                     Server               = $Server
                     Port                 = $Port
                     Transport            = $Transport
@@ -436,10 +432,9 @@ function New-PodeLoggingMethod {
             $methodId = New-PodeGuid
             $PodeContext.Server.Logging.ScriptBlock[$methodId] = (Get-PodeLoggingRestfulMethod)
             return @{
-                Id          = $methodId
-                ScriptBlock = (Get-PodeLoggingRestfulMethod)
-                Batch       = $batchInfo
-                Arguments   = @{
+                Id        = $methodId
+                Batch     = $batchInfo
+                Arguments = @{
                     BaseUrl              = $BaseUrl
                     Platform             = $Platform
                     Hostname             = $Hostname
@@ -466,35 +461,50 @@ function New-PodeLoggingMethod {
                     while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                         Start-Sleep -Milliseconds 100
 
-                        if ($PodeContext.LogsToMethod[$MethodId].TryDequeue([ref]$log)) {
+                        if ($PodeContext.Server.Logging.LogsToMethod[$MethodId].TryDequeue([ref]$log)) {
                             if ($null -ne $log) {
-                                $item = $log.Result
-                                $options = $log.Options
-                                $rawItem = $log.RawItems
-                                # Original ScriptBlock Start
-                                <# ScriptBlock #>
-                                # Original ScriptBlock End
+                                $item = $log.item
+                                $options = $log.options
+                                $rawItem = $log.rawItem
+                                try {
+                                    # Original ScriptBlock Start
+                                    <# ScriptBlock #>
+                                    # Original ScriptBlock End
+                                }
+                                catch {
+                                    Invoke-PodeHandleFailure -Message "Custom Logging Error. message: $_" -FailureAction $options.FailureAction
+                                }
                             }
                         }
                     }
                 }
                 $PodeContext.Server.Logging.ScriptBlock[$methodId] = [ScriptBlock]::Create( $enanchedScriptBlock.ToString().Replace('<# ScriptBlock #>', $ScriptBlock.ToString()))
-                $usingVars = $null
+
+                return @{
+                    Id            = $methodId
+                    Batch         = $batchInfo
+                    Arguments     = $ArgumentList
+                    FailureAction = $FailureAction
+                    DataFormat    = $DataFormat
+                    AsUTC         = $AsUTC
+                }
             }
             else {
                 $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-                $PodeContext.Server.Logging.ScriptBlock[$methodId] = $null
+                $PodeContext.Server.Logging.ScriptBlock[$methodId] = $ScriptBlock
+                return @{
+                    Id             = $methodId
+                    ScriptBlock    = $ScriptBlock
+                    UsingVariables = $usingVars
+                    Batch          = $batchInfo
+                    Arguments      = $ArgumentList
+                    FailureAction  = $FailureAction
+                    DataFormat     = $DataFormat
+                    AsUTC          = $AsUTC
+                    NoRunspace     = $true
+                }
             }
-            return @{
-                Id             = $methodId
-                ScriptBlock    = $ScriptBlock
-                UsingVariables = $usingVars
-                Batch          = $batchInfo
-                Arguments      = $ArgumentList
-                FailureAction  = $FailureAction
-                DataFormat     = $DataFormat
-                AsUTC          = $AsUTC
-            }
+
         }
     }
 }
@@ -561,7 +571,7 @@ function Enable-PodeRequestLogging {
     }
     process {
         # ensure the Method contains a scriptblock
-        if (Test-PodeIsEmpty $_.ScriptBlock) {
+        if (! $PodeContext.Server.Logging.ScriptBlock.ContainsKey( $_.Id)) {
             # The supplied output Method for Request Logging requires a valid ScriptBlock
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Request')
         }
@@ -660,7 +670,7 @@ function Enable-PodeErrorLogging {
 
     process {
         # ensure the Method contains a scriptblock
-        if (Test-PodeIsEmpty $_.ScriptBlock) {
+        if (! $PodeContext.Server.Logging.ScriptBlock.ContainsKey( $_.Id)) {
             # The supplied output Method for Error Logging requires a valid ScriptBlock
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Error')
         }
@@ -739,7 +749,7 @@ function Enable-PodeGeneralLogging {
 
     process {
         # ensure the Method contains a scriptblock
-        if (Test-PodeIsEmpty $_.ScriptBlock) {
+        if (! $PodeContext.Server.Logging.ScriptBlock.ContainsKey( $_.Id)) {
             # The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock.
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
         }
@@ -828,7 +838,7 @@ function Enable-PodeMainLogging {
 
     process {
         # ensure the Method contains a scriptblock
-        if (Test-PodeIsEmpty $_.ScriptBlock) {
+        if (! $PodeContext.Server.Logging.ScriptBlock.ContainsKey( $_.Id)) {
             # The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock.
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Main')
         }
@@ -1120,7 +1130,7 @@ function Write-PodeErrorLog {
         $item['ThreadId'] = [System.Threading.Thread]::CurrentThread.ManagedThreadId #[int]$ThreadId
 
         # add the item to be processed
-        $null = $PodeContext.LogsToProcess.Enqueue(@{
+        $null = $PodeContext.Server.Logging.LogsToProcess.Enqueue(@{
                 Name = $name
                 Item = $item
             })
@@ -1229,7 +1239,7 @@ function Write-PodeLog {
         }
 
         # add the item to be processed
-        $PodeContext.LogsToProcess.Enqueue($logItem)
+        $PodeContext.Server.Logging.LogsToProcess.Enqueue($logItem)
     }
 }
 

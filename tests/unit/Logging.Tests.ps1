@@ -31,10 +31,10 @@ Describe 'Get-PodeLogger' {
 Describe 'Write-PodeLog' {
     BeforeEach {
         $PodeContext = @{
-            LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-            Server        = @{
+            Server = @{
                 Logging = @{
-                    Types = @{
+                    LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+                    Types         = @{
                         test = @{
                             Standard = $false
                         }
@@ -48,26 +48,26 @@ Describe 'Write-PodeLog' {
 
         Write-PodeLog -Name 'test' -InputObject 'test'
 
-        $PodeContext.LogsToProcess.Count | Should -Be 0
+        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 0
     }
 
     It 'Adds a log item' {
         Mock Test-PodeLoggerEnabled { return $true }
         Write-PodeLog -Name 'test' -InputObject 'test'
 
-        $PodeContext.LogsToProcess.Count | Should -Be 1
-        $PodeContext.LogsToProcess[0].Name | Should -Be 'test'
-        $PodeContext.LogsToProcess[0].Item | Should -Be 'test'
+        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 1
+        $PodeContext.Server.Logging.LogsToProcess[0].Name | Should -Be 'test'
+        $PodeContext.Server.Logging.LogsToProcess[0].Item | Should -Be 'test'
     }
 }
 
 Describe 'Write-PodeErrorLog' {
     BeforeEach {
         $PodeContext = @{
-            LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-            Server        = @{
+            Server = @{
                 Logging = @{
-                    Types = @{
+                    LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+                    Types         = @{
                         test = @{
                             Standard = $false
                         }
@@ -81,7 +81,7 @@ Describe 'Write-PodeErrorLog' {
 
         Write-PodeLog -Name 'test' -InputObject 'test'
 
-        $PodeContext.LogsToProcess.Count | Should -Be 0
+        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 0
     }
 
     It 'Adds an error log item' {
@@ -97,8 +97,8 @@ Describe 'Write-PodeErrorLog' {
             Write-PodeErrorLog -ErrorRecord $Error[0]
         }
 
-        $PodeContext.LogsToProcess.Count | Should -Be 1
-        $PodeContext.LogsToProcess[0].Item.Message | Should -Be 'some error'
+        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 1
+        $PodeContext.Server.Logging.LogsToProcess[0].Item.Message | Should -Be 'some error'
     }
 
     It 'Adds an exception log item' {
@@ -111,8 +111,8 @@ Describe 'Write-PodeErrorLog' {
         $exp = [exception]::new('some error')
         Write-PodeErrorLog -Exception $exp
 
-        $PodeContext.LogsToProcess.Count | Should -Be 1
-        $PodeContext.LogsToProcess[0].Item.Message | Should -Be 'some error'
+        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 1
+        $PodeContext.Server.Logging.LogsToProcess[0].Item.Message | Should -Be 'some error'
     }
 
     It 'Does not log as Verbose not allowed' {
@@ -125,7 +125,7 @@ Describe 'Write-PodeErrorLog' {
         $exp = [exception]::new('some error')
         Write-PodeErrorLog -Exception $exp -Level Verbose
 
-        $PodeContext.LogsToProcess.Count | Should -Be 0
+        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 0
     }
 }
 

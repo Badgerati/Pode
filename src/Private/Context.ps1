@@ -76,8 +76,6 @@ function New-PodeContext {
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name LogsToMethod -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Threading -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
@@ -132,16 +130,20 @@ function New-PodeContext {
 
     # basic logging setup
     $ctx.Server.Logging = @{
-        Enabled     = $true
-        Types       = @{}
-        Masking = @{
-            Patterns   = @(
+        Enabled       = $true
+        Types         = @{}
+        Masking       = @{
+            Patterns = @(
                 '(?<keep_before>Password=)\w+'
             )
-            Mask       = '--MASKED--'
+            Mask     = '--MASKED--'
         }
-        QueueLimit  = 500
-        ScriptBlock = @{}
+        QueueLimit    = 500
+        ScriptBlock   = @{}
+        # requests that should be logged
+        LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+        LogsToMethod  = [System.Collections.Concurrent.ConcurrentDictionary[string, System.Collections.Concurrent.ConcurrentQueue[hashtable]]]::new()
+
     }
 
     # set thread counts
@@ -415,9 +417,6 @@ function New-PodeContext {
         Restart      = New-Object System.Threading.CancellationTokenSource
     }
 
-    # requests that should be logged
-    $ctx.LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-    $ctx.LogsToMethod = [System.Collections.Concurrent.ConcurrentDictionary[string, System.Collections.Concurrent.ConcurrentQueue[hashtable]]]::new()
     # middleware that needs to run
     $ctx.Server.Middleware = @()
     $ctx.Server.BodyParsers = @{}
@@ -802,8 +801,6 @@ function New-PodeStateContext {
             Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
             Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
             Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
-            Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
-            Add-Member -MemberType NoteProperty -Name LogsToMethod -Value $Context.LogsToMethod -PassThru |
             Add-Member -MemberType NoteProperty -Name Threading -Value $Context.Threading -PassThru |
             Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
 }
