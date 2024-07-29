@@ -1,127 +1,128 @@
 <#
 .SYNOPSIS
-Create a new method of outputting logs.
+    Create a new method of outputting logs.
 
 .DESCRIPTION
-Create a new method of outputting logs.
+    Create a new method of outputting logs.
 
 .PARAMETER Terminal
-If supplied, will use the inbuilt Terminal logging output method.
+    If supplied, will use the inbuilt Terminal logging output method.
 
 .PARAMETER File
-If supplied, will use the inbuilt File logging output method.
+    If supplied, will use the inbuilt File logging output method.
 
 .PARAMETER Path
-The File Path of where to store the logs.
+    The File Path of where to store the logs.
 
 .PARAMETER Name
-The File Name to prepend new log files using.
+    The File Name to prepend new log files using.
 
 .PARAMETER EventViewer
-If supplied, will use the inbuilt Event Viewer logging output method.
+    If supplied, will use the inbuilt Event Viewer logging output method.
 
 .PARAMETER EventLogName
-Optional Log Name for the Event Viewer (Default: Application)
+    Optional Log Name for the Event Viewer (Default: Application)
 
 .PARAMETER Source
-Optional Source for the Event Viewer (Default: Pode)
+    Optional Source for the Event Viewer (Default: Pode)
 
 .PARAMETER EventID
-Optional EventID for the Event Viewer (Default: 0)
+    Optional EventID for the Event Viewer (Default: 0)
 
 .PARAMETER Batch
-An optional batch size to write log items in bulk (Default: 1)
+    An optional batch size to write log items in bulk (Default: 1)
 
 .PARAMETER BatchTimeout
-An optional batch timeout, in seconds, to send items off for writing if a log item isn't received (Default: 0)
+    An optional batch timeout, in seconds, to send items off for writing if a log item isn't received (Default: 0)
 
 .PARAMETER MaxDays
-The maximum number of days to keep logs, before Pode automatically removes them.
+    The maximum number of days to keep logs, before Pode automatically removes them.
 
 .PARAMETER MaxSize
-The maximum size of a log file, before Pode starts writing to a new log file.
+    The maximum size of a log file, before Pode starts writing to a new log file.
 
 .PARAMETER Custom
-If supplied, will allow you to create a Custom Logging output method.
+    If supplied, will allow you to create a Custom Logging output method.
 
 .PARAMETER UseRunspace
-If supplied, the Custom Logging output method will use its own separated runspace
+    If supplied, the Custom Logging output method will use its own separated runspace
 
 .PARAMETER ScriptBlock
-The ScriptBlock that defines how to output a log item.
+    The ScriptBlock that defines how to output a log item.
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Custom Logging output method's ScriptBlock.
+    An array of arguments to supply to the Custom Logging output method's ScriptBlock.
 
 .PARAMETER Syslog
-If supplied, will use the Syslog logging output method.
+    If supplied, will use the Syslog logging output method.
 
 .PARAMETER Server
-The Syslog server to send logs to.
+    The Syslog server to send logs to.
 
 .PARAMETER Port
-The port on the Syslog server (Default: 514).
+    The port on the Syslog server (Default: 514).
 
 .PARAMETER Transport
-The transport protocol to use (Default: UDP).
+    The transport protocol to use (Default: UDP).
 
 .PARAMETER TlsProtocol
-The TLS protocol version to use (Default: TLS 1.3).
+    The TLS protocol version to use (Default: TLS 1.3).
 
 .PARAMETER SyslogProtocol
-The Syslog protocol to use (Default: RFC5424).
+    The Syslog protocol to use (Default: RFC5424).
 
 .PARAMETER Encoding
-The encoding to use for the Syslog messages (Default: UTF8).
+    The encoding to use for the Syslog messages (Default: UTF8).
 
 .PARAMETER SkipCertificateCheck
-Skip certificate validation for TLS connections.
+    Skip certificate validation for TLS connections.
 
 .PARAMETER Restful
-If supplied, will use the Restful logging output method.
+    If supplied, will use the Restful logging output method.
 
 .PARAMETER BaseUrl
-The base URL for the Restful logging endpoint.
+    The base URL for the Restful logging endpoint.
 
 .PARAMETER Platform
-The platform for Restful logging (Splunk, LogInsight).
+    The platform for Restful logging (Splunk, LogInsight).
 
 .PARAMETER Token
-The token for authentication with Restful servers that require it.
+    The token for authentication with Restful servers that require it.
 
 .PARAMETER Id
-The LogInsight collector ID.
+    The LogInsight collector ID.
 
 .PARAMETER FailureAction
-Defines the behavior in case of failure. Options are: Ignore, Report, Halt (Default: Ignore).
+    Defines the behavior in case of failure. Options are: Ignore, Report, Halt (Default: Ignore).
 
 .PARAMETER DataFormat
-The date format to use for the log entries (Default: 'dd/MMM/yyyy:HH:mm:ss zzz').
+    The date format to use for the log entries (Default: 'dd/MMM/yyyy:HH:mm:ss zzz').
 
 .PARAMETER ISO8601
-If set, the date format will be ISO 8601 compliant (equivalent to -DataFormat 'yyyy-MM-ddTHH:mm:ssK')
-This parameter is mutually exclusive with DataFormat.
+    If set, the date format will be ISO 8601 compliant (equivalent to -DataFormat 'yyyy-MM-ddTHH:mm:ssK')
+    This parameter is mutually exclusive with DataFormat.
 
 .PARAMETER AsUTC
-If set, the time will be logged in UTC instead of local time.
+    If set, the time will be logged in UTC instead of local time.
 
 .EXAMPLE
-$term_logging = New-PodeLoggingMethod -Terminal
+    $term_logging = New-PodeLoggingMethod -Terminal
 
 .EXAMPLE
-$file_logging = New-PodeLoggingMethod -File -Path ./logs -Name 'requests'
+    $file_logging = New-PodeLoggingMethod -File -Path ./logs -Name 'requests'
 
 .EXAMPLE
-$custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
+    $custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-$syslog_logging = New-PodeLoggingMethod -Syslog -Server '192.168.1.1' -Port 514 -Transport 'UDP'
+    $syslog_logging = New-PodeLoggingMethod -Syslog -Server '192.168.1.1' -Port 514 -Transport 'UDP'
 
 .EXAMPLE
-$restful_logging = New-PodeLoggingMethod -Restful -BaseUrl 'https://logserver.example.com' -Platform 'Splunk' -Token 'your-token'
+    $restful_logging = New-PodeLoggingMethod -Restful -BaseUrl 'https://logserver.example.com' -Platform 'Splunk' -Token 'your-token'
 #>
 function New-PodeLoggingMethod {
     [CmdletBinding(DefaultParameterSetName = 'Terminal')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUSeDeclaredVarsMoreThanAssignments', '')]
     [OutputType([hashtable])]
     param(
         [Parameter(ParameterSetName = 'Terminal')]
@@ -519,26 +520,25 @@ function New-PodeLoggingMethod {
 
 <#
 .SYNOPSIS
-Enables Request Logging using a supplied output method.
+    Enables Request Logging using a supplied output method.
 
 .DESCRIPTION
-Enables Request Logging using a supplied output method.
+    Enables Request Logging using a supplied output method.
 
 .PARAMETER Method
-The Method to use for output the log entry (From New-PodeLoggingMethod).
+    The Method to use for output the log entry (From New-PodeLoggingMethod).
 
 .PARAMETER UsernameProperty
-An optional property path within the $WebEvent.Auth.User object for the user's Username. (Default: Username).
+    An optional property path within the $WebEvent.Auth.User object for the user's Username. (Default: Username).
 
 .PARAMETER Raw
-If supplied, the log item returned will be the raw Request item as a hashtable and not a string.
+    If supplied, the log item returned will be the raw Request item as a hashtable and not a string.
 
 .PARAMETER LogFormat
-The format to use for the log entries. Options are: Extended, Common, Combined, JSON (Default: Combined).
-
+    The format to use for the log entries. Options are: Extended, Common, Combined, JSON (Default: Combined).
 
 .EXAMPLE
-New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 #>
 function Enable-PodeRequestLogging {
     [CmdletBinding()]
@@ -611,13 +611,13 @@ function Enable-PodeRequestLogging {
 
 <#
 .SYNOPSIS
-Disables Request Logging.
+    Disables Request Logging.
 
 .DESCRIPTION
-Disables Request Logging.
+    Disables Request Logging.
 
 .EXAMPLE
-Disable-PodeRequestLogging
+    Disable-PodeRequestLogging
 #>
 function Disable-PodeRequestLogging {
     [CmdletBinding()]
@@ -628,22 +628,22 @@ function Disable-PodeRequestLogging {
 
 <#
 .SYNOPSIS
-Enables Error Logging using a supplied output method.
+    Enables Error Logging using a supplied output method.
 
 .DESCRIPTION
-Enables Error Logging using a supplied output method.
+    Enables Error Logging using a supplied output method.
 
 .PARAMETER Method
-The Method to use for output the log entry (From New-PodeLoggingMethod).
+    The Method to use for output the log entry (From New-PodeLoggingMethod).
 
 .PARAMETER Levels
-The Levels of errors that should be logged (default is Error).
+    The Levels of errors that should be logged (default is Error).
 
 .PARAMETER Raw
-If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
+    If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
-New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 #>
 function Enable-PodeErrorLogging {
     [CmdletBinding()]
@@ -710,26 +710,26 @@ function Enable-PodeErrorLogging {
 
 <#
 .SYNOPSIS
-Enables a generic logging method in Pode.
+    Enables a generic logging method in Pode.
 
 .DESCRIPTION
-This function enables a generic logging method in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
+    This function enables a generic logging method in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
 
 .PARAMETER Method
-The hashtable defining the logging method, including the ScriptBlock for log output.
+    The hashtable defining the logging method, including the ScriptBlock for log output.
 
 .PARAMETER Levels
-An array of log levels to be enabled for the logging method (Default: 'Error', 'Emergency', 'Alert', 'Critical', 'Warning', 'Notice', 'Informational', 'Info', 'Verbose', 'Debug').
+    An array of log levels to be enabled for the logging method (Default: 'Error', 'Emergency', 'Alert', 'Critical', 'Warning', 'Notice', 'Informational', 'Info', 'Verbose', 'Debug').
 
 .PARAMETER Name
-The name of the logging method to be enabled.
+    The name of the logging method to be enabled.
 
 .PARAMETER Raw
-If set, the raw log data will be included in the logging output.
+    If set, the raw log data will be included in the logging output.
 
 .EXAMPLE
-$method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
-$method | Enable-PodeGeneralLogging -Name "mysyslog"
+    $method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
+    $method | Enable-PodeGeneralLogging -Name "mysyslog"
 #>
 function Enable-PodeGeneralLogging {
     [CmdletBinding()]
@@ -790,16 +790,16 @@ function Enable-PodeGeneralLogging {
 
 <#
 .SYNOPSIS
-Disables a generic logging method in Pode.
+    Disables a generic logging method in Pode.
 
 .DESCRIPTION
-This function disables a generic logging method in Pode.
+    This function disables a generic logging method in Pode.
 
 .PARAMETER Name
-The name of the logging method to be disable.
+    The name of the logging method to be disable.
 
 .EXAMPLE
-Disable-PodeGeneralLogging -Name 'TestLog'
+    Disable-PodeGeneralLogging -Name 'TestLog'
 #>
 function Disable-PodeGeneralLogging {
     [CmdletBinding()]
@@ -814,20 +814,20 @@ function Disable-PodeGeneralLogging {
 
 <#
 .SYNOPSIS
-Enables the trace logging in Pode.
+    Enables the trace logging in Pode.
 
 .DESCRIPTION
-This function enables the trace logging in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
+    This function enables the trace logging in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
 
 .PARAMETER Method
-The hashtable defining the logging method, including the ScriptBlock for log output.
+    The hashtable defining the logging method, including the ScriptBlock for log output.
 
 .PARAMETER Raw
-If set, the raw log data will be included in the logging output.
+    If set, the raw log data will be included in the logging output.
 
 .EXAMPLE
-$method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
-$method | Enable-PodeTraceLogging
+    $method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
+    $method | Enable-PodeTraceLogging
 #>
 function Enable-PodeTraceLogging {
     [CmdletBinding()]
@@ -913,25 +913,25 @@ function Disable-PodeErrorLogging {
 
 <#
 .SYNOPSIS
-Adds a custom Logging method for parsing custom log items.
+    Adds a custom Logging method for parsing custom log items.
 
 .DESCRIPTION
-Adds a custom Logging method for parsing custom log items.
+    Adds a custom Logging method for parsing custom log items.
 
 .PARAMETER Name
-A unique Name for the Logging method.
+    A unique Name for the Logging method.
 
 .PARAMETER Method
-The Method to use for output the log entry (From New-PodeLoggingMethod).
+    The Method to use for output the log entry (From New-PodeLoggingMethod).
 
 .PARAMETER ScriptBlock
-The ScriptBlock defining logic that transforms an item, and returns it for outputting.
+    The ScriptBlock defining logic that transforms an item, and returns it for outputting.
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Custom Logger's ScriptBlock.
+    An array of arguments to supply to the Custom Logger's ScriptBlock.
 
 .EXAMPLE
-New-PodeLoggingMethod -Terminal | Add-PodeLogger -Name 'Main' -ScriptBlock { /* logic */ }
+    New-PodeLoggingMethod -Terminal | Add-PodeLogger -Name 'Main' -ScriptBlock { /* logic */ }
 #>
 function Add-PodeLogger {
     [CmdletBinding()]
@@ -1004,16 +1004,17 @@ function Add-PodeLogger {
 
 <#
 .SYNOPSIS
-Removes a configured Logging method.
+    Removes a configured Logging method.
 
 .DESCRIPTION
-Removes a configured Logging method by its name. This function handles the removal of the logging method and ensures that any associated runspaces and script blocks are properly disposed of if they are no longer in use.
+    Removes a configured Logging method by its name.
+    This function handles the removal of the logging method and ensures that any associated runspaces and script blocks are properly disposed of if they are no longer in use.
 
 .PARAMETER Name
-The Name of the Logging method.
+    The Name of the Logging method.
 
 .EXAMPLE
-Remove-PodeLogger -Name 'LogName'
+    Remove-PodeLogger -Name 'LogName'
 #>
 function Remove-PodeLogger {
     [CmdletBinding()]
@@ -1088,28 +1089,28 @@ function Clear-PodeLoggers {
 
 <#
 .SYNOPSIS
-Writes and Exception or ErrorRecord using the inbuilt error logging.
+    Writes and Exception or ErrorRecord using the inbuilt error logging.
 
 .DESCRIPTION
-Writes and Exception or ErrorRecord using the inbuilt error logging.
+    Writes and Exception or ErrorRecord using the inbuilt error logging.
 
 .PARAMETER Exception
-An Exception to write.
+    An Exception to write.
 
 .PARAMETER ErrorRecord
-An ErrorRecord to write.
+    An ErrorRecord to write.
 
 .PARAMETER Level
-The Level of the error being logged.
+    The Level of the error being logged.
 
 .PARAMETER CheckInnerException
-If supplied, any exceptions are check for inner exceptions. If one is present, this is also logged.
+    If supplied, any exceptions are check for inner exceptions. If one is present, this is also logged.
 
 .EXAMPLE
-try { /* logic */ } catch { $_ | Write-PodeErrorLog }
+    try { /* logic */ } catch { $_ | Write-PodeErrorLog }
 
 .EXAMPLE
-[System.Exception]::new('error message') | Write-PodeErrorLog
+    [System.Exception]::new('error message') | Write-PodeErrorLog
 #>
 function Write-PodeErrorLog {
     [CmdletBinding()]
@@ -1193,34 +1194,34 @@ function Write-PodeErrorLog {
 
 <#
 .SYNOPSIS
-Write an object to a configured custom or inbuilt logging method.
+    Write an object to a configured custom or inbuilt logging method.
 
 .DESCRIPTION
-This function writes an object to a configured logging method in Pode.
-It supports both custom and inbuilt logging methods, allowing for structured logging with different log levels and messages.
+    This function writes an object to a configured logging method in Pode.
+    It supports both custom and inbuilt logging methods, allowing for structured logging with different log levels and messages.
 
 .PARAMETER Name
-The name of the logging method.
+    The name of the logging method.
 
 .PARAMETER InputObject
-The object to write to the logging method.
+    The object to write to the logging method.
 
 .PARAMETER Level
-The log level for the custom logging method (Default: 'INFO').
+    The log level for the custom logging method (Default: 'INFO').
 
 .PARAMETER Message
-The log message for the custom logging method.
+    The log message for the custom logging method.
 
 .PARAMETER Tag
-A string that identifies the source application, service, or process generating the log message.
-The tag helps in distinguishing log messages from different sources and makes it easier to filter and analyze logs.
-It is typically a short identifier such as the application name or process ID.
+    A string that identifies the source application, service, or process generating the log message.
+    The tag helps in distinguishing log messages from different sources and makes it easier to filter and analyze logs.
+    It is typically a short identifier such as the application name or process ID.
 
 .EXAMPLE
-$object | Write-PodeLog -Name 'LogName'
+    $object | Write-PodeLog -Name 'LogName'
 
 .EXAMPLE
-Write-PodeLog -Name 'CustomLog' -Level 'Error' -Message 'An error occurred.'
+    Write-PodeLog -Name 'CustomLog' -Level 'Error' -Message 'An error occurred.'
 #>
 function Write-PodeLog {
     [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
@@ -1293,17 +1294,17 @@ function Write-PodeLog {
 
 <#
 .SYNOPSIS
-Masks values within a log item to protect sensitive information.
+    Masks values within a log item to protect sensitive information.
 
 .DESCRIPTION
-Masks values within a log item, or any string, to protect sensitive information.
-Patterns, and the Mask, can be configured via the server.psd1 configuration file.
+    Masks values within a log item, or any string, to protect sensitive information.
+    Patterns, and the Mask, can be configured via the server.psd1 configuration file.
 
 .PARAMETER Item
-The string Item to mask values.
+    The string Item to mask values.
 
 .EXAMPLE
-$value = Protect-PodeLogItem -Item 'Username=Morty, Password=Hunter2'
+    $value = Protect-PodeLogItem -Item 'Username=Morty, Password=Hunter2'
 #>
 function Protect-PodeLogItem {
     [CmdletBinding()]
@@ -1351,19 +1352,19 @@ function Protect-PodeLogItem {
 
 <#
 .SYNOPSIS
-Automatically loads logging ps1 files
+    Automatically loads logging ps1 files
 
 .DESCRIPTION
-Automatically loads logging ps1 files from either a /logging folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
+    Automatically loads logging ps1 files from either a /logging folder, or a custom folder. Saves space dot-sourcing them all one-by-one.
 
 .PARAMETER Path
-Optional Path to a folder containing ps1 files, can be relative or literal.
+    Optional Path to a folder containing ps1 files, can be relative or literal.
 
 .EXAMPLE
-Use-PodeLogging
+    Use-PodeLogging
 
 .EXAMPLE
-Use-PodeLogging -Path './my-logging'
+    Use-PodeLogging -Path './my-logging'
 #>
 function Use-PodeLogging {
     [CmdletBinding()]
