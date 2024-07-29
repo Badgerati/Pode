@@ -21,8 +21,8 @@ function Set-PodeWebSocketConcurrency {
         $Maximum
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # error if <=0
     if ($Maximum -le 0) {
@@ -208,8 +208,8 @@ function Remove-PodeWebSocket {
         $Name
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if ([string]::IsNullOrWhiteSpace($Name) -and ($null -ne $WsEvent)) {
         $Name = $WsEvent.Request.WebSocket.Name

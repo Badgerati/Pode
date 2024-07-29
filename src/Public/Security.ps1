@@ -132,8 +132,8 @@ function Add-PodeSecurityHeader {
         $Append
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if ([string]::IsNullOrWhiteSpace($Value)) {
         return
@@ -175,8 +175,8 @@ function Remove-PodeSecurityHeader {
         $Name
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Security.Headers.Remove($Name)
 }
@@ -523,8 +523,8 @@ function Add-PodeSecurityContentSecurityPolicy {
         $UpgradeInsecureRequests
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     Set-PodeSecurityContentSecurityPolicyInternal -Params $PSBoundParameters -Append
 }

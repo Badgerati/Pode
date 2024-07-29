@@ -1,7 +1,7 @@
 param(
-    [ValidateSet('Terminal', 'File', 'mylog', 'Syslog','EventViewer','Custom')]
+    [ValidateSet('Terminal', 'File', 'mylog', 'Syslog', 'EventViewer', 'Custom')]
     [string[]]
-    $LoggingType = @('Terminal','file', 'Custom'),
+    $LoggingType = @( 'Terminal', 'file', 'Custom', 'Syslog'),
 
     [switch]
     $Raw
@@ -38,12 +38,12 @@ Start-PodeServer -browse {
 
     if ( $LoggingType -icontains 'custom') {
         $logging += New-PodeLoggingMethod -Custom -ScriptBlock {
-            param($Itemsss,$options,$RawItems)
-            $Itemsss|Out-File './examples/logs/customLegacy.log' -Append
+            param($Itemsss, $options, $RawItems)
+            $Itemsss | Out-File './examples/logs/customLegacy.log' -Append
         }
 
         $logging += New-PodeLoggingMethod -Custom -UseRunspace -ScriptBlock {
-            $item|Out-File './examples/logs/customWithRunspace.log' -Append
+            $item | Out-File './examples/logs/customWithRunspace.log' -Append
         }
     }
     if ( $LoggingType -icontains 'eventviewer') {
@@ -58,10 +58,13 @@ Start-PodeServer -browse {
         throw 'No logging selected'
     }
 
-    $logging | Enable-PodeMainLogging -Raw:$Raw
-    $logging | Enable-PodeRequestLogging -Raw:$Raw
-    $logging | Enable-PodeErrorLogging -Raw:$Raw
-    $logging | Enable-PodeGeneralLogging -Name 'mylog' -Raw:$Raw
+    New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging -Raw:$Raw
+
+
+#    $logging | Enable-PodeTraceLogging -Raw:$Raw
+ #   $logging | Enable-PodeRequestLogging -Raw:$Raw
+ #   $logging | Enable-PodeErrorLogging -Raw:$Raw
+  #  $logging | Enable-PodeGeneralLogging -Name 'mylog' -Raw:$Raw
 
     Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8085/"
@@ -72,7 +75,7 @@ Start-PodeServer -browse {
 
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
-
+        Disable-PodeRequestLogging
         Set-PodeResponseStatus -Code 500
     }
 

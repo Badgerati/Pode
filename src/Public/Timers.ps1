@@ -76,8 +76,8 @@ function Add-PodeTimer {
         $OnStart
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeTimer' -ThrowError
@@ -198,8 +198,8 @@ function Remove-PodeTimer {
         $Name
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $null = $PodeContext.Timers.Items.Remove($Name)
 }
@@ -218,8 +218,8 @@ function Clear-PodeTimers {
     [CmdletBinding()]
     param()
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Timers.Items.Clear()
 }
@@ -268,7 +268,7 @@ function Edit-PodeTimer {
 
     # ensure the timer exists
     if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-        # Timer 'Name' does not exist 
+        # Timer 'Name' does not exist
         throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
     }
 

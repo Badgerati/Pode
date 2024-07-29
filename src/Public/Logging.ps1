@@ -339,6 +339,7 @@ function New-PodeLoggingMethod {
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
+                Logger    = @()
                 Arguments = @{
                     DataFormat = $DataFormat
                     AsUTC      = $AsUTC
@@ -355,6 +356,7 @@ function New-PodeLoggingMethod {
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
+                Logger    = @()
                 Arguments = @{
                     Name          = $Name
                     Path          = $Path
@@ -387,6 +389,7 @@ function New-PodeLoggingMethod {
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
+                Logger    = @()
                 Arguments = @{
                     LogName       = $EventLogName
                     Source        = $Source
@@ -411,6 +414,7 @@ function New-PodeLoggingMethod {
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
+                Logger    = @()
                 Arguments = @{
                     Server               = $Server
                     Port                 = $Port
@@ -434,6 +438,7 @@ function New-PodeLoggingMethod {
             return @{
                 Id        = $methodId
                 Batch     = $batchInfo
+                Logger    = @()
                 Arguments = @{
                     BaseUrl              = $BaseUrl
                     Platform             = $Platform
@@ -483,6 +488,7 @@ function New-PodeLoggingMethod {
                 return @{
                     Id            = $methodId
                     Batch         = $batchInfo
+                    Logger        = @()
                     Arguments     = $ArgumentList
                     FailureAction = $FailureAction
                     DataFormat    = $DataFormat
@@ -497,6 +503,7 @@ function New-PodeLoggingMethod {
                     ScriptBlock    = $ScriptBlock
                     UsingVariables = $usingVars
                     Batch          = $batchInfo
+                    Logger         = @()
                     Arguments      = $ArgumentList
                     FailureAction  = $FailureAction
                     DataFormat     = $DataFormat
@@ -597,6 +604,8 @@ function Enable-PodeRequestLogging {
             }
             Standard    = $true
         }
+
+        $Method.ForEach({ $_.Logger += $name })
     }
 }
 
@@ -694,9 +703,10 @@ function Enable-PodeErrorLogging {
             }
             Standard    = $true
         }
+
+        $Method.ForEach({ $_.Logger += $name })
     }
 }
-
 
 <#
 .SYNOPSIS
@@ -772,6 +782,8 @@ function Enable-PodeGeneralLogging {
             }
             Standard    = $true
         }
+
+        $Method.ForEach({ $_.Logger += $Name })
     }
 }
 
@@ -802,10 +814,10 @@ function Disable-PodeGeneralLogging {
 
 <#
 .SYNOPSIS
-Enables the main logging in Pode.
+Enables the trace logging in Pode.
 
 .DESCRIPTION
-This function enables the main logging in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
+This function enables the trace logging in Pode, allowing logs to be written based on the defined method and log levels. It ensures the method is not already enabled and validates the provided script block.
 
 .PARAMETER Method
 The hashtable defining the logging method, including the ScriptBlock for log output.
@@ -815,9 +827,9 @@ If set, the raw log data will be included in the logging output.
 
 .EXAMPLE
 $method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
-$method | Enable-PodeMainLogging
+$method | Enable-PodeTraceLogging
 #>
-function Enable-PodeMainLogging {
+function Enable-PodeTraceLogging {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -831,8 +843,8 @@ function Enable-PodeMainLogging {
         $pipelineMethods = @()
         $name = Get-PodeMainLoggingName
         # error if it's already enabled
-        if ($PodeContext.Server.Logging.Types.Contains($Name)) {
-            throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f $Name)
+        if ($PodeContext.Server.Logging.Types.Contains($name)) {
+            throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f $name)
         }
     }
 
@@ -852,7 +864,7 @@ function Enable-PodeMainLogging {
         }
 
         # add the error logger
-        $PodeContext.Server.Logging.Types[$Name] = @{
+        $PodeContext.Server.Logging.Types[$name] = @{
             Method      = $Method
             ScriptBlock = (Get-PodeLoggingInbuiltType -Type Main)
             Arguments   = @{
@@ -861,20 +873,21 @@ function Enable-PodeMainLogging {
             }
             Standard    = $true
         }
+        $Method.ForEach({ $_.Logger += $name })
     }
 }
 
 <#
 .SYNOPSIS
-Disables the main logging method in Pode.
+Disables the trace logging method in Pode.
 
 .DESCRIPTION
-This function disables the main logging method in Pode.
+This function disables the trace logging method in Pode.
 
 .EXAMPLE
-Disable-PodeMainLogging
+Disable-PodeTraceLogging
 #>
-function Disable-PodeMainLogging {
+function Disable-PodeTraceLogging {
     [CmdletBinding()]
     param()
 
@@ -961,8 +974,8 @@ function Add-PodeLogger {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
 
-        # Record the operation on the main log
-        Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
         # ensure the name doesn't already exist
         if ($PodeContext.Server.Logging.Types.ContainsKey($Name)) {
@@ -1010,9 +1023,32 @@ function Remove-PodeLogger {
         $Name
     )
     Process {
-        # Record the operation on the main log
-        Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
         if ($PodeContext.Server.Logging.Types.Contains($Name)) {
+            # remove this logger from the method
+            $method = $PodeContext.Server.Logging.Types[$Name].Method
+            if ( $method.Logger.Count -eq 1) {
+                $method.Logger = @()
+            }
+            else {
+                $method.Logger = $method.Logger | Where-Object { $_ -ne $Name }
+            }
+            if ($method.Logger.Count -eq 0) {
+                # Method not anymore in use
+                if ($PodeContext.Server.Logging.Runspace.ContainsKey($method.Id)) {
+                    $PodeContext.Server.Logging.Runspace[$method.Id].Pipeline.Stop()
+                    $PodeContext.Server.Logging.Runspace[$method.Id].Pipeline.Dispose()
+                    $PodeContext.Server.Logging.Runspace.Remove($method.Id)
+                    $maxRunspaces = $PodeContext.RunspacePools['logs'].Pool.GetMaxRunspaces
+                    if ($maxRunspaces -gt 1) {
+                        $PodeContext.RunspacePools['logs'].Pool.SetMaxRunspaces($maxRunspaces - 1)
+                    }
+                }
+                if ($PodeContext.Server.Logging.ScriptBlock.ContainsKey($method.Id)) {
+                    $PodeContext.Server.Logging.ScriptBlock.Remove($method.Id)
+                }
+            }
             $null = $PodeContext.Server.Logging.Types.Remove($Name)
         }
     }
@@ -1032,8 +1068,8 @@ function Clear-PodeLoggers {
     [CmdletBinding()]
     param()
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Logging.Types.Clear()
 }

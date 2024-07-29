@@ -173,8 +173,8 @@ function Add-PodeAccess {
         $Match = 'One'
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # check name unique
     if (Test-PodeAccessExists -Name $Name) {
@@ -307,8 +307,8 @@ function Add-PodeAccessCustom {
     )
 
     begin {
-        # Record the operation on the main log
-        Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
         $routes = @()
     }
@@ -611,8 +611,8 @@ function Remove-PodeAccess {
         $Name
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $null = $PodeContext.Server.Authorisations.Methods.Remove($Name)
 }
@@ -631,8 +631,8 @@ function Clear-PodeAccess {
     [CmdletBinding()]
     param()
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Authorisations.Methods.Clear()
 }
@@ -675,8 +675,8 @@ function Add-PodeAccessMiddleware {
         $Route
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if (!(Test-PodeAccessExists -Name $Access)) {
         throw ($PodeLocale.accessMethodNotExistExceptionMessage -f $Access) #"Access method does not exist: $($Access)"

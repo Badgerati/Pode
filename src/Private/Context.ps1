@@ -143,7 +143,7 @@ function New-PodeContext {
         # requests that should be logged
         LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
         LogsToMethod  = [System.Collections.Concurrent.ConcurrentDictionary[string, System.Collections.Concurrent.ConcurrentQueue[hashtable]]]::new()
-
+        Runspace      = @{}
     }
 
     # set thread counts

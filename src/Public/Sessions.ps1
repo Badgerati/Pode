@@ -180,8 +180,8 @@ function Remove-PodeSession {
     [CmdletBinding()]
     param()
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {

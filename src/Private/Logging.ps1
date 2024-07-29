@@ -167,54 +167,10 @@ function Get-PodeLoggingSysLogMethod {
             return $value
         }
 
-        if ($item -isnot [array]) {
-            $item = @($item)
-        }
-
-        if ($rawItem -isnot [array]) {
-            $rawItem = @($rawItem)
-        }
-
         ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingSysLogMethod_$MethodId"
         $log = @{}
+        $socketCreated=$false
         try {
-            switch ($options.Transport.ToUpperInvariant()) {
-                'UDP' {
-                    $udpClient = New-Object System.Net.Sockets.UdpClient
-                }
-                'TCP' {
-                    # Create a TCP client for non-secure communication
-                    $tcpClient = New-Object System.Net.Sockets.TcpClient
-                    $tcpClient.Connect($options.Server, $options.Port)
-                    $networkStream = $tcpClient.GetStream()
-
-
-                }
-                'TLS' {
-                    # Create a TCP client for secure communication
-                    $tcpClient = New-Object System.Net.Sockets.TcpClient
-                    $tcpClient.Connect($options.Server, $options.Port)
-
-                    $sslStream = if ($options.SkipCertificateCheck) {
-                        New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false, { $true })
-                    }
-                    else {
-                        New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false)
-                    }
-
-                    # Define the TLS protocol version
-                    $tlsProtocol = if ($options.TlsProtocols) {
-                        $options.TlsProtocols
-                    }
-                    else {
-                        [System.Security.Authentication.SslProtocols]::Tls12  # Default to TLS 1.2
-                    }
-
-                    # Authenticate as client with specific TLS protocol
-                    $sslStream.AuthenticateAsClient($options.Server, $null, $tlsProtocol, $false)
-
-                }
-            }
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Start-Sleep -Milliseconds 100
 
@@ -222,6 +178,53 @@ function Get-PodeLoggingSysLogMethod {
                     $item = $log.item
                     $options = $log.options
                     $rawItem = $log.rawItem
+                    if ($item -isnot [array]) {
+                        $item = @($item)
+                    }
+
+                    if ($rawItem -isnot [array]) {
+                        $rawItem = @($rawItem)
+                    }
+                    if (!$socketCreated) {
+                        switch ($options.Transport.ToUpperInvariant()) {
+                            'UDP' {
+                                $udpClient = New-Object System.Net.Sockets.UdpClient
+                            }
+                            'TCP' {
+                                # Create a TCP client for non-secure communication
+                                $tcpClient = New-Object System.Net.Sockets.TcpClient
+                                $tcpClient.Connect($options.Server, $options.Port)
+                                $networkStream = $tcpClient.GetStream()
+                            }
+                            'TLS' {
+                                # Create a TCP client for secure communication
+                                $tcpClient = New-Object System.Net.Sockets.TcpClient
+                                $tcpClient.Connect($options.Server, $options.Port)
+
+                                $sslStream = if ($options.SkipCertificateCheck) {
+                                    New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false, { $true })
+                                }
+                                else {
+                                    New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false)
+                                }
+
+                                # Define the TLS protocol version
+                                $tlsProtocol = if ($options.TlsProtocols) {
+                                    $options.TlsProtocols
+                                }
+                                else {
+                                    [System.Security.Authentication.SslProtocols]::Tls12  # Default to TLS 1.2
+                                }
+
+                                # Authenticate as client with specific TLS protocol
+                                $sslStream.AuthenticateAsClient($options.Server, $null, $tlsProtocol, $false)
+                            }
+                            default {
+                                $udpClient = New-Object System.Net.Sockets.UdpClient
+                            }
+                        }
+                        $socketCreated=$true
+                    }
 
                     for ($i = 0; $i -lt $item.Length; $i++) {
                         # Mask values
@@ -241,7 +244,6 @@ function Get-PodeLoggingSysLogMethod {
                                 $message = ($item[$i] | Protect-PodeLogItem)
                             }
                         }
-
                         # Map $Level to syslog severity
                         switch ($rawItem[$i].Level) {
                             'emergency' { $severity = 0; break }
@@ -271,13 +273,15 @@ function Get-PodeLoggingSysLogMethod {
                                 break
                             }
                             'RFC5424' {
-                                $processId = $PID
+                                $processId = 1# $PID
                                 $timestamp = $rawItem[$i].Date.ToString('yyyy-MM-ddTHH:mm:ss.ffffffK')
+
                                 # Assemble the full syslog formatted Message
                                 $fullSyslogMessage = "<$priority>1 $timestamp $($PodeContext.Server.ComputerName) $($options.Source) $processId - - $message"
 
                                 # Set the max message length per RFC 5424 section 6.1
                                 $MaxLength = 2048
+
                                 break
                             }
                             default {
@@ -333,14 +337,12 @@ function Get-PodeLoggingSysLogMethod {
         finally {
             switch ($options.Transport.ToUpperInvariant()) {
                 'UDP' {
-
                     # Close the UDP client
                     if ($udpClient) {
                         $udpClient.Close()
                     }
                 }
                 'TCP' {
-
                     # Close the TCP client
                     if ($networkStream) { $networkStream.Close() }
                     if ($tcpClient) { $tcpClient.Close() }
@@ -351,6 +353,7 @@ function Get-PodeLoggingSysLogMethod {
                     if ($tcpClient) { $tcpClient.Close() }
                 }
             }
+            $socketCreated=$false
         }
     }
 }
@@ -470,8 +473,6 @@ function Get-PodeLoggingRestfulMethod {
         }
     }
 }
-
-
 
 <#
 .SYNOPSIS
@@ -958,11 +959,11 @@ function Start-PodeLoggerDispatcher {
     }
     $uniqueMethodIds = ($PodeContext.Server.Logging.Types.values.Method.Id | Select-Object -Unique)
     if ($uniqueMethodIds.Count -gt 0) {
-        if (   $PodeContext.RunspacePools['logs'].Pool.SetMaxRunspaces($uniqueMethodIds.Count + 1)) {
+        if ( $PodeContext.RunspacePools['logs'].Pool.SetMaxRunspaces($uniqueMethodIds.Count + 1)) {
             foreach ($methodId in $uniqueMethodIds) {
                 if ($null -ne $PodeContext.Server.Logging.ScriptBlock[$methodId]) {
                     $PodeContext.Server.Logging.LogsToMethod[$methodId] = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-                    Add-PodeRunspace -Type Logs -ScriptBlock $PodeContext.Server.Logging.ScriptBlock[$methodId] -Parameters @{MethodId = $methodId }
+                    $PodeContext.Server.Logging.Runspace[$methodId] =Add-PodeRunspace -PassThru -Type Logs -ScriptBlock $PodeContext.Server.Logging.ScriptBlock[$methodId] -Parameters @{MethodId = $methodId }
                 }
             }
         }
@@ -1003,7 +1004,7 @@ function Test-PodeLoggerBatch {
 }
 
 
-function Write-PodeMainLog {
+function Write-PodeTraceLog {
     [CmdletBinding(DefaultParameterSetName = 'Parameter')]
     param(
         [Parameter(Mandatory, ParameterSetName = 'Parameter')]

@@ -130,8 +130,8 @@ function Set-PodeSseDefaultScope {
         $Scope
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Sse.DefaultScope = $Scope
 }
@@ -602,8 +602,8 @@ function Set-PodeSseBroadcastLevel {
         $Type
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Sse.BroadcastLevel[$Name] = $Type.ToLowerInvariant()
 }

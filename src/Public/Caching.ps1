@@ -118,8 +118,8 @@ function Set-PodeCache {
         $Storage = $null
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # use the global settable default here
     if ($Ttl -le 0) {
@@ -230,8 +230,8 @@ function Remove-PodeCache {
         $Storage = $null
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # inmem or custom storage?
     if ([string]::IsNullOrEmpty($Storage)) {
@@ -279,8 +279,8 @@ function Clear-PodeCache {
         $Storage = $null
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # inmem or custom storage?
     if ([string]::IsNullOrEmpty($Storage)) {
@@ -367,8 +367,8 @@ function Add-PodeCacheStorage {
         $Default
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # test if storage already exists
     if (Test-PodeCacheStorage -Name $Name) {
@@ -414,8 +414,8 @@ function Remove-PodeCacheStorage {
         $Name
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $null = $PodeContext.Server.Cache.Storage.Remove($Name)
 }
@@ -489,8 +489,8 @@ function Set-PodeCacheDefaultStorage {
         $Name
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Cache.DefaultStorage = $Name
 }
@@ -533,8 +533,8 @@ function Set-PodeCacheDefaultTtl {
         $Value
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if ($Value -le 0) {
         return

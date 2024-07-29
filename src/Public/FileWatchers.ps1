@@ -106,8 +106,8 @@ function Add-PodeFileWatcher {
         $PassThru
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # set random name
     if ([string]::IsNullOrEmpty($Name)) {
@@ -146,7 +146,7 @@ function Add-PodeFileWatcher {
 
     # test if we have the file watcher already
     if (Test-PodeFileWatcher -Name $Name) {
-        # A File Watcher named has already been defined 
+        # A File Watcher named has already been defined
         throw ($PodeLocale.fileWatcherAlreadyDefinedExceptionMessage -f $Name)
     }
 
@@ -281,8 +281,8 @@ function Remove-PodeFileWatcher {
         $Name
     )
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $null = $PodeContext.Fim.Items.Remove($Name)
 }
@@ -301,8 +301,8 @@ function Clear-PodeFileWatchers {
     [CmdletBinding()]
     param()
 
-    # Record the operation on the main log
-    Write-PodeMainLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Fim.Items.Clear()
 }
