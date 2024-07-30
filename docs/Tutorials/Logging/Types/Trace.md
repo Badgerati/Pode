@@ -37,7 +37,7 @@ The raw log data hashtable that will be supplied to any Custom logging methods w
 
 ```powershell
 @{
-  'Server'     = 'mdaneri-dev'
+  'Server'     = 'pode-dev'
   'Message'    = 'Operation Add-PodeRoute invoked with parameters= ScriptBlock=<ScriptBlock> Method=Get Path=/'
   'ThreadId'   = 21
   'Operation'  = 'Add-PodeRoute'
@@ -46,7 +46,7 @@ The raw log data hashtable that will be supplied to any Custom logging methods w
   'Parameters' = @{
     'ScriptBlock' = @{
       'Attributes'      = ''
-      'File'            = 'C=\\Users\\m_dan\\Documents\\GitHub\\Pode\\examples\\logging.ps1'
+      'File'            = 'C=\\Users\\pode\\Documents\\GitHub\\Pode\\examples\\logging.ps1'
       'IsFilter'        = $false
       'IsConfiguration' = $false
       'Module'          = $null
