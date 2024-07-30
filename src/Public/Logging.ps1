@@ -493,9 +493,9 @@ function New-PodeLoggingMethod {
 
                         if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
                             if ($null -ne $log) {
-                                $item = $log.item
-                                $options = $log.options
-                                $rawItem = $log.rawItem
+                                $Item = $log.item
+                                $Options = $log.options
+                                $RawItem = $log.rawItem
                                 try {
                                     # Original ScriptBlock Start
                                     <# ScriptBlock #>

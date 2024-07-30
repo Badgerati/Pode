@@ -47,17 +47,30 @@ $s3_options = @{
 }
 
 $s3_logging = New-PodeLoggingMethod -Custom -UseRunspace -CustomOptions $s3_options -ScriptBlock {
-
+    # No param() allowed here
     Write-S3Object \`
         -BucketName '<name>' \`
-        -Content $item.ToString() \`
-        -AccessKey $options.AccessKey \`
-        -SecretKey $options.SecretKey
+        -Content $Item.ToString() \`
+        -AccessKey $Options.AccessKey \`
+        -SecretKey $Options.SecretKey
 }
 $s3_logging | Enable-PodeRequestLogging
 ```
 
 
 In this example, the `-UseRunspace` parameter ensures that the custom logging method runs in its own runspace, providing better isolation and performance.
+
+##### Variable available inside the ScriptBlock
+
+| Variable                | Type                          | Description                                      |
+| ----------------------- | ----------------------------- | ------------------------------------------------ |
+| Item                    | string                        | Log message content                              |
+| Options                 | hashtable                     | The options supplied to the logging method       |
+| Options.FailureAction   | string (Ignore, Report, Halt) | Defines the behavior in case of failure.         |
+| Options.DataFormat      | string                        | The date format to use for the log entries.      |
+| Options.AsUTC           | boolean                       | the time is logged in UTC instead of local time. |
+| Options.<CustomOptions> | PSObject                      | Any key passed using `-CustomOptions` parameter  |
+| RawItem                 | hashtable                     | Log message in raw format                        |
+
 
 By leveraging custom logging methods, you can extend Pode's logging capabilities to integrate with a wide range of external platforms, providing flexibility and control over your logging strategy.
