@@ -1,15 +1,17 @@
 # Overview
 
-There are two aspects to logging in Pode: Methods and Types.
+Logging in Pode consists of two main components: Methods and Types.
 
-* Methods define how log items should be recorded, such as to a file, terminal, or event viewer.
-* Types define how items to log are transformed, and what should be supplied to the Method.
+- **Methods**: Define how log items should be recorded, such as to a file, terminal, or event viewer. Each logging method operates in its own runspace, providing isolation and efficiency. The exception to this is the Custom method, which by default runs in the same runspace as the log dispatcher unless the `-UseRunspace` parameter is specified.
 
-For example when you supply an Exception to [`Write-PodeErrorLog`](../../../Functions/Logging/Write-PodeErrorLog), this Exception is first supplied to Pode's inbuilt Error logging type. This type transforms any Exception (or Error Record) into a string which can then be supplied to the File logging method.
+- **Types**: Define how log items are transformed and what data should be supplied to the Method.
 
-In Pode you can use File, Terminal, Event Viewer, or a Custom method. As well as Request, Error, or a Custom type.
+When you supply an Exception to [`Write-PodeErrorLog`](../../../Functions/Logging/Write-PodeErrorLog), the Exception is first processed by Pode's built-in Error logging type. This type transforms the Exception (or Error Record) into a string format, which can then be recorded by the logging method (e.g., File).
 
-This means you could write a logging method to output to an S3 bucket, Splunk, or any other logging platform.
+Pode supports various logging methods, including File, Terminal, Event Viewer, Syslog, Restful, or Custom methods. Additionally, you can utilize different logging types such as Request, Error, or Custom types.
+
+This flexibility allows you to create a custom logging method that can output logs to various platforms, such as an S3 bucket, Splunk, or any other logging service.
+
 
 ## Masking Values
 

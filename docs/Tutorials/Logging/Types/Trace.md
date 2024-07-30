@@ -5,7 +5,7 @@ Pode supports logging for any public function invocation and some important non-
 
 ## Enabling
 
-To enable and use the Main logging you use the `Enable-PodeMainLogging` function supplying a logging method from `New-PodeLoggingMethod`.
+To enable and use the Main logging you use the `Enable-PodeTraceLogging` function supplying a logging method from `New-PodeLoggingMethod`.
 
 ## Examples
 
@@ -15,7 +15,7 @@ The following example enables Main logging and will output all items to a Syslog
 
 ```powershell
 $method = New-PodeLoggingMethod -Syslog -Server '127.0.0.1' -Transport 'UDP'
-$method | Enable-PodeMainLogging
+$method | Enable-PodeTraceLogging
 ```
 
 ### Using Raw Data
@@ -28,7 +28,7 @@ $method = New-PodeLoggingMethod -Custom -ScriptBlock {
     "$($item | ConvertTo-Json -Depth 10)" | Out-Default
 }
 
-$method | Enable-PodeMainLogging -Raw
+$method | Enable-PodeTraceLogging -Raw
 ```
 
 ## Raw Main Log Data
