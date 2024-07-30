@@ -47,6 +47,10 @@
 .PARAMETER UseRunspace
     If supplied, the Custom Logging output method will use its own separated runspace
 
+.PARAMETER CustomOptions
+    An hastable of properties to supply to the Custom Logging output method's ScriptBlock when used inside a runspace.
+    The content is available using the variable `$options`
+
 .PARAMETER ScriptBlock
     The ScriptBlock that defines how to output a log item.
 
@@ -190,15 +194,21 @@ function New-PodeLoggingMethod {
         [int]
         $MaxSize = 0,
 
-        [Parameter(ParameterSetName = 'Custom')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CustomRunspace')]
         [switch]
         $Custom,
 
-        [Parameter(ParameterSetName = 'Custom')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CustomRunspace')]
         [switch]
         $UseRunspace,
 
+        [Parameter(ParameterSetName = 'CustomRunspace')]
+        [hashtable]
+        $CustomOptions = @{},
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'CustomRunspace')]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the Custom logging output method
@@ -241,7 +251,6 @@ function New-PodeLoggingMethod {
         $SyslogProtocol = 'RFC5424',
 
         [Parameter( ParameterSetName = 'Syslog')]
-        [Parameter(Mandatory = $false)]
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Default', 'Unicode', 'UTF32', 'UTF7', 'UTF8')]
         [string]
         $Encoding = 'UTF8',
@@ -274,7 +283,7 @@ function New-PodeLoggingMethod {
 
         [Parameter(ParameterSetName = 'EventViewer')]
         [Parameter(ParameterSetName = 'File')]
-        [Parameter(ParameterSetName = 'Custom')]
+        [Parameter(ParameterSetName = 'CustomRunspace')]
         [Parameter( ParameterSetName = 'Restful')]
         [Parameter( ParameterSetName = 'Syslog')]
         [string]
@@ -470,7 +479,7 @@ function New-PodeLoggingMethod {
             }
         }
 
-        'custom' {
+        { ($_ -eq 'CustomRunspace') -or ($_ -eq 'custom') } {
             $methodId = New-PodeGuid
             if ($UseRunspace.IsPresent) {
                 $enanchedScriptBlock = {
@@ -493,7 +502,7 @@ function New-PodeLoggingMethod {
                                     # Original ScriptBlock End
                                 }
                                 catch {
-                                    Invoke-PodeHandleFailure -Message "Custom Logging Error. message: $_" -FailureAction $options.FailureAction
+                                    Invoke-PodeHandleFailure -Message "Custom Logging $MethodId Error. message: $_" -FailureAction $options.FailureAction
                                 }
                             }
                         }
@@ -504,23 +513,20 @@ function New-PodeLoggingMethod {
                     ScriptBlock = [ScriptBlock]::Create( $enanchedScriptBlock.ToString().Replace('<# ScriptBlock #>', $ScriptBlock.ToString()))
                     Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
                 }
-
                 return @{
-                    Id            = $methodId
-                    Batch         = $batchInfo
-                    Logger        = @()
-                    Arguments     = $ArgumentList
-                    FailureAction = $FailureAction
-                    DataFormat    = $DataFormat
-                    AsUTC         = $AsUTC
+                    Id        = $methodId
+                    Batch     = $batchInfo
+                    Logger    = @()
+                    Arguments = @{
+                        FailureAction = $FailureAction
+                        DataFormat    = $DataFormat
+                        AsUTC         = $AsUTC
+                    } + $CustomOptions
                 }
             }
             else {
                 $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-                $PodeContext.Server.Logging.Method[$methodId] = @{
-                    ScriptBlock = $ScriptBlock
-                    Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-                }
+
                 return @{
                     Id             = $methodId
                     ScriptBlock    = $ScriptBlock
@@ -600,7 +606,7 @@ function Enable-PodeRequestLogging {
     }
     process {
         # ensure the Method contains a scriptblock
-        if (! $PodeContext.Server.Logging.Method.ContainsKey( $_.Id)) {
+        if ((! $PodeContext.Server.Logging.Method.ContainsKey($_.Id)) -and (! $_.ContainsKey('Scriptblock'))) {
             # The supplied output Method for Request Logging requires a valid ScriptBlock
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Request')
         }
@@ -701,7 +707,7 @@ function Enable-PodeErrorLogging {
 
     process {
         # ensure the Method contains a scriptblock
-        if (! $PodeContext.Server.Logging.Method.ContainsKey( $_.Id)) {
+        if ((! $PodeContext.Server.Logging.Method.ContainsKey($_.Id)) -and (! $_.ContainsKey('Scriptblock'))) {
             # The supplied output Method for Error Logging requires a valid ScriptBlock
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Error')
         }
@@ -781,7 +787,7 @@ function Enable-PodeGeneralLogging {
 
     process {
         # ensure the Method contains a scriptblock
-        if (! $PodeContext.Server.Logging.Method.ContainsKey( $_.Id)) {
+        if ((! $PodeContext.Server.Logging.Method.ContainsKey($_.Id)) -and (! $_.ContainsKey('Scriptblock'))) {
             # The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock.
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f $Name)
         }
@@ -872,7 +878,7 @@ function Enable-PodeTraceLogging {
 
     process {
         # ensure the Method contains a scriptblock
-        if (! $PodeContext.Server.Logging.Method.ContainsKey( $_.Id)) {
+        if ((! $PodeContext.Server.Logging.Method.ContainsKey($_.Id)) -and (! $_.ContainsKey('Scriptblock'))) {
             # The supplied output Method for the '{0}' Logging method requires a valid ScriptBlock.
             throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Main')
         }
@@ -1053,29 +1059,31 @@ function Remove-PodeLogger {
         if ($PodeContext.Server.Logging.Type.Contains($Name)) {
             # Retrieve the method associated with the logging type
             $method = $PodeContext.Server.Logging.Type[$Name].Method
+            # If it's not a legacy method remove the runspace
+            if (! $method.NoRunspace) {
+                # Remove the logger name from the method's logger collection
+                if ($method.Logger.Count -eq 1) {
+                    $method.Logger = @()
+                }
+                else {
+                    $method.Logger = $method.Logger | Where-Object { $_ -ne $Name }
+                }
 
-            # Remove the logger name from the method's logger collection
-            if ($method.Logger.Count -eq 1) {
-                $method.Logger = @()
-            }
-            else {
-                $method.Logger = $method.Logger | Where-Object { $_ -ne $Name }
-            }
+                # Check if there are no more loggers associated with the method
+                if ($method.Logger.Count -eq 0) {
+                    # If the method's runspace is still active, stop and dispose of it
+                    if ($PodeContext.Server.Logging.Method.ContainsKey($method.Id)) {
+                        $PodeContext.Server.Logging.Method[$method.Id].Runspace.Pipeline.Stop()
+                        $PodeContext.Server.Logging.Method[$method.Id].Runspace.Pipeline.Dispose()
 
-            # Check if there are no more loggers associated with the method
-            if ($method.Logger.Count -eq 0) {
-                # If the method's runspace is still active, stop and dispose of it
-                if ($PodeContext.Server.Logging.Method.ContainsKey($method.Id)) {
-                    $PodeContext.Server.Logging.Method[$method.Id].Runspace.Pipeline.Stop()
-                    $PodeContext.Server.Logging.Method[$method.Id].Runspace.Pipeline.Dispose()
-
-                    # Decrease the maximum runspaces for the 'logs' pool if applicable
-                    $maxRunspaces = $PodeContext.RunspacePools['logs'].Pool.GetMaxRunspaces
-                    if ($maxRunspaces -gt 1) {
-                        $PodeContext.RunspacePools['logs'].Pool.SetMaxRunspaces($maxRunspaces - 1)
+                        # Decrease the maximum runspaces for the 'logs' pool if applicable
+                        $maxRunspaces = $PodeContext.RunspacePools['logs'].Pool.GetMaxRunspaces
+                        if ($maxRunspaces -gt 1) {
+                            $PodeContext.RunspacePools['logs'].Pool.SetMaxRunspaces($maxRunspaces - 1)
+                        }
+                        # Remove the method's script block if it exists
+                        $PodeContext.Server.Logging.Method.Remove($method.Id)
                     }
-                    # Remove the method's script block if it exists
-                    $PodeContext.Server.Logging.Method.Remove($method.Id)
                 }
             }
 

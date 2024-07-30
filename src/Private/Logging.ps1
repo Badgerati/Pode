@@ -1122,16 +1122,18 @@ function Start-PodeLoggerDispatcher {
                     # Send the writable log item off to the log writer
                     if ($null -ne $item) {
                         foreach ($method in $logger.Method) {
-                            $_args = @{
-                                item    = $item
-                                options = $method.Arguments
-                                rawItem = $rawItem
-                            }
                             if ($method.NoRunspace) {
                                 # Legacy for custom methods
-                                $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logging.Method[$method.Id].ScriptBlock -Arguments $_args -UsingVariables $method.UsingVariables -Splat
+                            #    $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logging.Method[$method.Id].ScriptBlock -Arguments $_args -UsingVariables $method.UsingVariables -Splat
+                                $_args = @(, $item) + @($method.Arguments) + @(, $rawItem)
+                                $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
                             }
                             else {
+                                $_args = @{
+                                    item    = $item
+                                    options = $method.Arguments
+                                    rawItem = $rawItem
+                                }
                                 $PodeContext.Server.Logging.Method[$method.Id].Queue.Enqueue($_args)
                             }
                         }

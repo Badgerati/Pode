@@ -18,13 +18,14 @@ Additionally, custom logging methods can be run in their own runspace by using t
 
 This example takes the supplied item, converts it to a string, and sends it to an S3 bucket in AWS. In this case, it will log Requests:
 
+#### Legacy (No Runspace)
 ```powershell
 $s3_options = @{
     AccessKey = $AccessKey
     SecretKey = $SecretKey
 }
 
-$s3_logging = New-PodeLoggingMethod -Custom -ArgumentList $s3_opts -UseRunspace -ScriptBlock {
+$s3_logging = New-PodeLoggingMethod -Custom -ArgumentList $s3_options -ScriptBlock {
     param($item, $s3_opts)
 
     Write-S3Object \`
@@ -35,6 +36,27 @@ $s3_logging = New-PodeLoggingMethod -Custom -ArgumentList $s3_opts -UseRunspace 
 }
 $s3_logging | Enable-PodeRequestLogging
 ```
+
+
+#### With Runspace
+
+```powershell
+$s3_options = @{
+    AccessKey = $AccessKey
+    SecretKey = $SecretKey
+}
+
+$s3_logging = New-PodeLoggingMethod -Custom -UseRunspace -CustomOptions $s3_options -ScriptBlock {
+
+    Write-S3Object \`
+        -BucketName '<name>' \`
+        -Content $item.ToString() \`
+        -AccessKey $options.AccessKey \`
+        -SecretKey $options.SecretKey
+}
+$s3_logging | Enable-PodeRequestLogging
+```
+
 
 In this example, the `-UseRunspace` parameter ensures that the custom logging method runs in its own runspace, providing better isolation and performance.
 

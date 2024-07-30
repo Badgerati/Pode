@@ -37,15 +37,20 @@ Start-PodeServer -browse {
     }
 
     if ( $LoggingType -icontains 'custom') {
-        $logging += New-PodeLoggingMethod -Custom -ScriptBlock {
-            param($Itemsss, $options, $RawItems)
-            $Itemsss | Out-File './examples/logs/customLegacy.log' -Append
+        $logging += New-PodeLoggingMethod -Custom -ArgumentList 'arg1','arg2','arg3'  -ScriptBlock {
+            param($item, $arg1 ,$arg2,$arg3, $rawItem)
+            $item | Out-File './examples/logs/customLegacy.log' -Append
+            $arg1 ,$arg2,$arg3  -join ',' | Out-File './examples/logs/customLegacy_argumentList.log' -Append
+            $rawItem| Out-File './examples/logs/customLegacy_rawItem.log' -Append
         }
 
-        $logging += New-PodeLoggingMethod -Custom -UseRunspace -ScriptBlock {
+        $logging += New-PodeLoggingMethod -Custom -UseRunspace -CustomOptions @{ 'opt1'='something';'opt2'='else'} -ScriptBlock {
             $item | Out-File './examples/logs/customWithRunspace.log' -Append
+            $options | Out-File './examples/logs/customWithRunspace_options.log' -Append
+            $rawItem| Out-File './examples/logs/customWithRunspace_rawItem.log' -Append
         }
     }
+
     if ( $LoggingType -icontains 'eventviewer') {
         $logging += New-PodeLoggingMethod -EventViewer
     }
