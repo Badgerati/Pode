@@ -1101,9 +1101,9 @@ Clears all Logging methods that have been configured.
 Clears all Logging methods that have been configured.
 
 .EXAMPLE
-Clear-PodeLoggers
+Clear-PodeLogger
 #>
-function Clear-PodeLoggers {
+function Clear-PodeLogger {
     [CmdletBinding()]
     param()
 
@@ -1111,6 +1111,11 @@ function Clear-PodeLoggers {
     Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Logging.Type.Clear()
+}
+
+# Create the alias for back compatibility
+if (!(Test-Path Alias:Clear-PodeLoggers)) {
+    New-Alias Clear-PodeLoggers -Value  Clear-PodeLogger
 }
 
 <#

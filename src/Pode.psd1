@@ -288,7 +288,7 @@
         'Disable-PodeTraceLogging',
         'Add-PodeLogger',
         'Remove-PodeLogger',
-        'Clear-PodeLoggers',
+        'Clear-PodeLogger',
         'Write-PodeErrorLog',
         'Write-PodeLog',
         'Protect-PodeLogItem',
