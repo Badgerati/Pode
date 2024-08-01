@@ -8,6 +8,9 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
     $PodeContext = @{ 'Server' = $null; }
+
+    # Mock Write-PodeTraceLog to avoid load Pode C# component
+    Mock Write-PodeTraceLog {}
 }
 
 Describe 'Find-PodeRoute' {
@@ -291,8 +294,8 @@ Describe 'Add-PodeRoute' {
 
     It 'Throws error because no scriptblock supplied' {
 
-   #     ?*[] can be escaped using backtick, ex `*.
-        $expectedMessage = ($PodeLocale.noLogicPassedForMethodRouteExceptionMessage -f 'GET', '/').Replace('[','`[').Replace(']','`]')
+        #     ?*[] can be escaped using backtick, ex `*.
+        $expectedMessage = ($PodeLocale.noLogicPassedForMethodRouteExceptionMessage -f 'GET', '/').Replace('[', '`[').Replace(']', '`]')
         { Add-PodeRoute -Method GET -Path '/' -ScriptBlock {} } | Should -Throw -ExpectedMessage $expectedMessage # '*No logic passed*'
         # -Throw -ExpectedMessage $expectedMessage # '*No logic passed*'
     }
@@ -307,7 +310,7 @@ Describe 'Add-PodeRoute' {
                 )
             }
         }
-        $expectedMessage = ($PodeLocale.methodPathAlreadyDefinedExceptionMessage -f 'GET', '/').Replace('[','`[').Replace(']','`]')
+        $expectedMessage = ($PodeLocale.methodPathAlreadyDefinedExceptionMessage -f 'GET', '/').Replace('[', '`[').Replace(']', '`]')
         { Add-PodeRoute -Method GET -Path '/' -ScriptBlock { write-host 'hi' } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
     }
 

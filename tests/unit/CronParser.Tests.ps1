@@ -5,6 +5,9 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
+
+    # Mock Write-PodeTraceLog to avoid load Pode C# component
+    Mock Write-PodeTraceLog {}
 }
 
 Describe 'Get-PodeCronField' {
@@ -118,19 +121,19 @@ Describe 'ConvertFrom-PodeCronExpression' {
         }
 
         It 'Throws error for range atom with invalid min' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 0-5 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.minValueInvalidExceptionMessage -f 0,'DayOfMonth',1) # '*is invalid, should be greater than/equal to*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 0-5 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.minValueInvalidExceptionMessage -f 0, 'DayOfMonth', 1) # '*is invalid, should be greater than/equal to*'
         }
 
         It 'Throws error for range atom with invalid max' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 1-32 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.maxValueInvalidExceptionMessage -f 32,'DayOfMonth',31) #'*is invalid, should be less than/equal to*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 1-32 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.maxValueInvalidExceptionMessage -f 32, 'DayOfMonth', 31) #'*is invalid, should be less than/equal to*'
         }
 
         It 'Throws error for atom with invalid min' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 0 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.valueOutOfRangeExceptionMessage -f '','DayOfMonth',1,31) # '*invalid, should be between*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 0 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.valueOutOfRangeExceptionMessage -f '', 'DayOfMonth', 1, 31) # '*invalid, should be between*'
         }
 
         It 'Throws error for atom with invalid max' {
-            { ConvertFrom-PodeCronExpression -Expression '* * 32 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.valueOutOfRangeExceptionMessage -f '','DayOfMonth',1,31)#'*invalid, should be between*'
+            { ConvertFrom-PodeCronExpression -Expression '* * 32 * *' } | Should -Throw -ExpectedMessage ($PodeLocale.valueOutOfRangeExceptionMessage -f '', 'DayOfMonth', 1, 31)#'*invalid, should be between*'
         }
 
 

@@ -293,6 +293,9 @@
         'Write-PodeLog',
         'Protect-PodeLogItem',
         'Use-PodeLogging',
+        'Enable-PodeLogging',
+        'Disable-PodeLogging',
+        'Clear-PodeLogging',
 
         # core
         'Start-PodeServer',

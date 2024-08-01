@@ -7,6 +7,9 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
+
+    # Mock Write-PodeTraceLog to avoid load Pode C# component
+    Mock Write-PodeTraceLog {}
 }
 
 Describe 'Get-PodeInbuiltMiddleware' {
@@ -108,13 +111,13 @@ Describe 'Middleware' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Add-PodeMiddleware -Name 'Test1' -ScriptBlock { write-host 'middle1' }
-            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[','`[').Replace(']','`]') # -replace '\[', '`[' -replace '\]', '`]'
+            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
             { Add-PodeMiddleware -Name 'Test1' -ScriptBlock { write-host 'middle2' } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
         }
 
         It 'Throws error when adding middleware hash with no logic' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
-            $expectedMessage = $PodeLocale.middlewareNoLogicSuppliedExceptionMessage.Replace('[','`[').Replace(']','`]') # -replace '\[', '`[' -replace '\]', '`]'
+            $expectedMessage = $PodeLocale.middlewareNoLogicSuppliedExceptionMessage.Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
             { Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Rand' = { write-host 'middle1' } } } | Should -Throw -ExpectedMessage $expectedMessage # '*no logic supplied*'
         }
 
@@ -162,7 +165,7 @@ Describe 'Middleware' {
             $PodeContext = @{ 'Server' = @{ 'Middleware' = @(); }; }
 
             Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Logic' = { write-host 'middle1' } }
-            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[','`[').Replace(']','`]') # -replace '\[', '`[' -replace '\]', '`]'
+            $expectedMessage = ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f 'Test1').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
             { Add-PodeMiddleware -Name 'Test1' -InputObject @{ 'Logic' = { write-host 'middle2' } } } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
         }
     }

@@ -7,12 +7,15 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
-
     $PodeContext = @{
         Server        = $null
         Metrics       = @{ Server = @{ StartTime = [datetime]::UtcNow } }
         RunspacePools = @{}
-    } }
+    }
+
+    # Mock Write-PodeTraceLog to avoid load Pode C# component
+    Mock Write-PodeTraceLog {}
+}
 
 Describe 'Start-PodeInternalServer' {
     BeforeAll {
