@@ -1,7 +1,7 @@
 param(
     [ValidateSet('Terminal', 'File', 'mylog', 'Syslog', 'EventViewer', 'Custom')]
     [string[]]
-    $LoggingType = @( 'Terminal', 'file', 'Custom', 'Syslog'),
+    $LoggingType = @(  'file', 'Custom', 'Syslog'),
 
     [switch]
     $Raw
@@ -33,21 +33,22 @@ Start-PodeServer -browse {
     }
 
     if ( $LoggingType -icontains 'file') {
-        $logging += New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
+        $logging += New-PodeLoggingMethod -File -Name 'general' -MaxDays 4 -Format Simple -ISO8601
+        $requestLogging = New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
     }
 
     if ( $LoggingType -icontains 'custom') {
-        $logging += New-PodeLoggingMethod -Custom -ArgumentList 'arg1','arg2','arg3'  -ScriptBlock {
-            param($item, $arg1 ,$arg2,$arg3, $rawItem)
+        $logging += New-PodeLoggingMethod -Custom -ArgumentList 'arg1', 'arg2', 'arg3'  -ScriptBlock {
+            param($item, $arg1 , $arg2, $arg3, $rawItem)
             $item | Out-File './examples/logs/customLegacy.log' -Append
-            $arg1 ,$arg2,$arg3  -join ',' | Out-File './examples/logs/customLegacy_argumentList.log' -Append
-            $rawItem| Out-File './examples/logs/customLegacy_rawItem.log' -Append
+            $arg1 , $arg2, $arg3 -join ',' | Out-File './examples/logs/customLegacy_argumentList.log' -Append
+            $rawItem | Out-File './examples/logs/customLegacy_rawItem.log' -Append
         }
 
-        $logging += New-PodeLoggingMethod -Custom -UseRunspace -CustomOptions @{ 'opt1'='something';'opt2'='else'} -ScriptBlock {
+        $logging += New-PodeLoggingMethod -Custom -UseRunspace -CustomOptions @{ 'opt1' = 'something'; 'opt2' = 'else' } -ScriptBlock {
             $item | Out-File './examples/logs/customWithRunspace.log' -Append
             $options | Out-File './examples/logs/customWithRunspace_options.log' -Append
-            $rawItem| Out-File './examples/logs/customWithRunspace_rawItem.log' -Append
+            $rawItem | Out-File './examples/logs/customWithRunspace_rawItem.log' -Append
         }
     }
 
@@ -62,10 +63,12 @@ Start-PodeServer -browse {
     if ($logging.Count -eq 0) {
         throw 'No logging selected'
     }
+    if ( $requestLogging) {
+        $requestLogging | Enable-PodeRequestLogging
+    }
 
     $logging | Enable-PodeTraceLogging -Raw:$Raw
-    $logging | Enable-PodeRequestLogging -Raw:$Raw
-    $logging | Enable-PodeErrorLogging -Raw:$Raw
+    $logging | Enable-PodeErrorLogging -Raw:$Raw -Levels *
     $logging | Enable-PodeGeneralLogging -Name 'mylog' -Raw:$Raw
 
     Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'

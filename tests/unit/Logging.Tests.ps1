@@ -5,6 +5,10 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
+
+    Add-Type -LiteralPath "$($src)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
+    [Pode.PodeLogger]::Enabled = $true
+
 }
 Describe 'Get-PodeLogger' {
     It 'Returns null as the logger does not exist' {
@@ -48,16 +52,17 @@ Describe 'Write-PodeLog' {
 
         Write-PodeLog -Name 'test' -InputObject 'test'
 
-        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 0
+        [Pode.PodeLogger]::Count | Should -Be 0
     }
 
     It 'Adds a log item' {
         Mock Test-PodeLoggerEnabled { return $true }
         Write-PodeLog -Name 'test' -InputObject 'test'
 
-        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 1
-        $PodeContext.Server.Logging.LogsToProcess[0].Name | Should -Be 'test'
-        $PodeContext.Server.Logging.LogsToProcess[0].Item | Should -Be 'test'
+        [Pode.PodeLogger]::Count | Should -Be 1
+        $item = [Pode.PodeLogger]::Dequeue()
+        $item.Name | Should -Be 'test'
+        $item.Item | Should -Be 'test'
     }
 }
 
@@ -66,8 +71,7 @@ Describe 'Write-PodeErrorLog' {
         $PodeContext = @{
             Server = @{
                 Logging = @{
-                    LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-                    Type          = @{
+                    Type = @{
                         test = @{
                             Standard = $false
                         }
@@ -81,7 +85,7 @@ Describe 'Write-PodeErrorLog' {
 
         Write-PodeLog -Name 'test' -InputObject 'test'
 
-        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 0
+        [Pode.PodeLogger]::Count | Should -Be 0
     }
 
     It 'Adds an error log item' {
@@ -89,7 +93,8 @@ Describe 'Write-PodeErrorLog' {
         Mock Get-PodeLogger { return @{ Arguments = @{
                     Levels = @('Error')
                 }
-            } }
+            }
+        }
 
 
         try { throw 'some error' }
@@ -97,8 +102,9 @@ Describe 'Write-PodeErrorLog' {
             Write-PodeErrorLog -ErrorRecord $Error[0]
         }
 
-        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 1
-        $PodeContext.Server.Logging.LogsToProcess[0].Item.Message | Should -Be 'some error'
+        [Pode.PodeLogger]::Count | Should -Be 1
+        $item = [Pode.PodeLogger]::Dequeue()
+        $item.Item.Message | Should -Be 'some error'
     }
 
     It 'Adds an exception log item' {
@@ -111,8 +117,9 @@ Describe 'Write-PodeErrorLog' {
         $exp = [exception]::new('some error')
         Write-PodeErrorLog -Exception $exp
 
-        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 1
-        $PodeContext.Server.Logging.LogsToProcess[0].Item.Message | Should -Be 'some error'
+        [Pode.PodeLogger]::Count | Should -Be 1
+        $item = [Pode.PodeLogger]::Dequeue()
+        $item.Item.Message | Should -Be 'some error'
     }
 
     It 'Does not log as Verbose not allowed' {
@@ -124,8 +131,8 @@ Describe 'Write-PodeErrorLog' {
 
         $exp = [exception]::new('some error')
         Write-PodeErrorLog -Exception $exp -Level Verbose
-
-        $PodeContext.Server.Logging.LogsToProcess.Count | Should -Be 0
+        $item = [Pode.PodeLogger]::Dequeue()
+        [Pode.PodeLogger]::Count | Should -Be 0
     }
 }
 

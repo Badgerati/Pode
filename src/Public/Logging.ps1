@@ -17,6 +17,21 @@
 .PARAMETER Name
     The File Name to prepend new log files using.
 
+.PARAMETER Format
+    The format of the log entries for the File logging method. Options are: RFC3164, RFC5424, Simple, Default (Default: Default).
+
+.PARAMETER Separator
+    The separator to use in log entries for the File logging method (Default: ' ').
+
+.PARAMETER MaxLength
+    The maximum length of log entries for the File logging method (Default: -1).
+
+.PARAMETER MaxDays
+    The maximum number of days to keep logs, before Pode automatically removes them.
+
+.PARAMETER MaxSize
+    The maximum size of a log file, before Pode starts writing to a new log file.
+
 .PARAMETER EventViewer
     If supplied, will use the inbuilt Event Viewer logging output method.
 
@@ -34,12 +49,6 @@
 
 .PARAMETER BatchTimeout
     An optional batch timeout, in seconds, to send items off for writing if a log item isn't received (Default: 0)
-
-.PARAMETER MaxDays
-    The maximum number of days to keep logs, before Pode automatically removes them.
-
-.PARAMETER MaxSize
-    The maximum size of a log file, before Pode starts writing to a new log file.
 
 .PARAMETER Custom
     If supplied, will allow you to create a Custom Logging output method.
@@ -145,6 +154,19 @@ function New-PodeLoggingMethod {
         [string]
         $Name,
 
+        [Parameter( ParameterSetName = 'File')]
+        [ValidateSet('RFC3164' , 'RFC5424', 'Simple', 'Default' )]
+        [string]
+        $Format = 'Default',
+
+        [Parameter( ParameterSetName = 'File')]
+        [string]
+        $Separator = ' ',
+
+        [Parameter(  ParameterSetName = 'File')]
+        [int]
+        $MaxLength = -1,
+
         [Parameter(ParameterSetName = 'EventViewer')]
         [switch]
         $EventViewer,
@@ -155,6 +177,7 @@ function New-PodeLoggingMethod {
 
         [Parameter(ParameterSetName = 'EventViewer')]
         [Parameter(ParameterSetName = 'Syslog')]
+        [Parameter(ParameterSetName = 'File')]
         [string]
         $Source = 'Pode',
 
@@ -251,6 +274,7 @@ function New-PodeLoggingMethod {
         $SyslogProtocol = 'RFC5424',
 
         [Parameter( ParameterSetName = 'Syslog')]
+        [Parameter( ParameterSetName = 'File')]
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Default', 'Unicode', 'UTF32', 'UTF7', 'UTF8')]
         [string]
         $Encoding = 'UTF8',
@@ -328,7 +352,7 @@ function New-PodeLoggingMethod {
         $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
     }
     else {
-        $DataFormat = 'R' #RFC 1123 Format
+        $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
     }
 
     # batch details
@@ -384,6 +408,11 @@ function New-PodeLoggingMethod {
                     FailureAction = $FailureAction
                     DataFormat    = $DataFormat
                     AsUTC         = $AsUTC
+                    Encoding      = $Encoding
+                    Format        = $Format
+                    MaxLength     = $MaxLength
+                    Source        = $Source
+                    Separator     = $Separator
                 }
             }
         }
@@ -572,7 +601,7 @@ function Enable-PodeRequestLogging {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [hashtable]
+        [hashtable[]]
         $Method,
 
         [Parameter()]
@@ -763,7 +792,7 @@ function Enable-PodeGeneralLogging {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [hashtable]
+        [hashtable[]]
         $Method,
 
         [string[]]
@@ -937,6 +966,7 @@ function Disable-PodeErrorLogging {
     param()
 
     Remove-PodeLogger -Name (Get-PodeErrorLoggingName)
+
 }
 
 <#
@@ -1120,22 +1150,31 @@ if (!(Test-Path Alias:Clear-PodeLoggers)) {
 
 <#
 .SYNOPSIS
-    Writes and Exception or ErrorRecord using the inbuilt error logging.
+    Writes an Exception or ErrorRecord using the built-in error logging.
 
 .DESCRIPTION
-    Writes and Exception or ErrorRecord using the inbuilt error logging.
+    This function logs an Exception or ErrorRecord using Pode's built-in error logging mechanism. It allows specifying the error level and optionally checks for inner exceptions.
 
 .PARAMETER Exception
-    An Exception to write.
+    An Exception to log.
 
 .PARAMETER ErrorRecord
-    An ErrorRecord to write.
+    An ErrorRecord to log.
+
+.PARAMETER ErrorMessage
+    A custom error message to log.
+
+.PARAMETER Category
+    The error category for the custom error message (Default: NotSpecified).
 
 .PARAMETER Level
-    The Level of the error being logged.
+    The level of the error being logged. Options are: Error, Warning, Informational, Verbose, Debug (Default: Error).
 
 .PARAMETER CheckInnerException
-    If supplied, any exceptions are check for inner exceptions. If one is present, this is also logged.
+    If specified, any inner exceptions of the provided exception are also logged.
+
+.PARAMETER ThreadId
+    The ID of the thread where the error occurred.
 
 .EXAMPLE
     try { /* logic */ } catch { $_ | Write-PodeErrorLog }
@@ -1150,9 +1189,17 @@ function Write-PodeErrorLog {
         [System.Exception]
         $Exception,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Error')]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'ErrorRecord')]
         [System.Management.Automation.ErrorRecord]
         $ErrorRecord,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'ErrorMessage')]
+        [string]
+        $ErrorMessage,
+
+        [Parameter( ParameterSetName = 'ErrorMessage')]
+        [System.Management.Automation.ErrorCategory]
+        $Category = [System.Management.Automation.ErrorCategory]::NotSpecified,
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -1162,7 +1209,11 @@ function Write-PodeErrorLog {
 
         [Parameter(ParameterSetName = 'Exception')]
         [switch]
-        $CheckInnerException
+        $CheckInnerException,
+
+        [Parameter()]
+        [int]
+        $ThreadId
     )
 
     Process {
@@ -1188,11 +1239,17 @@ function Write-PodeErrorLog {
                 }
             }
 
-            'error' {
+            'ErrorRecord' {
                 $item = @{
                     Category   = $ErrorRecord.CategoryInfo.ToString()
                     Message    = $ErrorRecord.Exception.Message
                     StackTrace = $ErrorRecord.ScriptStackTrace
+                }
+            }
+            'ErrorMessage' {
+                $item = @{
+                    Category = $Category.ToString()
+                    Message  = $ErrorMessage
                 }
             }
         }
@@ -1207,13 +1264,20 @@ function Write-PodeErrorLog {
             $Item.Date = [datetime]::Now
         }
 
-        $item['ThreadId'] = [System.Threading.Thread]::CurrentThread.ManagedThreadId #[int]$ThreadId
+        if ($ThreadId) {
+            $Item['ThreadId'] = $ThreadId
+        }
+        else {
+            $item['ThreadId'] = [System.Threading.Thread]::CurrentThread.ManagedThreadId #[int]$ThreadId
+        }
+
+        $logItem = @{
+            Name = $name
+            Item = $item
+        }
 
         # add the item to be processed
-        $null = $PodeContext.Server.Logging.LogsToProcess.Enqueue(@{
-                Name = $name
-                Item = $item
-            })
+        $null = [Pode.PodeLogger]::Enqueue( $logItem)
 
         # for exceptions, check the inner exception
         if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
@@ -1225,11 +1289,11 @@ function Write-PodeErrorLog {
 
 <#
 .SYNOPSIS
-    Write an object to a configured custom or inbuilt logging method.
+    Writes an object to a configured custom or built-in logging method.
 
 .DESCRIPTION
     This function writes an object to a configured logging method in Pode.
-    It supports both custom and inbuilt logging methods, allowing for structured logging with different log levels and messages.
+    It supports both custom and built-in logging methods, allowing for structured logging with different log levels and messages.
 
 .PARAMETER Name
     The name of the logging method.
@@ -1238,7 +1302,7 @@ function Write-PodeErrorLog {
     The object to write to the logging method.
 
 .PARAMETER Level
-    The log level for the custom logging method (Default: 'INFO').
+    The log level for the custom logging method (Default: 'Informational').
 
 .PARAMETER Message
     The log message for the custom logging method.
@@ -1247,6 +1311,9 @@ function Write-PodeErrorLog {
     A string that identifies the source application, service, or process generating the log message.
     The tag helps in distinguishing log messages from different sources and makes it easier to filter and analyze logs.
     It is typically a short identifier such as the application name or process ID.
+
+.PARAMETER ThreadId
+    The ID of the thread where the log entry is generated.
 
 .EXAMPLE
     $object | Write-PodeLog -Name 'LogName'
@@ -1275,7 +1342,11 @@ function Write-PodeLog {
 
         [Parameter( ParameterSetName = 'custom')]
         [string]
-        $Tag = '-'
+        $Tag = '-',
+
+        [Parameter()]
+        [int]
+        $ThreadId
 
     )
     Process {
@@ -1315,11 +1386,15 @@ function Write-PodeLog {
                 $logItem.Item.Date = [datetime]::Now
             }
 
-            $logItem.Item.ThreadId = [System.Threading.Thread]::CurrentThread.ManagedThreadId
+            if ($ThreadId) {
+                $logItem.Item.ThreadId = $ThreadId
+            }
+            else {
+                $logItem.Item.ThreadId = [System.Threading.Thread]::CurrentThread.ManagedThreadId
+            }
         }
-
         # add the item to be processed
-        $PodeContext.Server.Logging.LogsToProcess.Enqueue($logItem)
+        [Pode.PodeLogger]::Enqueue($logItem)
     }
 }
 
@@ -1406,4 +1481,51 @@ function Use-PodeLogging {
     )
 
     Use-PodeFolder -Path $Path -DefaultPath 'logging'
+}
+
+
+
+<#
+.SYNOPSIS
+    Enables logging in Pode.
+
+.DESCRIPTION
+    This function enables logging in Pode by setting the appropriate flags in the Pode context.
+
+.EXAMPLE
+    Enable-PodeLogging
+#>
+function Enable-PodeLogging {
+    [pode.PodeLogger]::Enabled = $true
+    $PodeContext.Server.Logging = $true
+}
+
+<#
+.SYNOPSIS
+    Disables logging in Pode.
+
+.DESCRIPTION
+    This function disables logging in Pode by setting the appropriate flags in the Pode context.
+
+.EXAMPLE
+    Disable-PodeLogging
+#>
+function Disable-PodeLogging {
+    [pode.PodeLogger]::Enabled = $false
+    $PodeContext.Server.Logging = $false
+}
+
+
+<#
+.SYNOPSIS
+    Clears the Pode logging.
+
+.DESCRIPTION
+    This function clears all the logs in Pode by calling the Clear method on the PodeLogger class.
+
+.EXAMPLE
+    Clear-PodeLogging
+#>
+function Clear-PodeLogging {
+    [pode.PodeLogger]::Clear()
 }

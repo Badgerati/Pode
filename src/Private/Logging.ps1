@@ -78,14 +78,7 @@ function Get-PodeLoggingFileMethod {
                     try {
                         $Item = $log.Item
                         $Options = $log.Options
-
-                        # Check if the item is an array from batching
-                        if ($Item -is [array]) {
-                            $Item = ($Item -join [System.Environment]::NewLine)
-                        }
-
-                        # Mask values
-                        $Item = ($Item | Protect-PodeLogItem)
+                        $RawItem = $log.RawItem
 
                         # Variables
                         $date = [DateTime]::Now.ToString('yyyy-MM-dd')
@@ -119,8 +112,42 @@ function Get-PodeLoggingFileMethod {
                         # Get the file to write to
                         $path = [System.IO.Path]::Combine($Options.Path, "$($Options.Name)_$($date)_$($id).log")
 
+                        if ($Options.Format -eq 'Default') {
+                            # Check if the item is an array from batching
+                            if ($Item -is [array]) {
+                                $Item = ($Item -join [System.Environment]::NewLine)
+                            }
+
+                            # Mask values
+                            $outString = ($Item | Protect-PodeLogItem).ToString()
+                        }
+                        else {
+                            if ($RawItem -is [array]) {
+                                $tmpStrings = @()
+                                foreach ($item in $RawItem) {
+                                    if ($Options.Format -eq 'Simple') {
+                                        $tmpStrings += (ConvertTo-PodeSyslogFormat -RawItem $item -MaxLength $Options.MaxLength -Source $Options.Source -DataFormat $Options.DataFormat -Separator $Options.Separator)
+                                    }
+                                    else {
+                                        $outString = ConvertTo-PodeSyslogFormat -RawItem $item -RFC $Options.Format  -Source $Options.Source
+                                    }
+
+                                }
+                                $outString = $tmpStrings -join [System.Environment]::NewLine
+
+                            }
+                            else {
+                                if ($Options.Format -eq 'Simple') {
+                                    $outString = ConvertTo-PodeSyslogFormat -RawItem $RawItem -MaxLength $Options.MaxLength -Source $Options.Source -DataFormat $Options.DataFormat -Separator $Options.Separator
+                                }
+                                else {
+                                    $outString = ConvertTo-PodeSyslogFormat -RawItem $RawItem -RFC $Options.Format  -Source $Options.Source
+                                }
+                            }
+
+                        }
                         # Write the item to the file
-                        $Item.ToString() | Out-File -FilePath $path -Encoding utf8 -Append -Force
+                        $outString | Out-File -FilePath $path -Encoding $Options.Encoding -Append -Force
 
                         # Remove log files beyond the MaxDays retention period, ensuring this runs once a day
                         if (($Options.MaxDays -gt 0) -and ($Options.NextClearDown -lt [DateTime]::Now.Date)) {
@@ -142,6 +169,109 @@ function Get-PodeLoggingFileMethod {
     }
 }
 
+function ConvertTo-PodeSyslogFormat {
+    [CmdletBinding(DefaultParameterSetName = 'Custom')]
+    param(
+        [hashtable]
+        $RawItem,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'RFC')]
+        [ValidateSet('RFC3164', 'RFC5424')]
+        [string]
+        $RFC,
+
+        [string]
+        $Source,
+
+        [Parameter( ParameterSetName = 'Custom')]
+        [int]
+        $MaxLength,
+
+        [Parameter( ParameterSetName = 'Custom')]
+        [string]
+        $DataFormat,
+
+        [Parameter( ParameterSetName = 'Custom')]
+        [string]
+        $Separator = ' '
+
+
+    )
+    $MaxLength = -1
+    # Mask values
+    if ($RawItem.Message) {
+        if ($RawItem.StackTrace) {
+            $message = "$($RawItem.Level.ToUpperInvariant()): $($RawItem.Message | Protect-PodeLogItem). Exception Type: $($RawItem.Category). Stack Trace: $($RawItem.StackTrace)"
+        }
+        else {
+            $message = ($RawItem.Message | Protect-PodeLogItem)
+        }
+    }
+
+    # Map $Level to syslog severity
+    switch ($RawItem.Level) {
+        'emergency' { $severity = 0; break }
+        'alert' { $severity = 1; break }
+        'critical' { $severity = 2; break }
+        'error' { $severity = 3; break }
+        'warning' { $severity = 4; break }
+        'notice' { $severity = 5; break }
+        'info' { $severity = 6; break }
+        'informational' { $severity = 6; break }
+        'debug' { $severity = 7; break }
+        default { $severity = 6 } # Default to Informational
+    }
+
+    # Define the facility and severity
+    $facility = 1 # User-level messages
+    $priority = ($facility * 8) + $severity
+
+    # Determine the syslog message format
+    switch ($RFC) {
+        'RFC3164' {
+            # Set the max message length per RFC 3164 section 4.1
+            $MaxLength = 1024
+            # Assemble the full syslog formatted message
+            $timestamp = $RawItem.Date.ToString('MMM dd HH:mm:ss')
+            $fullSyslogMessage = "<$priority>$timestamp $($PodeContext.Server.ComputerName) $Source[$processId]: $message"
+            break
+        }
+        'RFC5424' {
+            $processId = $PID
+            $timestamp = $RawItem.Date.ToString('yyyy-MM-ddTHH:mm:ss.ffffffK')
+
+            # Assemble the full syslog formatted message
+            $fullSyslogMessage = "<$priority>1 $timestamp $($PodeContext.Server.ComputerName) $Source $processId - - $message"
+
+            # Set the max message length per RFC 5424 section 6.1
+            $MaxLength = 2048
+
+            break
+        }
+        # Simple version
+        default {
+            if ($DataFormat) {
+                $timestamp = $RawItem.Date.ToString($DataFormat)
+            }
+            else {
+                $timestamp = $DataFormat
+            }
+            # Assemble the full syslog formatted message
+            $fullSyslogMessage = "$timestamp$Separator$($RawItem.Level)$Separator$Source$Separator$message"
+            # Set the max message length
+            if ($Options.MaxLength) {
+                $MaxLength = $Options.MaxLength
+            }
+
+        }
+    }
+    # Ensure that the message is not too long
+    if ($MaxLength -gt 0 -and $fullSyslogMessage.Length -gt $MaxLength) {
+        return $fullSyslogMessage.Substring(0, $MaxLength)
+    }
+    # Return the full syslog formatted message
+    return $fullSyslogMessage
+}
 
 <#
 .SYNOPSIS
@@ -175,12 +305,9 @@ function Get-PodeLoggingSysLogMethod {
                 Start-Sleep -Milliseconds 100
 
                 if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
-                    $Item = $log.Item
+
                     $Options = $log.Options
                     $RawItem = $log.RawItem
-                    if ($Item -isnot [array]) {
-                        $Item = @($Item)
-                    }
 
                     if ($RawItem -isnot [array]) {
                         $RawItem = @($RawItem)
@@ -228,75 +355,8 @@ function Get-PodeLoggingSysLogMethod {
                         $socketCreated = $true
                     }
 
-                    for ($i = 0; $i -lt $Item.Length; $i++) {
-                        # Mask values
-                        if ($RawItem[$i].Message) {
-                            if ($RawItem[$i].StackTrace) {
-                                $message = "$($RawItem[$i].Level.ToUpperInvariant()): $($RawItem[$i].Message | Protect-PodeLogItem). Exception Type: $($RawItem[$i].Category). Stack Trace: $($RawItem[$i].StackTrace)"
-                            }
-                            else {
-                                $message = ($RawItem[$i].Message | Protect-PodeLogItem)
-                            }
-                        }
-                        else {
-                            if ($Item[$i] -is [hashtable]) {
-                                $message = $Item[$i] | ConvertTo-Json -Compress -Depth 2 -ErrorAction SilentlyContinue
-                            }
-                            else {
-                                $message = ($Item[$i] | Protect-PodeLogItem)
-                            }
-                        }
-                        # Map $Level to syslog severity
-                        switch ($RawItem[$i].Level) {
-                            'emergency' { $severity = 0; break }
-                            'alert' { $severity = 1; break }
-                            'critical' { $severity = 2; break }
-                            'error' { $severity = 3; break }
-                            'warning' { $severity = 4; break }
-                            'notice' { $severity = 5; break }
-                            'info' { $severity = 6; break }
-                            'informational' { $severity = 6; break }
-                            'debug' { $severity = 7; break }
-                            default { $severity = 6 } # Default to Informational
-                        }
-
-                        # Define the facility and severity
-                        $facility = 1 # User-level messages
-                        $priority = ($facility * 8) + $severity
-
-                        # Determine the syslog message format
-                        switch ($Options.SyslogProtocol.ToUpperInvariant()) {
-                            'RFC3164' {
-                                # Set the max message length per RFC 3164 section 4.1
-                                $MaxLength = 1024
-                                # Assemble the full syslog formatted message
-                                $timestamp = $RawItem[$i].Date.ToString('MMM dd HH:mm:ss')
-                                $fullSyslogMessage = "<$priority>$timestamp $($PodeContext.Server.ComputerName) $($Options.Source)[$processId]: $message"
-                                break
-                            }
-                            'RFC5424' {
-                                $processId = $PID
-                                $timestamp = $RawItem[$i].Date.ToString('yyyy-MM-ddTHH:mm:ss.ffffffK')
-
-                                # Assemble the full syslog formatted message
-                                $fullSyslogMessage = "<$priority>1 $timestamp $($PodeContext.Server.ComputerName) $($Options.Source) $processId - - $message"
-
-                                # Set the max message length per RFC 5424 section 6.1
-                                $MaxLength = 2048
-
-                                break
-                            }
-                            default {
-                                # The Syslog protocol can use only RFC3164 or RFC5424.
-                                throw ($PodeLocale.syslogProtocolExceptionMessage)
-                            }
-                        }
-
-                        # Ensure that the message is not too long
-                        if ($fullSyslogMessage.Length -gt $MaxLength) {
-                            $fullSyslogMessage = $fullSyslogMessage.Substring(0, $MaxLength)
-                        }
-
+                    for ($i = 0; $i -lt $RawItem.Length; $i++) {
+                        $fullSyslogMessage = ConvertTo-PodeSyslogFormat -RawItem $RawItem[$i] -RFC $Options.SyslogProtocol -Source $Options.Source
                         # Convert the message to a byte array
                         $byteMessage = $($Options.Encoding).GetBytes($fullSyslogMessage)
 
@@ -360,6 +420,7 @@ function Get-PodeLoggingSysLogMethod {
         }
     }
 }
+
 <#
 .SYNOPSIS
 Defines the method for sending log messages to a Restful API endpoint.
@@ -517,7 +578,7 @@ function Get-PodeLoggingEventViewerMethod {
                         $RawItem = @($RawItem)
                     }
 
-                    for ($i = 0; $i -lt $Item.Length; $i++) {
+                    for ($i = 0; $i -lt $RawItem.Length; $i++) {
                         # Convert log level to Event Viewer entry type - default to 'Information' if no level present
                         $entryType = ConvertTo-PodeEventViewerLevel -Level $RawItem[$i].Level
 
@@ -602,7 +663,7 @@ $script = Get-PodeLoggingInbuiltType -Type 'Errors'
 function Get-PodeLoggingInbuiltType {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Errors', 'Requests', 'General', 'Main')]
+        [ValidateSet('Errors', 'Requests', 'General', 'Main', 'Listener')]
         [string]
         $Type
     )
@@ -675,12 +736,10 @@ function Get-PodeLoggingInbuiltType {
                     "Message: $($item.Message)",
                     "StackTrace: $($item.StackTrace)"
                 )
-
                 # Join the details and return
                 return "$($row -join "`n")`n"
             }
         }
-
         'general' {
             $script = {
                 param($item, $options)
@@ -733,6 +792,7 @@ function Get-PodeRequestLoggingName {
     # Return the name of the request logger
     return '__pode_log_requests__'
 }
+
 
 <#
 .SYNOPSIS
@@ -830,27 +890,35 @@ function Test-PodeStandardLogger {
 
 <#
 .SYNOPSIS
-Tests if a specified logger is enabled.
+Determines if a specified logger is enabled.
 
 .DESCRIPTION
-This function checks if the specified logger is enabled by testing if logging is enabled in the Pode context and if the logger exists.
+This function checks if a specified logger is enabled by verifying if logging is enabled in the Pode context and if the logger exists within the logging configuration.
 
 .PARAMETER Name
-The name of the logger to test.
+The name of the logger to check.
 
 .EXAMPLE
 Test-PodeLoggerEnabled -Name 'MyLogger'
+
+# This command checks if the logger named 'MyLogger' is enabled.
 #>
 function Test-PodeLoggerEnabled {
     param(
-        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
 
-    # Check if logging is enabled and if the specified logger exists
-    return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Type.ContainsKey($Name))
+    if ($Name) {
+        # Check if logging is enabled and if the specified logger exists
+        return ([pode.PodeLogger]::Enabled -and $PodeContext.Server.Logging.Type.ContainsKey($Name))
+    }
+    else {
+        # Check if logging is generally enabled
+        return [pode.PodeLogger]::Enabled
+    }
 }
+
 
 <#
 .SYNOPSIS
@@ -991,7 +1059,7 @@ function Write-PodeRequestLog {
     }
 
     # Add the item to be processed
-    $null = $PodeContext.Server.Logging.LogsToProcess.Enqueue(@{
+    $null = [Pode.PodeLogger]::Enqueue(@{
             Name = $name
             Item = $item
         })
@@ -1070,23 +1138,35 @@ function Start-PodeLoggerDispatcher {
 
     $scriptBlock = {
         ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = 'LoggerDispatcher'
+
         $log = @{}
         # Wait for the server to start before processing logs
         if ( Wait-PodeServerToStart) {
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 # Check if the log queue has reached its limit
-                if ($PodeContext.Server.Logging.LogsToProcess.Count -ge $PodeContext.Server.Logging.QueueLimit) {
+                if ([Pode.PodeLogger]::Count -ge $PodeContext.Server.Logging.QueueLimit) {
                     Invoke-PodeHandleFailure -Message "Reached the log Queue Limit of $($PodeContext.Server.Logging.QueueLimit)" -FailureAction $logger.Method.Arguments.FailureAction
                 }
 
-                # Try to dequeue a log entry
-                if ($PodeContext.Server.Logging.LogsToProcess.TryDequeue([ref]$log)) {
+                # Try to dequeue a log entry from the queue
+                if (  [Pode.PodeLogger]::TryDequeue([ref]$log)) {
                     # If the log is null, check batch then sleep and skip
                     if ($null -eq $log) {
                         Start-Sleep -Milliseconds 100
                         continue
                     }
+                    if ($log.Name -eq 'Listener') {
 
+                        if ($log.Item -is [System.Exception]) {
+
+                            Write-PodeErrorLog -Exception $log.Item -Level = 'Error' -ThreadId $log.Item.ThreadId
+                        }
+                        else {
+                            Write-PodeLog  -Name (Get-PodeErrorLoggingName) -Message $log.Item.Message -Level 'error' -ThreadId $log.Item.ThreadId -Tag 'Listener'
+
+                        }
+                        continue
+                    }
                     # Run the log item through the appropriate method
                     $logger = $PodeContext.Server.Logging.Type[$log.Name]
                     $now = [datetime]::Now
@@ -1124,7 +1204,7 @@ function Start-PodeLoggerDispatcher {
                         foreach ($method in $logger.Method) {
                             if ($method.NoRunspace) {
                                 # Legacy for custom methods
-                            #    $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logging.Method[$method.Id].ScriptBlock -Arguments $_args -UsingVariables $method.UsingVariables -Splat
+                                #    $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Logging.Method[$method.Id].ScriptBlock -Arguments $_args -UsingVariables $method.UsingVariables -Splat
                                 $_args = @(, $item) + @($method.Arguments) + @(, $rawItem)
                                 $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
                             }
@@ -1307,8 +1387,21 @@ function Write-PodeTraceLog {
     }
 
     # Add the log item to the processing queue
-    $null = $PodeContext.Server.Logging.LogsToProcess.Enqueue(@{
+    $null = [Pode.PodeLogger]::Enqueue(@{
             Name = $name
             Item = $item
         })
+}
+
+
+
+function Enable-PodeLogging {
+    [pode.PodeLogger]::Enabled = $true
+    $PodeContext.Server.logging = $true
+}
+
+
+function Disable-PodeLogging {
+    [pode.PodeLogger]::Enabled = $false
+    $PodeContext.Server.logging = $true
 }

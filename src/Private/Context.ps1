@@ -181,13 +181,11 @@ function New-PodeContext {
 
     # basic logging setup
     $ctx.Server.Logging = @{
-        Enabled       = $true
-        Type         = @{}
-        Masking       = @{}
-        QueueLimit    = 500
-        # requests that should be logged
-        LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-        Method=@{}
+        Enabled    = $true
+        Type       = @{}
+        Masking    = @{}
+        QueueLimit = 500
+        Method     = @{}
     }
 
     # set thread counts
@@ -902,7 +900,7 @@ function Set-PodeServerConfiguration {
     }
 
     # logging
-    $Context.Server.Logging.Enabled = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
+    [pode.PodeLogger]::Enabled= ([bool]$Configuration.Logging.Enable)
     $Context.Server.Logging.Masking = @{
         Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
         Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
