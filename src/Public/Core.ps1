@@ -179,6 +179,9 @@ function Start-PodeServer {
             [Console]::TreatControlCAsInput = $true
         }
 
+        if ($PodeContext.Server.Logging.Enabled) {
+            Enable-PodeLogging
+        }
         # start the file monitor for interally restarting
         Start-PodeFileMonitor
 

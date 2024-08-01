@@ -844,6 +844,8 @@ function Close-PodeServerInternal {
         [switch]
         $ShowDoneMessage
     )
+    #Disable Logging before closing
+    Disable-PodeLogging
 
     # ensure the token is cancelled
     if ($null -ne $PodeContext.Tokens.Cancellation) {

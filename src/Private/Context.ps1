@@ -899,14 +899,19 @@ function Set-PodeServerConfiguration {
         Files     = @()
     }
 
-    # logging
-    [pode.PodeLogger]::Enabled= ([bool]$Configuration.Logging.Enable)
-    $Context.Server.Logging.Masking = @{
-        Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
-        Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
+    if ($Configuration.ContainsKey('Logging')) {
+        # logging
+        if ($Configuration.Logging.ContainsKey('Enable')) {
+            $Context.Server.Logging.Enabled = ([bool]$Configuration.Logging.Enable)
+        }
+        if ($Configuration.Logging.ContainsKey('Masking')) {
+            $Context.Server.Logging.Masking = @{
+                Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
+                Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
+            }
+        }
+        $Context.Server.Logging.QueueLimit = (Protect-PodeValue -Value $Configuration.Logging.QueueLimit $Context.Server.Logging.QueueLimit)
     }
-    $Context.Server.Logging.QueueLimit = (Protect-PodeValue -Value $Configuration.Logging.QueueLimit $Context.Server.Logging.QueueLimit)
-
 
     # sockets
     if (!(Test-PodeIsEmpty $Configuration.Ssl.Protocols)) {

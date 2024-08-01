@@ -1,3 +1,4 @@
+using namespace Pode
 <#
 .SYNOPSIS
 Defines the method for writing log messages to the terminal.
@@ -911,7 +912,7 @@ function Test-PodeLoggerEnabled {
 
     if ($Name) {
         # Check if logging is enabled and if the specified logger exists
-        return ([pode.PodeLogger]::Enabled -and $PodeContext.Server.Logging.Type.ContainsKey($Name))
+        return ([pode.PodeLogger]::Enabled -and $PodeContext -and $PodeContext.Server.Logging.Type.ContainsKey($Name))
     }
     else {
         # Check if logging is generally enabled
@@ -1391,17 +1392,4 @@ function Write-PodeTraceLog {
             Name = $name
             Item = $item
         })
-}
-
-
-
-function Enable-PodeLogging {
-    [pode.PodeLogger]::Enabled = $true
-    $PodeContext.Server.logging = $true
-}
-
-
-function Disable-PodeLogging {
-    [pode.PodeLogger]::Enabled = $false
-    $PodeContext.Server.logging = $true
 }

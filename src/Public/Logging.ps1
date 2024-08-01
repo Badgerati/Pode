@@ -1497,7 +1497,7 @@ function Use-PodeLogging {
 #>
 function Enable-PodeLogging {
     [pode.PodeLogger]::Enabled = $true
-    $PodeContext.Server.Logging = $true
+    $PodeContext.Server.Logging.Enabled = $true
 }
 
 <#
@@ -1512,7 +1512,7 @@ function Enable-PodeLogging {
 #>
 function Disable-PodeLogging {
     [pode.PodeLogger]::Enabled = $false
-    $PodeContext.Server.Logging = $false
+    $PodeContext.Server.Logging.Enabled = $false
 }
 
 
