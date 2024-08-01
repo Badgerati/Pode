@@ -90,15 +90,25 @@ try {
         }
     }
     else {
-        if ($PSVersionTable.PSVersion -ge [version]'7.4.0') {
-            Add-Type -LiteralPath "$($root)/Libs/net8.0/Pode.dll" -ErrorAction Stop
+        $frameworkDescription = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
+        $loaded = $false
+        if ($frameworkDescription -match '(\d+)\.(\d+)\.(\d+)') {
+            $majorVersion = [int]$matches[1]
+
+            for ($version = $majorVersion; $version -ge 6; $version--) {
+                $dllPath = "$($root)/Libs/net$version.0/Pode.dll"
+                if (Test-Path $dllPath) {
+                    Add-Type -LiteralPath $dllPath -ErrorAction Stop
+                    $loaded = $true
+                    break
+                }
+            }
         }
-        elseif ($PSVersionTable.PSVersion -ge [version]'7.2.0') {
-            Add-Type -LiteralPath "$($root)/Libs/net6.0/Pode.dll" -ErrorAction Stop
-        }
-        else {
+
+        if (-not $loaded) {
             Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
         }
+
     }
 
     # load private functions
