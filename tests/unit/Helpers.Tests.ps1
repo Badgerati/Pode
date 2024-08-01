@@ -1145,7 +1145,9 @@ Describe 'Close-PodeServerInternal' {
         Mock Stop-PodeFileMonitor { }
         Mock Close-PodeDisposable { }
         Mock Remove-PodePSDrive { }
-        Mock Write-Host { } }
+        Mock Write-Host { }
+        Mock Disable-PodeLogging { }
+    }
 
     It 'Closes out pode, but with no done flag' {
         $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }

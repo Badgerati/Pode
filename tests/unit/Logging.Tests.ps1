@@ -5,8 +5,9 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
-
-    Add-Type -LiteralPath "$($src)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
+    if (!([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' })) {
+        Add-Type -LiteralPath "$($src)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
+    }
     [Pode.PodeLogger]::Enabled = $true
 
 }

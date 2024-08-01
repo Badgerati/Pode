@@ -48,7 +48,7 @@ namespace Pode
             }
 
             // return if logging disabled, or if level isn't being logged
-            if (!PodeLogger.Enabled || connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }
@@ -64,7 +64,7 @@ namespace Pode
                     Console.WriteLine(ex.InnerException.StackTrace);
                 }
             }
-            else
+            if (PodeLogger.Enabled)
             {
                 Hashtable logEntry = new Hashtable
                 {
@@ -73,8 +73,8 @@ namespace Pode
                 };
 
                 PodeLogger.Enqueue(logEntry);
-
             }
+
         }
 
         public static void HandleAggregateException(AggregateException aex, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
@@ -114,6 +114,7 @@ namespace Pode
             {
                 return;
             }
+
             if (terminal)
             {
                 // write the message to terminal
@@ -126,7 +127,8 @@ namespace Pode
                     Console.WriteLine($"[{level}]: [ContextId: {context.ID}] {message}");
                 }
             }
-            else
+
+            if (PodeLogger.Enabled)
             {
                 Hashtable logEntry = new Hashtable
                 {
