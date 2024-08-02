@@ -184,7 +184,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
+                PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = (Request.InputStream == default(Stream)
                     ? PodeContextState.Error
                     : PodeContextState.SslError);
@@ -282,7 +282,7 @@ namespace Pode
                 State = PodeContextState.Receiving;
                 try
                 {
-                    PodeHelpers.WriteErrorMessage($"Receiving request", Listener, PodeLoggingLevel.Verbose, this);
+                    PodeLogger.WriteErrorMessage($"Receiving request", Listener, PodeLoggingLevel.Verbose, this);
                     var close = await Request.Receive(ContextTimeoutToken.Token);
                     SetContextType();
                     EndReceive(close);
@@ -291,7 +291,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
+                PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = PodeContextState.Error;
                 PodeSocket.HandleContext(this);
             }
@@ -313,12 +313,12 @@ namespace Pode
             NewResponse();
             State = PodeContextState.Receiving;
             PodeSocket.StartReceive(this);
-            PodeHelpers.WriteErrorMessage($"Socket listening", Listener, PodeLoggingLevel.Verbose, this);
+            PodeLogger.WriteErrorMessage($"Socket listening", Listener, PodeLoggingLevel.Verbose, this);
         }
 
         public void UpgradeWebSocket(string clientId = null)
         {
-            PodeHelpers.WriteErrorMessage($"Upgrading Websocket", Listener, PodeLoggingLevel.Verbose, this);
+            PodeLogger.WriteErrorMessage($"Upgrading Websocket", Listener, PodeLoggingLevel.Verbose, this);
 
             // websocket
             if (!IsWebSocket)
@@ -361,7 +361,7 @@ namespace Pode
             var signal = new PodeSignal(this, HttpRequest.Url.AbsolutePath, clientId);
             Request = new PodeSignalRequest(HttpRequest, signal);
             Listener.AddSignal(SignalRequest.Signal);
-            PodeHelpers.WriteErrorMessage($"Websocket upgraded", Listener, PodeLoggingLevel.Verbose, this);
+            PodeLogger.WriteErrorMessage($"Websocket upgraded", Listener, PodeLoggingLevel.Verbose, this);
         }
 
         public void Dispose()

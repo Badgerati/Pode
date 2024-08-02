@@ -40,42 +40,7 @@ namespace Pode
             }
         }
 
-        public static void WriteException(Exception ex, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, bool terminal = false)
-        {
-            if (ex == default(Exception))
-            {
-                return;
-            }
 
-            // return if logging disabled, or if level isn't being logged
-            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
-            {
-                return;
-            }
-            if (terminal)
-            {
-                // write the exception to terminal
-                Console.WriteLine($"[{level}] {ex.GetType().Name}: {ex.Message}");
-                Console.WriteLine(ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"[{level}] {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
-                    Console.WriteLine(ex.InnerException.StackTrace);
-                }
-            }
-            if (PodeLogger.Enabled)
-            {
-                Hashtable logEntry = new Hashtable
-                {
-                    ["Name"] = "Listener",
-                    ["Item"] = ex
-                };
-
-                PodeLogger.Enqueue(logEntry);
-            }
-
-        }
 
         public static void HandleAggregateException(AggregateException aex, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
         {
@@ -88,7 +53,7 @@ namespace Pode
                         return true;
                     }
 
-                    PodeHelpers.WriteException(ex, connector, level);
+                    PodeLogger.WriteException(ex, connector, level);
                     return false;
                 });
             }
@@ -101,54 +66,7 @@ namespace Pode
             }
         }
 
-        public static void WriteErrorMessage(string message, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default(PodeContext), bool terminal = false)
-        {
-            // do nothing if no message
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                return;
-            }
 
-            // return if logging disabled, or if level isn't being logged
-            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
-            {
-                return;
-            }
-
-            if (terminal)
-            {
-                // write the message to terminal
-                if (context == default(PodeContext))
-                {
-                    Console.WriteLine($"[{level}]: {message}");
-                }
-                else
-                {
-                    Console.WriteLine($"[{level}]: [ContextId: {context.ID}] {message}");
-                }
-            }
-
-            if (PodeLogger.Enabled)
-            {
-                Hashtable logEntry = new Hashtable
-                {
-                    ["Name"] = "Listener",
-                    ["Item"] = new Hashtable
-                    {
-                        ["Message"] = message,
-                        ["Level"] = level,
-                        ["ThreadId"] = Environment.CurrentManagedThreadId
-                    }
-                };
-
-                if (context != null)
-                {
-                    ((Hashtable)logEntry["Item"])["TargetObject"] = context.ID;
-                }
-
-                PodeLogger.Enqueue(logEntry);
-            }
-        }
 
         public static string NewGuid(int length = 16)
         {

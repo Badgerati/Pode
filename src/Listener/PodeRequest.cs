@@ -286,7 +286,7 @@ namespace Pode
                 BufferStream = default(MemoryStream);
             }
 
-            PodeHelpers.WriteErrorMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeLogger.WriteErrorMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
         }
     }
 }

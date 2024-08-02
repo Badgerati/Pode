@@ -166,7 +166,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Listener);
+                PodeLogger.WriteException(ex, Listener);
                 throw;
             }
 
@@ -191,7 +191,7 @@ namespace Pode
             {
                 if (error != SocketError.Success)
                 {
-                    PodeHelpers.WriteErrorMessage($"Closing accepting socket: {error}", Listener, PodeLoggingLevel.Debug);
+                    PodeLogger.WriteErrorMessage($"Closing accepting socket: {error}", Listener, PodeLoggingLevel.Debug);
                 }
 
                 // close socket
@@ -228,7 +228,7 @@ namespace Pode
             {
                 if (error != SocketError.Success)
                 {
-                    PodeHelpers.WriteErrorMessage($"Closing receiving socket: {error}", Listener, PodeLoggingLevel.Debug);
+                    PodeLogger.WriteErrorMessage($"Closing receiving socket: {error}", Listener, PodeLoggingLevel.Debug);
                 }
 
                 // close socket
@@ -259,7 +259,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Listener);
+                PodeLogger.WriteException(ex, Listener);
             }
 
             // add args back to connections
@@ -277,7 +277,7 @@ namespace Pode
                 // if we need to exit now, dispose and exit
                 if (context.CloseImmediately)
                 {
-                    PodeHelpers.WriteException(context.Request.Error, Listener);
+                    PodeLogger.WriteException(context.Request.Error, Listener);
                     context.Dispose(true);
                     process = false;
                 }
@@ -323,20 +323,20 @@ namespace Pode
                 {
                     if (context.IsWebSocket)
                     {
-                        PodeHelpers.WriteErrorMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, context);
+                        PodeLogger.WriteErrorMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, context);
                         Listener.AddClientSignal(context.SignalRequest.NewClientSignal());
                         context.Dispose();
                     }
                     else
                     {
-                        PodeHelpers.WriteErrorMessage($"Received request", Listener, PodeLoggingLevel.Verbose, context);
+                        PodeLogger.WriteErrorMessage($"Received request", Listener, PodeLoggingLevel.Verbose, context);
                         Listener.AddContext(context);
                     }
                 }
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Listener);
+                PodeLogger.WriteException(ex, Listener);
             }
         }
 
@@ -438,7 +438,7 @@ namespace Pode
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Listener);
+                PodeLogger.WriteException(ex, Listener);
             }
         }
 

@@ -91,7 +91,7 @@ namespace Pode
         protected override void Close()
         {
             // disconnect websockets
-            PodeHelpers.WriteErrorMessage($"Closing client web sockets", this, PodeLoggingLevel.Verbose);
+            PodeLogger.WriteErrorMessage($"Closing client web sockets", this, PodeLoggingLevel.Verbose);
 
             foreach (var _webSocket in WebSockets.Values.ToArray())
             {
@@ -99,10 +99,10 @@ namespace Pode
             }
 
             WebSockets.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed client web sockets", this, PodeLoggingLevel.Verbose);
+            PodeLogger.WriteErrorMessage($"Closed client web sockets", this, PodeLoggingLevel.Verbose);
 
             // close existing websocket requests
-            PodeHelpers.WriteErrorMessage($"Closing client web sockets requests", this, PodeLoggingLevel.Verbose);
+            PodeLogger.WriteErrorMessage($"Closing client web sockets requests", this, PodeLoggingLevel.Verbose);
 
             foreach (var _req in Requests.ToArray())
             {
@@ -110,7 +110,7 @@ namespace Pode
             }
 
             Requests.Clear();
-            PodeHelpers.WriteErrorMessage($"Closed client web requests", this, PodeLoggingLevel.Verbose);
+            PodeLogger.WriteErrorMessage($"Closed client web requests", this, PodeLoggingLevel.Verbose);
         }
     }
 }

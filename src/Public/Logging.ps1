@@ -1483,8 +1483,6 @@ function Use-PodeLogging {
     Use-PodeFolder -Path $Path -DefaultPath 'logging'
 }
 
-
-
 <#
 .SYNOPSIS
     Enables logging in Pode.
@@ -1492,13 +1490,31 @@ function Use-PodeLogging {
 .DESCRIPTION
     This function enables logging in Pode by setting the appropriate flags in the Pode context.
 
+.PARAMETER Terminal
+    A switch parameter that, if specified, enables terminal logging for the Pode C# listener.
+
 .EXAMPLE
     Enable-PodeLogging
+    This example enables all logging except terminal logging.
+
+.EXAMPLE
+    Enable-PodeLogging -Terminal
+    This example enables all logging including terminal logging for the Pode C# listener.
 #>
 function Enable-PodeLogging {
+    param(
+        [switch]
+        $Terminal
+    )
+
+    # Enable Pode logging
     [pode.PodeLogger]::Enabled = $true
     $PodeContext.Server.Logging.Enabled = $true
+
+    # Enable terminal logging for the Pode C# listener if the Terminal switch is specified
+    [pode.PodeLogger]::Terminal = $Terminal.IsPresent
 }
+
 
 <#
 .SYNOPSIS
@@ -1506,14 +1522,35 @@ function Enable-PodeLogging {
 
 .DESCRIPTION
     This function disables logging in Pode by setting the appropriate flags in the Pode context.
+    It allows you to optionally keep terminal logging enabled.
+
+.PARAMETER KeepTerminal
+    A switch parameter that, if specified, keeps terminal logging enabled for the Pode C# listener even when other logging is disabled.
 
 .EXAMPLE
     Disable-PodeLogging
+    This example disables all logging including terminal logging.
+
+.EXAMPLE
+    Disable-PodeLogging -KeepTerminal
+    This example disables all logging except terminal logging.
 #>
 function Disable-PodeLogging {
+    param(
+        [switch]
+        $KeepTerminal
+    )
+
+    # Disable Pode logging
     [pode.PodeLogger]::Enabled = $false
     $PodeContext.Server.Logging.Enabled = $false
+
+    # Optionally disable terminal logging if the KeepTerminal switch is not specified
+    if (! $KeepTerminal.IsPresent) {
+        [pode.PodeLogger]::Terminal = $false
+    }
 }
+
 
 
 <#

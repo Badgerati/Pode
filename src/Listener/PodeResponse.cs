@@ -90,23 +90,23 @@ namespace Pode
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Sending response", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeLogger.WriteErrorMessage($"Sending response", Context.Listener, PodeLoggingLevel.Verbose, Context);
 
             try
             {
                 SendHeaders(Context.IsTimeout);
                 SendBody(Context.IsTimeout);
-                PodeHelpers.WriteErrorMessage($"Response sent", Context.Listener, PodeLoggingLevel.Verbose, Context);
+                PodeLogger.WriteErrorMessage($"Response sent", Context.Listener, PodeLoggingLevel.Verbose, Context);
             }
-            catch (OperationCanceledException) {}
-            catch (IOException) {}
+            catch (OperationCanceledException) { }
+            catch (IOException) { }
             catch (AggregateException aex)
             {
                 PodeHelpers.HandleAggregateException(aex, Context.Listener);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener);
+                PodeLogger.WriteException(ex, Context.Listener);
                 throw;
             }
             finally
@@ -122,23 +122,23 @@ namespace Pode
                 return;
             }
 
-            PodeHelpers.WriteErrorMessage($"Sending response timed-out", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeLogger.WriteErrorMessage($"Sending response timed-out", Context.Listener, PodeLoggingLevel.Verbose, Context);
             StatusCode = 408;
 
             try
             {
                 SendHeaders(true);
-                PodeHelpers.WriteErrorMessage($"Response timed-out sent", Context.Listener, PodeLoggingLevel.Verbose, Context);
+                PodeLogger.WriteErrorMessage($"Response timed-out sent", Context.Listener, PodeLoggingLevel.Verbose, Context);
             }
-            catch (OperationCanceledException) {}
-            catch (IOException) {}
+            catch (OperationCanceledException) { }
+            catch (IOException) { }
             catch (AggregateException aex)
             {
                 PodeHelpers.HandleAggregateException(aex, Context.Listener);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener);
+                PodeLogger.WriteException(ex, Context.Listener);
                 throw;
             }
             finally
@@ -356,15 +356,15 @@ namespace Pode
                     Flush();
                 }
             }
-            catch (OperationCanceledException) {}
-            catch (IOException) {}
+            catch (OperationCanceledException) { }
+            catch (IOException) { }
             catch (AggregateException aex)
             {
                 PodeHelpers.HandleAggregateException(aex, Context.Listener);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener);
+                PodeLogger.WriteException(ex, Context.Listener);
                 throw;
             }
         }
@@ -465,7 +465,7 @@ namespace Pode
                 OutputStream = default(MemoryStream);
             }
 
-            PodeHelpers.WriteErrorMessage($"Response disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeLogger.WriteErrorMessage($"Response disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
         }
     }
 }
