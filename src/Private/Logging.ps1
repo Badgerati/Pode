@@ -318,24 +318,24 @@ function Get-PodeLoggingSysLogMethod {
                     if (!$socketCreated) {
                         switch ($Options.Transport.ToUpperInvariant()) {
                             'UDP' {
-                                $udpClient = New-Object System.Net.Sockets.UdpClient
+                                $udpClient = [System.Net.Sockets.UdpClient]::new()
                             }
                             'TCP' {
                                 # Create a TCP client for non-secure communication
-                                $tcpClient = New-Object System.Net.Sockets.TcpClient
+                                $tcpClient = [System.Net.Sockets.TcpClient]::new()
                                 $tcpClient.Connect($Options.Server, $Options.Port)
                                 $networkStream = $tcpClient.GetStream()
                             }
                             'TLS' {
                                 # Create a TCP client for secure communication
-                                $tcpClient = New-Object System.Net.Sockets.TcpClient
+                                $tcpClient = [System.Net.Sockets.TcpClient]::new()
                                 $tcpClient.Connect($Options.Server, $Options.Port)
 
                                 $sslStream = if ($Options.SkipCertificateCheck) {
-                                    New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false, { $true })
+                                    [System.Net.Security.SslStream]::new($tcpClient.GetStream(), $false, { $true })
                                 }
                                 else {
-                                    New-Object System.Net.Security.SslStream($tcpClient.GetStream(), $false)
+                                    [System.Net.Security.SslStream]::new($tcpClient.GetStream(), $false)
                                 }
 
                                 # Define the TLS protocol version
@@ -350,7 +350,7 @@ function Get-PodeLoggingSysLogMethod {
                                 $sslStream.AuthenticateAsClient($Options.Server, $null, $tlsProtocol, $false)
                             }
                             default {
-                                $udpClient = New-Object System.Net.Sockets.UdpClient
+                                $udpClient = [System.Net.Sockets.UdpClient]::new()
                             }
                         }
                         $socketCreated = $true
