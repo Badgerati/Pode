@@ -1398,7 +1398,7 @@ function ConvertFrom-PodeXml {
 #>
 function ConvertFrom-PodeYaml {
     [CmdletBinding()]
-    [OutputType([string])]
+    [OutputType([ordered])]
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
         [AllowNull()]
@@ -1431,7 +1431,8 @@ function ConvertFrom-PodeYaml {
 
         # Check if the internal YAML converter should be used
         if ($null -eq $PodeContext -or $PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
-            return ConvertFrom-PodeYamlInternal -InputObject $obj
+          #  return ConvertFrom-PodeYamlInternal -InputObject $obj
+          return [Pode.PodeConverter]::FromYaml($obj)
         }
 
         # Check if a YAML module has been imported, if not, test for available YAML modules
@@ -1444,7 +1445,8 @@ function ConvertFrom-PodeYaml {
             return ($obj | ConvertFrom-Yaml)
         }
         else {
-            return ConvertFrom-PodeYamlInternal -InputObject $obj
+            return [Pode.PodeConverter]::FromYaml($obj)
+          #  return ConvertFrom-PodeYamlInternal -InputObject $obj
         }
     }
 }
@@ -1495,7 +1497,8 @@ function ConvertTo-PodeYaml {
         }
 
         if ($null -eq $PodeContext -or $PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
-            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+            #   return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+            return [Pode.PodeConverter]::ToYaml($InputObject, $Depth, 0, $true)
         }
 
         if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
@@ -1506,7 +1509,8 @@ function ConvertTo-PodeYaml {
             return ($InputObject | ConvertTo-Yaml)
         }
         else {
-            return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+            # return ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth -NoNewLine
+            return [Pode.PodeConverter]::ToYaml($InputObject, $Depth, 0, $true)
         }
     }
 }
