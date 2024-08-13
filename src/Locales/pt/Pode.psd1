@@ -286,5 +286,5 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'A definição OpenAPI com o nome {0} já existe.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag não pode ser usado dentro de um 'ScriptBlock' Select-PodeOADefinition."
     definitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
-    getRequestBodyNotAllowedExceptionMessage                          = 'As operações GET não podem ter um corpo de solicitação.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'As operações {0} não podem ter um corpo de solicitação.'
 }

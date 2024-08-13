@@ -286,5 +286,5 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
     renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
-    getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات GET على محتوى الطلب.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
 }
