@@ -286,6 +286,6 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
-    getRequestBodyNotAllowedExceptionMessage                          = 'GET操作にはリクエストボディを含めることはできません。'
+    getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
 }
 
