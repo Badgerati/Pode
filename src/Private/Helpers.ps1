@@ -4306,3 +4306,48 @@ function Format-PodeDateToIso8601 {
 
     return $Date.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
 }
+
+
+<#
+.SYNOPSIS
+Creates a new runspace pool with specified minimum and maximum runspaces.
+
+.DESCRIPTION
+This function wraps the .NET `[runspacefactory]::CreateRunspacePool` method to create a new runspace pool.
+It allows specifying the minimum and maximum number of runspaces, as well as the runspace state.
+This function also automatically passes the current host context to the runspace pool.
+
+.PARAMETER MinRunspaces
+The minimum number of runspaces in the pool. This value determines the initial number of runspaces created when the pool is opened.
+
+.PARAMETER MaxRunspaces
+The maximum number of runspaces allowed in the pool. This value limits the total number of concurrent runspaces in the pool.
+
+.PARAMETER RunspaceState
+The state of the runspace, typically determined by the context in which the runspace pool is being created. This parameter is passed directly to the `CreateRunspacePool` method.
+
+.OUTPUTS
+System.Management.Automation.Runspaces.RunspacePool
+Returns a `RunspacePool` object representing the created runspace pool.
+
+.EXAMPLE
+$runspacePool = New-PodeRunspacePoolNetWrapper -MinRunspaces 1 -MaxRunspaces 5 -RunspaceState $state
+# Creates a new runspace pool with a minimum of 1 runspace, a maximum of 5 runspaces, and a specific runspace state.
+
+.NOTES
+This function is a wrapper around the `[runspacefactory]::CreateRunspacePool` method and is used to simplify the creation of runspace pools in Pode scripts.
+
+.LINK
+https://docs.microsoft.com/en-us/dotnet/api/system.management.automation.runspaces.runspacefactory.createrunspacepool
+#>
+function New-PodeRunspacePoolNetWrapper {
+    param (
+        [Parameter()]
+        [int]$MinRunspaces = 1,
+        [Parameter(Mandatory = $true)]
+        [int]$MaxRunspaces,
+        [Parameter(Mandatory = $true)]
+        [System.Management.Automation.Runspaces.InitialSessionState]$RunspaceState
+    )
+    return [runspacefactory]::CreateRunspacePool($MinRunspaces, $MaxRunspaces, $RunspaceState, $Host)
+}

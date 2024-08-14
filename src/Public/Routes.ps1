@@ -1695,60 +1695,36 @@ function Remove-PodeRoute {
         return
     }
 
-    $route = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
-            $_.Endpoint.Name -ine $EndpointName
-        })
-
-    # remove the runspace
-    if ($route.IsAsync) {
-        $asyncPoolName = $route.AsyncPoolName
-        if ( $asyncPoolName -and $PodeContext.RunspacePools.ContainsKey($asyncPoolName)) {
-            if (!  $PodeContext.RunspacePools[$asyncPoolName].Pool.IsDisposed) {
-                $PodeContext.RunspacePools[$asyncPoolName].Pool.BeginClose($null, $null)
-                Close-PodeDisposable -Disposable ($PodeContext.RunspacePools[$asyncPoolName].Pool)
-            }
-            $v = ''
-            $null = $PodeContext.RunspacePools.TryRemove($asyncPoolName, [ref]$v)
-        }
-        if ( $PodeContext.AsyncRoutes.Items.ContainsKey($asyncPoolName)) {
-            $PodeContext.Threads.AsyncRoutes -= $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].MaxRunspaces
-            $v = ''
-            $null = $PodeContext.AsyncRoutes.TryRemove($PodeContext.AsyncRoutes.Items[$r.AsyncPoolName], [ref]$v)
-        }
-    }
-
-    $route = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
-            $_.Endpoint.Name -ine $EndpointName
-        })
-
-    # remove the runspace
-    if ($route.IsAsync) {
-        $asyncPoolName = $route.AsyncPoolName
-        if ( $asyncPoolName -and $PodeContext.RunspacePools.ContainsKey($asyncPoolName)) {
-            if (!  $PodeContext.RunspacePools[$asyncPoolName].Pool.IsDisposed) {
-                $PodeContext.RunspacePools[$asyncPoolName].Pool.BeginClose($null, $null)
-                Close-PodeDisposable -Disposable ($PodeContext.RunspacePools[$asyncPoolName].Pool)
-            }
-            $v = ''
-            $null = $PodeContext.RunspacePools.TryRemove($asyncPoolName, [ref]$v)
-        }
-        if ( $PodeContext.AsyncRoutes.Items.ContainsKey($asyncPoolName)) {
-            $PodeContext.Threads.AsyncRoutes -= $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].MaxRunspaces
-            $v = ''
-            $null = $PodeContext.AsyncRoutes.TryRemove($Items, [ref]$v)
-        }
-    }
-
     # select the candidate route for deletion
     $route = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
-            $_.Endpoint.Name -ine $EndpointName
+            $_.Endpoint.Name -ieq $EndpointName
         })
 
-    # remove the operationId from the openapi operationId list
-    if ($route.OpenAPI) {
-        foreach ( $tag  in  $route.OpenAPI.DefinitionTag) {
-            if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $route.OpenAPI.OperationId)) {
-                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $route.OpenAPI.OperationId }
+    foreach ($r in $route) {
+        # remove the runspace
+        if ($r.IsAsync) {
+            $asyncPoolName = $r.AsyncPoolName
+            if ( $asyncPoolName -and $PodeContext.RunspacePools.ContainsKey($asyncPoolName)) {
+                if ( ! $PodeContext.RunspacePools[$asyncPoolName].Pool.IsDisposed) {
+                    $PodeContext.RunspacePools[$asyncPoolName].Pool.BeginClose($null, $null)
+                    Close-PodeDisposable -Disposable ($PodeContext.RunspacePools[$asyncPoolName].Pool)
+                }
+                $v = ''
+                $null = $PodeContext.RunspacePools.TryRemove($asyncPoolName, [ref]$v)
+            }
+            if ( $PodeContext.AsyncRoutes.Items.ContainsKey($asyncPoolName)) {
+                $PodeContext.Threads.AsyncRoutes -= $PodeContext.AsyncRoutes.Items[$asyncPoolName].MaxRunspaces
+                $v = ''
+                $null = $PodeContext.AsyncRoutes.Items.TryRemove( $asyncPoolName, [ref]$v)
+            }
+        }
+
+        # remove the operationId from the openapi operationId list
+        if ($r.OpenAPI) {
+            foreach ( $tag in $r.OpenAPI.DefinitionTag) {
+                if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $route.OpenAPI.OperationId)) {
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $route.OpenAPI.OperationId }
+                }
             }
         }
     }

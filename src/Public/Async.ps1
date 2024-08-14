@@ -1054,6 +1054,11 @@ function Set-PodeAsyncRoute {
             $Route = $pipelineValue
         }
 
+        if ($null -eq $Route) {
+            # The parameter 'Route' cannot be null
+            throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
+        }
+
         foreach ($r in $Route) {
             $r.IsAsync = $true
             if ( $Callback.IsPresent) {
@@ -1090,7 +1095,7 @@ function Set-PodeAsyncRoute {
             if (! $PodeContext.RunspacePools.ContainsKey($r.AsyncPoolName)) {
                 $PodeContext.RunspacePools[$r.AsyncPoolName] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
 
-                $PodeContext.RunspacePools[$r.AsyncPoolName]['Pool'] = [runspacefactory]::CreateRunspacePool($MinRunspaces, $MaxRunspaces, $PodeContext.RunspaceState, $Host)
+                $PodeContext.RunspacePools[$r.AsyncPoolName]['Pool'] = New-PodeRunspacePoolNetWrapper -MinRunspaces $MinRunspaces -MaxRunspaces $MaxRunspaces -RunspaceState $PodeContext.RunspaceState
                 $PodeContext.RunspacePools[$r.AsyncPoolName]['State'] = 'Waiting'
 
             }
@@ -1541,40 +1546,40 @@ function Set-PodeOAAsyncRouteSchemaName {
         [string[]]
         $OADefinitionTag
     )
-     # Validates the provided OpenAPI definition tags using a custom function.
-     $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
+    # Validates the provided OpenAPI definition tags using a custom function.
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
-     # Iterates over each valid OpenAPI definition tag.
-     foreach ($tag in $DefinitionTag) {
+    # Iterates over each valid OpenAPI definition tag.
+    foreach ($tag in $DefinitionTag) {
 
-         # If $OATypeName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
-         if (! $OATypeName) {
-             $OATypeName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.OATypeName
-         }
+        # If $OATypeName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
+        if (! $OATypeName) {
+            $OATypeName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.OATypeName
+        }
 
-         # If $TaskIdName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
-         if (! $TaskIdName) {
-             $TaskIdName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.TaskIdName
-         }
+        # If $TaskIdName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
+        if (! $TaskIdName) {
+            $TaskIdName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.TaskIdName
+        }
 
-         # If $QueryRequestName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
-         if (!$QueryRequestName) {
-             $QueryRequestName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.QueryRequestName
-         }
+        # If $QueryRequestName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
+        if (!$QueryRequestName) {
+            $QueryRequestName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.QueryRequestName
+        }
 
-         # If $QueryParameterName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
-         if (!$QueryParameterName) {
-             $QueryParameterName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.QueryParameterName
-         }
+        # If $QueryParameterName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
+        if (!$QueryParameterName) {
+            $QueryParameterName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.QueryParameterName
+        }
 
-         # Update the hiddenComponents.AsyncRoute property of the OpenAPI definition
-         # with the schema details fetched or provided, by calling Get-PodeOAAsyncRouteSchemaNameInternal function.
-         $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute = Get-PodeOAAsyncRouteSchemaNameInternal `
-             -OATypeName $OATypeName `  # Passes the OpenAPI type name.
-             -TaskIdName $TaskIdName `  # Passes the task ID name.
-             -QueryRequestName $QueryRequestName `  # Passes the query request name.
-             -QueryParameterName $QueryParameterName  # Passes the query parameter name.
-     }
+        # Update the hiddenComponents.AsyncRoute property of the OpenAPI definition
+        # with the schema details fetched or provided, by calling Get-PodeOAAsyncRouteSchemaNameInternal function.
+        $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute = Get-PodeOAAsyncRouteSchemaNameInternal `
+            -OATypeName $OATypeName `  # Passes the OpenAPI type name.
+        -TaskIdName $TaskIdName `  # Passes the task ID name.
+        -QueryRequestName $QueryRequestName `  # Passes the query request name.
+        -QueryParameterName $QueryParameterName  # Passes the query parameter name.
+    }
 }
 
 
