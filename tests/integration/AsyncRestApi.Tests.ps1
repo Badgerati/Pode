@@ -49,27 +49,27 @@ Describe 'ASYNC REST API Requests' {
 
     Describe 'Create Async operation on behalf of Mindy' {
 
-        It 'Create Async operation /auth/asyncUsingNotCancelable' {
+        It 'Create Async operation /auth/asyncUsingNotCancellable' {
 
-            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingNotCancelable" -Method Put -Headers $mindyCommonHeaders
+            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingNotCancellable" -Method Put -Headers $mindyCommonHeaders
 
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.Name | Should -Be '__Put_auth_asyncUsingNotCancelable__'
+            $response.Name | Should -Be '__Put_auth_asyncUsingNotCancellable__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $false
+            $response.Cancellable | Should -Be $false
         }
 
-        It 'Create Async operation /auth/asyncUsingCancelable' {
-            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingCancelable" -Method Put -Headers $mindyCommonHeaders
+        It 'Create Async operation /auth/asyncUsingCancellable' {
+            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingCancellable" -Method Put -Headers $mindyCommonHeaders
 
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.Name | Should -Be '__Put_auth_asyncUsingCancelable__'
+            $response.Name | Should -Be '__Put_auth_asyncUsingCancellable__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
 
         It 'Create Async operation /auth/asyncUsing with JSON body' {
@@ -87,7 +87,7 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'MINDY021'
             $response.Name | Should -Be '__Put_auth_asyncUsing__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
 
         It 'Create Async operation /auth/asyncStateNoColumn' {
@@ -98,7 +98,7 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'MINDY021'
             $response.Name | Should -Be '__Put_auth_asyncStateNoColumn__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
 
         It 'Create Async operation /auth/asyncState' {
@@ -109,7 +109,7 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'MINDY021'
             $response.Name | Should -Be '__Put_auth_asyncState__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
 
         It 'Create Async operation /auth/asyncParam' {
@@ -120,31 +120,31 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'MINDY021'
             $response.Name | Should -Be '__Put_auth_asyncParam__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
     }
 
     Describe 'Create Async operation on behalf of Morty' {
-        It 'Create Async operation /auth/asyncUsingNotCancelable' {
-            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingNotCancelable" -Method Put -Headers $mortyCommonHeaders
+        It 'Create Async operation /auth/asyncUsingNotCancellable' {
+            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingNotCancellable" -Method Put -Headers $mortyCommonHeaders
 
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'M0R7Y302'
-            $response.Name | Should -Be '__Put_auth_asyncUsingNotCancelable__'
+            $response.Name | Should -Be '__Put_auth_asyncUsingNotCancellable__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $false
+            $response.Cancellable | Should -Be $false
         }
 
-        It 'Create Async operation /auth/asyncUsingCancelable' {
-            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingCancelable" -Method Put -Headers $mortyCommonHeaders
+        It 'Create Async operation /auth/asyncUsingCancellable' {
+            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingCancellable" -Method Put -Headers $mortyCommonHeaders
 
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'M0R7Y302'
-            $response.Name | Should -Be '__Put_auth_asyncUsingCancelable__'
+            $response.Name | Should -Be '__Put_auth_asyncUsingCancellable__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
 
         It 'Create Async operation /auth/asyncUsing with JSON body' {
@@ -162,7 +162,7 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'M0R7Y302'
             $response.Name | Should -Be '__Put_auth_asyncUsing__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
 
         It 'Throws exception - Create Async operation /auth/asyncStateNoColumn' {
@@ -177,7 +177,7 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'M0R7Y302'
             $response.Name | Should -Be '__Put_auth_asyncState__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
 
         It 'Create Async operation /auth/asyncParam' {
@@ -188,7 +188,7 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'M0R7Y302'
             $response.Name | Should -Be '__Put_auth_asyncParam__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
 
         It 'Create Async operation /asyncWaitForeverTimeout' {
@@ -199,7 +199,7 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'M0R7Y302'
             $response.Name | Should -Be '__Put_auth_asyncWaitForeverTimeout__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
-            $response.Cancelable | Should -Be $false
+            $response.Cancellable | Should -Be $false
         }
     }
 
@@ -223,7 +223,7 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'MINDY021'
             $response.Name | Should -Be '__Put_auth_asyncWaitForever__'
             $response.State | Should -BeIn 'Running'
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
 
         it 'Terminate Async Operation as Mindy' {
@@ -234,7 +234,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Name | Should -Be '__Put_auth_asyncWaitForever__'
             $response.State | Should -BeIn 'Aborted'
             $response.Error | Should -BeIn 'User Aborted!'
-            $response.Cancelable | Should -Be $true
+            $response.Cancellable | Should -Be $true
         }
     }
 
@@ -270,9 +270,9 @@ Describe 'ASYNC REST API Requests' {
             $response | Should -Not -BeNullOrEmpty
             $response.Count | Should -Be 7
             $response.state.where({ $_ -eq 'Aborted' }).count | Should -Be 1
-            $response.where({ $_.Name -eq '__Put_auth_asyncUsingCancelable__' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.Name -eq '__Put_auth_asyncUsingCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncUsing__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({ $_.Name -eq '__Put_auth_asyncUsingNotCancelable__' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.Name -eq '__Put_auth_asyncUsingNotCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncWaitForever__' }).State | Should -Be 'Aborted'
             $response.where({ $_.Name -eq '__Put_auth_asyncParam__' }).Result.InnerValue | Should -Be 'comming as argument'
             $response.where({ $_.Name -eq '__Put_auth_asyncStateNoColumn__' }).Result.InnerValue | Should -Be 'coming from a PodeState'
@@ -293,9 +293,9 @@ Describe 'ASYNC REST API Requests' {
             $response | Should -Not -BeNullOrEmpty
             $response.Count | Should -Be 5
             $response.state.where({ $_ -eq 'Aborted' }).count | Should -Be 0
-            $response.where({ $_.Name -eq '__Put_auth_asyncUsingCancelable__' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.Name -eq '__Put_auth_asyncUsingCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncUsing__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({ $_.Name -eq '__Put_auth_asyncUsingNotCancelable__' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.Name -eq '__Put_auth_asyncUsingNotCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncParam__' }).Result.InnerValue | Should -Be 'comming as argument'
             $response.where({ $_.Name -eq '__Put_auth_asyncState__' }).Result.InnerValue | Should -Be 'coming from a PodeState'
         }

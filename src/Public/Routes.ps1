@@ -1713,7 +1713,7 @@ function Remove-PodeRoute {
         if ( $PodeContext.AsyncRoutes.Items.ContainsKey($asyncPoolName)) {
             $PodeContext.Threads.AsyncRoutes -= $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].MaxRunspaces
             $v = ''
-            $null = $PodeContext.AsyncRoutes.TryRemove($Items, [ref]$v)
+            $null = $PodeContext.AsyncRoutes.TryRemove($PodeContext.AsyncRoutes.Items[$r.AsyncPoolName], [ref]$v)
         }
     }
 

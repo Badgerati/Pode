@@ -30,11 +30,11 @@
         }
     }
     Server = @{
-        FileMonitor  = @{
+        FileMonitor = @{
             Enable    = $false
             ShowFiles = $true
         }
-        Logging      = @{
+        Logging     = @{
             Masking = @{
                 Patterns = @(
                     '(?<keep_before>Password=)\w+',
@@ -43,7 +43,7 @@
                 Mask     = '--MASKED--'
             }
         }
-        AutoImport   = @{
+        AutoImport  = @{
             Functions    = @{
                 ExportOnly = $true
             }
@@ -56,21 +56,23 @@
                 }
             }
         }
-        Request      = @{
+        Request     = @{
             Timeout  = 30
             BodySize = 100MB
         }
-        Debug        = @{
+        Debug       = @{
             Breakpoints = @{
                 Enable = $true
             }
         }
-        HouseKeeping = @{
-            AsyncRoutes = @{
+        AsyncRoutes = @{
+            HouseKeeping = @{
                 TimerInterval    = 30
                 RetentionMinutes = 10
             }
-            Tasks       = @{
+        }
+        Tasks       = @{
+            HouseKeeping = @{
                 TimerInterval    = 30
                 RetentionMinutes = 1
             }

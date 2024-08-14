@@ -139,6 +139,9 @@ function Add-PodeAsyncGetRoute {
     # Check if a Definition exists
     $oaName = Get-PodeAsyncRouteOAName -Tag $OADefinitionTag
 
+    # Remove any trailing '/'
+    $Path = $Path.TrimEnd('/')
+
     # Append task Id to path if the task Id is in the path
     if ($In -eq 'Path') {
         $Path = "$Path/:$($oaName.TaskIdName)"
@@ -182,7 +185,7 @@ function Add-PodeAsyncGetRoute {
     if ($AllowAnon.IsPresent) {
         $param.AllowAnon = $AllowAnon
     }
-    if ($IfExists.IsPresent) {
+    if ($IfExists) {
         $param.IfExists = $IfExists
     }
 
@@ -191,7 +194,7 @@ function Add-PodeAsyncGetRoute {
 
     # Generate OpenAPI documentation if not disabled
     if (! $NoOpenAPI.IsPresent) {
-        Add-PodeAsyncComponentSchema -Name $oaName.OATypeName -DefinitionTag $DefinitionTag
+        Add-PodeAsyncRouteComponentSchema -Name $oaName.OATypeName -DefinitionTag $DefinitionTag
 
         $route | Set-PodeOARouteInfo -Summary 'Get Pode Task Info' -DefinitionTag $DefinitionTag -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
@@ -415,7 +418,7 @@ function Add-PodeAsyncStopRoute {
     # Generate OpenAPI documentation if not disabled
     if (! $NoOpenAPI.IsPresent) {
 
-        Add-PodeAsyncComponentSchema -Name $oaName.OATypeName -DefinitionTag $DefinitionTag
+        Add-PodeAsyncRouteComponentSchema -Name $oaName.OATypeName -DefinitionTag $DefinitionTag
 
         $route | Set-PodeOARouteInfo -Summary 'Stop Pode Task' -DefinitionTag $DefinitionTag -PassThru |
             Set-PodeOARequest -PassThru -Parameters (
@@ -644,7 +647,7 @@ function Add-PodeAsyncQueryRoute {
 
     # Generate OpenAPI documentation if not disabled
     if (! $NoOpenAPI.IsPresent) {
-        Add-PodeAsyncComponentSchema -Name $oaName.OATypeName -DefinitionTag $DefinitionTag
+        Add-PodeAsyncRouteComponentSchema -Name $oaName.OATypeName -DefinitionTag $DefinitionTag
 
         if (!(Test-PodeOAComponent -Field schemas -Name $oaName.QueryRequestName -DefinitionTag $DefinitionTag)) {
 
@@ -686,7 +689,7 @@ function Add-PodeAsyncQueryRoute {
                 New-PodeOASchemaProperty -Name 'State' -Reference "String$($oaName.QueryParameterName)" |
                 New-PodeOASchemaProperty -Name 'Error' -Reference "String$($oaName.QueryParameterName)" |
                 New-PodeOASchemaProperty -Name 'CallbackSettings' -Reference "String$($oaName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'Cancelable' -Reference "Boolean$($oaName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'Cancellable' -Reference "Boolean$($oaName.QueryParameterName)" |
                 New-PodeOASchemaProperty -Name 'SseEnabled' -Reference "Boolean$($oaName.QueryParameterName)" |
                 New-PodeOASchemaProperty -Name 'SseGroup' -Reference "String$($oaName.QueryParameterName)" |
                 New-PodeOASchemaProperty -Name 'User' -Reference "String$($oaName.QueryParameterName)" |
@@ -719,7 +722,7 @@ function Add-PodeAsyncQueryRoute {
                 op    = 'EQ'
                 value = 'b143660f-ebeb-49d9-9f92-cd21f3ff559c'
             }
-            'Cancelable'   = @{
+            'Cancellable'  = @{
                 op    = 'EQ'
                 value = $true
             }
@@ -728,11 +731,11 @@ function Add-PodeAsyncQueryRoute {
         # Add OpenAPI route information and responses
         $route | Set-PodeOARouteInfo -Summary 'Query Pode Task Info' -DefinitionTag $DefinitionTag -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType -Content $oaName.OATypeName -Array) -PassThru |
-            Add-PodeOAResponse -StatusCode 422 -Description 'Invalid filter supplied' -Content (
+            Add-PodeOAResponse -StatusCode 400 -Description 'Invalid filter supplied' -Content (
                 New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                     New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($oaName.OATypeName)Error"
                 )
-            ) -PassThru | Add-PodeOAResponse -StatusCode 406 -Description 'Not Acceptable' -Content (
+            ) -PassThru | Add-PodeOAResponse -StatusCode 500 -Content (
                 New-PodeOAContentMediaType -MediaType $ResponseContentType -Content (
                     New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($oaName.OATypeName)Error"
                 )
@@ -793,9 +796,9 @@ function Add-PodeAsyncQueryRoute {
     The default value is 28800 (8 hours).
     -1 indicating no timeout.
 
-.PARAMETER AsyncIdGenerator
-    Specifies the function to generate unique Ids for asynchronous tasks. The default
-    is 'New-PodeGuid'.
+.PARAMETER IdGenerator
+    A custom ScriptBlock to generate a random unique Ids for asynchronous tasks. The default
+    is '{ return New-PodeGuid }'.
 
 .PARAMETER PassThru
     If specified, the function returns the route information after processing.
@@ -866,7 +869,7 @@ function Add-PodeAsyncQueryRoute {
         }
     }
 
-.PARAMETER NotCancelable
+.PARAMETER NotCancellable
     The Async operation cannot be forcefully terminated
 
 .PARAMETER EnableSse
@@ -930,8 +933,8 @@ function Set-PodeAsyncRoute {
         $Timeout = 28800,
 
         [Parameter()]
-        [string]
-        $AsyncIdGenerator,
+        [scriptblock]
+        $IdGenerator,
 
         [switch]
         $PassThru,
@@ -984,7 +987,7 @@ function Set-PodeAsyncRoute {
 
         [Parameter()]
         [switch]
-        $NotCancelable,
+        $NotCancellable,
 
         [Parameter()]
         [switch]
@@ -1073,7 +1076,7 @@ function Set-PodeAsyncRoute {
                 UsingVariables   = $r.UsingVariables
                 Arguments        = (Protect-PodeValue -Value $r.Arguments -Default @{})
                 CallbackSettings = $CallbackSettings
-                Cancelable       = -not ($NotCancelable.IsPresent)
+                Cancellable      = !($NotCancellable.IsPresent)
                 Permission       = $Permission
                 MinRunspaces     = $MinRunspaces
                 MaxRunspaces     = $MaxRunspaces
@@ -1095,12 +1098,12 @@ function Set-PodeAsyncRoute {
             $r.logic = Get-PodeAsyncSetScriptBlock
 
             # Set arguments and clear using variables
-            $r.Arguments = ( $AsyncIdGenerator, $r.AsyncPoolName  )
+            $r.Arguments = ( $IdGenerator, $r.AsyncPoolName  )
             $r.UsingVariables = $null
 
             # Add OpenAPI documentation if not excluded
             if (! $NoOpenAPI.IsPresent) {
-                Add-PodeAsyncComponentSchema -Name $oaName.OATypeName
+                Add-PodeAsyncRouteComponentSchema -Name $oaName.OATypeName
 
                 $route |
                     Set-PodeOARouteInfo -PassThru |
@@ -1210,7 +1213,7 @@ function Get-PodeAsyncRouteOperation {
 .DESCRIPTION
     The Stop-PodeAsyncRouteOperation function stops an asynchronous Pode route operation based on the provided Id.
     It sets the operation's state to 'Aborted', records an error message, and marks the completion time.
-    The function then disposes of the associated runspace pipeline and calls Close-AsyncScript to finalize the operation.
+    The function then disposes of the associated runspace pipeline and calls Complete-PodeAsyncRouteOperation to finalize the operation.
     If the operation does not exist, it throws an exception with an appropriate error message.
 
 .PARAMETER Id
@@ -1237,7 +1240,7 @@ function Stop-PodeAsyncRouteOperation {
         $async['Error'] = 'Aborted by System'
         $async['CompletedTime'] = [datetime]::UtcNow
         $async['Runspace'].Pipeline.Dispose()
-        Close-AsyncScript -AsyncResult $async
+        Complete-PodeAsyncRouteOperation -AsyncResult $async
         return  Export-PodeAsyncInfo -Async $async
     }
     throw ($PodeLocale.asyncRouteOperationDoesNotExistExceptionMessage -f $Id)
@@ -1364,44 +1367,80 @@ function Set-PodeAsyncProgress {
     )
 
     # Ensure this function is used within an async route
-    if ($___async___id___) {
-        $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
+    if (!$___async___id___) {
+        # Set-PodeAsyncProgress can only be used inside an Async Route Scriptblock.
+        throw $PodeLocale.setPodeAsyncProgressExceptionMessage
+    }
+    $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
 
-        # Initialize progress if not already set, for non-tick operations
-        if ($PSCmdlet.ParameterSetName -ne 'Tick' -and $PSCmdlet.ParameterSetName -ne 'SetValue') {
-            if (!$asyncResult.ContainsKey('Progress')) {
-                if ( $UseDecimalProgress.IsPresent) {
-                    $asyncResult['Progress'] = [double] 0
-                }
-                else {
-                    $asyncResult['Progress'] = [int] 0
-                }
+    # Initialize progress if not already set, for non-tick operations
+    if ($PSCmdlet.ParameterSetName -ne 'Tick' -and $PSCmdlet.ParameterSetName -ne 'SetValue') {
+        if (!$asyncResult.ContainsKey('Progress')) {
+            if ( $UseDecimalProgress.IsPresent) {
+                $asyncResult['Progress'] = [double] 0
             }
-
-            if ($MaxProgress -le $asyncResult['Progress']) {
-                \
-                # A Progress limit cannot be lower than the current progress.
-                throw $PodeLocale.progressLimitLowerThanCurrentExceptionMessage
+            else {
+                $asyncResult['Progress'] = [int] 0
             }
         }
 
-        switch ($PSCmdlet.ParameterSetName) {
-            'StartEnd' {
-                # Calculate total ticks and tick to progress ratio
-                $totalTicks = [math]::ceiling(($End - $Start) / $Steps)
+        if ($MaxProgress -le $asyncResult['Progress']) {
+            # A Progress limit cannot be lower than the current progress.
+            throw $PodeLocale.progressLimitLowerThanCurrentExceptionMessage
+        }
+    }
+
+    switch ($PSCmdlet.ParameterSetName) {
+        'StartEnd' {
+            # Calculate total ticks and tick to progress ratio
+            $totalTicks = [math]::ceiling(($End - $Start) / $Steps)
+            if ($asyncResult['Progress'] -is [double]) {
+                $asyncResult['TickToProgress'] = ($MaxProgress - $asyncResult['Progress']) / $totalTicks
+            }
+            else {
+                $asyncResult['TickToProgress'] = [Math]::Floor(($MaxProgress - $asyncResult['Progress']) / $totalTicks)
+            }
+        }
+        'Tick' {
+            # Increment progress by TickToProgress value
+            $asyncResult['Progress'] = $asyncResult['Progress'] + $asyncResult['TickToProgress']
+
+            # Ensure Progress does not exceed the specified limit
+            if ($asyncResult['Progress'] -ge $MaxProgress) {
                 if ($asyncResult['Progress'] -is [double]) {
-                    $asyncResult['TickToProgress'] = ($MaxProgress - $asyncResult['Progress']) / $totalTicks
+                    $asyncResult['Progress'] = $MaxProgress - 0.01
                 }
                 else {
-                    $asyncResult['TickToProgress'] = [Math]::Floor(($MaxProgress - $asyncResult['Progress']) / $totalTicks)
+                    $asyncResult['Progress'] = $MaxProgress - 1
                 }
             }
-            'Tick' {
+        }
+        'TimeBased' {
+            # Calculate tick interval and progress increment per tick
+            $totalTicks = [math]::ceiling($DurationSeconds / $IntervalSeconds)
+            if ($asyncResult['Progress'] -is [double]) {
+                $asyncResult['TickToProgress'] = ($MaxProgress - $asyncResult['Progress']) / $totalTicks
+            }
+            else {
+                $asyncResult['TickToProgress'] = [Math]::Floor(($MaxProgress - $asyncResult['Progress']) / $totalTicks)
+            }
+
+            # Start the scheduler
+            $asyncResult['eventName'] = "TimerEvent_$___async___id___"
+            $asyncResult['Timer'] = [System.Timers.Timer]::new()
+            $asyncResult['Timer'].Interval = $IntervalSeconds * 1000
+            $null = Register-ObjectEvent -InputObject $asyncResult['Timer'] -EventName Elapsed -SourceIdentifier  $asyncResult['eventName'] -MessageData @{AsyncResult = $asyncResult; MaxProgress = $MaxProgress } -Action {
+                $asyncResult = $Event.MessageData.AsyncResult
+                $MaxProgress = $Event.MessageData.MaxProgress
+
                 # Increment progress by TickToProgress value
                 $asyncResult['Progress'] = $asyncResult['Progress'] + $asyncResult['TickToProgress']
 
-                # Ensure Progress does not exceed the specified limit
-                if ($asyncResult['Progress'] -ge $MaxProgress) {
+                # Check if progress has reached or exceeded MaxProgress
+                if ($asyncResult['Progress'] -gt $MaxProgress) {
+                    # Closes and disposes of the timer
+                    Close-PodeAsyncRouteTimer -Operation  $asyncResult
+
                     if ($asyncResult['Progress'] -is [double]) {
                         $asyncResult['Progress'] = $MaxProgress - 0.01
                     }
@@ -1410,61 +1449,17 @@ function Set-PodeAsyncProgress {
                     }
                 }
             }
-            'TimeBased' {
-                # Calculate tick interval and progress increment per tick
-                $totalTicks = [math]::ceiling($DurationSeconds / $IntervalSeconds)
-                if ($asyncResult['Progress'] -is [double]) {
-                    $asyncResult['TickToProgress'] = ($MaxProgress - $asyncResult['Progress']) / $totalTicks
-                }
-                else {
-                    $asyncResult['TickToProgress'] = [Math]::Floor(($MaxProgress - $asyncResult['Progress']) / $totalTicks)
-                }
-
-                # Start the scheduler
-                $asyncResult['eventName'] = "TimerEvent_$___async___id___"
-                $asyncResult['Timer'] = [System.Timers.Timer]::new()
-                $asyncResult['Timer'].Interval = $IntervalSeconds * 1000
-                $null = Register-ObjectEvent -InputObject $asyncResult['Timer'] -EventName Elapsed -SourceIdentifier  $asyncResult['eventName'] -MessageData @{AsyncResult = $asyncResult; MaxProgress = $MaxProgress } -Action {
-                    $asyncResult = $Event.MessageData.AsyncResult
-                    $MaxProgress = $Event.MessageData.MaxProgress
-
-                    # Increment progress by TickToProgress value
-                    $asyncResult['Progress'] = $asyncResult['Progress'] + $asyncResult['TickToProgress']
-
-                    # Check if progress has reached or exceeded MaxProgress
-                    if ($asyncResult['Progress'] -gt $MaxProgress) {
-                        $asyncResult['Timer'].Stop()
-                        if ($asyncResult['Progress'] -is [double]) {
-                            $asyncResult['Progress'] = $MaxProgress - 0.01
-                        }
-                        else {
-                            $asyncResult['Progress'] = $MaxProgress - 1
-                        }
-                        $asyncResult['Timer'].Dispose()
-                        Unregister-Event -SourceIdentifier $asyncResult['eventName']
-                        $AsyncResult.Remove('Timer')
-                    }
-                }
-                $asyncResult['Timer'].Enabled = $true
+            $asyncResult['Timer'].Enabled = $true
+        }
+        'SetValue' {
+            if ( $UseDecimalProgress.IsPresent -or ($Value % 1 -ne 0) ) {
+                $asyncResult['Progress'] = $Value
             }
-            'SetValue' {
-                if ( $UseDecimalProgress.IsPresent -or ($Value % 1 -ne 0) ) {
-                    $asyncResult['Progress'] = $Value
-                }
-                else {
-                    $asyncResult['Progress'] = [int]$Value
-                }
+            else {
+                $asyncResult['Progress'] = [int]$Value
             }
         }
-
     }
-    else {
-        # Set-PodeAsyncProgress can only be used inside an Async Route Scriptblock.
-        throw $PodeLocale.setPodeAsyncProgressExceptionMessage
-
-
-    }
-
 }
 
 
@@ -1496,7 +1491,7 @@ function Get-PodeAsyncProgress {
         return $PodeContext.AsyncRoutes.Results[$___async___id___]['Progress']
     }
     else {
-        throw ('Set-PodeAsyncCounter can only be used inside an Async Route Scriptblock')
+        throw $PodeLocale.setPodeAsyncProgressExceptionMessage
     }
 }
 
@@ -1546,11 +1541,40 @@ function Set-PodeOAAsyncRouteSchemaName {
         [string[]]
         $OADefinitionTag
     )
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
+     # Validates the provided OpenAPI definition tags using a custom function.
+     $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
-    foreach ($tag in $DefinitionTag) {
-        $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute = Get-PodeOAAsyncRouteSchemaNameInternal @PSBoundParameters
-    }
+     # Iterates over each valid OpenAPI definition tag.
+     foreach ($tag in $DefinitionTag) {
+
+         # If $OATypeName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
+         if (! $OATypeName) {
+             $OATypeName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.OATypeName
+         }
+
+         # If $TaskIdName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
+         if (! $TaskIdName) {
+             $TaskIdName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.TaskIdName
+         }
+
+         # If $QueryRequestName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
+         if (!$QueryRequestName) {
+             $QueryRequestName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.QueryRequestName
+         }
+
+         # If $QueryParameterName is not provided, fetch it from the corresponding OpenAPI definition's hidden components.
+         if (!$QueryParameterName) {
+             $QueryParameterName = $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute.QueryParameterName
+         }
+
+         # Update the hiddenComponents.AsyncRoute property of the OpenAPI definition
+         # with the schema details fetched or provided, by calling Get-PodeOAAsyncRouteSchemaNameInternal function.
+         $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute = Get-PodeOAAsyncRouteSchemaNameInternal `
+             -OATypeName $OATypeName `  # Passes the OpenAPI type name.
+             -TaskIdName $TaskIdName `  # Passes the task ID name.
+             -QueryRequestName $QueryRequestName `  # Passes the query request name.
+             -QueryParameterName $QueryParameterName  # Passes the query parameter name.
+     }
 }
 
 

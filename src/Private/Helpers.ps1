@@ -4246,7 +4246,7 @@ function ConvertTo-PodeHashtable {
 
             # If the property value is an enumerable collection (excluding strings)
         }
-        elseif ($property.Value -is [System.Collections.IEnumerable] -and -not ($property.Value -is [string])) {
+        elseif ($property.Value -is [System.Collections.IEnumerable] -and !($property.Value -is [string])) {
 
             # Initialize an array list to hold the converted items
             $arrayList = @()
@@ -4277,4 +4277,32 @@ function ConvertTo-PodeHashtable {
 
     # Return the resulting hashtable
     return $hashtable
+}
+
+<#
+.SYNOPSIS
+    Formats a given DateTime object to the ISO 8601 format used in Pode.
+
+.DESCRIPTION
+    The `Format-PodeDateToIso8601` function takes a DateTime object and returns
+    a string formatted as `yyyy-MM-ddTHH:mm:ss.fffffffZ`, which is the ISO 8601 format
+    with seven fractional seconds, suitable for Pode async operations.
+
+.PARAMETER Date
+    The DateTime object to format.
+
+.EXAMPLE
+    $completedTime = Get-Date
+    $formattedDate = Format-PodeDateToIso8601 -Date $completedTime
+    Write-Output $formattedDate
+
+    This example formats the current date and time to the ISO 8601 format.
+
+#>
+function Format-PodeDateToIso8601 {
+    param (
+        [DateTime]$Date
+    )
+
+    return $Date.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
 }

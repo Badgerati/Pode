@@ -21,8 +21,8 @@ The configuration can be done using the `server.psd1` configuration file:
 ```powershell
 @{
     Server = @{
-        HouseKeeping = @{
-            AsyncRoutes = @{
+        AsyncRoutes = @{
+            HouseKeeping = @{
                 TimerInterval    = 20  # seconds
                 RetentionMinutes = 5   # minutes
             }

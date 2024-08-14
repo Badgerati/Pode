@@ -85,7 +85,7 @@ When a route is invoked, it automatically creates a runspace to execute the scri
 | **CallbackInfo.Tentative**      | integer | Number of tentatives.                                                                       |
 | **CallbackInfo.Url**            | string  | The callback URL.                                                                           |
 | **StartingTime**                | date    | The async operation starting time.                                                          |
-| **Cancelable***                 | boolean | The async operation can be forcefully terminated.                                           |
+| **Cancellable***                | boolean | The async operation can be forcefully terminated.                                           |
 | **CreationTime***               | string  | The async operation creation time.                                                          |
 | **Id***                         | string  | The async operation unique identifier.                                                      |
 | **Permission**                  | object  | The permission governing the async operation.                                               |
@@ -136,9 +136,9 @@ When a route is invoked, it automatically creates a runspace to execute the scri
   - **Enable SSE**: You can enable SSE for async routes to provide real-time updates.
   - **SSE Group**: Optionally group SSE connections to broadcast events to all connections in a specified group.
 
-- **NotCancelable**: If specified, the async operation cannot be forcefully terminated. This ensures that critical tasks are not interrupted.
+- **NotCancellable**: If specified, the async operation cannot be forcefully terminated. This ensures that critical tasks are not interrupted.
 
-- **AsyncIdGenerator**: Specifies the function to generate unique IDs for asynchronous tasks. The default is `New-PodeGuid`.
+- **IdGenerator**: A custom ScriptBlock to generate a random unique IDs for asynchronous tasks. The default is `{ return (New-PodeGuid) }`.
 
 - **Automatic OpenAPI Definition**: Routes defined with `Set-PodeAsyncRoute` can automatically generate OpenAPI documentation. This includes response types and callback details, making it easier to document and share your API.
 
@@ -224,7 +224,7 @@ The following properties can be used for the query:
 - `State`
 - `Error`
 - `CallbackSettings`
-- `Cancelable`
+- `Cancellable`
 - `EnableSse`
 - `SseGroup`
 - `Timeout`
@@ -287,7 +287,7 @@ $queryBody = @{
         value = "Get"
         op = "LIKE"
     }
-    Cancelable = @{
+    Cancellable = @{
         value = $true
         op = "EQ"
     }

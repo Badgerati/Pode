@@ -10,32 +10,51 @@ The `Set-PodeAsyncRoute` function supports including callback functionality for 
     - `$request.query.param-name`: query-param-value
     - `$request.header.header-name`: application/json
     - `$request.body#/field-name`: callbackUrl
-  - Can accept runtime expressions based on the [OpenAPI specification](https://swagger.io/docs/specification/callbacks/).
+    - Can accept runtime expressions based on the [OpenAPI specification](https://swagger.io/docs/specification/callbacks/).
+  - Acceptable static values (examples):
+    - 'http://example.com/callback'
+    - 'https://api.example.com/callback'
 
 - **Callback Content Type**: Specifies the content type for the callback. The default is `'application/json'`.
   - Can accept the following meta values:
     - `$request.query.param-name`: query-param-value
     - `$request.header.header-name`: application/json
     - `$request.body#/field-name`: callbackUrl
-  - Can accept runtime expressions based on the [OpenAPI specification](https://swagger.io/docs/specification/callbacks/).
+    - Can accept runtime expressions based on the [OpenAPI specification](https://swagger.io/docs/specification/callbacks/).
+  - Acceptable static values (examples):
+    - 'application/json'
+    - 'application/xml'
+    - 'text/plain'
 
 - **Callback Method**: Specifies the HTTP method for the callback. The default is `'Post'`.
   - Can accept the following meta values:
     - `$request.query.param-name`: query-param-value
     - `$request.header.header-name`: application/json
     - `$request.body#/field-name`: callbackUrl
-  - Can accept runtime expressions based on the [OpenAPI specification](https://swagger.io/docs/specification/callbacks/).
+    - Can accept runtime expressions based on the [OpenAPI specification](https://swagger.io/docs/specification/callbacks/).
+  - Acceptable static values (examples):
+    - `GET`
+    - `POST`
+    - `PUT`
+    - `DELETE`
 
 - **Callback Header Fields**: Specifies the header fields for the callback as a hashtable. The key can be a string representing the header key or one of the meta values. The value is the header value if it's a standard key or the default value if the meta value is not resolvable.
   - Can accept the following meta values as keys:
     - `$request.query.param-name`: query-param-value
     - `$request.header.header-name`: application/json
     - `$request.body#/field-name`: callbackUrl
-  - Can accept runtime expressions based on the [OpenAPI specification](https://swagger.io/docs/specification/callbacks/).
+    - Can accept runtime expressions based on the [OpenAPI specification](https://swagger.io/docs/specification/callbacks/).
+  - Acceptable static values (examples):
+    - `@{ 'Content-Type' = 'application/json' }`
+    - `@{ 'Authorization' = 'Bearer token' }`
+    - `@{ 'Custom-Header' = 'value' }`
 
 - **Send Result**: If specified, sends the result of the callback.
+  - Type Boolean.
 
 - **Event Name**: Specifies the event name for the callback.
+  - Type String.
+
 
 #### Example Usage
 

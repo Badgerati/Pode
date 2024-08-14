@@ -117,15 +117,23 @@ function New-PodeContext {
     }
 
     $ctx.Tasks = @{
-        Enabled = ($EnablePool -icontains 'tasks')
-        Items   = @{}
-        Results = @{}
+        Enabled      = ($EnablePool -icontains 'tasks')
+        Items        = @{}
+        Results      = @{}
+        HouseKeeping = @{
+            TimerInterval    = 30
+            RetentionMinutes = 1
+        }
     }
 
     $ctx.AsyncRoutes = @{
-        Enabled = $true
-        Items   = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-        Results = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+        Enabled      = $true
+        Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+        Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+        HouseKeeping = @{
+            TimerInterval    = 30
+            RetentionMinutes = 10
+        }
     }
 
     $ctx.Fim = @{
@@ -194,17 +202,6 @@ function New-PodeContext {
         'Views'  = 'views'
         'Public' = 'public'
         'Errors' = 'errors'
-    }
-
-    $ctx.Server.HouseKeeping = @{
-        AsyncRoutes = @{
-            TimerInterval    = 30
-            RetentionMinutes = 10
-        }
-        Tasks       = @{
-            TimerInterval    = 30
-            RetentionMinutes = 1
-        }
     }
 
     # check if there is any global configuration
@@ -915,16 +912,16 @@ function Set-PodeServerConfiguration {
         }
     }
 
-    $Context.Server.HouseKeeping = @{
-        AsyncRoutes = @{
-            TimerInterval    = Protect-PodeValue -Value $Configuration.HouseKeeping.AsyncRoutes.TimerInterval -Default $Context.Server.HouseKeeping.AsyncRoutes.TimerInterval
-            RetentionMinutes = Protect-PodeValue -Value $Configuration.HouseKeeping.AsyncRoutes.RetentionMinutes -Default $Context.Server.HouseKeeping.AsyncRoutes.RetentionMinutes
-        }
-        Tasks       = @{
-            TimerInterval    = Protect-PodeValue -Value $Configuration.HouseKeeping.Tasks.TimerInterval -Default $Context.Server.Tasks.AsyncRoute.TimerInterval
-            RetentionMinutes = Protect-PodeValue -Value $Configuration.HouseKeeping.Tasks.RetentionMinutes -Default $Context.Server.Tasks.AsyncRoute.RetentionMinutes
-        }
+    $Context.Server.AsyncRoutes.HouseKeeping = @{
+        TimerInterval    = Protect-PodeValue -Value $Configuration.AsyncRoutes.HouseKeeping.TimerInterval -Default $Context.Server.AsyncRoutes.HouseKeeping.TimerInterval
+        RetentionMinutes = Protect-PodeValue -Value $Configuration.AsyncRoutes.HouseKeeping.RetentionMinutes -Default $Context.Server.AsyncRoutes.HouseKeeping.RetentionMinutes
     }
+
+    $Context.Server.Tasks.HouseKeeping = @{
+        TimerInterval    = Protect-PodeValue -Value $Configuration.Tasks.HouseKeeping.TimerInterval -Default $Context.Server.Tasks.HouseKeeping.TimerInterval
+        RetentionMinutes = Protect-PodeValue -Value $Configuration.Tasks.HouseKeeping.RetentionMinutes -Default $Context.Server.Tasks.HouseKeeping.RetentionMinutes
+    }
+
 }
 
 function Set-PodeWebConfiguration {

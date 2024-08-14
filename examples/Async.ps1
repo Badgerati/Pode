@@ -32,8 +32,8 @@
         'Authorization' = 'Basic bWluZHk6cGlja2xl'
     }
 
-    $response_asyncUsingNotCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancelable' -Method Put -Headers $mortyCommonHeaders
-    $response_asyncUsingCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancelable' -Method Put -Headers $mortyCommonHeaders
+    $response_asyncUsingNotCancellable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancellable' -Method Put -Headers $mortyCommonHeaders
+    $response_asyncUsingCancellable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancellable' -Method Put -Headers $mortyCommonHeaders
 
     $body = @{
         callbackUrl = 'http://localhost:8080/receive/callback'
@@ -56,8 +56,8 @@
 
 $response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForever' -Method Put -Headers $mindyCommonHeaders
 
-    $response_Mindy_asyncUsingNotCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancelable' -Method Put -Headers $mindyCommonHeaders
-    $response_Mindy_asyncUsingCancelable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancelable' -Method Put -Headers $mindyCommonHeaders
+    $response_Mindy_asyncUsingNotCancellable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancellable' -Method Put -Headers $mindyCommonHeaders
+    $response_Mindy_asyncUsingCancellable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancellable' -Method Put -Headers $mindyCommonHeaders
     $response_Mindy_asyncStateNoColumn = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncStateNoColumn' -Method Put -Headers $mindyCommonHeaders
 
     $headersWithContentType = $mindyCommonHeaders.Clone()
@@ -289,17 +289,17 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
     } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingNotCancelable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
-        Write-PodeHost '/auth/asyncUsingNotCancelable'
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingNotCancellable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
+        Write-PodeHost '/auth/asyncUsingNotCancellable'
         Write-PodeHost "sleepTime=$($using:uSleepTime * 5)"
         Write-PodeHost "Message=$($using:uMessage)"
         #write-podehost $WebEvent.auth.User -Explode
         Start-Sleep ($using:uSleepTime * 10)
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -NotCancelable -Timeout 300
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -NotCancellable -Timeout 300
 
-    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingCancelable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
-        Write-PodeHost '/auth/asyncUsingCancelable'
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingCancellable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
+        Write-PodeHost '/auth/asyncUsingCancellable'
         Write-PodeHost "sleepTime=$($using:uSleepTime * 5)"
         Write-PodeHost "Message=$($using:uMessage)"
         #write-podehost $WebEvent.auth.User -Explode
@@ -320,7 +320,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         while ($true) {
             Start-Sleep 2
         }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 40 -NotCancelable
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 40 -NotCancellable
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncProgressByTimer' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
