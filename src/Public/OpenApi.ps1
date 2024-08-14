@@ -780,7 +780,7 @@ function Set-PodeOARequest {
 
         if ($null -ne $RequestBody) {
             # Only 'POST', 'PUT', 'PATCH' can have a request body
-            if (('POST', 'PUT', 'PATCH') -icontains $r.Method ) {
+            if (('POST', 'PUT', 'PATCH') -inotcontains $r.Method ) {
                 # {0} operations cannot have a Request Body.
                 throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
             }
