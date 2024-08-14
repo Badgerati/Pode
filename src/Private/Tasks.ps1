@@ -7,11 +7,11 @@ function Start-PodeTaskHousekeeper {
         return
     }
 
-    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval $PodeContext.Server.Tasks.HouseKeeping.TimerInterval -ScriptBlock {
+    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval $PodeContext.Tasks.HouseKeeping.TimerInterval -ScriptBlock {
         if ($PodeContext.Tasks.Results.Count -eq 0) {
             return
         }
-        $RetentionMinutes = $PodeContext.Server.Tasks.HouseKeeping.RetentionMinutes
+        $RetentionMinutes = $PodeContext.Tasks.HouseKeeping.RetentionMinutes
         $now = [datetime]::UtcNow
 
         foreach ($key in $PodeContext.Tasks.Results.Keys.Clone()) {

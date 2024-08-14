@@ -464,7 +464,7 @@ function Start-PodeAsyncRoutesHousekeeper {
     }
 
     # Add a new timer with the specified $Context.Server.AsyncRoute.TimerInterval and script block
-    Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval  $PodeContext.Server.AsyncRoutes.HouseKeeping.TimerInterval  -ScriptBlock {
+    Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval  $PodeContext.AsyncRoutes.HouseKeeping.TimerInterval  -ScriptBlock {
         ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = '__pode_asyncroutes_housekeeper__'
         # Return if there are no async route results
         if ($PodeContext.AsyncRoutes.Results.Count -eq 0) {
@@ -472,7 +472,7 @@ function Start-PodeAsyncRoutesHousekeeper {
         }
 
         $now = [datetime]::UtcNow
-        $RetentionMinutes = $PodeContext.Server.AsyncRoutes.HouseKeeping.RetentionMinutes
+        $RetentionMinutes = $PodeContext.AsyncRoutes.HouseKeeping.RetentionMinutes
         # Iterate over the keys of the async route results
         foreach ($key in $PodeContext.AsyncRoutes.Results.Keys.Clone()) {
             $result = $PodeContext.AsyncRoutes.Results[$key]
