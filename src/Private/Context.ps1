@@ -939,6 +939,12 @@ function Set-PodeWebConfiguration {
         OpenApi          = @{
             DefaultDefinitionTag = [string](Protect-PodeValue -Value $Configuration.OpenApi.DefaultDefinitionTag -Default 'default')
         }
+        Conversion       = @{
+            # If Pode is running in Powershell Core Json conversion are by default to HashTable
+            JsonToHashTable = [bool] (Protect-PodeValue -Value $Configuration.Conversion.JsonToHashTable -Default (Test-PodeIsPSCore) )
+            XmlToHashTable  = [bool] (Protect-PodeValue -Value $Configuration.Conversion.XmlToHashTable -Default $true )
+            YamlToHashTable = [bool] (Protect-PodeValue -Value $Configuration.Conversion.XmlToHashTable -Default $true )
+        }
     }
 
     if ($Configuration.OpenApi -and $Configuration.OpenApi.ContainsKey('UsePodeYamlInternal')) {

@@ -1379,6 +1379,9 @@ function ConvertFrom-PodeXml {
 .PARAMETER InputObject
     The YAML input object to be converted.
 
+.PARAMETER AsHashTable
+    Converts the YAML to a hash table object
+
 .EXAMPLE
     $yamlString = @'
     openapi: 3.0.3
@@ -1400,10 +1403,14 @@ function ConvertFrom-PodeYaml {
     [CmdletBinding()]
     [OutputType([ordered])]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
         [AllowNull()]
         [string[]]
-        $InputObject
+        $InputObject,
+
+        [Parameter()]
+        [switch]
+        $AsHashTable
     )
 
     begin {
@@ -1431,23 +1438,28 @@ function ConvertFrom-PodeYaml {
 
         # Check if the internal YAML converter should be used
         if ($null -eq $PodeContext -or $PodeContext.Server.Web.OpenApi.UsePodeYamlInternal) {
-          #  return ConvertFrom-PodeYamlInternal -InputObject $obj
-          return [Pode.PodeConverter]::FromYaml($obj)
+            #  return ConvertFrom-PodeYamlInternal -InputObject $obj
+            $result = [Pode.PodeConverter]::FromYaml($obj)
         }
 
         # Check if a YAML module has been imported, if not, test for available YAML modules
-        if ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
+        elseif ($null -eq $PodeContext.Server.InternalCache.YamlModuleImported) {
             $PodeContext.Server.InternalCache.YamlModuleImported = ((Test-PodeModuleInstalled -Name 'PSYaml') -or (Test-PodeModuleInstalled -Name 'powershell-yaml'))
         }
-
-        # Use the external YAML module if available, otherwise use the internal converter
-        if ($PodeContext.Server.InternalCache.YamlModuleImported) {
-            return ($obj | ConvertFrom-Yaml)
+        if (!$result) {
+            # Use the external YAML module if available, otherwise use the internal converter
+            if ($PodeContext.Server.InternalCache.YamlModuleImported) {
+                $result = ($obj | ConvertFrom-Yaml)
+            }
+            else {
+                $result = [Pode.PodeConverter]::FromYaml($obj)
+                #  return ConvertFrom-PodeYamlInternal -InputObject $obj
+            }
         }
-        else {
-            return [Pode.PodeConverter]::FromYaml($obj)
-          #  return ConvertFrom-PodeYamlInternal -InputObject $obj
+        if ($AsHashTable){
+            return [PSCustomObject]$result
         }
+        return $result
     }
 }
 

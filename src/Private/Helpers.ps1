@@ -1836,10 +1836,14 @@ function ConvertFrom-PodeRequestContent {
     switch ($ContentType) {
         { $_ -ilike '*/json' } {
             if (Test-PodeIsPSCore) {
-                $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
+                $Result.Data = ($Content | ConvertFrom-Json -AsHashtable:$PodeContext.Server.Web.Conversion.JsonToHashTable)
             }
             else {
-                $Result.Data = ($Content | ConvertFrom-Json)
+                if($PodeContext.Server.Web.Conversion.JsonToHashTable){
+                    $Result.Data = ConvertTo-PodeHashtable -PSObject ($Content | ConvertFrom-Json)
+                }else{
+                    $Result.Data = ($Content | ConvertFrom-Json)
+                }
             }
         }
 
@@ -1848,7 +1852,7 @@ function ConvertFrom-PodeRequestContent {
         }
 
         { $_ -ilike '*/yaml' } {
-            $Result.Data = ($Content | ConvertFrom-PodeYaml )
+            $Result.Data = ($Content | ConvertFrom-PodeYaml -AsHashtable:$PodeContext.Server.Web.Conversion.YamlToHashTable)
         }
 
         { $_ -ilike '*/csv' } {
