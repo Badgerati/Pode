@@ -233,7 +233,7 @@ Describe 'ASYNC REST API Requests' {
             $response.User | Should -Be 'MINDY021'
             $response.Name | Should -Be '__Put_auth_asyncWaitForever__'
             $response.State | Should -BeIn 'Aborted'
-            $response.Error | Should -BeIn 'User Aborted!'
+            $response.Error | Should -BeIn 'Aborted by the user'
             $response.Cancellable | Should -Be $true
         }
     }
