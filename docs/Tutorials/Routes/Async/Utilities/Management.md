@@ -3,11 +3,11 @@
 
 The management functions in Pode allow you to control and query the status of asynchronous tasks. These functions provide an interface to search, fetch, stop, and check the existence of asynchronous operations within your Pode application. These functions are primarily intended for internal use and are not subject to any permissions or restrictions.
 
-### Get-PodeQueryAsyncRouteOperation
+###  Get-PodeAsyncRouteOperation
 
-The `Get-PodeQueryAsyncRouteOperation` function acts as a public interface for searching asynchronous Pode route operations based on specified query conditions. It allows you to query the status and details of multiple asynchronous tasks based on various parameters.
+The ` Get-PodeAsyncRouteOperation` function acts as a public interface for searching asynchronous Pode route operations based on specified query conditions. It allows you to query the status and details of multiple asynchronous tasks based on various parameters.
 
-`Get-PodeQueryAsyncRouteOperation` is similar in intent to `Add-PodeAsyncQueryRoute`. The main difference is that this function is used inside the Pode code to manage Async tasks and is not subject to any permissions or restrictions.
+` Get-PodeAsyncRouteOperation` is similar in intent to `Add-PodeAsyncQueryRoute`. The main difference is that this function is used inside the Pode code to manage Async tasks and is not subject to any permissions or restrictions.
 
 #### Example Usage
 
@@ -23,7 +23,7 @@ $queryConditions = @{
     }
 }
 
-$results = Get-PodeQueryAsyncRouteOperation -Filter $queryConditions
+$results =  Get-PodeAsyncRouteOperation -Filter $queryConditions
 ```
 
 #### Explanation

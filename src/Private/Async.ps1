@@ -144,7 +144,7 @@ function Invoke-PodeAsyncRoute {
     Converts a provided script block into an enhanced script block for asynchronous execution in Pode.
 
 .DESCRIPTION
-    The `ConvertTo-PodeEnhancedScriptBlock` function takes a given script block and wraps it with additional code
+    The `ConvertTo-PodeAsyncEnhancedScriptBlock` function takes a given script block and wraps it with additional code
     to manage asynchronous execution within the Pode framework. It handles setting up the execution state,
     logging errors, and invoking callback URLs with results.
 
@@ -160,7 +160,7 @@ function Invoke-PodeAsyncRoute {
         # Script block code here
     }
 
-    $enhancedScriptBlock = ConvertTo-PodeEnhancedScriptBlock -ScriptBlock $originalScriptBlock
+    $enhancedScriptBlock = ConvertTo-PodeAsyncEnhancedScriptBlock -ScriptBlock $originalScriptBlock
 
     # Now you can use $enhancedScriptBlock for asynchronous execution in Pode.
 
@@ -170,7 +170,7 @@ function Invoke-PodeAsyncRoute {
     - This is an internal function and may change in future releases of Pode.
 #>
 
-function ConvertTo-PodeEnhancedScriptBlock {
+function ConvertTo-PodeAsyncEnhancedScriptBlock {
     param (
         [Parameter(Mandatory = $true)]
         [ScriptBlock]
@@ -345,12 +345,12 @@ function Complete-PodeAsyncRouteOperation {
         if ($AsyncResult['CallbackSettings']) {
 
             # Resolve the callback URL, method, content type, and headers
-            $callbackUrl = (Convert-PodeCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].UrlField).Value
-            $method = (Convert-PodeCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].Method -DefaultValue 'Post').Value
-            $contentType = (Convert-PodeCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].ContentType).Value
+            $callbackUrl = (Convert-PodeAsyncCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].UrlField).Value
+            $method = (Convert-PodeAsyncCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].Method -DefaultValue 'Post').Value
+            $contentType = (Convert-PodeAsyncCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].ContentType).Value
             $headers = @{}
             foreach ($key in $AsyncResult['CallbackSettings'].HeaderFields.Keys) {
-                $value = Convert-PodeCallBackRuntimeExpression -Variable $key -DefaultValue $AsyncResult['HeaderFields'][$key]
+                $value = Convert-PodeAsyncCallBackRuntimeExpression -Variable $key -DefaultValue $AsyncResult['HeaderFields'][$key]
                 if ($value) {
                     $headers[$value.Key] = $value.Value
                 }
@@ -751,7 +751,7 @@ function Search-PodeAsyncTask {
     Converts runtime expressions for Pode callback variables.
 
 .DESCRIPTION
-    The `Convert-PodeCallBackRuntimeExpression` function processes runtime expressions
+    The `Convert-PodeAsyncCallBackRuntimeExpression` function processes runtime expressions
     for Pode callback variables. It interprets variables in headers, query parameters,
     and body fields from the web event request, providing a default value if the variable
     is not resolvable. This function is used in the context of OpenAPI callback specifications
@@ -776,17 +776,17 @@ function Search-PodeAsyncTask {
 
 .EXAMPLE
     # Convert a header variable with a default value
-    $result = Convert-PodeCallBackRuntimeExpression -Variable '$request.header.Content-Type' -DefaultValue 'application/json'
+    $result = Convert-PodeAsyncCallBackRuntimeExpression -Variable '$request.header.Content-Type' -DefaultValue 'application/json'
     Write-Output $result
 
 .EXAMPLE
     # Convert a query parameter variable with a default value
-    $result = Convert-PodeCallBackRuntimeExpression -Variable '$request.query.userId' -DefaultValue 'unknown'
+    $result = Convert-PodeAsyncCallBackRuntimeExpression -Variable '$request.query.userId' -DefaultValue 'unknown'
     Write-Output $result
 
 .EXAMPLE
     # Convert a body field variable with a default value
-    $result = Convert-PodeCallBackRuntimeExpression -Variable '$request.body#/user/name' -DefaultValue 'anonymous'
+    $result = Convert-PodeAsyncCallBackRuntimeExpression -Variable '$request.body#/user/name' -DefaultValue 'anonymous'
     Write-Output $result
 
 .NOTES
@@ -799,7 +799,7 @@ function Search-PodeAsyncTask {
     If the variable cannot be resolved from the request, the provided default value is used.
     If no default value is provided and the variable cannot be resolved, the variable itself is returned as the value.
 #>
-function Convert-PodeCallBackRuntimeExpression {
+function Convert-PodeAsyncCallBackRuntimeExpression {
     param(
         [string]$Variable,
         [string]$DefaultValue
@@ -1234,6 +1234,9 @@ function Get-PodeAsyncStopScriptBlock {
 .PARAMETER Async
     A [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] containing the asynchronous operation's details. This parameter is mandatory.
 
+.PARAMETER Raw
+    If specified, returns the raw [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] without any formatting.
+
 .EXAMPLE
     $asyncInfo = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
     $exportedInfo = Export-PodeAsyncInfo -Async $asyncInfo
@@ -1243,103 +1246,108 @@ function Get-PodeAsyncStopScriptBlock {
 #>
 function Export-PodeAsyncInfo {
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true )]
         [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]
-        $Async
+        $Async,
+
+        [switch]
+        $Raw
     )
-    process {
-        # Initialize a hashtable to store the exported information
-        $export = @{
-            Id           = $Async['Id']
-            Cancellable  = $Async['Cancellable']
-            # Format creation time in ISO 8601 UTC format
-            CreationTime = Format-PodeDateToIso8601 -Date $Async['CreationTime']
-            ExpireTime   = Format-PodeDateToIso8601 -Date $Async['ExpireTime']
-            Name         = $Async['Name']
-            State        = $Async['State']
-        }
-
-        # Include permission if it exists
-        if ($Async.ContainsKey('Permission')) {
-            $export.Permission = $Async['Permission']
-        }
-
-        # Include starting time if it exists
-        if ($Async['StartingTime']) {
-            $export.StartingTime = Format-PodeDateToIso8601 -Date $Async['StartingTime']
-        }
-
-        # Include callback settings if they exist
-        if ($Async['CallbackSettings']) {
-            $export.CallbackSettings = $Async['CallbackSettings']
-        }
-
-        # Include user if it exists
-        if ($Async.ContainsKey('User')) {
-            $export.User = $Async['User']
-        }
-
-        # Include permission if it exists (redundant check)
-        if ($Async.ContainsKey('Permission')) {
-            $export.Permission = $Async['Permission']
-        }
-
-        # Include SSE setting if it exists
-        if ($Async['EnableSse']) {
-            $export.SseEnabled = $Async['EnableSse']
-        }
-
-        # Include Progress setting if it exists
-        if ($Async.ContainsKey('Progress')) {
-            $export.Progress = [math]::Round($Async['Progress'], 2)
-        }
-
-        # If the task is completed, include the result or error based on the state
-        if ($Async['Runspace'].Handler.IsCompleted) {
-            switch ($Async['State'] ) {
-                'Failed' {
-                    $export.Error = $Async['Error']
-                    break
-                }
-                'Completed' {
-                    if ($Async['Result']) {
-                        $export.Result = $Async['Result']
-                    }
-                    break
-                }
-                'Aborted' {
-                    $export.Error = $Async['Error']
-                    break
-                }
-            }
-
-            # Include callback information if it exists
-            if ($Async.ContainsKey('CallbackTentative') -and $Async['CallbackTentative'] -gt 0) {
-                $export.CallbackInfo = @{
-                    Tentative = $Async['CallbackTentative']
-                    State     = $Async['CallbackInfoState']
-                    Url       = $Async['CallbackUrl']
-                }
-            }
-
-            # Include SSE event info state if it exists
-            if ($Async.ContainsKey('SeeEventInfoState')) {
-                $export.SeeEventInfoState = $Async['SeeEventInfoState']
-            }
-
-            # Ensure completed time is set, retrying after a short delay if necessary
-            if (-not $Async.ContainsKey('CompletedTime')) {
-                Start-Sleep 1
-            }
-            if ($Async.ContainsKey('CompletedTime')) {
-                # Format completed time in ISO 8601 UTC format
-                $export.CompletedTime = Format-PodeDateToIso8601 -Date $Async['CompletedTime']
-            }
-        }
-
-        # Return the exported information
-        return $export
+    if ($Raw.IsPresent) {
+        return $Async
     }
+
+    # Initialize a hashtable to store the exported information
+    $export = @{
+        Id           = $Async['Id']
+        Cancellable  = $Async['Cancellable']
+        # Format creation time in ISO 8601 UTC format
+        CreationTime = Format-PodeDateToIso8601 -Date $Async['CreationTime']
+        ExpireTime   = Format-PodeDateToIso8601 -Date $Async['ExpireTime']
+        Name         = $Async['Name']
+        State        = $Async['State']
+    }
+
+    # Include permission if it exists
+    if ($Async.ContainsKey('Permission')) {
+        $export.Permission = $Async['Permission']
+    }
+
+    # Include starting time if it exists
+    if ($Async['StartingTime']) {
+        $export.StartingTime = Format-PodeDateToIso8601 -Date $Async['StartingTime']
+    }
+
+    # Include callback settings if they exist
+    if ($Async['CallbackSettings']) {
+        $export.CallbackSettings = $Async['CallbackSettings']
+    }
+
+    # Include user if it exists
+    if ($Async.ContainsKey('User')) {
+        $export.User = $Async['User']
+    }
+
+    # Include permission if it exists (redundant check)
+    if ($Async.ContainsKey('Permission')) {
+        $export.Permission = $Async['Permission']
+    }
+
+    # Include SSE setting if it exists
+    if ($Async['EnableSse']) {
+        $export.SseEnabled = $Async['EnableSse']
+    }
+
+    # Include Progress setting if it exists
+    if ($Async.ContainsKey('Progress')) {
+        $export.Progress = [math]::Round($Async['Progress'], 2)
+    }
+
+    # If the task is completed, include the result or error based on the state
+    if ($Async['Runspace'].Handler.IsCompleted) {
+        switch ($Async['State'] ) {
+            'Failed' {
+                $export.Error = $Async['Error']
+                break
+            }
+            'Completed' {
+                if ($Async['Result']) {
+                    $export.Result = $Async['Result']
+                }
+                break
+            }
+            'Aborted' {
+                $export.Error = $Async['Error']
+                break
+            }
+        }
+
+        # Include callback information if it exists
+        if ($Async.ContainsKey('CallbackTentative') -and $Async['CallbackTentative'] -gt 0) {
+            $export.CallbackInfo = @{
+                Tentative = $Async['CallbackTentative']
+                State     = $Async['CallbackInfoState']
+                Url       = $Async['CallbackUrl']
+            }
+        }
+
+        # Include SSE event info state if it exists
+        if ($Async.ContainsKey('SeeEventInfoState')) {
+            $export.SeeEventInfoState = $Async['SeeEventInfoState']
+        }
+
+        # Ensure completed time is set, retrying after a short delay if necessary
+        if (-not $Async.ContainsKey('CompletedTime')) {
+            Start-Sleep 1
+        }
+        if ($Async.ContainsKey('CompletedTime')) {
+            # Format completed time in ISO 8601 UTC format
+            $export.CompletedTime = Format-PodeDateToIso8601 -Date $Async['CompletedTime']
+        }
+    }
+
+    # Return the exported information
+    return $export
 }
 
 <#
