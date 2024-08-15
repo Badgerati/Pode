@@ -1665,7 +1665,7 @@ Describe 'New-PodeCron' {
 }
 
 
- 
+
 
 
 Describe 'ConvertTo-PodeYamlInternal Tests' {
@@ -1683,7 +1683,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
 - two
 - three
 '@)
-            $result | Should -Be ($expected.Trim() -Replace "`r`n", "`n")
+            $result | Should -Be  $expected.Trim()
         }
 
         It 'Converts hashtables correctly' {
@@ -1692,7 +1692,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
                 key2 = 'value2'
             }
             $result = ConvertTo-PodeYamlInternal -InputObject $hashTable -NoNewLine
-            $result | Should -Be "key1: value1`nkey2: value2"
+            $result | Should -Be "key1: value1$([Environment]::NewLine)key2: value2"
         }
     }
 
@@ -1705,7 +1705,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
             }
             $result = ConvertTo-PodeYamlInternal -InputObject  $nestedHash -NoNewLine
 
-            $result | Should -Be "parent: `n  child: value"
+            $result | Should -Be "parent: $([Environment]::NewLine)  child: value"
         }
     }
 

@@ -1839,9 +1839,10 @@ function ConvertFrom-PodeRequestContent {
                 $Result.Data = ($Content | ConvertFrom-Json -AsHashtable:$PodeContext.Server.Web.Conversion.JsonToHashTable)
             }
             else {
-                if($PodeContext.Server.Web.Conversion.JsonToHashTable){
+                if ($PodeContext.Server.Web.Conversion.JsonToHashTable) {
                     $Result.Data = ConvertTo-PodeHashtable -PSObject ($Content | ConvertFrom-Json)
-                }else{
+                }
+                else {
                     $Result.Data = ($Content | ConvertFrom-Json)
                 }
             }
@@ -3731,7 +3732,7 @@ function ConvertTo-PodeYamlInternal {
             'string' {
                 $String = "$InputObject"
                 if (($string -match '[\r\n]' -or $string.Length -gt 80) -and ($string -notlike 'http*')) {
-                    $multiline = [System.Text.StringBuilder]::new("|`n")
+                    $multiline = [System.Text.StringBuilder]::new('|' + [Environment]::NewLine)
 
                     $items = $string.Split("`n")
                     for ($i = 0; $i -lt $items.Length; $i++) {
@@ -3794,7 +3795,7 @@ function ConvertTo-PodeYamlInternal {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
-                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = [Environment]::NewLine + $padding }
                         $null = $string.Append( $NewPadding).Append( $item).Append(': ')
                         if ($InputObject[$item] -is [System.ValueType]) {
                             if ($InputObject[$item] -is [bool]) {
@@ -3820,7 +3821,7 @@ function ConvertTo-PodeYamlInternal {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in ($InputObject | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name)) {
-                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                        if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = [Environment]::NewLine + $padding }
                         $null = $string.Append( $NewPadding).Append( $item).Append(': ')
                         if ($InputObject.$item -is [System.ValueType]) {
                             if ($InputObject.$item -is [bool]) {
@@ -3845,7 +3846,7 @@ function ConvertTo-PodeYamlInternal {
                 $string = [System.Text.StringBuilder]::new()
                 $index = 0
                 foreach ($item in $InputObject ) {
-                    if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = "`n$padding" }
+                    if ($NoNewLine -and $index++ -eq 0) { $NewPadding = '' } else { $NewPadding = [Environment]::NewLine +$padding }
                     $null = $string.Append($NewPadding).Append('- ').Append((ConvertTo-PodeYamlInternal -InputObject $item -depth $Depth -NestingLevel ($NestingLevel + 1) -NoNewLine))
                 }
                 $string.ToString()

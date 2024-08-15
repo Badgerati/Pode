@@ -9,7 +9,24 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
     if (!([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' })) {
-        Add-Type -LiteralPath "$($src)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
+        $frameworkDescription = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
+        $loaded = $false
+        if ($frameworkDescription -match '(\d+)\.(\d+)\.(\d+)') {
+            $majorVersion = [int]$matches[1]
+
+            for ($version = $majorVersion; $version -ge 6; $version--) {
+                $dllPath = "$($src)/Libs/net$version.0/Pode.dll"
+                if (Test-Path $dllPath) {
+                    Add-Type -LiteralPath $dllPath -ErrorAction Stop
+                    $loaded = $true
+                    break
+                }
+            }
+        }
+
+        if (-not $loaded) {
+            Add-Type -LiteralPath "$($src)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
+        }
     }
     function Compare-Hashtable {
         param (
@@ -118,12 +135,12 @@ Describe 'ConvertFrom-PodeYaml test' {
         BeforeAll {
             # Mocking the internal function ConvertFrom-PodeYamlInternal
             Mock -CommandName ConvertFrom-PodeYamlInternal -MockWith {
-                return @{ openapi = '3.0.3'; info = @{ title = 'Async test - OpenAPI 3.0'; version = '0.0.1' }; paths = @{ '/task/{taskId}' = @{ get = @{ summary = 'Get Pode Task Info' } } } }
+                return [ordered]@{ openapi = '3.0.3'; info = @{ title = 'Async test - OpenAPI 3.0'; version = '0.0.1' }; paths = @{ '/task/{taskId}' = @{ get = @{ summary = 'Get Pode Task Info' } } } }
             }
 
             # Mocking the external function ConvertFrom-Yaml
             Mock -CommandName ConvertFrom-Yaml -MockWith {
-                return @{ openapi = '3.0.3'; info = @{ title = 'Async test - OpenAPI 3.0'; version = '0.0.1' }; paths = @{ '/task/{taskId}' = @{ get = @{ summary = 'Get Pode Task Info' } } } }
+                return [ordered]@{ openapi = '3.0.3'; info = @{ title = 'Async test - OpenAPI 3.0'; version = '0.0.1' }; paths = @{ '/task/{taskId}' = @{ get = @{ summary = 'Get Pode Task Info' } } } }
             }
 
             # Mocking the Test-PodeModuleInstalled function
@@ -161,7 +178,7 @@ Describe 'ConvertFrom-PodeYaml test' {
 
                # Assert-MockCalled -CommandName ConvertFrom-PodeYamlInternal -Times 1
                 Assert-MockCalled -CommandName ConvertFrom-Yaml -Times 0
-                $result | Should -BeOfType 'ordered'
+                $result | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
                 $result.openapi | Should -Be '3.0.3'
             }
         }
@@ -180,6 +197,7 @@ Describe 'ConvertFrom-PodeYaml test' {
                         }
                     }
                 }
+
             }
 
             It 'Should use the external converter if a YAML module is available' {
@@ -198,7 +216,7 @@ Describe 'ConvertFrom-PodeYaml test' {
 
                 Assert-MockCalled -CommandName ConvertFrom-Yaml -Times 1
               #  Assert-MockCalled -CommandName ConvertFrom-PodeYamlInternal -Times 0
-                $result | Should -BeOfType 'hashtable'
+                $result | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
                 $result.openapi | Should -Be '3.0.3'
             }
         }

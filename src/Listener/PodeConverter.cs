@@ -1,3 +1,5 @@
+#if !NETSTANDARD2_0
+
 using System;
 using System.Collections;
 using System.Collections.Specialized;
@@ -198,7 +200,7 @@ namespace Pode
                         foreach (object item in list)
                         {
                             string newPadding = noNewLine && arrayIndex++ == 0 ? string.Empty : Environment.NewLine + padding;
-                            arrayStringBuilder.Append(newPadding).Append("- ").Append(ToYaml(item, depth, nestingLevel + 1,true).Trim('\''));
+                            arrayStringBuilder.Append(newPadding).Append("- ").Append(ToYaml(item, depth, nestingLevel + 1, true).Trim('\''));
                         }
                         output.Append(arrayStringBuilder.ToString());
                     }
@@ -317,3 +319,4 @@ namespace Pode
 
 
 }
+#endif
