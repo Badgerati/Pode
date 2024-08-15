@@ -317,11 +317,7 @@ Describe 'Get-PodeAsyncRouteOperation Tests' {
     }
 }
 
-# Test script for Get-PodeAsyncRoute function using Pester
-# Save this as Get-PodeAsyncRoute.Tests.ps1
-
 Describe 'Get-PodeAsyncRoute' {
-
 
     BeforeAll {
         # Set up mock data for testing
@@ -430,7 +426,72 @@ Describe 'Get-PodeAsyncRoute' {
         $Result = Get-PodeAsyncRoute -Raw
 
         # Assert
-        $Result.Count |should -Be 3
-        $Result.GetType().tostring() |should -Be  'System.Collections.Concurrent.ConcurrentDictionary`2[System.String,System.Management.Automation.PSObject]'
+        $Result.Count | should -Be 3
+        $Result.GetType().tostring() | should -Be  'System.Collections.Concurrent.ConcurrentDictionary`2[System.String,System.Management.Automation.PSObject]'
+    }
+}
+
+
+# Test script for Get-PodeAsyncRouteOperation function using Pester
+# Save this as Get-PodeAsyncRouteOperation.Tests.ps1
+
+Describe 'Get-PodeAsyncRouteOperation' {
+    BeforeAll {
+        # Mock data setup
+        $operationId1 = '123e4567-e89b-12d3-a456-426614174000'
+        $asyncOperationDetails1 = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
+        $asyncOperationDetails1['Id'] = $operationId1
+        $asyncOperationDetails1['State'] = 'Running'
+        $asyncOperationDetails1['Cancellable'] = $true
+        $asyncOperationDetails1['CreationTime'] = Get-Date
+        $asyncOperationDetails1['ExpireTime'] = ($asyncOperationDetails1['CreationTime']).AddMinutes(10)
+        $asyncOperationDetails1['Name'] = 'PesterTest1'
+        $PodeContext = @{
+            AsyncRoutes = @{
+                Results = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
+            }
+        }
+        $PodeContext.AsyncRoutes.Results[$operationId1] = $asyncOperationDetails1
+
+        # Mock the Export-PodeAsyncInfo function
+        Mock -CommandName 'Export-PodeAsyncInfo' -MockWith {
+            param (
+                [switch]$Raw,
+                [Parameter(Mandatory)]
+                [psobject]$Async
+            )
+            return $Async
+        }
+
+        # Set a mock for the exception message
+        $PodeLocale = @{
+            asyncRouteOperationDoesNotExistExceptionMessage = 'The async route operation with Id {0} does not exist.'
+        }
+    }
+
+    It 'should retrieve the operation details for a valid Id' {
+        # Act
+        $result = Get-PodeAsyncRouteOperation -Id '123e4567-e89b-12d3-a456-426614174000'
+
+        # Assert
+        $result['Id'] | Should -Be '123e4567-e89b-12d3-a456-426614174000'
+        $result['Name'] | Should -Be 'PesterTest1'
+    }
+
+    It 'should return the raw data if -Raw is specified' {
+        # Act
+        $result = Get-PodeAsyncRouteOperation -Id '123e4567-e89b-12d3-a456-426614174000' -Raw
+
+        # Assert
+        $result | Should -BeExactly $PodeContext.AsyncRoutes.Results['123e4567-e89b-12d3-a456-426614174000']
+        Assert-MockCalled 'Export-PodeAsyncInfo' -Exactly 1 -Scope It -ParameterFilter { $Raw -and $_.Async -eq $PodeContext.AsyncRoutes.Results['123e4567-e89b-12d3-a456-426614174000'] }
+    }
+
+    It 'should throw an exception if the operation Id does not exist' {
+        # Arrange
+        $nonExistentId = '999e4567-e89b-12d3-a456-426614174999'
+
+        # Act & Assert
+        { Get-PodeAsyncRouteOperation -Id $nonExistentId } | Should -Throw -ErrorMessage "The async route operation with Id $nonExistentId does not exist."
     }
 }

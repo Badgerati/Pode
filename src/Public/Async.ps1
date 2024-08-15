@@ -1387,7 +1387,7 @@ function Get-PodeAsyncRoute {
         $nameMatches = [string]::IsNullOrEmpty($Name) -or $PodeContext.AsyncRoutes.Results[$key]['Name'] -eq $Name
 
         if ($idMatches -and $nameMatches) {
-            $result[$key]=$PodeContext.AsyncRoutes.Results[$key]
+            $result[$key] = $PodeContext.AsyncRoutes.Results[$key]
         }
     }
 
@@ -1459,6 +1459,9 @@ function Get-PodeAsyncRouteOperation {
 .PARAMETER Id
     A string representing the Id (typically a UUID) of the asynchronous route operation to abort. This parameter is mandatory.
 
+.PARAMETER Raw
+    If specified, returns the raw [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] without any formatting.
+
 .EXAMPLE
     $operationId = '123e4567-e89b-12d3-a456-426614174000'
     $operationDetails = Stop-PodeAsyncRouteOperation -Id $operationId
@@ -1472,7 +1475,10 @@ function Stop-PodeAsyncRouteOperation {
     param (
         [Parameter(Mandatory = $true)]
         [string]
-        $Id
+        $Id,
+
+        [switch]
+        $Raw
     )
     if ($PodeContext.AsyncRoutes.Results.ContainsKey($Id )) {
         $async = $PodeContext.AsyncRoutes.Results[$Id]
@@ -1481,7 +1487,7 @@ function Stop-PodeAsyncRouteOperation {
         $async['CompletedTime'] = [datetime]::UtcNow
         $async['Runspace'].Pipeline.Dispose()
         Complete-PodeAsyncRouteOperation -AsyncResult $async
-        return  Export-PodeAsyncInfo -Async $async
+        return  Export-PodeAsyncInfo -Async $async -Raw:$Raw
     }
     throw ($PodeLocale.asyncRouteOperationDoesNotExistExceptionMessage -f $Id)
 }
