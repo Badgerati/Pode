@@ -987,15 +987,31 @@ function Get-PodeAsyncSetScriptBlock {
 
         # If the task involves a user, include user information and add default permissions
         if ($async['User']) {
+            # Assign the user information from the async task to the result object
             $res.User = $async['User']
-            # Add default read permission for the user if not already present
-            if (! ($async['Permission'].Read.Users -icontains $async.User)) {
-                $async['Permission'].Read.Users += $async.User
+
+            # Iterate over the permission types: 'Read' and 'Write'
+            'Read', 'Write' | ForEach-Object {
+                # Check if the Permission hashtable contains the current permission type (e.g., 'Read' or 'Write')
+                if (! $async['Permission'].ContainsKey($_)) {
+                    # If not, initialize it as an empty hashtable
+                    $async['Permission'][$_] = @{}
+                    write-podehost "['Permission'][$_]"
+                }
+
+                # Check if the 'Users' array exists within the current permission type
+                if (! $async['Permission'][$_].ContainsKey('Users')) {
+                    # If not, initialize it as an empty array
+                    $async['Permission'][$_].Users = @()
+                }
+
+                # Add the user to the 'Users' array if they are not already present
+                if (! ($async['Permission'][$_].Users -icontains $async.User)) {
+                    $async['Permission'][$_].Users += $async.User
+                }
             }
-            # Add default write permission for the user if not already present
-            if (! ($async['Permission'].Write.Users -icontains $async.User)) {
-                $async['Permission'].Write.Users += $async.User
-            }
+
+            # Assign the updated Permission object back to the result object
             $res.Permission = $async['Permission']
         }
 

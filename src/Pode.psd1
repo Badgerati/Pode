@@ -178,6 +178,7 @@
         'Set-PodeAsyncProgress',
         'Get-PodeAsyncProgress',
         'Set-PodeOAAsyncRouteSchemaName',
+        'Set-PodeAsyncRoutePermission',
 
         # handlers
         'Add-PodeHandler',

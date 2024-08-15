@@ -769,7 +769,193 @@ function Add-PodeAsyncQueryRoute {
         return $route
     }
 }
+<#
+.SYNOPSIS
+    Assigns or removes permissions to/from an asynchronous route in Pode based on specified criteria such as users, groups, roles, and scopes.
 
+.DESCRIPTION
+    The `Set-PodeAsyncRoutePermission` function allows you to define and assign or remove specific permissions to/from an async route.
+    You can control access to the route by specifying which users, groups, roles, or scopes have `Read` or `Write` permissions.
+
+.PARAMETER Route
+    A hashtable array representing the async route(s) to which permissions will be assigned or from which they will be removed. This parameter is mandatory.
+
+.PARAMETER Type
+    Specifies the type of permission to assign or remove. Acceptable values are 'Read' or 'Write'. This parameter is mandatory.
+
+.PARAMETER Groups
+    Specifies the groups that will be granted or removed from the specified permission type.
+
+.PARAMETER Users
+    Specifies the users that will be granted or removed from the specified permission type.
+
+.PARAMETER Roles
+    Specifies the roles that will be granted or removed from the specified permission type.
+
+.PARAMETER Scopes
+    Specifies the scopes that will be granted or removed from the specified permission type.
+
+.PARAMETER Remove
+    If specified, the function will remove the specified users, groups, roles, or scopes from the permissions instead of adding them.
+
+.PARAMETER PassThru
+    If specified, the function will return the modified route object(s) after assigning or removing permissions.
+
+.EXAMPLE
+    Add-PodeRoute -PassThru -Method Put -Path '/asyncState' -Authentication 'Validate' -Group 'Support' `
+    -ScriptBlock {
+        $data = Get-PodeState -Name 'data'
+        Write-PodeHost 'data:'
+        Write-PodeHost $data -Explode -ShowType
+        Start-Sleep $data.sleepTime
+        return @{ InnerValue = $data.Message }
+    } | Set-PodeAsyncRoute `
+        -ResponseContentType 'application/json', 'application/yaml' -Timeout 300 -PassThru |
+        Set-PodeAsyncRoutePermission -Type Read -Groups 'Developer'
+
+    This example creates an async route that requires authentication and assigns 'Read' permission to the 'Developer' group.
+
+.EXAMPLE
+    # Removing 'Developer' group from Read permissions
+    Set-PodeAsyncRoutePermission -Route $route -Type Read -Groups 'Developer' -Remove
+
+    This example removes the 'Developer' group from the 'Read' permissions of the specified async route.
+
+.OUTPUTS
+    [hashtable]
+#>
+function Set-PodeAsyncRoutePermission {
+    param(
+        [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [ValidateSet('Read', 'Write')]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [string[]]
+        $Groups,
+
+        [Parameter()]
+        [string[]]
+        $Users,
+
+        [Parameter()]
+        [string[]]
+        $Roles,
+
+        [Parameter()]
+        [string[]]
+        $Scopes,
+
+        [switch]
+        $Remove,
+
+        [switch]
+        $PassThru
+    )
+
+    Begin {
+        $pipelineValue = @()
+    }
+
+    Process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    End {
+        # Helper function to add or remove items from a permission list
+        function Update-PermissionList {
+            param (
+                [Parameter(Mandatory = $true)]
+                [AllowEmptyCollection()]
+                [string[]]$List,
+
+                [string[]]$Items,
+
+                [switch]$Remove
+            )
+            # Initialize $List if it's null
+            if (-not $List) {
+                $List = @()
+            }
+
+            if ($Remove) {
+                return $List | Where-Object { $_ -notin $Items }
+            }
+            else {
+                return $List + $Items
+            }
+        }
+
+        # Handle multiple piped-in routes
+        if ($pipelineValue.Count -gt 1) {
+            $Route = $pipelineValue
+        }
+
+        # Validate that the Route parameter is not null
+        if ($null -eq $Route) {
+            throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
+        }
+
+        foreach ($r in $Route) {
+            # Initialize the permission hashtable for the route if not already present
+            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName)) {
+                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
+                    Permission = @{}
+                }
+            }
+
+            # Initialize the permission type hashtable if not already present
+            if (! $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission.ContainsKey($Type)) {
+                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type] = @{}
+            }
+
+
+
+            # Assign or remove users from the specified permission type
+            if ($Users) {
+                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].ContainsKey('Users')) {
+                    $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Users = @()
+                }
+                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Users = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Users -Items $Users -Remove:$Remove
+            }
+
+            # Assign or remove groups from the specified permission type
+            if ($Groups) {
+                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].ContainsKey('Groups')) {
+                    $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Groups = @()
+                }
+                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Groups = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Groups -Items $Groups -Remove:$Remove
+            }
+
+            # Assign or remove roles from the specified permission type
+            if ($Roles) {
+                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].ContainsKey('Roles')) {
+                    $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Roles = @()
+                }
+                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Roles = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Roles -Items $Roles -Remove:$Remove
+            }
+
+            # Assign or remove scopes from the specified permission type
+            if ($Scopes) {
+                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].ContainsKey('Scopes')) {
+                    $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Scopes = @()
+                }
+                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Scopes = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Scopes -Items $Scopes -Remove:$Remove
+            }
+        }
+
+        # Return the route object(s) if PassThru is specified
+        if ($PassThru) {
+            return $Route
+        }
+    }
+}
 
 
 
@@ -850,24 +1036,6 @@ function Add-PodeAsyncQueryRoute {
     - $request.query.param-name  : query-param-value
     - $request.header.header-name: application/json
     - $request.body#/field-name  : callbackUrl
-
-.PARAMETER Permission
-    Access list
-    Permission object structure
-    @{
-        Read  = @{
-            Groups = @()
-            Roles      = @()
-            Scopes     = @()
-            Users      = @()
-        }
-        Write = @{
-            Groups      = @()
-            Roles       = @()
-            Scopes      = @()
-            Users       = @()
-        }
-    }
 
 .PARAMETER NotCancellable
     The Async operation cannot be forcefully terminated
@@ -982,10 +1150,6 @@ function Set-PodeAsyncRoute {
         $CallbackHeaderFields = @{},
 
         [Parameter()]
-        [hashtable]
-        $Permission = @{},
-
-        [Parameter()]
         [switch]
         $NotCancellable,
 
@@ -1017,25 +1181,6 @@ function Set-PodeAsyncRoute {
                 Method       = $CallbackMethod
                 HeaderFields = $CallbackHeaderFields
             }
-        }
-
-        # Set permission hashtable
-        if ( $Permission.ContainsKey('Read')) {
-            if (! $Permission.Read.ContainsKey('Users')) {
-                $Permission.Read['Users'] = @()
-            }
-        }
-        else {
-            $Permission['Read'] = @{Users = @() }
-        }
-
-        if ( $Permission.ContainsKey('Write')) {
-            if (! $Permission.Write.ContainsKey('Users')) {
-                $Permission.Write['Users'] = @()
-            }
-        }
-        else {
-            $Permission['Write'] = @{Users = @() }
         }
 
         # Start the housekeeper for async routes
@@ -1074,15 +1219,19 @@ function Set-PodeAsyncRoute {
                     }
                 }
             }
+            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName)) {
+                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
+                    Permission = @{}
+                }
+            }
             # Store the route's async task definition in Pode context
-            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
+            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] += @{
                 Name             = $r.AsyncPoolName
                 Script           = ConvertTo-PodeEnhancedScriptBlock -ScriptBlock $r.Logic
                 UsingVariables   = $r.UsingVariables
                 Arguments        = (Protect-PodeValue -Value $r.Arguments -Default @{})
                 CallbackSettings = $CallbackSettings
                 Cancellable      = !($NotCancellable.IsPresent)
-                Permission       = $Permission
                 MinRunspaces     = $MinRunspaces
                 MaxRunspaces     = $MaxRunspaces
                 EnableSse        = $EnableSse.IsPresent
