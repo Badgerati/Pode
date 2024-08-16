@@ -1795,8 +1795,8 @@ function Set-PodeAsyncRouteOASchemaName {
         }
 
         # Update the hiddenComponents.AsyncRoute property of the OpenAPI definition
-        # with the schema details fetched or provided, by calling Get-PodeOAAsyncRouteSchemaNameInternal function.
-        $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute = Get-PodeOAAsyncRouteSchemaNameInternal `
+        # with the schema details fetched or provided, by calling Get-PodeAsyncRouteOASchemaNameInternal function.
+        $PodeContext.Server.OpenApi.Definitions[$tag].hiddenComponents.AsyncRoute = Get-PodeAsyncRouteOASchemaNameInternal `
             -OATypeName $OATypeName `  # Passes the OpenAPI type name.
         -TaskIdName $TaskIdName `  # Passes the task ID name.
         -QueryRequestName $QueryRequestName `  # Passes the query request name.

@@ -1493,7 +1493,7 @@ function Get-PodeAsyncRouteOAName {
     Retrieves the schema names for asynchronous Pode route operations.
 
 .DESCRIPTION
-    The Get-PodeOAAsyncRouteSchemaNameInternal function is designed to return a hashtable containing schema names for asynchronous Pode route operations.
+    The Get-PodeAsyncRouteOASchemaNameInternal function is designed to return a hashtable containing schema names for asynchronous Pode route operations.
     It includes the type names and parameter names that are used for OpenAPI documentation.
 
 .PARAMETER OATypeName
@@ -1508,7 +1508,7 @@ function Get-PodeAsyncRouteOAName {
 .PARAMETER QueryParameterName
     The name of the query parameter in the OpenAPI schema. Defaults to 'QueryParameter'.
 #>
-function Get-PodeOAAsyncRouteSchemaNameInternal {
+function Get-PodeAsyncRouteOASchemaNameInternal {
     param (
         [string]
         $OATypeName = 'AsyncTask',

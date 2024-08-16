@@ -1260,7 +1260,7 @@ function Get-PodeOABaseObject {
             }
             operationId      = @()
             #Async Route OpenAPI names
-            AsyncRoute       = Get-PodeOAAsyncRouteSchemaNameInternal
+            AsyncRoute       = Get-PodeAsyncRouteOASchemaNameInternal
         }
     }
 }
