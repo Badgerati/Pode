@@ -1728,7 +1728,7 @@ function Get-PodeAsyncProgress {
     Sets the schema names for asynchronous Pode route operations.
 
 .DESCRIPTION
-    The Set-PodeOAAsyncRouteSchemaName function is designed to configure schema names for asynchronous Pode route operations in OpenAPI documentation.
+    The Set-PodeAsyncRouteOASchemaName function is designed to configure schema names for asynchronous Pode route operations in OpenAPI documentation.
     It stores the specified type names and parameter names for OpenAPI documentation in the Pode context server's OpenAPI definitions.
 
 .PARAMETER OATypeName
@@ -1747,7 +1747,7 @@ function Get-PodeAsyncProgress {
 .PARAMETER OADefinitionTag
     The tags associated with the OpenAPI definitions that need to be updated.
 #>
-function Set-PodeOAAsyncRouteSchemaName {
+function Set-PodeAsyncRouteOASchemaName {
     param(
         [string]
         $OATypeName,

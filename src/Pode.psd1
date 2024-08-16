@@ -176,7 +176,7 @@
         'Test-PodeAsyncRouteOperation',
         'Set-PodeAsyncProgress',
         'Get-PodeAsyncProgress',
-        'Set-PodeOAAsyncRouteSchemaName',
+        'Set-PodeAsyncRouteOASchemaName',
         'Set-PodeAsyncRoutePermission',
         'Get-PodeAsyncRoute',
 
