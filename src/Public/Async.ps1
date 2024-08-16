@@ -1297,7 +1297,7 @@ function Set-PodeAsyncRoute {
     Retrieves asynchronous Pode route operations based on specified query conditions.
 
 .DESCRIPTION
-    The  Get-PodeAsyncRouteOperation function acts as a public interface for searching asynchronous Pode route operations.
+    The   Get-PodeAsyncRouteOperationByFilter function acts as a public interface for searching asynchronous Pode route operations.
     It utilizes the Search-PodeAsyncTask function to perform the search based on the specified query conditions.
 
 .PARAMETER Filter
@@ -1312,14 +1312,14 @@ function Set-PodeAsyncRoute {
         'State' = @{ 'op' = 'EQ'; 'value' = 'Running' }
         'CreationTime' = @{ 'op' = 'GT'; 'value' = (Get-Date).AddHours(-1) }
     }
-    $results =  Get-PodeAsyncRouteOperation -Filter $filter
+    $results =   Get-PodeAsyncRouteOperationByFilter -Filter $filter
 
     This example retrieves route operations that are in the 'Running' state and were created within the last hour.
 
 .OUTPUTS
     Returns an array of hashtables or [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] representing the matched route operations.
 #>
-function  Get-PodeAsyncRouteOperation {
+function   Get-PodeAsyncRouteOperationByFilter {
     param (
         [Parameter(Mandatory = $true)]
         [hashtable]
@@ -1328,8 +1328,17 @@ function  Get-PodeAsyncRouteOperation {
         [switch]
         $Raw
     )
-
-    Export-PodeAsyncInfo -Raw:$Raw -Async (Search-PodeAsyncTask -Query $Filter)
+    $async = Search-PodeAsyncTask -Query $Filter
+    if ($async -is [System.Object[]]) {
+        $result = @()
+        foreach ($item in $async) {
+            $result += Export-PodeAsyncInfo -Raw:$Raw -Async $item
+        }
+    }
+    else {
+        $result = Export-PodeAsyncInfo -Raw:$Raw -Async $async
+    }
+    return $result
 }
 
 <#
@@ -1379,16 +1388,23 @@ function Get-PodeAsyncRoute {
     )
 
     # Filter the async routes based on Id and Name
-    # If Id or Name is $null or empty, those conditions are ignored
-    $result = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
-
-    foreach ($key in $PodeContext.AsyncRoutes.Results.Keys) {
-        $idMatches = [string]::IsNullOrEmpty($Id) -or $PodeContext.AsyncRoutes.Results[$key]['Id'] -eq $Id
-        $nameMatches = [string]::IsNullOrEmpty($Name) -or $PodeContext.AsyncRoutes.Results[$key]['Name'] -eq $Name
-
-        if ($idMatches -and $nameMatches) {
-            $result[$key] = $PodeContext.AsyncRoutes.Results[$key]
+    if (![string]::IsNullOrEmpty($Id)) {
+        $result = $PodeContext.AsyncRoutes.Results[$Id]
+    }
+    elseif (! [string]::IsNullOrEmpty($Name)) {
+        foreach ($key in $PodeContext.AsyncRoutes.Results.Keys) {
+            if ($PodeContext.AsyncRoutes.Results[$key]['Name'] -ieq $Name) {
+                $result = $PodeContext.AsyncRoutes.Results[$key]
+                break
+            }
         }
+    }
+    else {
+        $result = $PodeContext.AsyncRoutes.Results
+    }
+
+    if ($null -eq $result) {
+        return $null
     }
 
     # If the -Raw switch is specified, return the filtered results directly
@@ -1396,55 +1412,20 @@ function Get-PodeAsyncRoute {
         return $result
     }
 
-    # Otherwise, process each item in the filtered results through Export-PodeAsyncInfo
-    $export = @{}
-    foreach ($item in $result.Values) {
-        $export[$item.Id] += Export-PodeAsyncInfo -Raw:$Raw -Async $item
+    if ([string]::IsNullOrEmpty($Id) -and [string]::IsNullOrEmpty($Name)) {
+        # Otherwise, process each item in the filtered results through Export-PodeAsyncInfo
+        $export = @()
+        foreach ($item in $result.Values) {
+            $export += Export-PodeAsyncInfo  -Async $item
+        }
     }
-
+    else {
+        $export = Export-PodeAsyncInfo  -Async $result
+    }
     # Return the processed export result
     return $export
 }
 
-
-<#
-.SYNOPSIS
-    Retrieves detailed information about a specific asynchronous Pode route operation by its Id.
-
-.DESCRIPTION
-    The Get-PodeAsyncRouteOperation function fetches the details of an asynchronous Pode route operation based on the provided Id.
-    If the operation exists, it returns the detailed information using the Export-PodeAsyncInfo function.
-    If the operation does not exist, it throws an exception with an appropriate error message.
-
-.PARAMETER Id
-    A string representing the Id (typically a UUID) of the asynchronous route operation to retrieve. This parameter is mandatory.
-
-.PARAMETER Raw
-    If specified, returns the raw [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] without any formatting.
-
-.EXAMPLE
-    $operationId = '123e4567-e89b-12d3-a456-426614174000'
-    $operationDetails = Get-PodeAsyncRouteOperation -Id $operationId
-
-    This example retrieves the details of the asynchronous route operation with the Id '123e4567-e89b-12d3-a456-426614174000'.
-
-.OUTPUTS
-    Returns a hashtable representing the detailed information of the specified asynchronous route operation.
-#>
-function Get-PodeAsyncRouteOperation {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Id,
-
-        [switch]
-        $Raw
-    )
-    if ($PodeContext.AsyncRoutes.Results.ContainsKey($Id )) {
-        return   Export-PodeAsyncInfo -Raw:$Raw -Async $PodeContext.AsyncRoutes.Results[$Id]
-    }
-    throw ($PodeLocale.asyncRouteOperationDoesNotExistExceptionMessage -f $Id)
-}
 
 <#
 .SYNOPSIS
