@@ -294,4 +294,6 @@
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgressは、非同期ルートスクリプトブロック内でのみ使用できます。'
     progressLimitLowerThanCurrentExceptionMessage                     = '進行状況の制限は、現在の進行状況より低くすることはできません。'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} は異なる OpenAPI 定義間で異なります。'
+    routeNotMarkedAsAsyncExceptionMessage                             = "ルート '{0}' は非同期ルートとしてマークされていません。"
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "関数 '{0}' を同じルート '{1}' に対して複数回呼び出すことはできません。"
 }

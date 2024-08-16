@@ -294,5 +294,7 @@
     progressLimitLowerThanCurrentExceptionMessage                     = 'Une limite de progression ne peut pas être inférieure à la progression actuelle.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} varie entre différentes définitions OpenAPI.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "La route '{0}' n'est pas marquée comme une route asynchrone."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "La fonction '{0}' ne peut pas être invoquée plusieurs fois pour la même route '{1}'."
 }
 

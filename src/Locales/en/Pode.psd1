@@ -294,5 +294,6 @@
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress can only be used inside an Async Route Scriptblock.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'A Progress limit cannot be lower than the current progress.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} varies between different OpenAPI definitions.'
-
+    routeNotMarkedAsAsyncExceptionMessage                             = "The route '{0}' is not marked as an Async Route."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "The function '{0}' cannot be invoked multiple times for the same route '{1}'."
 }

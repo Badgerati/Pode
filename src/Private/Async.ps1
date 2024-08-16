@@ -1450,36 +1450,49 @@ function Get-PodeAsyncQueryScriptBlock {
 function Get-PodeAsyncRouteOAName {
     param (
         [string[]]
-        $Tag
+        $Tag,
+
+        [switch]
+        $ForEachOADefinition
     )
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $Tag
 
-    if ($DefinitionTag.Count -gt 1) {
-
-        for ( $i = 1 ; $i -lt $DefinitionTag.Count ; $i++) {
-
-            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.OATypeName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.OATypeName) {
-                # varies between different OpenAPI definitions.
-                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'OATypeName')
-            }
-
-            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryParameter -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryParameter) {
-                # varies between different OpenAPI definitions.
-                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryParameter')
-            }
-
-            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryRequestName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryRequestName) {
-                # varies between different OpenAPI definitions.
-                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryRequestName')
-            }
-
-            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.TaskIdName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.TaskIdName) {
-                # varies between different OpenAPI definitions.
-                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'TaskIdName')
-            }
-
+    if ($ForEachOADefinition.IsPresent) {
+        $result = @{}
+         if( $DefinitionTag -is [string]){
+           $DefinitionTag=[string[]]@($DefinitionTag)
+         }
+        for  ($i=0;$i -lt  $DefinitionTag.Count; $i++) {
+            $result[$DefinitionTag[$i]] = $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute
         }
-        return $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute
+        return $result
+    }
+    if ($DefinitionTag.Count -gt 1) {
+            for ( $i = 1 ; $i -lt $DefinitionTag.Count ; $i++) {
+
+                if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.OATypeName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.OATypeName) {
+                    # varies between different OpenAPI definitions.
+                    throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'OATypeName')
+                }
+
+                if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryParameter -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryParameter) {
+                    # varies between different OpenAPI definitions.
+                    throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryParameter')
+                }
+
+                if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryRequestName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryRequestName) {
+                    # varies between different OpenAPI definitions.
+                    throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryRequestName')
+                }
+
+                if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.TaskIdName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.TaskIdName) {
+                    # varies between different OpenAPI definitions.
+                    throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'TaskIdName')
+                }
+
+            }
+
+            return $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute
     }
     else {
         return $PodeContext.Server.OpenApi.Definitions[$DefinitionTag].hiddenComponents.AsyncRoute

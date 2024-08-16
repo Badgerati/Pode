@@ -222,7 +222,7 @@ Describe 'Remove-PodeRoute' {
 
     It 'Removes async route and cleans up runspace and async route pools' {
         $route = Add-PodeRoute -PassThru -Method Get -Path '/async' -ScriptBlock { Write-Host 'hello' } |
-            Set-PodeAsyncRoute -MaxRunspaces 5 -MinRunspaces 3 -ResponseContentType 'application/json'  -Timeout 300 -NoOpenApi -PassThru
+            Set-PodeAsyncRoute -MaxRunspaces 5 -MinRunspaces 3 -ResponseContentType 'application/json'  -Timeout 300 -PassThru
         $asyncPoolName = $route.AsyncPoolName
         $PodeContext.RunspacePools[$asyncPoolName].Pool = New-Object PSObject -Property @{
             IsDisposed = $true # to avoid to call BeginClose($null,$null)
@@ -238,10 +238,10 @@ Describe 'Remove-PodeRoute' {
         Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
 
         $route1 =  Add-PodeRoute -PassThru -Method Get -Path '/asyncusers' -ScriptBlock { Write-Host 'hello' } |
-        Set-PodeAsyncRoute -MaxRunspaces $maxRunspaces -MinRunspaces 3 -ResponseContentType 'application/json'  -Timeout 300 -NoOpenApi -PassThru
+        Set-PodeAsyncRoute -MaxRunspaces $maxRunspaces -MinRunspaces 3 -ResponseContentType 'application/json'  -Timeout 300 -PassThru
 
         $route2 =  Add-PodeRoute -PassThru -Method Get -Path '/asyncusers' -EndpointName user -ScriptBlock { Write-Host 'hello' } |
-        Set-PodeAsyncRoute -MaxRunspaces $maxRunspaces -MinRunspaces 3 -ResponseContentType 'application/yaml'  -Timeout 300 -NoOpenApi -PassThru
+        Set-PodeAsyncRoute -MaxRunspaces $maxRunspaces -MinRunspaces 3 -ResponseContentType 'application/yaml'  -Timeout 300 -PassThru
 
         $PodeContext.RunspacePools[$route1.AsyncPoolName].Pool = New-Object PSObject -Property @{
             IsDisposed = $true # to avoid to call BeginClose($null,$null)

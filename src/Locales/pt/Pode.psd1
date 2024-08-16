@@ -294,4 +294,6 @@
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress só pode ser usado dentro de um Scriptblock de Rota Assíncrona.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Um limite de progresso não pode ser inferior ao progresso atual.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} varia entre diferentes definições OpenAPI.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "A rota '{0}' não está marcada como uma Rota Assíncrona."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "A função '{0}' não pode ser invocada várias vezes para a mesma rota '{1}'."
 }

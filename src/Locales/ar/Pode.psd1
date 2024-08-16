@@ -294,4 +294,6 @@
     progressLimitLowerThanCurrentExceptionMessage                     = 'لا يمكن أن يكون حد التقدم أقل من التقدم الحالي.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} يختلف بين تعريفات OpenAPI المختلفة.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "المسار '{0}' لم يتم وضع علامة عليه كمسار غير متزامن."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "لا يمكن استدعاء الدالة '{0}' عدة مرات لنفس المسار '{1}'."
 }

@@ -28,8 +28,10 @@ Describe 'Set-PodeAsyncRoutePermission' {
             # Example route object to test with
             $route = @{
                 AsyncPoolName = 'testRoute'
+                IsAsync       = $true
             }
-
+            $PodeContext.AsyncRoutes.Items[$route.AsyncPoolName] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            $PodeContext.AsyncRoutes.Items[$route.AsyncPoolName].Permission = @{}
             # Sample users, groups, roles, and scopes
             $users = @('user1', 'user2')
             $groups = @('group1', 'group2')
@@ -71,10 +73,14 @@ Describe 'Set-PodeAsyncRoutePermission' {
 
         It 'should handle multiple routes piped in' {
             $routes = @(
-                @{ AsyncPoolName = 'route1' },
-                @{ AsyncPoolName = 'route2' }
+                @{ AsyncPoolName = 'route1' ; IsAsync = $true },
+                @{ AsyncPoolName = 'route2' ; IsAsync = $true }
             )
 
+            $PodeContext.AsyncRoutes.Items['route1'] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            $PodeContext.AsyncRoutes.Items['route1'].Permission = @{}
+            $PodeContext.AsyncRoutes.Items['route2'] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            $PodeContext.AsyncRoutes.Items['route2'].Permission = @{}
             $routes | Set-PodeAsyncRoutePermission -Type 'Read' -Users $users
 
             $PodeContext.AsyncRoutes.Items['route1'].Permission.Read.Users | Should -Be $users
@@ -109,7 +115,9 @@ Describe 'Set-PodeAsyncRoutePermission' {
             # Example route object to test with
             $route = @{
                 AsyncPoolName = 'testRoute'
+                IsAsync = $true
             }
+            $PodeContext.AsyncRoutes.Items['testRoute'] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
 
             # Initialize permissions for testing remove functionality
             $PodeContext.AsyncRoutes.Items['testRoute'] = @{
@@ -477,7 +485,7 @@ Describe ' Get-PodeAsyncRouteOperationByFilter' {
     It 'should throw an exception if the property does not exist' {
 
         { Get-PodeAsyncRouteOperationByFilter -Filter @{
-            'notExist' = @{ 'op' = 'EQ'; 'value' = $true}
-        }} | Should -Throw -ExpectedMessage ($PodeLocale.invalidQueryElementExceptionMessage -f 'notExist')
+                'notExist' = @{ 'op' = 'EQ'; 'value' = $true }
+            } } | Should -Throw -ExpectedMessage ($PodeLocale.invalidQueryElementExceptionMessage -f 'notExist')
     }
 }

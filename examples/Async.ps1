@@ -48,13 +48,13 @@
 
     $response_asyncParam = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncParam' -Method Put -Headers $mortyCommonHeaders
 
-    $response_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForeverTimeout' -Method Put -Headers $mortyCommonHeaders
+    $response_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncInfiniteLoopTimeout' -Method Put -Headers $mortyCommonHeaders
 
     $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mortyCommonHeaders
 
 
 
-$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForever' -Method Put -Headers $mindyCommonHeaders
+$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncInfiniteLoop' -Method Put -Headers $mindyCommonHeaders
 
     $response_Mindy_asyncUsingNotCancellable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancellable' -Method Put -Headers $mindyCommonHeaders
     $response_Mindy_asyncUsingCancellable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancellable' -Method Put -Headers $mindyCommonHeaders
@@ -68,7 +68,7 @@ $response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080
 
     $response_Mindy_asyncParam = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncParam' -Method Put -Headers $mindyCommonHeaders
 
-    $response_Mindy_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncWaitForeverTimeout' -Method Put -Headers $mindyCommonHeaders
+    $response_Mindy_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncInfiniteLoopTimeout' -Method Put -Headers $mindyCommonHeaders
 
 $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
 
@@ -120,13 +120,17 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
 
     Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses -EnableSchemaValidation:$($PSVersionTable.PSVersion -ge [version]'6.1.0')
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation:$($PSVersionTable.PSVersion -ge [version]'6.1.0') -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1'
 
-    Add-PodeOAInfo -Title 'Async test - OpenAPI 3.0' -Version 0.0.1
+    Add-PodeOAInfo -Title 'Async test - OpenAPI 3.0' -Version 0.0.2
+    Add-PodeOAInfo -Title 'Async test - OpenAPI 3.1' -Version 0.0.2 -DefinitionTag 'v3.1'
 
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
+    Enable-PodeOAViewer -Type Swagger -Path '/docs3.1/swagger' -DefinitionTag 'v3.1'
 
     Enable-PodeOAViewer -Editor -Path '/docs/swagger-editor'
     Enable-PodeOAViewer -Bookmarks -Path '/docs'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs3.1' -DefinitionTag 'v3.1'
     $uSleepTime = 4
     $uMessage = 'coming from using'
 
@@ -245,9 +249,10 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Callback -PassThru -CallbackSendResult -Timeout 300 | Set-PodeOARequest  -RequestBody (
-        New-PodeOARequestBody -Content @{'application/json' = (New-PodeOAStringProperty -Name 'callbackUrl' -Format Uri -Object -Example 'http://localhost:8080/receive/callback') }
-    )
+    } | Set-PodeOARouteInfo -Summary 'Async with callback with Using variable' -OperationId 'asyncUsingCallback' -DefinitionTag 'Default','v3.1' -PassThru |
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'  -Timeout 300 -PassThru | Add-PodeAsyncRouteCallback -PassThru -CallbackSendResult | Set-PodeOARequest  -RequestBody (
+            New-PodeOARequestBody -Content @{'application/json' = (New-PodeOAStringProperty -Name 'callbackUrl' -Format Uri -Object -Example 'http://localhost:8080/receive/callback') }
+        )
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncState' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
@@ -258,11 +263,12 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
             Start-Sleep $state:data.sleepTime
         }
         return @{ InnerValue = $state:data.Message }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
+    } | Set-PodeOARouteInfo -Summary 'Async with State variable' -OperationId 'asyncState' -PassThru |
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncStateNoColumn'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Support'   -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncStateNoColumn'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Support' -ScriptBlock {
         Write-PodeHost '/auth/asyncStateNoColumn'
         $data = Get-PodeState -Name 'data'
         Write-PodeHost 'data:'
@@ -271,7 +277,8 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
             Start-Sleep $data.sleepTime
         }
         return @{ InnerValue = $data.Message }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
+    } | Set-PodeOARouteInfo -Summary 'Async with State variable NoColumn' -OperationId 'asyncStateNoColumn' -PassThru |
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 
 
@@ -286,7 +293,9 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
             Start-Sleep $sleepTime2
         }
         return @{ InnerValue = $Message }
-    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
+    } -ArgumentList @{sleepTime2 = 2; Message = 'comming as argument' } |
+        Set-PodeOARouteInfo -Summary 'Async with Parameters' -OperationId 'asyncParameters' -PassThru |
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingNotCancellable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
@@ -296,7 +305,8 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         #write-podehost $WebEvent.auth.User -Explode
         Start-Sleep ($using:uSleepTime * 10)
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -NotCancellable -Timeout 300
+    } | Set-PodeOARouteInfo -Summary 'Async with Using variable Not Cancellable' -OperationId 'asyncUsingNotCancellable' -PassThru |
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -NotCancellable -Timeout 300
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsingCancellable' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -ScriptBlock {
         Write-PodeHost '/auth/asyncUsingCancellable'
@@ -305,22 +315,25 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         #write-podehost $WebEvent.auth.User -Explode
         Start-Sleep ($using:uSleepTime * 10)
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
+    } | Set-PodeOARouteInfo -Summary 'Async with Using variable Cancellable' -OperationId 'asyncUsingCancellable' -PassThru |
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncWaitForever' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncInfiniteLoop' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
         while ($true) {
             Start-Sleep 2
         }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
+    } | Set-PodeOARouteInfo -Summary 'Async infinite loop' -OperationId 'asyncInfiniteLoop' -PassThru |
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 
 
-    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncWaitForeverTimeout' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
+    Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncInfiniteLoopTimeout' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
         while ($true) {
             Start-Sleep 2
         }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 40 -NotCancellable
+    } | Set-PodeOARouteInfo -Summary 'Async infinite loop with Timeout' -OperationId 'asyncInfiniteLoopTimeout' -PassThru |
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 40 -NotCancellable
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncProgressByTimer' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
@@ -328,7 +341,8 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         for ($i = 0 ; $i -lt 30 ; $i++) {
             Start-Sleep 1
         }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300 -MaxRunspaces 10
+    } | Set-PodeOARouteInfo -Summary 'Async with Progress By Timer' -OperationId 'asyncProgressByTimer' -PassThru |
+    Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300 -MaxRunspaces 10
 
 
 

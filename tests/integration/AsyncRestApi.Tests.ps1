@@ -192,12 +192,12 @@ Describe 'ASYNC REST API Requests' {
         }
 
         It 'Create Async operation /asyncWaitForeverTimeout' {
-            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncWaitForeverTimeout" -Method Put -Headers $mortyCommonHeaders
+            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncInfiniteLoopTimeout" -Method Put -Headers $mortyCommonHeaders
 
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'M0R7Y302'
-            $response.Name | Should -Be '__Put_auth_asyncWaitForeverTimeout__'
+            $response.Name | Should -Be '__Put_auth_asyncInfiniteLoopTimeout__'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $false
         }
@@ -205,7 +205,7 @@ Describe 'ASYNC REST API Requests' {
 
     Describe -Name 'Get Async Operation' {
         BeforeAll {
-            $responseCreateAsync = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncWaitForever" -Method Put -Headers $mindyCommonHeaders
+            $responseCreateAsync = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncInfiniteLoop" -Method Put -Headers $mindyCommonHeaders
         }
         it 'Throws exception - Get Async Operation as Morty' {
             { Invoke-RestMethod -Uri "http://localhost:$($Port)/task/$($responseCreateAsync.ID)" -Method Get -Headers $mortyCommonHeaders } |
@@ -221,7 +221,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.Name | Should -Be '__Put_auth_asyncWaitForever__'
+            $response.Name | Should -Be '__Put_auth_asyncInfiniteLoop__'
             $response.State | Should -BeIn 'Running'
             $response.Cancellable | Should -Be $true
         }
@@ -231,7 +231,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.Name | Should -Be '__Put_auth_asyncWaitForever__'
+            $response.Name | Should -Be '__Put_auth_asyncInfiniteLoop__'
             $response.State | Should -BeIn 'Aborted'
             $response.Error | Should -BeIn 'Aborted by the user'
             $response.Cancellable | Should -Be $true
@@ -273,7 +273,7 @@ Describe 'ASYNC REST API Requests' {
             $response.where({ $_.Name -eq '__Put_auth_asyncUsingCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncUsing__' }).Result.InnerValue | Should -Be 'coming from using'
             $response.where({ $_.Name -eq '__Put_auth_asyncUsingNotCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({ $_.Name -eq '__Put_auth_asyncWaitForever__' }).State | Should -Be 'Aborted'
+            $response.where({ $_.Name -eq '__Put_auth_asyncInfiniteLoop__' }).State | Should -Be 'Aborted'
             $response.where({ $_.Name -eq '__Put_auth_asyncParam__' }).Result.InnerValue | Should -Be 'comming as argument'
             $response.where({ $_.Name -eq '__Put_auth_asyncStateNoColumn__' }).Result.InnerValue | Should -Be 'coming from a PodeState'
             $response.where({ $_.Name -eq '__Put_auth_asyncState__' }).Result.InnerValue | Should -Be 'coming from a PodeState'
@@ -282,7 +282,7 @@ Describe 'ASYNC REST API Requests' {
             $counter = 0
             do {
                 $body = @{'Name' = @{
-                        'value' = '__Put_auth_asyncWaitForeverTimeout__'
+                        'value' = '__Put_auth_asyncInfiniteLoopTimeout__'
                         'op'    = 'NE'
                     }
                 } | ConvertTo-Json
@@ -303,7 +303,7 @@ Describe 'ASYNC REST API Requests' {
         it 'Timeout' {
             do {
                 $body = @{'Name' = @{
-                        'value' = '__Put_auth_asyncWaitForeverTimeout__'
+                        'value' = '__Put_auth_asyncInfiniteLoopTimeout__'
                         'op'    = 'EQ'
                     }
                 } | ConvertTo-Json

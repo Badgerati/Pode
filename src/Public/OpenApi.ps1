@@ -3530,7 +3530,7 @@ function Test-PodeOADefinitionTag {
 
     if ($Tag -and $Tag.Count -gt 0) {
         foreach ($t in $Tag) {
-            if (! ($PodeContext.Server.OpenApi.Definitions.Keys -ccontains $t)) {
+            if (! ($PodeContext.Server.OpenApi.Definitions.Keys -icontains $t)) {
                 # DefinitionTag does not exist.
                 throw ($PodeLocale.definitionTagNotDefinedExceptionMessage -f $t)
             }

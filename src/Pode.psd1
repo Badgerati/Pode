@@ -179,6 +179,7 @@
         'Set-PodeAsyncRouteOASchemaName',
         'Set-PodeAsyncRoutePermission',
         'Get-PodeAsyncRoute',
+        'Add-PodeAsyncRouteCallback',
 
         # handlers
         'Add-PodeHandler',

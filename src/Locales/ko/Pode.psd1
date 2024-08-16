@@ -294,4 +294,6 @@
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress는 비동기 경로 스크립트 블록 내에서만 사용할 수 있습니다.'
     progressLimitLowerThanCurrentExceptionMessage                     = '진행 한도는 현재 진행보다 낮을 수 없습니다.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} 는 서로 다른 OpenAPI 정의 간에 다릅니다.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "경로 '{0}' 이(가) 비동기 경로로 표시되지 않았습니다."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "함수 '{0}' 를 동일한 경로 '{1}' 에 대해 여러 번 호출할 수 없습니다."
 }

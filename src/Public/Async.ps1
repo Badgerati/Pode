@@ -899,23 +899,21 @@ function Set-PodeAsyncRoutePermission {
 
         # Validate that the Route parameter is not null
         if ($null -eq $Route) {
+            # The parameter 'Route' cannot be null
             throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
         }
 
         foreach ($r in $Route) {
-            # Initialize the permission hashtable for the route if not already present
-            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName)) {
-                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
-                    Permission = @{}
-                }
+            # Check if the route is marked as an Async Route
+            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or ! $r.IsAsync) {
+                # The route '{0}' is not marked as an Async Route.
+                throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.AsyncPoolName)
             }
 
             # Initialize the permission type hashtable if not already present
             if (! $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission.ContainsKey($Type)) {
                 $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type] = @{}
             }
-
-
 
             # Assign or remove users from the specified permission type
             if ($Users) {
@@ -961,45 +959,14 @@ function Set-PodeAsyncRoutePermission {
 
 <#
 .SYNOPSIS
-    Defines an asynchronous route in Pode with runspace management.
+    Adds a callback to an asynchronous route in Pode.
 
 .DESCRIPTION
-    The `Set-PodeAsyncRoute` function enables you to define routes in Pode that execute asynchronously,
-    leveraging runspace management for non-blocking operation. This function allows you to specify
-    response types (JSON, XML, YAML) and manage asynchronous task parameters such as timeout and
-    unique Id generation. It supports the use of arguments, `$using` variables, and state variables.
+    The Add-PodeAsyncRouteCallback function allows you to attach a callback to an existing asynchronous route in Pode.
+    This function takes various parameters to configure the callback URL, method, headers, and more.
 
 .PARAMETER Route
-    A hashtable array that contains route definitions. Each hashtable should include
-    the `Method`, `Path`, and `Logic` keys at a minimum.
-
-.PARAMETER ResponseContentType
-    Specifies the response type(s) for the route. Valid values are 'application/json' , 'application/xml', 'application/yaml'.
-    You can specify multiple types. The default is 'application/json'.
-
-.PARAMETER Timeout
-    Defines the timeout period for the asynchronous task in seconds.
-    The default value is 28800 (8 hours).
-    -1 indicating no timeout.
-
-.PARAMETER IdGenerator
-    A custom ScriptBlock to generate a random unique Ids for asynchronous tasks. The default
-    is '{ return New-PodeGuid }'.
-
-.PARAMETER PassThru
-    If specified, the function returns the route information after processing.
-
-.PARAMETER NoOpenAPI
-    If specified, the route will not be included in the OpenAPI documentation.
-
-.PARAMETER MaxRunspaces
-    The maximum number of Runspaces that can exist in this route. The default is 2.
-
-.PARAMETER MinRunspaces
-    The minimum number of Runspaces that exist in this route. The default is 1.
-
-.PARAMETER Callback
-    Specifies whether to include callback functionality for the route.
+    The route(s) to which the callback should be added. This parameter is mandatory and accepts hashtable arrays.
 
 .PARAMETER CallbackUrl
     Specifies the URL field for the callback. Default is '$request.body#/callbackUrl'.
@@ -1037,6 +1004,165 @@ function Set-PodeAsyncRoutePermission {
     - $request.header.header-name: application/json
     - $request.body#/field-name  : callbackUrl
 
+.PARAMETER PassThru
+    If specified, the route information is returned.
+
+.EXAMPLE
+      Add-PodeRoute -PassThru -Method Put -Path '/example' |
+      Add-PodeAsyncRouteCallback -Route $route -CallbackUrl '$request.body#/callbackUrl'
+
+.NOTES
+    This function should only be used with routes that have been marked as asynchronous using the Set-PodeAsyncRoute function.
+#>
+function  Add-PodeAsyncRouteCallback {
+    param (
+        [Parameter(Mandatory = $true , ValueFromPipeline = $true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter()]
+        [string]
+        $CallbackUrl = '$request.body#/callbackUrl',
+
+        [Parameter()]
+        [switch]
+        $CallbackSendResult,
+
+        [Parameter()]
+        [string]
+        $EventName,
+
+        [Parameter()]
+        [string]
+        $CallbackContentType = 'application/json',
+
+        [Parameter()]
+        [string]
+        $CallbackMethod = 'Post',
+
+        [Parameter()]
+        [hashtable]
+        $CallbackHeaderFields = @{},
+
+        [switch]
+        $PassThru
+    )
+
+    Begin {
+        $pipelineValue = @()
+        $CallbackSettings = @{
+            UrlField     = $CallbackUrl
+            ContentType  = $CallbackContentType
+            SendResult   = $CallbackSendResult.ToBool()
+            Method       = $CallbackMethod
+            HeaderFields = $CallbackHeaderFields
+        }
+    }
+
+    Process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    End {
+        # Handle multiple piped-in routes
+        if ($pipelineValue.Count -gt 1) {
+            $Route = $pipelineValue
+        }
+
+        # Validate that the Route parameter is not null
+        if ($null -eq $Route) {
+            # The parameter 'Route' cannot be null
+            throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
+        }
+
+        foreach ($r in $Route) {
+            # Check if the route is marked as an Async Route
+            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or ! $r.IsAsync) {
+                # The route '{0}' is not marked as an Async Route.
+                throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.AsyncPoolName)
+            }
+
+            # Generate or use the provided event name for the callback
+            if ([string]::IsNullOrEmpty($EventName)) {
+                $CallbackSettings.EventName = $r.Path.Replace('/', '_') + '_Callback'
+            }
+            else {
+                if ($Route.Count -gt 1) {
+                    $CallbackSettings.EventName = "$EventName_$($r.Path.Replace('/', '_'))"
+                }
+                else {
+                    $CallbackSettings.EventName = $EventName
+                }
+            }
+
+            # Attach the callback settings to the Async Route
+            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].CallbackSettings = $CallbackSettings
+
+            # Add OpenAPI callback documentation if applicable
+            if ( $r.OpenApi.Swagger) {
+                $r |
+                    Add-PodeOACallBack -Name $CallbackSettings.EventName -Path $CallbackUrl -Method $CallbackMethod -DefinitionTag $r.OpenApi.DefinitionTag -RequestBody (
+                        New-PodeOARequestBody -Content @{ $CallbackContentType = (
+                                New-PodeOAObjectProperty -Name 'Result' |
+                                    New-PodeOAStringProperty -Name 'EventName' -Description 'The event name.' -Required |
+                                    New-PodeOAStringProperty -Name 'Url' -Format Uri -Example 'http://localhost/callback' -Required |
+                                    New-PodeOAStringProperty -Name 'Method' -Example 'Post' -Required |
+                                    New-PodeOAStringProperty -Name 'State' -Description 'The parent async operation status' -Required -Example 'Complete' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
+                                    New-PodeOAObjectProperty -Name 'Result' -Description 'The parent result' -NoProperties |
+                                    New-PodeOAStringProperty -Name 'Error' -Description 'The parent error' |
+                                    New-PodeOAObjectProperty
+                                )
+                            }
+                        ) -Response (
+                            New-PodeOAResponse -StatusCode 200 -Description  'Successful operation'
+                        )
+            }
+        }
+        # Return the route information if PassThru is specified
+        if ($PassThru) {
+            return $Route
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    Defines an asynchronous route in Pode with runspace management.
+
+.DESCRIPTION
+    The `Set-PodeAsyncRoute` function enables you to define routes in Pode that execute asynchronously,
+    leveraging runspace management for non-blocking operation. This function allows you to specify
+    response types (JSON, XML, YAML) and manage asynchronous task parameters such as timeout and
+    unique Id generation. It supports the use of arguments, `$using` variables, and state variables.
+
+.PARAMETER Route
+    A hashtable array that contains route definitions. Each hashtable should include
+    the `Method`, `Path`, and `Logic` keys at a minimum.
+
+.PARAMETER ResponseContentType
+    Specifies the response type(s) for the route. Valid values are 'application/json' , 'application/xml', 'application/yaml'.
+    You can specify multiple types. The default is 'application/json'.
+
+.PARAMETER Timeout
+    Defines the timeout period for the asynchronous task in seconds.
+    The default value is 28800 (8 hours).
+    -1 indicating no timeout.
+
+.PARAMETER IdGenerator
+    A custom ScriptBlock to generate a random unique Ids for asynchronous tasks. The default
+    is '{ return New-PodeGuid }'.
+
+.PARAMETER PassThru
+    If specified, the function returns the route information after processing.
+
+.PARAMETER MaxRunspaces
+    The maximum number of Runspaces that can exist in this route. The default is 2.
+
+.PARAMETER MinRunspaces
+    The minimum number of Runspaces that exist in this route. The default is 1.
+
 .PARAMETER NotCancellable
     The Async operation cannot be forcefully terminated
 
@@ -1045,11 +1171,6 @@ function Set-PodeAsyncRoutePermission {
 
 .PARAMETER SseGroup
     An optional Group for this SSE connection, to enable broadcasting events to all connections for an SSE connection name in a Group.
-
-.PARAMETER OADefinitionTag
-    An Array of strings representing the unique tag for the API specification.
-    This tag helps in distinguishing between different versions or types of API specifications within the application.
-    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .OUTPUTS
     [hashtable[]]
@@ -1107,10 +1228,6 @@ function Set-PodeAsyncRoute {
         [switch]
         $PassThru,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'NoOpenAPI')]
-        [switch]
-        $NoOpenAPI,
-
         [Parameter()]
         [ValidateRange(1, 100)]
         [int]
@@ -1123,34 +1240,6 @@ function Set-PodeAsyncRoute {
 
         [Parameter()]
         [switch]
-        $Callback,
-
-        [Parameter()]
-        [string]
-        $CallbackUrl = '$request.body#/callbackUrl',
-
-        [Parameter()]
-        [switch]
-        $CallbackSendResult,
-
-        [Parameter()]
-        [string]
-        $EventName,
-
-        [Parameter()]
-        [string]
-        $CallbackContentType = 'application/json',
-
-        [Parameter()]
-        [string]
-        $CallbackMethod = 'Post',
-
-        [Parameter()]
-        [hashtable]
-        $CallbackHeaderFields = @{},
-
-        [Parameter()]
-        [switch]
         $NotCancellable,
 
         [Parameter()]
@@ -1159,29 +1248,13 @@ function Set-PodeAsyncRoute {
 
         [Parameter()]
         [string]
-        $SseGroup,
-
-        [Parameter(ParameterSetName = 'OpenAPI')]
-        [string[]]
-        $OADefinitionTag
+        $SseGroup
 
     )
     Begin {
-        # Check if a Definition exists
-        $oaName = Get-PodeAsyncRouteOAName -Tag $OADefinitionTag
 
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
-
-        if ( $Callback.IsPresent) {
-            $CallbackSettings = @{
-                UrlField     = $CallbackUrl
-                ContentType  = $CallbackContentType
-                SendResult   = $CallbackSendResult.ToBool()
-                Method       = $CallbackMethod
-                HeaderFields = $CallbackHeaderFields
-            }
-        }
 
         # Start the housekeeper for async routes
         Start-PodeAsyncRoutesHousekeeper
@@ -1205,38 +1278,28 @@ function Set-PodeAsyncRoute {
         }
 
         foreach ($r in $Route) {
+            # Check if the route is already marked as an Async Route
+            if ( $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or $r.IsAsync) {
+                # The function cannot be invoked multiple times for the same route
+                throw ($PodeLocale.functionCannotBeInvokedMultipleTimesExceptionMessage -f $MyInvocation.MyCommand.Name, $r.Path)
+            }
+
             $r.IsAsync = $true
-            if ( $Callback.IsPresent) {
-                if ([string]::IsNullOrEmpty($EventName)) {
-                    $CallbackSettings.EventName = $r.Path.Replace('/', '_') + '_Callback'
-                }
-                else {
-                    if ($Route.Count -gt 1) {
-                        $CallbackSettings.EventName = "$EventName_$($r.Path.Replace('/', '_'))"
-                    }
-                    else {
-                        $CallbackSettings.EventName = $EventName
-                    }
-                }
-            }
-            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName)) {
-                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
-                    Permission = @{}
-                }
-            }
+
             # Store the route's async task definition in Pode context
-            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] += @{
+            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
                 Name             = $r.AsyncPoolName
                 Script           = ConvertTo-PodeAsyncEnhancedScriptBlock -ScriptBlock $r.Logic
                 UsingVariables   = $r.UsingVariables
                 Arguments        = (Protect-PodeValue -Value $r.Arguments -Default @{})
-                CallbackSettings = $CallbackSettings
+                CallbackSettings = $null
                 Cancellable      = !($NotCancellable.IsPresent)
                 MinRunspaces     = $MinRunspaces
                 MaxRunspaces     = $MaxRunspaces
                 EnableSse        = $EnableSse.IsPresent
                 SseGroup         = $SseGroup
                 Timeout          = $Timeout
+                Permission       = @{}
             }
 
             #Set thread count
@@ -1256,29 +1319,14 @@ function Set-PodeAsyncRoute {
             $r.UsingVariables = $null
 
             # Add OpenAPI documentation if not excluded
-            if (! $NoOpenAPI.IsPresent) {
-                Add-PodeAsyncRouteComponentSchema -Name $oaName.OATypeName
-
-                $route |
-                    Set-PodeOARouteInfo -PassThru |
-                    Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $oaName.OATypeName )
-                if ($Callback) {
-                    $route |
-                        Add-PodeOACallBack -Name $CallbackSettings.EventName -Path $CallbackUrl -Method $CallbackMethod -RequestBody (
-                            New-PodeOARequestBody -Content @{ $CallbackContentType = (
-                                    New-PodeOAObjectProperty -Name 'Result' |
-                                        New-PodeOAStringProperty -Name 'EventName' -Description 'The event name.' -Required |
-                                        New-PodeOAStringProperty -Name 'Url' -Format Uri -Example 'http://localhost/callback' -Required |
-                                        New-PodeOAStringProperty -Name 'Method' -Example 'Post' -Required |
-                                        New-PodeOAStringProperty -Name 'State' -Description 'The parent async operation status' -Required -Example 'Complete' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
-                                        New-PodeOAObjectProperty -Name 'Result' -Description 'The parent result' -NoProperties |
-                                        New-PodeOAStringProperty -Name 'Error' -Description 'The parent error' |
-                                        New-PodeOAObjectProperty
-                                    )
-                                }
-                            ) -Response (
-                                New-PodeOAResponse -StatusCode 200 -Description  'Successful operation'
-                            )
+            if ( $r.OpenApi.Swagger) {
+                $oaName = Get-PodeAsyncRouteOAName -Tag $r.OpenApi.DefinitionTag -ForEachOADefinition
+                foreach ($key in $oaName.Keys) {
+                    Add-PodeAsyncRouteComponentSchema -Name $oaName[$key].oATypeName -DefinitionTag $key
+                    $r |
+                        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' `
+                            -DefinitionTag $key `
+                            -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $oaName[$key].OATypeName )
                 }
             }
         }

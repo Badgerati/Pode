@@ -294,4 +294,6 @@
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress 只能在异步路由脚本块中使用。'
     progressLimitLowerThanCurrentExceptionMessage                     = '进度限制不能低于当前进度。'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} 在不同的 OpenAPI 定义之间有所不同。'
+    routeNotMarkedAsAsyncExceptionMessage                             = "路由 '{0}' 未标记为异步路由。"
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "函数 '{0}' 不能在同一路由 '{1}' 上多次调用。"
 }
