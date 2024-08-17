@@ -624,7 +624,6 @@ function Add-PodeOAResponse {
         throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
     }
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     # override status code with default
     if ($Default) {
         $code = 'default'
@@ -635,7 +634,9 @@ function Add-PodeOAResponse {
 
     # add the respones to the routes
     foreach ($r in @($Route)) {
-        foreach ($tag in $DefinitionTag) {
+        $oaDefinitionTag = Test-PodeRouteOADefinitionTag -Route $r -DefinitionTag $DefinitionTag
+
+        foreach ($tag in $oaDefinitionTag) {
             if (! $r.OpenApi.Responses.$tag) {
                 $r.OpenApi.Responses.$tag = @{}
             }
@@ -737,6 +738,11 @@ The Request Body definition the request uses (from New-PodeOARequestBody).
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
+.PARAMETER DefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps distinguish between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Schema 'UserIdBody')
 #>
@@ -756,7 +762,10 @@ function Set-PodeOARequest {
         $RequestBody,
 
         [switch]
-        $PassThru
+        $PassThru,
+
+        [string[]]
+        $DefinitionTag
     )
 
     if ($null -eq $Route) {
@@ -766,20 +775,26 @@ function Set-PodeOARequest {
 
     foreach ($r in @($Route)) {
 
-        if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
-            $r.OpenApi.Parameters = @($Parameters)
-        }
+        $oaDefinitionTag = Test-PodeRouteOADefinitionTag -Route $r -DefinitionTag $DefinitionTag
 
-        if ($null -ne $RequestBody) {
-            $r.OpenApi.RequestBody = $RequestBody
-        }
+        foreach ($tag in $oaDefinitionTag) {
+            if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
+                $r.OpenApi.Parameters[$tag] = @($Parameters)
+            }
 
+            if ($null -ne $RequestBody) {
+                $r.OpenApi.RequestBody = $RequestBody
+            }
+        }
     }
 
     if ($PassThru) {
         return $Route
     }
 }
+
+
+
 
 <#
 .SYNOPSIS
@@ -1558,19 +1573,8 @@ function Set-PodeOARouteInfo {
         throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
     }
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-
     foreach ($r in @($Route)) {
-        if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
-            if ($r.OpenApi.IsDefTagConfigured ) {
-                # Definition Tag for a Route cannot be changed.
-                throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
-            }
-            else {
-                $r.OpenApi.DefinitionTag = $DefinitionTag
-                $r.OpenApi.IsDefTagConfigured = $true
-            }
-        }
+        $oaDefinitionTag = Test-PodeRouteOADefinitionTag -Route $r -DefinitionTag $DefinitionTag
 
         if ($Summary) {
             $r.OpenApi.Summary = $Summary
@@ -1583,7 +1587,7 @@ function Set-PodeOARouteInfo {
                 # OperationID:$OperationId has to be unique and cannot be applied to an array
                 throw ($PodeLocale.operationIdMustBeUniqueForArrayExceptionMessage -f $OperationId)
             }
-            foreach ($tag in $DefinitionTag) {
+            foreach ($tag in $oaDefinitionTag) {
                 if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
                     # OperationID:$OperationId has to be unique
                     throw ($PodeLocale.operationIdMustBeUniqueExceptionMessage -f $OperationId)
@@ -1603,6 +1607,15 @@ function Set-PodeOARouteInfo {
         $r.OpenApi.Swagger = $true
         if ($Deprecated.IsPresent) {
             $r.OpenApi.Deprecated = $Deprecated.IsPresent
+        }
+
+        if ($r.OpenApi.Postponed) {
+            if ($r.OpenApi.PostponedArgumentList) {
+                Invoke-Command -ScriptBlock $r.OpenApi.Postponed -ArgumentList $r.OpenApi.PostponedArgumentList
+            }
+            else {
+                Invoke-Command -ScriptBlock $r.OpenApi.Postponed
+            }
         }
     }
 
@@ -2599,10 +2612,10 @@ function Add-PodeOACallBack {
         throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
     }
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-
     foreach ($r in @($Route)) {
-        foreach ($tag in $DefinitionTag) {
+        $oaDefinitionTag = Test-PodeRouteOADefinitionTag -Route $r -DefinitionTag $DefinitionTag
+
+        foreach ($tag in $oaDefinitionTag) {
             if ($Reference) {
                 Test-PodeOAComponentInternal -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
                 if (!$Name) {

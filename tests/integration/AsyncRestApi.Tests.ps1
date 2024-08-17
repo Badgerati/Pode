@@ -212,7 +212,7 @@ Describe 'ASYNC REST API Requests' {
                 Should -Throw #-ExceptionType ([Microsoft.PowerShell.Commands.HttpResponseException])
         }
         it 'Throws exception - Terminate Async Operation as Morty' {
-            { Invoke-RestMethod -Uri "http://localhost:$($Port)/task?taskId=$($responseCreateAsync.ID)" -Method Delete -Headers $mortyCommonHeaders } |
+            { Invoke-RestMethod -Uri "http://localhost:$($Port)/task?id=$($responseCreateAsync.ID)" -Method Delete -Headers $mortyCommonHeaders } |
                 Should -Throw  #-Exception Type ([Microsoft.PowerShell.Commands.HttpResponseException])
         }
 
@@ -227,7 +227,7 @@ Describe 'ASYNC REST API Requests' {
         }
 
         it 'Terminate Async Operation as Mindy' {
-            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/task?taskId=$($responseCreateAsync.ID)" -Method Delete -Headers $mindyCommonHeaders
+            $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/task?id=$($responseCreateAsync.ID)" -Method Delete -Headers $mindyCommonHeaders
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'

@@ -489,3 +489,74 @@ Describe ' Get-PodeAsyncRouteOperationByFilter' {
             } } | Should -Throw -ExpectedMessage ($PodeLocale.invalidQueryElementExceptionMessage -f 'notExist')
     }
 }
+
+
+# Set-PodeAsyncRouteOASchemaName.Tests.ps1
+
+Describe 'Set-PodeAsyncRouteOASchemaName' {
+    # Mocking the dependencies
+    Mock -CommandName Test-PodeOADefinitionTag -MockWith { return @('default') }
+
+
+    # Setting up a mock PodeContext with default values
+    BeforeEach {
+        $PodeContext = @{
+            Server = @{
+                OpenApi = @{
+                    Definitions = @{
+                        default = @{
+                            hiddenComponents = @{
+                                AsyncRoute = @{
+                                    OATypeName = 'DefaultAsyncRouteTask'
+                                    TaskIdName = 'defaultId'
+                                    QueryRequestName = 'DefaultAsyncRouteTaskQuery'
+                                    QueryParameterName = 'DefaultAsyncRouteTaskQueryParameter'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    It 'Should set the OpenAPI schema names correctly when all parameters are provided' {
+        # Arrange
+        $params = @{
+            OATypeName = 'CustomTask'
+            TaskIdName = 'CustomId'
+            QueryRequestName = 'CustomQuery'
+            QueryParameterName = 'CustomQueryParam'
+            OADefinitionTag = @('default')
+        }
+
+        # Act
+        Set-PodeAsyncRouteOASchemaName @params
+
+        # Assert
+        $definition = $PodeContext.Server.OpenApi.Definitions['default'].hiddenComponents.AsyncRoute
+        $definition.OATypeName | Should -Be 'CustomTask'
+        $definition.TaskIdName | Should -Be 'CustomId'
+        $definition.QueryRequestName | Should -Be 'CustomQuery'
+        $definition.QueryParameterName | Should -Be 'CustomQueryParam'
+    }
+
+    It 'Should use default values if parameters are not provided' {
+        # Arrange
+        $params = @{
+            OADefinitionTag = @('default')
+        }
+
+        # Act
+        Set-PodeAsyncRouteOASchemaName @params
+
+        # Assert
+        $definition = $PodeContext.Server.OpenApi.Definitions['default'].hiddenComponents.AsyncRoute
+        $definition.OATypeName | Should -Be 'DefaultAsyncRouteTask'
+        $definition.TaskIdName | Should -Be 'defaultId'
+        $definition.QueryRequestName | Should -Be 'DefaultAsyncRouteTaskQuery'
+        $definition.QueryParameterName | Should -Be 'DefaultAsyncRouteTaskQueryParameter'
+    }
+
+      
+}

@@ -435,8 +435,8 @@ function Add-PodeRoute {
                     OpenApi          = @{
                         Path               = $OpenApiPath
                         Responses          = $DefaultResponse
-                        Parameters         = $null
-                        RequestBody        = $null
+                        Parameters         = @{}
+                        RequestBody        = @{}
                         CallBacks          = @{}
                         Authentication     = @()
                         Servers            = @()

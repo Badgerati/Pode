@@ -148,8 +148,6 @@ When a route is invoked, it automatically creates a runspace to execute the scri
 
 The `Add-PodeAsyncGetRoute` function creates a route in Pode that allows retrieving the status and details of an asynchronous task. This function supports different methods for task ID retrieval (Cookie, Header, Path, Query) and various response types (JSON, XML, YAML). It integrates with OpenAPI documentation, providing detailed route information and response schemas.
 
-Unless the `-NoOpenAPI` switch is used, the OpenAPI section will be automatically created.
-
 The task ID name can be changed using the `TaskIdName` parameter. The default name is `taskId`.
 
 This function accepts almost any parameter applicable to a standard Pode Route.
@@ -161,7 +159,8 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncWait' -ScriptBlock {
     Start-Sleep 20
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
-Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Path
+Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Path |
+Set-PodeOARouteInfo -Summary 'Query an Async Task'  # Set-PodeOARouteInfo is required to get the OpenApi documentation
 ```
 
 #### Usage as a User
@@ -175,9 +174,7 @@ Invoke-RestMethod -Uri "http://localhost:8080/task?taskId=$($response_asyncWait.
 
 The `Add-PodeAsyncStopRoute` function creates a route in Pode that allows stopping an asynchronous task. This function supports different methods for task ID retrieval (Cookie, Header, Path, Query) and various response types (JSON, XML, YAML). It integrates with OpenAPI documentation, providing detailed route information and response schemas.
 
-Unless the `-NoOpenAPI` switch is used, the OpenAPI section will be automatically created.
-
-The task ID can be passed as a cookie, header, path, or query, and the name itself can be changed using the `TaskIdName` parameter. The default name is `taskId`.
+The task ID can be passed as a cookie, header, path, or query, and the name itself can be changed using `Set-PodeAsyncRouteOASchemaName` and the `TaskIdName` parameter. The default name is `id`.
 
 This function accepts almost any parameter applicable to a standard Pode Route.
 
@@ -190,7 +187,8 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncWait' -ScriptBlock {
     Start-Sleep 20
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
-Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Path
+Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Path -PassThru |
+Set-PodeOARouteInfo -Summary 'Stop an Async task'  # Set-PodeOARouteInfo is required to get the OpenApi documentation
 ```
 
 #### Usage as a User
@@ -205,8 +203,6 @@ Invoke-RestMethod -Uri "http://localhost:8080/task?taskId=$($response_asyncWait.
 ### Add-PodeAsyncQueryRoute
 
 The `Add-PodeAsyncQueryRoute` function creates a route in Pode for querying task information based on specified parameters. This function supports multiple content types for both requests and responses, and can generate OpenAPI documentation.
-
-Unless the `-NoOpenAPI` switch is used, the OpenAPI section will be automatically created.
 
 This function accepts almost any parameter applicable to a standard Pode Route.
 
@@ -256,7 +252,8 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncWait' -ScriptBlock {
     Start-Sleep 20
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
-Add-PodeAsyncQueryRoute -Path '/tasks/query' -ResponseContentType 'application/json', 'application/yaml' -In Body
+Add-PodeAsyncQueryRoute -Path '/tasks/query' -ResponseContentType 'application/json', 'application/yaml' -In Body|
+Set-PodeOARouteInfo -Summary 'Query an Async task'  # Set-PodeOARouteInfo is required to get the OpenApi documentation
 ```
 
 #### Usage as a User

@@ -32,16 +32,14 @@ $results =   Get-PodeAsyncRouteOperationByFilter -Filter $queryConditions
 
 ---
 
-###  Get-PodeAsyncRouteOperationByFilter
+###  Get-PodeAsyncRoute
 
-The ` Get-PodeAsyncRouteOperationByFilter` function fetches details of an asynchronous Pode route operation by its ID. It allows you to retrieve the status, results, and other information about a specific asynchronous task.
-
-` Get-PodeAsyncRouteOperationByFilter` is similar in intent to `Add-PodeAsyncGetRoute`. The main difference is that this function is used inside the Pode code to manage Async tasks and is not subject to any permissions or restrictions.
+The ` Get-PodeAsyncRoute` function fetches details of an asynchronous Pode route operation by its ID. It allows you to retrieve the status, results, and other information about a specific asynchronous task.
 
 #### Example Usage
 
 ```powershell
-$operationDetails =  Get-PodeAsyncRouteOperationByFilter -Id 'b143660f-ebeb-49d9-9f92-cd21f3ff559c'
+$operationDetails =  Get-PodeAsyncRoute -Id 'b143660f-ebeb-49d9-9f92-cd21f3ff559c'
 ```
 
 #### Explanation

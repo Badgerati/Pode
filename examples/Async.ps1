@@ -72,7 +72,7 @@ $response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080
 
 $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
 
-$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri "http://localhost:8080/task?taskId=$($response_Mindy_asyncWaitForever.Id)" -Method Delete -Headers $mindyCommonHeaders
+$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri "http://localhost:8080/task?Id=$($response_Mindy_asyncWaitForever.Id)" -Method Delete -Headers $mindyCommonHeaders
 
 .NOTES
     Author: Pode Team
@@ -119,8 +119,8 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
     # New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'  -DisableMinimalDefinitions -NoDefaultResponses -EnableSchemaValidation:$($PSVersionTable.PSVersion -ge [version]'6.1.0')
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation:$($PSVersionTable.PSVersion -ge [version]'6.1.0') -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1'
+    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'    -EnableSchemaValidation:$($PSVersionTable.PSVersion -ge [version]'6.1.0') -DisableMinimalDefinitions -NoDefaultResponses
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1' -OpenApiVersion '3.1.0' -EnableSchemaValidation:$($PSVersionTable.PSVersion -ge [version]'6.1.0') -DefinitionTag 'v3.1' -DisableMinimalDefinitions -NoDefaultResponses
 
     Add-PodeOAInfo -Title 'Async test - OpenAPI 3.0' -Version 0.0.2
     Add-PodeOAInfo -Title 'Async test - OpenAPI 3.1' -Version 0.0.2 -DefinitionTag 'v3.1'
@@ -243,13 +243,17 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         }
     }
 
+    Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
+        Close-PodeServer
+    } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
+
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncUsing' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'   -ScriptBlock {
         Write-PodeHost '/auth/asyncUsing'
         Write-PodeHost "sleepTime=$($using:uSleepTime)"
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeOARouteInfo -Summary 'Async with callback with Using variable' -OperationId 'asyncUsingCallback' -DefinitionTag 'Default','v3.1' -PassThru |
+    } | Set-PodeOARouteInfo -Summary 'Async with callback with Using variable' -OperationId 'asyncUsingCallback' -DefinitionTag 'Default','v3.1'  -PassThru |
         Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'  -Timeout 300 -PassThru | Add-PodeAsyncRouteCallback -PassThru -CallbackSendResult | Set-PodeOARequest  -RequestBody (
             New-PodeOARequestBody -Content @{'application/json' = (New-PodeOAStringProperty -Name 'callbackUrl' -Format Uri -Object -Example 'http://localhost:8080/receive/callback') }
         )
@@ -344,9 +348,6 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
     } | Set-PodeOARouteInfo -Summary 'Async with Progress By Timer' -OperationId 'asyncProgressByTimer' -PassThru |
     Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300 -MaxRunspaces 10
 
-
-
-
     Add-PodeRoute -PassThru -Method Get -path '/SumOfSquareRoot' -ScriptBlock {
         $start = [int]( Get-PodeHeader -Name 'Start')
         $end = [int]( Get-PodeHeader -Name 'End')
@@ -374,19 +375,17 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         ) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  @{ 'application/json' = New-PodeOANumberProperty -Name 'Result' -Format Double -Description 'Result' -Required -Object }
 
 
-    Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' #-TaskIdName 'pippopppoId'
-    Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Query -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' #-TaskIdName 'pippopppoId'
+    Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru |Set-PodeOARouteInfo -Summary 'Get Async Route Task Info'
 
-    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'
+    Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Query -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -OADefinitionTag 'Default','v3.1' -PassThru |Set-PodeOARouteInfo -Summary 'Stop Async Route Task'
+
+    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru |Set-PodeOARouteInfo -Summary 'Query Async Route Task Info'
 
     Add-PodeRoute -PassThru -Method Post -path '/receive/callback' -ScriptBlock {
         write-podehost 'Callback received'
         write-podehost $WebEvent.Data -Explode
     }
 
-    Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
-        Close-PodeServer
-    } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
 
     Add-PodeRoute  -Method 'Get' -Path '/hello' -ScriptBlock {
         Write-PodeJsonResponse -Value @{'message' = 'Hello!' } -StatusCode 200

@@ -1385,7 +1385,8 @@ function Get-PodeAsyncQueryScriptBlock {
         $response = @()  # Initialize an empty array to hold the response
         try {
             if ($PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.schemaValidation) {
-                $validation = Test-PodeOAJsonSchemaCompliance -Json $query -SchemaReference 'AsyncTaskQueryRequest'
+                $validation = Test-PodeOAJsonSchemaCompliance -Json $query -SchemaReference `
+                    $PodeContext.Server.OpenApi.Definitions[$DefinitionTag].hiddenComponents.AsyncRoute.QueryRequestName
                 $validated = $validation.result
             }
             else {
@@ -1459,40 +1460,40 @@ function Get-PodeAsyncRouteOAName {
 
     if ($ForEachOADefinition.IsPresent) {
         $result = @{}
-         if( $DefinitionTag -is [string]){
-           $DefinitionTag=[string[]]@($DefinitionTag)
-         }
-        for  ($i=0;$i -lt  $DefinitionTag.Count; $i++) {
+        if ( $DefinitionTag -is [string]) {
+            $DefinitionTag = [string[]]@($DefinitionTag)
+        }
+        for ($i = 0; $i -lt $DefinitionTag.Count; $i++) {
             $result[$DefinitionTag[$i]] = $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute
         }
         return $result
     }
     if ($DefinitionTag.Count -gt 1) {
-            for ( $i = 1 ; $i -lt $DefinitionTag.Count ; $i++) {
+        for ( $i = 1 ; $i -lt $DefinitionTag.Count ; $i++) {
 
-                if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.OATypeName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.OATypeName) {
-                    # varies between different OpenAPI definitions.
-                    throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'OATypeName')
-                }
-
-                if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryParameter -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryParameter) {
-                    # varies between different OpenAPI definitions.
-                    throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryParameter')
-                }
-
-                if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryRequestName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryRequestName) {
-                    # varies between different OpenAPI definitions.
-                    throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryRequestName')
-                }
-
-                if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.TaskIdName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.TaskIdName) {
-                    # varies between different OpenAPI definitions.
-                    throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'TaskIdName')
-                }
-
+            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.OATypeName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.OATypeName) {
+                # varies between different OpenAPI definitions.
+                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'OATypeName')
             }
 
-            return $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute
+            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryParameter -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryParameter) {
+                # varies between different OpenAPI definitions.
+                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryParameter')
+            }
+
+            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.QueryRequestName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.QueryRequestName) {
+                # varies between different OpenAPI definitions.
+                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'QueryRequestName')
+            }
+
+            if ($PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute.TaskIdName -ne $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[$i]].hiddenComponents.AsyncRoute.TaskIdName) {
+                # varies between different OpenAPI definitions.
+                throw ($PodeLocale.openApiDefinitionsMismatchExceptionMessage -f 'TaskIdName')
+            }
+
+        }
+
+        return $PodeContext.Server.OpenApi.Definitions[$DefinitionTag[0]].hiddenComponents.AsyncRoute
     }
     else {
         return $PodeContext.Server.OpenApi.Definitions[$DefinitionTag].hiddenComponents.AsyncRoute
@@ -1510,33 +1511,33 @@ function Get-PodeAsyncRouteOAName {
     It includes the type names and parameter names that are used for OpenAPI documentation.
 
 .PARAMETER OATypeName
-    The type name for OpenAPI documentation. The default is 'AsyncTask'.
+    The type name for OpenAPI documentation. The default is 'AsyncRouteTask'.
 
 .PARAMETER TaskIdName
-    The name of the parameter that contains the task Id. The default is 'taskId'.
+    The name of the parameter that contains the task Id. The default is 'id'.
 
 .PARAMETER QueryRequestName
-    The name of the Pode task query request in the OpenAPI schema. Defaults to 'AsyncTaskQueryRequest'.
+    The name of the Pode task query request in the OpenAPI schema. Defaults to 'AsyncRouteTaskQuery'.
 
 .PARAMETER QueryParameterName
-    The name of the query parameter in the OpenAPI schema. Defaults to 'QueryParameter'.
+    The name of the query parameter in the OpenAPI schema. Defaults to 'AsyncRouteTaskQueryParameter'.
 #>
 function Get-PodeAsyncRouteOASchemaNameInternal {
     param (
         [string]
-        $OATypeName = 'AsyncTask',
+        $OATypeName = 'AsyncRouteTask',
 
         [Parameter()]
         [string]
-        $TaskIdName = 'taskId',
+        $TaskIdName = 'id',
 
         [Parameter()]
         [string]
-        $QueryRequestName = 'AsyncTaskQueryRequest',
+        $QueryRequestName = 'AsyncRouteTaskQuery',
 
         [Parameter()]
         [string]
-        $QueryParameterName = 'QueryParameter'
+        $QueryParameterName = 'AsyncRouteTaskQueryParameter'
     )
     return @{
         # Store the OATypeName name
