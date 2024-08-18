@@ -1284,10 +1284,17 @@ function Set-PodeAsyncRoute {
 
             $r.IsAsync = $true
 
+            if ($IdGenerator) {
+                $r.AsyncRouteTaskIdGenerator = $IdGenerator
+            }
+            else {
+                $r.AsyncRouteTaskIdGenerator = { return (New-PodeGuid) }
+            }
+
             # Store the route's async task definition in Pode context
             $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
                 Name             = $r.AsyncPoolName
-                Script           = ConvertTo-PodeAsyncEnhancedScriptBlock -ScriptBlock $r.Logic
+                Script           = Get-PodeAsyncRouteScriptblock -ScriptBlock $r.Logic
                 UsingVariables   = $r.UsingVariables
                 Arguments        = (Protect-PodeValue -Value $r.Arguments -Default @{})
                 CallbackSettings = $null
@@ -1313,7 +1320,7 @@ function Set-PodeAsyncRoute {
             $r.logic = Get-PodeAsyncSetScriptBlock
 
             # Set arguments and clear using variables
-            $r.Arguments = ( $IdGenerator, $r.AsyncPoolName  )
+            $r.Arguments = @()
             $r.UsingVariables = $null
 
             # Add OpenAPI documentation if not excluded
