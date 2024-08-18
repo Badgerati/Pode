@@ -862,7 +862,7 @@ function Set-PodeAsyncRoutePermission {
                 [switch]$Remove
             )
             # Initialize $List if it's null
-            if (-not $List) {
+            if (! $List) {
                 $List = @()
             }
 

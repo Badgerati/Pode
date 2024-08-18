@@ -2189,7 +2189,7 @@ function Test-PodeRouteOADefinitionTag {
             if ($DefinitionTag | ForEach-Object {
 
                     # Check if the current element exists in the already configured DefinitionTag
-                    if (-not ($Route.OpenApi.DefinitionTag -contains $_)) {
+                    if (!($Route.OpenApi.DefinitionTag -contains $_)) {
                         # If any element in $DefinitionTag is not present in the configured DefinitionTag, throw an exception
                         throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
                     }

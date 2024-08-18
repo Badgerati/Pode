@@ -1337,7 +1337,7 @@ function Export-PodeAsyncInfo {
         }
 
         # Ensure completed time is set, retrying after a short delay if necessary
-        if (-not $Async.ContainsKey('CompletedTime')) {
+        if (! $Async.ContainsKey('CompletedTime')) {
             Start-Sleep 1
         }
         if ($Async.ContainsKey('CompletedTime')) {
