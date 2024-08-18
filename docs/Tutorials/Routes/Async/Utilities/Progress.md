@@ -5,9 +5,9 @@ The Progress functions in Pode allow you to manage and retrieve the progress of 
 
 **Note**: These functions can only be used inside an AsyncRoute scriptblock. Using them outside of that context will generate an exception.
 
-### Set-PodeAsyncProgress
+### Set-PodeAsyncRouteProgress
 
-The `Set-PodeAsyncProgress` function manages the progress of an asynchronous task within Pode routes. It allows you to update the progress of a running asynchronous task in various ways, providing real-time feedback on the task's status.
+The `Set-PodeAsyncRouteProgress` function manages the progress of an asynchronous task within Pode routes. It allows you to update the progress of a running asynchronous task in various ways, providing real-time feedback on the task's status.
 
 #### Key Features
 
@@ -24,19 +24,19 @@ Add-PodeRoute -PassThru -Method Get -Path '/SumOfSquareRoot' -ScriptBlock {
     $start = [int](Get-PodeHeader -Name 'Start')
     $end = [int](Get-PodeHeader -Name 'End')
     Write-PodeHost "Start=$start End=$end"
-    Set-PodeAsyncProgress -Start $start -End $end -UseDecimalProgress -MaxProgress 80
+    Set-PodeAsyncRouteProgress -Start $start -End $end -UseDecimalProgress -MaxProgress 80
     [double]$sum = 0.0
     for ($i = $start; $i -le $end; $i++) {
         $sum += [math]::Sqrt($i)
-        Set-PodeAsyncProgress -Tick
+        Set-PodeAsyncRouteProgress -Tick
     }
-    Write-PodeHost (Get-PodeAsyncProgress)
-    Set-PodeAsyncProgress -Start $start -End $end -Steps 4
+    Write-PodeHost (Get-PodeAsyncRouteProgress)
+    Set-PodeAsyncRouteProgress -Start $start -End $end -Steps 4
     for ($i = $start; $i -le $end; $i += 4) {
         $sum += [math]::Sqrt($i)
-        Set-PodeAsyncProgress -Tick
+        Set-PodeAsyncRouteProgress -Tick
     }
-    Write-PodeHost (Get-PodeAsyncProgress)
+    Write-PodeHost (Get-PodeAsyncRouteProgress)
     Write-PodeHost "Result of Start=$start End=$end is $sum"
     return $sum
 } | Set-PodeAsyncRoute
@@ -50,7 +50,7 @@ In this example:
 
 ```powershell
 Add-PodeRoute -PassThru -Method Put -Path 'asyncProgressByTimer' -ScriptBlock {
-    Set-PodeAsyncProgress -DurationSeconds 30 -IntervalSeconds 1
+    Set-PodeAsyncRouteProgress -DurationSeconds 30 -IntervalSeconds 1
     for ($i = 0 ; $i -lt 30 ; $i++) {
         Start-Sleep 1
     }
@@ -63,7 +63,7 @@ In this example:
 ##### Set Specific Progress Value
 
 ```powershell
-Set-PodeAsyncProgress -Value 75
+Set-PodeAsyncRouteProgress -Value 75
 ```
 
 #### Parameters
@@ -80,9 +80,9 @@ Set-PodeAsyncProgress -Value 75
 
 ---
 
-### Get-PodeAsyncProgress
+### Get-PodeAsyncRouteProgress
 
-The `Get-PodeAsyncProgress` function retrieves the current progress of an asynchronous route in Pode. It allows you to check the progress of a running asynchronous task.
+The `Get-PodeAsyncRouteProgress` function retrieves the current progress of an asynchronous route in Pode. It allows you to check the progress of a running asynchronous task.
 
 **Note**: This function can only be used inside an AsyncRoute scriptblock. Using it outside of that context will generate an exception.
 
@@ -91,9 +91,9 @@ The `Get-PodeAsyncProgress` function retrieves the current progress of an asynch
 ```powershell
 Add-PodeRoute -PassThru -Method Get '/process' {
     # Perform some work and update progress
-    Set-PodeAsyncProgress -Value 40
+    Set-PodeAsyncRouteProgress -Value 40
     # Retrieve the current progress
-    $progress = Get-PodeAsyncProgress
+    $progress = Get-PodeAsyncRouteProgress
     Write-PodeHost "Current Progress: $progress"
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json'
 ```

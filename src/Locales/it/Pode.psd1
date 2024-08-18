@@ -290,7 +290,7 @@
     asyncRouteOperationDoesNotExistExceptionMessage                   = "Nessuna operazione di percorso asincrono esiste con l'Id {0}."
     scriptContainsDisallowedCommandExceptionMessage                   = "Lo script non può contenere il comando '{0}'."
     invalidQueryElementExceptionMessage                               = 'La query fornita non è valida. {0} non è un elemento valido per una query.'
-    setPodeAsyncProgressExceptionMessage                              = "Set-PodeAsyncProgress può essere utilizzato solo all'interno di uno Scriptblock di un percorso asincrono."
+    setPodeAsyncProgressExceptionMessage                              = "Set-PodeAsyncRouteProgress può essere utilizzato solo all'interno di uno Scriptblock di un percorso asincrono."
     progressLimitLowerThanCurrentExceptionMessage                     = "Un limite di progresso non può essere inferiore all'attuale progresso."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Il tag di definizione per una Route non può essere cambiato.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} varia tra diverse definizioni OpenAPI.'

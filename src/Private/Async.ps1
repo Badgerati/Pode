@@ -12,7 +12,7 @@
     result, state, and any errors.
 
 .NOTES
-    - The function handles the creation and management of asynchronous tasks in Pode.
+    - The function handles the creation and management of asynchronous route tasks in Pode.
     - It sets up the parameters, initializes the runspace, and tracks the task's state, results, and any errors.
     - This is an internal function and may change in future releases of Pode.
 #>
@@ -318,12 +318,12 @@ function Complete-PodeAsyncRouteOperation {
         if ($AsyncResult['CallbackSettings']) {
 
             # Resolve the callback URL, method, content type, and headers
-            $callbackUrl = (Convert-PodeAsyncCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].UrlField).Value
-            $method = (Convert-PodeAsyncCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].Method -DefaultValue 'Post').Value
-            $contentType = (Convert-PodeAsyncCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].ContentType).Value
+            $callbackUrl = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].UrlField).Value
+            $method = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].Method -DefaultValue 'Post').Value
+            $contentType = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].ContentType).Value
             $headers = @{}
             foreach ($key in $AsyncResult['CallbackSettings'].HeaderFields.Keys) {
-                $value = Convert-PodeAsyncCallBackRuntimeExpression -Variable $key -DefaultValue $AsyncResult['HeaderFields'][$key]
+                $value = Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $key -DefaultValue $AsyncResult['HeaderFields'][$key]
                 if ($value) {
                     $headers[$value.Key] = $value.Value
                 }
@@ -489,10 +489,10 @@ function Start-PodeAsyncRoutesHousekeeper {
 
 <#
 .SYNOPSIS
-    Adds an OpenAPI component schema for Pode asynchronous tasks.
+    Adds an OpenAPI component schema for Pode asynchronous route tasks.
 
 .DESCRIPTION
-    The Add-PodeAsyncRouteComponentSchema function creates an OpenAPI component schema for Pode asynchronous tasks if it does not already exist.
+    The Add-PodeAsyncRouteComponentSchema function creates an OpenAPI component schema for Pode asynchronous route tasks if it does not already exist.
     This schema includes properties such as Id, CreationTime, StartingTime, Result, CompletedTime, State, Error, and Task.
 
 .PARAMETER Name
@@ -563,10 +563,10 @@ function Add-PodeAsyncRouteComponentSchema {
 
 <#
 .SYNOPSIS
-    Searches for asynchronous Pode tasks based on specified query conditions.
+    Searches for asynchronous route Pode tasks based on specified query conditions.
 
 .DESCRIPTION
-    The Search-PodeAsyncTask function searches the Pode context for asynchronous tasks that match the specified query conditions.
+    The Search-PodeAsyncRouteTask function searches the Pode context for asynchronous route tasks that match the specified query conditions.
     It supports comparison operators such as greater than (GT), less than (LT), greater than or equal (GE), less than or equal (LE),
     equal (EQ), not equal (NE), like (LIKE), and not like (NOTLIKE). Additionally, it can check user permissions if specified.
 
@@ -585,7 +585,7 @@ function Add-PodeAsyncRouteComponentSchema {
         'State' = @{ 'op' = 'EQ'; 'value' = 'Running' }
         'CreationTime' = @{ 'op' = 'GT'; 'value' = (Get-Date).AddHours(-1) }
     }
-    $results = Search-PodeAsyncTask -Query $query
+    $results = Search-PodeAsyncRouteTask -Query $query
 
     This example searches for tasks that are in the 'Running' state and were created within the last hour.
 
@@ -597,7 +597,7 @@ function Add-PodeAsyncRouteComponentSchema {
     $query = @{
         'State' = @{ 'op' = 'EQ'; 'value' = 'Completed' }
     }
-    $results = Search-PodeAsyncTask -Query $query -User $user -CheckPermission
+    $results = Search-PodeAsyncRouteTask -Query $query -User $user -CheckPermission
 
     This example searches for tasks that are in the 'Completed' state and checks if the specified user has permission to view them.
 
@@ -607,7 +607,7 @@ function Add-PodeAsyncRouteComponentSchema {
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Search-PodeAsyncTask {
+function Search-PodeAsyncRouteTask {
     param (
         [Parameter(Mandatory = $true)]
         [hashtable]
@@ -634,7 +634,7 @@ function Search-PodeAsyncTask {
                 if ($result.User -and ($null -eq $User)) {
                     continue
                 }
-                if ($result.Permission -and (! (Test-PodeAsyncPermission -Permission $result.Permission.Read -User $User))) {
+                if ($result.Permission -and (! (Test-PodeAsyncRoutePermission -Permission $result.Permission.Read -User $User))) {
                     continue
                 }
             }
@@ -724,7 +724,7 @@ function Search-PodeAsyncTask {
     Converts runtime expressions for Pode callback variables.
 
 .DESCRIPTION
-    The `Convert-PodeAsyncCallBackRuntimeExpression` function processes runtime expressions
+    The `Convert-PodeAsyncRouteCallBackRuntimeExpression` function processes runtime expressions
     for Pode callback variables. It interprets variables in headers, query parameters,
     and body fields from the web event request, providing a default value if the variable
     is not resolvable. This function is used in the context of OpenAPI callback specifications
@@ -749,17 +749,17 @@ function Search-PodeAsyncTask {
 
 .EXAMPLE
     # Convert a header variable with a default value
-    $result = Convert-PodeAsyncCallBackRuntimeExpression -Variable '$request.header.Content-Type' -DefaultValue 'application/json'
+    $result = Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable '$request.header.Content-Type' -DefaultValue 'application/json'
     Write-Output $result
 
 .EXAMPLE
     # Convert a query parameter variable with a default value
-    $result = Convert-PodeAsyncCallBackRuntimeExpression -Variable '$request.query.userId' -DefaultValue 'unknown'
+    $result = Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable '$request.query.userId' -DefaultValue 'unknown'
     Write-Output $result
 
 .EXAMPLE
     # Convert a body field variable with a default value
-    $result = Convert-PodeAsyncCallBackRuntimeExpression -Variable '$request.body#/user/name' -DefaultValue 'anonymous'
+    $result = Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable '$request.body#/user/name' -DefaultValue 'anonymous'
     Write-Output $result
 
 .NOTES
@@ -772,7 +772,7 @@ function Search-PodeAsyncTask {
     If the variable cannot be resolved from the request, the provided default value is used.
     If no default value is provided and the variable cannot be resolved, the variable itself is returned as the value.
 #>
-function Convert-PodeAsyncCallBackRuntimeExpression {
+function Convert-PodeAsyncRouteCallBackRuntimeExpression {
     param(
         [string]$Variable,
         [string]$DefaultValue
@@ -833,7 +833,7 @@ function Convert-PodeAsyncCallBackRuntimeExpression {
     Tests if a user has the required asynchronous permissions based on provided permissions hashtable.
 
 .DESCRIPTION
-    The `Test-PodeAsyncPermission` function checks if a user has the required permissions specified in the provided hashtable.
+    The `Test-PodeAsyncRoutePermission` function checks if a user has the required permissions specified in the provided hashtable.
     It iterates through the keys in the permission hashtable and checks if the user has the necessary permissions.
 
 .PARAMETER Permission
@@ -868,14 +868,14 @@ function Convert-PodeAsyncCallBackRuntimeExpression {
         }
     }
 
-    $result = Test-PodeAsyncPermission -Permission $permissions -User $user
+    $result = Test-PodeAsyncRoutePermission -Permission $permissions -User $user
     Write-Output $result
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 
-function Test-PodeAsyncPermission {
+function Test-PodeAsyncRoutePermission {
     param(
         [hashtable]
         $Permission,
@@ -920,57 +920,57 @@ function Test-PodeAsyncPermission {
     it adds default read and write permissions for the user.
 
 .EXAMPLE
-    $scriptBlock = Get-PodeAsyncSetScriptBlock
+    $scriptBlock = Get-PodeAsyncRouteSetScriptBlock
     # Use the returned script block in an async route in Pode
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Get-PodeAsyncSetScriptBlock {
+function Get-PodeAsyncRouteSetScriptBlock {
     # This function returns a script block that handles async route operations
     return [scriptblock] {
         # Get the 'Accept' header from the request to determine the response format
         $responseMediaType = Get-PodeHeader -Name 'Accept'
 
         # Invoke the internal async route task
-        $async = Invoke-PodeAsyncRoute
+        $asyncOperation = Invoke-PodeAsyncRoute
 
         # Prepare the response
         $res = @{
-            CreationTime = Format-PodeDateToIso8601 -Date $async['CreationTime']           # Format creation time in ISO 8601 UTC format
-            Id           = $async['Id']                                                    # Task Id
-            State        = $async['State']                                                 # Task state
-            Name         = $async['Name']                                                  # Task name
-            Cancellable  = $async['Cancellable']                                           # Task cancellable status
+            CreationTime = Format-PodeDateToIso8601 -Date $asyncOperation['CreationTime']           # Format creation time in ISO 8601 UTC format
+            Id           = $asyncOperation['Id']                                                    # Task Id
+            State        = $asyncOperation['State']                                                 # Task state
+            Name         = $asyncOperation['Name']                                                  # Task name
+            Cancellable  = $asyncOperation['Cancellable']                                           # Task cancellable status
         }
 
         # If the task involves a user, include user information and add default permissions
-        if ($async['User']) {
+        if ($asyncOperation['User']) {
             # Assign the user information from the async task to the result object
-            $res.User = $async['User']
+            $res.User = $asyncOperation['User']
 
             # Iterate over the permission types: 'Read' and 'Write'
             'Read', 'Write' | ForEach-Object {
                 # Check if the Permission hashtable contains the current permission type (e.g., 'Read' or 'Write')
-                if (! $async['Permission'].ContainsKey($_)) {
+                if (! $asyncOperation['Permission'].ContainsKey($_)) {
                     # If not, initialize it as an empty hashtable
-                    $async['Permission'][$_] = @{}
+                    $asyncOperation['Permission'][$_] = @{}
                 }
 
                 # Check if the 'Users' array exists within the current permission type
-                if (! $async['Permission'][$_].ContainsKey('Users')) {
+                if (! $asyncOperation['Permission'][$_].ContainsKey('Users')) {
                     # If not, initialize it as an empty array
-                    $async['Permission'][$_].Users = @()
+                    $asyncOperation['Permission'][$_].Users = @()
                 }
 
                 # Add the user to the 'Users' array if they are not already present
-                if (! ($async['Permission'][$_].Users -icontains $async.User)) {
-                    $async['Permission'][$_].Users += $async.User
+                if (! ($asyncOperation['Permission'][$_].Users -icontains $asyncOperation.User)) {
+                    $asyncOperation['Permission'][$_].Users += $asyncOperation.User
                 }
             }
 
             # Assign the updated Permission object back to the result object
-            $res.Permission = $async['Permission']
+            $res.Permission = $asyncOperation['Permission']
         }
 
         # Send the response based on the requested media type
@@ -1028,7 +1028,7 @@ function Get-PodeAsyncGetScriptBlock {
             # Check if the user is authorized to perform this operation
             if ($async['User']) {
                 if ($WebEvent.Auth.User) {
-                    $authorized = Test-PodeAsyncPermission -Permission $async['Permission'].Read -User $WebEvent.Auth.User
+                    $authorized = Test-PodeAsyncRoutePermission -Permission $async['Permission'].Read -User $WebEvent.Auth.User
                 }
                 else {
                     $authorized = $false
@@ -1041,7 +1041,7 @@ function Get-PodeAsyncGetScriptBlock {
             # If authorized, export the task info and return a response
             if ($authorized) {
                 # Create a summary of the task for export
-                $export = Export-PodeAsyncInfo -Async $async
+                $export = Export-PodeAsyncRouteInfo -Async $async
 
                 switch ($responseMediaType) {
                     'application/xml' { Write-PodeXmlResponse -Value $export -StatusCode 200; break }
@@ -1074,10 +1074,10 @@ function Get-PodeAsyncGetScriptBlock {
 
 <#
 .SYNOPSIS
-    Retrieves a script block for handling the stopping of asynchronous tasks in Pode.
+    Retrieves a script block for handling the stopping of asynchronous route tasks in Pode.
 
 .DESCRIPTION
-    This function returns a script block designed to stop asynchronous tasks in a Pode web server.
+    This function returns a script block designed to stop asynchronous route tasks in a Pode web server.
     The script block checks for task identifiers in different parts of the request (cookies, headers, path parameters, query parameters)
     and retrieves the corresponding async route result. It handles authorization, cancels the task if it is cancellable and not completed,
     and formats the response based on the Accept header.
@@ -1089,13 +1089,13 @@ function Get-PodeAsyncGetScriptBlock {
         The name of the task identifier to be retrieved from the specified source.
 
 .EXAMPLE
-    $scriptBlock = Get-PodeAsyncStopScriptBlock
+    $scriptBlock = Get-PodeAsyncRouteStopScriptBlock
     # Use the returned script block in an async stop route in Pode
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Get-PodeAsyncStopScriptBlock {
+function Get-PodeAsyncRouteStopScriptBlock {
     # This function returns a script block that handles async route operations
     return [scriptblock] {
         param($In, $TaskIdName)
@@ -1126,7 +1126,7 @@ function Get-PodeAsyncStopScriptBlock {
                         $statusCode = 401 # Unauthorized
                     }
                     else {
-                        if ((Test-PodeAsyncPermission -Permission $async['Permission'].Write -User $WebEvent.Auth.User)) {
+                        if ((Test-PodeAsyncRoutePermission -Permission $async['Permission'].Write -User $WebEvent.Auth.User)) {
                             # Set the task state to 'Aborted' and log the error and completion time
                             $async['State'] = 'Aborted'
                             $async['Error'] = 'Aborted by the user'
@@ -1135,7 +1135,7 @@ function Get-PodeAsyncStopScriptBlock {
                             Complete-PodeAsyncRouteOperation -AsyncResult $async
 
                             # Create a summary of the task
-                            $export = Export-PodeAsyncInfo -Async $async
+                            $export = Export-PodeAsyncRouteInfo -Async $async
 
                             # Respond with the task summary in the appropriate format
                             switch ($responseMediaType) {
@@ -1187,7 +1187,7 @@ function Get-PodeAsyncStopScriptBlock {
     Exports the detailed information of an asynchronous operation to a hashtable.
 
 .DESCRIPTION
-    The `Export-PodeAsyncInfo` function extracts and formats information from an asynchronous operation encapsulated in a [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] object. It includes details such as Id, creation time, state, user, permissions, and callback settings, among others. The function returns a hashtable with this information, suitable for logging or further processing.
+    The `Export-PodeAsyncRouteInfo` function extracts and formats information from an asynchronous operation encapsulated in a [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] object. It includes details such as Id, creation time, state, user, permissions, and callback settings, among others. The function returns a hashtable with this information, suitable for logging or further processing.
 
 .PARAMETER Async
     A [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] containing the asynchronous operation's details. This parameter is mandatory.
@@ -1197,12 +1197,12 @@ function Get-PodeAsyncStopScriptBlock {
 
 .EXAMPLE
     $asyncInfo = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
-    $exportedInfo = Export-PodeAsyncInfo -Async $asyncInfo
+    $exportedInfo = Export-PodeAsyncRouteInfo -Async $asyncInfo
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Export-PodeAsyncInfo {
+function Export-PodeAsyncRouteInfo {
     param(
         [Parameter(Mandatory = $true )]
         [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]
@@ -1305,10 +1305,10 @@ function Export-PodeAsyncInfo {
 
 <#
 .SYNOPSIS
-    Retrieves a script block for querying asynchronous tasks in Pode.
+    Retrieves a script block for querying asynchronous route tasks in Pode.
 
 .DESCRIPTION
-    This function returns a script block designed to query asynchronous tasks in a Pode web server.
+    This function returns a script block designed to query asynchronous route tasks in a Pode web server.
     The script block processes the query from different parts of the request (body, query parameters, headers),
     searches for async tasks based on the query, checks permissions, and formats the response based on the Accept header.
 
@@ -1316,13 +1316,13 @@ function Export-PodeAsyncInfo {
     The source of the query, such as 'Body', 'Query', or 'Header'.
 
 .EXAMPLE
-    $scriptBlock = Get-PodeAsyncQueryScriptBlock
+    $scriptBlock = Get-PodeAsyncRouteQueryScriptBlock
     # Use the returned script block in an async query route in Pode
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Get-PodeAsyncQueryScriptBlock {
+function Get-PodeAsyncRouteQueryScriptBlock {
     return [scriptblock] {
         param($Payload, $DefinitionTag)
 
@@ -1347,12 +1347,12 @@ function Get-PodeAsyncQueryScriptBlock {
             }
             if ($validated) {
                 # Search for async tasks based on the query and user, checking permissions
-                $results = Search-PodeAsyncTask -Query $query -User $WebEvent.Auth.User -CheckPermission
+                $results = Search-PodeAsyncRouteTask -Query $query -User $WebEvent.Auth.User -CheckPermission
 
                 # If results are found, export async task information for each result
                 if ($results) {
                     foreach ($async in $results) {
-                        $response += Export-PodeAsyncInfo -Async $async
+                        $response += Export-PodeAsyncRouteInfo -Async $async
                     }
                 }
 

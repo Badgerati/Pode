@@ -4,7 +4,7 @@
     Adds a route to get the status and details of an asynchronous task in Pode.
 
 .DESCRIPTION
-    The `Add-PodeAsyncGetRoute` function creates a route in Pode that allows retrieving the status
+    The `Add-PodeAsyncRouteGet` function creates a route in Pode that allows retrieving the status
     and details of an asynchronous task. This function supports different methods for task Id
     retrieval (Cookie, Header, Path, Query) and various response types (JSON, XML, YAML). It
     integrates with OpenAPI documentation, providing detailed route information and response schemas.
@@ -62,7 +62,7 @@
 .OUTPUTS
     [hashtable]
 #>
-function Add-PodeAsyncGetRoute {
+function Add-PodeAsyncRouteGet {
     [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
     [OutputType([hashtable])]
     param (
@@ -214,7 +214,7 @@ function Add-PodeAsyncGetRoute {
     Adds a route to stop an asynchronous task in Pode.
 
 .DESCRIPTION
-    The `Add-PodeAsyncStopRoute` function creates a route in Pode that allows the stopping of an
+    The `Add-PodeAsyncRouteStop` function creates a route in Pode that allows the stopping of an
     asynchronous task. This function supports different methods for task Id retrieval (Cookie,
     Header, Path, Query) and various response types (JSON, XML, YAML). It integrates with OpenAPI
     documentation, providing detailed route information and response schemas.
@@ -274,14 +274,14 @@ function Add-PodeAsyncGetRoute {
 
 .EXAMPLE
     # Adding a route to stop an asynchronous task with the task Id in the query string
-    Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType YAML -In Query
+    Add-PodeAsyncRouteStop -Path '/task/stop' -ResponseType YAML -In Query
 
 .EXAMPLE
     #  Adding a route to stop an asynchronous task with the task Id in the URL path
-    Add-PodeAsyncStopRoute -Path '/task/stop' -ResponseType JSON, YAML -In Path
+    Add-PodeAsyncRouteStop -Path '/task/stop' -ResponseType JSON, YAML -In Path
 #>
 
-function Add-PodeAsyncStopRoute {
+function Add-PodeAsyncRouteStop {
     [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
     [OutputType([hashtable])]
     param (
@@ -360,7 +360,7 @@ function Add-PodeAsyncStopRoute {
     $param = @{
         Method           = 'Delete'
         Path             = $Path
-        ScriptBlock      = Get-PodeAsyncStopScriptBlock
+        ScriptBlock      = Get-PodeAsyncRouteStopScriptBlock
         ArgumentList     = ($In, $oaName.TaskIdName)
         ErrorContentType = $ResponseContentType[0]
         PassThru         = $true
@@ -435,7 +435,7 @@ function Add-PodeAsyncStopRoute {
     Adds a Pode route for querying task information.
 
 .DESCRIPTION
-    The Add-PodeAsyncQueryRoute function creates a Pode route that allows querying task information based on specified parameters.
+    The Add-PodeAsyncRouteQuery function creates a Pode route that allows querying task information based on specified parameters.
     The function supports multiple content types for both requests and responses, and can generate OpenAPI documentation if needed.
 
 .PARAMETER Path
@@ -491,7 +491,7 @@ function Add-PodeAsyncStopRoute {
     You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-    Add-PodeAsyncQueryRoute -Path '/tasks/query' -ResponseContentType 'application/json' -QueryContentType 'application/json','application/yaml' -Payload 'Body'
+    Add-PodeAsyncRouteQuery -Path '/tasks/query' -ResponseContentType 'application/json' -QueryContentType 'application/json','application/yaml' -Payload 'Body'
 
     This example creates a Pode route at '/tasks/query' that processes query requests with JSON content types and expects the payload in the body.
 
@@ -499,7 +499,7 @@ function Add-PodeAsyncStopRoute {
     [hashtable]
 #>
 
-function Add-PodeAsyncQueryRoute {
+function Add-PodeAsyncRouteQuery {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param (
@@ -575,7 +575,7 @@ function Add-PodeAsyncQueryRoute {
     # Define the parameters for the route
     $param = @{
         Path             = $Path
-        ScriptBlock      = Get-PodeAsyncQueryScriptBlock
+        ScriptBlock      = Get-PodeAsyncRouteQueryScriptBlock
         ArgumentList     = @($Payload, ( Test-PodeOADefinitionTag -Tag $Tag))
         ErrorContentType = $ResponseContentType[0]
         ContentType      = $QueryContentType[0]
@@ -615,17 +615,11 @@ function Add-PodeAsyncQueryRoute {
     }
 
     # Determine the HTTP method based on the payload location
-    switch ($Payload) {
-        'Body' {
-            $param.Method = 'Post'
-        }
-        'Header' {
-            $param.Method = 'Get'
-        }
-        'Query' {
-            $param.Method = 'Get'
-        }
-    }
+    $param.Method = (@{
+        'Body'   = 'Post'
+        'Header' = 'Get'
+        'Query'  = 'Get'
+    })[$Payload]
 
     # Add the route to Pode
     $route = Add-PodeRoute @param
@@ -1154,7 +1148,7 @@ function  Add-PodeAsyncRouteCallback {
     -1 indicating no timeout.
 
 .PARAMETER IdGenerator
-    A custom ScriptBlock to generate a random unique Ids for asynchronous tasks. The default
+    A custom ScriptBlock to generate a random unique Ids for asynchronous route tasks. The default
     is '{ return New-PodeGuid }'.
 
 .PARAMETER PassThru
@@ -1317,7 +1311,7 @@ function Set-PodeAsyncRoute {
 
             }
             # Replace the Route logic with this that allow to execute the original logic asynchronously
-            $r.logic = Get-PodeAsyncSetScriptBlock
+            $r.logic = Get-PodeAsyncRouteSetScriptBlock
 
             # Set arguments and clear using variables
             $r.Arguments = @()
@@ -1351,7 +1345,7 @@ function Set-PodeAsyncRoute {
 
 .DESCRIPTION
     The   Get-PodeAsyncRouteOperationByFilter function acts as a public interface for searching asynchronous Pode route operations.
-    It utilizes the Search-PodeAsyncTask function to perform the search based on the specified query conditions.
+    It utilizes the Search-PodeAsyncRouteTask function to perform the search based on the specified query conditions.
 
 .PARAMETER Filter
     A hashtable containing the query conditions. Each key in the hashtable represents a field to search on,
@@ -1381,15 +1375,15 @@ function   Get-PodeAsyncRouteOperationByFilter {
         [switch]
         $Raw
     )
-    $async = Search-PodeAsyncTask -Query $Filter
+    $async = Search-PodeAsyncRouteTask -Query $Filter
     if ($async -is [System.Object[]]) {
         $result = @()
         foreach ($item in $async) {
-            $result += Export-PodeAsyncInfo -Raw:$Raw -Async $item
+            $result += Export-PodeAsyncRouteInfo -Raw:$Raw -Async $item
         }
     }
     else {
-        $result = Export-PodeAsyncInfo -Raw:$Raw -Async $async
+        $result = Export-PodeAsyncRouteInfo -Raw:$Raw -Async $async
     }
     return $result
 }
@@ -1399,7 +1393,7 @@ function   Get-PodeAsyncRouteOperationByFilter {
     Retrieves and filters async routes from Pode's async route context.
 
 .DESCRIPTION
-    The `Get-PodeAsyncRoute` function allows you to filter Pode async routes based on the `Id` and `Name` properties.
+    The `Get-PodeAsyncRouteOperation` function allows you to filter Pode async routes based on the `Id` and `Name` properties.
     If either `Id` or `Name` is not specified (or `$null`), those fields will not be used for filtering.
     The filtered results can be optionally exported in raw format using the `-Raw` switch.
 
@@ -1415,17 +1409,17 @@ function   Get-PodeAsyncRouteOperationByFilter {
     A switch that, if specified, exports the results in raw format.
 
 .EXAMPLE
-    Get-PodeAsyncRoute -Id "12345" -Raw
+    Get-PodeAsyncRouteOperation -Id "12345" -Raw
 
     Retrieves the async route with the Id "12345" and exports it in raw format.
 
 .EXAMPLE
-    Get-PodeAsyncRoute -Name "RouteName"
+    Get-PodeAsyncRouteOperation -Name "RouteName"
 
     Retrieves the async routes with the name "RouteName".
 #>
 
-function Get-PodeAsyncRoute {
+function Get-PodeAsyncRouteOperation {
     param (
         [Parameter()]
         [string]
@@ -1466,14 +1460,14 @@ function Get-PodeAsyncRoute {
     }
 
     if ([string]::IsNullOrEmpty($Id) -and [string]::IsNullOrEmpty($Name)) {
-        # Otherwise, process each item in the filtered results through Export-PodeAsyncInfo
+        # Otherwise, process each item in the filtered results through Export-PodeAsyncRouteInfo
         $export = @()
         foreach ($item in $result.Values) {
-            $export += Export-PodeAsyncInfo  -Async $item
+            $export += Export-PodeAsyncRouteInfo  -Async $item
         }
     }
     else {
-        $export = Export-PodeAsyncInfo  -Async $result
+        $export = Export-PodeAsyncRouteInfo  -Async $result
     }
     # Return the processed export result
     return $export
@@ -1521,7 +1515,7 @@ function Stop-PodeAsyncRouteOperation {
         $async['CompletedTime'] = [datetime]::UtcNow
         $async['Runspace'].Pipeline.Dispose()
         Complete-PodeAsyncRouteOperation -AsyncResult $async
-        return  Export-PodeAsyncInfo -Async $async -Raw:$Raw
+        return  Export-PodeAsyncRouteInfo -Async $async -Raw:$Raw
     }
     throw ($PodeLocale.asyncRouteOperationDoesNotExistExceptionMessage -f $Id)
 }
@@ -1597,21 +1591,21 @@ function Test-PodeAsyncRouteOperation {
     The value to set the progress to (used in SetValue parameter set).
 
 .EXAMPLE
-    Set-PodeAsyncProgress -Start 0 -End 100 -Steps 10 -MaxProgress 100
+    Set-PodeAsyncRouteProgress -Start 0 -End 100 -Steps 10 -MaxProgress 100
 
 .EXAMPLE
-    Set-PodeAsyncProgress -Tick
+    Set-PodeAsyncRouteProgress -Tick
 
 .EXAMPLE
-    Set-PodeAsyncProgress -IntervalSeconds 5 -DurationSeconds 300 -MaxProgress 100
+    Set-PodeAsyncRouteProgress -IntervalSeconds 5 -DurationSeconds 300 -MaxProgress 100
 
 .EXAMPLE
-    Set-PodeAsyncProgress -Value 50
+    Set-PodeAsyncRouteProgress -Value 50
 
 .NOTES
     This function can only be used inside an Async Route Scriptblock in Pode.
 #>
-function Set-PodeAsyncProgress {
+function Set-PodeAsyncRouteProgress {
     [CmdletBinding(DefaultParameterSetName = 'StartEnd')]
     param (
         [Parameter(Mandatory = $true, ParameterSetName = 'StartEnd')]
@@ -1648,7 +1642,7 @@ function Set-PodeAsyncProgress {
 
     # Ensure this function is used within an async route
     if (!$___async___id___) {
-        # Set-PodeAsyncProgress can only be used inside an Async Route Scriptblock.
+        # Set-PodeAsyncRouteProgress can only be used inside an Async Route Scriptblock.
         throw $PodeLocale.setPodeAsyncProgressExceptionMessage
     }
     $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
@@ -1748,7 +1742,7 @@ function Set-PodeAsyncProgress {
     Retrieves the current progress of an asynchronous route in Pode.
 
 .DESCRIPTION
-    The `Get-PodeAsyncProgress` function returns the current progress of an asynchronous route in Pode.
+    The `Get-PodeAsyncRouteProgress` function returns the current progress of an asynchronous route in Pode.
     It retrieves the progress based on the asynchronous route ID (`$___async___id___`).
     If called outside of an asynchronous route script block, an error is thrown.
 
@@ -1758,7 +1752,7 @@ function Set-PodeAsyncProgress {
         # Perform some work and update progress
         Set-PodeAsyncCounter -Value 40
         # Retrieve the current progress
-        $progress = Get-PodeAsyncProgress
+        $progress = Get-PodeAsyncRouteProgress
         Write-PodeHost "Current Progress: $progress"
     } |Set-PodeAsyncRoute -ResponseContentType 'application/json'
 
@@ -1766,7 +1760,7 @@ function Set-PodeAsyncProgress {
     This function should only be used inside an asynchronous route scriptblock.
 
 #>
-function Get-PodeAsyncProgress {
+function Get-PodeAsyncRouteProgress {
     if ($___async___id___) {
         return $PodeContext.AsyncRoutes.Results[$___async___id___]['Progress']
     }

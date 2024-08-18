@@ -308,10 +308,10 @@ public class MathOperations
             ) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  @{ 'application/json' = New-PodeOANumberProperty -Name 'Result' -Format Double -Description 'Result' -Required -Object }
 
 
-        Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path
-        Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Query
+        Add-PodeAsyncRouteGet -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path
+        Add-PodeAsyncRouteStop -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Query
 
-        Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'
+        Add-PodeAsyncRouteQuery -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'
 
 
         Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {

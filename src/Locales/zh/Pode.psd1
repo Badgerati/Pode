@@ -291,7 +291,7 @@
     asyncRouteOperationDoesNotExistExceptionMessage                   = '不存在 ID 为 {0} 的异步路由操作。'
     scriptContainsDisallowedCommandExceptionMessage                   = "脚本不允许包含命令 '{0}'。"
     invalidQueryElementExceptionMessage                               = '提供的查询无效。{0} 不是有效的查询元素。'
-    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress 只能在异步路由脚本块中使用。'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress 只能在异步路由脚本块中使用。'
     progressLimitLowerThanCurrentExceptionMessage                     = '进度限制不能低于当前进度。'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} 在不同的 OpenAPI 定义之间有所不同。'
     routeNotMarkedAsAsyncExceptionMessage                             = "路由 '{0}' 未标记为异步路由。"

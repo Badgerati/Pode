@@ -168,17 +168,17 @@
 
         #Async
         'Set-PodeAsyncRoute',
-        'Add-PodeAsyncStopRoute',
-        'Add-PodeAsyncGetRoute',
-        'Add-PodeAsyncQueryRoute',
+        'Add-PodeAsyncRouteStop',
+        'Add-PodeAsyncRouteGet',
+        'Add-PodeAsyncRouteQuery',
         'Stop-PodeAsyncRouteOperation',
         'Get-PodeAsyncRouteOperationByFilter',
         'Test-PodeAsyncRouteOperation',
-        'Set-PodeAsyncProgress',
-        'Get-PodeAsyncProgress',
+        'Set-PodeAsyncRouteProgress',
+        'Get-PodeAsyncRouteProgress',
         'Set-PodeAsyncRouteOASchemaName',
         'Set-PodeAsyncRoutePermission',
-        'Get-PodeAsyncRoute',
+        'Get-PodeAsyncRouteOperation',
         'Add-PodeAsyncRouteCallback',
 
         # handlers

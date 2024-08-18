@@ -291,7 +291,7 @@
     asyncRouteOperationDoesNotExistExceptionMessage                   = 'Operacja Async Route z Id {0} nie istnieje.'
     scriptContainsDisallowedCommandExceptionMessage                   = "Skrypt nie może zawierać polecenia '{0}'."
     invalidQueryElementExceptionMessage                               = 'Podane zapytanie jest nieprawidłowe. {0} nie jest prawidłowym elementem zapytania.'
-    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress można używać tylko wewnątrz bloku skryptowego Async Route.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress można używać tylko wewnątrz bloku skryptowego Async Route.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Limit postępu nie może być niższy niż obecny postęp.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} różni się między różnymi definicjami OpenAPI.'
     routeNotMarkedAsAsyncExceptionMessage                             = "Trasa '{0}' nie jest oznaczona jako trasa asynchroniczna."

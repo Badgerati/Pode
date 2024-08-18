@@ -342,7 +342,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
 
     Add-PodeRoute -PassThru -Method Put -Path '/auth/asyncProgressByTimer' -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -ScriptBlock {
-        Set-PodeAsyncProgress -DurationSeconds 30 -IntervalSeconds 1
+        Set-PodeAsyncRouteProgress -DurationSeconds 30 -IntervalSeconds 1
         for ($i = 0 ; $i -lt 30 ; $i++) {
             Start-Sleep 1
         }
@@ -353,20 +353,20 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         $start = [int]( Get-PodeHeader -Name 'Start')
         $end = [int]( Get-PodeHeader -Name 'End')
         Write-PodeHost "Start=$start End=$end"
-        Set-PodeAsyncProgress -Start $start -End $End -UseDecimalProgress -MaxProgress 80
+        Set-PodeAsyncRouteProgress -Start $start -End $End -UseDecimalProgress -MaxProgress 80
         [double]$sum = 0.0
         for ($i = $Start; $i -le $End; $i++) {
             $sum += [math]::Sqrt($i )
-            Set-PodeAsyncProgress -Tick
+            Set-PodeAsyncRouteProgress -Tick
         }
-        Write-PodeHost  (Get-PodeAsyncProgress)
-        Set-PodeAsyncProgress -Start $start -End $End -Steps 4
+        Write-PodeHost  (Get-PodeAsyncRouteProgress)
+        Set-PodeAsyncRouteProgress -Start $start -End $End -Steps 4
         for ($i = $Start; $i -le $End; $i += 4) {
             $sum += [math]::Sqrt($i )
-            Set-PodeAsyncProgress -Tick
+            Set-PodeAsyncRouteProgress -Tick
         }
 
-        Write-PodeHost  (Get-PodeAsyncProgress)
+        Write-PodeHost  (Get-PodeAsyncRouteProgress)
         Write-PodeHost "Result of Start=$start End=$end is $sum"
         return $sum
     } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 10 -MinRunspaces 5 -PassThru | Set-PodeOARouteInfo -Summary 'Caluclate sum of square roots'  -PassThru |
@@ -376,11 +376,11 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         ) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  @{ 'application/json' = New-PodeOANumberProperty -Name 'Result' -Format Double -Description 'Result' -Required -Object }
 
 
-    Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru | Set-PodeOARouteInfo -Summary 'Get Async Route Task Info'
+    Add-PodeAsyncRouteGet -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru | Set-PodeOARouteInfo -Summary 'Get Async Route Task Info'
 
-    Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Query -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -OADefinitionTag 'Default', 'v3.1' -PassThru | Set-PodeOARouteInfo -Summary 'Stop Async Route Task'
+    Add-PodeAsyncRouteStop -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Query -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -OADefinitionTag 'Default', 'v3.1' -PassThru | Set-PodeOARouteInfo -Summary 'Stop Async Route Task'
 
-    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru | Set-PodeOARouteInfo -Summary 'Query Async Route Task Info'
+    Add-PodeAsyncRouteQuery -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru | Set-PodeOARouteInfo -Summary 'Query Async Route Task Info'
 
     Add-PodeRoute -PassThru -Method Post -path '/receive/callback' -ScriptBlock {
         write-podehost 'Callback received'

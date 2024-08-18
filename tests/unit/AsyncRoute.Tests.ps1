@@ -186,9 +186,9 @@ Describe 'Set-PodeAsyncRoutePermission' {
 }
 
 
-# Assuming the function Export-PodeAsyncInfo is already defined in your session or module
+# Assuming the function Export-PodeAsyncRouteInfo is already defined in your session or module
 
-Describe 'Export-PodeAsyncInfo Tests' {
+Describe 'Export-PodeAsyncRouteInfo Tests' {
 
     BeforeEach {
         $testDate = Get-Date
@@ -215,7 +215,7 @@ Describe 'Export-PodeAsyncInfo Tests' {
             $asyncData['Result'] = 'Success'
             $asyncData['CompletedTime'] = $testDate.AddMinutes(5)
 
-            $result = Export-PodeAsyncInfo -Async $asyncData
+            $result = Export-PodeAsyncRouteInfo -Async $asyncData
 
             $result | Should -BeOfType 'hashtable'
             $result.Id | Should -Be 'async-001'
@@ -240,7 +240,7 @@ Describe 'Export-PodeAsyncInfo Tests' {
             $asyncData = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
             $asyncData['Id'] = 'async-002'
 
-            $result = Export-PodeAsyncInfo -Async $asyncData -Raw
+            $result = Export-PodeAsyncRouteInfo -Async $asyncData -Raw
 
             $result | Should -BeOfType 'System.Collections.Concurrent.ConcurrentDictionary[string, psobject]'
             $result['Id'] | Should -Be 'async-002'
@@ -255,7 +255,7 @@ Describe 'Export-PodeAsyncInfo Tests' {
             $asyncData['ExpireTime'] = $testDate.AddMinutes(10)
             $asyncData['State'] = 'Running'
 
-            $result = Export-PodeAsyncInfo -Async $asyncData
+            $result = Export-PodeAsyncRouteInfo -Async $asyncData
 
             $result | Should -BeOfType 'hashtable'
             $result.Id | Should -Be 'async-003'
@@ -267,7 +267,7 @@ Describe 'Export-PodeAsyncInfo Tests' {
     }
 }
 
-Describe 'Get-PodeAsyncRoute' {
+Describe 'Get-PodeAsyncRouteOperation' {
 
     BeforeAll {
         $PodeContext = @{
@@ -320,7 +320,7 @@ Describe 'Get-PodeAsyncRoute' {
     It 'should return all routes when Id and Name are null' {
 
         # Act
-        $Result = Get-PodeAsyncRoute
+        $Result = Get-PodeAsyncRouteOperation
 
         # Assert
         $Result.Count | Should -Be 3
@@ -346,7 +346,7 @@ Describe 'Get-PodeAsyncRoute' {
         # Arrange
 
         # Act
-        $Result = Get-PodeAsyncRoute -Id $operationId3
+        $Result = Get-PodeAsyncRouteOperation -Id $operationId3
 
         # Assert
         $Result.Id | Should -Be $operationId3
@@ -358,7 +358,7 @@ Describe 'Get-PodeAsyncRoute' {
     It 'should return routes with Name Route1' {
 
         # Act
-        $Result = Get-PodeAsyncRoute -Name 'PesterTest2'
+        $Result = Get-PodeAsyncRouteOperation -Name 'PesterTest2'
 
         # Assert
         $Result.Id | Should -Be $operationId2
@@ -372,16 +372,16 @@ Describe 'Get-PodeAsyncRoute' {
         $MockResults = @()
 
         # Act
-        $Result = Get-PodeAsyncRoute -Id '999'
+        $Result = Get-PodeAsyncRouteOperation -Id '999'
 
         # Assert
         $Result | Should -BeNullOrEmpty
     }
 
-    It 'should pass the Raw switch to Export-PodeAsyncInfo' {
+    It 'should pass the Raw switch to Export-PodeAsyncRouteInfo' {
 
         # Act
-        $Result = Get-PodeAsyncRoute -Raw
+        $Result = Get-PodeAsyncRouteOperation -Raw
 
         # Assert
         $Result.Count | should -Be 3
@@ -558,5 +558,5 @@ Describe 'Set-PodeAsyncRouteOASchemaName' {
         $definition.QueryParameterName | Should -Be 'DefaultAsyncRouteTaskQueryParameter'
     }
 
-      
+
 }

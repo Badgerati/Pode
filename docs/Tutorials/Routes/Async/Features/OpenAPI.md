@@ -21,9 +21,9 @@ You can tailor the generated OpenAPI documentation to fit your specific needs:
 ### Piping for Documentation
 
 To generate OpenAPI documentation for an async route, you must pipe the route definition through `Set-PodeOARouteInfo`, as shown in the example below. This requirement also applies to the following async routes:
-- `Add-PodeAsyncQueryRoute`
-- `Add-PodeAsyncStopRoute`
-- `Add-PodeAsyncGetRoute`
+- `Add-PodeAsyncRouteQuery`
+- `Add-PodeAsyncRouteStop`
+- `Add-PodeAsyncRouteGet`
 
 ## Example Usage
 
