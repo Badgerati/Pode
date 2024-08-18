@@ -253,8 +253,9 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         Write-PodeHost "Message=$($using:uMessage)"
         Start-Sleep $using:uSleepTime
         return @{ InnerValue = $using:uMessage }
-    } | Set-PodeOARouteInfo -Summary 'Async with callback with Using variable' -OperationId 'asyncUsingCallback' -DefinitionTag 'Default','v3.1'  -PassThru |
-        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'  -Timeout 300 -PassThru | Add-PodeAsyncRouteCallback -PassThru -CallbackSendResult | Set-PodeOARequest  -RequestBody (
+    } | Set-PodeOARouteInfo -Summary 'Async with callback with Using variable' -OperationId 'asyncUsingCallback' -DefinitionTag 'Default', 'v3.1'  -PassThru |
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'  -Timeout 300 -PassThru |
+        Add-PodeAsyncRouteCallback -PassThru -CallbackSendResult | Set-PodeOARequest  -RequestBody (
             New-PodeOARequestBody -Content @{'application/json' = (New-PodeOAStringProperty -Name 'callbackUrl' -Format Uri -Object -Example 'http://localhost:8080/receive/callback') }
         )
 
@@ -346,7 +347,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
             Start-Sleep 1
         }
     } | Set-PodeOARouteInfo -Summary 'Async with Progress By Timer' -OperationId 'asyncProgressByTimer' -PassThru |
-    Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300 -MaxRunspaces 10
+        Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300 -MaxRunspaces 10
 
     Add-PodeRoute -PassThru -Method Get -path '/SumOfSquareRoot' -ScriptBlock {
         $start = [int]( Get-PodeHeader -Name 'Start')
@@ -375,11 +376,11 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         ) | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  @{ 'application/json' = New-PodeOANumberProperty -Name 'Result' -Format Double -Description 'Result' -Required -Object }
 
 
-    Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru |Set-PodeOARouteInfo -Summary 'Get Async Route Task Info'
+    Add-PodeAsyncGetRoute -Path '/task' -ResponseContentType  'application/json', 'application/yaml'  -In Path -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru | Set-PodeOARouteInfo -Summary 'Get Async Route Task Info'
 
-    Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Query -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -OADefinitionTag 'Default','v3.1' -PassThru |Set-PodeOARouteInfo -Summary 'Stop Async Route Task'
+    Add-PodeAsyncStopRoute -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Query -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software' -OADefinitionTag 'Default', 'v3.1' -PassThru | Set-PodeOARouteInfo -Summary 'Stop Async Route Task'
 
-    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru |Set-PodeOARouteInfo -Summary 'Query Async Route Task Info'
+    Add-PodeAsyncQueryRoute -path '/tasks'  -ResponseContentType 'application/json', 'application/yaml'   -Payload  Body -QueryContentType 'application/json', 'application/yaml'  -Authentication 'MergedAuth' -Access 'MergedAccess' -Group 'Software'  -PassThru | Set-PodeOARouteInfo -Summary 'Query Async Route Task Info'
 
     Add-PodeRoute -PassThru -Method Post -path '/receive/callback' -ScriptBlock {
         write-podehost 'Callback received'
