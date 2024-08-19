@@ -26,8 +26,8 @@ function Invoke-PodeAsyncRoute {
         # Make a deepcopy of webEvent
         $webEvent_ToClone = @{Route = @{} }
         foreach ($key in $webEvent.Keys) {
-            if (!('Parameters' , 'OnEnd', 'Middleware', 'Request', 'Response', 'PendingCookies', 'Files', 'Route' -contains $key)) {
-                $webEvent_ToClone[$key] = $webEvent[$key]
+            if (!('OnEnd', 'Middleware', 'Response', 'PendingCookies', 'Files', 'Route' -contains $key)) {
+                $webEvent_Clone[$key] = $webEvent[$key]
             }
         }
         foreach ($key in $webEvent.Route.Keys) {
