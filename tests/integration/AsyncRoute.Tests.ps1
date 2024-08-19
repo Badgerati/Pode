@@ -2,7 +2,6 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseUsingScopeModifierInNewRunspaces', '')]
 param()
 
-
 Describe 'ASYNC REST API Requests' {
 
     BeforeAll {
@@ -19,7 +18,7 @@ Describe 'ASYNC REST API Requests' {
         }
         $Port = 8080
         $Endpoint = "http://127.0.0.1:$($Port)"
-        $scriptPath = "$($PSScriptRoot)\..\..\examples\Async.ps1"
+        $scriptPath = "$($PSScriptRoot)\..\..\examples\AsyncRoute.ps1"
         if ($PSVersionTable.PsVersion -gt [version]'6.0') {
             Start-Process 'pwsh' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
         }
@@ -41,10 +40,6 @@ Describe 'ASYNC REST API Requests' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/hello" -Method Get
             $response.message | Should -Be 'Hello!'
         }
-        <#  it "wait a bit" {
-            Start-Sleep -Seconds 3000
-            "done" | Should -be "done"
-        }#>
     }
 
     Describe 'Create Async operation on behalf of Mindy' {

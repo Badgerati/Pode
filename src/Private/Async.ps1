@@ -18,21 +18,21 @@
 #>
 function Invoke-PodeAsyncRoute {
     try {
-        # Generate an Id for the async task, using the provided IdGenerator or a new GUID
+        # Generate an Id for the async route task, using the provided IdGenerator or a new GUID
         $id = Invoke-PodeScriptBlock -ScriptBlock  $WebEvent.Route.AsyncRouteTaskIdGenerator -Return
 
         # Retrieve the task to be executed asynchronously
         $asyncRouteTask = $PodeContext.AsyncRoutes.Items[$WebEvent.Route.AsyncPoolName]
         # Make a deepcopy of webEvent
-        $webEvent_Clone = @{Route = @{} }
+        $webEvent_ToClone = @{Route = @{} }
         foreach ($key in $webEvent.Keys) {
             if (!('Parameters' , 'OnEnd', 'Middleware', 'Request', 'Response', 'PendingCookies', 'Files', 'Route' -contains $key)) {
-                $webEvent_Clone[$key] = $webEvent[$key]
+                $webEvent_ToClone[$key] = $webEvent[$key]
             }
         }
         foreach ($key in $webEvent.Route.Keys) {
             if (!( 'AsyncRouteTaskIdGenerator', 'Middleware', 'Logic' -contains $key)) {
-                $webEvent_Clone.Route[$key] = $webEvent.Route[$key]
+                $webEvent_ToClone.Route[$key] = $webEvent.Route[$key]
             }
         }
 
@@ -43,7 +43,7 @@ function Invoke-PodeAsyncRoute {
                 Sender   = $asyncRouteTask
                 Metadata = @{}
             }
-            WebEvent         = $webEvent_Clone | ConvertTo-Json -Depth 99 | ConvertFrom-Json -AsHashtable
+            WebEvent         = Copy-PodeDeepClone -InputObject $webEvent_ToClone
             ___async___id___ = $id
         }
         # Add any task arguments
@@ -61,7 +61,7 @@ function Invoke-PodeAsyncRoute {
         # Set the creation time
         $creationTime = [datetime]::UtcNow
 
-        # Initialize the result and runspace for the async task
+        # Initialize the result and runspace for the async route task
         $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
         $runspace = Add-PodeRunspace -Type $asyncRouteTask.Name -ScriptBlock (($asyncRouteTask.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
 
@@ -95,7 +95,7 @@ function Invoke-PodeAsyncRoute {
         if ($WebEvent.Auth.User) {
             $asyncOperation['User'] = $WebEvent.Auth.User.Id
             # Make a deepcopy of the permission object
-            $asyncOperation['Permission'] = ($asyncRouteTask.Permission | ConvertTo-Json -Depth 99 | ConvertFrom-Json -AsHashtable)
+            $asyncOperation['Permission'] = ($asyncRouteTask.Permission | Copy-PodeDeepClone)
         }
 
         # Add the request URL and method
@@ -111,6 +111,7 @@ function Invoke-PodeAsyncRoute {
         $_ | Write-PodeErrorLog
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -223,19 +224,14 @@ function Get-PodeAsyncRouteScriptblock {
     # Initialize variables
     $paramLineIndex = $null
     $parameters = ''
-    $paramFound = $false
+
     # Find the line containing 'param' and extract parameters
     for ($i = 0; $i -lt $lines.Length; $i++) {
-        # Check for the blocked commands using a single regex
-        if ($lines[$i] -match 'Write-Pode.*Response') {
-            throw  ($PodeLocale.scriptContainsDisallowedCommandExceptionMessage -f $matches[0].Trim())
-        }
-        if ((! $paramFound) -and ($lines[$i] -match '^\s*param\((.*)\)\s*$')) {
+        if ($lines[$i] -match '^\s*param\((.*)\)\s*$') {
             $parameters = $matches[1].Trim()
             $paramLineIndex = $i
-            $paramFound = $true
+            break
         }
-
     }
 
     # Remove the line containing 'param'
@@ -244,6 +240,7 @@ function Get-PodeAsyncRouteScriptblock {
             $remainingLines = $lines[1..($lines.Length - 1)]
         }
         else {
+            # include comments or empty lines
             $remainingLines = $lines[0..($paramLineIndex - 1)] + $lines[($paramLineIndex + 1)..($lines.Length - 1)]
         }
 
@@ -262,7 +259,35 @@ function Get-PodeAsyncRouteScriptblock {
     return [ScriptBlock]::Create($enhancedScriptBlockContent)
 }
 
+<#
+.SYNOPSIS
+    Validates a ScriptBlock to ensure it does not contain disallowed Pode response commands.
 
+.DESCRIPTION
+    The Test-PodeAsyncRouteScriptblockInvalidCommand function checks a given ScriptBlock
+    to ensure that it does not contain any disallowed Pode response commands, such as
+    'Write-Pode...Response'. If such a command is found, the function throws an exception
+    with a relevant error message.
+
+.PARAMETER ScriptBlock
+    The ScriptBlock that you want to validate. This parameter is mandatory.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeAsyncRouteScriptblockInvalidCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ScriptBlock]
+        $ScriptBlock
+    )
+
+    # Convert the ScriptBlock to a string and check if it contains disallowed commands
+    if ($ScriptBlock.ToString() -imatch 'Write\-Pode.+Response') {
+        # If a disallowed command is found, throw an exception with a relevant message
+        throw ($PodeLocale.scriptContainsDisallowedCommandExceptionMessage -f $Matches[0].Trim())
+    }
+}
 <#
 .SYNOPSIS
     Closes an asynchronous script execution, setting its state to 'Completed' and handling callback invocations.
@@ -915,7 +940,7 @@ function Test-PodeAsyncRoutePermission {
 
 .DESCRIPTION
     This function returns a script block designed to handle asynchronous route operations in a Pode web server.
-    It generates an Id for the async task, invokes the internal async task, and prepares the response based on the Accept header.
+    It generates an Id for the async route task, invokes the internal async route task, and prepares the response based on the Accept header.
     The response includes details such as creation time, Id, state, name, and cancellable status. If the task involves a user,
     it adds default read and write permissions for the user.
 
@@ -946,7 +971,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
 
         # If the task involves a user, include user information and add default permissions
         if ($asyncOperation['User']) {
-            # Assign the user information from the async task to the result object
+            # Assign the user information from the async route task to the result object
             $res.User = $asyncOperation['User']
 
             # Iterate over the permission types: 'Read' and 'Write'
@@ -1310,7 +1335,7 @@ function Export-PodeAsyncRouteInfo {
 .DESCRIPTION
     This function returns a script block designed to query asynchronous route tasks in a Pode web server.
     The script block processes the query from different parts of the request (body, query parameters, headers),
-    searches for async tasks based on the query, checks permissions, and formats the response based on the Accept header.
+    searches for Async Route Tasks based on the query, checks permissions, and formats the response based on the Accept header.
 
 .PARAMETER Payload
     The source of the query, such as 'Body', 'Query', or 'Header'.
@@ -1346,10 +1371,10 @@ function Get-PodeAsyncRouteQueryScriptBlock {
                 $validated = $true
             }
             if ($validated) {
-                # Search for async tasks based on the query and user, checking permissions
+                # Search for Async Route Tasks based on the query and user, checking permissions
                 $results = Search-PodeAsyncRouteTask -Query $query -User $WebEvent.Auth.User -CheckPermission
 
-                # If results are found, export async task information for each result
+                # If results are found, export async route task information for each result
                 if ($results) {
                     foreach ($async in $results) {
                         $response += Export-PodeAsyncRouteInfo -Async $async

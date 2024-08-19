@@ -1,6 +1,6 @@
 # Schedules
 
-A Schedule in Pode is a long-running async task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, but this can be changed by using [`Set-PodeScheduleConcurrency`](../../Functions/Schedules/Set-PodeScheduleConcurrency).
+A Schedule in Pode is a long-running async route task, and unlike timers, when they trigger they are run in their own separate runspace - so they don't affect each other if they take a while to process. By default up to a maximum of 10 schedules can run concurrently, but this can be changed by using [`Set-PodeScheduleConcurrency`](../../Functions/Schedules/Set-PodeScheduleConcurrency).
 
 Schedule triggers are defined using [`cron expressions`](../Misc/CronExpressions), basic syntax is supported as well as some predefined expressions. Pode also has an inbuilt helper, [`New-PodeCron`](../../Functions/Utilities/New-PodeCron), to help with building cron expressions - as [described here](../Misc/CronExpressions#helper). Schedules can start immediately, have a delayed start time, and also have a defined end time.
 
@@ -170,7 +170,7 @@ Invoke-PodeSchedule -Name 'date' -ArgumentList @{ Date = [DateTime]::Now }
 The following is the structure of the Schedule object internally, as well as the object that is returned from [`Get-PodeSchedule`](../../Functions/Schedules/Get-PodeSchedule):
 
 | Name            | Type        | Description                                                                                   |
-| --------------- | ----------- | --------------------------------------------------------------------------------------------- |
+|-----------------|-------------|-----------------------------------------------------------------------------------------------|
 | Name            | string      | The name of the Schedule                                                                      |
 | StartTime       | datetime    | The delayed start time of the Schedule                                                        |
 | EndTime         | datetime    | The end time of the Schedule                                                                  |

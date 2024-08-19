@@ -15,7 +15,7 @@ When an async route is configured using `Set-PodeAsyncRoute`, the corresponding 
 ### Customization Options
 
 You can tailor the generated OpenAPI documentation to fit your specific needs:
-- **OpenApi Schemas**: Customize the schema name for the async task using the `OATypeName` parameter, or other relevant parameters like `$TaskIdName`, `$QueryRequestName`, and `$QueryParameterName` using `Set-PodeAsyncRouteOASchemaName`.
+- **OpenApi Schemas**: Customize the schema name for the async route task using the `OATypeName` parameter, or other relevant parameters like `$TaskIdName`, `$QueryRequestName`, and `$QueryParameterName` using `Set-PodeAsyncRouteOASchemaName`.
 - **Route Information**: Further customize the OpenAPI route definition using Pode’s OpenAPI functions, such as `Set-PodeOARouteInfo` and any othe OpenApi functions available for route definition.
 
 ### Piping for Documentation
@@ -30,14 +30,14 @@ To generate OpenAPI documentation for an async route, you must pipe the route de
 The following example demonstrates how to define an async route and customize its OpenAPI documentation:
 
 ```powershell
-# Set a custom schema name for the async task
+# Set a custom schema name for the async route task
 Set-PodeAsyncRouteOASchemaName -OATypeName 'MyTask'
 
 # Define an async route and customize its OpenAPI information
 Add-PodeRoute -PassThru -Method Post -Path '/asyncExample' -ScriptBlock {
     return @{ Message = "Async Route" }
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -PassThru |
-    Set-PodeOARouteInfo -Summary 'My Async Task' -Description 'This is a description'
+    Set-PodeOARouteInfo -Summary 'My Async Route Task' -Description 'This is a description'
 ```
 
 ### Resulting OpenAPI Documentation
@@ -47,7 +47,7 @@ The generated OpenAPI documentation might look as follows:
 ```yaml
 /asyncExample:
   post:
-    summary: My Async Task
+    summary: My Async Route Task
     description: This is a description
     responses:
       200:

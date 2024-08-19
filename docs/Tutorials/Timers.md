@@ -1,6 +1,6 @@
 # Timers
 
-A Timer in Pode is a short-running async task. All timers in Pode run in the same runspace along side your main server logic - so aim to keep them as short running as possible. Timers have unique names, and iterate on a defined number of seconds.
+A Timer in Pode is a short-running async route task. All timers in Pode run in the same runspace along side your main server logic - so aim to keep them as short running as possible. Timers have unique names, and iterate on a defined number of seconds.
 
 !!! warning
     Since all timers are run within the same runspace, it is wise to keep them as short running as possible. If you require a long-running task it's recommend to use [Schedules](../Schedules) instead.
@@ -137,7 +137,7 @@ Invoke-PodeTimer -Name 'date' -ArgumentList 'Arg1', 'Arg2'
 The following is the structure of the Timer object internally, as well as the object that is returned from [`Get-PodeTimer`](../../Functions/Timers/Get-PodeTimer):
 
 | Name            | Type        | Description                                                                                |
-| --------------- | ----------- | ------------------------------------------------------------------------------------------ |
+|-----------------|-------------|--------------------------------------------------------------------------------------------|
 | Name            | string      | The name of the Timer                                                                      |
 | Interval        | int         | How often the Timer runs, defined in seconds                                               |
 | Limit           | int         | The number of times the Timer should run - 0 if running forever                            |

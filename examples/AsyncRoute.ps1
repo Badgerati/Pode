@@ -16,7 +16,7 @@
     Prevents the server from being terminated.
 
 .EXAMPLE
-    .\PodeServer.ps1 -Port 9090 -Quiet -DisableTermination
+    .\AsyncRoute.ps1 -Port 9090 -Quiet -DisableTermination
 
 .EXAMPLE
     # Example of using the endpoints with Invoke-RestMethod

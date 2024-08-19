@@ -142,7 +142,7 @@ When a route is invoked, it automatically creates a runspace to execute the scri
 
 - **Automatic OpenAPI Definition**: Routes defined with `Set-PodeAsyncRoute` can automatically generate OpenAPI documentation. This includes response types and callback details, making it easier to document and share your API.
 
-## Functions for Managing Async Tasks
+## Functions for Managing Async Route Tasks
 
 ### Add-PodeAsyncRouteGet
 
@@ -160,7 +160,7 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncWait' -ScriptBlock {
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 Add-PodeAsyncRouteGet -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Path |
-Set-PodeOARouteInfo -Summary 'Query an Async Task'  # Set-PodeOARouteInfo is required to get the OpenApi documentation
+Set-PodeOARouteInfo -Summary 'Query an Async Route Task'  # Set-PodeOARouteInfo is required to get the OpenApi documentation
 ```
 
 #### Usage as a User
@@ -188,7 +188,7 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncWait' -ScriptBlock {
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 Add-PodeAsyncRouteStop -Path '/task' -ResponseContentType 'application/json', 'application/yaml' -In Path -PassThru |
-Set-PodeOARouteInfo -Summary 'Stop an Async task'  # Set-PodeOARouteInfo is required to get the OpenApi documentation
+Set-PodeOARouteInfo -Summary 'Stop an Async Route Task'  # Set-PodeOARouteInfo is required to get the OpenApi documentation
 ```
 
 #### Usage as a User
@@ -253,7 +253,7 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncWait' -ScriptBlock {
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -Timeout 300
 
 Add-PodeAsyncRouteQuery -Path '/tasks/query' -ResponseContentType 'application/json', 'application/yaml' -In Body|
-Set-PodeOARouteInfo -Summary 'Query an Async task'  # Set-PodeOARouteInfo is required to get the OpenApi documentation
+Set-PodeOARouteInfo -Summary 'Query an Async Route Task'  # Set-PodeOARouteInfo is required to get the OpenApi documentation
 ```
 
 #### Usage as a User

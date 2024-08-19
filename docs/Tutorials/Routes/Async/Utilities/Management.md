@@ -7,7 +7,7 @@ The management functions in Pode allow you to control and query the status of as
 
 The `  Get-PodeAsyncRouteOperationByFilter` function acts as a public interface for searching asynchronous Pode route operations based on specified query conditions. It allows you to query the status and details of multiple asynchronous tasks based on various parameters.
 
-`  Get-PodeAsyncRouteOperationByFilter` is similar in intent to `Add-PodeAsyncRouteQuery`. The main difference is that this function is used inside the Pode code to manage Async tasks and is not subject to any permissions or restrictions.
+`  Get-PodeAsyncRouteOperationByFilter` is similar in intent to `Add-PodeAsyncRouteQuery`. The main difference is that this function is used inside the Pode code to manage Async Route Tasks and is not subject to any permissions or restrictions.
 
 #### Example Usage
 
@@ -52,7 +52,7 @@ $operationDetails =  Get-PodeAsyncRouteOperation -Id 'b143660f-ebeb-49d9-9f92-cd
 
 The `Stop-PodeAsyncRouteOperation` function aborts a specific asynchronous Pode route operation by its ID. It sets the task's state to 'Aborted' and disposes of the associated runspace. Returns a hashtable representing the detailed information of the aborted asynchronous route operation.
 
-`Stop-PodeAsyncRouteOperation` is similar in intent to `Add-PodeAsyncRouteStop`. The main difference is that this function is used inside the Pode code to manage Async tasks and is not subject to any permissions or restrictions.
+`Stop-PodeAsyncRouteOperation` is similar in intent to `Add-PodeAsyncRouteStop`. The main difference is that this function is used inside the Pode code to manage Async Route Tasks and is not subject to any permissions or restrictions.
 
 #### Example Usage
 

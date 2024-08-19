@@ -1276,8 +1276,13 @@ function Set-PodeAsyncRoute {
                 throw ($PodeLocale.functionCannotBeInvokedMultipleTimesExceptionMessage -f $MyInvocation.MyCommand.Name, $r.Path)
             }
 
+            # Validates $r.Logic for disallowed Pode commands
+            Test-PodeAsyncRouteScriptblockInvalidCommand -ScriptBlock $r.Logic
+
+            # Set the Route as Async
             $r.IsAsync = $true
 
+            # Assign the Id generator 
             if ($IdGenerator) {
                 $r.AsyncRouteTaskIdGenerator = $IdGenerator
             }
@@ -1285,7 +1290,7 @@ function Set-PodeAsyncRoute {
                 $r.AsyncRouteTaskIdGenerator = { return (New-PodeGuid) }
             }
 
-            # Store the route's async task definition in Pode context
+            # Store the route's async route task definition in Pode context
             $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
                 Name             = $r.AsyncPoolName
                 Script           = Get-PodeAsyncRouteScriptblock -ScriptBlock $r.Logic

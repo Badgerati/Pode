@@ -1,6 +1,6 @@
 # IdGenerator
 
-The `IdGenerator` parameter specifies the function used to generate unique IDs for asynchronous tasks. This allows you to customize the way IDs are generated for each async task, ensuring they meet your application's requirements.
+The `IdGenerator` parameter specifies the function used to generate unique IDs for asynchronous tasks. This allows you to customize the way IDs are generated for each async route task, ensuring they meet your application's requirements.
 
 - **Default Value**: The default function used is `New-PodeGuid`, which generates a unique GUID for each task.
 
@@ -17,5 +17,5 @@ Add-PodeRoute -PassThru -Method Post -Path '/customAsyncId' -ScriptBlock {
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -IdGenerator  {return [guid]::NewGuid().ToString() + "-custom" }
 ```
 
-In this example, the `New-CustomAsyncId` function generates a GUID with a custom suffix, ensuring each async task has a unique and identifiable ID.
+In this example, the `New-CustomAsyncId` function generates a GUID with a custom suffix, ensuring each async route task has a unique and identifiable ID.
 

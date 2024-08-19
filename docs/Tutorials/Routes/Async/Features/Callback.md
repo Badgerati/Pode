@@ -79,11 +79,11 @@ Add-PodeRoute -PassThru -Method Post -Path '/asyncWithCallback' -ScriptBlock {
 2. **Setting Async Route with Callback**: The `Set-PodeAsyncRoute` processes the route to make it asynchronous and sets up the callback.
     - `-ResponseContentType` specifies the response formats as JSON and YAML.
     - `-Callback` enables the callback functionality.
-    - `-CallbackUrl` sets the URL that will be called when the async task is completed, using a runtime expression based on the request body.
+    - `-CallbackUrl` sets the URL that will be called when the async route task is completed, using a runtime expression based on the request body.
     - `-CallbackContentType` specifies the content type for the callback request.
     - `-CallbackMethod` sets the HTTP method for the callback request, using a runtime expression based on the request body.
     - `-CallbackHeaderFields` includes custom header fields in the callback request, using a runtime expression based on the request headers.
-    - `-CallbackSendResult` ensures that the result of the async task is sent in the callback request.
+    - `-CallbackSendResult` ensures that the result of the async route task is sent in the callback request.
     - `-EventName` specifies the event name for the callback.
 
-This setup ensures that when the asynchronous task completes, a request will be made to the specified callback URL with the defined settings, including the result of the async task, using runtime expressions to dynamically set the callback parameters.
+This setup ensures that when the asynchronous task completes, a request will be made to the specified callback URL with the defined settings, including the result of the async route task, using runtime expressions to dynamically set the callback parameters.
