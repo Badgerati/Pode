@@ -369,7 +369,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         Write-PodeHost  (Get-PodeAsyncRouteProgress)
         Write-PodeHost "Result of Start=$start End=$end is $sum"
         return $sum
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 10 -MinRunspaces 5 -PassThru | Set-PodeOARouteInfo -Summary 'Caluclate sum of square roots'  -PassThru |
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml' -MaxRunspaces 10 -MinRunspaces 5 -PassThru | Set-PodeOARouteInfo -Summary 'Calculate sum of square roots'  -PassThru |
         Set-PodeOARequest -PassThru -Parameters (
       (  New-PodeOANumberProperty -Name 'Start' -Format Double -Description 'Start' -Required | ConvertTo-PodeOAParameter -In Header),
          (   New-PodeOANumberProperty -Name 'End' -Format Double -Description 'End' -Required | ConvertTo-PodeOAParameter -In Header)
@@ -392,4 +392,145 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         Write-PodeJsonResponse -Value @{'message' = 'Hello!' } -StatusCode 200
     } -PassThru | Set-PodeOARouteInfo -Summary 'Hello from the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
 
+
+    Add-PodeRoute  -PassThru -Method Get -Path '/events' -ScriptBlock {
+        # ConvertTo-PodeSseConnection -Name 'Events' -Scope Local -Group 'Test events'
+        $msg = "Start - Hello there! The datetime is: $([datetime]::Now.TimeOfDay)"
+        write-podehost $msg
+        Send-PodeSseEvent   -Data $msg -FromEvent #-name 'Events' -Group 'Test events' #-FromEvent
+        write-podehost 'PodeSseEvent sent'
+        Start-Sleep -Seconds 10
+        $msg = "End -Hello there! The datetime is: $([datetime]::Now.TimeOfDay)"
+        write-podehost $msg
+        Send-PodeSseEvent   -Data $msg  -FromEvent #-name 'Events' -Group 'Test events' #-FromEvent
+        write-podehost 'PodeSseEvent sent'
+        return @{'message' = 'Done' }
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json'  -MaxRunspaces 2  -PassThru -EnableSse -SseGroup 'Test events'
+
+    Add-PodeRoute -method Get -Path '/html/events' -ScriptBlock {
+        Write-PodeHtmlResponse -StatusCode 200 -Value  @'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventSource Example</title>
+</head>
+<body>
+    <h1>EventSource Demo</h1>
+    <p>Listening for events...</p>
+    <div id="output"></div> <!-- A div to display the event data -->
+
+    <script>
+        // Fetch the EventSource URL
+        fetch('http://localhost:8080/events')
+            .then(response => response.json())
+            .then(data => {
+                // Log the full data received from the RESTful call
+                console.log('Received RESTful data:', data);
+
+                // Retrieve the Name from the Sse hashtable
+                const eventSourceName = data.Sse.Url;
+                const eventSourceUrl = `${eventSourceName}`;
+
+                // Log the constructed EventSource URL
+                console.log('Constructed EventSource URL:', eventSourceUrl);
+
+                // Initialize EventSource with the retrieved name
+                const sse = new EventSource(eventSourceUrl);
+                const outputDiv = document.getElementById('output');
+
+                sse.addEventListener('pode.open', (e) => {
+                    var data = JSON.parse(e.data);
+                    let clientId = data.clientId;
+                    let group = data.group;
+                    let name = data.name;
+                    let asyncRouteTaskId = data.asyncRouteTaskId;
+
+                    // Display the data on the webpage
+                    outputDiv.innerHTML += `
+                        <p><strong>pode.open Event:</strong></p>
+                        <p>Client ID: ${clientId}</p>
+                        <p>Group: ${group}</p>
+                        <p>Name: ${name}</p>
+                        <p>AsyncRouteTaskId: ${asyncRouteTaskId}</p>
+                        <hr>
+                    `;
+
+                    console.log(`Client ID: ${clientId}`);
+                    console.log(`Group: ${group}`);
+                    console.log(`Name: ${name}`);
+                    console.log(`AsyncRouteTaskId: ${asyncRouteTaskId}`);
+                });
+
+                sse.addEventListener('pode.close', (e) => {
+                    console.log('Closing SSE connection.');
+                    outputDiv.innerHTML += `
+                        <p><strong>pode.close Event:</strong></p>
+                        <p>Connection is closing.</p>
+                        <hr>
+                    `;
+                    sse.close();
+                });
+                sse.addEventListener('message', (e) => {
+                    var data = JSON.parse(e.data);
+                    let updateInfo = data.updateInfo;
+
+                    // Handle the update event
+                    outputDiv.innerHTML += `
+                        <p><strong>message Event:</strong></p>
+                        <p>Update Info: ${updateInfo}</p>
+                        <hr>
+                    `;
+
+                    console.log(`Update Info: ${updateInfo}`);
+                });
+                sse.addEventListener('events', (e) => {
+                    var data = JSON.parse(e.data);
+                    let updateInfo = data.updateInfo;
+
+                    // Handle the update event
+                    outputDiv.innerHTML += `
+                        <p><strong>pode.update Event:</strong></p>
+                        <p>Update Info: ${updateInfo}</p>
+                        <hr>
+                    `;
+
+                    console.log(`Update Info: ${updateInfo}`);
+                });
+
+                sse.onmessage = function(event) {
+                    console.log("Received an event:", event);
+                    outputDiv.innerHTML += `
+                        <p><strong>General Message Event:</strong></p>
+                        <p>Data: ${event.data}</p>
+                        <hr>
+                    `;
+                };
+
+
+
+                sse.addEventListener('pode.error', (e) => {
+                    var data = JSON.parse(e.data);
+                    let errorMessage = data.errorMessage;
+
+                    // Handle the error event
+                    outputDiv.innerHTML += `
+                        <p><strong>pode.error Event:</strong></p>
+                        <p>Error Message: ${errorMessage}</p>
+                        <hr>
+                    `;
+
+                    console.error(`Error Message: ${errorMessage}`);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching the EventSource name:', error);
+            });
+    </script>
+</body>
+</html>
+
+'@
+    }
 }

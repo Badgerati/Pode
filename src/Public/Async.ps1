@@ -616,10 +616,10 @@ function Add-PodeAsyncRouteQuery {
 
     # Determine the HTTP method based on the payload location
     $param.Method = (@{
-        'Body'   = 'Post'
-        'Header' = 'Get'
-        'Query'  = 'Get'
-    })[$Payload]
+            'Body'   = 'Post'
+            'Header' = 'Get'
+            'Query'  = 'Get'
+        })[$Payload]
 
     # Add the route to Pode
     $route = Add-PodeRoute @param
@@ -1282,7 +1282,7 @@ function Set-PodeAsyncRoute {
             # Set the Route as Async
             $r.IsAsync = $true
 
-            # Assign the Id generator 
+            # Assign the Id generator
             if ($IdGenerator) {
                 $r.AsyncRouteTaskIdGenerator = $IdGenerator
             }
@@ -1300,8 +1300,7 @@ function Set-PodeAsyncRoute {
                 Cancellable      = !($NotCancellable.IsPresent)
                 MinRunspaces     = $MinRunspaces
                 MaxRunspaces     = $MaxRunspaces
-                EnableSse        = $EnableSse.IsPresent
-                SseGroup         = $SseGroup
+
                 Timeout          = $Timeout
                 Permission       = @{}
             }
@@ -1332,6 +1331,70 @@ function Set-PodeAsyncRoute {
                             -DefinitionTag $key `
                             -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $oaName[$key].OATypeName )
                 }
+            }
+            if ($EnableSse.IsPresent) {
+                Write-PodeHost 'Enable SSE'
+                $sseRoute = Add-PodeRoute -PassThru -method Get -Path "$($r.Path)_events" -ArgumentList $SseGroup `
+                    -ScriptBlock {
+                    param($SseGroup)
+
+                    if ([string]::IsNullOrEmpty($SseGroup)) {
+                        write-podehost "webEvent.Route.Path=$($webEvent.Route.Path)"
+                        ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local -Group $SseGroup
+                    }
+                    else {
+                        ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local
+                    }
+
+                    $id = $WebEvent.Query['Id']
+                    if (!$PodeContext.AsyncRoutes.Results.ContainsKey($id)) {
+                        try {
+                            throw ($PodeLocale.asyncIdDoesNotExistExceptionMessage -f $id)
+                        }
+                        catch {
+                            # Log the error
+                            $_ | Write-PodeErrorLog
+                        }
+                    }
+
+                    while (!$PodeContext.AsyncRoutes.Results[$Id].IsCompleted) {
+                        start-sleep 1
+                    }
+                    $AsyncResult=   $PodeContext.AsyncRoutes.Results[$Id]
+                    try {
+                        switch ($AsyncResult['State']) {
+                            'Failed' {
+                                $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Error = $AsyncResult['Error'] }
+                            }
+                            'Completed' {
+                                if ($AsyncResult['Result']) {
+                                    $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Result = $AsyncResult['Result'] }
+                                }
+                                else {
+                                    $null = Send-PodeSseEvent -FromEvent -Data @{ State = 'Completed' }
+                                }
+                            }
+                            'Aborted' {
+                                $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Error = $AsyncResult['Error'] }
+                            }
+                        }
+                        $AsyncResult['Sse']['SeeEventInfoState'] = 'Completed'
+                    }
+                    catch {
+                        # Log any errors encountered during SSE handling
+                        $_ | Write-PodeErrorLog
+                        $AsyncResult['Sse']['SeeEventInfoState'] = 'Failed'
+                    }
+
+                }
+
+                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName]['Sse'] = @{
+                    Group = $SseGroup
+                    Name  = "$($r.Path)_events"
+                    Route = $sseRoute
+                }
+
+                #      write-podehost  $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Sse -Explode -label 'PodeContext.AsyncRoutes.Items[$r.AsyncPoolName]'
             }
         }
 

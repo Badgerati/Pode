@@ -115,7 +115,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
             # Example route object to test with
             $route = @{
                 AsyncPoolName = 'testRoute'
-                IsAsync = $true
+                IsAsync       = $true
             }
             $PodeContext.AsyncRoutes.Items['testRoute'] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
 
@@ -214,6 +214,7 @@ Describe 'Export-PodeAsyncRouteInfo Tests' {
             }
             $asyncData['Result'] = 'Success'
             $asyncData['CompletedTime'] = $testDate.AddMinutes(5)
+            $asyncData['IsCompleted'] = $true
 
             $result = Export-PodeAsyncRouteInfo -Async $asyncData
 
@@ -228,10 +229,11 @@ Describe 'Export-PodeAsyncRouteInfo Tests' {
             $result.StartingTime | Should -Be (Format-PodeDateToIso8601 -Date ($testDate.AddSeconds(30)))
             $result.CallbackSettings.Url | Should -Be 'http://example.com/callback'
             $result.User | Should -Be 'testuser'
-            $result.SseEnabled | Should -Be $true
+            $result.Sse | Should -BeNullOrEmpty
             $result.Progress | Should -Be 50
             $result.Result | Should -Be 'Success'
             $result.CompletedTime | Should -Be (Format-PodeDateToIso8601 -Date ($testDate.AddMinutes(5)))
+            $result.IsCompleted | Should -BeTrue
         }
     }
 
@@ -507,9 +509,9 @@ Describe 'Set-PodeAsyncRouteOASchemaName' {
                         default = @{
                             hiddenComponents = @{
                                 AsyncRoute = @{
-                                    OATypeName = 'DefaultAsyncRouteTask'
-                                    TaskIdName = 'defaultId'
-                                    QueryRequestName = 'DefaultAsyncRouteTaskQuery'
+                                    OATypeName         = 'DefaultAsyncRouteTask'
+                                    TaskIdName         = 'defaultId'
+                                    QueryRequestName   = 'DefaultAsyncRouteTaskQuery'
                                     QueryParameterName = 'DefaultAsyncRouteTaskQueryParameter'
                                 }
                             }
@@ -523,11 +525,11 @@ Describe 'Set-PodeAsyncRouteOASchemaName' {
     It 'Should set the OpenAPI schema names correctly when all parameters are provided' {
         # Arrange
         $params = @{
-            OATypeName = 'CustomTask'
-            TaskIdName = 'CustomId'
-            QueryRequestName = 'CustomQuery'
+            OATypeName         = 'CustomTask'
+            TaskIdName         = 'CustomId'
+            QueryRequestName   = 'CustomQuery'
             QueryParameterName = 'CustomQueryParam'
-            OADefinitionTag = @('default')
+            OADefinitionTag    = @('default')
         }
 
         # Act
