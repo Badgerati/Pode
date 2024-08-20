@@ -210,7 +210,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'ビューのフォルダ名は既に存在します: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'リセットする WebSocket の名前が指定されていません。'
     mergeDefaultAuthNotInListExceptionMessage                         = "MergeDefault認証'{0}'は提供された認証リストにありません。"
-    descriptionRequiredExceptionMessage                               = '説明が必要です。'
+    descriptionRequiredExceptionMessage                               = 'パス:{0} 応答:{1} に説明が必要です'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'ページ名は有効な英数字である必要があります: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'デフォルト値は boolean ではなく、enum に含まれていません。'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'OpenApi コンポーネントスキーマ {0} は存在しません。'
@@ -288,5 +288,6 @@
     invalidEncodingExceptionMessage                                   = '無効なエンコーディング: {0}'
     syslogProtocolExceptionMessage                                    = 'SyslogプロトコルはRFC3164またはRFC5424のみを使用できます。'
     definitionTagChangeNotAllowedExceptionMessage                      = 'Routeの定義タグは変更できません。'
+    getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
 }
 

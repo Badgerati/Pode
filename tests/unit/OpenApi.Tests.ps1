@@ -3110,6 +3110,70 @@ Describe 'OpenApi' {
     }
 
 
+    Describe 'Set-PodeOARequest' {
+
+        It 'Sets Parameters on the route if provided' {
+            $route = @{
+                Method = 'GET'
+                OpenApi = @{}
+            }
+            $parameters = @(
+                @{ Name = 'param1'; In = 'query' }
+            )
+
+            Set-PodeOARequest -Route $route -Parameters $parameters
+
+            $route.OpenApi.Parameters | Should -BeExactly $parameters
+        }
+
+        It 'Sets RequestBody on the route if method is POST' {
+            $route = @{
+                Method = 'POST'
+                OpenApi = @{}
+            }
+            $requestBody = @{ Content = 'application/json' }
+
+            Set-PodeOARequest -Route $route -RequestBody $requestBody
+
+            $route.OpenApi.RequestBody | Should -BeExactly $requestBody
+        }
+
+        It 'Throws an exception if RequestBody is set on a method that does not allow it' {
+            $route = @{
+                Method = 'GET'
+                OpenApi = @{}
+            }
+            $requestBody = @{ Content = 'application/json' }
+
+            {
+                Set-PodeOARequest -Route $route -RequestBody $requestBody
+            } | Should -Throw -ExpectedMessage ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f 'GET')
+        }
+
+        It 'Returns the route when PassThru is used' {
+            $route = @{
+                Method = 'POST'
+                OpenApi = @{}
+            }
+
+            $result = Set-PodeOARequest -Route $route -PassThru
+
+            $result | Should -BeExactly $route
+        }
+
+        It 'Does not set RequestBody if not provided' {
+            $route = @{
+                Method = 'PUT'
+                OpenApi = @{}
+            }
+
+            Set-PodeOARequest -Route $route
+
+            $route.OpenApi.RequestBody | Should -BeNullOrEmpty
+        }
+    }
+
+
 
     Context 'Pet Object example' {
         BeforeEach {

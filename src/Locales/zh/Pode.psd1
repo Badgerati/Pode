@@ -210,7 +210,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = '视图文件夹名称已存在: {0}'
     noNameForWebSocketResetExceptionMessage                           = '没有提供要重置的 WebSocket 的名称。'
     mergeDefaultAuthNotInListExceptionMessage                         = "MergeDefault 身份验证 '{0}' 不在提供的身份验证列表中。"
-    descriptionRequiredExceptionMessage                               = '描述是必需的。'
+    descriptionRequiredExceptionMessage                               = '路径:{0} 响应:{1} 需要描述'
     pageNameShouldBeAlphaNumericExceptionMessage                      = '页面名称应为有效的字母数字值: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = '默认值不是布尔值且不属于枚举。'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'OpenApi 组件架构 {0} 不存在。'
@@ -288,4 +288,5 @@
     invalidEncodingExceptionMessage                                   = '无效的编码: {0}'
     syslogProtocolExceptionMessage                                    = 'Syslog 协议只能使用 RFC3164 或 RFC5424。'
     definitionTagChangeNotAllowedExceptionMessage                      = 'Route的定义标签无法更改。'
+    getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
 }

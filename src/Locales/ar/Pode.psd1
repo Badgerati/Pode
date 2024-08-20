@@ -210,7 +210,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'اسم مجلد العرض موجود بالفعل: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'لا يوجد اسم لإعادة تعيين WebSocket من المزود.'
     mergeDefaultAuthNotInListExceptionMessage                         = "المصادقة MergeDefault '{0}' غير موجودة في قائمة المصادقة المقدمة."
-    descriptionRequiredExceptionMessage                               = 'الوصف مطلوب.'
+    descriptionRequiredExceptionMessage                               = 'مطلوب وصف للمسار: {0} الاستجابة: {1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'يجب أن يكون اسم الصفحة قيمة أبجدية رقمية صالحة: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'القيمة الافتراضية ليست من نوع boolean وليست جزءًا من التعداد.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'مخطط مكون OpenApi {0} غير موجود.'
@@ -288,4 +288,5 @@
     invalidEncodingExceptionMessage                                   = 'ترميز غير صالح: {0}'
     syslogProtocolExceptionMessage                                    = 'يمكن لبروتوكول Syslog استخدام RFC3164 أو RFC5424 فقط.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
+      getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
 }

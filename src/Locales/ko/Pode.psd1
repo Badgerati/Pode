@@ -210,7 +210,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = '뷰 폴더 이름이 이미 존재합니다: {0}'
     noNameForWebSocketResetExceptionMessage                           = '재설정할 WebSocket의 이름이 제공되지 않았습니다.'
     mergeDefaultAuthNotInListExceptionMessage                         = "병합 기본 인증 '{0}'이(가) 제공된 인증 목록에 없습니다."
-    descriptionRequiredExceptionMessage                               = '설명이 필요합니다.'
+    descriptionRequiredExceptionMessage                               = '경로:{0} 응답:{1} 에 대한 설명이 필요합니다'
     pageNameShouldBeAlphaNumericExceptionMessage                      = '페이지 이름은 유효한 알파벳 숫자 값이어야 합니다: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = '기본값이 boolean이 아니며 enum에 속하지 않습니다.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'OpenApi 구성 요소 스키마 {0}이(가) 존재하지 않습니다.'
@@ -288,4 +288,5 @@
     invalidEncodingExceptionMessage                                   = '잘못된 인코딩: {0}'
     syslogProtocolExceptionMessage                                    = 'Syslog 프로토콜은 RFC3164 또는 RFC5424만 사용할 수 있습니다.'
     definitionTagChangeNotAllowedExceptionMessage                      = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
+      getRequestBodyNotAllowedExceptionMessage                          = '{0} 작업에는 요청 본문이 있을 수 없습니다.'
 }

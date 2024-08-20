@@ -210,7 +210,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'El nombre de la carpeta Views ya existe: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'No se proporcionó ningún nombre para restablecer el WebSocket.'
     mergeDefaultAuthNotInListExceptionMessage                         = "La autenticación MergeDefault '{0}' no está en la lista de autenticación proporcionada."
-    descriptionRequiredExceptionMessage                               = 'Se requiere una descripción.'
+    descriptionRequiredExceptionMessage                               = 'Se requiere una descripción para la Ruta:{0} Respuesta:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'El nombre de la página debe ser un valor alfanumérico válido: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'El valor predeterminado no es un booleano y no forma parte del enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'El esquema del componente OpenApi {0} no existe.'
@@ -288,4 +288,5 @@
     invalidEncodingExceptionMessage                                   = 'Codificación inválida: {0}'
     syslogProtocolExceptionMessage                                    = 'El protocolo Syslog solo puede usar RFC3164 o RFC5424.'
     definitionTagChangeNotAllowedExceptionMessage                      = 'La etiqueta de definición para una Route no se puede cambiar.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'Las operaciones {0} no pueden tener un cuerpo de solicitud.'
 }
