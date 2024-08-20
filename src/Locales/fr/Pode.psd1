@@ -282,12 +282,11 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Le module Active Directory est uniquement disponible sur Windows.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La définition OpenAPI nommée {0} existe déjà.'
-    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
     loggingAlreadyEnabledExceptionMessage                             = "La journalisation '{0}' a déjà été activée."
     invalidEncodingExceptionMessage                                   = 'Encodage invalide : {0}'
     syslogProtocolExceptionMessage                                    = 'Le protocole Syslog ne peut utiliser que RFC3164 ou RFC5424.'
-    definitionTagChangeNotAllowedExceptionMessage                      = 'Le tag de définition pour une Route ne peut pas être modifié.'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
     getRequestBodyNotAllowedExceptionMessage                          = 'Les opérations {0} ne peuvent pas avoir de corps de requête.'
 }
-
