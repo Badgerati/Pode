@@ -1,137 +1,143 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <title>$($data.Title)</title>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
-        <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" crossorigin></script>
-        <script type="text/javascript">
-            window.onload = function() {
-                SwaggerUIBundle({
-                    deepLinking: true,
-                    dom_id: '#swagger-ui',
-                    showExtensions: true,
-                    showCommonExtensions: true,
-                    url: '$($data.OpenApi)'
-                });
-            };
-        </script>
 
-        $(if ($data.DarkMode) {
-            "<style>
-                .swagger-ui button {
-                    outline: none !important;
-                }
+<head>
+    <title>$($data.Title)</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" crossorigin></script>
+    <script type="text/javascript">
+        window.onload = function() {
+            SwaggerUIBundle({
+                deepLinking: true,
+                dom_id: '#swagger-ui',
+                showExtensions: true,
+                showCommonExtensions: true,
+                url: '$($data.OpenApi)',
+                requestSnippetsEnabled: true
 
-                .swagger-ui .info .title,
-                .swagger-ui a.nostyle,
-                .swagger-ui .parameter__name,
-                .swagger-ui .parameter__type,
-                .swagger-ui .parameter__deprecated,
-                .swagger-ui .parameter__in,
-                .swagger-ui .parameter__enum,
-                .swagger-ui table thead tr th,
-                .swagger-ui .response-col_status,
-                .swagger-ui .response-col_description,
-                .swagger-ui .response-control-media-type__title,
-                .swagger-ui table thead tr td,
-                .swagger-ui .opblock .opblock-section-header h4,
-                .swagger-ui label,
-                .swagger-ui .tab li,
-                .swagger-ui .opblock .opblock-section-header label,
-                .swagger-ui .opblock .opblock-summary-path span,
-                .swagger-ui .opblock-tag span,
-                .swagger-ui .response-col_links,
-                .swagger-ui .response-col_links i,
-                .swagger-ui .btn {
-                    color: #CCCCCC !important;
-                }
+            });
+        };
+    </script>
 
-                .swagger-ui svg.arrow,
-                .swagger-ui button.unlocked,
-                .swagger-ui .authorization__btn.locked {
-                    fill: #CCCCCC;
-                    opacity: 1 !important;
-                }
+    $(if ($data.DarkMode) {
+    "<style>
+        .swagger-ui button {
+            outline: none !important;
+        }
 
-                .swagger-ui select,
-                .swagger-ui select:hover,
-                .swagger-ui select:focus,
-                .swagger-ui select:focus-visible {
-                    color: #BBB;
-                    border: solid 1px #777;
-                }
+        .swagger-ui .info .title,
+        .swagger-ui a.nostyle,
+        .swagger-ui .parameter__name,
+        .swagger-ui .parameter__type,
+        .swagger-ui .parameter__deprecated,
+        .swagger-ui .parameter__in,
+        .swagger-ui .parameter__enum,
+        .swagger-ui table thead tr th,
+        .swagger-ui .response-col_status,
+        .swagger-ui .response-col_description,
+        .swagger-ui .response-control-media-type__title,
+        .swagger-ui table thead tr td,
+        .swagger-ui .opblock .opblock-section-header h4,
+        .swagger-ui label,
+        .swagger-ui .tab li,
+        .swagger-ui .opblock .opblock-section-header label,
+        .swagger-ui .opblock .opblock-summary-path span,
+        .swagger-ui .opblock-tag span,
+        .swagger-ui .response-col_links,
+        .swagger-ui .response-col_links i,
+        .swagger-ui .btn {
+            color: #CCCCCC !important;
+        }
 
-                .swagger-ui .try-out button,
-                .swagger-ui div.model-example .tab .tabitem button.tablinks {
-                    background: #CCCCCC44;
-                    border: solid 1px #777;
-                    color: #CCC;
-                    border-radius: 4px;
-                    padding: 7px;
-                }
-                .swagger-ui div.model-example .tab .tabitem.active button.tablinks {
-                    font-weight: bold;
-                }
+        .swagger-ui svg.arrow,
+        .swagger-ui button.unlocked,
+        .swagger-ui .authorization__btn.locked {
+            fill: #CCCCCC;
+            opacity: 1 !important;
+        }
 
-                .swagger-ui .try-out button:hover,
-                .swagger-ui div.model-example .tab .tabitem button.tablinks:hover {
-                    background: #CCCCCC88;
-                }
+        .swagger-ui select,
+        .swagger-ui select:hover,
+        .swagger-ui select:focus,
+        .swagger-ui select:focus-visible {
+            color: #BBB;
+            border: solid 1px #777;
+        }
 
-                .swagger-ui div.model-example .highlight-code pre {
-                    border: solid 1px #777;
-                    border-radius: 6px;
-                }
+        .swagger-ui .try-out button,
+        .swagger-ui div.model-example .tab .tabitem button.tablinks {
+            background: #CCCCCC44;
+            border: solid 1px #777;
+            color: #CCC;
+            border-radius: 4px;
+            padding: 7px;
+        }
 
-                .swagger-ui .scheme-container {
-                    box-shadow: none;
-                    border-bottom: 1px solid #CCCCCC;
-                }
+        .swagger-ui div.model-example .tab .tabitem.active button.tablinks {
+            font-weight: bold;
+        }
 
-                .swagger-ui .opblock .opblock-summary-description,
-                .swagger-ui .opblock-description-wrapper p,
-                .swagger-ui h4,
-                .swagger-ui h5 {
-                    color: #BBBBBB !important;
-                }
+        .swagger-ui .try-out button:hover,
+        .swagger-ui div.model-example .tab .tabitem button.tablinks:hover {
+            background: #CCCCCC88;
+        }
 
-                body,
-                .swagger-ui .info .title,
-                .swagger-ui .scheme-container,
-                .swagger-ui select,
-                .modal-ux {
-                    background-color: #222 !important;
-                    color: #CCC;
-                }
+        .swagger-ui div.model-example .highlight-code pre {
+            border: solid 1px #777;
+            border-radius: 6px;
+        }
 
-                .modal-ux-header h3 {
-                    color: #CCC !important;
-                }
+        .swagger-ui .scheme-container {
+            box-shadow: none;
+            border-bottom: 1px solid #CCCCCC;
+        }
 
-                .close-modal svg {
-                    filter: invert(1) brightness(0.5);
-                }
+        .swagger-ui .opblock .opblock-summary-description,
+        .swagger-ui .opblock-description-wrapper p,
+        .swagger-ui h4,
+        .swagger-ui h5 {
+            color: #BBBBBB !important;
+        }
 
-                .swagger-ui .opblock .opblock-section-header {
-                    background-color: transparent;
-                }
+        body,
+        .swagger-ui .info .title,
+        .swagger-ui .scheme-container,
+        .swagger-ui select,
+        .modal-ux {
+            background-color: #222 !important;
+            color: #CCC;
+        }
 
-                .swagger-ui textarea,
-                .swagger-ui input[type=text],
-                .swagger-ui input[type=password] {
-                    background-color: #41444e;
-                    color: #CCC;
-                }
+        .modal-ux-header h3 {
+            color: #CCC !important;
+        }
 
-                .swagger-ui .topbar {
-                    background-color: #000;
-                }
-            </style>"
-        })
-    </head>
-    <body>
-        <div id="swagger-ui"></div>
-    </body>
+        .close-modal svg {
+            filter: invert(1) brightness(0.5);
+        }
+
+        .swagger-ui .opblock .opblock-section-header {
+            background-color: transparent;
+        }
+
+        .swagger-ui textarea,
+        .swagger-ui input[type=text],
+        .swagger-ui input[type=password] {
+            background-color: #41444e;
+            color: #CCC;
+        }
+
+        .swagger-ui .topbar {
+            background-color: #000;
+        }
+    </style>"
+    })
+</head>
+
+<body>
+    <div id="swagger-ui"></div>
+</body>
+
 </html>

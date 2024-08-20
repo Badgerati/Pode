@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'اسم مجلد العرض موجود بالفعل: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'لا يوجد اسم لإعادة تعيين WebSocket من المزود.'
     mergeDefaultAuthNotInListExceptionMessage                         = "المصادقة MergeDefault '{0}' غير موجودة في قائمة المصادقة المقدمة."
-    descriptionRequiredExceptionMessage                               = 'الوصف مطلوب.'
+    descriptionRequiredExceptionMessage                               = 'مطلوب وصف للمسار: {0} الاستجابة: {1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'يجب أن يكون اسم الصفحة قيمة أبجدية رقمية صالحة: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'القيمة الافتراضية ليست من نوع boolean وليست جزءًا من التعداد.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'مخطط مكون OpenApi {0} غير موجود.'
@@ -284,6 +284,7 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = 'تم تمكين تسجيل الطلبات بالفعل.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
-    renamePodeOADefinitionTagExceptionMessage                     = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
+    renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
+    definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
 }
