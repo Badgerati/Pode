@@ -296,5 +296,5 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} 在不同的 OpenAPI 定义之间有所不同。'
     routeNotMarkedAsAsyncExceptionMessage                             = "路由 '{0}' 未标记为异步路由。"
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "函数 '{0}' 不能在同一路由 '{1}' 上多次调用。"
-       getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
+    getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
 }
