@@ -212,7 +212,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'De mapnaam Views bestaat al: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Geen naam opgegeven voor een WebSocket om te resetten.'
     mergeDefaultAuthNotInListExceptionMessage                         = "De standaardauthenticatie '{0}' staat niet in de opgegeven authenticatielijst."
-    descriptionRequiredExceptionMessage                               = 'Een beschrijving is vereist.'
+    descriptionRequiredExceptionMessage                               = 'Een beschrijving is vereist voor Pad:{0} Antwoord:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'De paginanaam moet een geldige alfanumerieke waarde zijn: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'De standaardwaarde is geen boolean en maakt geen deel uit van de enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'Het OpenApi-component schema {0} bestaat niet.'
@@ -296,5 +296,6 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} verschilt tussen verschillende OpenAPI-definities.'
     routeNotMarkedAsAsyncExceptionMessage                             = "De route '{0}' is niet gemarkeerd als een asynchrone route."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "De functie '{0}' kan niet meerdere keren worden aangeroepen voor dezelfde route '{1}'."
+    getRequestBodyNotAllowedExceptionMessage                          = '{0}-operaties kunnen geen Request Body hebben.'
 }
 

@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = '视图文件夹名称已存在: {0}'
     noNameForWebSocketResetExceptionMessage                           = '没有提供要重置的 WebSocket 的名称。'
     mergeDefaultAuthNotInListExceptionMessage                         = "MergeDefault 身份验证 '{0}' 不在提供的身份验证列表中。"
-    descriptionRequiredExceptionMessage                               = '描述是必需的。'
+    descriptionRequiredExceptionMessage                               = '路径:{0} 响应:{1} 需要描述'
     pageNameShouldBeAlphaNumericExceptionMessage                      = '页面名称应为有效的字母数字值: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = '默认值不是布尔值且不属于枚举。'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'OpenApi 组件架构 {0} 不存在。'
@@ -296,4 +296,5 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} 在不同的 OpenAPI 定义之间有所不同。'
     routeNotMarkedAsAsyncExceptionMessage                             = "路由 '{0}' 未标记为异步路由。"
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "函数 '{0}' 不能在同一路由 '{1}' 上多次调用。"
+       getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
 }

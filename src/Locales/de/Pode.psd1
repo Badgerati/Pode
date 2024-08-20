@@ -296,4 +296,5 @@
   openApiDefinitionsMismatchExceptionMessage                        = '{0} variiert zwischen verschiedenen OpenAPI-Definitionen.'
   routeNotMarkedAsAsyncExceptionMessage                             = "Die Route '{0}' ist nicht als asynchrone Route markiert."
   functionCannotBeInvokedMultipleTimesExceptionMessage              = "Die Funktion '{0}' kann nicht mehrmals für dieselbe Route '{1}' aufgerufen werden."
+  getRequestBodyNotAllowedExceptionMessage                          = '{0}-Operationen können keinen Anforderungstext haben.'
 }

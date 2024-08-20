@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'Le nom du dossier Views existe déjà: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Aucun Nom fourni pour réinitialiser le WebSocket.'
     mergeDefaultAuthNotInListExceptionMessage                         = "L'authentification MergeDefault '{0}' n'est pas dans la liste d'authentification fournie."
-    descriptionRequiredExceptionMessage                               = 'Une description est requise.'
+    descriptionRequiredExceptionMessage                               = 'Une description est requise pour le chemin:{0} Réponse:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'Le nom de la page doit être une valeur alphanumérique valide: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = "La valeur par défaut n'est pas un booléen et ne fait pas partie de l'énumération."
     openApiComponentSchemaDoesNotExistExceptionMessage                = "Le schéma du composant OpenApi {0} n'existe pas."
@@ -296,5 +296,6 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} varie entre différentes définitions OpenAPI.'
     routeNotMarkedAsAsyncExceptionMessage                             = "La route '{0}' n'est pas marquée comme une route asynchrone."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "La fonction '{0}' ne peut pas être invoquée plusieurs fois pour la même route '{1}'."
+    getRequestBodyNotAllowedExceptionMessage                          = 'Les opérations {0} ne peuvent pas avoir de corps de requête.'
 }
 
