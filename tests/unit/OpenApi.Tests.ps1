@@ -3112,15 +3112,17 @@ Describe 'OpenApi' {
         It 'Sets Parameters on the route if provided' {
             $route = @{
                 Method = 'GET'
-                OpenApi = @{}
+                OpenApi = @{
+                    Parameters=@{}
+                }
             }
-            $parameters = @(
-                @{ Name = 'param1'; In = 'query' }
-            )
+            $parameters =  @(
+                    @{ Name = 'param1'; In = 'query' }
+                )
 
             Set-PodeOARequest -Route $route -Parameters $parameters
 
-            $route.OpenApi.Parameters | Should -BeExactly $parameters
+            $route.OpenApi.Parameters['Default'] | Should -BeExactly $parameters
         }
 
         It 'Sets RequestBody on the route if method is POST' {
