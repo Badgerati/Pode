@@ -66,7 +66,8 @@
             }
         }
         AsyncRoutes = @{
-            HouseKeeping = @{
+            UserFieldIdentifier = 'Id'
+            HouseKeeping        = @{
                 TimerInterval    = 30
                 RetentionMinutes = 10
             }

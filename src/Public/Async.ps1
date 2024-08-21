@@ -1998,4 +1998,61 @@ function Set-PodeAsyncRouteOASchemaName {
     }
 }
 
+<#
+.SYNOPSIS
+    Sets the field name that uniquely identifies a user for async routes in Pode.
 
+.DESCRIPTION
+    The `Set-PodeAsyncRouteUserIdentifierField` function allows you to specify a custom field name
+    that represents the user identifier in async routes within Pode. This field name is stored in the Pode context
+    and is used throughout the application to identify users in async operations.
+
+.PARAMETER UserIdentifierField
+    The name of the field that uniquely identifies a user. This parameter is mandatory.
+    By default, the user identifier field is 'Id'.
+
+.EXAMPLE
+    Set-PodeAsyncRouteUserIdentifierField -UserIdentifierField 'UserId'
+
+    This example sets the user identifier field to 'UserId', overriding the default 'Id'.
+
+.NOTES
+    The user identifier field is stored in `$PodeContext.AsyncRoutes.UserFieldIdentifier`. The default value is 'Id'.
+#>
+function Set-PodeAsyncRouteUserIdentifierField {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $UserIdentifierField
+    )
+    $PodeContext.AsyncRoutes.UserFieldIdentifier = $UserIdentifierField
+}
+
+<#
+.SYNOPSIS
+    Retrieves the field name that uniquely identifies a user for async routes in Pode.
+
+.DESCRIPTION
+    The `Get-PodeAsyncRouteUserIdentifierField` function returns the current field name
+    used to uniquely identify users in async routes within Pode. This field name is stored in the Pode context.
+
+.PARAMETER UserIdentifierField
+    The name of the field that uniquely identifies a user. This parameter is mandatory.
+    By default, the user identifier field is 'Id'.
+
+.EXAMPLE
+    $userField = Get-PodeAsyncRouteUserIdentifierField
+
+    This example retrieves the current user identifier field, which by default is 'Id'.
+
+.NOTES
+    The user identifier field is retrieved from `$PodeContext.AsyncRoutes.UserFieldIdentifier`. The default value is 'Id'.
+#>
+function Get-PodeAsyncRouteUserIdentifierField {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $UserIdentifierField
+    )
+    return $PodeContext.AsyncRoutes.UserFieldIdentifier
+}

@@ -181,6 +181,8 @@
         'Get-PodeAsyncRouteOperation',
         'Add-PodeAsyncRouteCallback',
         'Add-PodeAsyncRouteSse',
+        'Get-PodeAsyncRouteUserIdentifierField',
+        'Set-PodeAsyncRouteUserIdentifierField',
 
         # handlers
         'Add-PodeHandler',

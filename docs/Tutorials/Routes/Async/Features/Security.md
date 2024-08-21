@@ -3,7 +3,11 @@
 
 All async route operations are subject to Pode security, ensuring that any task operation complies with defined authentication and authorization rules.
 
-- **Permissions**: You can specify read and write permissions for each route. This can include specific users, groups, roles, and scopes.
+> **⚠ Important:**
+> All security checks are performed using the user identifier field specified by the `Set-PodeAsyncRouteUserIdentifierField` function. If this field is not explicitly set, the default field `Id` is used.
+
+#### Permissions
+ You can specify read and write permissions for each route. This can include specific users, groups, roles, and scopes.
   - **Read Access**: Define which users, groups, roles, and scopes have read access. This means that the authenticated user that fits the permission can query the task status.
   - **Write Access**: Define which users, groups, roles, and scopes have write access. This means that the authenticated user that fits the permission can stop the task.
 

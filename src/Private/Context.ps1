@@ -127,13 +127,14 @@ function New-PodeContext {
     }
 
     $ctx.AsyncRoutes = @{
-        Enabled      = $true
-        Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-        Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-        HouseKeeping = @{
+        Enabled             = $true
+        Items               = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+        Results             = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+        HouseKeeping        = @{
             TimerInterval    = 30
             RetentionMinutes = 10
         }
+        UserFieldIdentifier = 'Id'
     }
 
     $ctx.Fim = @{
@@ -916,6 +917,8 @@ function Set-PodeServerConfiguration {
         TimerInterval    = Protect-PodeValue -Value $Configuration.AsyncRoutes.HouseKeeping.TimerInterval -Default $Context.AsyncRoutes.HouseKeeping.TimerInterval
         RetentionMinutes = Protect-PodeValue -Value $Configuration.AsyncRoutes.HouseKeeping.RetentionMinutes -Default $Context.AsyncRoutes.HouseKeeping.RetentionMinutes
     }
+
+    $Context.AsyncRoutes.UserFieldIdentifier = Protect-PodeValue -Value $Configuration.AsyncRoutes.UserFieldIdentifier -Default $Context.AsyncRoutes.UserFieldIdentifier
 
     $Context.Tasks.HouseKeeping = @{
         TimerInterval    = Protect-PodeValue -Value $Configuration.Tasks.HouseKeeping.TimerInterval -Default $Context.Tasks.HouseKeeping.TimerInterval

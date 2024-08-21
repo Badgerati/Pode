@@ -822,7 +822,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
 
             # Add user information if available
             if ($WebEvent.Auth.User) {
-                $asyncOperation['User'] = $WebEvent.Auth.User.Id
+                $asyncOperation['User'] = $WebEvent.Auth.User[$PodeContext.AsyncRoutes.UserFieldIdentifier]
                 # Make a deepcopy of the permission object
                 $asyncOperation['Permission'] = ($asyncRouteTask.Permission | Copy-PodeDeepClone)
             }
