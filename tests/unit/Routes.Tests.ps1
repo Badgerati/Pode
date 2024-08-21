@@ -223,14 +223,14 @@ Describe 'Remove-PodeRoute' {
     It 'Removes async route and cleans up runspace and async route pools' {
         $route = Add-PodeRoute -PassThru -Method Get -Path '/async' -ScriptBlock { Write-Host 'hello' } |
             Set-PodeAsyncRoute -MaxRunspaces 5 -MinRunspaces 3 -ResponseContentType 'application/json'  -Timeout 300 -PassThru
-        $asyncPoolName = $route.AsyncPoolName
-        $PodeContext.RunspacePools[$asyncPoolName].Pool = New-Object PSObject -Property @{
+        $asyncRouteId = $route.AsyncRouteId
+        $PodeContext.RunspacePools[$asyncRouteId].Pool = New-Object PSObject -Property @{
             IsDisposed = $true # to avoid to call BeginClose($null,$null)
         }
         Remove-PodeRoute -Method Get -Path '/async'
 
-        $PodeContext.RunspacePools.ContainsKey($asyncPoolName) | Should -Be $false
-        $PodeContext.AsyncRoutes.Items.ContainsKey($asyncPoolName) | Should -Be $false
+        $PodeContext.RunspacePools.ContainsKey($asyncRouteId) | Should -Be $false
+        $PodeContext.AsyncRoutes.Items.ContainsKey($asyncRouteId) | Should -Be $false
         $PodeContext.Threads.AsyncRoutes | Should -Be 0
     }
     It 'Adds two routes and removes one async route and cleans up runspace and async route pools' {
@@ -243,24 +243,24 @@ Describe 'Remove-PodeRoute' {
         $route2 =  Add-PodeRoute -PassThru -Method Get -Path '/asyncusers' -EndpointName user -ScriptBlock { Write-Host 'hello' } |
         Set-PodeAsyncRoute -MaxRunspaces $maxRunspaces -MinRunspaces 3 -ResponseContentType 'application/yaml'  -Timeout 300 -PassThru
 
-        $PodeContext.RunspacePools[$route1.AsyncPoolName].Pool = New-Object PSObject -Property @{
+        $PodeContext.RunspacePools[$route1.AsyncRouteId].Pool = New-Object PSObject -Property @{
             IsDisposed = $true # to avoid to call BeginClose($null,$null)
         }
         $PodeContext.Threads.AsyncRoutes | Should -Be ($maxRunspaces + $maxRunspaces)
-        $PodeContext.RunspacePools.ContainsKey($route2.asyncPoolName) | Should -Be $true
-        $PodeContext.AsyncRoutes.Items.ContainsKey($route2.asyncPoolName) | Should -Be $true
+        $PodeContext.RunspacePools.ContainsKey($route2.asyncRouteId) | Should -Be $true
+        $PodeContext.AsyncRoutes.Items.ContainsKey($route2.asyncRouteId) | Should -Be $true
 
-        $PodeContext.RunspacePools.ContainsKey($route1.asyncPoolName) | Should -Be $true
-        $PodeContext.AsyncRoutes.Items.ContainsKey($route1.asyncPoolName) | Should -Be $true
+        $PodeContext.RunspacePools.ContainsKey($route1.asyncRouteId) | Should -Be $true
+        $PodeContext.AsyncRoutes.Items.ContainsKey($route1.asyncRouteId) | Should -Be $true
 
         #remove $route1
         Remove-PodeRoute -Method Get -Path '/asyncusers'
 
-        $PodeContext.RunspacePools.ContainsKey($route2.asyncPoolName) | Should -Be $true
-        $PodeContext.AsyncRoutes.Items.ContainsKey($route2.asyncPoolName) | Should -Be $true
+        $PodeContext.RunspacePools.ContainsKey($route2.asyncRouteId) | Should -Be $true
+        $PodeContext.AsyncRoutes.Items.ContainsKey($route2.asyncRouteId) | Should -Be $true
 
-        $PodeContext.RunspacePools.ContainsKey($route1.asyncPoolName) | Should -Be $false
-        $PodeContext.AsyncRoutes.Items.ContainsKey($route1.asyncPoolName) | Should -Be $false
+        $PodeContext.RunspacePools.ContainsKey($route1.asyncRouteId) | Should -Be $false
+        $PodeContext.AsyncRoutes.Items.ContainsKey($route1.asyncRouteId) | Should -Be $false
 
         $PodeContext.Threads.AsyncRoutes | Should -Be $maxRunspaces
 

@@ -431,7 +431,7 @@ function Add-PodeRoute {
                     Method           = $_method
                     Path             = $Path
                     IsAsync          = $false
-                    AsyncPoolName    = "__$($_method)$($Path)_$($_endpoint.Name)_".Replace('/', '_')
+                    AsyncRouteId     = "__$($_method)$($Path)_$($_endpoint.Name)_".Replace('/', '_')
                     OpenApi          = @{
                         Path               = $OpenApiPath
                         Responses          = $DefaultResponse
@@ -1703,19 +1703,19 @@ function Remove-PodeRoute {
     foreach ($r in $route) {
         # remove the runspace
         if ($r.IsAsync) {
-            $asyncPoolName = $r.AsyncPoolName
-            if ( $asyncPoolName -and $PodeContext.RunspacePools.ContainsKey($asyncPoolName)) {
-                if ( ! $PodeContext.RunspacePools[$asyncPoolName].Pool.IsDisposed) {
-                    $PodeContext.RunspacePools[$asyncPoolName].Pool.BeginClose($null, $null)
-                    Close-PodeDisposable -Disposable ($PodeContext.RunspacePools[$asyncPoolName].Pool)
+            $asyncRouteId = $r.AsyncRouteId
+            if ( $asyncRouteId -and $PodeContext.RunspacePools.ContainsKey($asyncRouteId)) {
+                if ( ! $PodeContext.RunspacePools[$asyncRouteId].Pool.IsDisposed) {
+                    $PodeContext.RunspacePools[$asyncRouteId].Pool.BeginClose($null, $null)
+                    Close-PodeDisposable -Disposable ($PodeContext.RunspacePools[$asyncRouteId].Pool)
                 }
                 $v = ''
-                $null = $PodeContext.RunspacePools.TryRemove($asyncPoolName, [ref]$v)
+                $null = $PodeContext.RunspacePools.TryRemove($asyncRouteId, [ref]$v)
             }
-            if ( $PodeContext.AsyncRoutes.Items.ContainsKey($asyncPoolName)) {
-                $PodeContext.Threads.AsyncRoutes -= $PodeContext.AsyncRoutes.Items[$asyncPoolName].MaxRunspaces
+            if ( $PodeContext.AsyncRoutes.Items.ContainsKey($asyncRouteId)) {
+                $PodeContext.Threads.AsyncRoutes -= $PodeContext.AsyncRoutes.Items[$asyncRouteId].MaxRunspaces
                 $v = ''
-                $null = $PodeContext.AsyncRoutes.Items.TryRemove( $asyncPoolName, [ref]$v)
+                $null = $PodeContext.AsyncRoutes.Items.TryRemove( $asyncRouteId, [ref]$v)
             }
         }
 

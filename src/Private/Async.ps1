@@ -444,7 +444,7 @@ function Search-PodeAsyncRouteTask {
             # Iterate through each query condition
             foreach ($key in $Query.Keys) {
                 # Check the variable name
-                if (! (('Id', 'Name', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancellable',  'User', 'Url', 'Method', 'Progress') -contains $key)) {
+                if (! (('Id', 'Name', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancellable', 'User', 'Url', 'Method', 'Progress') -contains $key)) {
                     # The query provided is invalid.{0} is not a valid element for a query.
                     throw ($PodeLocale.invalidQueryElementExceptionMessage -f $key)
                 }
@@ -734,7 +734,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
             $responseMediaType = Get-PodeHeader -Name 'Accept'
 
             # Retrieve the task to be executed asynchronously
-            $asyncRouteTask = $PodeContext.AsyncRoutes.Items[$WebEvent.Route.AsyncPoolName]
+            $asyncRouteTask = $PodeContext.AsyncRoutes.Items[$WebEvent.Route.AsyncRouteId]
 
             # Invoke the internal async route task
             #      $asyncOperation = Invoke-PodeAsyncRoute
@@ -1459,7 +1459,7 @@ function Close-PodeAsyncRouteTimer {
     This schema includes properties such as Id, CreationTime, StartingTime, Result, CompletedTime, State, Error, and Task.
 
 .PARAMETER Name
-    The name of the OpenAPI component schema. Defaults to 'AsyncTask'.
+    The name of the OpenAPI component schema. Defaults to 'AsyncRouteTask'.
 
 .EXAMPLE
     Add-PodeAsyncRouteComponentSchema -Name 'CustomTask'
@@ -1472,7 +1472,7 @@ function Close-PodeAsyncRouteTimer {
 function Add-PodeAsyncRouteComponentSchema {
     param (
         [string]
-        $Name = 'AsyncTask',
+        $Name = 'AsyncRouteTask',
 
         [string[]]
         $DefinitionTag

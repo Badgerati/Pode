@@ -881,46 +881,46 @@ function Set-PodeAsyncRoutePermission {
 
         foreach ($r in $Route) {
             # Check if the route is marked as an Async Route
-            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or ! $r.IsAsync) {
+            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncRouteId) -or ! $r.IsAsync) {
                 # The route '{0}' is not marked as an Async Route.
                 throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.Path)
             }
 
             # Initialize the permission type hashtable if not already present
-            if (! $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission.ContainsKey($Type)) {
-                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type] = @{}
+            if (! $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission.ContainsKey($Type)) {
+                $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type] = @{}
             }
 
             # Assign or remove users from the specified permission type
             if ($Users) {
-                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].ContainsKey('Users')) {
-                    $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Users = @()
+                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].ContainsKey('Users')) {
+                    $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Users = @()
                 }
-                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Users = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Users -Items $Users -Remove:$Remove
+                $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Users = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Users -Items $Users -Remove:$Remove
             }
 
             # Assign or remove groups from the specified permission type
             if ($Groups) {
-                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].ContainsKey('Groups')) {
-                    $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Groups = @()
+                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].ContainsKey('Groups')) {
+                    $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Groups = @()
                 }
-                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Groups = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Groups -Items $Groups -Remove:$Remove
+                $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Groups = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Groups -Items $Groups -Remove:$Remove
             }
 
             # Assign or remove roles from the specified permission type
             if ($Roles) {
-                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].ContainsKey('Roles')) {
-                    $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Roles = @()
+                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].ContainsKey('Roles')) {
+                    $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Roles = @()
                 }
-                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Roles = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Roles -Items $Roles -Remove:$Remove
+                $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Roles = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Roles -Items $Roles -Remove:$Remove
             }
 
             # Assign or remove scopes from the specified permission type
             if ($Scopes) {
-                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].ContainsKey('Scopes')) {
-                    $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Scopes = @()
+                if (!$PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].ContainsKey('Scopes')) {
+                    $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Scopes = @()
                 }
-                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Scopes = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Permission[$Type].Scopes -Items $Scopes -Remove:$Remove
+                $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Scopes = Update-PermissionList -List $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].Permission[$Type].Scopes -Items $Scopes -Remove:$Remove
             }
         }
 
@@ -1076,7 +1076,7 @@ function  Add-PodeAsyncRouteCallback {
 
         foreach ($r in $Route) {
             # Check if the route is marked as an Async Route
-            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or ! $r.IsAsync) {
+            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncRouteId) -or ! $r.IsAsync) {
                 # The route '{0}' is not marked as an Async Route.
                 throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.Path)
             }
@@ -1095,7 +1095,7 @@ function  Add-PodeAsyncRouteCallback {
             }
 
             # Attach the callback settings to the Async Route
-            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].CallbackSettings = $CallbackSettings
+            $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId].CallbackSettings = $CallbackSettings
 
             # Add OpenAPI callback documentation if applicable
             if ( $r.OpenApi.Swagger) {
@@ -1260,7 +1260,7 @@ function Set-PodeAsyncRoute {
 
         foreach ($r in $Route) {
             # Check if the route is already marked as an Async Route
-            if ( $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or $r.IsAsync) {
+            if ( $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncRouteId) -or $r.IsAsync) {
                 # The function cannot be invoked multiple times for the same route
                 throw ($PodeLocale.functionCannotBeInvokedMultipleTimesExceptionMessage -f $MyInvocation.MyCommand.Name, $r.Path)
             }
@@ -1280,8 +1280,8 @@ function Set-PodeAsyncRoute {
             }
 
             # Store the route's async route task definition in Pode context
-            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName] = @{
-                Name             = $r.AsyncPoolName
+            $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId] = @{
+                Name             = $r.AsyncRouteId
                 Script           = Get-PodeAsyncRouteScriptblock -ScriptBlock $r.Logic
                 UsingVariables   = $r.UsingVariables
                 Arguments        = (Protect-PodeValue -Value $r.Arguments -Default @{})
@@ -1295,11 +1295,11 @@ function Set-PodeAsyncRoute {
 
             #Set thread count
             $PodeContext.Threads.AsyncRoutes += $MaxRunspaces
-            if (! $PodeContext.RunspacePools.ContainsKey($r.AsyncPoolName)) {
-                $PodeContext.RunspacePools[$r.AsyncPoolName] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            if (! $PodeContext.RunspacePools.ContainsKey($r.AsyncRouteId)) {
+                $PodeContext.RunspacePools[$r.AsyncRouteId] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
 
-                $PodeContext.RunspacePools[$r.AsyncPoolName]['Pool'] = New-PodeRunspacePoolNetWrapper -MinRunspaces $MinRunspaces -MaxRunspaces $MaxRunspaces -RunspaceState $PodeContext.RunspaceState
-                $PodeContext.RunspacePools[$r.AsyncPoolName]['State'] = 'Waiting'
+                $PodeContext.RunspacePools[$r.AsyncRouteId]['Pool'] = New-PodeRunspacePoolNetWrapper -MinRunspaces $MinRunspaces -MaxRunspaces $MaxRunspaces -RunspaceState $PodeContext.RunspaceState
+                $PodeContext.RunspacePools[$r.AsyncRouteId]['State'] = 'Waiting'
 
             }
             # Replace the Route logic with this that allow to execute the original logic asynchronously
@@ -1467,7 +1467,7 @@ function Add-PodeAsyncRouteSse {
 
         foreach ($r in $Route) {
             # Check if the route is marked as an Async Route
-            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or ! $r.IsAsync) {
+            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncRouteId) -or ! $r.IsAsync) {
                 # The route '{0}' is not marked as an Async Route.
                 throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.Path)
             }
@@ -1475,7 +1475,7 @@ function Add-PodeAsyncRouteSse {
             $sseRoute = Add-PodeRoute -PassThru -method Get -Path "$($r.Path)_events" -ArgumentList $SseGroup `
                 -ScriptBlock $sseScriptBlock
 
-            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName]['Sse'] = @{
+            $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId]['Sse'] = @{
                 Group = $SseGroup
                 Name  = "$($r.Path)_events"
                 Route = $sseRoute

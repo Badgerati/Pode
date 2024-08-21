@@ -71,9 +71,9 @@ Add-PodeRoute -PassThru -Method Put -Path '/asyncState' -ScriptBlock {
 
 ### Route Response
 
-When a route is invoked, it automatically creates a runspace to execute the scriptblock associated with the route. It then returns an `AsyncTask` object that includes information related to the task just sent for execution.
+When a route is invoked, it automatically creates a runspace to execute the scriptblock associated with the route. It then returns an `AsyncRouteTask` object that includes information related to the task just sent for execution.
 
-#### `AsyncTask` Object Definition
+#### `AsyncRouteTask` Object Definition
 
 | Name                            | Type    | Description                                                                                  |
 |---------------------------------|---------|----------------------------------------------------------------------------------------------|
