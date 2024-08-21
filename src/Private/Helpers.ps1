@@ -4176,7 +4176,7 @@ function ConvertTo-PodeHashtable {
 .DESCRIPTION
     The `Format-PodeDateToIso8601` function takes a DateTime object and returns
     a string formatted as `yyyy-MM-ddTHH:mm:ss.fffffffZ`, which is the ISO 8601 format
-    with seven fractional seconds, suitable for Pode async operations.
+    with seven fractional seconds, suitable for Pode async route tasks.
 
 .PARAMETER Date
     The DateTime object to format.

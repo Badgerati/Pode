@@ -75,38 +75,38 @@ When a route is invoked, it automatically creates a runspace to execute the scri
 
 #### `AsyncTask` Object Definition
 
-| Name                            | Type    | Description                                                                                 |
-|---------------------------------|---------|---------------------------------------------------------------------------------------------|
-| **User**                        | string  | The async operation owner.                                                                  |
-| **CompletedTime**               | date    | The async operation completion time.                                                        |
-| **State***                      | string  | The async operation status. Possible values: `NotStarted`, `Running`, `Failed`, `Completed` |
-| **CallbackInfo**                | object  | The Callback operation result.                                                              |
-| **CallbackInfo.State**          | string  | Operation status. Possible values: `NotStarted`, `Running`, `Failed`, `Completed`           |
-| **CallbackInfo.Tentative**      | integer | Number of tentatives.                                                                       |
-| **CallbackInfo.Url**            | string  | The callback URL.                                                                           |
-| **StartingTime**                | date    | The async operation starting time.                                                          |
-| **Cancellable***                | boolean | The async operation can be forcefully terminated.                                           |
-| **CreationTime***               | string  | The async operation creation time.                                                          |
-| **Id***                         | string  | The async operation unique identifier.                                                      |
-| **Permission**                  | object  | The permission governing the async operation.                                               |
-| **Permission.Write**            | object  | Write permission.                                                                           |
-| **Permission.Write.Users**      | array   | Users with write permission.                                                                |
-| **Permission.Write.Groups**     | array   | Groups with write permission.                                                               |
-| **Permission.Write.Roles**      | array   | Roles with write permission.                                                                |
-| **Permission.Write.Scopes**     | array   | Scopes with write permission.                                                               |
-| **Permission.Read**             | object  | Read permission.                                                                            |
-| **Permission.Read.Users**       | array   | Users with read permission.                                                                 |
-| **Permission.Read.Groups**      | array   | Groups with read permission.                                                                |
-| **Permission.Read.Roles**       | array   | Roles with read permission.                                                                 |
-| **Permission.Read.Scopes**      | array   | Scopes with read permission.                                                                |
-| **Error**                       | string  | The error message, if any.                                                                  |
-| **CallbackSettings**            | object  | Callback Configuration.                                                                     |
-| **CallbackSettings.UrlField**   | string  | The URL Field.                                                                              |
-| **CallbackSettings.Method**     | string  | HTTP Method. Possible values: `Post`, `Put`                                                 |
-| **CallbackSettings.SendResult** | boolean | Send the result.                                                                            |
-| **Result**                      | string  | The result of the async operation.                                                          |
-| **Name***                       | string  | The async operation name.                                                                   |
-| **Progress**                    | number  | Represents the task activity progress.                                                      |
+| Name                            | Type    | Description                                                                                  |
+|---------------------------------|---------|----------------------------------------------------------------------------------------------|
+| **User**                        | string  | The async route task owner.                                                                  |
+| **CompletedTime**               | date    | The async route task completion time.                                                        |
+| **State***                      | string  | The async route task status. Possible values: `NotStarted`, `Running`, `Failed`, `Completed` |
+| **CallbackInfo**                | object  | The Callback operation result.                                                               |
+| **CallbackInfo.State**          | string  | Operation status. Possible values: `NotStarted`, `Running`, `Failed`, `Completed`            |
+| **CallbackInfo.Tentative**      | integer | Number of tentatives.                                                                        |
+| **CallbackInfo.Url**            | string  | The callback URL.                                                                            |
+| **StartingTime**                | date    | The async route task starting time.                                                          |
+| **Cancellable***                | boolean | The async route task can be forcefully terminated.                                           |
+| **CreationTime***               | string  | The async route task creation time.                                                          |
+| **Id***                         | string  | The async route task unique identifier.                                                      |
+| **Permission**                  | object  | The permission governing the async route task.                                               |
+| **Permission.Write**            | object  | Write permission.                                                                            |
+| **Permission.Write.Users**      | array   | Users with write permission.                                                                 |
+| **Permission.Write.Groups**     | array   | Groups with write permission.                                                                |
+| **Permission.Write.Roles**      | array   | Roles with write permission.                                                                 |
+| **Permission.Write.Scopes**     | array   | Scopes with write permission.                                                                |
+| **Permission.Read**             | object  | Read permission.                                                                             |
+| **Permission.Read.Users**       | array   | Users with read permission.                                                                  |
+| **Permission.Read.Groups**      | array   | Groups with read permission.                                                                 |
+| **Permission.Read.Roles**       | array   | Roles with read permission.                                                                  |
+| **Permission.Read.Scopes**      | array   | Scopes with read permission.                                                                 |
+| **Error**                       | string  | The error message, if any.                                                                   |
+| **CallbackSettings**            | object  | Callback Configuration.                                                                      |
+| **CallbackSettings.UrlField**   | string  | The URL Field.                                                                               |
+| **CallbackSettings.Method**     | string  | HTTP Method. Possible values: `Post`, `Put`                                                  |
+| **CallbackSettings.SendResult** | boolean | Send the result.                                                                             |
+| **Result**                      | string  | The result of the async route task.                                                          |
+| **Name***                       | string  | The async route task name.                                                                   |
+| **Progress**                    | number  | Represents the task activity progress.                                                       |
 
 **Note**: Properties marked with `*` are always available.
 
@@ -136,7 +136,7 @@ When a route is invoked, it automatically creates a runspace to execute the scri
   - **Enable SSE**: You can enable SSE for async routes to provide real-time updates.
   - **SSE Group**: Optionally group SSE connections to broadcast events to all connections in a specified group.
 
-- **NotCancellable**: If specified, the async operation cannot be forcefully terminated. This ensures that critical tasks are not interrupted.
+- **NotCancellable**: If specified, the async route task cannot be forcefully terminated. This ensures that critical tasks are not interrupted.
 
 - **IdGenerator**: A custom ScriptBlock to generate a random unique IDs for asynchronous tasks. The default is `{ return (New-PodeGuid) }`.
 

@@ -180,6 +180,7 @@
         'Set-PodeAsyncRoutePermission',
         'Get-PodeAsyncRouteOperation',
         'Add-PodeAsyncRouteCallback',
+        'Add-PodeAsyncRouteSse',
 
         # handlers
         'Add-PodeHandler',

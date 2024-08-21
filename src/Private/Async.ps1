@@ -1,5 +1,5 @@
 
- <#
+<#
 .SYNOPSIS
     Converts a provided script block into an enhanced script block for asynchronous execution in Pode.
 
@@ -194,100 +194,95 @@ function Complete-PodeAsyncRouteOperation {
         [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]
         $AsyncResult
     )
+    # Set the completed time if not already set
+    if (! $AsyncResult.ContainsKey('CompletedTime') -or ($null -eq $AsyncResult['CompletedTime'])) {
+        $AsyncResult['CompletedTime'] = [datetime]::UtcNow
+    }
+
+    # Ensure state is set to 'Completed' if it was still 'Running'
+    if ($AsyncResult['State'] -eq 'Running') {
+        $AsyncResult['State'] = 'Completed'
+    }
+
+
+    if ($AsyncResult['Timer']) {
+        # Closes and disposes of the timer
+        Close-PodeAsyncRouteTimer -Operation $AsyncResult
+    }
+
+    # Ensure Progress is set to 100 if in use
+    if ($AsyncResult.ContainsKey('Progress')) {
+        $AsyncResult['Progress'] = 100
+    }
+
     try {
-        # Set the completed time if not already set
-        if (! $AsyncResult.ContainsKey('CompletedTime') -or ($null -eq $AsyncResult['CompletedTime'])) {
-            $AsyncResult['CompletedTime'] = [datetime]::UtcNow
-        }
+        if ($AsyncResult['CallbackSettings']) {
 
-        # Ensure state is set to 'Completed' if it was still 'Running'
-        if ($AsyncResult['State'] -eq 'Running') {
-            $AsyncResult['State'] = 'Completed'
-        }
+            # Resolve the callback URL, method, content type, and headers
+            $callbackUrl = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].UrlField).Value
+            $method = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].Method -DefaultValue 'Post').Value
+            $contentType = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].ContentType).Value
+            $headers = @{}
+            foreach ($key in $AsyncResult['CallbackSettings'].HeaderFields.Keys) {
+                $value = Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $key -DefaultValue $AsyncResult['HeaderFields'][$key]
+                if ($value) {
+                    $headers[$value.Key] = $value.Value
+                }
+            }
 
-
-        if ($AsyncResult['Timer']) {
-            # Closes and disposes of the timer
-            Close-PodeAsyncRouteTimer -Operation $AsyncResult
-        }
-
-        # Ensure Progress is set to 100 if in use
-        if ($AsyncResult.ContainsKey('Progress')) {
-            $AsyncResult['Progress'] = 100
-        }
-
-        try {
-            if ($AsyncResult['CallbackSettings']) {
-
-                # Resolve the callback URL, method, content type, and headers
-                $callbackUrl = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].UrlField).Value
-                $method = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].Method -DefaultValue 'Post').Value
-                $contentType = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].ContentType).Value
-                $headers = @{}
-                foreach ($key in $AsyncResult['CallbackSettings'].HeaderFields.Keys) {
-                    $value = Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $key -DefaultValue $AsyncResult['HeaderFields'][$key]
-                    if ($value) {
-                        $headers[$value.Key] = $value.Value
+            # Prepare the body for the callback
+            $body = @{
+                Url       = $AsyncResult['Url']
+                Method    = $AsyncResult['Method']
+                EventName = $AsyncResult['CallbackSettings'].EventName
+                State     = $AsyncResult['State']
+            }
+            switch ($AsyncResult['State']) {
+                'Failed' {
+                    $body.Error = $AsyncResult['Error']
+                }
+                'Completed' {
+                    if ($AsyncResult['CallbackSettings'].SendResult -and $AsyncResult['Result']) {
+                        $body.Result = $AsyncResult['Result']
                     }
                 }
-
-                # Prepare the body for the callback
-                $body = @{
-                    Url       = $AsyncResult['Url']
-                    Method    = $AsyncResult['Method']
-                    EventName = $AsyncResult['CallbackSettings'].EventName
-                    State     = $AsyncResult['State']
+                'Aborted' {
+                    $body.Error = $AsyncResult['Error']
                 }
-                switch ($AsyncResult['State']) {
-                    'Failed' {
-                        $body.Error = $AsyncResult['Error']
-                    }
-                    'Completed' {
-                        if ($AsyncResult['CallbackSettings'].SendResult -and $AsyncResult['Result']) {
-                            $body.Result = $AsyncResult['Result']
-                        }
-                    }
-                    'Aborted' {
-                        $body.Error = $AsyncResult['Error']
-                    }
+            }
+
+            # Convert the body to the appropriate content type
+            switch ($contentType) {
+                'application/json' { $cBody = ($body | ConvertTo-Json -Depth 10) }
+                'application/xml' { $cBody = ($body | ConvertTo-Xml -NoTypeInformation) }
+                'application/yaml' { $cBody = ($body | ConvertTo-PodeYaml -Depth 10) }
+            }
+
+            # Store callback information in the async result
+            $AsyncResult['CallbackUrl'] = $callbackUrl
+            $AsyncResult['CallbackInfoState'] = 'Running'
+            $AsyncResult['CallbackTentative'] = 0
+
+            # Attempt to invoke the callback up to 3 times
+            for ($i = 0; $i -le 3; $i++) {
+                try {
+                    $AsyncResult['CallbackTentative'] = $AsyncResult['CallbackTentative'] + 1
+                    $null = Invoke-RestMethod -Uri $callbackUrl -Method $method -Headers $headers -Body $cBody -ContentType $contentType -ErrorAction Stop
+                    $AsyncResult['CallbackInfoState'] = 'Completed'
+                    break
                 }
-
-                # Convert the body to the appropriate content type
-                switch ($contentType) {
-                    'application/json' { $cBody = ($body | ConvertTo-Json -Depth 10) }
-                    'application/xml' { $cBody = ($body | ConvertTo-Xml -NoTypeInformation) }
-                    'application/yaml' { $cBody = ($body | ConvertTo-PodeYaml -Depth 10) }
-                }
-
-                # Store callback information in the async result
-                $AsyncResult['CallbackUrl'] = $callbackUrl
-                $AsyncResult['CallbackInfoState'] = 'Running'
-                $AsyncResult['CallbackTentative'] = 0
-
-                # Attempt to invoke the callback up to 3 times
-                for ($i = 0; $i -le 3; $i++) {
-                    try {
-                        $AsyncResult['CallbackTentative'] = $AsyncResult['CallbackTentative'] + 1
-                        $null = Invoke-RestMethod -Uri $callbackUrl -Method $method -Headers $headers -Body $cBody -ContentType $contentType -ErrorAction Stop
-                        $AsyncResult['CallbackInfoState'] = 'Completed'
-                        break
-                    }
-                    catch {
-                        $_ | Write-PodeErrorLog
-                        $AsyncResult['CallbackInfoState'] = 'Failed'
-                        Start-Sleep -Seconds 2
-                    }
+                catch {
+                    $_ | Write-PodeErrorLog
+                    $AsyncResult['CallbackInfoState'] = 'Failed'
+                    Start-Sleep -Seconds 2
                 }
             }
         }
-        catch {
-            # Log any errors encountered during the callback process
-            $_ | Write-PodeErrorLog
-            $AsyncResult['CallbackInfoState'] = 'Failed'
-        }
     }
-    finally {
-        $AsyncResult['IsCompleted'] = $true
+    catch {
+        # Log any errors encountered during the callback process
+        $_ | Write-PodeErrorLog
+        $AsyncResult['CallbackInfoState'] = 'Failed'
     }
 
 }
@@ -365,79 +360,6 @@ function Start-PodeAsyncRoutesHousekeeper {
     }
 }
 
-<#
-.SYNOPSIS
-    Adds an OpenAPI component schema for Pode asynchronous route tasks.
-
-.DESCRIPTION
-    The Add-PodeAsyncRouteComponentSchema function creates an OpenAPI component schema for Pode asynchronous route tasks if it does not already exist.
-    This schema includes properties such as Id, CreationTime, StartingTime, Result, CompletedTime, State, Error, and Task.
-
-.PARAMETER Name
-    The name of the OpenAPI component schema. Defaults to 'AsyncTask'.
-
-.EXAMPLE
-    Add-PodeAsyncRouteComponentSchema -Name 'CustomTask'
-
-    This example creates an OpenAPI component schema named 'CustomTask' with the specified properties if it does not already exist.
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-#>
-function Add-PodeAsyncRouteComponentSchema {
-    param (
-        [string]
-        $Name = 'AsyncTask',
-
-        [string[]]
-        $DefinitionTag
-    )
-
-    # Test and normalize the definition tag
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-
-    # Check if the component schema already exists
-    if (!(Test-PodeOAComponent -Field schemas -Name $Name -DefinitionTag $DefinitionTag)) {
-
-        # Define permission content
-        $permissionContent = New-PodeOAStringProperty -Name 'Groups' -Array -Example 'group1', 'group2' |
-            New-PodeOAStringProperty -Name 'Roles' -Array -Example 'reviewer', 'taskadmin' |
-            New-PodeOAStringProperty -Name 'Scopes' -Array -Example 'scope1', 'scope2', 'scope3' |
-            New-PodeOAStringProperty -Name 'Users' -Array -Example 'id0001', 'id0005', 'id0231'
-
-        # Create the component schema
-        New-PodeOAStringProperty -Name 'Id' -Format Uuid -Description 'The async operation unique identifier.' -Required |
-            New-PodeOAStringProperty -Name 'User' -Description 'The async operation owner.' |
-            New-PodeOAStringProperty -Name 'CreationTime' -Format Date-Time -Description 'The async operation creation time.' -Example '2024-07-02T20:58:15.2014422Z' -Required |
-            New-PodeOAStringProperty -Name 'StartingTime' -Format Date-Time -Description 'The async operation starting time.' -Example '2024-07-02T20:58:15.2014422Z' |
-            New-PodeOAStringProperty -Name 'Result' -Example '{result ="Anything is good" , numOfIteration = 3 }' |
-            New-PodeOAStringProperty -Name 'CompletedTime' -Format Date-Time -Description 'The async operation completion time.' -Example '2024-07-02T20:59:23.2174712Z' |
-            New-PodeOAStringProperty -Name 'State' -Description 'The async operation status' -Required -Example 'Running' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
-            New-PodeOAStringProperty -Name 'Error' -Description 'The error message if any.' |
-            New-PodeOAStringProperty -Name 'Name' -Example '__Get_path_endpoint1_' -Description 'The async operation name.' -Required |
-            New-PodeOABoolProperty -Name 'Cancellable' -Description 'The async operation can be forcefully terminated' -Required |
-            New-PodeOABoolProperty -Name 'SseEnabled' -Description 'The async operation is using SSE.' |
-            New-PodeOANumberProperty -Name 'Progress' -Description 'The async operation percentage progress' -Minimum 0 -Maximum 100 |
-            New-PodeOAObjectProperty -Name 'Permission' -Description 'The permission governing the async operation.' -Properties (
-                ($permissionContent | New-PodeOAObjectProperty -Name 'Read'),
-                ($permissionContent | New-PodeOAObjectProperty -Name 'Write')
-            ) |
-            New-PodeOAObjectProperty -Name 'CallbackInfo' -Description 'The Callback operation result' -Properties (
-                New-PodeOAStringProperty -Name 'State' -Description 'Operation status' -Example 'Completed' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
-                    New-PodeOAIntProperty -Name 'Tentative' -Description 'Number of tentatives' |
-                    New-PodeOAStringProperty -Name 'Url' -Format Uri -Description 'The callback URL' -Example 'Completed'
-                ) |
-                New-PodeOAObjectProperty -Name 'CallbackSettings' -Description 'Callback Configuration' -Properties (
-                    New-PodeOAStringProperty -Name 'UrlField' -Description 'The URL Field.' -Example '$request.body#/callbackUrl' -Required |
-                        New-PodeOABoolProperty -Name 'SendResult' -Description 'Send the result.' -Required |
-                        New-PodeOAStringProperty -Name 'Method' -Description 'HTTP Method.' -Enum @('Post', 'Put') -Required |
-                        New-PodeOAStringProperty -Name 'ContentType' -Description 'ContentType.' -Enum @('application/json' , 'application/xml', 'application/yaml') -Required |
-                        New-PodeOAObjectProperty -Name 'HeaderFields' -AdditionalProperties (New-PodeOAStringProperty) -NoProperties
-                    ) |
-                    New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name -DefinitionTag $DefinitionTag
-    }
-
-}
 
 <#
 .SYNOPSIS
@@ -888,16 +810,14 @@ function Get-PodeAsyncRouteSetScriptBlock {
             $asyncOperation['Timeout'] = $asyncRouteTask.Timeout
 
             if ($asyncRouteTask.ContainsKey('Sse')) {
-                $asyncOperation['Sse'] = @{
-                    Name  = $asyncRouteTask['Sse'].Name
-                    Group = $asyncRouteTask['Sse'].Group
-                    Url   = "$($asyncRouteTask['Sse'].Name)?Id=$Id"
-                }
+                $sseObject = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
+                $sseObject['Name'] = $asyncRouteTask['Sse'].Name
+                $sseObject['Group'] = $asyncRouteTask['Sse'].Group
+                $sseObject['Url'] = "$($asyncRouteTask['Sse'].Name)?Id=$Id"
+                $sseObject['State'] = 'NotStarted'
+                $asyncOperation['Sse'] = $sseObject
 
                 Write-PodeHost $asyncOperation['Sse'] -explode
-            }
-            else {
-                Write-PodeHost 'no SSE key'
             }
 
             # Add user information if available
@@ -913,8 +833,6 @@ function Get-PodeAsyncRouteSetScriptBlock {
 
             # If the task involves a user, include user information and add default permissions
             if ($asyncOperation['User']) {
-                # Assign the user information from the async route task to the result object
-                #              $res.User = $asyncOperation['User']
 
                 # Iterate over the permission types: 'Read' and 'Write'
                 'Read', 'Write' | ForEach-Object {
@@ -935,13 +853,12 @@ function Get-PodeAsyncRouteSetScriptBlock {
                         $asyncOperation['Permission'][$_].Users += $asyncOperation.User
                     }
                 }
-
-                # Assign the updated Permission object back to the result object
-                #             $res.Permission = $asyncOperation['Permission']
             }
-            $res = Export-PodeAsyncRouteInfo -Async   $asyncOperation
+            # Store the result in the Pode context
+            $PodeContext.AsyncRoutes.Results[$Id] = $asyncOperation
 
-            Write-PodeHost $res -Explode
+            # Return the result of the asynchronous operation
+            $res = Export-PodeAsyncRouteInfo -Async $asyncOperation
             # Send the response based on the requested media type
             switch ($responseMediaType) {
                 'application/xml' { Write-PodeXmlResponse -Value $res -StatusCode 200; break }
@@ -949,10 +866,6 @@ function Get-PodeAsyncRouteSetScriptBlock {
                 'application/yaml' { Write-PodeYamlResponse -Value $res -StatusCode 200 ; break }
                 default { Write-PodeJsonResponse -Value $res -StatusCode 200 }
             }
-
-            # Store the result in the Pode context
-            $PodeContext.AsyncRoutes.Results[$Id] = $asyncOperation
-
         }
         catch {
             $_ | Write-PodeErrorLog
@@ -1227,7 +1140,13 @@ function Export-PodeAsyncRouteInfo {
     if ($Async.ContainsKey('Sse')) {
         $export.Sse = @{
             Name  = $Async['Sse'].Name
-            Group = $Async['Sse'].Group
+            State = $Async['Sse'].State
+        }
+        if ($Async['Sse'].ContainsKey('Group')) {
+            $export.Sse['Group'] = $Async['Sse'].Group
+        }
+        if ($Async['Sse'].ContainsKey('Url')) {
+            $export.Sse['Url'] = $Async['Sse'].Url
         }
     }
 
@@ -1236,8 +1155,10 @@ function Export-PodeAsyncRouteInfo {
         $export.Progress = [math]::Round($Async['Progress'], 2)
     }
 
+    $export.IsCompleted = $Async['Runspace'].Handler.IsCompleted
+
     # If the task is completed, include the result or error based on the state
-    if ($Async['Runspace'].Handler.IsCompleted) {
+    if ($export.IsCompleted) {
         switch ($Async['State'] ) {
             'Failed' {
                 $export.Error = $Async['Error']
@@ -1264,11 +1185,6 @@ function Export-PodeAsyncRouteInfo {
             }
         }
 
-        # Include SSE event info state if it exists
-        if ($Async.ContainsKey('SeeEventInfoState')) {
-            $export.SeeEventInfoState = $Async['SeeEventInfoState']
-        }
-
         # Ensure completed time is set, retrying after a short delay if necessary
         if (! $Async.ContainsKey('CompletedTime')) {
             Start-Sleep 1
@@ -1278,7 +1194,6 @@ function Export-PodeAsyncRouteInfo {
             $export.CompletedTime = Format-PodeDateToIso8601 -Date $Async['CompletedTime']
         }
 
-        $export.IsCompleted = $Async['IsCompleted']
     }
 
     # Return the exported information
@@ -1519,13 +1434,99 @@ function Close-PodeAsyncRouteTimer {
         [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]
         $Operation
     )
+    try {
+        if (!$Operation['Timer']) {
+            return
+        }
 
-    if (!$Operation['Timer']) {
-        return
+        $Operation['Timer'].Stop()
+        $Operation['Timer'].Dispose()
+        Unregister-Event -SourceIdentifier $Operation['eventName'] -Force
+        $null = $Operation.Remove('Timer')
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Adds an OpenAPI component schema for Pode asynchronous route tasks.
+
+.DESCRIPTION
+    The Add-PodeAsyncRouteComponentSchema function creates an OpenAPI component schema for Pode asynchronous route tasks if it does not already exist.
+    This schema includes properties such as Id, CreationTime, StartingTime, Result, CompletedTime, State, Error, and Task.
+
+.PARAMETER Name
+    The name of the OpenAPI component schema. Defaults to 'AsyncTask'.
+
+.EXAMPLE
+    Add-PodeAsyncRouteComponentSchema -Name 'CustomTask'
+
+    This example creates an OpenAPI component schema named 'CustomTask' with the specified properties if it does not already exist.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Add-PodeAsyncRouteComponentSchema {
+    param (
+        [string]
+        $Name = 'AsyncTask',
+
+        [string[]]
+        $DefinitionTag
+    )
+
+    # Test and normalize the definition tag
+    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+    # Check if the component schema already exists
+    if (!(Test-PodeOAComponent -Field schemas -Name $Name -DefinitionTag $DefinitionTag)) {
+
+        # Define permission content
+        $permissionContent = New-PodeOAStringProperty -Name 'Groups' -Array -Example 'group1', 'group2' |
+            New-PodeOAStringProperty -Name 'Roles' -Array -Example 'reviewer', 'taskadmin' |
+            New-PodeOAStringProperty -Name 'Scopes' -Array -Example 'scope1', 'scope2', 'scope3' |
+            New-PodeOAStringProperty -Name 'Users' -Array -Example 'id0001', 'id0005', 'id0231'
+
+        # Create the component schema
+        New-PodeOAStringProperty -Name 'Id' -Format Uuid -Description 'The async route task unique identifier.' -Required |
+            New-PodeOAStringProperty -Name 'User' -Description 'The async route task owner.' |
+            New-PodeOAStringProperty -Name 'CreationTime' -Format Date-Time -Description 'The async route task creation time.' -Example '2024-07-02T20:58:15.2014422Z' -Required |
+            New-PodeOAStringProperty -Name 'ExpireTime' -Format Date-Time -Description 'The async route task expiration.' -Example '2024-07-02T23:58:15.2014422Z' -Required |
+            New-PodeOAStringProperty -Name 'StartingTime' -Format Date-Time -Description 'The async route task starting time.' -Example '2024-07-02T20:58:15.2014422Z' |
+            New-PodeOAStringProperty -Name 'Result' -Example '{result ="Anything is good" , numOfIteration = 3 }' |
+            New-PodeOAStringProperty -Name 'CompletedTime' -Format Date-Time -Description 'The async route task completion time.' -Example '2024-07-02T20:59:23.2174712Z' |
+            New-PodeOAStringProperty -Name 'State' -Description 'The async route task status' -Required -Example 'Running' -Enum @('NotStarted', 'Running', 'Failed', 'Completed', 'Aborted') |
+            New-PodeOAStringProperty -Name 'Error' -Description 'The error message if any.' |
+            New-PodeOAStringProperty -Name 'Name' -Example '__Get_path_endpoint1_' -Description 'The async route task name.' -Required |
+            New-PodeOABoolProperty -Name 'Cancellable' -Description 'The async route task can be forcefully terminated' -Required |
+            New-PodeOABoolProperty -Name 'IsCompleted' -Description 'The async route task is completed' -Required |
+            New-PodeOAObjectProperty -Name 'Sse' -Description 'The async route task Sse details.'  -Properties (
+                New-PodeOAStringProperty -Name 'Name' -Description 'The name of the Sse connection.' -Required |
+                    New-PodeOAStringProperty -Name 'State' -Description 'The state of the Sse connection.' -Required -Enum @('NotStarted', 'Running', 'Failed', 'Completed', 'Aborted') |
+                    New-PodeOAStringProperty -Name 'Group' -Description 'The group name for this Sse connection.' |
+                    New-PodeOAStringProperty -Name 'Url' -Description 'The Sse url.'
+                ) |
+                New-PodeOANumberProperty -Name 'Progress' -Description 'The async route task percentage progress' -Minimum 0 -Maximum 100 |
+                New-PodeOAObjectProperty -Name 'Permission' -Description 'The permission governing the async route task.' -Properties (
+                ($permissionContent | New-PodeOAObjectProperty -Name 'Read'),
+                ($permissionContent | New-PodeOAObjectProperty -Name 'Write')
+                ) |
+                New-PodeOAObjectProperty -Name 'CallbackInfo' -Description 'The Callback operation result' -Properties (
+                    New-PodeOAStringProperty -Name 'State' -Description 'Operation status' -Example 'Completed' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
+                        New-PodeOAIntProperty -Name 'Tentative' -Description 'Number of tentatives' |
+                        New-PodeOAStringProperty -Name 'Url' -Format Uri -Description 'The callback URL' -Example 'Completed'
+                    ) |
+                    New-PodeOAObjectProperty -Name 'CallbackSettings' -Description 'Callback Configuration' -Properties (
+                        New-PodeOAStringProperty -Name 'UrlField' -Description 'The URL Field.' -Example '$request.body#/callbackUrl' -Required |
+                            New-PodeOABoolProperty -Name 'SendResult' -Description 'Send the result.' -Required |
+                            New-PodeOAStringProperty -Name 'Method' -Description 'HTTP Method.' -Enum @('Post', 'Put') -Required |
+                            New-PodeOAStringProperty -Name 'ContentType' -Description 'ContentType.' -Enum @('application/json' , 'application/xml', 'application/yaml') -Required |
+                            New-PodeOAObjectProperty -Name 'HeaderFields' -AdditionalProperties (New-PodeOAStringProperty) -NoProperties
+                        ) |
+                        New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name $Name -DefinitionTag $DefinitionTag
     }
 
-    $Operation['Timer'].Stop()
-    $Operation['Timer'].Dispose()
-    Unregister-Event -SourceIdentifier $Operation['eventName'] -Force
-    $null = $Operation.Remove('Timer')
 }

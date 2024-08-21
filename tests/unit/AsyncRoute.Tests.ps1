@@ -188,7 +188,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
 
 # Assuming the function Export-PodeAsyncRouteInfo is already defined in your session or module
 
-Describe 'Export-PodeAsyncRouteInfo Tests' {
+Describe 'Export-PodeAsyncRouteInfo' {
 
     BeforeEach {
         $testDate = Get-Date
@@ -392,7 +392,7 @@ Describe 'Get-PodeAsyncRouteOperation' {
 }
 
 
-Describe ' Get-PodeAsyncRouteOperationByFilter' {
+Describe 'Get-PodeAsyncRouteOperationByFilter' {
     BeforeAll {
         # Mock data setup
         $PodeContext = @{
@@ -559,6 +559,192 @@ Describe 'Set-PodeAsyncRouteOASchemaName' {
         $definition.QueryRequestName | Should -Be 'DefaultAsyncRouteTaskQuery'
         $definition.QueryParameterName | Should -Be 'DefaultAsyncRouteTaskQueryParameter'
     }
+}
 
+
+Describe 'Add-PodeAsyncRouteSse' {
+
+    BeforeAll {
+        # Mock the required Pode functions and variables
+        Mock -CommandName 'Add-PodeRoute' -MockWith {
+            return @{ Path = "$($args[2])_events"; Method = 'Get' }
+        }
+        #   Mock -CommandName 'ConvertTo-PodeSseConnection'
+        Mock -CommandName 'Send-PodeSseEvent'
+        Mock -CommandName 'Write-PodeErrorLog'
+
+        # Mock Pode Context
+        $PodeContext = @{
+            AsyncRoutes = @{
+                Items   = @{
+                    'ExamplePool' = @{
+                        Sse = $null
+                    }
+                }
+                Results = @{
+                    '12345' = @{
+                        Runspace = [pscustomobject]@{ Handler = [pscustomobject]@{ IsCompleted = $false } }
+                        State    = 'Completed'
+                        Result   = 'Success'
+                    }
+                }
+            }
+        }
+        # Mock data setup
+        $PodeContext = @{
+            AsyncRoutes = @{
+                Enabled      = $true
+                Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                HouseKeeping = @{
+                    TimerInterval    = 30
+                    RetentionMinutes = 10
+                }
+            }
+        }
+        # Add a sample asynchronous route operation to the mock PodeContext
+        $operationId1 = '123e4567-e89b-12d3-a456-426614174000'
+        $asyncOperationDetails = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
+        $asyncOperationDetails['Id'] = $operationId1
+        $asyncOperationDetails['State'] = 'Completed'
+        $asyncOperationDetails['Cancellable'] = $true
+        $asyncOperationDetails['CreationTime'] = Get-Date
+        $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
+        $asyncOperationDetails['Name'] = 'PesterTest1'
+        $asyncOperationDetails['Result'] = 'Success'
+        $asyncOperationDetails['Runspace'] = [pscustomobject]@{ Handler = [pscustomobject]@{ IsCompleted = $false } }
+        $PodeContext.AsyncRoutes.Results[$operationId1] = $asyncOperationDetails
+
+        $PodeContext.AsyncRoutes.Items['ExamplePool'] = @{
+            Sse = $null
+        }
+
+    }
+
+    It 'Should throw an exception if the route is not marked as async' {
+        {
+            $route = @{
+                Path          = '/not-async'
+                AsyncPoolName = 'not-async'
+                IsAsync       = $true
+            } | Add-PodeAsyncRouteSse
+        } | Should -Throw -ExpectedMessage ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f '/not-async')
+    }
+
+    It 'Should add SSE route for a valid async route' {
+        $route = @{ Path = '/events'; AsyncPoolName = 'ExamplePool'; IsAsync = $true }
+
+        $result = Add-PodeAsyncRouteSse -Route $route -PassThru
+
+        $result | Should -BeOfType 'hashtable'
+        $result.Path | Should -Be '/events'
+        $PodeContext.AsyncRoutes.Items['ExamplePool'].Sse.Name | Should -Be '/events_events'
+    }
+
+    It 'Should handle multiple routes piped in' {
+        $routes = @(
+            @{ Path = '/events1'; AsyncPoolName = 'ExamplePool'; IsAsync = $true },
+            @{ Path = '/events2'; AsyncPoolName = 'ExamplePool'; IsAsync = $true }
+        )
+
+        $result = $routes | Add-PodeAsyncRouteSse -PassThru
+
+        $result | Should -HaveCount 2
+        $PodeContext.AsyncRoutes.Items['ExamplePool'].Sse.Name | Should -Be '/events2_events'
+    }
+
+    It 'Should return the modified route object when PassThru is specified' {
+        $route = @{ Path = '/events'; AsyncPoolName = 'ExamplePool'; IsAsync = $true }
+
+        $result = Add-PodeAsyncRouteSse -Route $route -PassThru
+
+        $result | Should -BeOfType 'hashtable'
+        $result.Path | Should -Be '/events'
+    }
+
+
+}
+
+Describe 'Set-PodeAsyncRoute' {
+
+    BeforeEach {
+        # Mock the required Pode functions and variables
+        Mock -CommandName 'Start-PodeAsyncRoutesHousekeeper'
+        Mock -CommandName 'New-PodeGuid' -MockWith { return [guid]::NewGuid().ToString() }
+        Mock -CommandName 'Test-PodeAsyncRouteScriptblockInvalidCommand'
+        Mock -CommandName 'Get-PodeAsyncRouteScriptblock' -MockWith { return $args[0] }
+        Mock -CommandName 'Get-PodeAsyncRouteSetScriptBlock' -MockWith { return $args[0] }
+        Mock -CommandName 'New-PodeRunspacePoolNetWrapper' -MockWith { return @{} }
+
+        # Mock Pode Context
+        $PodeContext = @{
+            Threads       = @{
+                AsyncRoutes = 0
+            }
+            RunspacePools = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            RunspaceState = [initialsessionstate]::CreateDefault()
+
+            AsyncRoutes   = @{
+                Enabled      = $true
+                Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                HouseKeeping = @{
+                    TimerInterval    = 30
+                    RetentionMinutes = 10
+                }
+            }
+        }
+
+
+    }
+
+
+    It 'Should correctly mark a route as async and set runspaces' {
+        $route = @{ Path = '/async'; AsyncPoolName = 'AsyncPool'; IsAsync = $false; Logic = {} }
+        Mock -CommandName 'New-PodeRunspacePoolNetWrapper' -MockWith { return @{} }
+        $result = Set-PodeAsyncRoute -Route $route -MaxRunspaces 3 -MinRunspaces 2 -PassThru
+
+        $result | Should -BeOfType 'hashtable'
+        $result.IsAsync | Should -Be $true
+
+        $PodeContext.AsyncRoutes.Items['AsyncPool'].MinRunspaces | Should -Be 2
+        $PodeContext.AsyncRoutes.Items['AsyncPool'].MaxRunspaces | Should -Be 3
+        $PodeContext.Threads.AsyncRoutes | Should -Be 3
+    }
+
+    It 'Should throw an exception if attempting to invoke for a route already marked as async' {
+        $route = @{ Path = '/async'; AsyncPoolName = 'AsyncPool'; IsAsync = $true; Logic = {} }
+
+        {
+            Set-PodeAsyncRoute -Route $route
+        } | Should -Throw -ExpectedMessage ($PodeLocale.functionCannotBeInvokedMultipleTimesExceptionMessage -f 'Set-PodeAsyncRoute', '/async')
+    }
+
+    It 'Should handle a custom IdGenerator script block' {
+        $route = @{ Path = '/async'; AsyncPoolName = 'AsyncPool'; IsAsync = $false; Logic = {} }
+
+        $idGenScript = { return 'CustomId' }
+        Set-PodeAsyncRoute -Route $route -IdGenerator $idGenScript
+
+        $route.AsyncRouteTaskIdGenerator.Invoke() | Should -Be 'CustomId'
+    }
+
+    It 'Should use default IdGenerator if none is provided' {
+        $route = @{ Path = '/async'; AsyncPoolName = 'AsyncPool'; IsAsync = $false; Logic = {} }
+
+        Set-PodeAsyncRoute -Route $route
+
+        $id = $route.AsyncRouteTaskIdGenerator.Invoke()
+
+        $id -match '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' | Should -Be $true  # Checks if the generated Id is a valid GUID
+    }
+
+    It 'Should respect the Timeout parameter' {
+        $route = @{ Path = '/async'; AsyncPoolName = 'AsyncPool'; IsAsync = $false; Logic = {} }
+
+        Set-PodeAsyncRoute -Route $route -Timeout 600
+
+        $PodeContext.AsyncRoutes.Items['AsyncPool'].Timeout | Should -Be 600
+    }
 
 }

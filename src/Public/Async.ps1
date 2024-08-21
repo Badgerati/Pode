@@ -883,7 +883,7 @@ function Set-PodeAsyncRoutePermission {
             # Check if the route is marked as an Async Route
             if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or ! $r.IsAsync) {
                 # The route '{0}' is not marked as an Async Route.
-                throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.AsyncPoolName)
+                throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.Path)
             }
 
             # Initialize the permission type hashtable if not already present
@@ -1078,7 +1078,7 @@ function  Add-PodeAsyncRouteCallback {
             # Check if the route is marked as an Async Route
             if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or ! $r.IsAsync) {
                 # The route '{0}' is not marked as an Async Route.
-                throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.AsyncPoolName)
+                throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.Path)
             }
 
             # Generate or use the provided event name for the callback
@@ -1106,7 +1106,7 @@ function  Add-PodeAsyncRouteCallback {
                                     New-PodeOAStringProperty -Name 'EventName' -Description 'The event name.' -Required |
                                     New-PodeOAStringProperty -Name 'Url' -Format Uri -Example 'http://localhost/callback' -Required |
                                     New-PodeOAStringProperty -Name 'Method' -Example 'Post' -Required |
-                                    New-PodeOAStringProperty -Name 'State' -Description 'The parent async operation status' -Required -Example 'Complete' -Enum @('NotStarted', 'Running', 'Failed', 'Completed') |
+                                    New-PodeOAStringProperty -Name 'State' -Description 'The parent async route task status' -Required -Example 'Complete' -Enum @('NotStarted', 'Running', 'Failed', 'Completed', 'Aborted') |
                                     New-PodeOAObjectProperty -Name 'Result' -Description 'The parent result' -NoProperties |
                                     New-PodeOAStringProperty -Name 'Error' -Description 'The parent error' |
                                     New-PodeOAObjectProperty
@@ -1161,13 +1161,7 @@ function  Add-PodeAsyncRouteCallback {
     The minimum number of Runspaces that exist in this route. The default is 1.
 
 .PARAMETER NotCancellable
-    The Async operation cannot be forcefully terminated
-
-.PARAMETER EnableSse
-    Enables Server Sent Events (SSE) support on the Async operation.
-
-.PARAMETER SseGroup
-    An optional Group for this SSE connection, to enable broadcasting events to all connections for an SSE connection name in a Group.
+    The async route task cannot be forcefully terminated
 
 .OUTPUTS
     [hashtable[]]
@@ -1198,7 +1192,7 @@ function  Add-PodeAsyncRouteCallback {
 
 #>
 function Set-PodeAsyncRoute {
-    [CmdletBinding(DefaultParameterSetName = 'OpenAPI')]
+    [CmdletBinding()]
     [OutputType([hashtable[]])]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -1206,10 +1200,12 @@ function Set-PodeAsyncRoute {
         [hashtable[]]
         $Route,
 
+        [Parameter()]
         [string[]]
         [ValidateSet('application/json' , 'application/xml', 'application/yaml')]
         $ResponseContentType = 'application/json',
 
+        [Parameter()]
         [int]
         $Timeout = 28800,
 
@@ -1217,6 +1213,7 @@ function Set-PodeAsyncRoute {
         [scriptblock]
         $IdGenerator,
 
+        [Parameter()]
         [switch]
         $PassThru,
 
@@ -1232,15 +1229,7 @@ function Set-PodeAsyncRoute {
 
         [Parameter()]
         [switch]
-        $NotCancellable,
-
-        [Parameter()]
-        [switch]
-        $EnableSse,
-
-        [Parameter()]
-        [string]
-        $SseGroup
+        $NotCancellable
 
     )
     Begin {
@@ -1300,7 +1289,6 @@ function Set-PodeAsyncRoute {
                 Cancellable      = !($NotCancellable.IsPresent)
                 MinRunspaces     = $MinRunspaces
                 MaxRunspaces     = $MaxRunspaces
-
                 Timeout          = $Timeout
                 Permission       = @{}
             }
@@ -1332,70 +1320,7 @@ function Set-PodeAsyncRoute {
                             -Content (New-PodeOAContentMediaType -MediaType $ResponseContentType  -Content $oaName[$key].OATypeName )
                 }
             }
-            if ($EnableSse.IsPresent) {
-                Write-PodeHost 'Enable SSE'
-                $sseRoute = Add-PodeRoute -PassThru -method Get -Path "$($r.Path)_events" -ArgumentList $SseGroup `
-                    -ScriptBlock {
-                    param($SseGroup)
 
-                    if ([string]::IsNullOrEmpty($SseGroup)) {
-                        write-podehost "webEvent.Route.Path=$($webEvent.Route.Path)"
-                        ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local -Group $SseGroup
-                    }
-                    else {
-                        ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local
-                    }
-
-                    $id = $WebEvent.Query['Id']
-                    if (!$PodeContext.AsyncRoutes.Results.ContainsKey($id)) {
-                        try {
-                            throw ($PodeLocale.asyncIdDoesNotExistExceptionMessage -f $id)
-                        }
-                        catch {
-                            # Log the error
-                            $_ | Write-PodeErrorLog
-                        }
-                    }
-
-                    while (!$PodeContext.AsyncRoutes.Results[$Id].IsCompleted) {
-                        start-sleep 1
-                    }
-                    $AsyncResult=   $PodeContext.AsyncRoutes.Results[$Id]
-                    try {
-                        switch ($AsyncResult['State']) {
-                            'Failed' {
-                                $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Error = $AsyncResult['Error'] }
-                            }
-                            'Completed' {
-                                if ($AsyncResult['Result']) {
-                                    $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Result = $AsyncResult['Result'] }
-                                }
-                                else {
-                                    $null = Send-PodeSseEvent -FromEvent -Data @{ State = 'Completed' }
-                                }
-                            }
-                            'Aborted' {
-                                $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Error = $AsyncResult['Error'] }
-                            }
-                        }
-                        $AsyncResult['Sse']['SeeEventInfoState'] = 'Completed'
-                    }
-                    catch {
-                        # Log any errors encountered during SSE handling
-                        $_ | Write-PodeErrorLog
-                        $AsyncResult['Sse']['SeeEventInfoState'] = 'Failed'
-                    }
-
-                }
-
-                $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName]['Sse'] = @{
-                    Group = $SseGroup
-                    Name  = "$($r.Path)_events"
-                    Route = $sseRoute
-                }
-
-                #      write-podehost  $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName].Sse -Explode -label 'PodeContext.AsyncRoutes.Items[$r.AsyncPoolName]'
-            }
         }
 
         # Return the route information if PassThru is specified
@@ -1405,7 +1330,163 @@ function Set-PodeAsyncRoute {
     }
 }
 
+<#
+.SYNOPSIS
+    Adds a Server-Sent Events (SSE) route to an existing Pode async route.
 
+.DESCRIPTION
+    The `Add-PodeAsyncRouteSse` function registers a new SSE route associated with an existing Pode async route.
+    This allows the server to push updates to the client for the specified route.
+    The function accepts a hashtable array of routes and sets up the SSE route for each. The response content type can be specified, and you can choose to pass through the modified route object with the `-PassThru` switch.
+
+    The function also ensures that the specified routes are marked as async routes. If a route is not marked as async, an exception will be thrown.
+
+.PARAMETER Route
+    A hashtable array representing the route(s) to which the SSE route will be added.
+    This parameter is mandatory and supports pipeline input. Each route must be marked as an async route, or an exception will be thrown.
+
+.PARAMETER PassThru
+    If specified, the function will return the route object after adding the SSE route.
+
+.PARAMETER SseGroup
+    Specifies the group for the SSE connection. If not provided, the group will be set to the path of the route.
+
+.OUTPUTS
+    Hashtable[]
+
+.NOTES
+    The function creates a new route with the `_events` suffix appended to the original route's path.
+    The new route handles SSE connections and manages the async results from the original route.
+
+    If the route is not marked as an async route, an exception will be thrown.
+
+.EXAMPLE
+    Add-PodeRoute -PassThru -Method Get -Path '/events' -ScriptBlock {
+        return @{'message' = 'Done' }
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json' -MaxRunspaces 2 -PassThru -EnableSse -SseGroup 'Test events' |
+        Add-PodeAsyncRouteSse -SseGroup 'Test events'
+
+    This example demonstrates creating a new GET route at the path '/events' and setting it as an async route with a maximum of 2 runspaces. The async route is enabled for Server-Sent Events (SSE) and is grouped under 'Test events'.
+    The `Add-PodeAsyncRouteSse` function is then used to add an SSE route to the async route, ensuring that updates from the server are pushed to the client.
+#>
+function Add-PodeAsyncRouteSse {
+    [CmdletBinding()]
+    [OutputType([hashtable[]])]
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [ValidateNotNullOrEmpty()]
+        [hashtable[]]
+        $Route,
+
+        [Parameter()]
+        [switch]
+        $PassThru,
+
+        [Parameter()]
+        [string]
+        $SseGroup
+    )
+
+    Begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
+
+        $sseScriptBlock = {
+            param($SseGroup)
+
+            if ([string]::IsNullOrEmpty($SseGroup)) {
+                write-podehost "webEvent.Route.Path=$($webEvent.Route.Path)"
+                ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local -Group $SseGroup
+            }
+            else {
+                ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local
+            }
+
+            $id = $WebEvent.Query['Id']
+            if (!$PodeContext.AsyncRoutes.Results.ContainsKey($id)) {
+                try {
+                    throw ($PodeLocale.asyncIdDoesNotExistExceptionMessage -f $id)
+                }
+                catch {
+                    # Log the error
+                    $_ | Write-PodeErrorLog
+                    return
+                }
+            }
+            $AsyncResult = $PodeContext.AsyncRoutes.Results[$Id]
+
+            $AsyncResult['Sse']['State'] = 'Waiting'
+
+            while (!$AsyncResult['Runspace'].Handler.IsCompleted) {
+                start-sleep 1
+            }
+
+            try {
+                switch ($AsyncResult['State']) {
+                    'Failed' {
+                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Error = $AsyncResult['Error'] }
+                    }
+                    'Completed' {
+                        if ($AsyncResult['Result']) {
+                            $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Result = $AsyncResult['Result'] }
+                        }
+                        else {
+                            $null = Send-PodeSseEvent -FromEvent -Data @{ State = 'Completed' }
+                        }
+                    }
+                    'Aborted' {
+                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Error = $AsyncResult['Error'] }
+                    }
+                }
+                $AsyncResult['Sse']['State'] = 'Completed'
+            }
+            catch {
+                # Log any errors encountered during SSE handling
+                $_ | Write-PodeErrorLog
+                $AsyncResult['Sse']['State'] = 'Failed'
+            }
+
+        }
+    }
+
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    End {
+        # Set Route to the array of values if multiple values are piped in
+        if ($pipelineValue.Count -gt 1) {
+            $Route = $pipelineValue
+        }
+
+        if ($null -eq $Route) {
+            # The parameter 'Route' cannot be null
+            throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
+        }
+
+        foreach ($r in $Route) {
+            # Check if the route is marked as an Async Route
+            if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncPoolName) -or ! $r.IsAsync) {
+                # The route '{0}' is not marked as an Async Route.
+                throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.Path)
+            }
+
+            $sseRoute = Add-PodeRoute -PassThru -method Get -Path "$($r.Path)_events" -ArgumentList $SseGroup `
+                -ScriptBlock $sseScriptBlock
+
+            $PodeContext.AsyncRoutes.Items[$r.AsyncPoolName]['Sse'] = @{
+                Group = $SseGroup
+                Name  = "$($r.Path)_events"
+                Route = $sseRoute
+            }
+        }
+        # Return the route information if PassThru is specified
+        if ($PassThru) {
+            return $Route
+        }
+    }
+}
 
 <#
 .SYNOPSIS

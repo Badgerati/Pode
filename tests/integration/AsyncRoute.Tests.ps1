@@ -42,9 +42,9 @@ Describe 'ASYNC REST API Requests' {
         }
     }
 
-    Describe 'Create Async operation on behalf of Mindy' {
+    Describe 'Create Async Route Task on behalf of Mindy' {
 
-        It 'Create Async operation /auth/asyncUsingNotCancellable' {
+        It 'Create Async Route Task /auth/asyncUsingNotCancellable' {
 
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingNotCancellable" -Method Put -Headers $mindyCommonHeaders
 
@@ -56,7 +56,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $false
         }
 
-        It 'Create Async operation /auth/asyncUsingCancellable' {
+        It 'Create Async Route Task /auth/asyncUsingCancellable' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingCancellable" -Method Put -Headers $mindyCommonHeaders
 
             # Assertions to validate the response
@@ -67,7 +67,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $true
         }
 
-        It 'Create Async operation /auth/asyncUsing with JSON body' {
+        It 'Create Async Route Task /auth/asyncUsing with JSON body' {
             $body = @{
                 callbackUrl = "http://localhost:$($Port)/receive/callback"
             } | ConvertTo-Json
@@ -85,7 +85,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $true
         }
 
-        It 'Create Async operation /auth/asyncStateNoColumn' {
+        It 'Create Async Route Task /auth/asyncStateNoColumn' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncStateNoColumn" -Method Put -Headers $mindyCommonHeaders
 
             # Assertions to validate the response
@@ -96,7 +96,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $true
         }
 
-        It 'Create Async operation /auth/asyncState' {
+        It 'Create Async Route Task /auth/asyncState' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncState" -Method Put -Headers $mindyCommonHeaders
 
             # Assertions to validate the response
@@ -107,7 +107,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $true
         }
 
-        It 'Create Async operation /auth/asyncParam' {
+        It 'Create Async Route Task /auth/asyncParam' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncParam" -Method Put -Headers $mindyCommonHeaders
 
             # Assertions to validate the response
@@ -119,8 +119,8 @@ Describe 'ASYNC REST API Requests' {
         }
     }
 
-    Describe 'Create Async operation on behalf of Morty' {
-        It 'Create Async operation /auth/asyncUsingNotCancellable' {
+    Describe 'Create Async Route Task on behalf of Morty' {
+        It 'Create Async Route Task /auth/asyncUsingNotCancellable' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingNotCancellable" -Method Put -Headers $mortyCommonHeaders
 
             # Assertions to validate the response
@@ -131,7 +131,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $false
         }
 
-        It 'Create Async operation /auth/asyncUsingCancellable' {
+        It 'Create Async Route Task /auth/asyncUsingCancellable' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncUsingCancellable" -Method Put -Headers $mortyCommonHeaders
 
             # Assertions to validate the response
@@ -142,7 +142,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $true
         }
 
-        It 'Create Async operation /auth/asyncUsing with JSON body' {
+        It 'Create Async Route Task /auth/asyncUsing with JSON body' {
             $body = @{
                 callbackUrl = "http://localhost:$($Port)/receive/callback"
             } | ConvertTo-Json
@@ -160,11 +160,11 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $true
         }
 
-        It 'Throws exception - Create Async operation /auth/asyncStateNoColumn' {
+        It 'Throws exception - Create Async Route Task /auth/asyncStateNoColumn' {
             { Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncStateNoColumn" -Method Put -Headers $mortyCommonHeaders } | Should -Throw
         }
 
-        It 'Create Async operation /auth/asyncState' {
+        It 'Create Async Route Task /auth/asyncState' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncState" -Method Put -Headers $mortyCommonHeaders
 
             # Assertions to validate the response
@@ -175,7 +175,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $true
         }
 
-        It 'Create Async operation /auth/asyncParam' {
+        It 'Create Async Route Task /auth/asyncParam' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncParam" -Method Put -Headers $mortyCommonHeaders
 
             # Assertions to validate the response
@@ -186,7 +186,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $true
         }
 
-        It 'Create Async operation /asyncWaitForeverTimeout' {
+        It 'Create Async Route Task /asyncWaitForeverTimeout' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncInfiniteLoopTimeout" -Method Put -Headers $mortyCommonHeaders
 
             # Assertions to validate the response
@@ -198,20 +198,20 @@ Describe 'ASYNC REST API Requests' {
         }
     }
 
-    Describe -Name 'Get Async Operation' {
+    Describe -Name 'Get Async Route Task' {
         BeforeAll {
             $responseCreateAsync = Invoke-RestMethod -Uri "http://localhost:$($Port)/auth/asyncInfiniteLoop" -Method Put -Headers $mindyCommonHeaders
         }
-        it 'Throws exception - Get Async Operation as Morty' {
+        it 'Throws exception - Get Async Route Task as Morty' {
             { Invoke-RestMethod -Uri "http://localhost:$($Port)/task/$($responseCreateAsync.ID)" -Method Get -Headers $mortyCommonHeaders } |
                 Should -Throw #-ExceptionType ([Microsoft.PowerShell.Commands.HttpResponseException])
         }
-        it 'Throws exception - Terminate Async Operation as Morty' {
+        it 'Throws exception - Terminate Async Route Task as Morty' {
             { Invoke-RestMethod -Uri "http://localhost:$($Port)/task?id=$($responseCreateAsync.ID)" -Method Delete -Headers $mortyCommonHeaders } |
                 Should -Throw  #-Exception Type ([Microsoft.PowerShell.Commands.HttpResponseException])
         }
 
-        it 'Get Async Operation as Mindy' {
+        it 'Get Async Route Task as Mindy' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/task/$($responseCreateAsync.ID)" -Method Get -Headers $mindyCommonHeaders
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
@@ -221,7 +221,7 @@ Describe 'ASYNC REST API Requests' {
             $response.Cancellable | Should -Be $true
         }
 
-        it 'Terminate Async Operation as Mindy' {
+        it 'Terminate Async Route Task as Mindy' {
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/task?id=$($responseCreateAsync.ID)" -Method Delete -Headers $mindyCommonHeaders
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
@@ -233,8 +233,8 @@ Describe 'ASYNC REST API Requests' {
         }
     }
 
-    Describe -Name 'Query Async Operation' {
-        it 'Get Query Async Operation as Mindy' {
+    Describe -Name 'Query Async Route Task' {
+        it 'Get Query Async Route Task as Mindy' {
             $body = @{} | ConvertTo-Json
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/tasks" -Method Post -Body $body -Headers $mindyCommonHeaders
             # Assertions to validate the response
@@ -243,7 +243,7 @@ Describe 'ASYNC REST API Requests' {
             $response.state.where({ $_ -eq 'Aborted' }).count | Should -Be 1
         }
 
-        it 'Get Query Async Operation as Morty' {
+        it 'Get Query Async Route Task as Morty' {
             $body = @{} | ConvertTo-Json
             $response = Invoke-RestMethod -Uri "http://localhost:$($Port)/tasks" -Method Post -Body $body -Headers $mortyCommonHeaders
             # Assertions to validate the response

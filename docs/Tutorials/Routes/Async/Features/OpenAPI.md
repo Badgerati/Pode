@@ -67,15 +67,15 @@ components:
       properties:
         User:
           type: string
-          description: The async operation owner.
+          description: The async route task owner.
         CompletedTime:
           type: string
-          description: The async operation completion time.
+          description: The async route task completion time.
           example: 2024-07-02T20:59:23.2174712Z
           format: date-time
         State:
           type: string
-          description: The async operation status.
+          description: The async route task status.
           example: Running
           enum:
             - NotStarted
@@ -84,7 +84,7 @@ components:
             - Completed
         Result:
           type: object
-          description: The result of the async operation.
+          description: The result of the async route task.
           properties:
             InnerValue:
               type: string

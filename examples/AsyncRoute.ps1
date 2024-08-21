@@ -405,7 +405,8 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         Send-PodeSseEvent   -Data $msg  -FromEvent #-name 'Events' -Group 'Test events' #-FromEvent
         write-podehost 'PodeSseEvent sent'
         return @{'message' = 'Done' }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json'  -MaxRunspaces 2  -PassThru -EnableSse -SseGroup 'Test events'
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json'  -MaxRunspaces 2  -PassThru -EnableSse -SseGroup 'Test events' |
+        Add-PodeAsyncRouteSse -SseGroup 'Test events'
 
     Add-PodeRoute -method Get -Path '/html/events' -ScriptBlock {
         Write-PodeHtmlResponse -StatusCode 200 -Value  @'
