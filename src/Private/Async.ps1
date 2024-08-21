@@ -444,7 +444,7 @@ function Search-PodeAsyncRouteTask {
             # Iterate through each query condition
             foreach ($key in $Query.Keys) {
                 # Check the variable name
-                if (! (('Id', 'Name', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancellable', 'SseEnabled', 'SseGroup', 'User', 'Url', 'Method', 'Progress') -contains $key)) {
+                if (! (('Id', 'Name', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancellable',  'User', 'Url', 'Method', 'Progress') -contains $key)) {
                     # The query provided is invalid.{0} is not a valid element for a query.
                     throw ($PodeLocale.invalidQueryElementExceptionMessage -f $key)
                 }

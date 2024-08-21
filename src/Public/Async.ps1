@@ -1363,7 +1363,7 @@ function Set-PodeAsyncRoute {
 .EXAMPLE
     Add-PodeRoute -PassThru -Method Get -Path '/events' -ScriptBlock {
         return @{'message' = 'Done' }
-    } | Set-PodeAsyncRoute -ResponseContentType 'application/json' -MaxRunspaces 2 -PassThru -EnableSse -SseGroup 'Test events' |
+    } | Set-PodeAsyncRoute -ResponseContentType 'application/json' -MaxRunspaces 2 -PassThru  |
         Add-PodeAsyncRouteSse -SseGroup 'Test events'
 
     This example demonstrates creating a new GET route at the path '/events' and setting it as an async route with a maximum of 2 runspaces. The async route is enabled for Server-Sent Events (SSE) and is grouped under 'Test events'.
