@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'O nome da pasta Views já existe: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Nenhum nome fornecido para redefinir o WebSocket.'
     mergeDefaultAuthNotInListExceptionMessage                         = "A Autenticação MergeDefault '{0}' não está na lista de Autenticação fornecida."
-    descriptionRequiredExceptionMessage                               = 'É necessária uma descrição.'
+    descriptionRequiredExceptionMessage                               = 'Uma descrição é necessária para o Caminho:{0} Resposta:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'O nome da página deve ser um valor alfanumérico válido: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'O valor padrão não é booleano e não faz parte do enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'O esquema do componente OpenApi {0} não existe.'
@@ -288,4 +288,5 @@
     NonHashtableArrayElementExceptionMessage                          = 'A matriz contém um elemento que não é uma tabela hash'
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'A entrada não é uma tabela hash ou uma matriz de tabelas hash'
     DefinitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'As operações {0} não podem ter um corpo de solicitação.'
 }

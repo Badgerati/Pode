@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'Der Name des Ansichtsordners existiert bereits: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Kein Name für das Zurücksetzen des WebSocket angegeben.'
     mergeDefaultAuthNotInListExceptionMessage                         = "Die MergeDefault-Authentifizierung '{0}' befindet sich nicht in der angegebenen Authentifizierungsliste."
-    descriptionRequiredExceptionMessage                               = 'Eine Beschreibung ist erforderlich.'
+    descriptionRequiredExceptionMessage                               = 'Eine Beschreibung ist erforderlich für Pfad:{0} Antwort:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'Der Seitenname sollte einen gültigen alphanumerischen Wert haben: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'Der Standardwert ist kein Boolean und gehört nicht zum Enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'Das OpenApi-Komponentenschema {0} existiert nicht.'
@@ -288,4 +288,5 @@
     NonHashtableArrayElementExceptionMessage                          = 'Array enthält ein Nicht-Hashtable-Element'
     InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'Eingabe ist kein Hashtable oder Array von Hashtables'
     DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitionstag für eine Route kann nicht geändert werden.'
+    getRequestBodyNotAllowedExceptionMessage                          = '{0}-Operationen können keinen Anforderungstext haben.'
 }
