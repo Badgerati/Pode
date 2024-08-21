@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'Nazwa folderu Widoków już istnieje: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Nie podano nazwy dla resetowania WebSocket.'
     mergeDefaultAuthNotInListExceptionMessage                         = "Uwierzytelnianie MergeDefault '{0}' nie znajduje się na dostarczonej liście uwierzytelniania."
-    descriptionRequiredExceptionMessage                               = 'Wymagany jest opis.'
+    descriptionRequiredExceptionMessage                               = 'Wymagany jest opis dla ścieżki:{0} Odpowiedź:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'Nazwa strony powinna być poprawną wartością alfanumeryczną: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'Wartość domyślna nie jest typu boolean i nie należy do enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'Schemat komponentu OpenApi {0} nie istnieje.'
@@ -287,5 +287,6 @@
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag nie może być używany wewnątrz 'ScriptBlock' Select-PodeOADefinition."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Tag definicji dla Route nie może zostać zmieniony.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'Operacje {0} nie mogą mieć treści żądania.'
 }
 

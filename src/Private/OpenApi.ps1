@@ -335,10 +335,21 @@ function ConvertTo-PodeOAOfProperty {
     if (@('allOf', 'oneOf', 'anyOf') -inotcontains $Property.type) {
         return @{}
     }
-
     # Initialize the schema with the 'Of' type
-    $schema = [ordered]@{
-        $Property.type = @()
+    if ($Property.name) {
+        $schema = [ordered]@{
+            $Property.name = @{
+                $Property.type = @()
+            }
+        }
+        if ($Property.description) {
+            $schema[$Property.name].description = $Property.description
+        }
+    }
+    else {
+        $schema = [ordered]@{
+            $Property.type = @()
+        }
     }
 
     # Process each schema defined in the property
@@ -347,11 +358,21 @@ function ConvertTo-PodeOAOfProperty {
             if ($prop -is [string]) {
                 # Validate the schema component and add a reference to it
                 Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $prop -PostValidation
-                $schema[$Property.type] += @{ '$ref' = "#/components/schemas/$prop" }
+                if ($Property.name) {
+                    $schema[$Property.name][$Property.type] += @{ '$ref' = "#/components/schemas/$prop" }
+                }
+                else {
+                    $schema[$Property.type] += @{ '$ref' = "#/components/schemas/$prop" }
+                }
             }
             else {
                 # Convert the property to an OpenAPI schema property
-                $schema[$Property.type] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
+                if ($Property.name) {
+                    $schema[$Property.name][$Property.type] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
+                }
+                else {
+                    $schema[$Property.type] += $prop | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
+                }
             }
         }
     }
@@ -466,69 +487,69 @@ function ConvertTo-PodeOASchemaProperty {
             $schema['readOnly'] = $Property.readOnly
         }
 
-        if ($Property.example) {
-            if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
-                $schema['example'] = $Property.example
+    if ($Property.example) {
+        if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
+            $schema['example'] = $Property.example
+        }
+        else {
+            if ($Property.example -is [Array]) {
+                $schema['examples'] = $Property.example
             }
             else {
-                if ($Property.example -is [Array]) {
-                    $schema['examples'] = $Property.example
-                }
-                else {
-                    $schema['examples'] = @( $Property.example)
-                }
+                $schema['examples'] = @( $Property.example)
             }
         }
-        if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
-            if ($Property.minimum) {
-                $schema['minimum'] = $Property.minimum
-            }
+    }
+    if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
+        if ($Property.ContainsKey('minimum')) {
+            $schema['minimum'] = $Property.minimum
+        }
 
-            if ($Property.maximum) {
-                $schema['maximum'] = $Property.maximum
-            }
+        if ($Property.ContainsKey('maximum')) {
+            $schema['maximum'] = $Property.maximum
+        }
 
             if ($Property.exclusiveMaximum) {
                 $schema['exclusiveMaximum'] = $Property.exclusiveMaximum
             }
 
+        if ($Property.exclusiveMinimum) {
+            $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
+        }
+    }
+    else {
+        if ($Property.ContainsKey('maximum')) {
+            if ($Property.exclusiveMaximum) {
+                $schema['exclusiveMaximum'] = $Property.maximum
+            }
+            else {
+                $schema['maximum'] = $Property.maximum
+            }
+        }
+        if ($Property.ContainsKey('minimum')) {
             if ($Property.exclusiveMinimum) {
-                $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
+                $schema['exclusiveMinimum'] = $Property.minimum
+            }
+            else {
+                $schema['minimum'] = $Property.minimum
             }
         }
-        else {
-            if ($Property.maximum) {
-                if ($Property.exclusiveMaximum) {
-                    $schema['exclusiveMaximum'] = $Property.maximum
-                }
-                else {
-                    $schema['maximum'] = $Property.maximum
-                }
-            }
-            if ($Property.minimum) {
-                if ($Property.exclusiveMinimum) {
-                    $schema['exclusiveMinimum'] = $Property.minimum
-                }
-                else {
-                    $schema['minimum'] = $Property.minimum
-                }
-            }
-        }
-        if ($Property.multipleOf) {
-            $schema['multipleOf'] = $Property.multipleOf
-        }
+    }
+    if ($Property.multipleOf) {
+        $schema['multipleOf'] = $Property.multipleOf
+    }
 
         if ($Property.pattern) {
             $schema['pattern'] = $Property.pattern
         }
 
-        if ($Property.minLength) {
-            $schema['minLength'] = $Property.minLength
-        }
+    if ($Property.ContainsKey('minLength')) {
+        $schema['minLength'] = $Property.minLength
+    }
 
-        if ($Property.maxLength) {
-            $schema['maxLength'] = $Property.maxLength
-        }
+    if ($Property.ContainsKey('maxLength')) {
+        $schema['maxLength'] = $Property.maxLength
+    }
 
         if ($Property.xml ) {
             $schema['xml'] = $Property.xml
@@ -543,15 +564,15 @@ function ConvertTo-PodeOASchemaProperty {
             }
         }
 
-        # are we using an array?
-        if ($Property.array) {
-            if ($Property.maxItems ) {
-                $schema['maxItems'] = $Property.maxItems
-            }
+    # are we using an array?
+    if ($Property.array) {
+        if ($Property.ContainsKey('maxItems') ) {
+            $schema['maxItems'] = $Property.maxItems
+        }
 
-            if ($Property.minItems ) {
-                $schema['minItems'] = $Property.minItems
-            }
+        if ($Property.ContainsKey('minItems') ) {
+            $schema['minItems'] = $Property.minItems
+        }
 
             if ($Property.uniqueItems ) {
                 $schema['uniqueItems'] = $Property.uniqueItems
@@ -613,15 +634,21 @@ function ConvertTo-PodeOASchemaProperty {
             }
         }
 
-        if ($Property.type -ieq 'object') {
-            foreach ($prop in $Property.properties) {
-                if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type) {
-                    switch ($prop.type.ToLower()) {
-                        'allof' { $prop.type = 'allOf' }
-                        'oneof' { $prop.type = 'oneOf' }
-                        'anyof' { $prop.type = 'anyOf' }
-                    }
+    if ($Property.type -ieq 'object') {
+        $schema['properties'] = @{}
+        foreach ($prop in $Property.properties) {
+            if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type) {
+                switch ($prop.type.ToLower()) {
+                    'allof' { $prop.type = 'allOf' }
+                    'oneof' { $prop.type = 'oneOf' }
+                    'anyof' { $prop.type = 'anyOf' }
+                }
+                if ($prop.name) {
+                    $schema['properties'] += ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $prop
+                }
+                else {
                     $schema += ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $prop
+                }
 
                 }
             }
@@ -1119,6 +1146,11 @@ function Get-PodeOpenApiDefinitionInternal {
                 # add path's http method to defintition
 
                 $pm = Set-PodeOpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
+                if ($pm.responses.Count -eq 0) {
+                    $pm.responses += @{
+                        'default' = @{'description' = 'No description' }
+                    }
+                }
                 $def.paths[$_route.OpenApi.Path][$method] = $pm
 
                 # add any custom server endpoints for route
@@ -1327,7 +1359,7 @@ function Initialize-PodeOpenApiTable {
     )
     # Initialization of the OpenAPI table with default settings
     $OpenAPI = @{
-        DefinitionTagSelectionStack = New-Object 'System.Collections.Generic.Stack[System.Object]'
+        DefinitionTagSelectionStack = [System.Collections.Generic.Stack[System.Object]]::new()
     }
 
     # Set the currently selected definition tag
@@ -1712,15 +1744,15 @@ function New-PodeOAPropertyInternal {
 
     if ($Params.UniqueItems.IsPresent) { $param.uniqueItems = $Params.UniqueItems.IsPresent }
 
-    if ($Params.MaxItems) { $param.maxItems = $Params.MaxItems }
+    if ($Params.ContainsKey('MaxItems')) { $param.maxItems = $Params.MaxItems }
 
-    if ($Params.MinItems) { $param.minItems = $Params.MinItems }
+    if ($Params.ContainsKey('MinItems')) { $param.minItems = $Params.MinItems }
 
     if ($Params.Enum) { $param.enum = $Params.Enum }
 
-    if ($Params.Minimum) { $param.minimum = $Params.Minimum }
+    if ($Params.ContainsKey('Minimum')) { $param.minimum = $Params.Minimum }
 
-    if ($Params.Maximum) { $param.maximum = $Params.Maximum }
+    if ($Params.ContainsKey('Maximum')) { $param.maximum = $Params.Maximum }
 
     if ($Params.ExclusiveMaximum.IsPresent) { $param.exclusiveMaximum = $Params.ExclusiveMaximum.IsPresent }
 
@@ -1729,13 +1761,13 @@ function New-PodeOAPropertyInternal {
 
     if ($Params.Pattern) { $param.pattern = $Params.Pattern }
 
-    if ($Params.MinLength) { $param.minLength = $Params.MinLength }
+    if ($Params.ContainsKey('MinLength')) { $param.minLength = $Params.MinLength }
 
-    if ($Params.MaxLength) { $param.maxLength = $Params.MaxLength }
+    if ($Params.ContainsKey('MaxLength')) { $param.maxLength = $Params.MaxLength }
 
-    if ($Params.MinProperties) { $param.minProperties = $Params.MinProperties }
+    if ($Params.ContainsKey('MinProperties')) { $param.minProperties = $Params.MinProperties }
 
-    if ($Params.MaxProperties) { $param.maxProperties = $Params.MaxProperties }
+    if ($Params.ContainsKey('MaxProperties')) { $param.maxProperties = $Params.MaxProperties }
 
     if ($Params.XmlName -or $Params.XmlNamespace -or $Params.XmlPrefix -or $Params.XmlAttribute.IsPresent -or $Params.XmlWrapped.IsPresent) {
 
@@ -1944,12 +1976,12 @@ function New-PodeOResponseInternal {
         if ($Params.Default) {
             $Description = 'Default Response.'
         }
-        elseif ($Params.StatusCode) {
+        elseif ([int]::TryParse($Params.StatusCode, [ref]$null)) {
             $Description = Get-PodeStatusDescription -StatusCode $Params.StatusCode
         }
         else {
             # A Description is required
-            throw ($PodeLocale.descriptionRequiredExceptionMessage)
+            throw ($PodeLocale.descriptionRequiredExceptionMessage -f $params.Route.path, $Params.StatusCode )
         }
     }
     else {
