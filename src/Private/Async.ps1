@@ -89,7 +89,6 @@ function Get-PodeAsyncRouteScriptblock {
         finally {
             Complete-PodeAsyncRouteOperation -AsyncResult $asyncResult
         }
-
     }
 
     # Convert the provided script block to a string
@@ -165,6 +164,7 @@ function Test-PodeAsyncRouteScriptblockInvalidCommand {
         throw ($PodeLocale.scriptContainsDisallowedCommandExceptionMessage -f $Matches[0].Trim())
     }
 }
+
 <#
 .SYNOPSIS
     Closes an asynchronous script execution, setting its state to 'Completed' and handling callback invocations.
@@ -287,7 +287,6 @@ function Complete-PodeAsyncRouteOperation {
 
 }
 
-
 <#
 .SYNOPSIS
     Starts the housekeeper for Pode asynchronous routes.
@@ -359,7 +358,6 @@ function Start-PodeAsyncRoutesHousekeeper {
         $result = $null
     }
 }
-
 
 <#
 .SYNOPSIS

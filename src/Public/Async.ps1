@@ -187,18 +187,18 @@ function Add-PodeAsyncRouteGet {
 
     # Add OpenAPI documentation postponed script
     $route.OpenApi.Postponed = {
-        param($params )
+        param($param)
         $r | Set-PodeOARequest -PassThru -Parameters (
-            New-PodeOAStringProperty -Name $params.OAName.TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $params.In) |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $params.ResponseContentType -Content $params.OAName.OATypeName) -PassThru |
+            New-PodeOAStringProperty -Name $param.OAName.TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $param.In) |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $param.ResponseContentType -Content $param.OAName.OATypeName) -PassThru |
             Add-PodeOAResponse -StatusCode 4XX -Description 'Client error. The request contains bad syntax or cannot be fulfilled.' -Content (
-                New-PodeOAContentMediaType -MediaType $params.ResponseContentType -Content (
-                    New-PodeOAStringProperty -Name 'Id' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($params.OAName.OATypeName)Error"
+                New-PodeOAContentMediaType -MediaType $param.ResponseContentType -Content (
+                    New-PodeOAStringProperty -Name 'Id' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($param.OAName.OATypeName)Error"
                 ))
     }
 
     $route.OpenApi.PostponedArgumentList = @{
-        OAName                = $oaName
+        OAName              = $oaName
         In                  = $In
         ResponseContentType = $ResponseContentType
     }
@@ -407,18 +407,18 @@ function Add-PodeAsyncRouteStop {
 
     # Add OpenAPI documentation postponed script
     $route.OpenApi.Postponed = {
-        param($params)
+        param($param)
         $r | Set-PodeOARequest -PassThru -Parameters (
-            New-PodeOAStringProperty -Name $params.OAName.TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $params.In) |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $params.ResponseContentType -Content $params.OAName.OATypeName) -PassThru |
+            New-PodeOAStringProperty -Name $param.OAName.TaskIdName -Format Uuid -Description 'Task Id' -Required | ConvertTo-PodeOAParameter -In $param.In) |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $param.ResponseContentType -Content $param.OAName.OATypeName) -PassThru |
             Add-PodeOAResponse -StatusCode 4XX -Description 'Client error. The request contains bad syntax or cannot be fulfilled.' -Content (
-                New-PodeOAContentMediaType -MediaType $params.ResponseContentType -Content (
-                    New-PodeOAStringProperty -Name 'Id' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($params.OAName.OATypeName)Error"
+                New-PodeOAContentMediaType -MediaType $param.ResponseContentType -Content (
+                    New-PodeOAStringProperty -Name 'Id' -Format Uuid -Required | New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($param.OAName.OATypeName)Error"
                 )
             )
     }
     $route.OpenApi.PostponedArgumentList = @{
-        OAName                = $oaName
+        OAName              = $oaName
         In                  = $In
         ResponseContentType = $ResponseContentType
     }
@@ -626,46 +626,46 @@ function Add-PodeAsyncRouteQuery {
 
     # Add OpenAPI documentation postponed script
     $route.OpenApi.Postponed = {
-        param($params )
-        if (!(Test-PodeOAComponent -Field schemas -Name $params.OAName.QueryRequestName )) {
+        param($param )
+        if (!(Test-PodeOAComponent -Field schemas -Name $param.OAName.QueryRequestName )) {
 
             New-PodeOAStringProperty -Name 'op' -Enum 'GT', 'LT', 'GE', 'LE', 'EQ', 'NE', 'LIKE', 'NOTLIKE' -Required |
                 New-PodeOAStringProperty -Name 'value' -Description 'The value to compare against' -Required |
-                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "String$($params.OAName.QueryParameterName)"
+                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "String$($param.OAName.QueryParameterName)"
 
 
             New-PodeOAStringProperty -Name 'op' -Enum   'EQ', 'NE'  -Required |
                 New-PodeOAStringProperty -Name 'value' -Description 'The value to compare against' -Required |
-                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "Boolean$($params.OAName.QueryParameterName)"
+                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "Boolean$($param.OAName.QueryParameterName)"
 
             New-PodeOAStringProperty -Name 'op' -Enum 'GT', 'LT', 'GE', 'LE', 'EQ', 'NE'  -Required |
                 New-PodeOAStringProperty -Name 'value' -format Date-Time -Description 'The value to compare against' -Required |
-                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "DateTime$($params.OAName.QueryParameterName)"
+                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "DateTime$($param.OAName.QueryParameterName)"
 
 
             New-PodeOAStringProperty -Name 'op' -Enum 'GT', 'LT', 'GE', 'LE', 'EQ', 'NE'  -Required |
                 New-PodeOANumberProperty -Name 'value' -Description 'The value to compare against' -Required |
-                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "Number$($params.OAName.QueryParameterName)"
+                New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "Number$($param.OAName.QueryParameterName)"
 
             # Define AsyncTaskQueryRequest using pipelining
-            New-PodeOASchemaProperty -Name 'Id' -Reference "String$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'AsyncRouteId' -Reference "String$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'StartingTime' -Reference "DateTime$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'CreationTime' -Reference "DateTime$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'CompletedTime' -Reference "DateTime$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'ExpireTime' -Reference "DateTime$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'State' -Reference "String$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'Error' -Reference "String$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'CallbackSettings' -Reference "String$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'Cancellable' -Reference "Boolean$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'SseEnabled' -Reference "Boolean$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'SseGroup' -Reference "String$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'User' -Reference "String$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'Url' -Reference "String$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'Method' -Reference "String$($params.OAName.QueryParameterName)" |
-                New-PodeOASchemaProperty -Name 'Progress' -Reference "Number$($params.OAName.QueryParameterName)" |
+            New-PodeOASchemaProperty -Name 'Id' -Reference "String$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'AsyncRouteId' -Reference "String$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'StartingTime' -Reference "DateTime$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'CreationTime' -Reference "DateTime$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'CompletedTime' -Reference "DateTime$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'ExpireTime' -Reference "DateTime$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'State' -Reference "String$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'Error' -Reference "String$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'CallbackSettings' -Reference "String$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'Cancellable' -Reference "Boolean$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'SseEnabled' -Reference "Boolean$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'SseGroup' -Reference "String$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'User' -Reference "String$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'Url' -Reference "String$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'Method' -Reference "String$($param.OAName.QueryParameterName)" |
+                New-PodeOASchemaProperty -Name 'Progress' -Reference "Number$($param.OAName.QueryParameterName)" |
                 New-PodeOAObjectProperty |
-                Add-PodeOAComponentSchema -Name $params.OAName.QueryRequestName
+                Add-PodeOAComponentSchema -Name $param.OAName.QueryRequestName
         }
 
         # Define an example hashtable for the OpenAPI request
@@ -682,7 +682,7 @@ function Add-PodeAsyncRouteQuery {
                 op    = 'EQ'
                 value = 'Completed'
             }
-            'AsyncRouteId'         = @{
+            'AsyncRouteId' = @{
                 op    = 'LIKE'
                 value = 'Get'
             }
@@ -698,42 +698,42 @@ function Add-PodeAsyncRouteQuery {
 
         # Add OpenAPI route information and responses
         $r |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $params.ResponseContentType -Content $params.OAName.OATypeName -Array) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType $param.ResponseContentType -Content $param.OAName.OATypeName -Array) -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid filter supplied' -Content (
-                New-PodeOAContentMediaType -MediaType $params.ResponseContentType -Content (
-                    New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($params.OAName.OATypeName)Error"
+                New-PodeOAContentMediaType -MediaType $param.ResponseContentType -Content (
+                    New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($param.OAName.OATypeName)Error"
                 )
             ) -PassThru | Add-PodeOAResponse -StatusCode 500 -Content (
-                New-PodeOAContentMediaType -MediaType $params.ResponseContentType -Content (
-                    New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($params.OAName.OATypeName)Error"
+                New-PodeOAContentMediaType -MediaType $param.ResponseContentType -Content (
+                    New-PodeOAStringProperty -Name 'Error' -Required | New-PodeOAObjectProperty -XmlName "$($param.OAName.OATypeName)Error"
                 )
             )
 
 
         # Define examples for different media types
         $example = [ordered]@{}
-        foreach ($mt in $params.QueryContentType) {
-            $example += New-PodeOAExample -MediaType $mt -Name $params.OAName.QueryRequestName -Value $exampleHashTable
+        foreach ($mt in $param.QueryContentType) {
+            $example += New-PodeOAExample -MediaType $mt -Name $param.OAName.QueryRequestName -Value $exampleHashTable
         }
 
         # Set the OpenAPI request based on the payload location
-        switch ($params.Payload.ToLowerInvariant()) {
+        switch ($param.Payload.ToLowerInvariant()) {
             'body' {
                 $r | Set-PodeOARequest -RequestBody (
-                    New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType $params.QueryContentType -Content $params.OAName.QueryRequestName) -Examples $example
+                    New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType $param.QueryContentType -Content $param.OAName.QueryRequestName) -Examples $example
                 )
             }
             'header' {
-                $r | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Header -Schema $params.OAName.QueryRequestName -ContentType $params.QueryContentType[0] -Example $example[0])
+                $r | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Header -Schema $param.OAName.QueryRequestName -ContentType $param.QueryContentType[0] -Example $example[0])
             }
             'query' {
-                $r | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Query -Schema $params.OAName.QueryRequestName -ContentType $params.QueryContentType[0] -Example $example[0])
+                $r | Set-PodeOARequest -Parameters (ConvertTo-PodeOAParameter -In Query -Schema $param.OAName.QueryRequestName -ContentType $param.QueryContentType[0] -Example $example[0])
             }
         }
     }
 
     $route.OpenApi.PostponedArgumentList = @{
-        OAName                = $oaName
+        OAName              = $oaName
         In                  = $In
         ResponseContentType = $ResponseContentType
         QueryContentType    = $QueryContentType
@@ -1281,7 +1281,7 @@ function Set-PodeAsyncRoute {
 
             # Store the route's async route task definition in Pode context
             $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId] = @{
-                AsyncRouteId             = $r.AsyncRouteId
+                AsyncRouteId     = $r.AsyncRouteId
                 Script           = Get-PodeAsyncRouteScriptblock -ScriptBlock $r.Logic
                 UsingVariables   = $r.UsingVariables
                 Arguments        = (Protect-PodeValue -Value $r.Arguments -Default @{})
