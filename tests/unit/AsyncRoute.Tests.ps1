@@ -201,7 +201,7 @@ Describe 'Export-PodeAsyncRouteInfo' {
             $asyncData['Cancellable'] = $true
             $asyncData['CreationTime'] = $testDate
             $asyncData['ExpireTime'] = $testDate.AddMinutes(10)
-            $asyncData['Name'] = 'TestAsync'
+            $asyncData['AsyncRouteId'] = 'TestAsync'
             $asyncData['State'] = 'Completed'
             $asyncData['Permission'] = 'Admin'
             $asyncData['StartingTime'] = $testDate.AddSeconds(30)
@@ -223,7 +223,7 @@ Describe 'Export-PodeAsyncRouteInfo' {
             $result.Cancellable | Should -Be $true
             $result.CreationTime | Should -Be (Format-PodeDateToIso8601 -Date $testDate)
             $result.ExpireTime | Should -Be (Format-PodeDateToIso8601 -Date ($testDate.AddMinutes(10)))
-            $result.Name | Should -Be 'TestAsync'
+            $result.AsyncRouteId | Should -Be 'TestAsync'
             $result.State | Should -Be 'Completed'
             $result.Permission | Should -Be 'Admin'
             $result.StartingTime | Should -Be (Format-PodeDateToIso8601 -Date ($testDate.AddSeconds(30)))
@@ -293,7 +293,7 @@ Describe 'Get-PodeAsyncRouteOperation' {
         $asyncOperationDetails['Cancellable'] = $true
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
-        $asyncOperationDetails['Name'] = 'PesterTest1'
+        $asyncOperationDetails['AsyncRouteId'] = 'PesterTest1'
         $PodeContext.AsyncRoutes.Results[$operationId1] = $asyncOperationDetails
 
 
@@ -304,7 +304,7 @@ Describe 'Get-PodeAsyncRouteOperation' {
         $asyncOperationDetails['Cancellable'] = $false
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
-        $asyncOperationDetails['Name'] = 'PesterTest2'
+        $asyncOperationDetails['AsyncRouteId'] = 'PesterTest2'
         $PodeContext.AsyncRoutes.Results[$operationId2] = $asyncOperationDetails
 
         $operationId3 = '123e4567-e89b-12d3-a456-426614174002'
@@ -314,12 +314,12 @@ Describe 'Get-PodeAsyncRouteOperation' {
         $asyncOperationDetails['Cancellable'] = $true
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
-        $asyncOperationDetails['Name'] = 'PesterTest3'
+        $asyncOperationDetails['AsyncRouteId'] = 'PesterTest3'
         $PodeContext.AsyncRoutes.Results[$operationId3] = $asyncOperationDetails
 
     }
 
-    It 'should return all routes when Id and Name are null' {
+    It 'should return all routes when Id and AsyncRouteId are null' {
 
         # Act
         $Result = Get-PodeAsyncRouteOperation
@@ -329,15 +329,15 @@ Describe 'Get-PodeAsyncRouteOperation' {
         foreach ($r in $Result) {
             switch ($r.Id ) {
                 $operationId1 {
-                    $r.Name | Should -Be 'PesterTest1'
+                    $r.AsyncRouteId | Should -Be 'PesterTest1'
                     $r.State | Should -Be 'Running'
                 }
                 $operationId2 {
-                    $r.Name | Should -Be 'PesterTest2'
+                    $r.AsyncRouteId | Should -Be 'PesterTest2'
                     $r.State | Should -Be 'NotStarted'
                 }
                 $operationId3 {
-                    $r.Name | Should -Be 'PesterTest3'
+                    $r.AsyncRouteId | Should -Be 'PesterTest3'
                     $r.State | Should -Be 'Running'
                 }
             }
@@ -354,19 +354,19 @@ Describe 'Get-PodeAsyncRouteOperation' {
         $Result.Id | Should -Be $operationId3
         $Result.State | Should -Be 'Running'
         $Result.Cancellable | Should -BeTrue
-        $Result.Name | Should -Be 'PesterTest3'
+        $Result.AsyncRouteId | Should -Be 'PesterTest3'
     }
 
-    It 'should return routes with Name Route1' {
+    It 'should return routes with AsyncRouteId Route1' {
 
         # Act
-        $Result = Get-PodeAsyncRouteOperation -Name 'PesterTest2'
+        $Result = Get-PodeAsyncRouteOperation -AsyncRouteId 'PesterTest2'
 
         # Assert
         $Result.Id | Should -Be $operationId2
         $Result.State | Should -Be 'NotStarted'
         $Result.Cancellable | Should -BeFalse
-        $Result.Name | Should -Be 'PesterTest2'
+        $Result.AsyncRouteId | Should -Be 'PesterTest2'
     }
 
     It 'should return empty when Id does not match' {
@@ -417,7 +417,7 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
         $asyncOperationDetails['Cancellable'] = $true
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
-        $asyncOperationDetails['Name'] = 'PesterTest1'
+        $asyncOperationDetails['AsyncRouteId'] = 'PesterTest1'
         $PodeContext.AsyncRoutes.Results[$operationId1] = $asyncOperationDetails
 
 
@@ -428,7 +428,7 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
         $asyncOperationDetails['Cancellable'] = $false
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
-        $asyncOperationDetails['Name'] = 'PesterTest2'
+        $asyncOperationDetails['AsyncRouteId'] = 'PesterTest2'
         $PodeContext.AsyncRoutes.Results[$operationId2] = $asyncOperationDetails
 
         $operationId3 = '123e4567-e89b-12d3-a456-426614174002'
@@ -438,7 +438,7 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
         $asyncOperationDetails['Cancellable'] = $false
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
-        $asyncOperationDetails['Name'] = 'PesterTest3'
+        $asyncOperationDetails['AsyncRouteId'] = 'PesterTest3'
         $PodeContext.AsyncRoutes.Results[$operationId3] = $asyncOperationDetails
 
     }
@@ -452,7 +452,7 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
 
         # Assert
         $result['Id'] | Should -Be '123e4567-e89b-12d3-a456-426614174000'
-        $result['Name'] | Should -Be 'PesterTest1'
+        $result['AsyncRouteId'] | Should -Be 'PesterTest1'
     }
 
     It 'should return the raw data if -Raw is specified' {
@@ -610,7 +610,7 @@ Describe 'Add-PodeAsyncRouteSse' {
         $asyncOperationDetails['Cancellable'] = $true
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
-        $asyncOperationDetails['Name'] = 'PesterTest1'
+        $asyncOperationDetails['AsyncRouteId'] = 'PesterTest1'
         $asyncOperationDetails['Result'] = 'Success'
         $asyncOperationDetails['Runspace'] = [pscustomobject]@{ Handler = [pscustomobject]@{ IsCompleted = $false } }
         $PodeContext.AsyncRoutes.Results[$operationId1] = $asyncOperationDetails

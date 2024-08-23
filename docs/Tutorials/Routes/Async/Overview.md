@@ -105,7 +105,7 @@ When a route is invoked, it automatically creates a runspace to execute the scri
 | **CallbackSettings.Method**     | string  | HTTP Method. Possible values: `Post`, `Put`                                                  |
 | **CallbackSettings.SendResult** | boolean | Send the result.                                                                             |
 | **Result**                      | string  | The result of the async route task.                                                          |
-| **Name***                       | string  | The async route task name.                                                                   |
+| **AsyncRouteId***               | string  | The async route Id.                                                                          |
 | **Progress**                    | number  | Represents the task activity progress.                                                       |
 
 **Note**: Properties marked with `*` are always available.
@@ -210,8 +210,7 @@ This function accepts almost any parameter applicable to a standard Pode Route.
 
 The following properties can be used for the query:
 - `Id`
-- `Name`
-- `Runspace`
+- `AsyncRouteId`
 - `Output`
 - `StartingTime`
 - `CreationTime`
@@ -280,7 +279,7 @@ $queryBody = @{
         value = "7/5/2024 1:20:00 PM"
         op = "GT"
     }
-    Name = @{
+    AsyncRouteId = @{
         value = "Get"
         op = "LIKE"
     }

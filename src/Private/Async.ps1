@@ -55,7 +55,7 @@ function Get-PodeAsyncRouteScriptblock {
         }
 
         $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
-            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "$($asyncResult.Name)_$___async___id___"
+            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "$($asyncResult.AsyncRouteId)_$___async___id___"
         try {
             $asyncResult['StartingTime'] = [datetime]::UtcNow
 
@@ -444,7 +444,7 @@ function Search-PodeAsyncRouteTask {
             # Iterate through each query condition
             foreach ($key in $Query.Keys) {
                 # Check the variable name
-                if (! (('Id', 'Name', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancellable', 'User', 'Url', 'Method', 'Progress') -contains $key)) {
+                if (! (('Id', 'AsyncRouteId', 'StartingTime', 'CreationTime', 'CompletedTime', 'ExpireTime', 'State', 'Error', 'CallbackSettings', 'Cancellable', 'User', 'Url', 'Method', 'Progress') -contains $key)) {
                     # The query provided is invalid.{0} is not a valid element for a query.
                     throw ($PodeLocale.invalidQueryElementExceptionMessage -f $key)
                 }
@@ -783,7 +783,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
 
             # Initialize the result and runspace for the async route task
             $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
-            $runspace = Add-PodeRunspace -Type $asyncRouteTask.Name -ScriptBlock (($asyncRouteTask.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
+            $runspace = Add-PodeRunspace -Type $asyncRouteTask.AsyncRouteId -ScriptBlock (($asyncRouteTask.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
 
             # Set the expiration time based on the timeout value
             if ($asyncRouteTask.Timeout -ge 0) {
@@ -796,7 +796,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
             # Initialize the result hashtable
             $asyncOperation = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
             $asyncOperation['Id'] = $Id
-            $asyncOperation['Name'] = $asyncRouteTask.Name
+            $asyncOperation['AsyncRouteId'] = $asyncRouteTask.AsyncRouteId
             $asyncOperation['Runspace'] = $runspace
             $asyncOperation['Output'] = $result
             $asyncOperation['StartingTime'] = $null
@@ -1112,7 +1112,7 @@ function Export-PodeAsyncRouteInfo {
         # Format creation time in ISO 8601 UTC format
         CreationTime = Format-PodeDateToIso8601 -Date $Async['CreationTime']
         ExpireTime   = Format-PodeDateToIso8601 -Date $Async['ExpireTime']
-        Name         = $Async['Name']
+        AsyncRouteId = $Async['AsyncRouteId']
         State        = $Async['State']
     }
 
@@ -1226,7 +1226,7 @@ function Get-PodeAsyncRouteQueryScriptBlock {
         # Determine the source of the query based on the payload parameter
         switch ($Payload) {
             'Body' { $query = $WebEvent.Data }                          # Retrieve the query from the body
-            'Query' { $query = $WebEvent.Query[$Name] }                 # Retrieve the query from query parameters
+            'Query' { $query = $WebEvent.Query['query'] }                 # Retrieve the query from query parameters
             'Header' { $query = $WebEvent.Request.Headers['query'] }    # Retrieve the query from headers
         }
 
@@ -1500,7 +1500,7 @@ function Add-PodeAsyncRouteComponentSchema {
             New-PodeOAStringProperty -Name 'CompletedTime' -Format Date-Time -Description 'The async route task completion time.' -Example '2024-07-02T20:59:23.2174712Z' |
             New-PodeOAStringProperty -Name 'State' -Description 'The async route task status' -Required -Example 'Running' -Enum @('NotStarted', 'Running', 'Failed', 'Completed', 'Aborted') |
             New-PodeOAStringProperty -Name 'Error' -Description 'The error message if any.' |
-            New-PodeOAStringProperty -Name 'Name' -Example '__Get_path_endpoint1_' -Description 'The async route task name.' -Required |
+            New-PodeOAStringProperty -Name 'AsyncRouteId' -Example '__Get_path_endpoint1_' -Description 'The async route Id.' -Required |
             New-PodeOABoolProperty -Name 'Cancellable' -Description 'The async route task can be forcefully terminated' -Required |
             New-PodeOABoolProperty -Name 'IsCompleted' -Description 'The async route task is completed' -Required |
             New-PodeOAObjectProperty -Name 'Sse' -Description 'The async route task Sse details.'  -Properties (
