@@ -107,6 +107,7 @@ When a route is invoked, it automatically creates a runspace to execute the scri
 | **Result**                      | string  | The result of the async route task.                                                          |
 | **AsyncRouteId***               | string  | The async route Id.                                                                          |
 | **Progress**                    | number  | Represents the task activity progress.                                                       |
+| **IsCompleted**                 | boolean | True when the task is completed.                                                             |
 
 **Note**: Properties marked with `*` are always available.
 
