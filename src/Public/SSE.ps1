@@ -91,7 +91,7 @@ function ConvertTo-PodeSseConnection {
     $ClientId = New-PodeSseClientId -ClientId $ClientId
 
     # set and send SSE headers
-    $ClientId = $WebEvent.Response.SetSseConnection($Scope, $ClientId, $Name, $Group, $RetryDuration, $AllowAllOrigins.IsPresent)
+    $ClientId = Wait-PodeTask -Task $WebEvent.Response.SetSseConnection($Scope, $ClientId, $Name, $Group, $RetryDuration, $AllowAllOrigins.IsPresent)
 
     # create SSE property on WebEvent
     $WebEvent.Sse = @{
@@ -252,7 +252,7 @@ function Send-PodeSseEvent {
 
     # send directly back to current connection
     if ($FromEvent -and $WebEvent.Sse.IsLocal) {
-        $WebEvent.Response.SendSseEvent($EventType, $Data, $Id)
+        $null = Wait-PodeTask -Task $WebEvent.Response.SendSseEvent($EventType, $Data, $Id)
         return
     }
 
