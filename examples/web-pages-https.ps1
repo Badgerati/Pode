@@ -11,6 +11,7 @@ Import-Module "$($path)/src/Pode.psm1" -Force -ErrorAction Stop
 
 # create a server, flagged to generate a self-signed cert for dev/testing
 Start-PodeServer {
+    New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging -Levels Error
 
     # bind to ip/port and set as https with self-signed cert
     Add-PodeEndpoint -Address * -Port 8443 -Protocol Https -SelfSigned
@@ -29,6 +30,10 @@ Start-PodeServer {
     # GET request throws fake "500" server error status code
     Add-PodeRoute -Method Get -Path '/error' -ScriptBlock {
         Set-PodeResponseStatus -Code 500
+    }
+
+    Add-PodeRoute -Method 'GET' -Path '/test' -ScriptBlock {
+        Write-PodeTextResponse -Value (Get-Date)
     }
 
 }

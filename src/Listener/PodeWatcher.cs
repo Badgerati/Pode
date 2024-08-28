@@ -11,7 +11,7 @@ namespace Pode
 
         public PodeItemQueue<PodeFileEvent> FileEvents { get; private set; }
 
-        public PodeWatcher(CancellationToken cancellationToken = default(CancellationToken))
+        public PodeWatcher(CancellationToken cancellationToken = default)
             : base(cancellationToken)
         {
             FileWatchers = new List<PodeFileWatcher>();
@@ -24,7 +24,7 @@ namespace Pode
             FileWatchers.Add(watcher);
         }
 
-        public Task<PodeFileEvent> GetFileEventAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task<PodeFileEvent> GetFileEventAsync(CancellationToken cancellationToken = default)
         {
             return FileEvents.GetAsync(cancellationToken);
         }

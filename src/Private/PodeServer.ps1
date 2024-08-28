@@ -330,7 +330,7 @@ function Start-PodeWebServer {
                         # send the message to all found sockets
                         foreach ($socket in $sockets) {
                             try {
-                                $socket.Context.Response.SendSignal($message)
+                                $null = Wait-PodeTask -Task $socket.Context.Response.SendSignal($message)
                             }
                             catch {
                                 $null = $Listener.Signals.Remove($socket.ClientId)
