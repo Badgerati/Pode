@@ -28,7 +28,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
             # Example route object to test with
             $route = @{
                 AsyncRouteId = 'testRoute'
-                IsAsync       = $true
+                IsAsync      = $true
             }
             $PodeContext.AsyncRoutes.Items[$route.AsyncRouteId] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
             $PodeContext.AsyncRoutes.Items[$route.AsyncRouteId].Permission = @{}
@@ -115,7 +115,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
             # Example route object to test with
             $route = @{
                 AsyncRouteId = 'testRoute'
-                IsAsync       = $true
+                IsAsync      = $true
             }
             $PodeContext.AsyncRoutes.Items['testRoute'] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
 
@@ -624,9 +624,9 @@ Describe 'Add-PodeAsyncRouteSse' {
     It 'Should throw an exception if the route is not marked as async' {
         {
             $route = @{
-                Path          = '/not-async'
+                Path         = '/not-async'
                 AsyncRouteId = 'not-async'
-                IsAsync       = $true
+                IsAsync      = $true
             } | Add-PodeAsyncRouteSse
         } | Should -Throw -ExpectedMessage ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f '/not-async')
     }
@@ -745,6 +745,154 @@ Describe 'Set-PodeAsyncRoute' {
         Set-PodeAsyncRoute -Route $route -Timeout 600
 
         $PodeContext.AsyncRoutes.Items['AsyncPool'].Timeout | Should -Be 600
+    }
+
+}
+
+
+Describe 'Stop-PodeAsyncRouteOperation' {
+    # Mocking the dependencies
+    BeforeAll {
+        # Mock Pode Context
+        $PodeContext = @{
+            Threads       = @{
+                AsyncRoutes = 0
+            }
+            RunspacePools = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            RunspaceState = [initialsessionstate]::CreateDefault()
+
+            AsyncRoutes   = @{
+                Enabled      = $true
+                Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                HouseKeeping = @{
+                    TimerInterval    = 30
+                    RetentionMinutes = 10
+                }
+            }
+        }
+
+        # Mocking the Complete-PodeAsyncRouteOperation function
+        Mock -CommandName 'Complete-PodeAsyncRouteOperation'
+
+        # Mocking the Export-PodeAsyncRouteInfo function
+        Mock -CommandName 'Export-PodeAsyncRouteInfo'  -MockWith {
+            param($Async, [switch]$Raw)
+            # Return the async operation details, formatted or raw
+            if ($Raw) { return $Async } else { return @{'Formatted' = $true } }
+        }
+    }
+
+    Context 'When operation Id exists' {
+        BeforeAll {
+            class TestRunspacePipeline {
+                [bool]$IsDisposed = $false
+                [void]Dispose() {
+                    $this.IsDisposed = $true
+                    # Mock the Runspace.Dispose method
+                }
+            }
+        }
+        BeforeEach {
+            # Add a mock operation to PodeContext
+            $mockOperation = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
+            $mockOperation['Id'] = '123e4567-e89b-12d3-a456-426614174000'
+            $mockOperation['State'] = 'Running'
+            $mockOperation['Error'] = $null
+            $mockOperation['CompletedTime'] = $null
+            $mockOperation['Runspace'] = [pscustomobject]@{ Pipeline = [TestRunspacePipeline]::new() }
+
+            $PodeContext.AsyncRoutes.Results[$mockOperation.Id] = $mockOperation
+        }
+
+        It 'Should abort the operation and finalize it' {
+            $operationId = '123e4567-e89b-12d3-a456-426614174000'
+
+            # Call the function
+            $result = Stop-PodeAsyncRouteOperation -Id $operationId
+
+            # Assertions
+            $operation = $PodeContext.AsyncRoutes.Results[$operationId]
+            $operation.State | Should -Be 'Aborted'
+            $operation.Error | Should -Be 'Aborted by System'
+            $operation.CompletedTime | Should -Not -Be $null
+
+            # Ensure Complete-PodeAsyncRouteOperation was called
+            $operation.Runspace.Pipeline.IsDisposed | Should -BeTrue
+        }
+
+        It 'Should return raw operation details when -Raw is specified' {
+            $operationId = '123e4567-e89b-12d3-a456-426614174000'
+
+            # Call the function with -Raw
+            $result = Stop-PodeAsyncRouteOperation -Id $operationId -Raw
+
+            # Assertions
+            $result | Should -Be $PodeContext.AsyncRoutes.Results[$operationId]
+        }
+    }
+
+    Context 'When operation Id does not exist' {
+        It 'Should throw an exception' {
+            $operationId = 'nonexistent-id'
+
+            # Assert that the function throws an exception
+            { Stop-PodeAsyncRouteOperation -Id $operationId } | Should -Throw
+        }
+    }
+}
+
+
+Describe 'Add-PodeAsyncRouteGet' {
+    # Mocking the dependencies
+     BeforeAll {
+        # Mock the Get-PodeAsyncRouteOAName function
+         Mock -CommandName Get-PodeAsyncRouteOAName -MockWith {
+            return @{
+                TaskIdName = 'taskId'
+                OATypeName = 'AsyncTaskType'
+            }
+        }
+
+        # Mock the Add-PodeRoute function
+        Mock -CommandName Add-PodeRoute -MockWith {
+            return @{
+             Path = $Path; AsyncRouteId = "__Get$($Path)__".Replace('/', '_'); IsAsync = $false; Logic = {} ;OpenApi=@{}}
+        }
+
+        # Mock the Set-PodeOARequest, Add-PodeOAResponse, New-PodeOAStringProperty, and New-PodeOAObjectProperty functions
+       Mock -CommandName Set-PodeOARequest -MockWith { return $args[0] }
+       #  Mock -CommandName Add-PodeOAResponse -MockWith { return $args[0] }
+           Mock -CommandName New-PodeOAStringProperty -MockWith { return @{} }
+        Mock -CommandName New-PodeOAObjectProperty -MockWith { return @{} }#>
+    }
+
+    Context 'When Path and OADefinitionTag are specified' {
+        It 'Should create the route and return it when PassThru is specified' {
+            $route = Add-PodeAsyncRouteGet -Path '/status' -PassThru
+
+            # Ensure Add-PodeRoute was called with the expected parameters
+            Assert-MockCalled -CommandName Add-PodeRoute -Exactly 1 -Scope It
+
+            # Verify the returned route
+            $route.Path | Should -Be '/status'
+            $route.OpenApi.ContainsKey('Postponed') | Should -Be $true
+            $route.OpenApi.ContainsKey('PostponedArgumentList') | Should -Be $true
+        }
+
+        It 'Should correctly modify the Path when In is Path' {
+            $route = Add-PodeAsyncRouteGet -Path '/status' -In 'Path' -PassThru
+
+            # Ensure the Path was modified to include taskId
+            $route.Path | Should -Be '/status/:taskId'
+        }
+
+        It 'Should append the taskId to the Path when In is Path' {
+            $route = Add-PodeAsyncRouteGet -Path '/status' -In 'Path' -PassThru
+
+            # Verify that the taskId is appended to the path
+            $route.Path | Should -Be '/status/:taskId'
+        }
     }
 
 }
