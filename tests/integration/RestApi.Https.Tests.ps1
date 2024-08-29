@@ -6,6 +6,7 @@ Describe 'REST API Requests' {
     BeforeAll {
         $splatter = @{}
         $version = $PSVersionTable.PSVersion
+        $useCurl = $false
 
         if ($version.Major -eq 5) {
             # Ignore SSL certificate validation errors
@@ -20,10 +21,13 @@ Describe 'REST API Requests' {
                     }
                 }
 '@
-
             [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
         }
         else {
+            if ($version -ge [version]'7.4.0') {
+                $useCurl = $true
+            }
+
             $splatter.SkipCertificateCheck = $true
         }
 
@@ -125,8 +129,10 @@ Describe 'REST API Requests' {
 
     It 'responds back with pong' {
         # test curl
-        $result = (curl -s -X GET "$($Endpoint)/ping" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'Pong'
+        if ($useCurl) {
+            $result = (curl -s -X GET "$($Endpoint)/ping" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'Pong'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Get @splatter
@@ -135,8 +141,10 @@ Describe 'REST API Requests' {
 
     It 'responds back with 404 for invalid route' {
         # test curl
-        $status_code = (curl -s -o /dev/null -w '%{http_code}' "$Endpoint/eek" -k)
-        $status_code | Should -be 404
+        if ($useCurl) {
+            $status_code = (curl -s -o /dev/null -w '%{http_code}' "$Endpoint/eek" -k)
+            $status_code | Should -be 404
+        }
 
         # test Invoke-RestMethod
         { Invoke-RestMethod -Uri "$($Endpoint)/eek" -Method Get -ErrorAction Stop @splatter } | Should -Throw -ExpectedMessage '*404*'
@@ -144,8 +152,10 @@ Describe 'REST API Requests' {
 
     It 'responds back with 405 for incorrect method' {
         # test curl
-        $status_code = (curl -X POST -s -o /dev/null -w '%{http_code}' "$Endpoint/ping" -k)
-        $status_code | Should -be 405
+        if ($useCurl) {
+            $status_code = (curl -X POST -s -o /dev/null -w '%{http_code}' "$Endpoint/ping" -k)
+            $status_code | Should -be 405
+        }
 
         # test Invoke-RestMethod
         { Invoke-RestMethod -Uri "$($Endpoint)/ping" -Method Post -ErrorAction Stop @splatter } | Should -Throw -ExpectedMessage '*405*'
@@ -153,8 +163,10 @@ Describe 'REST API Requests' {
 
     It 'responds with simple query parameter' {
         # test curl
-        $result = (curl -s -X GET "$($Endpoint)/data/query?username=rick" -k) | ConvertFrom-Json
-        $result.Username | Should -Be 'rick'
+        if ($useCurl) {
+            $result = (curl -s -X GET "$($Endpoint)/data/query?username=rick" -k) | ConvertFrom-Json
+            $result.Username | Should -Be 'rick'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/data/query?username=rick" -Method Get @splatter
@@ -163,8 +175,10 @@ Describe 'REST API Requests' {
 
     It 'responds with simple payload parameter - json' {
         # test curl
-        $result = curl -s -X POST "$($Endpoint)/data/payload" -H 'Content-Type: application/json' -d '{"username":"rick"}' -k | ConvertFrom-Json
-        $result.Username | Should -Be 'rick'
+        if ($useCurl) {
+            $result = curl -s -X POST "$($Endpoint)/data/payload" -H 'Content-Type: application/json' -d '{"username":"rick"}' -k | ConvertFrom-Json
+            $result.Username | Should -Be 'rick'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/data/payload" -Method Post -Body '{"username":"rick"}' -ContentType 'application/json' @splatter
@@ -173,8 +187,10 @@ Describe 'REST API Requests' {
 
     It 'responds with simple payload parameter - xml' {
         # test curl
-        $result = curl -s -X POST "$($Endpoint)/data/payload" -H 'Content-Type: application/xml' -d '<username>rick</username>' -k | ConvertFrom-Json
-        $result.Username | Should -Be 'rick'
+        if ($useCurl) {
+            $result = curl -s -X POST "$($Endpoint)/data/payload" -H 'Content-Type: application/xml' -d '<username>rick</username>' -k | ConvertFrom-Json
+            $result.Username | Should -Be 'rick'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/data/payload" -Method Post -Body '<username>rick</username>' -ContentType 'application/xml' @splatter
@@ -183,8 +199,10 @@ Describe 'REST API Requests' {
 
     It 'responds with simple payload parameter forced to json' {
         # test curl
-        $result = curl -s -X POST "$($Endpoint)/data/payload-forced-type"  -d '{"username":"rick"}' -k | ConvertFrom-Json
-        $result.Username | Should -Be 'rick'
+        if ($useCurl) {
+            $result = curl -s -X POST "$($Endpoint)/data/payload-forced-type"  -d '{"username":"rick"}' -k | ConvertFrom-Json
+            $result.Username | Should -Be 'rick'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/data/payload-forced-type" -Method Post -Body '{"username":"rick"}' @splatter
@@ -193,8 +211,10 @@ Describe 'REST API Requests' {
 
     It 'responds with simple route parameter' {
         # test curl
-        $result = (curl -s -X GET "$($Endpoint)/data/param/rick" -k) | ConvertFrom-Json
-        $result.Username | Should -Be 'rick'
+        if ($useCurl) {
+            $result = (curl -s -X GET "$($Endpoint)/data/param/rick" -k) | ConvertFrom-Json
+            $result.Username | Should -Be 'rick'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/data/param/rick" -Method Get @splatter
@@ -203,10 +223,12 @@ Describe 'REST API Requests' {
 
     It 'responds with simple route parameter long' {
         # test curl
-        $result = (curl -s -X GET "$($Endpoint)/data/param/rick/messages" -k) | ConvertFrom-Json
-        $result.Messages[0] | Should -Be 'Hello, world!'
-        $result.Messages[1] | Should -Be 'Greetings'
-        $result.Messages[2] | Should -Be 'Wubba Lub'
+        if ($useCurl) {
+            $result = (curl -s -X GET "$($Endpoint)/data/param/rick/messages" -k) | ConvertFrom-Json
+            $result.Messages[0] | Should -Be 'Hello, world!'
+            $result.Messages[1] | Should -Be 'Greetings'
+            $result.Messages[2] | Should -Be 'Wubba Lub'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/data/param/rick/messages" -Method Get @splatter
@@ -217,8 +239,10 @@ Describe 'REST API Requests' {
 
     It 'responds ok to remove account' {
         # test curl
-        $result = (curl -s -X DELETE "$($Endpoint)/api/rick/remove" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'OK'
+        if ($useCurl) {
+            $result = (curl -s -X DELETE "$($Endpoint)/api/rick/remove" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'OK'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/api/rick/remove" -Method Delete @splatter
@@ -227,8 +251,10 @@ Describe 'REST API Requests' {
 
     It 'responds ok to replace account' {
         # test curl
-        $result = (curl -s -X PUT "$($Endpoint)/api/rick/replace" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'OK'
+        if ($useCurl) {
+            $result = (curl -s -X PUT "$($Endpoint)/api/rick/replace" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'OK'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/api/rick/replace" -Method Put @splatter
@@ -237,8 +263,10 @@ Describe 'REST API Requests' {
 
     It 'responds ok to update account' {
         # test curl
-        $result = (curl -s -X PATCH "$($Endpoint)/api/rick/update" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'OK'
+        if ($useCurl) {
+            $result = (curl -s -X PATCH "$($Endpoint)/api/rick/update" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'OK'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/api/rick/update" -Method Patch @splatter
@@ -246,7 +274,6 @@ Describe 'REST API Requests' {
     }
 
     It 'decodes encoded payload parameter - gzip' {
-        # test curl
         $data = @{ username = 'rick' }
         $message = ($data | ConvertTo-Json)
 
@@ -262,16 +289,18 @@ Describe 'REST API Requests' {
             $ms.Position = 0
             $compressedData = $ms.ToArray()
 
-            # Save the compressed data to a temporary file
-            $tempFile = [System.IO.Path]::GetTempFileName()
-            [System.IO.File]::WriteAllBytes($tempFile, $compressedData)
+            if ($useCurl) {
+                # Save the compressed data to a temporary file
+                $tempFile = [System.IO.Path]::GetTempFileName()
+                [System.IO.File]::WriteAllBytes($tempFile, $compressedData)
 
-            # make the request
-            $result = curl -s -X POST "$Endpoint/encoding/transfer" -H 'Transfer-Encoding: gzip' -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
+                # make the request
+                $result = curl -s -X POST "$Endpoint/encoding/transfer" -H 'Transfer-Encoding: gzip' -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
 
-            # Cleanup the temporary file
-            Remove-Item -Path $tempFile
-            $result.Username | Should -Be 'rick'
+                # Cleanup the temporary file
+                Remove-Item -Path $tempFile
+                $result.Username | Should -Be 'rick'
+            }
 
             # make the request
             $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $compressedData -Headers @{ 'Transfer-Encoding' = 'gzip' } -ContentType 'application/json' @splatter
@@ -299,16 +328,18 @@ Describe 'REST API Requests' {
             $compressedData = $ms.ToArray()
 
             # test curl
-            # Save the compressed data to a temporary file
-            $tempFile = [System.IO.Path]::GetTempFileName()
-            [System.IO.File]::WriteAllBytes($tempFile, $compressedData)
+            if ($useCurl) {
+                # Save the compressed data to a temporary file
+                $tempFile = [System.IO.Path]::GetTempFileName()
+                [System.IO.File]::WriteAllBytes($tempFile, $compressedData)
 
-            # make the request
-            $result = curl -s -X POST "$Endpoint/encoding/transfer" -H 'Transfer-Encoding: deflate' -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
+                # make the request
+                $result = curl -s -X POST "$Endpoint/encoding/transfer" -H 'Transfer-Encoding: deflate' -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
 
-            # Cleanup the temporary file
-            Remove-Item -Path $tempFile
-            $result.Username | Should -Be 'rick'
+                # Cleanup the temporary file
+                Remove-Item -Path $tempFile
+                $result.Username | Should -Be 'rick'
+            }
 
             # test Invoke-RestMethod
             $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer" -Method Post -Body $compressedData -Headers @{  'Transfer-Encoding' = 'deflate' } -ContentType 'application/json' @splatter
@@ -336,16 +367,18 @@ Describe 'REST API Requests' {
             $compressedData = $ms.ToArray()
 
             # test curl
-            # Save the compressed data to a temporary file
-            $tempFile = [System.IO.Path]::GetTempFileName()
-            [System.IO.File]::WriteAllBytes($tempFile, $compressedData)
+            if ($useCurl) {
+                # Save the compressed data to a temporary file
+                $tempFile = [System.IO.Path]::GetTempFileName()
+                [System.IO.File]::WriteAllBytes($tempFile, $compressedData)
 
-            # make the request
-            $result = curl -s -X POST "$Endpoint/encoding/transfer-forced-type"  -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
+                # make the request
+                $result = curl -s -X POST "$Endpoint/encoding/transfer-forced-type"  -H 'Content-Type: application/json' --data-binary "@$tempFile" -k | ConvertFrom-Json
 
-            # Cleanup the temporary file
-            Remove-Item -Path $tempFile
-            $result.Username | Should -Be 'rick'
+                # Cleanup the temporary file
+                Remove-Item -Path $tempFile
+                $result.Username | Should -Be 'rick'
+            }
 
             # test Invoke-RestMethod
             $result = Invoke-RestMethod -Uri "$($Endpoint)/encoding/transfer-forced-type" -Method Post -Body $compressedData -ContentType 'application/json' @splatter
@@ -358,14 +391,16 @@ Describe 'REST API Requests' {
 
     It 'works with any method' {
         # test curl
-        $result = (curl -s -X GET "$($Endpoint)/all" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'OK'
+        if ($useCurl) {
+            $result = (curl -s -X GET "$($Endpoint)/all" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'OK'
 
-        $result = (curl -s -X PUT "$($Endpoint)/all" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'OK'
+            $result = (curl -s -X PUT "$($Endpoint)/all" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'OK'
 
-        $result = (curl -s -X PATCH "$($Endpoint)/all" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'OK'
+            $result = (curl -s -X PATCH "$($Endpoint)/all" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'OK'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/all" -Method Get @splatter
@@ -380,14 +415,16 @@ Describe 'REST API Requests' {
 
     It 'route with a wild card' {
         # test curl
-        $result = (curl -s -X GET "$($Endpoint)/api/stuff/hello" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'OK'
+        if ($useCurl) {
+            $result = (curl -s -X GET "$($Endpoint)/api/stuff/hello" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'OK'
 
-        $result = (curl -s -X GET "$($Endpoint)/api/random/hello" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'OK'
+            $result = (curl -s -X GET "$($Endpoint)/api/random/hello" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'OK'
 
-        $result = (curl -s -X GET "$($Endpoint)/api/123/hello" -k) | ConvertFrom-Json
-        $result.Result | Should -Be 'OK'
+            $result = (curl -s -X GET "$($Endpoint)/api/123/hello" -k) | ConvertFrom-Json
+            $result.Result | Should -Be 'OK'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/api/stuff/hello" -Method Get @splatter
@@ -402,8 +439,10 @@ Describe 'REST API Requests' {
 
     It 'route importing outer function' {
         # test curl
-        $result = (curl -s -X GET "$($Endpoint)/imported/func/outer" -k) | ConvertFrom-Json
-        $result.Message | Should -Be 'Outer Hello'
+        if ($useCurl) {
+            $result = (curl -s -X GET "$($Endpoint)/imported/func/outer" -k) | ConvertFrom-Json
+            $result.Message | Should -Be 'Outer Hello'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/imported/func/outer" -Method Get @splatter
@@ -412,8 +451,10 @@ Describe 'REST API Requests' {
 
     It 'route importing outer function' {
         # test curl
-        $result = (curl -s -X GET "$($Endpoint)/imported/func/inner" -k) | ConvertFrom-Json
-        $result.Message | Should -Be 'Inner Hello'
+        if ($useCurl) {
+            $result = (curl -s -X GET "$($Endpoint)/imported/func/inner" -k) | ConvertFrom-Json
+            $result.Message | Should -Be 'Inner Hello'
+        }
 
         # test Invoke-RestMethod
         $result = Invoke-RestMethod -Uri "$($Endpoint)/imported/func/inner" -Method Get @splatter
