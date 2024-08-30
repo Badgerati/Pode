@@ -5,6 +5,8 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Reflection;
 using System.Runtime.Versioning;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Pode
 {
@@ -13,12 +15,14 @@ namespace Pode
         public static readonly string[] HTTP_METHODS = new string[] { "CONNECT", "DELETE", "GET", "HEAD", "MERGE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE" };
         public const string WEB_SOCKET_MAGIC_KEY = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         public readonly static char[] NEW_LINE_ARRAY = new char[] { '\r', '\n' };
+        public readonly static char[] SPACE_ARRAY = new char[] { ' ' };
         public const string NEW_LINE = "\r\n";
         public const string NEW_LINE_UNIX = "\n";
         public const int BYTE_SIZE = sizeof(byte);
         public const byte NEW_LINE_BYTE = 10;
         public const byte CARRIAGE_RETURN_BYTE = 13;
         public const byte DASH_BYTE = 45;
+        public const byte PERIOD_BYTE = 46;
 
         private static string _dotnet_version = string.Empty;
         private static bool _is_net_framework = false;
@@ -26,7 +30,7 @@ namespace Pode
         {
             get
             {
-                if (String.IsNullOrWhiteSpace(_dotnet_version))
+                if (string.IsNullOrWhiteSpace(_dotnet_version))
                 {
                     _dotnet_version = Assembly.GetEntryAssembly()?.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName ?? "Framework";
                     _is_net_framework = _dotnet_version.Equals("Framework", StringComparison.InvariantCultureIgnoreCase);
@@ -71,7 +75,7 @@ namespace Pode
                         return true;
                     }
 
-                    PodeHelpers.WriteException(ex, connector, level);
+                    WriteException(ex, connector, level);
                     return false;
                 });
             }
@@ -114,25 +118,48 @@ namespace Pode
             {
                 var bytes = new byte[length];
                 rnd.GetBytes(bytes);
-                return (new Guid(bytes)).ToString();
+                return new Guid(bytes).ToString();
             }
         }
 
-        public static void WriteTo(MemoryStream stream, byte[] array, int startIndex, int count = 0)
+        public static async Task WriteTo(MemoryStream stream, byte[] array, int startIndex, int count, CancellationToken cancellationToken)
         {
+            // Validate startIndex and count to avoid unnecessary work
+            if (startIndex < 0 || startIndex > array.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
+            }
+
             if (count <= 0 || startIndex + count > array.Length)
             {
                 count = array.Length - startIndex;
             }
 
-            stream.Write(array, startIndex, count);
+            // Perform the asynchronous write operation
+            if (count > 0)
+            {
+                await stream.WriteAsync(array, startIndex, count, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         public static byte[] Slice(byte[] array, int startIndex, int count = 0)
         {
+            // Validate startIndex and adjust count if needed
+            if (startIndex < 0 || startIndex > array.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
+            }
+
+            // If count is zero or less, or exceeds the array bounds, adjust it
             if (count <= 0 || startIndex + count > array.Length)
             {
                 count = array.Length - startIndex;
+            }
+
+            // If the count is zero, return an empty array
+            if (count == 0)
+            {
+                return Array.Empty<byte>();
             }
 
             var newArray = new byte[count];
