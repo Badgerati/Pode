@@ -5,10 +5,11 @@ using System.Collections.Specialized;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Web;
 using System.Linq;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -58,17 +59,17 @@ namespace Pode
 
         public override bool CloseImmediately
         {
-            get => (string.IsNullOrWhiteSpace(HttpMethod)
-                || (IsWebSocket && !HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase)));
+            get => string.IsNullOrWhiteSpace(HttpMethod)
+                || (IsWebSocket && !HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase));
         }
 
         public override bool IsProcessable
         {
-            get => (!CloseImmediately && !AwaitingBody);
+            get => !CloseImmediately && !AwaitingBody;
         }
 
-        public PodeHttpRequest(Socket socket, PodeSocket podeSocket)
-            : base(socket, podeSocket)
+        public PodeHttpRequest(Socket socket, PodeSocket podeSocket, PodeContext context)
+            : base(socket, podeSocket, context)
         {
             Protocol = "HTTP/1.1";
             Type = PodeProtocolType.Http;
@@ -85,12 +86,11 @@ namespace Pode
             // wait until we have the rest of the payload
             if (AwaitingBody)
             {
-                return (bytes.Length >= (ContentLength - BodyStream.Length));
+                return bytes.Length >= (ContentLength - BodyStream.Length);
             }
 
-            var lf = (byte)10;
             var previousIndex = -1;
-            var index = Array.IndexOf(bytes, lf);
+            var index = Array.IndexOf(bytes, PodeHelpers.NEW_LINE_BYTE);
 
             // do we have a request line yet?
             if (index == -1)
@@ -102,7 +102,8 @@ namespace Pode
             if (!IsRequestLineValid)
             {
                 var reqLine = Encoding.GetString(bytes, 0, index).Trim();
-                var reqMeta = Regex.Split(reqLine, "\\s+");
+                var reqMeta = reqLine.Split(PodeHelpers.SPACE_ARRAY, StringSplitOptions.RemoveEmptyEntries);
+
                 if (reqMeta.Length != 3)
                 {
                     throw new HttpRequestException($"Invalid request line: {reqLine} [{reqMeta.Length}]");
@@ -115,27 +116,17 @@ namespace Pode
             while (true)
             {
                 previousIndex = index;
-                index = Array.IndexOf(bytes, lf, index + 1);
+                index = Array.IndexOf(bytes, PodeHelpers.NEW_LINE_BYTE, index + 1);
 
-                if (index - previousIndex <= 2)
-                {
-                    if (index - previousIndex == 1)
-                    {
-                        break;
-                    }
-
-                    if (bytes[previousIndex + 1] == (byte)13)
-                    {
-                        break;
-                    }
-                }
-
-                if (index == bytes.Length - 1)
+                // If the difference between indexes indicates the end of headers, exit the loop
+                if (index == previousIndex + 1 ||
+                    (index > previousIndex + 1 && bytes[previousIndex + 1] == PodeHelpers.CARRIAGE_RETURN_BYTE))
                 {
                     break;
                 }
 
-                if (index == -1)
+                // Return false if LF not found and end of array is reached
+                if (index == -1 || index >= bytes.Length - 1)
                 {
                     return false;
                 }
@@ -146,7 +137,7 @@ namespace Pode
             return true;
         }
 
-        protected override bool Parse(byte[] bytes)
+        protected override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
         {
             // if there are no bytes, return (0 bytes read means we can close the socket)
             if (bytes.Length == 0)
@@ -168,14 +159,14 @@ namespace Pode
                 var reqLines = content.Split(new string[] { newline }, StringSplitOptions.None);
                 content = string.Empty;
 
-                bodyIndex = ParseHeaders(reqLines, newline);
+                bodyIndex = ParseHeaders(reqLines);
                 bodyIndex = reqLines.Take(bodyIndex).Sum(x => x.Length) + (bodyIndex * newline.Length);
-                reqLines = default(string[]);
+                reqLines = default;
             }
 
             // parse the body
-            ParseBody(bytes, newline, bodyIndex);
-            AwaitingBody = (ContentLength > 0 && BodyStream.Length < ContentLength && Error == default(HttpRequestException));
+            await ParseBody(bytes, newline, bodyIndex, cancellationToken).ConfigureAwait(false);
+            AwaitingBody = ContentLength > 0 && BodyStream.Length < ContentLength && Error == default(HttpRequestException);
 
             if (!AwaitingBody)
             {
@@ -184,21 +175,21 @@ namespace Pode
                 if (BodyStream != default(MemoryStream))
                 {
                     BodyStream.Dispose();
-                    BodyStream = default(MemoryStream);
+                    BodyStream = default;
                 }
             }
 
-            return (!AwaitingBody);
+            return !AwaitingBody;
         }
 
-        private int ParseHeaders(string[] reqLines, string newline)
+        private int ParseHeaders(string[] reqLines)
         {
             // reset raw body
-            RawBody = default(byte[]);
+            RawBody = default;
             _body = string.Empty;
 
             // first line is method/url
-            var reqMeta = Regex.Split(reqLines[0].Trim(), "\\s+");
+            var reqMeta = reqLines[0].Trim().Split(' ');
             if (reqMeta.Length != 3)
             {
                 throw new HttpRequestException($"Invalid request line: {reqLines[0]} [{reqMeta.Length}]");
@@ -206,18 +197,18 @@ namespace Pode
 
             // http method
             HttpMethod = reqMeta[0].Trim();
-            if (Array.IndexOf(PodeHelpers.HTTP_METHODS, HttpMethod) == -1)
+            if (!PodeHelpers.HTTP_METHODS.Contains(HttpMethod))
             {
                 throw new HttpRequestException($"Invalid request HTTP method: {HttpMethod}");
             }
 
             // query string
             var reqQuery = reqMeta[1].Trim();
-            var qmIndex = string.IsNullOrEmpty(reqQuery) ? 0 : reqQuery.IndexOf("?");
+            var qmIndex = reqQuery.IndexOf("?");
 
             QueryString = qmIndex > 0
-                ? HttpUtility.ParseQueryString(reqQuery.Substring(qmIndex))
-                : default(NameValueCollection);
+                ? HttpUtility.ParseQueryString(reqQuery.Substring(qmIndex + 1))
+                : default;
 
             // http protocol version
             Protocol = (reqMeta[2] ?? "HTTP/1.1").Trim();
@@ -226,7 +217,7 @@ namespace Pode
                 throw new HttpRequestException($"Invalid request version: {Protocol}");
             }
 
-            ProtocolVersion = Regex.Split(Protocol, "/")[1];
+            ProtocolVersion = Protocol.Split('/')[1];
 
             // headers
             Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
@@ -246,38 +237,41 @@ namespace Pode
                 }
 
                 h_index = h_line.IndexOf(":");
-                h_name = h_line.Substring(0, h_index).Trim();
-                h_value = h_line.Substring(h_index + 1).Trim();
-                Headers.Add(h_name, h_value);
+                if (h_index > 0)
+                {
+                    h_name = h_line.Substring(0, h_index).Trim();
+                    h_value = h_line.Substring(h_index + 1).Trim();
+                    Headers.Add(h_name, h_value);
+                }
             }
 
             // build required URI details
-            var _proto = (IsSsl ? "https" : "http");
-            Host = $"{Headers["Host"]}";
-            Url = new Uri($"{_proto}://{Host}{reqQuery}");
+            var _proto = IsSsl ? "https" : "http";
+            Host = Headers["Host"]?.ToString();
 
             // check the host header
-            if (!Context.PodeSocket.CheckHostname(Host))
+            if (string.IsNullOrWhiteSpace(Host) || !Context.PodeSocket.CheckHostname(Host))
             {
-                throw new HttpRequestException($"Invalid request Host: {Host}");
+                throw new HttpRequestException($"Invalid Host header: {Host}");
             }
+
+            // build the URL
+            Url = new Uri($"{_proto}://{Host}{reqQuery}");
 
             // get the content length
-            var strContentLength = $"{Headers["Content-Length"]}";
-            if (string.IsNullOrWhiteSpace(strContentLength))
+            ContentLength = 0;
+            if (int.TryParse(Headers["Content-Length"]?.ToString(), out int _contentLength))
             {
-                strContentLength = "0";
+                ContentLength = _contentLength;
             }
 
-            ContentLength = int.Parse(strContentLength);
-
             // set the transfer encoding
-            TransferEncoding = $"{Headers["Transfer-Encoding"]}";
+            TransferEncoding = Headers["Transfer-Encoding"]?.ToString();
 
             // set other default headers
-            UrlReferrer = $"{Headers["Referer"]}";
-            UserAgent = $"{Headers["User-Agent"]}";
-            ContentType = $"{Headers["Content-Type"]}";
+            UrlReferrer = Headers["Referer"]?.ToString();
+            UserAgent = Headers["User-Agent"]?.ToString();
+            ContentType = Headers["Content-Type"]?.ToString();
 
             // set content encoding
             ContentEncoding = System.Text.Encoding.UTF8;
@@ -286,9 +280,9 @@ namespace Pode
                 var atoms = ContentType.Split(';');
                 foreach (var atom in atoms)
                 {
-                    if (atom.Trim().ToLowerInvariant().StartsWith("charset"))
+                    if (atom.Trim().StartsWith("charset", StringComparison.InvariantCultureIgnoreCase))
                     {
-                        ContentEncoding = System.Text.Encoding.GetEncoding((atom.Split('=')[1].Trim()));
+                        ContentEncoding = System.Text.Encoding.GetEncoding(atom.Split('=')[1].Trim());
                         break;
                     }
                 }
@@ -301,30 +295,29 @@ namespace Pode
             }
 
             // do we have an SSE ClientId?
-            SseClientId = $"{Headers["X-Pode-Sse-Client-Id"]}";
+            SseClientId = Headers["X-Pode-Sse-Client-Id"]?.ToString();
             if (HasSseClientId)
             {
-                SseClientName = $"{Headers["X-Pode-Sse-Name"]}";
-                SseClientGroup = $"{Headers["X-Pode-Sse-Group"]}";
+                SseClientName = Headers["X-Pode-Sse-Name"]?.ToString();
+                SseClientGroup = Headers["X-Pode-Sse-Group"]?.ToString();
             }
 
             // keep-alive?
-            IsKeepAlive = (IsWebSocket ||
+            IsKeepAlive = IsWebSocket ||
                 (Headers.ContainsKey("Connection")
-                    && $"{Headers["Connection"]}".Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase)));
+                    && Headers["Connection"]?.ToString().Equals("keep-alive", StringComparison.InvariantCultureIgnoreCase) == true);
 
             // return index where body starts in req
             return bodyIndex;
         }
 
-        private void ParseBody(byte[] bytes, string newline, int start)
+        private async Task ParseBody(byte[] bytes, string newline, int start, CancellationToken cancellationToken)
         {
-            if (BodyStream == default(MemoryStream))
-            {
-                BodyStream = new MemoryStream();
-            }
+            // set the body stream
+            BodyStream ??= new MemoryStream();
 
-            var isChunked = (!string.IsNullOrWhiteSpace(TransferEncoding) && TransferEncoding.Contains("chunked"));
+            // are we chunked?
+            var isChunked = !string.IsNullOrWhiteSpace(TransferEncoding) && TransferEncoding.Contains("chunked");
 
             // if chunked, and we have a content-length, fail
             if (isChunked && ContentLength > 0)
@@ -346,12 +339,7 @@ namespace Pode
                     // get index of newline char, read start>index bytes as HEX for length
                     c_index = Array.IndexOf(bytes, (byte)newline[0], start);
                     c_hexBytes = PodeHelpers.Slice(bytes, start, c_index - start);
-
-                    c_hex = string.Empty;
-                    foreach (var b in c_hexBytes)
-                    {
-                        c_hex += (char)b;
-                    }
+                    c_hex = Encoding.GetString(c_hexBytes.ToArray());
 
                     // if no length, continue
                     c_length = Convert.ToInt32(c_hex, 16);
@@ -368,19 +356,19 @@ namespace Pode
                     start = (start + c_length - 1) + newline.Length + 1;
                 }
 
-                PodeHelpers.WriteTo(BodyStream, c_rawBytes.ToArray(), 0, c_rawBytes.Count);
+                await PodeHelpers.WriteTo(BodyStream, c_rawBytes.ToArray(), 0, c_rawBytes.Count, cancellationToken).ConfigureAwait(false);
             }
 
             // else use content length
             else if (ContentLength > 0)
             {
-                PodeHelpers.WriteTo(BodyStream, bytes, start, ContentLength);
+                await PodeHelpers.WriteTo(BodyStream, bytes, start, ContentLength, cancellationToken).ConfigureAwait(false);
             }
 
             // else just read all
             else
             {
-                PodeHelpers.WriteTo(BodyStream, bytes, start);
+                await PodeHelpers.WriteTo(BodyStream, bytes, start, 0, cancellationToken).ConfigureAwait(false);
             }
 
             // check body size
@@ -398,9 +386,20 @@ namespace Pode
             Form = PodeForm.Parse(RawBody, ContentType, ContentEncoding);
         }
 
+        public override void PartialDispose()
+        {
+            if (BodyStream != default(MemoryStream))
+            {
+                BodyStream.Dispose();
+                BodyStream = default;
+            }
+
+            base.PartialDispose();
+        }
+
         public override void Dispose()
         {
-            RawBody = default(byte[]);
+            RawBody = default;
             _body = string.Empty;
 
             if (BodyStream != default(MemoryStream))

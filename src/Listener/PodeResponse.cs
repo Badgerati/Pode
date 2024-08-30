@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -77,13 +78,14 @@ namespace Pode
 
         private static UTF8Encoding Encoding = new UTF8Encoding();
 
-        public PodeResponse()
+        public PodeResponse(PodeContext context)
         {
             Headers = new PodeResponseHeaders();
             OutputStream = new MemoryStream();
+            Context = context;
         }
 
-        public void Send()
+        public async Task Send()
         {
             if (Sent || IsDisposed || (SentHeaders && SseEnabled))
             {
@@ -94,8 +96,8 @@ namespace Pode
 
             try
             {
-                SendHeaders(Context.IsTimeout);
-                SendBody(Context.IsTimeout);
+                await SendHeaders(Context.IsTimeout).ConfigureAwait(false);
+                await SendBody(Context.IsTimeout).ConfigureAwait(false);
                 PodeLogger.WriteErrorMessage($"Response sent", Context.Listener, PodeLoggingLevel.Verbose, Context);
             }
             catch (OperationCanceledException) { }
@@ -111,11 +113,11 @@ namespace Pode
             }
             finally
             {
-                Flush();
+                await Flush().ConfigureAwait(false);
             }
         }
 
-        public void SendTimeout()
+        public async Task SendTimeout()
         {
             if (SentHeaders || IsDisposed)
             {
@@ -127,7 +129,7 @@ namespace Pode
 
             try
             {
-                SendHeaders(true);
+                await SendHeaders(true).ConfigureAwait(false);
                 PodeLogger.WriteErrorMessage($"Response timed-out sent", Context.Listener, PodeLoggingLevel.Verbose, Context);
             }
             catch (OperationCanceledException) { }
@@ -143,11 +145,11 @@ namespace Pode
             }
             finally
             {
-                Flush();
+                await Flush().ConfigureAwait(false);
             }
         }
 
-        private void SendHeaders(bool timeout)
+        private async Task SendHeaders(bool timeout)
         {
             if (SentHeaders || !Request.InputStream.CanWrite)
             {
@@ -164,12 +166,12 @@ namespace Pode
 
             // stream response output
             var buffer = Encoding.GetBytes(BuildHeaders(Headers));
-            Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait(Context.Listener.CancellationToken);
-            buffer = default(byte[]);
+            await Request.InputStream.WriteAsync(buffer, 0, buffer.Length, Context.Listener.CancellationToken).ConfigureAwait(false);
+            buffer = default;
             SentHeaders = true;
         }
 
-        private void SendBody(bool timeout)
+        private async Task SendBody(bool timeout)
         {
             if (SentBody || SseEnabled || !Request.InputStream.CanWrite)
             {
@@ -179,21 +181,21 @@ namespace Pode
             // stream response output
             if (!timeout && OutputStream.Length > 0)
             {
-                OutputStream.WriteTo(Request.InputStream);
+                await Task.Run(() => OutputStream.WriteTo(Request.InputStream), Context.Listener.CancellationToken).ConfigureAwait(false);
             }
 
             SentBody = true;
         }
 
-        public void Flush()
+        public async Task Flush()
         {
             if (Request.InputStream.CanWrite)
             {
-                Request.InputStream.Flush();
+                await Request.InputStream.FlushAsync().ConfigureAwait(false);
             }
         }
 
-        public string SetSseConnection(PodeSseScope scope, string clientId, string name, string group, int retry, bool allowAllOrigins)
+        public async Task<string> SetSseConnection(PodeSseScope scope, string clientId, string name, string group, int retry, bool allowAllOrigins)
         {
             // do nothing for no scope
             if (scope == PodeSseScope.None)
@@ -231,9 +233,9 @@ namespace Pode
             }
 
             // send headers, and open event
-            Send();
-            SendSseRetry(retry);
-            SendSseEvent("pode.open", $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\"}}");
+            await Send().ConfigureAwait(false);
+            await SendSseRetry(retry).ConfigureAwait(false);
+            await SendSseEvent("pode.open", $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\"}}").ConfigureAwait(false);
 
             // if global, cache connection in listener
             if (scope == PodeSseScope.Global)
@@ -245,60 +247,60 @@ namespace Pode
             return clientId;
         }
 
-        public void CloseSseConnection()
+        public async Task CloseSseConnection()
         {
-            SendSseEvent("pode.close", string.Empty);
+            await SendSseEvent("pode.close", string.Empty).ConfigureAwait(false);
         }
 
-        public void SendSseEvent(string eventType, string data, string id = null)
+        public async Task SendSseEvent(string eventType, string data, string id = null)
         {
             if (!string.IsNullOrEmpty(id))
             {
-                WriteLine($"id: {id}");
+                await WriteLine($"id: {id}").ConfigureAwait(false);
             }
 
             if (!string.IsNullOrEmpty(eventType))
             {
-                WriteLine($"event: {eventType}");
+                await WriteLine($"event: {eventType}").ConfigureAwait(false);
             }
 
-            WriteLine($"data: {data}{PodeHelpers.NEW_LINE}", true);
+            await WriteLine($"data: {data}{PodeHelpers.NEW_LINE}", true).ConfigureAwait(false);
         }
 
-        public void SendSseRetry(int retry)
+        public async Task SendSseRetry(int retry)
         {
             if (retry <= 0)
             {
                 return;
             }
 
-            WriteLine($"retry: {retry}", true);
+            await WriteLine($"retry: {retry}", true).ConfigureAwait(false);
         }
 
-        public void SendSignal(PodeServerSignal signal)
+        public async Task SendSignal(PodeServerSignal signal)
         {
             if (!string.IsNullOrEmpty(signal.Value))
             {
-                Write(signal.Value);
+                await Write(signal.Value).ConfigureAwait(false);
             }
         }
 
-        public void Write(string message, bool flush = false)
+        public async Task Write(string message, bool flush = false)
         {
             // simple messages
             if (!Context.IsWebSocket)
             {
-                Write(Encoding.GetBytes(message), flush);
+                await Write(Encoding.GetBytes(message), flush).ConfigureAwait(false);
             }
 
             // web socket message
             else
             {
-                WriteFrame(message, PodeWsOpCode.Text, flush);
+                await WriteFrame(message, PodeWsOpCode.Text, flush).ConfigureAwait(false);
             }
         }
 
-        public void WriteFrame(string message, PodeWsOpCode opCode = PodeWsOpCode.Text, bool flush = false)
+        public async Task WriteFrame(string message, PodeWsOpCode opCode = PodeWsOpCode.Text, bool flush = false)
         {
             if (IsDisposed)
             {
@@ -332,15 +334,15 @@ namespace Pode
             }
 
             buffer.AddRange(msgBytes);
-            Write(buffer.ToArray(), flush);
+            await Write(buffer.ToArray(), flush).ConfigureAwait(false);
         }
 
-        public void WriteLine(string message, bool flush = false)
+        public async Task WriteLine(string message, bool flush = false)
         {
-            Write(Encoding.GetBytes($"{message}{PodeHelpers.NEW_LINE}"), flush);
+            await Write(Encoding.GetBytes($"{message}{PodeHelpers.NEW_LINE}"), flush).ConfigureAwait(false);
         }
 
-        public void Write(byte[] buffer, bool flush = false)
+        public async Task Write(byte[] buffer, bool flush = false)
         {
             if (Request.IsDisposed || !Request.InputStream.CanWrite)
             {
@@ -349,11 +351,11 @@ namespace Pode
 
             try
             {
-                Request.InputStream.WriteAsync(buffer, 0, buffer.Length).Wait(Context.Listener.CancellationToken);
+                await Request.InputStream.WriteAsync(buffer, 0, buffer.Length, Context.Listener.CancellationToken).ConfigureAwait(false);
 
                 if (flush)
                 {
-                    Flush();
+                    await Flush().ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException) { }
@@ -445,11 +447,6 @@ namespace Pode
             return builder.ToString();
         }
 
-        public void SetContext(PodeContext context)
-        {
-            Context = context;
-        }
-
         public void Dispose()
         {
             if (IsDisposed)
@@ -462,7 +459,7 @@ namespace Pode
             if (OutputStream != default(MemoryStream))
             {
                 OutputStream.Dispose();
-                OutputStream = default(MemoryStream);
+                OutputStream = default;
             }
 
             PodeLogger.WriteErrorMessage($"Response disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);

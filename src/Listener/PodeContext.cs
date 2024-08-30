@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -18,13 +19,9 @@ namespace Pode
         public PodeSocket PodeSocket { get; private set; }
         public DateTime Timestamp { get; private set; }
         public Hashtable Data { get; private set; }
+        public string EndpointName => PodeSocket.Name;
 
-        public string EndpointName
-        {
-            get => PodeSocket.Name;
-        }
-
-        private object _lockable = new object();
+        private object _lockable = new();
 
         private PodeContextState _state;
         public PodeContextState State
@@ -39,73 +36,25 @@ namespace Pode
             }
         }
 
-        public bool CloseImmediately
-        {
-            get => (State == PodeContextState.Error
+        public bool CloseImmediately => State == PodeContextState.Error
                 || State == PodeContextState.Closing
                 || State == PodeContextState.Timeout
-                || Request.CloseImmediately);
-        }
+                || Request.CloseImmediately;
 
-        public new bool IsWebSocket
-        {
-            get => (base.IsWebSocket || (base.IsUnknown && PodeSocket.IsWebSocket));
-        }
+        public new bool IsWebSocket => base.IsWebSocket || (IsUnknown && PodeSocket.IsWebSocket);
+        public bool IsWebSocketUpgraded => IsWebSocket && Request is PodeSignalRequest;
+        public new bool IsSmtp => base.IsSmtp || (IsUnknown && PodeSocket.IsSmtp);
+        public new bool IsHttp => base.IsHttp || (IsUnknown && PodeSocket.IsHttp);
 
-        public bool IsWebSocketUpgraded
-        {
-            get => (IsWebSocket && Request is PodeSignalRequest);
-        }
+        public PodeSmtpRequest SmtpRequest => (PodeSmtpRequest)Request;
+        public PodeHttpRequest HttpRequest => (PodeHttpRequest)Request;
+        public PodeSignalRequest SignalRequest => (PodeSignalRequest)Request;
 
-        public new bool IsSmtp
-        {
-            get => (base.IsSmtp || (base.IsUnknown && PodeSocket.IsSmtp));
-        }
-
-        public new bool IsHttp
-        {
-            get => (base.IsHttp || (base.IsUnknown && PodeSocket.IsHttp));
-        }
-
-        public PodeSmtpRequest SmtpRequest
-        {
-            get => (PodeSmtpRequest)Request;
-        }
-
-        public PodeHttpRequest HttpRequest
-        {
-            get => (PodeHttpRequest)Request;
-        }
-
-        public PodeSignalRequest SignalRequest
-        {
-            get => (PodeSignalRequest)Request;
-        }
-
-        public bool IsKeepAlive
-        {
-            get => ((Request.IsKeepAlive && Response.SseScope != PodeSseScope.Local) || Response.SseScope == PodeSseScope.Global);
-        }
-
-        public bool IsErrored
-        {
-            get => (State == PodeContextState.Error || State == PodeContextState.SslError);
-        }
-
-        public bool IsTimeout
-        {
-            get => (State == PodeContextState.Timeout);
-        }
-
-        public bool IsClosed
-        {
-            get => (State == PodeContextState.Closed);
-        }
-
-        public bool IsOpened
-        {
-            get => (State == PodeContextState.Open);
-        }
+        public bool IsKeepAlive => (Request.IsKeepAlive && Response.SseScope != PodeSseScope.Local) || Response.SseScope == PodeSseScope.Global;
+        public bool IsErrored => State == PodeContextState.Error || State == PodeContextState.SslError;
+        public bool IsTimeout => State == PodeContextState.Timeout;
+        public bool IsClosed => State == PodeContextState.Closed;
+        public bool IsOpened => State == PodeContextState.Open;
 
         public CancellationTokenSource ContextTimeoutToken { get; private set; }
         private Timer TimeoutTimer;
@@ -121,14 +70,17 @@ namespace Pode
 
             Type = PodeProtocolType.Unknown;
             State = PodeContextState.New;
+        }
 
+        public async Task Initialise()
+        {
             NewResponse();
-            NewRequest();
+            await NewRequest().ConfigureAwait(false);
         }
 
         private void TimeoutCallback(object state)
         {
-            if (Response.SseEnabled)
+            if (Response.SseEnabled || Request.IsWebSocket)
             {
                 return;
             }
@@ -140,54 +92,51 @@ namespace Pode
             Request.Error = new HttpRequestException("Request timeout");
             Request.Error.Data.Add("PodeStatusCode", 408);
 
-            this.Dispose();
+            Dispose();
         }
 
         private void NewResponse()
         {
-            Response = new PodeResponse();
-            Response.SetContext(this);
+            Response = new PodeResponse(this);
         }
 
-        private void NewRequest()
+        private async Task NewRequest()
         {
             // create a new request
             switch (PodeSocket.Type)
             {
                 case PodeProtocolType.Smtp:
-                    Request = new PodeSmtpRequest(Socket, PodeSocket);
+                    Request = new PodeSmtpRequest(Socket, PodeSocket, this);
                     break;
 
                 case PodeProtocolType.Tcp:
-                    Request = new PodeTcpRequest(Socket, PodeSocket);
+                    Request = new PodeTcpRequest(Socket, PodeSocket, this);
                     break;
 
                 default:
-                    Request = new PodeHttpRequest(Socket, PodeSocket);
+                    Request = new PodeHttpRequest(Socket, PodeSocket, this);
                     break;
             }
-
-            Request.SetContext(this);
 
             // attempt to open the request stream
             try
             {
-                Request.Open();
+                await Request.Open(CancellationToken.None).ConfigureAwait(false);
                 State = PodeContextState.Open;
             }
             catch (AggregateException aex)
             {
                 PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Debug, true);
-                State = (Request.InputStream == default(Stream)
+                State = Request.InputStream == default(Stream)
                     ? PodeContextState.Error
-                    : PodeContextState.SslError);
+                    : PodeContextState.SslError;
             }
             catch (Exception ex)
             {
                 PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = (Request.InputStream == default(Stream)
                     ? PodeContextState.Error
-                    : PodeContextState.SslError);
+                    : PodeContextState.SslError;
             }
 
             // if request is SMTP or TCP, send ACK if available
@@ -195,11 +144,11 @@ namespace Pode
             {
                 if (PodeSocket.IsSmtp)
                 {
-                    SmtpRequest.SendAck();
+                    await SmtpRequest.SendAck().ConfigureAwait(false);
                 }
                 else if (PodeSocket.IsTcp && !string.IsNullOrWhiteSpace(PodeSocket.AcknowledgeMessage))
                 {
-                    Response.WriteLine(PodeSocket.AcknowledgeMessage, true);
+                    await Response.WriteLine(PodeSocket.AcknowledgeMessage, true).ConfigureAwait(false);
                 }
             }
         }
@@ -261,21 +210,17 @@ namespace Pode
             }
         }
 
-        public void RenewTimeoutToken()
-        {
-            ContextTimeoutToken = new CancellationTokenSource();
-        }
-
         public void CancelTimeout()
         {
             TimeoutTimer.Dispose();
         }
 
-        public async void Receive()
+        public async Task Receive()
         {
             try
             {
                 // start timeout
+                ContextTimeoutToken = new CancellationTokenSource();
                 TimeoutTimer = new Timer(TimeoutCallback, null, Listener.RequestTimeout * 1000, Timeout.Infinite);
 
                 // start receiving
@@ -285,7 +230,7 @@ namespace Pode
                     PodeLogger.WriteErrorMessage($"Receiving request", Listener, PodeLoggingLevel.Verbose, this);
                     var close = await Request.Receive(ContextTimeoutToken.Token);
                     SetContextType();
-                    EndReceive(close);
+                    await EndReceive(close).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) { }
             }
@@ -293,11 +238,11 @@ namespace Pode
             {
                 PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Debug);
                 State = PodeContextState.Error;
-                PodeSocket.HandleContext(this);
+                await PodeSocket.HandleContext(this).ConfigureAwait(false);
             }
         }
 
-        public void EndReceive(bool close)
+        public async Task EndReceive(bool close)
         {
             State = close ? PodeContextState.Closing : PodeContextState.Received;
             if (close)
@@ -305,7 +250,7 @@ namespace Pode
                 Response.StatusCode = 400;
             }
 
-            PodeSocket.HandleContext(this);
+            await PodeSocket.HandleContext(this).ConfigureAwait(false);
         }
 
         public void StartReceive()
@@ -316,7 +261,7 @@ namespace Pode
             PodeLogger.WriteErrorMessage($"Socket listening", Listener, PodeLoggingLevel.Verbose, this);
         }
 
-        public void UpgradeWebSocket(string clientId = null)
+        public async Task UpgradeWebSocket(string clientId = null)
         {
             PodeLogger.WriteErrorMessage($"Upgrading Websocket", Listener, PodeLoggingLevel.Verbose, this);
 
@@ -355,7 +300,7 @@ namespace Pode
             }
 
             // send message to upgrade web socket
-            Response.Send();
+            await Response.Send().ConfigureAwait(false);
 
             // add open web socket to listener
             var signal = new PodeSignal(this, HttpRequest.Url.AbsolutePath, clientId);
@@ -373,10 +318,12 @@ namespace Pode
         {
             lock (_lockable)
             {
+                PodeHelpers.WriteErrorMessage($"Disposing Context", Listener, PodeLoggingLevel.Verbose, this);
                 Listener.RemoveProcessingContext(this);
 
                 if (IsClosed)
                 {
+                    PodeSocket.RemovePendingSocket(Socket);
                     Request.Dispose();
                     Response.Dispose();
                     ContextTimeoutToken.Dispose();
@@ -402,7 +349,7 @@ namespace Pode
                     // are we awaiting for more info?
                     if (IsHttp)
                     {
-                        _awaitingBody = (HttpRequest.AwaitingBody && !IsErrored && !IsTimeout);
+                        _awaitingBody = HttpRequest.AwaitingBody && !IsErrored && !IsTimeout;
                     }
 
                     // only send a response if Http
@@ -410,11 +357,11 @@ namespace Pode
                     {
                         if (IsTimeout)
                         {
-                            Response.SendTimeout();
+                            Response.SendTimeout().Wait();
                         }
                         else
                         {
-                            Response.Send();
+                            Response.Send().Wait();
                         }
                     }
 
@@ -431,7 +378,7 @@ namespace Pode
 
                         if (Response.SseEnabled)
                         {
-                            Response.CloseSseConnection();
+                            Response.CloseSseConnection().Wait();
                         }
 
                         Request.Dispose();
@@ -447,7 +394,12 @@ namespace Pode
                 // if keep-alive, or awaiting body, setup for re-receive
                 if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout && !Response.SseEnabled)) && !force)
                 {
+                    PodeHelpers.WriteErrorMessage($"Re-receiving Request", Listener, PodeLoggingLevel.Verbose, this);
                     StartReceive();
+                }
+                else
+                {
+                    PodeSocket.RemovePendingSocket(Socket);
                 }
             }
         }

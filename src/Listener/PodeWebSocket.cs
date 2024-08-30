@@ -17,27 +17,23 @@ namespace Pode
         public string ContentType { get; private set; }
         public bool IsConnected
         {
-            get => (WebSocket != default(ClientWebSocket) && WebSocket.State == WebSocketState.Open);
+            get => WebSocket != default(ClientWebSocket) && WebSocket.State == WebSocketState.Open;
         }
 
         private ClientWebSocket WebSocket;
 
-        public PodeWebSocket(string name, string url, string contentType)
+        public PodeWebSocket(string name, string url, string contentType, PodeReceiver receiver)
         {
             Name = name;
             URL = new Uri(url);
+            Receiver = receiver;
 
             ContentType = string.IsNullOrWhiteSpace(contentType)
                 ? "application/json"
                 : contentType;
         }
 
-        public void BindReceiver(PodeReceiver receiver)
-        {
-            Receiver = receiver;
-        }
-
-        public async void Connect()
+        public async Task Connect()
         {
             if (IsConnected)
             {
@@ -46,29 +42,29 @@ namespace Pode
 
             if (WebSocket != default(ClientWebSocket))
             {
-                Disconnect(PodeWebSocketCloseFrom.Client);
+                await Disconnect(PodeWebSocketCloseFrom.Client).ConfigureAwait(false);
                 WebSocket.Dispose();
             }
 
             WebSocket = new ClientWebSocket();
             WebSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(60);
 
-            await WebSocket.ConnectAsync(URL, Receiver.CancellationToken);
-            await Task.Factory.StartNew(Receive, Receiver.CancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            await WebSocket.ConnectAsync(URL, Receiver.CancellationToken).ConfigureAwait(false);
+            await Task.Factory.StartNew(Receive, Receiver.CancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default).ConfigureAwait(false);
         }
 
-        public void Reconnect(string url)
+        public async Task Reconnect(string url)
         {
             if (!string.IsNullOrWhiteSpace(url))
             {
                 URL = new Uri(url);
             }
 
-            Disconnect(PodeWebSocketCloseFrom.Client);
-            Connect();
+            await Disconnect(PodeWebSocketCloseFrom.Client).ConfigureAwait(false);
+            await Connect().ConfigureAwait(false);
         }
 
-        public async void Receive()
+        public async Task Receive()
         {
             var result = default(WebSocketReceiveResult);
             var buffer = _WebSocket.CreateClientBuffer(1024, 1024);
@@ -80,7 +76,7 @@ namespace Pode
                 {
                     do
                     {
-                        result = await WebSocket.ReceiveAsync(buffer, Receiver.CancellationToken);
+                        result = await WebSocket.ReceiveAsync(buffer, Receiver.CancellationToken).ConfigureAwait(false);
                         if (result.MessageType != WebSocketMessageType.Close)
                         {
                             bufferStream.Write(buffer.ToArray(), 0, result.Count);
@@ -90,7 +86,7 @@ namespace Pode
 
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
-                        Disconnect(PodeWebSocketCloseFrom.Server);
+                        await Disconnect(PodeWebSocketCloseFrom.Server).ConfigureAwait(false);
                         break;
                     }
 
@@ -105,7 +101,8 @@ namespace Pode
                     bufferStream = new MemoryStream();
                 }
             }
-            catch (TaskCanceledException) {}
+            catch (OperationCanceledException) { }
+            catch (IOException) { }
             catch (WebSocketException ex)
             {
                 PodeLogger.WriteException(ex, Receiver, PodeLoggingLevel.Debug);
@@ -113,23 +110,27 @@ namespace Pode
             }
             finally
             {
-                bufferStream.Dispose();
-                bufferStream = default(MemoryStream);
-                buffer = default(ArraySegment<byte>);
+                if (bufferStream != default)
+                {
+                    bufferStream.Dispose();
+                    bufferStream = default;
+                }
+
+                buffer = default;
             }
         }
 
-        public void Send(string message, WebSocketMessageType type = WebSocketMessageType.Text)
+        public async Task Send(string message, WebSocketMessageType type = WebSocketMessageType.Text)
         {
             if (!IsConnected)
             {
                 return;
             }
 
-            WebSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)), type, true, Receiver.CancellationToken).Wait();
+            await WebSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)), type, true, Receiver.CancellationToken).ConfigureAwait(false);
         }
 
-        public void Disconnect(PodeWebSocketCloseFrom closeFrom)
+        public async Task Disconnect(PodeWebSocketCloseFrom closeFrom)
         {
             if (WebSocket == default(ClientWebSocket))
             {
@@ -143,13 +144,13 @@ namespace Pode
                 // only close output in client closing
                 if (closeFrom == PodeWebSocketCloseFrom.Client)
                 {
-                    WebSocket.CloseOutputAsync(WebSocketCloseStatus.Empty, string.Empty, CancellationToken.None).Wait();
+                    await WebSocket.CloseOutputAsync(WebSocketCloseStatus.Empty, string.Empty, CancellationToken.None).ConfigureAwait(false);
                 }
 
                 // if the server is closing, or client and netcore, then close properly
                 if (closeFrom == PodeWebSocketCloseFrom.Server || !PodeHelpers.IsNetFramework)
                 {
-                    WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).Wait();
+                    await WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).ConfigureAwait(false);
                 }
 
                 PodeLogger.WriteErrorMessage($"Closed client web socket: {Name}", Receiver, PodeLoggingLevel.Verbose);
@@ -162,7 +163,7 @@ namespace Pode
 
         public void Dispose()
         {
-            Disconnect(PodeWebSocketCloseFrom.Client);
+            Disconnect(PodeWebSocketCloseFrom.Client).Wait();
         }
     }
 }

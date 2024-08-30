@@ -1793,6 +1793,6 @@ function Send-PodeResponse {
     param()
 
     if ($null -ne $WebEvent.Response) {
-        $WebEvent.Response.Send()
+        $null = Wait-PodeTask -Task $WebEvent.Response.Send()
     }
 }

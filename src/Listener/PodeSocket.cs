@@ -25,15 +25,11 @@ namespace Pode
         public bool DualMode { get; private set; }
 
         private ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
-        private ConcurrentQueue<SocketAsyncEventArgs> ReceiveConnections;
         private IDictionary<string, Socket> PendingSockets;
 
         private PodeListener Listener;
 
-        public bool IsSsl
-        {
-            get => Certificate != default(X509Certificate);
-        }
+        public bool IsSsl => Certificate != default(X509Certificate);
 
         private int _receiveTimeout;
         public int ReceiveTimeout
@@ -50,11 +46,7 @@ namespace Pode
         }
 
         public bool HasHostnames => Hostnames.Any();
-
-        public string Hostname
-        {
-            get => HasHostnames ? Hostnames[0] : Endpoints[0].IPAddress.ToString();
-        }
+        public string Hostname => HasHostnames ? Hostnames[0] : Endpoints[0].IPAddress.ToString();
 
         public PodeSocket(string name, IPAddress[] ipAddress, int port, SslProtocols protocols, PodeProtocolType type, X509Certificate certificate = null, bool allowClientCertificate = false, PodeTlsMode tlsMode = PodeTlsMode.Implicit, bool dualMode = false)
             : base(type)
@@ -68,7 +60,6 @@ namespace Pode
             DualMode = dualMode;
 
             AcceptConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
-            ReceiveConnections = new ConcurrentQueue<SocketAsyncEventArgs>();
             PendingSockets = new Dictionary<string, Socket>();
             Endpoints = new List<PodeEndpoint>();
 
@@ -95,13 +86,13 @@ namespace Pode
         {
             foreach (var ep in Endpoints)
             {
-                StartEndpoint(ep);
+                _ = Task.Run(() => StartEndpoint(ep), Listener.CancellationToken);
             }
         }
 
         private void StartEndpoint(PodeEndpoint endpoint)
         {
-            if (endpoint.IsDisposed)
+            if (endpoint.IsDisposed || Listener.CancellationToken.IsCancellationRequested)
             {
                 return;
             }
@@ -117,7 +108,7 @@ namespace Pode
 
             try
             {
-                raised = endpoint.AcceptAsync(args);
+                raised = endpoint.Accept(args);
             }
             catch (ObjectDisposedException)
             {
@@ -130,49 +121,46 @@ namespace Pode
             }
         }
 
-        private void StartReceive(Socket acceptedSocket)
+        private async Task StartReceive(Socket acceptedSocket)
         {
+            // add the socket to pending
+            AddPendingSocket(acceptedSocket);
+
+            // create the context
             var context = new PodeContext(acceptedSocket, this, Listener);
+            PodeHelpers.WriteErrorMessage($"Opening Receive", Listener, PodeLoggingLevel.Verbose, context);
+
+            // initialise the context
+            await context.Initialise().ConfigureAwait(false);
             if (context.IsErrored)
             {
                 context.Dispose(true);
                 return;
             }
 
+            // start receiving data
             StartReceive(context);
         }
 
         public void StartReceive(PodeContext context)
         {
-            var args = GetReceiveConnection();
-            args.AcceptSocket = context.Socket;
-            args.UserToken = context;
-            StartReceive(args);
-        }
-
-        private void StartReceive(SocketAsyncEventArgs args)
-        {
-            args.SetBuffer(new byte[0], 0, 0);
-            bool raised;
+            PodeHelpers.WriteErrorMessage($"Starting Receive", Listener, PodeLoggingLevel.Verbose, context);
 
             try
             {
-                AddPendingSocket(args.AcceptSocket);
-                raised = args.AcceptSocket.ReceiveAsync(args);
+                _ = Task.Run(async () => await context.Receive().ConfigureAwait(false), Listener.CancellationToken);
             }
-            catch (ObjectDisposedException)
+            catch (OperationCanceledException) { }
+            catch (IOException) { }
+            catch (AggregateException aex)
             {
-                return;
+                PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
+                context.Socket.Close();
             }
             catch (Exception ex)
             {
                 PodeLogger.WriteException(ex, Listener);
-                throw;
-            }
-
-            if (!raised)
-            {
-                ProcessReceive(args);
+                context.Socket.Close();
             }
         }
 
@@ -205,7 +193,20 @@ namespace Pode
             else
             {
                 // start receive
-                StartReceive(args.AcceptSocket);
+                try
+                {
+                    _ = Task.Run(async () => await StartReceive(accepted), Listener.CancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) { }
+                catch (IOException) { }
+                catch (AggregateException aex)
+                {
+                    PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
+                }
+                catch (Exception ex)
+                {
+                    PodeLogger.WriteException(ex, Listener);
+                }
             }
 
             // add args back to connections
@@ -213,61 +214,7 @@ namespace Pode
             AcceptConnections.Enqueue(args);
         }
 
-        private void ProcessReceive(SocketAsyncEventArgs args)
-        {
-            // get details
-            var received = args.AcceptSocket;
-            var context = (PodeContext)args.UserToken;
-            var error = args.SocketError;
-
-            // remove the socket from pending
-            RemovePendingSocket(received);
-
-            // close socket if not successful, or if listener is stopped - close now!
-            if ((received == default(Socket)) || (error != SocketError.Success) || (!Listener.IsConnected))
-            {
-                if (error != SocketError.Success)
-                {
-                    PodeLogger.WriteErrorMessage($"Closing receiving socket: {error}", Listener, PodeLoggingLevel.Debug);
-                }
-
-                // close socket
-                if (received != default(Socket))
-                {
-                    received.Close();
-                }
-
-                // close the context
-                context.Dispose(true);
-
-                // add args back to connections
-                ClearSocketAsyncEvent(args);
-                ReceiveConnections.Enqueue(args);
-                return;
-            }
-
-            try
-            {
-                context.RenewTimeoutToken();
-                Task.Factory.StartNew(() => context.Receive(), context.ContextTimeoutToken.Token);
-            }
-            catch (OperationCanceledException) { }
-            catch (IOException) { }
-            catch (AggregateException aex)
-            {
-                PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
-            }
-            catch (Exception ex)
-            {
-                PodeLogger.WriteException(ex, Listener);
-            }
-
-            // add args back to connections
-            ClearSocketAsyncEvent(args);
-            ReceiveConnections.Enqueue(args);
-        }
-
-        public void HandleContext(PodeContext context)
+        public async Task HandleContext(PodeContext context)
         {
             try
             {
@@ -287,7 +234,7 @@ namespace Pode
                 {
                     if (!context.IsWebSocketUpgraded)
                     {
-                        context.UpgradeWebSocket();
+                        await context.UpgradeWebSocket().ConfigureAwait(false);
                         process = false;
                         context.Dispose();
                     }
@@ -350,34 +297,9 @@ namespace Pode
             }
         }
 
-        private SocketAsyncEventArgs NewReceiveConnection()
-        {
-            lock (ReceiveConnections)
-            {
-                var args = new SocketAsyncEventArgs();
-                args.Completed += new EventHandler<SocketAsyncEventArgs>(Receive_Completed);
-                return args;
-            }
-        }
-
-        private SocketAsyncEventArgs GetReceiveConnection()
-        {
-            if (!ReceiveConnections.TryDequeue(out SocketAsyncEventArgs args))
-            {
-                args = NewReceiveConnection();
-            }
-
-            return args;
-        }
-
         private void Accept_Completed(object sender, SocketAsyncEventArgs e)
         {
             ProcessAccept(e);
-        }
-
-        private void Receive_Completed(object sender, SocketAsyncEventArgs e)
-        {
-            ProcessReceive(e);
         }
 
         private void AddPendingSocket(Socket socket)
@@ -392,7 +314,7 @@ namespace Pode
             }
         }
 
-        private void RemovePendingSocket(Socket socket)
+        public void RemovePendingSocket(Socket socket)
         {
             lock (PendingSockets)
             {
@@ -468,8 +390,8 @@ namespace Pode
 
         private void ClearSocketAsyncEvent(SocketAsyncEventArgs e)
         {
-            e.AcceptSocket = default(Socket);
-            e.UserToken = default(object);
+            e.AcceptSocket = default;
+            e.UserToken = default;
         }
 
         public new bool Equals(object obj)
