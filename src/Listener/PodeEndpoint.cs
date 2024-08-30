@@ -1,6 +1,8 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -52,7 +54,7 @@ namespace Pode
             Socket.Listen(int.MaxValue);
         }
 
-        public bool AcceptAsync(SocketAsyncEventArgs args)
+        public bool Accept(SocketAsyncEventArgs args)
         {
             if (IsDisposed)
             {
@@ -66,7 +68,7 @@ namespace Pode
         {
             IsDisposed = true;
             PodeSocket.CloseSocket(Socket);
-            Socket = default(Socket);
+            Socket = default;
         }
 
         public new bool Equals(object obj)

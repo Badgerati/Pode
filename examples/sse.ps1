@@ -15,9 +15,9 @@ Start-PodeServer -Threads 3 {
     # open local sse connection, and send back data
     Add-PodeRoute -Method Get -Path '/data' -ScriptBlock {
         ConvertTo-PodeSseConnection -Name 'Data' -Scope Local
-        Send-PodeSseEvent -Id 1234 -EventType Action -Data 'hello, there!'
+        Send-PodeSseEvent -Id 1234 -EventType Action -Data 'hello, there!' -FromEvent
         Start-Sleep -Seconds 3
-        Send-PodeSseEvent -Id 1337 -EventType BoldOne -Data 'general kenobi'
+        Send-PodeSseEvent -Id 1337 -EventType BoldOne -Data 'general kenobi' -FromEvent
     }
 
     # home page to get sse events
