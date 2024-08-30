@@ -20,8 +20,10 @@ namespace Pode
             Start();
         }
 
-        public void ConnectWebSocket(string name, string url, string contentType)
+        public async Task ConnectWebSocket(string name, string url, string contentType)
         {
+            var socket = default(PodeWebSocket);
+
             lock (WebSockets)
             {
                 if (WebSockets.ContainsKey(name))
@@ -29,16 +31,16 @@ namespace Pode
                     throw new Exception($"WebSocket connection with name {name} already defined");
                 }
 
-                var socket = new PodeWebSocket(name, url, contentType);
-                socket.BindReceiver(this);
-                socket.Connect();
+                socket = new PodeWebSocket(name, url, contentType, this);
                 WebSockets.Add(name, socket);
             }
+
+            await socket.Connect().ConfigureAwait(false);
         }
 
         public PodeWebSocket GetWebSocket(string name)
         {
-            return (WebSockets.ContainsKey(name) ? WebSockets[name] : default(PodeWebSocket));
+            return WebSockets.ContainsKey(name) ? WebSockets[name] : default;
         }
 
         public void DisconnectWebSocket(string name)
