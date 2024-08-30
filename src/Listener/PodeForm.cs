@@ -202,7 +202,7 @@ namespace Pode
                 return false;
             }
 
-            return (contentEncoding.GetString(bytes).StartsWith(boundary));
+            return contentEncoding.GetString(bytes).StartsWith(boundary);
         }
 
         public static bool IsLineBoundary(string line, string boundary)

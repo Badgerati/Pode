@@ -133,7 +133,7 @@ function Connect-PodeWebSocket {
 
     # connect
     try {
-        $PodeContext.Server.WebSockets.Receiver.ConnectWebSocket($Name, $Url, $ContentType)
+        $null = Wait-PodeTask -Task $PodeContext.Server.WebSockets.Receiver.ConnectWebSocket($Name, $Url, $ContentType)
     }
     catch {
         # Failed to connect to websocket
@@ -284,7 +284,7 @@ function Send-PodeWebSocket {
     $Message = ConvertTo-PodeResponseContent -InputObject $Message -ContentType $ws.ContentType -Depth $Depth
 
     # send message
-    $ws.Send($Message, $Type)
+    $null = Wait-PodeTask -Task $ws.Send($Message, $Type)
 }
 
 <#
@@ -319,7 +319,7 @@ function Reset-PodeWebSocket {
     )
 
     if ([string]::IsNullOrWhiteSpace($Name) -and ($null -ne $WsEvent)) {
-        $WsEvent.Request.WebSocket.Reconnect($Url)
+        $null = Wait-PodeTask -Task $WsEvent.Request.WebSocket.Reconnect($Url)
         return
     }
 
@@ -329,7 +329,7 @@ function Reset-PodeWebSocket {
     }
 
     if (Test-PodeWebSocket -Name $Name) {
-        $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name).Reconnect($Url)
+        $null = Wait-PodeTask -Task $PodeContext.Server.WebSockets.Receiver.GetWebSocket($Name).Reconnect($Url)
     }
 }
 
