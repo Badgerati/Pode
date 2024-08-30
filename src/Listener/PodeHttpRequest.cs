@@ -314,7 +314,10 @@ namespace Pode
         private async Task ParseBody(byte[] bytes, string newline, int start, CancellationToken cancellationToken)
         {
             // set the body stream
-            BodyStream ??= new MemoryStream();
+            if (BodyStream == default(MemoryStream))
+            {
+                BodyStream = new MemoryStream();
+            }
 
             // are we chunked?
             var isChunked = !string.IsNullOrWhiteSpace(TransferEncoding) && TransferEncoding.Contains("chunked");
