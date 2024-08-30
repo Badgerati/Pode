@@ -7,7 +7,7 @@ namespace Pode
     {
         public object this[string name]
         {
-            get => (Headers.ContainsKey(name) ? Headers[name][0] : string.Empty);
+            get => Headers.TryGetValue(name, out IList<object> value) ? value[0] : string.Empty;
             set => Set(name, value);
         }
 
@@ -28,14 +28,15 @@ namespace Pode
 
         public IList<object> Get(string name)
         {
-            return Headers.ContainsKey(name) ? Headers[name] : default(IList<object>);
+            return Headers.TryGetValue(name, out IList<object> value) ? value : default(IList<object>);
         }
 
         public void Set(string name, object value)
         {
-            if (!Headers.ContainsKey(name))
+            if (!Headers.TryGetValue(name, out var list))
             {
-                Headers.Add(name, new List<object>());
+                list = new List<object>();
+                Headers[name] = list;
             }
 
             Headers[name].Clear();

@@ -21,7 +21,7 @@ namespace Pode
         public Hashtable Data { get; private set; }
         public string EndpointName => PodeSocket.Name;
 
-        private object _lockable = new();
+        private object _lockable = new object();
 
         private PodeContextState _state;
         public PodeContextState State
@@ -134,7 +134,7 @@ namespace Pode
             catch (Exception ex)
             {
                 PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Debug);
-                State = (Request.InputStream == default(Stream)
+                State = Request.InputStream == default(Stream)
                     ? PodeContextState.Error
                     : PodeContextState.SslError;
             }
@@ -318,7 +318,7 @@ namespace Pode
         {
             lock (_lockable)
             {
-                PodeHelpers.WriteErrorMessage($"Disposing Context", Listener, PodeLoggingLevel.Verbose, this);
+                PodeLogger.WriteErrorMessage($"Disposing Context", Listener, PodeLoggingLevel.Verbose, this);
                 Listener.RemoveProcessingContext(this);
 
                 if (IsClosed)
@@ -394,7 +394,7 @@ namespace Pode
                 // if keep-alive, or awaiting body, setup for re-receive
                 if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout && !Response.SseEnabled)) && !force)
                 {
-                    PodeHelpers.WriteErrorMessage($"Re-receiving Request", Listener, PodeLoggingLevel.Verbose, this);
+                    PodeLogger.WriteErrorMessage($"Re-receiving Request", Listener, PodeLoggingLevel.Verbose, this);
                     StartReceive();
                 }
                 else

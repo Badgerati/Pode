@@ -128,7 +128,7 @@ namespace Pode
 
             // create the context
             var context = new PodeContext(acceptedSocket, this, Listener);
-            PodeHelpers.WriteErrorMessage($"Opening Receive", Listener, PodeLoggingLevel.Verbose, context);
+            PodeLogger.WriteErrorMessage($"Opening Receive", Listener, PodeLoggingLevel.Verbose, context);
 
             // initialise the context
             await context.Initialise().ConfigureAwait(false);
@@ -144,7 +144,7 @@ namespace Pode
 
         public void StartReceive(PodeContext context)
         {
-            PodeHelpers.WriteErrorMessage($"Starting Receive", Listener, PodeLoggingLevel.Verbose, context);
+            PodeLogger.WriteErrorMessage($"Starting Receive", Listener, PodeLoggingLevel.Verbose, context);
 
             try
             {

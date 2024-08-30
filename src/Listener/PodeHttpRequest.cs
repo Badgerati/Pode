@@ -313,8 +313,11 @@ namespace Pode
 
         private async Task ParseBody(byte[] bytes, string newline, int start, CancellationToken cancellationToken)
         {
-            // set the body stream
-            BodyStream ??= new MemoryStream();
+            // Set the body stream if it's null
+            if (BodyStream == null)
+            {
+                BodyStream = new MemoryStream();
+            }
 
             // are we chunked?
             var isChunked = !string.IsNullOrWhiteSpace(TransferEncoding) && TransferEncoding.Contains("chunked");
@@ -405,14 +408,20 @@ namespace Pode
             if (BodyStream != default(MemoryStream))
             {
                 BodyStream.Dispose();
+                BodyStream = null;
             }
 
             if (Form != default(PodeForm))
             {
                 Form.Dispose();
+                Form = null;
             }
 
+            // Call base Dispose to ensure inherited resources are cleaned up
             base.Dispose();
+
+            // Suppress finalization if there's a finalizer
+            GC.SuppressFinalize(this);
         }
     }
 }

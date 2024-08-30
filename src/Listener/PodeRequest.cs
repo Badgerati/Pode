@@ -117,7 +117,7 @@ namespace Pode
                 catch (ObjectDisposedException) { }
                 catch (Exception ex)
                 {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                    PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
                     Error = new HttpRequestException(ex.Message, ex);
                     Error.Data.Add("PodeStatusCode", 502);
                 }
@@ -182,12 +182,12 @@ namespace Pode
             catch (IOException) { }
             catch (HttpRequestException httpex)
             {
-                PodeHelpers.WriteException(httpex, Context.Listener, PodeLoggingLevel.Error);
+                PodeLogger.WriteException(httpex, Context.Listener, PodeLoggingLevel.Error);
                 Error = httpex;
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
                 Error = new HttpRequestException(ex.Message, ex);
                 Error.Data.Add("PodeStatusCode", 400);
             }

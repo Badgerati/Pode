@@ -529,7 +529,11 @@ namespace Pode
                 }
             }
 
+            // Call base Dispose to ensure inherited resources are cleaned up
             base.Dispose();
+
+            // Suppress finalization if there's a finalizer
+            GC.SuppressFinalize(this);
         }
     }
 }
