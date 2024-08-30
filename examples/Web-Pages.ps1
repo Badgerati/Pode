@@ -58,16 +58,16 @@ Start-PodeServer -Threads 2 -Verbose {
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http -Name "$($Port)Address" -RedirectTo '8090Address'
 
     # allow the local ip and some other ips
-    Add-PodeAccessRule -Access Allow -Type IP -Values @('127.0.0.1', '[::1]')
-    Add-PodeAccessRule -Access Allow -Type IP -Values @('192.169.0.1', '192.168.0.2')
+    # Add-PodeAccessRule -Access Allow -Type IP -Values @('127.0.0.1', '[::1]')
+    # Add-PodeAccessRule -Access Allow -Type IP -Values @('192.169.0.1', '192.168.0.2')
 
     # deny an ip
-    Add-PodeAccessRule -Access Deny -Type IP -Values 10.10.10.10
-    Add-PodeAccessRule -Access Deny -Type IP -Values '10.10.0.0/24'
-    Add-PodeAccessRule -Access Deny -Type IP -Values all
+    # Add-PodeAccessRule -Access Deny -Type IP -Values 10.10.10.10
+    # Add-PodeAccessRule -Access Deny -Type IP -Values '10.10.0.0/24'
+    # Add-PodeAccessRule -Access Deny -Type IP -Values all
 
     # limit
-    Add-PodeLimitRule -Type IP -Values all -Limit 100 -Seconds 5
+    # Add-PodeLimitRule -Type IP -Values all -Limit 100 -Seconds 5
 
     # log requests to the terminal
     New-PodeLoggingMethod -Terminal -Batch 10 -BatchTimeout 10 | Enable-PodeRequestLogging
