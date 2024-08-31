@@ -21,7 +21,7 @@ namespace Pode
         public Hashtable Data { get; private set; }
         public string EndpointName => PodeSocket.Name;
 
-        private object _lockable = new();
+        private object _lockable = new object();
 
         private PodeContextState _state;
         public PodeContextState State
