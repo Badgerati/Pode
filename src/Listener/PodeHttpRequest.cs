@@ -313,8 +313,8 @@ namespace Pode
 
         private async Task ParseBody(byte[] bytes, string newline, int start, CancellationToken cancellationToken)
         {
-            // Set the body stream if it's null
-            if (BodyStream == null)
+            // set the body stream
+            if (BodyStream == default(MemoryStream))
             {
                 BodyStream = new MemoryStream();
             }
