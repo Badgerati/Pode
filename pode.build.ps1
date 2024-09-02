@@ -545,45 +545,8 @@ Task TestNoBuild TestDeps, {
     }
 }, PushCodeCoverage, CheckFailedTests
 
-# Synopsis: Run tests after a build if needed
-Task Test {
-
-    # Get the .NET framework description to determine the runtime version
-    $frameworkDescription = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
-    $found = $false
-
-    # Match and extract the major version number from the framework description
-    if ($frameworkDescription -match '(\d+)\.(\d+)\.(\d+)') {
-        $majorVersion = [int]$matches[1]
-
-        # Loop through the major versions from the detected version down to 6
-        for ($version = $majorVersion; $version -ge 6; $version--) {
-            # Check if the corresponding Pode.dll file exists for the version
-            if (Test-Path "./src/Libs/net$version.0/Pode.dll") {
-                $found = $true
-                break
-            }
-        }
-    }
-
-    # If no specific versioned Pode.dll was found, check for the netstandard2.0 version
-    if (-not $found) {
-        $found = Test-Path "./src/Libs/netstandard2.0/Pode.dll"
-    }
-
-    # If any Pode.dll was found, skip the build task
-    if ($found) {
-        Write-Output 'Build Task not needed'
-    }
-    else {
-        # If no Pode.dll was found, invoke the build task
-        Invoke-Build Build
-    }
-
-    # Always run the test task, assuming that the build task has already been run if needed
-    Invoke-Build TestNoBuild
-}
-
+# Synopsis: Run tests after a build
+Task Test Build, TestNoBuild
 
 # Synopsis: Check if any of the tests failed
 Task CheckFailedTests {

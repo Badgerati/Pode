@@ -90,25 +90,25 @@ try {
         }
     }
     else {
-        $frameworkDescription = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
-        $loaded = $false
-        if ($frameworkDescription -match '(\d+)\.(\d+)\.(\d+)') {
-            $majorVersion = [int]$matches[1]
+        # fetch the .net version and the libs path
+        $version = [System.Environment]::Version.Major
+        $libsPath = "$($root)/Libs"
 
-            for ($version = $majorVersion; $version -ge 6; $version--) {
-                $dllPath = "$($root)/Libs/net$version.0/Pode.dll"
-                if (Test-Path $dllPath) {
-                    Add-Type -LiteralPath $dllPath -ErrorAction Stop
-                    $loaded = $true
-                    break
-                }
-            }
+        # filter .net dll folders based on version above, and get path for latest version found
+        if (![string]::IsNullOrWhiteSpace($version)) {
+            $netFolder = Get-ChildItem -Path $libsPath -Directory -Force |
+                Where-Object { $_.Name -imatch "net[1-$($version)]" } |
+                Sort-Object -Property Name -Descending |
+                Select-Object -First 1 -ExpandProperty FullName
         }
 
-        if (-not $loaded) {
-            Add-Type -LiteralPath "$($root)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
+        # use netstandard if no folder found
+        if ([string]::IsNullOrWhiteSpace($netFolder)) {
+            $netFolder = "$($libsPath)/netstandard2.0"
         }
 
+        # append Pode.dll and mount
+        Add-Type -LiteralPath "$($netFolder)/Pode.dll" -ErrorAction Stop
     }
 
     # load private functions
