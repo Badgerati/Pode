@@ -8,10 +8,10 @@
     that demonstrate caching with Redis.
 
 .EXAMPLE
-    To run the sample: ./Casching.ps1
+    To run the sample: ./Caching.ps1
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Casching.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Caching.ps1
 
 .NOTES
     Author: Pode Team

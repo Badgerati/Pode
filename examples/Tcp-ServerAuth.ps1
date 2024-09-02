@@ -6,10 +6,10 @@
     This script sets up a Pode TCP server that listens on port 8081, logs errors to the terminal, and implements role-based access control. The server provides an endpoint that restricts access based on user roles retrieved from a database.
 
 .EXAMPLE
-    To run the sample: ./TcpServer-Auth.ps1
+    To run the sample: ./Tcp-ServerAuth.ps1
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/TcpServer-Auth.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Tcp-ServerAuth.ps1
 
 .NOTES
     Author: Pode Team

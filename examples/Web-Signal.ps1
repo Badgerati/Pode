@@ -4,7 +4,8 @@
 
 .DESCRIPTION
     This script sets up a Pode server that listens on a specified port and provides both HTTP and WebSocket
-    endpoints. It also logs errors and other request details to the terminal.
+    endpoints. It demonstrates how to set up WebSockets in Pode and logs errors and other request details
+    to the terminal.
 
 .PARAMETER Port
     The port number on which the server will listen. Default is 8091.

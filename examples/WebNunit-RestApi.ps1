@@ -21,7 +21,7 @@
     }
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Nunit-RestApi.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/WebNunit-RestApi.ps1
 .NOTES
     Author: Pode Team
     License: MIT License

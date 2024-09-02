@@ -15,7 +15,7 @@
     Invoke-RestMethod -Uri http://localhost:8081/api/users/usertest/message -Method Get
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Rest-Api.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-RestApi.ps1
 
 .NOTES
     Author: Pode Team
