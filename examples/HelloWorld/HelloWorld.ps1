@@ -1,3 +1,24 @@
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with a simple GET endpoint.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on port 8080. It includes a single route for GET requests
+    to the root path ('/') that returns a simple text response.
+
+.EXAMPLE
+    To run the sample: ./HelloWorld/HelloWorld.ps1
+
+    # HTML responses 'Hello, world!
+    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/HelloWorld/HelloWorld.ps1
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
 try {
     # Get the path of the script being executed
     $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
