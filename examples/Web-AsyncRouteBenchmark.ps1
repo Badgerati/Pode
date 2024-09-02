@@ -32,10 +32,13 @@
     The endpoint to be used for requests in Client mode. Default is 'SumOfSquaresInCSharp'.
 
 .EXAMPLE
-    .\AsyncRoute-Compute.ps1 -Client -StepSize 1000000 -ThrottleLimit 10 -Endpoint 'SumOfSquaresNoLoop'
+    .\Web-AsyncRouteBenchmark.ps1 -Client -StepSize 1000000 -ThrottleLimit 10 -Endpoint 'SumOfSquaresNoLoop'
 
 .EXAMPLE
-    .\AsyncRoute-Compute.ps1 -Port 9090 -Quiet -DisableTermination
+    .\Web-AsyncRouteBenchmark.ps1 -Port 9090 -Quiet -DisableTermination
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AsyncRouteBenchmark.ps1
 
 .NOTES
     Author: Pode Team

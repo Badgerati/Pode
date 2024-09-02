@@ -16,7 +16,7 @@
     Prevents the server from being terminated.
 
 .EXAMPLE
-    .\AsyncRoute.ps1 -Port 9090 -Quiet -DisableTermination
+    .\Web-AsyncRoute.ps1 -Port 9090 -Quiet -DisableTermination
 
 .EXAMPLE
     # Example of using the endpoints with Invoke-RestMethod
@@ -54,7 +54,7 @@
 
 
 
-$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncInfiniteLoop' -Method Put -Headers $mindyCommonHeaders
+    $response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncInfiniteLoop' -Method Put -Headers $mindyCommonHeaders
 
     $response_Mindy_asyncUsingNotCancellable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingNotCancellable' -Method Put -Headers $mindyCommonHeaders
     $response_Mindy_asyncUsingCancellable = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncUsingCancellable' -Method Put -Headers $mindyCommonHeaders
@@ -70,9 +70,12 @@ $response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri 'http://localhost:8080
 
     $response_Mindy_asyncWaitForeverTimeout = Invoke-RestMethod -Uri 'http://localhost:8080/auth/asyncInfiniteLoopTimeout' -Method Put -Headers $mindyCommonHeaders
 
-$response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
+    $response = Invoke-RestMethod -Uri 'http://localhost:8080/tasks' -Method Post -Body '{}' -Headers $mindyCommonHeaders
 
-$response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri "http://localhost:8080/task?Id=$($response_Mindy_asyncWaitForever.Id)" -Method Delete -Headers $mindyCommonHeaders
+    $response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri "http://localhost:8080/task?Id=$($response_Mindy_asyncWaitForever.Id)" -Method Delete -Headers $mindyCommonHeaders
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AsyncRoute.ps1
 
 .NOTES
     Author: Pode Team
