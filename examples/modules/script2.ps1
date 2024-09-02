@@ -1,1 +1,0 @@
-Write-Host 'Goodbye, world!'

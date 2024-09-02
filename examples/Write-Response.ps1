@@ -1,10 +1,63 @@
-$podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
-    Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with various routes for different response types.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on a specified port and provides various routes to
+    retrieve process information in different formats (HTML, Text, CSV, JSON, XML, YAML).
+
+.EXAMPLE
+    To run the sample: ./Write-Response.ps1
+
+    # HTML responses
+    Invoke-RestMethod -Uri http://localhost:8081/html/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/html/processesPiped -Method Get
+
+    # Text responses
+    Invoke-RestMethod -Uri http://localhost:8081/text/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/text/processesPiped -Method Get
+
+    # CSV responses
+    Invoke-RestMethod -Uri http://localhost:8081/csv/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/csv/processesPiped -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/csv/string -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/csv/hash -Method Get
+
+    # JSON responses
+    Invoke-RestMethod -Uri http://localhost:8081/json/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/json/processesPiped -Method Get
+
+    # XML responses
+    Invoke-RestMethod -Uri http://localhost:8081/xml/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/xml/processesPiped -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/xml/hash -Method Get
+
+    # YAML responses
+    Invoke-RestMethod -Uri http://localhost:8081/yaml/processes -Method Get
+    Invoke-RestMethod -Uri http://localhost:8081/yaml/processesPiped -Method Get
+
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Write-Response.ps1
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+try {
+    # Determine the script path and Pode module path
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+
+    # Import the Pode module from the source path if it exists, otherwise from installed modules
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
+    }
 }
-else {
-    Import-Module -Name 'Pode'
-}
+catch { throw }
 
 Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
@@ -108,22 +161,5 @@ Start-PodeServer {
             Select-Object Name, @{e = { [int]($_.WS / 1mb) }; n = 'WS' } |
             Sort-Object WS -Descending | Write-PodeYamlResponse   -StatusCode 200 -ContentType 'text/yaml'
     }
-    Start-Job -ScriptBlock {
-        Start-Sleep -Seconds 5
-        Start-Process http://localhost:8081/html/processesPiped
-        Start-Process http://localhost:8081/html/processes
-        Start-Process http://localhost:8081/text/processesPiped
-        Start-Process http://localhost:8081/text/processes
-        Start-Process http://localhost:8081/csv/processesPiped
-        Start-Process http://localhost:8081/csv/processes
-        Start-Process http://localhost:8081/csv/string
-        Start-Process http://localhost:8081/csv/hash
-        Start-Process http://localhost:8081/json/processesPiped
-        Start-Process http://localhost:8081/json/processes
-        Start-Process http://localhost:8081/xml/processesPiped
-        Start-Process http://localhost:8081/xml/processes
-        Start-Process http://localhost:8081/xml/hash
-        Start-Process http://localhost:8081/yaml/processesPiped
-        Start-Process http://localhost:8081/yaml/processes
-    }
+
 }
