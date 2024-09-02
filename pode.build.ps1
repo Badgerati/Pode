@@ -346,94 +346,40 @@ Task DocsDeps ChocoDeps, {
 
 Task IndexSamples {
     $examplesPath = './examples'
-    $sampleMarkDownPath = './docs/Getting-Started/Samples.md'
-    if ((Test-Path -PathType Container -Path $examplesPath) ) {
-
-        $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
-            'Authentication', 'certs', 'logs', 'relative', 'routes'  ) # List of directories to exclude
-
-        # Filter out non-existing directories
-        $existingExcludeDirs = @()
-        foreach ($dir in $excludeDirs) {
-            if (Test-Path -Path (Join-Path -Path $examplesPath -ChildPath $dir)) {
-                $existingExcludeDirs += $dir
-            }
-        }
-        $ps1Files = (Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse |
-                Where-Object {
-                    $exclude = $false
-                    foreach ($dir in $existingExcludeDirs) {
-                        if ($_.FullName -like "*$([IO.Path]::DirectorySeparatorChar)$dir$([IO.Path]::DirectorySeparatorChar)*") {
-                            $exclude = $true
-                            break
-                        }
-                    }
-                    -not $exclude
-                })
-        $title = "# Pode's Sample Scripts List"
-        $indexContent = "## Index`n"
-        foreach ($file in $ps1Files) {
-            write-host $file
-            $content = Get-Content -Path  $file.FullName -ErrorAction Stop
-            $synopsis = @()
-            $description = $()
-            $inSynopsis = $false
-            $inDescription = $false
-            $inBlockComment = $false
-            foreach ($line in $content) {
-                $line = $line.Trim()
-                if (! [string]::IsNullOrWhiteSpace($line)) {
-                    if ($inBlockComment) {
-                        if ($line -match '#>') {
-                            $inBlockComment = $false
-                            $inSynopsis = $false
-                            $inDescription = $false
-                            break
-                        }
-                        else {
-                            if ( $line -match '\.SYNOPSIS') {
-                                $inSynopsis = $true
-                                $inDescription = $false
-                            }
-                            elseif ( $line -match '\.DESCRIPTION') {
-                                $inSynopsis = $false
-                                $inDescription = $true
-                            }
-                            elseif ( $line -match '\.PARAMETER' -or $line -match '\.NOTES' -or $line -match '\.EXAMPLE') {
-                                $inSynopsis = $false
-                                $inDescription = $false
-                            }
-                            elseif ( $inDescription) {
-                                $description += $line
-                            }
-                            elseif ( $inSynopsis) {
-                                $synopsis += $line
-                            }
-                        }
-                    }
-                    elseif ($line -match '<#') {
-                        $inBlockComment = $true
-                    }
-                }
-            }
-
-            $header = [PSCustomObject]@{
-                Path        = $file.FullName
-                Synopsis    = ($synopsis -join '`n').Trim()
-                Description = ($description -join '`n').Trim()
-            }
-
-            if ($header.Synopsis -or $header.Description) {
-                $indexContent += "- [$($file.BaseName)](#$($file.BaseName))`n"
-                $markdownContent += "## [$($file.BaseName)](https://github.com/Badgerati/Pode/blob/develop/examples/$($file.Name))`n`n"
-                $markdownContent += "**Synopsis:**`n`n`t$($header.Synopsis)`n`n"
-                $markdownContent += "**Description:**`n`n`t$($header.Description)`n`n"
-            }
-        }
-        Write-Output "Write Markdown document for the sample files to $sampleMarkDownPath"
-        Set-Content -Path $sampleMarkDownPath -Value ( $title + "`n" + $indexContent + "`n" + $markdownContent)
-
+    if (!(Test-Path -PathType Container -Path $examplesPath)) {
+        return
     }
+
+    # List of directories to exclude
+    $sampleMarkDownPath = './docs/Getting-Started/Samples.md'
+    $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
+        'Authentication', 'certs', 'logs', 'relative', 'routes')
+
+    # Convert exlusion list into single regex pattern for directory matching
+    $dirSeparator = [IO.Path]::DirectorySeparatorChar
+    $excludeDirs = "\$($dirSeparator)($($excludeDirs -join '|'))\$($dirSeparator)"
+
+    # build the page content
+    Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse -File -Force |
+        Where-Object {
+            $_.FullName -inotmatch $excludeDirs
+        } |
+        Sort-Object -Property FullName |
+        ForEach-Object {
+            Write-Verbose "Processing Sample: $($_.FullName)"
+
+            # get the script help
+            $help = Get-Help -Name $_.FullName -ErrorAction Stop
+
+            # add help content
+            $urlFileName = ($_.FullName -isplit 'examples')[1].Trim('\/') -replace '[\\/]', '/'
+            $markdownContent += "## [$($_.BaseName)](https://github.com/Badgerati/Pode/blob/develop/examples/$($urlFileName))`n`n"
+            $markdownContent += "**Synopsis**`n`n$($help.Synopsis)`n`n"
+            $markdownContent += "**Description**`n`n$($help.Description.Text)`n`n"
+        }
+
+    Write-Output "Write Markdown document for the sample files to $($sampleMarkDownPath)"
+    Set-Content -Path $sampleMarkDownPath -Value "# Sample Scripts`n`n$($markdownContent)" -Force
 }
 
 <#

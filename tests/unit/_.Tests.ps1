@@ -1,30 +1,25 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 param()
+
 BeforeDiscovery {
     $path = $PSCommandPath
     $examplesPath = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/examples/'
 
+    # List of directories to exclude
     $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
-        'Authentication', 'certs', 'logs', 'relative', 'routes') # List of directories to exclude
-    # Filter out non-existing directories
-    $existingExcludeDirs = @()
-    foreach ($dir in $excludeDirs) {
-        if (Test-Path -Path (Join-Path -Path $examplesPath -ChildPath $dir)) {
-            $existingExcludeDirs += $dir
-        }
-    }
-    $ps1Files = (Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse |
-            Where-Object {
-                $exclude = $false
-                foreach ($dir in $existingExcludeDirs) {
-                    if ($_.FullName -like "*$([IO.Path]::DirectorySeparatorChar)$dir$([IO.Path]::DirectorySeparatorChar)*") {
-                        $exclude = $true
-                        break
-                    }
-                }
-                -not $exclude
-            }).FullName
+        'Authentication', 'certs', 'logs', 'relative', 'routes')
+
+    # Convert exlusion list into single regex pattern for directory matching
+    $dirSeparator = [IO.Path]::DirectorySeparatorChar
+    $excludeDirs = "\$($dirSeparator)($($excludeDirs -join '|'))\$($dirSeparator)"
+
+    # get the example scripts
+    $ps1Files = @(Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse -File -Force |
+        Where-Object {
+            $_.FullName -inotmatch $excludeDirs
+        }).FullName
 }
+
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'

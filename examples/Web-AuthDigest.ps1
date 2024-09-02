@@ -7,12 +7,12 @@
     for securing access to the server. The authentication details are checked against predefined user data.
 
 .EXAMPLE
-    To run the sample: ./Web-Auth-Digest.ps1
+    To run the sample: ./Web-AuthDigest.ps1
 
     Invoke-RestMethod -Uri http://localhost:8081/users -Method Get
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/Web-Auth-Digest.ps1
+    https://github.com/Badgerati/Pode/blob/develop/examples/Web-AuthDigest.ps1
 
 .NOTES
     Author: Pode Team
