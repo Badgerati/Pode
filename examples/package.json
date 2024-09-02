@@ -1,9 +1,9 @@
 {
     "name": "pode",
     "version": "0.0.0",
-    "main": "./web-pages.ps1",
+    "main": "./Web-Pages.ps1",
     "scripts": {
-        "start": "./web-pages.ps1",
+        "start": "./Web-Pages.ps1",
         "install": "",
         "test": "",
         "build": ""

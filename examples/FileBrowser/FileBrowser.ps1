@@ -1,14 +1,43 @@
- try {
+<#
+.SYNOPSIS
+    PowerShell script to set up a Pode server with static file browsing and authentication.
+
+.DESCRIPTION
+    This script sets up a Pode server that listens on port 8081. It includes static file browsing
+    with different routes, some of which require authentication. The script also demonstrates
+    how to set up basic authentication using Pode.
+
+    The server includes routes for downloading files, browsing files without downloading, and
+    accessing files with authentication.
+
+.EXAMPLE
+    To run the sample: ./FileBrowser/FileBrowser.ps1
+
+    Access the file browser:
+        Navigate to 'http://localhost:8081/' to browse the files in the specified directory.
+    Download a file:
+        Navigate to 'http://localhost:8081/download' to download files.
+    Access a file with authentication:
+        Navigate to 'http://localhost:8081/auth' and provide the username 'morty' and password 'pickle'.
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/FileBrowser/FileBrowser.ps1
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
+#>
+try {
     $FileBrowserPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
     $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $FileBrowserPath)
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
-        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop #-ArgumentList 'ja'
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
     }
     else {
-        Import-Module -Name 'Pode' -ErrorAction Stop
+        Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
     }
- }
- catch { throw }
+}
+catch { throw }
 
 $directoryPath = $podePath
 # Start Pode server
