@@ -4,6 +4,6 @@ services:
   web:
     build: .
     ports:
-      - "8085:8085"
+      - "8081:8081"
     container_name: pode-example
     restart: always
