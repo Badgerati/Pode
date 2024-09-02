@@ -1,5 +1,25 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 param()
+
+BeforeDiscovery {
+    $path = $PSCommandPath
+    $examplesPath = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/examples/'
+
+    # List of directories to exclude
+    $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
+        'Authentication', 'certs', 'logs', 'relative', 'routes')
+
+    # Convert exlusion list into single regex pattern for directory matching
+    $dirSeparator = [IO.Path]::DirectorySeparatorChar
+    $excludeDirs = "\$($dirSeparator)($($excludeDirs -join '|'))\$($dirSeparator)"
+
+    # get the example scripts
+    $ps1Files = @(Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse -File -Force |
+        Where-Object {
+            $_.FullName -inotmatch $excludeDirs
+        }).FullName
+}
+
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
@@ -122,4 +142,38 @@ Describe 'All Aliases' {
 
         $found | Should -Be @()
     }
+}
+
+
+Describe 'Examples Script Headers' {
+    Context 'Checking file: [<_>]' -ForEach ($ps1Files) {
+        BeforeAll {
+            $content = Get-Content -Path $_ -Raw
+        }
+        It 'should have a .SYNOPSIS section' {
+            $hasSynopsis = $content -match '\.SYNOPSIS\s+([^\#]*)'
+            $hasSynopsis | Should -Be $true
+        }
+
+        It 'should have a .DESCRIPTION section' {
+            $hasDescription = $content -match '\.DESCRIPTION\s+([^\#]*)'
+            $hasDescription | Should -Be $true
+        }
+
+        It 'should have a .NOTES section with Author and License' {
+            $hasNotes = $content -match '\.NOTES\s+([^\#]*?)Author:\s*Pode Team\s*License:\s*MIT License'
+            $hasNotes | Should -Be $true
+        }
+
+        It 'should have a .LINK section' {
+            $hasDescription = $content -match '\.LINK\s+([^\#]*)'
+            $hasDescription | Should -Be $true
+        }
+
+        It 'should have a .EXAMPLE section' {
+            $hasDescription = $content -match '\.EXAMPLE\s+([^\#]*)'
+            $hasDescription | Should -Be $true
+        }
+    }
+
 }
