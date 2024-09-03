@@ -18,7 +18,7 @@ Describe 'ASYNC REST API Requests' {
         }
         $Port = 8080
         $Endpoint = "http://127.0.0.1:$($Port)"
-        $scriptPath = "$($PSScriptRoot)\..\..\examples\AsyncRoute.ps1"
+        $scriptPath = "$($PSScriptRoot)\..\..\examples\Web-AsyncRoute.ps1"
         if ($PSVersionTable.PsVersion -gt [version]'6.0') {
             Start-Process 'pwsh' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -Port $Port -DisableTermination"  -NoNewWindow
         }
