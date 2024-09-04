@@ -284,8 +284,10 @@
     requestLoggingAlreadyEnabledExceptionMessage                      = 'リクエストロギングは既に有効になっています。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
-    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
-    definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
+    renamePodeOADefinitionTagExceptionMessage                     = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
+    NonHashtableArrayElementExceptionMessage                          = '配列にハッシュテーブルではない要素が含まれています'
+    InputNotHashtableOrArrayOfHashtablesExceptionMessage              = '入力がハッシュテーブルまたはハッシュテーブルの配列ではありません'
+    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
 }
 

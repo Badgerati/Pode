@@ -1653,6 +1653,7 @@ function ConvertTo-PodeResponseContent {
         $ContentType,
 
         [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
@@ -1676,12 +1677,7 @@ function ConvertTo-PodeResponseContent {
     switch ($ContentType) {
         { $_ -match '^(.*\/)?(.*\+)?json$' } {
             if ($InputObject -isnot [string]) {
-                if ($Depth -le 0) {
-                    return (ConvertTo-Json -InputObject $InputObject -Compress)
-                }
-                else {
-                    return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
-                }
+                return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
             }
 
             if ([string]::IsNullOrWhiteSpace($InputObject)) {
@@ -1689,14 +1685,9 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+        { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
-                if ($Depth -le 0) {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
-                }
-                else {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
-                }
+                return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
             }
 
             if ([string]::IsNullOrWhiteSpace($InputObject)) {
@@ -1705,17 +1696,7 @@ function ConvertTo-PodeResponseContent {
         }
 
         { $_ -match '^(.*\/)?(.*\+)?xml$' } {
-            if ($InputObject -isnot [string]) {
-                $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
-                    })
-
-                return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
-            }
-
-            if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                return [string]::Empty
-            }
+            return ConvertTo-PodeXml -InputObject $InputObject -Depth $Depth
         }
 
         { $_ -ilike '*/csv' } {
@@ -3646,11 +3627,12 @@ function ConvertTo-PodeYaml {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
         [AllowNull()]
         $InputObject,
 
-        [parameter()]
+        [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 16
     )
@@ -3723,19 +3705,20 @@ function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $false)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $false)]
         [AllowNull()]
         $InputObject,
 
-        [parameter()]
+        [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
-        [parameter()]
+        [Parameter()]
         [int]
         $NestingLevel = 0,
 
-        [parameter()]
+        [Parameter()]
         [switch]
         $NoNewLine
     )
@@ -3977,62 +3960,154 @@ function Open-PodeRunspace {
 
 <#
 .SYNOPSIS
-    Resolves various types of object arrays into PowerShell objects.
+    Converts any object, including nested hashtables and arrays, to a PSObject.
 
 .DESCRIPTION
-    This function takes an input property and determines its type.
-    It then resolves the property into a PowerShell object or an array of objects,
-    depending on whether the property is a hashtable, array, or single object.
+    The ConvertTo-PodePSObject function recursively converts an input object
+    to a PSObject. It handles nested hashtables and arrays, ensuring that
+    all nested structures are properly converted.
 
-.PARAMETER Property
-    The property to be resolved. It can be a hashtable, an object array, or a single object.
-
-.RETURNS
-    Returns a PowerShell object or an array of PowerShell objects, depending on the input property type.
+.PARAMETER InputObject
+    The input object to be converted. This can be a hashtable, array, or any other type of object.
 
 .EXAMPLE
-    $result = Resolve-PodeObjectArray -Property $myProperty
-    This example resolves the $myProperty into a PowerShell object or an array of objects.
+    $complexObject = @{
+        Name = "John Doe"
+        Age = 30
+        Occupation = "Engineer"
+        Address = @{
+            Street = "123 Main St"
+            City = "Anytown"
+            State = "CA"
+            Zip = "12345"
+        }
+        Projects = @(
+            @{ ProjectName = "Project Alpha"; Duration = "6 months" }
+            @{ ProjectName = "Project Beta"; Duration = "3 months" }
+        )
+        Skills = @("PowerShell", "C#", "SQL")
+    }
 
-.NOTES
-    This is an internal function and may change in future releases of Pode.
+    $psObject = $complexObject | ConvertTo-PodePSObject
+    $psObject
 #>
-function Resolve-PodeObjectArray {
-    [CmdletBinding()]
-    [OutputType([object[]])]
-    [OutputType([psobject])]
+function ConvertTo-PodePSObject {
     param (
-        [AllowNull()]
-        [object]
-        $Property
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        $InputObject
     )
 
-    # Check if the property is a hashtable
-    if ($Property -is [hashtable]) {
-        # If the hashtable has only one item, convert it to a PowerShell object
-        if ($Property.Count -eq 1) {
-            return New-Object psobject -Property $Property
+    process {
+        if ($InputObject -is [hashtable]) {
+            $psObject = New-Object PSObject
+            foreach ($key in $InputObject.Keys) {
+                $value = $InputObject[$key]
+                $convertedValue = ConvertTo-PodePSObject -InputObject $value
+                $psObject | Add-Member -MemberType NoteProperty -Name $key -Value $convertedValue
+            }
+            return $psObject
+        }
+        elseif ($InputObject -is [array]) {
+            $convertedArray = @()
+            foreach ($item in $InputObject) {
+                $convertedArray += ConvertTo-PodePSObject -InputObject $item
+            }
+            return $convertedArray
         }
         else {
-            # If the hashtable has more than one item, recursively resolve each item
-            return @(foreach ($p in $Property) {
-                    Resolve-PodeObjectArray -Property $p
-                })
+            return $InputObject
         }
     }
-    # Check if the property is an array of objects
-    elseif ($Property -is [object[]]) {
-        # Recursively resolve each item in the array
-        return @(foreach ($p in $Property) {
-                Resolve-PodeObjectArray -Property $p
-            })
+}
+
+<#
+.SYNOPSIS
+    Converts a hashtable or an array of hashtables to a human-readable XML string.
+
+.DESCRIPTION
+    This is an internal function and may change in future releases of Pode.
+    The function takes a hashtable or an array of hashtables as input and converts them to a formatted XML string.
+    It handles nested hashtables and arrays.
+
+.PARAMETER Value
+    The hashtable or array of hashtables to be converted to XML.
+
+.PARAMETER RootLabel
+    The label that reppresent root
+
+.EXAMPLE
+    $hashTable = @{ Name = "John"; Age = 30 }
+    Convert-PodeHashTableToXml -Value $hashTable
+#>
+function Convert-PodeHashTableToXml {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]
+        $Value,
+
+        [string]
+        $RootLabel = 'root'
+    )
+
+    # Create a new XML document
+    $xmlDocument = New-Object System.Xml.XmlDocument
+    #'<?xml version="1.0" encoding="UTF-8"?>
+    $root = $xmlDocument.CreateElement( $RootLabel)
+    $xmlDocument.AppendChild($root) | Out-Null
+
+    # Function to recursively add nodes
+    function Add-XmlNode {
+        param(
+            [System.Xml.XmlDocument]$doc,
+            [System.Xml.XmlElement]$parent,
+            [string]$key,
+            [object]$value
+        )
+
+        $node = $doc.CreateElement($key)
+
+        if ($value -is [hashtable]) {
+            $value.GetEnumerator() | ForEach-Object {
+                Add-XmlNode -doc $doc -parent $node -key $_.Key -value $_.Value
+            }
+        }
+        elseif ($value -is [array]) {
+            foreach ($item in $value) {
+                Add-XmlNode -doc $doc -parent $node -key 'item' -value $item
+            }
+        }
+        else {
+            $node.InnerText = $value.ToString()
+        }
+
+        $parent.AppendChild($node) | Out-Null
     }
-    # Check if the property is already a PowerShell object
-    elseif ($Property -is [psobject]) {
-        return $Property
+
+    # Check if the input is an array of hashtables
+    if ($Value -is [array]) {
+        $Value | ForEach-Object {
+            if ($_ -is [hashtable]) {
+                $hashtableNode = $xmlDocument.CreateElement('hashtable')
+                $root.AppendChild($hashtableNode) | Out-Null
+                $_.GetEnumerator() | ForEach-Object {
+                    Add-XmlNode -doc $xmlDocument -parent $hashtableNode -key $_.Key -value $_.Value
+                }
+            }
+            else {
+                # Array contains non-hashtable element.
+                throw $PodeLocale.NonHashtableArrayElementExceptionMessage
+            }
+        }
+    }
+    elseif ($Value -is [hashtable]) {
+        $Value.GetEnumerator() | ForEach-Object {
+            Add-XmlNode -doc $xmlDocument -parent $root -key $_.Key -value $_.Value
+        }
     }
     else {
-        # For any other type, convert it to a PowerShell object
-        return New-Object psobject -Property $Property
+        # Input is not a hashtable or an array of hashtables
+        throw $PodeLocale.InputNotHashtableOrArrayOfHashtablesExceptionMessage
     }
+
+    return '<?xml version="1.0" encoding="UTF-8"?>' + $xmlDocument.OuterXml
 }

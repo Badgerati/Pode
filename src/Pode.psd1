@@ -141,6 +141,7 @@
         'ConvertFrom-PodeXml',
         'Set-PodeDefaultFolder',
         'Get-PodeDefaultFolder',
+        'ConvertTo-PodeXml',
 
         # routes
         'Add-PodeRoute',

@@ -61,6 +61,11 @@ catch { throw }
 
 Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
+    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3'
+    Add-PodeOAInfo -Title 'Test Write-Response' -Version 0.0.1
+
+    Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger'
+    Enable-PodeOAViewer -Bookmarks -Path '/docs'
     #   nopipe
     Add-PodeRoute -Path '/html/processes'  -Method Get -ScriptBlock {
         $myProcess = Get-Process | .{ process { if ($_.WS -gt 100mb) { $_ } } } |
@@ -133,6 +138,14 @@ Start-PodeServer {
             Select-Object Name, @{e = { [int]($_.WS / 1mb) }; n = 'WS' } |
             Sort-Object WS -Descending
         Write-PodeXmlResponse -Value $myProcess  -StatusCode 200
+    }
+
+      #   nopipe
+      Add-PodeRoute -Path '/xml/processesNoPropertyName'  -Method Get -ScriptBlock {
+        $myProcess = Get-Process | .{ process { if ($_.WS -gt 100mb) { $_ } } } |
+            Select-Object Name, @{e = { [int]($_.WS / 1mb) }; n = 'WS' } |
+            Sort-Object WS -Descending
+        Write-PodeXmlResponse -Value $myProcess  -StatusCode 200 -NoPropertyName
     }
 
     #    pipe

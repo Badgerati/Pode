@@ -227,6 +227,7 @@ function Send-PodeSseEvent {
         $Data,
 
         [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
