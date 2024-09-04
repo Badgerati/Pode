@@ -114,6 +114,8 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
+            # Sets the name of the current runspace
+            Set-PodeCurrentRunspaceName -Name "HttpEndpoint_$ThreadId"
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -292,6 +294,8 @@ function Start-PodeWebServer {
                 [Parameter(Mandatory = $true)]
                 $Listener
             )
+            # Sets the name of the current runspace
+            Set-PodeCurrentRunspaceName -Name 'WsEndpoint'
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -370,6 +374,8 @@ function Start-PodeWebServer {
                 [int]
                 $ThreadId
             )
+            # Sets the name of the current runspace
+            Set-PodeCurrentRunspaceName -Name "WsEndpoint_$ThreadId"
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -449,6 +455,8 @@ function Start-PodeWebServer {
             [ValidateNotNull()]
             $Listener
         )
+        # Sets the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name "Listener_KeepAlive"
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -473,7 +481,7 @@ function Start-PodeWebServer {
         $waitType = 'Signals'
     }
 
-    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener} -NoProfile
 
     # browse to the first endpoint, if flagged
     if ($Browse) {

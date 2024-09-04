@@ -84,6 +84,8 @@ function Start-PodeTcpServer {
             [int]
             $ThreadId
         )
+        # Sets the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name "TCPEndpoint_$ThreadId"
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -205,6 +207,8 @@ function Start-PodeTcpServer {
             [ValidateNotNull()]
             $Listener
         )
+        # Sets the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name 'TCPEndpoint_KeepAlive'
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
