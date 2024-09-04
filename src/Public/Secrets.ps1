@@ -660,7 +660,7 @@ function Update-PodeSecret {
         $Name,
 
         #> byte[], string, securestring, pscredential, hashtable
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true )]
         [object]
         $InputObject,
 
@@ -668,42 +668,57 @@ function Update-PodeSecret {
         [hashtable]
         $Metadata
     )
-
-    # has the secret been mounted?
-    if (!(Test-PodeSecret -Name $Name)) {
-        # No Secret named has been mounted
-        throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
-    }
-
-    # make sure the value type is correct
-    $InputObject = Protect-PodeSecretValueType -Value $InputObject
-
-    # get the secret and vault
-    $secret = $PodeContext.Server.Secrets.Keys[$Name]
-
-    # reset the cache if enabled
-    if ($secret.Cache.Enabled) {
-        $secret.Cache.Value = $InputObject
-        $secret.Cache.Expiry = [datetime]::UtcNow.AddMinutes($secret.Cache.Ttl)
-    }
-
-    # if we're expanding a property, convert this to a hashtable
-    if ($secret.Properties.Enabled -and $secret.Properties.Expand) {
-        $InputObject = @{
-            "$($secret.Properties.Fields)" = $InputObject
+    begin {
+        # has the secret been mounted?
+        if (!(Test-PodeSecret -Name $Name)) {
+            # No Secret named has been mounted
+            throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
         }
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    # set the secret depending on vault type
-    $vault = $PodeContext.Server.Secrets.Vaults[$secret.Vault]
-    Lock-PodeObject -Name $vault.LockableName -ScriptBlock {
-        switch ($vault.Type) {
-            'custom' {
-                Set-PodeSecretCustomKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata -ArgumentList $secret.Arguments
-            }
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
 
-            'secretmanagement' {
-                Set-PodeSecretManagementKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata
+    end {
+        # Set InputObject to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $InputObject = $pipelineValue
+        }
+
+        # make sure the value type is correct
+        $InputObject = Protect-PodeSecretValueType -Value $InputObject
+
+        # get the secret and vault
+        $secret = $PodeContext.Server.Secrets.Keys[$Name]
+
+        # reset the cache if enabled
+        if ($secret.Cache.Enabled) {
+            $secret.Cache.Value = $InputObject
+            $secret.Cache.Expiry = [datetime]::UtcNow.AddMinutes($secret.Cache.Ttl)
+        }
+
+        # if we're expanding a property, convert this to a hashtable
+        if ($secret.Properties.Enabled -and $secret.Properties.Expand) {
+            $InputObject = @{
+                "$($secret.Properties.Fields)" = $InputObject
+            }
+        }
+
+        # set the secret depending on vault type
+        $vault = $PodeContext.Server.Secrets.Vaults[$secret.Vault]
+        Lock-PodeObject -Name $vault.LockableName -ScriptBlock {
+            switch ($vault.Type) {
+                'custom' {
+                    Set-PodeSecretCustomKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata -ArgumentList $secret.Arguments
+                }
+
+                'secretmanagement' {
+                    Set-PodeSecretManagementKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata
+                }
             }
         }
     }
@@ -890,7 +905,7 @@ function Set-PodeSecret {
         $Vault,
 
         #> byte[], string, securestring, pscredential, hashtable
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [object]
         $InputObject,
 
@@ -902,26 +917,41 @@ function Set-PodeSecret {
         [object[]]
         $ArgumentList
     )
-
-    # has the vault been registered?
-    if (!(Test-PodeSecretVault -Name $Vault)) {
-        # No Secret Vault with the name has been registered
-        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
+    begin {
+        # has the vault been registered?
+        if (!(Test-PodeSecretVault -Name $Vault)) {
+            # No Secret Vault with the name has been registered
+            throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
+        }
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    # make sure the value type is correct
-    $InputObject = Protect-PodeSecretValueType -Value $InputObject
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
 
-    # set the secret depending on vault type
-    $_vault = $PodeContext.Server.Secrets.Vaults[$Vault]
-    Lock-PodeObject -Name $_vault.LockableName -ScriptBlock {
-        switch ($_vault.Type) {
-            'custom' {
-                Set-PodeSecretCustomKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata -ArgumentList $ArgumentList
-            }
+    end {
+        # Set InputObject to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $InputObject = $pipelineValue
+        }
 
-            'secretmanagement' {
-                Set-PodeSecretManagementKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata
+        # make sure the value type is correct
+        $InputObject = Protect-PodeSecretValueType -Value $InputObject
+
+        # set the secret depending on vault type
+        $_vault = $PodeContext.Server.Secrets.Vaults[$Vault]
+        Lock-PodeObject -Name $_vault.LockableName -ScriptBlock {
+            switch ($_vault.Type) {
+                'custom' {
+                    Set-PodeSecretCustomKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata -ArgumentList $ArgumentList
+                }
+
+                'secretmanagement' {
+                    Set-PodeSecretManagementKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata
+                }
             }
         }
     }
