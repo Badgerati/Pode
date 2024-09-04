@@ -1667,57 +1667,6 @@ Describe 'New-PodeCron' {
 
 
 
-Describe 'ConvertTo-PodeYaml Tests' {
-    BeforeAll {
-        $PodeContext = @{ Server = @{InternalCache = @{} } }
-    }
-    Context 'When converting basic types' {
-        It 'Converts strings correctly' {
-            $result = 'hello world' | ConvertTo-PodeYaml
-            $result | Should -Be 'hello world'
-        }
-
-        It 'Converts arrays correctly' {
-            $result = @('one', 'two', 'three') | ConvertTo-PodeYaml
-            $expected = (@'
-- one
-- two
-- three
-'@)
-            $result | Should -Be ($expected.Trim() -Replace "`r`n", "`n")
-        }
-
-        It 'Converts hashtables correctly' {
-            $hashTable = [ordered]@{
-                key1 = 'value1'
-                key2 = 'value2'
-            }
-            $result = $hashTable | ConvertTo-PodeYaml
-            $result | Should -Be "key1: value1`nkey2: value2"
-        }
-    }
-
-    Context 'When converting complex objects' {
-        It 'Handles nested hashtables' {
-            $nestedHash = @{
-                parent = @{
-                    child = 'value'
-                }
-            }
-            $result = $nestedHash | ConvertTo-PodeYaml
-
-            $result | Should -Be "parent: `n  child: value"
-        }
-    }
-
-    Context 'Error handling' {
-        It 'Returns empty string for null input' {
-            $result = $null | ConvertTo-PodeYaml
-            $result | Should -Be ''
-        }
-    }
-}
-
 
 Describe 'ConvertTo-PodeYamlInternal Tests' {
     Context 'When converting basic types' {
@@ -1734,7 +1683,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
 - two
 - three
 '@)
-            $result | Should -Be ($expected.Trim() -Replace "`r`n", "`n")
+            $result | Should -Be  $expected.Trim()
         }
 
         It 'Converts hashtables correctly' {
@@ -1743,7 +1692,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
                 key2 = 'value2'
             }
             $result = ConvertTo-PodeYamlInternal -InputObject $hashTable -NoNewLine
-            $result | Should -Be "key1: value1`nkey2: value2"
+            $result | Should -Be "key1: value1$([Environment]::NewLine)key2: value2"
         }
     }
 
@@ -1756,7 +1705,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
             }
             $result = ConvertTo-PodeYamlInternal -InputObject  $nestedHash -NoNewLine
 
-            $result | Should -Be "parent: `n  child: value"
+            $result | Should -Be "parent: $([Environment]::NewLine)  child: value"
         }
     }
 

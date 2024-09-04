@@ -1,5 +1,5 @@
 @{
-    Web    = @{
+    Web = @{
         Static      = @{
             Defaults = @(
                 'index.html',
@@ -19,6 +19,7 @@
             Default             = 'application/html'
             Routes              = @{
                 '/john' = 'application/json'
+                '/auth' = 'application/json'
             }
         }
         Compression = @{
@@ -27,7 +28,14 @@
         OpenApi     = @{
             UsePodeYamlInternal = $true
         }
+
+        Conversion = @{
+            JsonToHashTable = $true
+            XmlToHashTable  = $true
+            YamlToHashTable = $true
+        }
     }
+
     Server = @{
         FileMonitor = @{
             Enable    = $false
@@ -62,6 +70,18 @@
         Debug       = @{
             Breakpoints = @{
                 Enable = $true
+            }
+        }
+        AsyncRoutes = @{
+            HouseKeeping = @{
+                TimerInterval    = 30
+                RetentionMinutes = 10
+            }
+        }
+        Tasks       = @{
+            HouseKeeping = @{
+                TimerInterval    = 30
+                RetentionMinutes = 1
             }
         }
     }
