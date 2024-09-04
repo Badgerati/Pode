@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'اسم مجلد العرض موجود بالفعل: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'لا يوجد اسم لإعادة تعيين WebSocket من المزود.'
     mergeDefaultAuthNotInListExceptionMessage                         = "المصادقة MergeDefault '{0}' غير موجودة في قائمة المصادقة المقدمة."
-    descriptionRequiredExceptionMessage                               = 'مطلوب وصف للمسار: {0} الاستجابة: {1}'
+    descriptionRequiredExceptionMessage                               = 'الوصف مطلوب.'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'يجب أن يكون اسم الصفحة قيمة أبجدية رقمية صالحة: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'القيمة الافتراضية ليست من نوع boolean وليست جزءًا من التعداد.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'مخطط مكون OpenApi {0} غير موجود.'
@@ -283,8 +283,18 @@
     adModuleWindowsOnlyExceptionMessage                               = 'وحدة Active Directory متاحة فقط على نظام Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'تم تمكين تسجيل الطلبات بالفعل.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.'
+    invalidQueryFormatExceptionMessage                                = 'الاستعلام المقدم له تنسيق غير صالح.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
     renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
+    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} غير موجود.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'لا توجد عملية مسار غير متزامن بالمعرف {0}.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "لا يُسمح للبرنامج النصي باحتواء الأمر '{0}'."
+    invalidQueryElementExceptionMessage                               = 'الاستعلام المقدم غير صالح. {0} ليس عنصرًا صالحًا للاستعلام.'
+    setPodeAsyncProgressExceptionMessage                              = 'يمكن استخدام Set-PodeAsyncRouteProgress فقط داخل كتلة نصية لمسار غير متزامن.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'لا يمكن أن يكون حد التقدم أقل من التقدم الحالي.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} يختلف بين تعريفات OpenAPI المختلفة.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "المسار '{0}' لم يتم وضع علامة عليه كمسار غير متزامن."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "لا يمكن استدعاء الدالة '{0}' عدة مرات لنفس المسار '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
 }

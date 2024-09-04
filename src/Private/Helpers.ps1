@@ -554,7 +554,7 @@ function Get-PodeSubnetRange {
 function Add-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
+
         [string]
         $Type,
 
@@ -1689,7 +1689,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+        { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
@@ -1839,7 +1839,7 @@ function ConvertFrom-PodeRequestContent {
                 $Result.Data = ($Content | ConvertFrom-Json -AsHashtable)
             }
             else {
-                $Result.Data = ($Content | ConvertFrom-Json)
+                $Result.Data = ConvertTo-PodeHashtable -PSObject ($Content | ConvertFrom-Json)
             }
         }
 
@@ -3945,7 +3945,6 @@ function ConvertTo-PodeYamlInternal {
 function Open-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
         [string]
         $Type
     )
@@ -3974,6 +3973,7 @@ function Open-PodeRunspace {
         throw
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -4034,5 +4034,279 @@ function Resolve-PodeObjectArray {
     else {
         # For any other type, convert it to a PowerShell object
         return New-Object psobject -Property $Property
+    }
+}
+
+
+
+<#
+.SYNOPSIS
+    Checks if two arrays have any common elements.
+
+.DESCRIPTION
+    This function takes two arrays as input parameters and checks if they share any common elements.
+    It returns $true if there is at least one common element, and $false otherwise.
+
+.PARAMETER ReferenceArray
+    The first array to compare.
+
+.PARAMETER DifferenceArray
+    The second array to compare.
+
+.EXAMPLE
+    $array1 = @('a', 'b', 'c')
+    $array2 = @('c', 'd', 'e')
+    Test-PodeArraysHaveCommonElement -ReferenceArray $array1 -DifferenceArray $array2
+    # Output: True
+
+.EXAMPLE
+    $array1 = @('a', 'b', 'c')
+    $array2 = @('d', 'e', 'f')
+    Test-PodeArraysHaveCommonElement -ReferenceArray $array1 -DifferenceArray $array2
+    # Output: False
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeArraysHaveCommonElement {
+    param (
+        [array]$ReferenceArray, # The first array to compare
+        [array]$DifferenceArray    # The second array to compare
+    )
+
+    # Iterate through each item in the DifferenceArray
+    foreach ($item in $DifferenceArray) {
+        # Check if the item exists in the ReferenceArray
+        if ($ReferenceArray -contains $item) {
+            # Return true if a common element is found
+            return $true
+        }
+    }
+    # Return false if no common elements are found
+    return $false
+}
+
+<#
+.SYNOPSIS
+    Converts a PSCustomObject to a hashtable recursively.
+
+.DESCRIPTION
+    The ConvertTo-PodeHashtable function takes a PSCustomObject as input and recursively converts it into a hashtable.
+    This is useful for transforming structured data from JSON or other sources into a native PowerShell hashtable.
+
+.PARAMETER PSObject
+    The PSCustomObject to convert to a hashtable. This parameter is mandatory.
+
+.EXAMPLE
+    $psObject = [PSCustomObject]@{
+        Name = "John Doe"
+        Age = 30
+        Address = [PSCustomObject]@{
+            Street = "123 Main St"
+            City = "Anytown"
+            State = "CA"
+        }
+        PhoneNumbers = @(
+            [PSCustomObject]@{ Type = "home"; Number = "123-456-7890" },
+            [PSCustomObject]@{ Type = "work"; Number = "987-654-3210" }
+        )
+    }
+
+    $hashtable = ConvertTo-PodeHashtable -PSObject $psObject
+    $hashtable
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertTo-PodeHashtable {
+    param (
+        [Parameter(Mandatory = $true)]
+        [PSObject]$PSObject
+    )
+
+    # Initialize an empty hashtable
+    $hashtable = @{}
+
+    # Iterate over each property of the PSObject
+    foreach ($property in $PSObject.PSObject.Properties) {
+
+        # If the property value is a PSCustomObject, recursively convert it to a hashtable
+        if ($property.Value -is [PSCustomObject]) {
+            $hashtable[$property.Name] = ConvertTo-PodeHashtable -PSObject $property.Value
+
+            # If the property value is an enumerable collection (excluding strings)
+        }
+        elseif ($property.Value -is [System.Collections.IEnumerable] -and !($property.Value -is [string])) {
+
+            # Initialize an array list to hold the converted items
+            $arrayList = @()
+
+            # Iterate over each item in the collection
+            foreach ($item in $property.Value) {
+
+                # If the item is a PSCustomObject, recursively convert it and add to the array list
+                if ($item -is [PSCustomObject]) {
+                    $arrayList += (ConvertTo-PodeHashtable -PSObject $item)
+
+                    # Otherwise, add the item directly to the array list
+                }
+                else {
+                    $arrayList += $item
+                }
+            }
+
+            # Add the array list to the hashtable under the current property name
+            $hashtable[$property.Name] = $arrayList
+
+            # If the property value is neither a PSCustomObject nor a collection, add it directly to the hashtable
+        }
+        else {
+            $hashtable[$property.Name] = $property.Value
+        }
+    }
+
+    # Return the resulting hashtable
+    return $hashtable
+}
+
+<#
+.SYNOPSIS
+    Formats a given DateTime object to the ISO 8601 format used in Pode.
+
+.DESCRIPTION
+    The `Format-PodeDateToIso8601` function takes a DateTime object and returns
+    a string formatted as `yyyy-MM-ddTHH:mm:ss.fffffffZ`, which is the ISO 8601 format
+    with seven fractional seconds, suitable for Pode async route tasks.
+
+.PARAMETER Date
+    The DateTime object to format.
+
+.EXAMPLE
+    $completedTime = Get-Date
+    $formattedDate = Format-PodeDateToIso8601 -Date $completedTime
+    Write-Output $formattedDate
+
+    This example formats the current date and time to the ISO 8601 format.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Format-PodeDateToIso8601 {
+    param (
+        [DateTime]$Date
+    )
+
+    return $Date.ToString('yyyy-MM-ddTHH:mm:ss.fffffffZ')
+}
+
+
+<#
+.SYNOPSIS
+    Creates a new runspace pool with specified minimum and maximum runspaces.
+
+.DESCRIPTION
+    This function wraps the .NET `[runspacefactory]::CreateRunspacePool` method to create a new runspace pool.
+    It allows specifying the minimum and maximum number of runspaces, as well as the runspace state.
+    This function also automatically passes the current host context to the runspace pool.
+
+.PARAMETER MinRunspaces
+    The minimum number of runspaces in the pool. This value determines the initial number of runspaces created when the pool is opened.
+
+.PARAMETER MaxRunspaces
+    The maximum number of runspaces allowed in the pool. This value limits the total number of concurrent runspaces in the pool.
+
+.PARAMETER RunspaceState
+    The state of the runspace, typically determined by the context in which the runspace pool is being created. This parameter is passed directly to the `CreateRunspacePool` method.
+
+.OUTPUTS
+    System.Management.Automation.Runspaces.RunspacePool
+    Returns a `RunspacePool` object representing the created runspace pool.
+
+.EXAMPLE
+    $runspacePool = New-PodeRunspacePoolNetWrapper -MinRunspaces 1 -MaxRunspaces 5 -RunspaceState $state
+    # Creates a new runspace pool with a minimum of 1 runspace, a maximum of 5 runspaces, and a specific runspace state.
+
+.NOTES
+    This function is a wrapper around the `[runspacefactory]::CreateRunspacePool` method and is used to simplify the creation of runspace pools in Pode scripts.
+    This is an internal function and may change in future releases of Pode.
+
+.LINK
+    https://docs.microsoft.com/en-us/dotnet/api/system.management.automation.runspaces.runspacefactory.createrunspacepool
+#>
+function New-PodeRunspacePoolNetWrapper {
+    param (
+        [Parameter()]
+        [int]$MinRunspaces = 1,
+        [Parameter(Mandatory = $true)]
+        [int]$MaxRunspaces,
+        [Parameter(Mandatory = $true)]
+        [System.Management.Automation.Runspaces.InitialSessionState]$RunspaceState
+    )
+    return [runspacefactory]::CreateRunspacePool($MinRunspaces, $MaxRunspaces, $RunspaceState, $Host)
+}
+
+<#
+.SYNOPSIS
+    Creates a deep clone of a PSObject by serializing and deserializing the object.
+
+.DESCRIPTION
+    The Copy-PodeDeepClone function takes a PSObject as input and creates a deep clone of it.
+    This is achieved by serializing the object using the PSSerializer class, and then
+    deserializing it back into a new instance. This method ensures that nested objects, arrays,
+    and other complex structures are copied fully, without sharing references between the original
+    and the cloned object.
+
+.PARAMETER InputObject
+    The PSObject that you want to deep clone. This object will be serialized and then deserialized
+    to create a deep copy.
+
+.PARAMETER Deep
+    Specifies the depth for the serialization. The depth controls how deeply nested objects
+    and properties are serialized. The default value is 10.
+
+.INPUTS
+    [PSObject] - The function accepts a PSObject to deep clone.
+
+.OUTPUTS
+    [PSObject] - The function returns a new PSObject that is a deep clone of the original.
+
+.EXAMPLE
+    $originalObject = [PSCustomObject]@{
+        Name = 'John Doe'
+        Age = 30
+        Address = [PSCustomObject]@{
+            Street = '123 Main St'
+            City = 'Anytown'
+            Zip = '12345'
+        }
+    }
+
+    $clonedObject = $originalObject | Copy-PodeDeepClone -Deep 15
+
+    # The $clonedObject is now a deep clone of $originalObject.
+    # Changes to $clonedObject will not affect $originalObject and vice versa.
+
+.NOTES
+    This function uses the System.Management.Automation.PSSerializer class, which is available in
+    PowerShell 5.1 and later versions. The default depth parameter is set to 10 to handle nested
+    objects appropriately, but it can be customized via the -Deep parameter.
+    This is an internal function and may change in future releases of Pode.
+#>
+function Copy-PodeDeepClone {
+    param (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [PSObject]$InputObject,
+
+        [Parameter()]
+        [int]$Deep = 10
+    )
+
+    process {
+        # Serialize the object to XML format using PSSerializer
+        # The depth parameter controls how deeply nested objects are serialized
+        $xmlSerializer = [System.Management.Automation.PSSerializer]::Serialize($InputObject, $Deep)
+
+        # Deserialize the XML back into a new PSObject, creating a deep clone of the original
+        return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }

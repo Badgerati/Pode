@@ -763,10 +763,10 @@ function Set-PodeOpenApiRouteValue {
     if ($Route.OpenApi.OperationId) {
         $pm.operationId = $Route.OpenApi.OperationId
     }
-    if ($Route.OpenApi.Parameters) {
-        $pm.parameters = $Route.OpenApi.Parameters
+    if ($Route.OpenApi.Parameters.$DefinitionTag) {
+        $pm.parameters = $Route.OpenApi.Parameters.$DefinitionTag
     }
-    if ($Route.OpenApi.RequestBody.$DefinitionTag) {
+    if ($Route.OpenApi.RequestBody.$DefinitionTag ) {
         $pm.requestBody = $Route.OpenApi.RequestBody.$DefinitionTag
     }
     if ($Route.OpenApi.CallBacks.$DefinitionTag) {
@@ -1284,6 +1284,8 @@ function Get-PodeOABaseObject {
                 'default' = @{ description = 'Internal server error' }
             }
             operationId      = @()
+            #Async Route OpenAPI names
+            AsyncRoute       = Get-PodeAsyncRouteOASchemaNameInternal
         }
     }
 }
@@ -2192,4 +2194,50 @@ function Test-PodeOAComponentInternal {
             return $true
         }
     }
+}
+
+function Test-PodeRouteOADefinitionTag {
+    param(
+        [Parameter(Mandatory = $true )]
+        [ValidateNotNullOrEmpty()]
+        [hashtable ]
+        $Route,
+
+        [string[]]
+        $DefinitionTag
+    )
+    # Check if the OpenAPI Definition Tag is already configured
+    if ($Route.OpenApi.IsDefTagConfigured) {
+        # If a DefinitionTag is provided
+        if ($DefinitionTag) {
+            # Loop through each element in $DefinitionTag
+            if ($DefinitionTag | ForEach-Object {
+
+                    # Check if the current element exists in the already configured DefinitionTag
+                    if (!($Route.OpenApi.DefinitionTag -contains $_)) {
+                        # If any element in $DefinitionTag is not present in the configured DefinitionTag, throw an exception
+                        throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
+                    }
+                    # Return $true for each element to continue the check
+                    $true
+                }
+            ) {
+                # If all elements in $DefinitionTag are present in the configured DefinitionTag, assign it to $oaDefinitionTag
+                return $DefinitionTag
+            }
+        }
+
+        return $Route.OpenApi.DefinitionTag
+    }
+    # If the OpenAPI Definition Tag is not configured yet
+
+    # Validate the provided DefinitionTag and assign it to $oaDefinitionTag
+    $oaDefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    # Set the validated DefinitionTag as the OpenAPI DefinitionTag
+    $Route.OpenApi.DefinitionTag = $oaDefinitionTag
+    # Mark the OpenAPI DefinitionTag as configured
+    $Route.OpenApi.IsDefTagConfigured = $true
+
+
+    return  $oaDefinitionTag
 }

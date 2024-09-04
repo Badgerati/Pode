@@ -7,11 +7,11 @@ function Start-PodeTaskHousekeeper {
         return
     }
 
-    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval 30 -ScriptBlock {
+    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval $PodeContext.Tasks.HouseKeeping.TimerInterval -ScriptBlock {
         if ($PodeContext.Tasks.Results.Count -eq 0) {
             return
         }
-
+        $RetentionMinutes = $PodeContext.Tasks.HouseKeeping.RetentionMinutes
         $now = [datetime]::UtcNow
 
         foreach ($key in $PodeContext.Tasks.Results.Keys.Clone()) {
@@ -35,7 +35,7 @@ function Start-PodeTaskHousekeeper {
             }
 
             # is it expired by completion? if so, dispose and remove
-            if ($result.CompletedTime.AddMinutes(1) -lt $now) {
+            if ($result.CompletedTime.AddMinutes($RetentionMinutes) -lt $now) {
                 Close-PodeTaskInternal -Result $result
             }
         }
@@ -102,7 +102,6 @@ function Invoke-PodeInternalTask {
                 $parameters[$usingVar.NewName] = $usingVar.Value
             }
         }
-
         $name = New-PodeGuid
         $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
         $runspace = Add-PodeRunspace -Type Tasks -ScriptBlock (($Task.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru

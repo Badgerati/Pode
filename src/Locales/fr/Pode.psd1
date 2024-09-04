@@ -285,7 +285,17 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La définition OpenAPI nommée {0} existe déjà.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
+    invalidQueryFormatExceptionMessage                                = 'La requête fournie a un format invalide.'
+    asyncIdDoesNotExistExceptionMessage                               = "Async {0} n'existe pas."
+    asyncRouteOperationDoesNotExistExceptionMessage                   = "Aucune opération de route asynchrone n'existe avec l'Id {0}."
+    scriptContainsDisallowedCommandExceptionMessage                   = "Le script ne peut pas contenir la commande '{0}'."
+    invalidQueryElementExceptionMessage                               = "La requête fournie est invalide. {0} n'est pas un élément valide pour une requête."
+    setPodeAsyncProgressExceptionMessage                              = "Set-PodeAsyncRouteProgress ne peut être utilisé qu'à l'intérieur d'un Scriptblock de Route Asynchrone."
+    progressLimitLowerThanCurrentExceptionMessage                     = 'Une limite de progression ne peut pas être inférieure à la progression actuelle.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} varie entre différentes définitions OpenAPI.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "La route '{0}' n'est pas marquée comme une route asynchrone."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "La fonction '{0}' ne peut pas être invoquée plusieurs fois pour la même route '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = 'Les opérations {0} ne peuvent pas avoir de corps de requête.'
 }
 
