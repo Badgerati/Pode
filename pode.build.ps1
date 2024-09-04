@@ -548,7 +548,6 @@ Task TestNoBuild TestDeps, {
 # Synopsis: Run tests after a build
 Task Test Build, TestNoBuild
 
-
 # Synopsis: Check if any of the tests failed
 Task CheckFailedTests {
     if ($TestStatus.FailedCount -gt 0) {
