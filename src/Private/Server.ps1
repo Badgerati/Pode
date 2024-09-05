@@ -64,7 +64,7 @@ function Start-PodeInternalServer {
 
         if (!$PodeContext.Server.IsServerless) {
             # start runspace for loggers
-            Start-PodeLoggingRunspace
+            Start-PodeLoggerDispatcher
 
             # start runspace for timers
             Start-PodeTimerRunspace
@@ -146,12 +146,13 @@ function Start-PodeInternalServer {
 
         # run running event hooks
         Invoke-PodeEvent -Type Running
-
+        Write-PodeTraceLog -Message "Pode $(Get-PodeVersion) (PID: $($PID))"
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
-
             # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
-            Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $endpoints.Length, $PodeContext.Threads.General) -ForegroundColor Yellow
+            $msg = ($PodeLocale.listeningOnEndpointsMessage -f $endpoints.Length, $PodeContext.Threads.General)
+            Write-PodeHost $msg -ForegroundColor Yellow
+            $urlAndFlags = @()
             $endpoints | ForEach-Object {
                 $flags = @()
                 if ($_.DualMode) {
@@ -166,7 +167,9 @@ function Start-PodeInternalServer {
                 }
 
                 Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
+                $urlAndFlags += "$($_.Url) $($flags)"
             }
+            Write-PodeTraceLog -Message "$msg - $($urlAndFlags -join ' , ')"
             # state the OpenAPI endpoints for each definition
             foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
                 $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
@@ -206,7 +209,7 @@ function Start-PodeInternalServer {
                     }
                 }
             }
-
+            $PodeContext.Server.Started = $true
         }
     }
     catch {
@@ -246,7 +249,10 @@ function Restart-PodeInternalServer {
 
         $PodeContext.Server.Views.Clear()
         $PodeContext.Timers.Items.Clear()
-        $PodeContext.Server.Logging.Types.Clear()
+        $PodeContext.Server.Logging.Type.Clear()
+        $PodeContext.Server.Logging.Method.Clear()
+        Clear-PodeLogging
+
 
         # clear schedules
         $PodeContext.Schedules.Items.Clear()

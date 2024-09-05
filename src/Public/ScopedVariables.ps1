@@ -239,6 +239,9 @@ function Add-PodeScopedVariable {
         $ScriptBlock
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     Add-PodeScopedVariableInternal @PSBoundParameters
 }
 
@@ -262,6 +265,9 @@ function Remove-PodeScopedVariable {
         [string]
         $Name
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $null = $PodeContext.Server.ScopedVariables.Remove($Name)
 }
@@ -301,6 +307,10 @@ Removes all Scoped Variables.
 Clear-PodeScopedVariables
 #>
 function Clear-PodeScopedVariables {
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $null = $PodeContext.Server.ScopedVariables.Clear()
 }
 

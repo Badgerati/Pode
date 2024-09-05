@@ -744,6 +744,9 @@ function Remove-PodeSecret {
         $ArgumentList
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # has the vault been registered?
     if (!(Test-PodeSecretVault -Name $Vault)) {
         # No Secret Vault with the name has been registered

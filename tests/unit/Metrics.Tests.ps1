@@ -21,7 +21,11 @@ BeforeAll {
                 }
             }
         }
-    } }
+    }
+
+    # Mock Write-PodeTraceLog to avoid load Pode C# component
+    Mock Write-PodeTraceLog {}
+}
 
 Describe 'Get-PodeServerUptime' {
     It 'Returns the current session uptime' {

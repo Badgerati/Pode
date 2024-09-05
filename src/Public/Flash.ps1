@@ -27,6 +27,9 @@ function Add-PodeFlashMessage {
         $Message
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
         # Sessions are required to use Flash messages
@@ -59,6 +62,9 @@ Clear-PodeFlashMessages
 function Clear-PodeFlashMessages {
     [CmdletBinding()]
     param()
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
@@ -165,6 +171,9 @@ function Remove-PodeFlashMessage {
         [string]
         $Name
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {

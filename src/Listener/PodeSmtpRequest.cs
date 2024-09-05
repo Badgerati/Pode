@@ -265,7 +265,7 @@ namespace Pode
 
         public void Reset()
         {
-            PodeHelpers.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeLogger.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
 
             _canProcess = false;
             Headers = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
@@ -529,7 +529,11 @@ namespace Pode
                 }
             }
 
+            // Call base Dispose to ensure inherited resources are cleaned up
             base.Dispose();
+
+            // Suppress finalization if there's a finalizer
+            GC.SuppressFinalize(this);
         }
     }
 }

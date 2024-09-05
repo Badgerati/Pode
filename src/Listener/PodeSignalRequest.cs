@@ -129,16 +129,22 @@ namespace Pode
 
         public override void Dispose()
         {
-            // send close frame
+            // Check if already disposed to avoid repeated cleanup
             if (!IsDisposed)
             {
-                PodeHelpers.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
-                Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close).Wait();
+                // Log and send the close frame
+                PodeLogger.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
+                _ = Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close);
             }
 
             // remove client, and dispose
             Context.Listener.Signals.Remove(Signal.ClientId);
+
+            // Call the base class Dispose method to ensure inherited resources are cleaned up
             base.Dispose();
+
+            // Suppress finalization to optimize GC (optional, for future-proofing)
+            GC.SuppressFinalize(this);
         }
 
     }

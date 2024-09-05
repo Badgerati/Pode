@@ -8,6 +8,9 @@ BeforeAll {
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
     $now = [datetime]::UtcNow
+
+    # Mock Write-PodeTraceLog to avoid load Pode C# component
+    Mock Write-PodeTraceLog {}
 }
 
 Describe 'Get-PodeSession' {

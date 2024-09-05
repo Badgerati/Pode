@@ -395,6 +395,9 @@ function Add-PodeOAServerEndpoint {
         $DefinitionTag
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
         $DefinitionTag = @($PodeContext.Server.OpenAPI.SelectedDefinitionTag)
     }
@@ -627,6 +630,9 @@ function Add-PodeOAResponse {
         $DefinitionTag
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
         throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
@@ -703,6 +709,9 @@ function Remove-PodeOAResponse {
         $PassThru
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
         throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
@@ -766,6 +775,9 @@ function Set-PodeOARequest {
         [switch]
         $PassThru
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
@@ -1566,6 +1578,9 @@ function Set-PodeOARouteInfo {
         $DefinitionTag
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
         throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
@@ -2001,6 +2016,9 @@ function Add-PodeOAExternalDoc {
         $DefinitionTag
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     foreach ($tag in $DefinitionTag) {
@@ -2060,6 +2078,9 @@ function Add-PodeOATag {
         [string[]]
         $DefinitionTag
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
@@ -2166,6 +2187,9 @@ function Add-PodeOAInfo {
         [string]
         $DefinitionTag
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
@@ -2606,6 +2630,9 @@ function Add-PodeOACallBack {
         [string[]]
         $DefinitionTag
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if ($null -eq $Route) {
         # The parameter 'Route' cannot be null
@@ -3190,6 +3217,9 @@ function Add-PodeOAExternalRoute {
         $DefinitionTag
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -3357,6 +3387,9 @@ function Add-PodeOAWebhook {
         [string[]]
         $DefinitionTag
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 

@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "リクエストに '{0}' という名前のパラメータが提供されていないか、データがありません。"
     cacheStorageNotFoundForSetExceptionMessage                        = "キャッシュされたアイテム '{1}' を設定しようとしたときに、名前 '{0}' のキャッシュストレージが見つかりません。"
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: 既に定義されています。'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'エラーロギングは既に有効になっています。'
     valueForUsingVariableNotFoundExceptionMessage                     = "'`$using:{0}'の値が見つかりませんでした。"
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = 'ドキュメントツール RapidPdf は OpenAPI 3.1 をサポートしていません'
     oauth2ClientSecretRequiredExceptionMessage                        = 'PKCEを使用しない場合、OAuth2にはクライアントシークレットが必要です。'
@@ -281,11 +280,13 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "'{1}'認証バリデーターのために提供された'{0}'スキームには有効なScriptBlockが必要です。"
     sseFailedToBroadcastExceptionMessage                              = '{0}のSSEブロードキャストレベルが定義されているため、SSEのブロードキャストに失敗しました: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Active DirectoryモジュールはWindowsでのみ利用可能です。'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'リクエストロギングは既に有効になっています。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
+    loggingAlreadyEnabledExceptionMessage                             = "ログ記録 '{0}' は既に有効になっています。"
+    invalidEncodingExceptionMessage                                   = '無効なエンコーディング: {0}'
+    syslogProtocolExceptionMessage                                    = 'SyslogプロトコルはRFC3164またはRFC5424のみを使用できます。'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
 }
-

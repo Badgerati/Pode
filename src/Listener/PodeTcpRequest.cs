@@ -1,3 +1,4 @@
+using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -66,7 +67,7 @@ namespace Pode
 
         public void Reset()
         {
-            PodeHelpers.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeLogger.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
             _body = string.Empty;
             RawBody = default;
         }
@@ -78,9 +79,15 @@ namespace Pode
 
         public override void Dispose()
         {
-            RawBody = default;
+            // Reset or clear fields
+            RawBody = null;  // Set to null if it's a reference type, to avoid unexpected behavior
             _body = string.Empty;
+
+            // Call base Dispose to ensure inherited resources are cleaned up
             base.Dispose();
+
+            // Suppress finalization if there's a finalizer
+            GC.SuppressFinalize(this);
         }
     }
 }
