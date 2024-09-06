@@ -310,7 +310,7 @@ Describe 'ConvertFrom-PodeSerializedString' {
             $result['role'].GetEnumerator() | ForEach-Object {
                 $expected['role'][$_.Key] | Should -Be $_.Value
             }
-            $result['firstName']|Should -Be  $expected['firstName']
+            $result['firstName'] | Should -Be  $expected['firstName']
         }
 
     }
@@ -549,7 +549,7 @@ Describe 'ConvertTo-PodeSerializedString' {
 }
 
 
-Describe 'Get-PodeParameter' {
+Describe 'Get-PodePathParameter' {
     BeforeEach {
         # Mock the $WebEvent variable
         $Script:WebEvent = [PSCustomObject]@{
@@ -559,7 +559,7 @@ Describe 'Get-PodeParameter' {
 
     It 'should return the specified parameter value from the web event' {
         # Call the function
-        $result = Get-PodeParameter -Name 'action'
+        $result = Get-PodePathParameter -Name 'action'
 
         # Assert the result
         $result | Should -Be 'create'
@@ -567,7 +567,7 @@ Describe 'Get-PodeParameter' {
 }
 
 
-Describe 'Get-PodeQuery' {
+Describe 'Get-PodeQueryParameter' {
     BeforeEach {
         # Mock the $WebEvent variable
         $Script:WebEvent = [PSCustomObject]@{
@@ -577,7 +577,7 @@ Describe 'Get-PodeQuery' {
 
     It 'should return the specified query parameter value from the web event' {
         # Call the function
-        $result = Get-PodeQuery -Name 'userId'
+        $result = Get-PodeQueryParameter -Name 'userId'
 
         # Assert the result
         $result | Should -Be '12345'
@@ -585,7 +585,7 @@ Describe 'Get-PodeQuery' {
 }
 
 
-Describe 'Get-PodeBody' {
+Describe 'Get-PodeBodyData' {
     BeforeEach {
         # Mock the $WebEvent variable
         $Script:WebEvent = [PSCustomObject]@{
@@ -595,7 +595,7 @@ Describe 'Get-PodeBody' {
 
     It 'should return the body data of the web event' {
         # Call the function
-        $result = Get-PodeBody
+        $result = Get-PodeBodyData
 
         # Assert the result
         $result | Should -Be 'This is the body data'

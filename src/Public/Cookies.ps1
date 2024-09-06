@@ -109,67 +109,99 @@ function Set-PodeCookie {
 
 <#
 .SYNOPSIS
-Retrieves a cookie from the Request.
+    Retrieves a specified cookie from the incoming request.
 
 .DESCRIPTION
-Retrieves a cookie from the Request, with the option to supply a secret to unsign the cookie's value.
+    The `Get-PodeCookie` function retrieves a cookie from the incoming request. Optionally, it can unsign the cookie's value using a secret, with an additional option to extend the secret using the client request's UserAgent and RemoteIPAddress. It also provides the ability to return the raw .NET Cookie object for direct manipulation or deserialize serialized cookie values.
 
 .PARAMETER Name
-The name of the cookie to retrieve.
+    The name of the cookie to retrieve.
 
 .PARAMETER Secret
-The secret used to unsign the cookie's value.
+    The secret used to unsign the cookie's value. This parameter is optional and applicable only in the 'builtin' parameter set.
 
 .PARAMETER Strict
-If supplied, the Secret will be extended using the client request's UserAgent and RemoteIPAddress.
+    If specified, the secret is extended using the client's UserAgent and RemoteIPAddress. This parameter is optional and applicable only in the 'builtin' parameter set.
 
 .PARAMETER Raw
-If supplied, the cookie returned will be the raw .NET Cookie object for manipulation.
+    If specified, the cookie returned will be the raw .NET Cookie object, allowing for direct manipulation. This parameter is optional and applicable only in the 'builtin' parameter set.
+
+.PARAMETER NoExplode
+    Prevents deserialization from exploding arrays in the cookie value. This parameter is optional and applicable only in the 'Serialize' parameter set.
+
+.PARAMETER Serialize
+    Indicates that the retrieved cookie value should be deserialized. This parameter is mandatory in the 'Serialize' parameter set.
 
 .EXAMPLE
-Get-PodeCookie -Name 'Views'
+    Get-PodeCookie -Name 'Views'
+    Retrieves the value of the 'Views' cookie from the request.
 
 .EXAMPLE
-Get-PodeCookie -Name 'Views' -Secret 'hunter2'
+    Get-PodeCookie -Name 'Views' -Secret 'hunter2'
+    Retrieves and unsigns the 'Views' cookie using the specified secret.
+
+.EXAMPLE
+    Get-PodeCookie -Name 'Session' -Serialize -NoExplode
+    Retrieves and deserializes the 'Session' cookie value without exploding arrays.
+
+.EXAMPLE
+    Get-PodeCookie -Name 'AuthToken' -Raw
+    Retrieves the raw .NET Cookie object for the 'AuthToken' cookie, allowing for direct manipulation.
 #>
+
 function Get-PodeCookie {
-    [CmdletBinding()]
-    [OutputType([hashtable])]
+    [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'BuiltIn')]
         [string]
         $Name,
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'BuiltIn')]
         [string]
         $Secret,
 
+        [Parameter(ParameterSetName = 'BuiltIn')]
         [switch]
         $Strict,
 
+        [Parameter(ParameterSetName = 'BuiltIn')]
         [switch]
-        $Raw
+        $Raw,
+
+        [Parameter(ParameterSetName = 'Serialize')]
+        [switch]
+        $NoExplode,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Serialize')]
+        [switch]
+        $Serialize
     )
-
-    # get the cookie from the request
-    $cookie = $WebEvent.Cookies[$Name]
-    if (!$Raw) {
-        $cookie = (ConvertTo-PodeCookie -Cookie $cookie)
-    }
-
-    if (($null -eq $cookie) -or [string]::IsNullOrWhiteSpace($cookie.Value)) {
-        return $null
-    }
-
-    # if a secret was supplied, attempt to unsign the cookie
-    if (![string]::IsNullOrWhiteSpace($Secret)) {
-        $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret -Strict:$Strict)
-        if (![string]::IsNullOrWhiteSpace($value)) {
-            $cookie.Value = $value
+    if ($WebEvent) {
+        # get the cookie from the request
+        $cookie = $WebEvent.Cookies[$Name]
+        if (!$Raw) {
+            $cookie = (ConvertTo-PodeCookie -Cookie $cookie)
         }
-    }
 
-    return $cookie
+        if (($null -eq $cookie) -or [string]::IsNullOrWhiteSpace($cookie.Value)) {
+            return $null
+        }
+
+        if ($Serialize.IsPresent) {
+            $cookie.Value = ConvertFrom-PodeSerializedString -SerializedString $cookie.Value -Style 'Form' -Explode:(!$NoExplode)
+        }
+
+        # if a secret was supplied, attempt to unsign the cookie
+        if (![string]::IsNullOrWhiteSpace($Secret)) {
+            $value = (Invoke-PodeValueUnsign -Value $cookie.Value -Secret $Secret -Strict:$Strict)
+            if (![string]::IsNullOrWhiteSpace($value)) {
+                $cookie.Value = $value
+            }
+        }
+
+        return $cookie
+    }
 }
 
 <#
