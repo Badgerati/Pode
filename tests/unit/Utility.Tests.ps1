@@ -12,118 +12,398 @@ BeforeAll {
 
 Describe 'ConvertFrom-PodeSerializedString' {
 
-    It 'should convert Simple style serialized string to hashtable' {
-        $serialized = 'name=value,anotherName=anotherValue'
-        $result = ConvertFrom-PodeSerializedString -SerializedString $serialized
-        $expected = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
+    Describe 'Path Parameters' {
+        It 'Convert Simple(Explode) style serialized string to a primitive value' {
+            $serialized = '5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple -Explode
+            $result | Should -be 5
         }
-        $result.GetEnumerator() | ForEach-Object {
-            $expected[$_.Key] | Should -Be $_.Value
+
+        It 'Convert Simple(Explode) style serialized string to hashtable' {
+            $serialized = 'role=admin,firstName=Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple -Explode
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Simple(Explode) style serialized string to array' {
+            $serialized = '3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple -Explode
+            $result | Should -be  @(3, 4, 5)
+        }
+
+        It 'Convert Simple style serialized string to a primitive value' {
+            $serialized = '5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple
+            $result | Should -be 5
+        }
+
+        It 'Convert Simple style serialized string to hashtable' {
+            $serialized = 'role,admin,firstName,Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Simple style serialized string to array' {
+            $serialized = '3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple
+            $result | Should -be  @(3, 4, 5)
+        }
+
+
+        It 'Convert Label(Explode) style serialized string to a primitive value' {
+            $serialized = '.5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Label -Explode
+            $result | Should -be 5
+        }
+
+        It 'Convert Label(Explode) style serialized string to hashtable' {
+            $serialized = '.role=admin.firstName=Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Label -Explode
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Label(Explode) style serialized string to array' {
+            $serialized = '.3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Label -Explode
+            $result | Should -be  @(3, 4, 5)
+        }
+
+        It 'Convert Simple style serialized string to a primitive value' {
+            $serialized = '.5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Label
+            $result | Should -be 5
+        }
+
+        It 'Convert Label style serialized string to hashtable' {
+            $serialized = '.role,admin,firstName,Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Label
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Label style serialized string to array' {
+            $serialized = '.3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Label
+            $result | Should -be  @(3, 4, 5)
+        }
+
+
+
+        It 'Convert Matrix(Explode) style serialized string to a primitive value' {
+            $serialized = ';id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix -Explode
+            $result | Should -be 5
+        }
+
+        It 'Convert Matrix(Explode) style serialized string to hashtable' {
+            $serialized = ';role=admin;firstName=Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix -Explode
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Matrix(Explode) style serialized string to array' {
+            $serialized = ';id=3;id=4;id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix -Explode
+            $result | Should -be  @(3, 4, 5)
+        }
+
+        It 'Convert Simple style serialized string to a primitive value' {
+            $serialized = ';id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix
+            $result | Should -be 5
+        }
+
+        It 'Convert Matrix style serialized string to hashtable' {
+            $serialized = ';id=role,admin,firstName,Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Matrix style serialized string to array' {
+            $serialized = ';id=3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix
+            $result | Should -be  @(3, 4, 5)
+        }
+
+
+        It 'Convert Matrix(Explode) style serialized string to a primitive value' {
+            $serialized = ';id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix -Explode
+            $result | Should -be 5
+        }
+
+        It 'Convert Matrix(Explode) style serialized string to hashtable' {
+            $serialized = ';role=admin;firstName=Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix -Explode
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Matrix(Explode) style serialized string to array' {
+            $serialized = ';id=3;id=4;id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix -Explode
+            $result | Should -be  @(3, 4, 5)
+        }
+
+        It 'Convert Matrix style serialized string to a primitive value' {
+            $serialized = ';id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix
+            $result | Should -be 5
+        }
+
+        It 'Convert Matrix style serialized string to hashtable' {
+            $serialized = ';id=role,admin,firstName,Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Matrix style serialized string to array' {
+            $serialized = ';id=3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Matrix
+            $result | Should -be  @(3, 4, 5)
         }
     }
 
-    It 'should convert Label style serialized string to hashtable' {
-        $serialized = '.name.value.anotherName.anotherValue'
-        $result = ConvertFrom-PodeSerializedString -SerializedString $serialized
-        $expected = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
+    Describe 'Query Parameters' {
+        It 'Convert Form(Explode) style serialized string to a primitive value' {
+            $serialized = '?id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form -Explode
+            $result | Should -be 5
         }
-        $result.GetEnumerator() | ForEach-Object {
-            $expected[$_.Key] | Should -Be $_.Value
+
+        It 'Convert Form(Explode) style serialized string to hashtable' {
+            $serialized = '?role=admin&firstName=Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form -Explode
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Form(Explode) style serialized string to array' {
+            $serialized = '?id=3&id=4&id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form -Explode
+            $result | Should -be  @(3, 4, 5)
+        }
+
+        It 'Convert Form style serialized string to a primitive value' {
+            $serialized = '?id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form
+            $result | Should -be 5
+        }
+
+        It 'Convert Form style serialized string to hashtable' {
+            $serialized = '?id=role,admin,firstName,Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Form style serialized string to array' {
+            $serialized = '?id=3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form
+            $result | Should -be  @(3, 4, 5)
+        }
+
+
+        It 'Convert SpaceDelimited(Explode) style serialized string to array' {
+            $serialized = '?id=3&id=4&id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style SpaceDelimited -Explode
+            $result | Should -be  @(3, 4, 5)
+        }
+
+        It 'Convert SpaceDelimited style serialized string to array' {
+            $serialized = '?id=3%204%205'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style SpaceDelimited
+            $result | Should -be  @(3, 4, 5)
+        }
+
+
+        It 'Convert pipeDelimited(Explode) style serialized string to array' {
+            $serialized = '?id=3&id=4&id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style pipeDelimited -Explode
+            $result | Should -be  @(3, 4, 5)
+        }
+
+        It 'Convert pipeDelimited style serialized string to array' {
+            $serialized = '?id=3|4|5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style pipeDelimited
+            $result | Should -be  @(3, 4, 5)
+        }
+
+        It 'Convert DeepObject(Explode) style serialized string to hashtable' {
+            $serialized = '?id[role]=admin&id[firstName]=Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style DeepObject
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result.GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert DeepObject(Explode) style nested object serialized to hashtable' {
+            $serialized = '?id[role][type]=admin&id[role][level]=high&id[firstName]=Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style DeepObject
+            $expected = @{
+                role      = @{
+                    type  = 'admin'
+                    level = 'high'
+                }
+                firstName = 'Alex'
+            }
+            $result['role'].GetEnumerator() | ForEach-Object {
+                $expected['role'][$_.Key] | Should -Be $_.Value
+            }
+            $result['firstName']|Should -Be  $expected['firstName']
+        }
+
+    }
+
+
+    Describe 'Header Parameters' {
+        It 'Convert Simple(Explode) style serialized string to a primitive value' {
+            $serialized = 'X-MyHeader: 5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple -Explode
+            $result['X-MyHeader'] | Should -be 5
+        }
+
+        It 'Convert Simple(Explode) style serialized string to hashtable' {
+            $serialized = 'X-MyHeader: role=admin,firstName=Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple -Explode
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result['X-MyHeader'].GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Simple(Explode) style serialized string to array' {
+            $serialized = 'X-MyHeader: 3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple -Explode
+            $result['X-MyHeader'] | Should -be  @(3, 4, 5)
+        }
+
+        It 'Convert Simple style serialized string to a primitive value' {
+            $serialized = 'X-MyHeader: 5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple
+            $result['X-MyHeader'] | Should -be 5
+        }
+
+        It 'Convert Simple style serialized string to hashtable' {
+            $serialized = 'X-MyHeader: role,admin,firstName,Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result['X-MyHeader'].GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
+        }
+
+        It 'Convert Simple style serialized string to array' {
+            $serialized = 'X-MyHeader: 3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Simple
+            $result['X-MyHeader'] | Should -be  @(3, 4, 5)
         }
     }
 
-    It 'should convert Matrix style serialized string to hashtable' {
-        $serialized = ';name=value;anotherName=anotherValue'
-        $result = ConvertFrom-PodeSerializedString -SerializedString $serialized
-        $expected = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
+    Describe 'Cookie Parameters' {
+        It 'Convert Form(Explode) style serialized string to a primitive value' {
+            $serialized = 'Cookie: id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form -Explode
+            $result['Cookie'] | Should -be 5
         }
-        $result.GetEnumerator() | ForEach-Object {
-            $expected[$_.Key] | Should -Be $_.Value
-        }
-    }
 
-    It 'should convert Query style serialized string to hashtable' {
-        $serialized = 'name=value&anotherName=anotherValue'
-        $result = ConvertFrom-PodeSerializedString -SerializedString $serialized
-        $expected = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
+        It 'Convert Form style serialized string to a primitive value' {
+            $serialized = 'Cookie: id=5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form
+            $result['Cookie'] | Should -be 5
         }
-        $result.GetEnumerator() | ForEach-Object {
-            $expected[$_.Key] | Should -Be $_.Value
-        }
-    }
 
-    It 'should convert Form style serialized string to hashtable' {
-        $serialized = 'name=value&anotherName=anotherValue'
-        $result = ConvertFrom-PodeSerializedString -SerializedString $serialized
-        $expected = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
+        It 'Convert Form style serialized string to hashtable' {
+            $serialized = 'Cookie: id=role,admin,firstName,Alex'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form
+            $expected = @{
+                role      = 'admin'
+                firstName = 'Alex'
+            }
+            $result['Cookie'].GetEnumerator() | ForEach-Object {
+                $expected[$_.Key] | Should -Be $_.Value
+            }
         }
-        $result.GetEnumerator() | ForEach-Object {
-            $expected[$_.Key] | Should -Be $_.Value
-        }
-    }
 
-    It 'should convert SpaceDelimited style serialized string to hashtable' {
-        $serialized = 'name=value anotherName=anotherValue'
-        $result = ConvertFrom-PodeSerializedString -SerializedString $serialized
-        $expected = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
-        }
-        $result.GetEnumerator() | ForEach-Object {
-            $expected[$_.Key] | Should -Be $_.Value
+        It 'Convert Form style serialized string to array' {
+            $serialized = 'Cookie: id=3,4,5'
+            $result = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style Form
+            $result['Cookie'] | Should -be  @(3, 4, 5)
         }
     }
-
-    It 'should convert PipeDelimited style serialized string to hashtable' {
-        $serialized = 'name=value|anotherName=anotherValue'
-        $result = ConvertFrom-PodeSerializedString -SerializedString $serialized
-        $expected = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
-        }
-        $result.GetEnumerator() | ForEach-Object {
-            $expected[$_.Key] | Should -Be $_.Value
-        }
-    }
-
-    It 'should convert DeepObject style serialized string to hashtable' {
-        $serialized = 'name[name]=value,anotherName[anotherName]=anotherValue'
-        $result = ConvertFrom-PodeSerializedString -SerializedString $serialized
-        $expected = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
-        }
-        $result.GetEnumerator() | ForEach-Object {
-            $expected[$_.Key] | Should -Be $_.Value
-        }
-    }
-
-    It 'should convert DeepObjectExplode style serialized string to hashtable' {
-        $serialized = 'name[name]=value&anotherName[anotherName]=anotherValue'
-        $result = ConvertFrom-PodeSerializedString -SerializedString $serialized
-        $expected = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
-        }
-        $result.GetEnumerator() | ForEach-Object {
-            $expected[$_.Key] | Should -Be $_.Value
-        }
-    }
+    <#
 
     It 'should throw an error for unsupported serialization format' {
         $serialized = 'unsupportedFormat'
         { ConvertFrom-PodeSerializedString -SerializedString $serialized } | Should -Throw ($PodeLocale.unsupportedSerializationTypeExceptionMessage)
     }
+    #>
 }
 
 
@@ -172,7 +452,7 @@ Describe 'ConvertTo-PodeSerializedString' {
             anotherName = 'anotherValue'
         }
         $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Label'
-        $result -eq '.name.value.anotherName.anotherValue' -or   $result -eq '.anotherName.anotherValue.name.value'| Should -BeTrue
+        $result -eq '.name.value.anotherName.anotherValue' -or $result -eq '.anotherName.anotherValue.name.value' | Should -BeTrue
     }
 
     It 'should convert hashtable to Matrix style serialized string' {
