@@ -285,16 +285,6 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duración inválida para Access-Control-Max-Age proporcionada: {0}. Debe ser mayor que 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La definición de OpenAPI con el nombre {0} ya existe.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag no se puede usar dentro de un 'ScriptBlock' de Select-PodeOADefinition."
-    invalidQueryFormatExceptionMessage                                = 'La consulta proporcionada tiene un formato no válido.'
-    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} no existe.'
-    asyncRouteOperationDoesNotExistExceptionMessage                   = 'No existe ninguna operación de ruta asíncrona con Id {0}.'
-    scriptContainsDisallowedCommandExceptionMessage                   = "El script no puede contener el comando '{0}'."
-    invalidQueryElementExceptionMessage                               = 'La consulta proporcionada no es válida. {0} no es un elemento válido para una consulta.'
-    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress solo se puede usar dentro de un Scriptblock de Ruta Asíncrona.'
-    progressLimitLowerThanCurrentExceptionMessage                     = 'Un límite de progreso no puede ser inferior al progreso actual.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'La etiqueta de definición para una Route no se puede cambiar.'
-    openApiDefinitionsMismatchExceptionMessage                        = '{0} varía entre diferentes definiciones de OpenAPI.'
-    routeNotMarkedAsAsyncExceptionMessage                             = "La ruta '{0}' no está marcada como una Ruta Asíncrona."
-    functionCannotBeInvokedMultipleTimesExceptionMessage              = "La función '{0}' no se puede invocar varias veces para la misma ruta '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = 'Las operaciones {0} no pueden tener un cuerpo de solicitud.'
 }

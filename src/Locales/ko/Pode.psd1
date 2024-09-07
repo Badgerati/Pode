@@ -286,15 +286,5 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '이름이 {0}인 OpenAPI 정의가 이미 존재합니다.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag은 Select-PodeOADefinition 'ScriptBlock' 내에서 사용할 수 없습니다."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
-    invalidQueryFormatExceptionMessage                                = '제공된 쿼리의 형식이 잘못되었습니다.'
-    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} 존재하지 않습니다.'
-    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id {0}의 비동기 경로 작업이 존재하지 않습니다.'
-    scriptContainsDisallowedCommandExceptionMessage                   = "스크립트에 '{0}' 명령을 포함할 수 없습니다."
-    invalidQueryElementExceptionMessage                               = '제공된 쿼리가 잘못되었습니다. {0} 는 쿼리에 대한 유효한 요소가 아닙니다.'
-    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgress는 비동기 경로 스크립트 블록 내에서만 사용할 수 있습니다.'
-    progressLimitLowerThanCurrentExceptionMessage                     = '진행 한도는 현재 진행보다 낮을 수 없습니다.'
-    openApiDefinitionsMismatchExceptionMessage                        = '{0} 는 서로 다른 OpenAPI 정의 간에 다릅니다.'
-    routeNotMarkedAsAsyncExceptionMessage                             = "경로 '{0}' 이(가) 비동기 경로로 표시되지 않았습니다."
-    functionCannotBeInvokedMultipleTimesExceptionMessage              = "함수 '{0}' 를 동일한 경로 '{1}' 에 대해 여러 번 호출할 수 없습니다."
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 작업에는 요청 본문이 있을 수 없습니다.'
 }

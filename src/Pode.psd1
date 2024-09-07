@@ -166,24 +166,6 @@
         'Test-PodeStaticRoute',
         'Test-PodeSignalRoute',
 
-        #Async
-        'Set-PodeAsyncRoute',
-        'Add-PodeAsyncRouteStop',
-        'Add-PodeAsyncRouteGet',
-        'Add-PodeAsyncRouteQuery',
-        'Stop-PodeAsyncRouteOperation',
-        'Get-PodeAsyncRouteOperationByFilter',
-        'Test-PodeAsyncRouteOperation',
-        'Set-PodeAsyncRouteProgress',
-        'Get-PodeAsyncRouteProgress',
-        'Set-PodeAsyncRouteOASchemaName',
-        'Set-PodeAsyncRoutePermission',
-        'Get-PodeAsyncRouteOperation',
-        'Add-PodeAsyncRouteCallback',
-        'Add-PodeAsyncRouteSse',
-        'Get-PodeAsyncRouteUserIdentifierField',
-        'Set-PodeAsyncRouteUserIdentifierField',
-
         # handlers
         'Add-PodeHandler',
         'Remove-PodeHandler',

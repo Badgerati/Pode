@@ -286,15 +286,5 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
-    invalidQueryFormatExceptionMessage                                = '提供的查询格式无效。'
-    asyncIdDoesNotExistExceptionMessage                               = '异步 {0} 不存在。'
-    asyncRouteOperationDoesNotExistExceptionMessage                   = '不存在 ID 为 {0} 的异步路由操作。'
-    scriptContainsDisallowedCommandExceptionMessage                   = "脚本不允许包含命令 '{0}'。"
-    invalidQueryElementExceptionMessage                               = '提供的查询无效。{0} 不是有效的查询元素。'
-    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress 只能在异步路由脚本块中使用。'
-    progressLimitLowerThanCurrentExceptionMessage                     = '进度限制不能低于当前进度。'
-    openApiDefinitionsMismatchExceptionMessage                        = '{0} 在不同的 OpenAPI 定义之间有所不同。'
-    routeNotMarkedAsAsyncExceptionMessage                             = "路由 '{0}' 未标记为异步路由。"
-    functionCannotBeInvokedMultipleTimesExceptionMessage              = "函数 '{0}' 不能在同一路由 '{1}' 上多次调用。"
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
 }

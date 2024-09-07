@@ -286,15 +286,6 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
-    invalidQueryFormatExceptionMessage                                = '提供されたクエリには無効な形式があります。'
-    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} は存在しません.'
-    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Id {0} の非同期ルート操作は存在しません.'
-    scriptContainsDisallowedCommandExceptionMessage                   = "スクリプトにコマンド '{0}' を含めることはできません。"
-    invalidQueryElementExceptionMessage                               = '提供されたクエリは無効です。 {0} はクエリの有効な要素ではありません。'
-    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncProgressは、非同期ルートスクリプトブロック内でのみ使用できます。'
-    progressLimitLowerThanCurrentExceptionMessage                     = '進行状況の制限は、現在の進行状況より低くすることはできません。'
-    openApiDefinitionsMismatchExceptionMessage                        = '{0} は異なる OpenAPI 定義間で異なります。'
-    routeNotMarkedAsAsyncExceptionMessage                             = "ルート '{0}' は非同期ルートとしてマークされていません。"
-    functionCannotBeInvokedMultipleTimesExceptionMessage              = "関数 '{0}' を同じルート '{1}' に対して複数回呼び出すことはできません。"
     getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
 }
+
