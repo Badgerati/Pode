@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'Der Name des Ansichtsordners existiert bereits: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Kein Name für das Zurücksetzen des WebSocket angegeben.'
     mergeDefaultAuthNotInListExceptionMessage                         = "Die MergeDefault-Authentifizierung '{0}' befindet sich nicht in der angegebenen Authentifizierungsliste."
-    descriptionRequiredExceptionMessage                               = 'Eine Beschreibung ist erforderlich für Pfad:{0} Antwort:{1}'
+    descriptionRequiredExceptionMessage                               = 'Eine Beschreibung ist erforderlich.'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'Der Seitenname sollte einen gültigen alphanumerischen Wert haben: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'Der Standardwert ist kein Boolean und gehört nicht zum Enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'Das OpenApi-Komponentenschema {0} existiert nicht.'
@@ -285,6 +285,16 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ungültige Access-Control-Max-Age-Dauer angegeben: {0}. Sollte größer als 0 sein.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'Die OpenAPI-Definition mit dem Namen {0} existiert bereits.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kann nicht innerhalb eines 'ScriptBlock' von Select-PodeOADefinition verwendet werden."
+    invalidQueryFormatExceptionMessage                                = 'Die angegebene Abfrage hat ein ungültiges Format.'
+    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} existiert nicht.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Keine Async-Route-Operation mit der Id {0} existiert.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "Das Skript darf den Befehl '{0}' nicht enthalten."
+    invalidQueryElementExceptionMessage                               = 'Die bereitgestellte Abfrage ist ungültig. {0} ist kein gültiges Element für eine Abfrage.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress kann nur innerhalb eines Async-Route-Skriptblocks verwendet werden.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'Ein Fortschrittslimit darf nicht niedriger als der aktuelle Fortschritt sein.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitionstag für eine Route kann nicht geändert werden.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} variiert zwischen verschiedenen OpenAPI-Definitionen.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "Die Route '{0}' ist nicht als asynchrone Route markiert."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "Die Funktion '{0}' kann nicht mehrmals für dieselbe Route '{1}' aufgerufen werden."
     getRequestBodyNotAllowedExceptionMessage                          = '{0}-Operationen können keinen Anforderungstext haben.'
-}
+  }

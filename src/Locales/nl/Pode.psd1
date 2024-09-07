@@ -285,7 +285,16 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ongeldige Access-Control-Max-Age duur opgegeven: {0}. Moet groter zijn dan 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
+    invalidQueryFormatExceptionMessage                                = 'De opgegeven query heeft een ongeldig formaat.'
+    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} bestaat niet.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = 'Er bestaat geen Async Route-operatie met Id {0}.'
+    scriptContainsDisallowedCommandExceptionMessage                   = "Script mag het commando '{0}' niet bevatten."
+    invalidQueryElementExceptionMessage                               = 'De opgegeven query is ongeldig. {0} is geen geldig element voor een query.'
+    setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress kan alleen worden gebruikt binnen een Async Route Scriptblock.'
+    progressLimitLowerThanCurrentExceptionMessage                     = 'Een voortgangslimiet kan niet lager zijn dan de huidige voortgang.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} verschilt tussen verschillende OpenAPI-definities.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "De route '{0}' is niet gemarkeerd als een asynchrone route."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "De functie '{0}' kan niet meerdere keren worden aangeroepen voor dezelfde route '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = '{0}-operaties kunnen geen Request Body hebben.'
 }
-

@@ -805,6 +805,9 @@ Show the object content
 .PARAMETER ShowType
 Show the Object Type
 
+.PARAMETER Label
+Add a label to the object
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
@@ -829,7 +832,11 @@ function Write-PodeHost {
 
         [Parameter( Mandatory = $false, ParameterSetName = 'object')]
         [switch]
-        $ShowType
+        $ShowType,
+
+        [Parameter( Mandatory = $false, ParameterSetName = 'object')]
+        [string]
+        $Label
     )
 
     if ($PodeContext.Server.Quiet) {
@@ -847,6 +854,9 @@ function Write-PodeHost {
             $Object = $Object | Out-String
             if ($ShowType) {
                 $Object = "`tTypeName: $type`n$Object"
+            }
+            if ($Label){
+                $Object = "`tName: $Label$Object"
             }
         }
     }

@@ -285,6 +285,16 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durata non valida fornita per Access-Control-Max-Age: {0}. Deve essere maggiore di 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La definizione OpenAPI denominata {0} esiste già.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag non può essere utilizzato all'interno di un 'ScriptBlock' di Select-PodeOADefinition."
+    invalidQueryFormatExceptionMessage                                = 'La query fornita ha un formato non valido.'
+    asyncIdDoesNotExistExceptionMessage                               = 'Async {0} non esiste.'
+    asyncRouteOperationDoesNotExistExceptionMessage                   = "Nessuna operazione di percorso asincrono esiste con l'Id {0}."
+    scriptContainsDisallowedCommandExceptionMessage                   = "Lo script non può contenere il comando '{0}'."
+    invalidQueryElementExceptionMessage                               = 'La query fornita non è valida. {0} non è un elemento valido per una query.'
+    setPodeAsyncProgressExceptionMessage                              = "Set-PodeAsyncRouteProgress può essere utilizzato solo all'interno di uno Scriptblock di un percorso asincrono."
+    progressLimitLowerThanCurrentExceptionMessage                     = "Un limite di progresso non può essere inferiore all'attuale progresso."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Il tag di definizione per una Route non può essere cambiato.'
+    openApiDefinitionsMismatchExceptionMessage                        = '{0} varia tra diverse definizioni OpenAPI.'
+    routeNotMarkedAsAsyncExceptionMessage                             = "Il percorso '{0}' non è asincrono."
+    functionCannotBeInvokedMultipleTimesExceptionMessage              = "La funzione '{0}' non può essere invocata più volte per lo stesso percorso '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = 'Le operazioni {0} non possono avere un corpo della richiesta.'
 }
