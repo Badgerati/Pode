@@ -39,15 +39,16 @@ The scriptblock for the route will have access to the `$WebEvent` variable which
 
 You can add your routes straight into the [`Start-PodeServer`](../../../Functions/Core/Start-PodeServer) scriptblock, or separate them into different files. These files can then be dot-sourced, or you can use [`Use-PodeRoutes`](../../../Functions/Routes/Use-PodeRoutes) to automatically load all ps1 files within a `/routes` directory at the root of your server.
 
-## Payloads
 
-The following is an example of using data from a request's payload - ie, the data in the body of POST request. To retrieve values from the payload you can use the `.Data` property on the `$WebEvent` variable to a route's logic.
+## Body Payloads
 
-Alternatively, you can use the Get-PodeBodyData function to retrieve the body data.
+The following is an example of using data from a request's payload—i.e., the data in the body of a POST request. To retrieve values from the payload, you can use the `.Data` property on the `$WebEvent` variable in a route's logic.
 
-Depending the the Content-Type supplied, Pode has inbuilt body-parsing logic for JSON, XML, CSV, and Form data.
+Alternatively, you can use the `Get-PodeBodyData` function to retrieve the body data, with additional support for deserialization.
 
-This example will get the `userId` and "find" user, returning the users data:
+Depending on the Content-Type supplied, Pode has built-in body-parsing logic for JSON, XML, CSV, and Form data.
+
+This example will get the `userId` and "find" the user, returning the user's data:
 
 ```powershell
 Start-PodeServer {
@@ -73,14 +74,16 @@ Invoke-WebRequest -Uri 'http://localhost:8080/users' -Method Post -Body '{ "user
 ```
 
 !!! important
-    The `ContentType` is required as it informs Pode on how to parse the requests payload. For example, if the content type were `application/json`, then Pode will attempt to parse the body of the request as JSON - converting it to a hashtable.
+    The `ContentType` is required as it informs Pode on how to parse the request's payload. For example, if the content type is `application/json`, Pode will attempt to parse the body of the request as JSON—converting it to a hashtable.
 
 !!! important
-    On PowerShell 5 referencing JSON data on `$WebEvent.Data` must be done as `$WebEvent.Data.userId`. This also works in PowerShell 6+, but you can also use `$WebEvent.Data['userId']` on PowerShell 6+.
+    On PowerShell 5, referencing JSON data on `$WebEvent.Data` must be done as `$WebEvent.Data.userId`. This also works in PowerShell 6+, but you can also use `$WebEvent.Data['userId']` on PowerShell 6+.
 
-Alternatively, you can use the Get-PodeBodyData function to retrieve the body data. This function works similarly to the .Data property on $WebEvent and supports the same content types.
+### Using Get-PodeBodyData
 
-Here is the same example using Get-PodeBodyData:
+Alternatively, you can use the `Get-PodeBodyData` function to retrieve the body data. This function works similarly to the `.Data` property on `$WebEvent` and supports the same content types.
+
+Here is the same example using `Get-PodeBodyData`:
 
 ```powershell
 Start-PodeServer {
@@ -102,13 +105,47 @@ Start-PodeServer {
 }
 ```
 
-## Query Strings
+### Deserialization with Get-PodeBodyData
 
-The following is an example of using data from a request's payload - i.e., the data in the body of a POST request. To retrieve values from the payload, you can use the `Data` property on the `$WebEvent` variable in a route's logic.
+The `Get-PodeBodyData` function can also deserialize body data from requests, allowing for more complex data handling scenarios. This feature is especially useful when dealing with serialized data structures that require specific interpretation styles.
 
-Alternatively, you can use the `Get-PodeBodyData` function to retrieve the body data.
+To enable deserialization, use the `-Deserialize` switch along with the following options:
 
-Depending on the Content-Type supplied, Pode has inbuilt body-parsing logic for JSON, XML, CSV, and Form data.
+- **`-NoExplode`**: Prevents deserialization from exploding arrays in the body data. This is useful when dealing with comma-separated values where array expansion is not desired.
+- **`-Style`**: Defines the deserialization style (`'Simple'`, `'Label'`, `'Matrix'`, `'Form'`, `'SpaceDelimited'`, `'PipeDelimited'`, `'DeepObject'`) to interpret the body data correctly. The default style is `'Form'`.
+- **`-KeyName`**: Specifies the key name to use when deserializing, allowing accurate mapping of the body data. The default value for `KeyName` is `'id'`.
+
+### Example with Deserialization
+
+This example demonstrates deserialization of body data using specific styles and options:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Post -Path '/items' -ScriptBlock {
+        # retrieve and deserialize the body data
+        $body = Get-PodeBodyData -Deserialize -Style 'Matrix' -NoExplode
+
+        # get the item based on the deserialized data
+        $item = Get-DummyItem -ItemId $body.id
+
+        # return the item details
+        Write-PodeJsonResponse -Value @{
+            Name = $item.name
+            Quantity = $item.quantity
+        }
+    }
+}
+```
+
+In this example, `Get-PodeBodyData` is used to deserialize the body data with the `'Matrix'` style and prevent array explosion (`-NoExplode`). This approach provides flexible and precise handling of incoming body data, enhancing the capability of your Pode routes to manage complex payloads.
+
+## Query Parameters
+
+The following is an example of using data from a request's query string. To retrieve values from the query parameters, you can use the `Query` property on the `$WebEvent` variable in a route's logic.
+
+Alternatively, you can use the `Get-PodeQueryParameter` function to retrieve the query parameter data, with additional support for deserialization.
 
 This example will return a user based on the `userId` supplied:
 
@@ -135,7 +172,9 @@ The following request will invoke the above route:
 Invoke-WebRequest -Uri 'http://localhost:8080/users?userId=12345' -Method Get
 ```
 
-Alternatively, you can use the Get-PodeQueryParameter function to retrieve the query data. This function works similarly to the `Query` property on `$WebEvent`.
+### Using Get-PodeQueryParameter
+
+Alternatively, you can use the `Get-PodeQueryParameter` function to retrieve the query data. This function works similarly to the `Query` property on `$WebEvent` but provides additional options for deserialization when needed.
 
 Here is the same example using `Get-PodeQueryParameter`:
 
@@ -159,13 +198,47 @@ Start-PodeServer {
 }
 ```
 
-## Parameters
+#### Deserialization with Get-PodeQueryParameter
+
+The `Get-PodeQueryParameter` function can also deserialize query parameters passed in the URL, using specific styles to interpret the data correctly. This feature is particularly useful when handling complex data structures or encoded parameter values.
+
+To enable deserialization, use the `-Deserialize` switch along with the following options:
+
+- **`-NoExplode`**: Prevents deserialization from exploding arrays when handling comma-separated values. This is useful when array expansion is not desired.
+- **`-Style`**: Defines the deserialization style (`'Simple'`, `'Label'`, `'Matrix'`, `'Form'`, `'SpaceDelimited'`, `'PipeDelimited'`, `'DeepObject'`) to interpret the query parameter value correctly. The default style is `'Form'`.
+- **`-KeyName`**: Specifies the key name to use when deserializing, allowing you to map the query parameter data accurately. The default value for `KeyName` is `'id'`.
+
+#### Example with Deserialization
+
+This example demonstrates deserialization of a query parameter with specific styles and options:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/items' -ScriptBlock {
+        # retrieve and deserialize the 'filter' query parameter
+        $filter = Get-PodeQueryParameter -Name 'filter' -Deserialize -Style 'SpaceDelimited' -NoExplode
+
+        # get items based on the deserialized filter data
+        $items = Get-DummyItems -Filter $filter
+
+        # return the item details
+        Write-PodeJsonResponse -Value $items
+    }
+}
+```
+
+In this example, the `Get-PodeQueryParameter` function is used to deserialize the `filter` query parameter, interpreting it according to the specified style (`SpaceDelimited`) and preventing array explosion (`-NoExplode`). This approach allows for dynamic and precise handling of complex query data, enhancing the flexibility of your Pode routes.
+
+
+## Path Parameters
 
 The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters, you can use the `Parameters` property from the `$WebEvent` variable.
 
 Alternatively, you can use the `Get-PodePathParameter` function to retrieve the parameter data.
 
-This example will get the `:userId` and "find" user, returning the users data:
+This example will get the `:userId` and "find" user, returning the user's data:
 
 ```powershell
 Start-PodeServer {
@@ -190,9 +263,11 @@ The following request will invoke the above route:
 Invoke-WebRequest -Uri 'http://localhost:8080/users/12345' -Method Get
 ```
 
-Alternatively, you can use the Get-PodePathParameter function to retrieve the parameter data. This function works similarly to the `Parameters` property on `$WebEvent`.
+### Using Get-PodePathParameter
 
-Here is the same example using Get-PodePathParameter:
+Alternatively, you can use the `Get-PodePathParameter` function to retrieve the parameter data. This function works similarly to the `Parameters` property on `$WebEvent` but provides additional options for deserialization when needed.
+
+Here is the same example using `Get-PodePathParameter`:
 
 ```powershell
 Start-PodeServer {
@@ -214,9 +289,45 @@ Start-PodeServer {
 }
 ```
 
+#### Deserialization with Get-PodePathParameter
+
+The `Get-PodePathParameter` function can handle deserialization of parameters passed in the URL path, query string, or body, using specific styles to interpret the data correctly. This is useful when dealing with more complex data structures or encoded parameter values.
+
+To enable deserialization, use the `-Deserialize` switch along with the following options:
+
+- **`-Explode`**: Specifies whether to explode arrays when deserializing, useful when parameters contain comma-separated values.
+- **`-Style`**: Defines the deserialization style (`'Simple'`, `'Label'`, or `'Matrix'`) to interpret the parameter value correctly. The default style is `'Simple'`.
+- **`-KeyName`**: Specifies the key name to use when deserializing, allowing you to map the parameter data accurately. The default value for `KeyName` is `'id'`.
+
+#### Example with Deserialization
+
+This example demonstrates deserialization of a parameter that is styled and exploded as part of the request:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/items/:itemId' -ScriptBlock {
+        # retrieve and deserialize the 'itemId' parameter
+        $itemId = Get-PodePathParameter -Name 'itemId' -Deserialize -Style 'Label' -Explode
+
+        # get the item based on the deserialized data
+        $item = Get-DummyItem -ItemId $itemId
+
+        # return the item details
+        Write-PodeJsonResponse -Value @{
+            Name = $item.name
+            Quantity = $item.quantity
+        }
+    }
+}
+```
+
+In this example, the `Get-PodePathParameter` function is used to deserialize the `itemId` parameter, interpreting it according to the specified style (`Label`) and handling arrays if present (`-Explode`). The default `KeyName` is `'id'`, but it can be customized as needed. This approach allows for dynamic and precise handling of incoming request data, making your Pode routes more versatile and resilient.
+
 ## Headers
 
-The following is an example of using values supplied in a request's headers. To retrieve values from the headers, you can use the `Headers` property from the `$WebEvent.Request` variable. Alternatively, you can use the Get-PodeHeader function to retrieve the header data.
+The following is an example of using values supplied in a request's headers. To retrieve values from the headers, you can use the `Headers` property from the `$WebEvent.Request` variable. Alternatively, you can use the `Get-PodeHeader` function to retrieve the header data.
 
 This example will get the Authorization header and validate the token, returning a success message:
 
@@ -229,7 +340,7 @@ Start-PodeServer {
         $token = $WebEvent.Request.Headers['Authorization']
 
         # validate the token
-        $isValid = Test-PodeJwt  -payload $token
+        $isValid = Test-PodeJwt -payload $token
 
         # return the result
         Write-PodeJsonResponse -Value @{
@@ -245,10 +356,9 @@ The following request will invoke the above route:
 Invoke-WebRequest -Uri 'http://localhost:8080/validate' -Method Get -Headers @{ Authorization = 'Bearer some_token' }
 ```
 
+Alternatively, you can use the `Get-PodeHeader` function to retrieve the header data. This function works similarly to the `Headers` property on `$WebEvent.Request`.
 
-Alternatively, you can use the Get-PodeHeader function to retrieve the header data. This function works similarly to the `Headers` property on `$WebEvent.Request`.
-
-Here is the same example using Get-PodeHeader:
+Here is the same example using `Get-PodeHeader`:
 
 ```powershell
 Start-PodeServer {
@@ -259,7 +369,7 @@ Start-PodeServer {
         $token = Get-PodeHeader -Name 'Authorization'
 
         # validate the token
-        $isValid = Test-PodeJwt  -payload $token
+        $isValid = Test-PodeJwt -payload $token
 
         # return the result
         Write-PodeJsonResponse -Value @{
@@ -269,12 +379,48 @@ Start-PodeServer {
 }
 ```
 
+### Deserialization with Get-PodeHeader
+
+The `Get-PodeHeader` function can also deserialize header values, enabling more advanced handling of serialized data sent in headers. This feature is useful when dealing with complex data structures or when headers contain encoded or serialized content.
+
+To enable deserialization, use the `-Deserialize` switch along with the following options:
+
+- **`-Explode`**: Specifies whether the deserialization process should explode arrays in the header value. This is useful when handling comma-separated values within the header.
+- **`-Deserialize`**: Indicates that the retrieved header value should be deserialized, interpreting the content based on the deserialization style and options.
+
+### Example with Deserialization
+
+This example demonstrates deserialization of a header value:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/deserialize' -ScriptBlock {
+        # retrieve and deserialize the 'X-SerializedHeader' header
+        $headerData = Get-PodeHeader -Name 'X-SerializedHeader' -Deserialize -Explode
+
+        # process the deserialized header data
+        # (example processing logic here)
+
+        # return the processed header data
+        Write-PodeJsonResponse -Value @{
+            HeaderData = $headerData
+        }
+    }
+}
+```
+
+In this example, `Get-PodeHeader` is used to deserialize the `X-SerializedHeader` header, interpreting it according to the provided deserialization options. The `-Explode` switch ensures that any arrays within the header value are properly expanded during deserialization.
+
+For further information on general usage and retrieving headers, please refer to the [Headers Documentation](Headers.md).
+
 
 ## Cookies
 
 The following is an example of using values supplied in a request's cookies. To retrieve values from the cookies, you can use the `Cookies` property from the `$WebEvent` variable.
 
-Alternatively, you can use the `Get-PodeCookie` function to retrieve the cookie data.
+Alternatively, you can use the `Get-PodeCookie` function to retrieve the cookie data, with additional support for deserialization and secure handling.
 
 This example will get the `SessionId` cookie and use it to authenticate the user, returning a success message:
 
@@ -303,7 +449,9 @@ The following request will invoke the above route:
 Invoke-WebRequest -Uri 'http://localhost:8080/authenticate' -Method Get -Headers @{ Cookie = 'SessionId=abc123' }
 ```
 
-Alternatively, you can use the `Get-PodeCookie` function to retrieve the cookie data. This function works similarly to the `Cookies` property on `$WebEvent`.
+### Using Get-PodeCookie
+
+Alternatively, you can use the `Get-PodeCookie` function to retrieve the cookie data. This function works similarly to the `Cookies` property on `$WebEvent`, but it provides additional options for deserialization and secure cookie handling.
 
 Here is the same example using `Get-PodeCookie`:
 
@@ -325,6 +473,42 @@ Start-PodeServer {
     }
 }
 ```
+
+### Deserialization with Get-PodeCookie
+
+The `Get-PodeCookie` function can also deserialize cookie values, allowing for more complex handling of serialized data sent in cookies. This feature is particularly useful when cookies contain encoded or structured content that needs specific parsing.
+
+To enable deserialization, use the `-Deserialize` switch along with the following options:
+
+- **`-NoExplode`**: Prevents deserialization from exploding arrays in the cookie value. This is useful when handling comma-separated values where array expansion is not desired.
+- **`-Deserialize`**: Indicates that the retrieved cookie value should be deserialized, interpreting the content based on the provided deserialization style and options.
+
+### Example with Deserialization
+
+This example demonstrates deserialization of a cookie value:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/deserialize-cookie' -ScriptBlock {
+        # retrieve and deserialize the 'Session' cookie
+        $sessionData = Get-PodeCookie -Name 'Session' -Deserialize -NoExplode
+
+        # process the deserialized cookie data
+        # (example processing logic here)
+
+        # return the processed cookie data
+        Write-PodeJsonResponse -Value @{
+            SessionData = $sessionData
+        }
+    }
+}
+```
+
+In this example, `Get-PodeCookie` is used to deserialize the `Session` cookie, interpreting it according to the provided deserialization options. The `-NoExplode` switch ensures that any arrays within the cookie value are not expanded during deserialization.
+
+For further information on general usage and retrieving cookies, please refer to the [Headers Documentation](Cookies.md).
 
 ## Script from File
 

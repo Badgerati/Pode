@@ -106,31 +106,35 @@ function Set-PodeCookie {
     Add-PodeHeader -Name 'Set-Cookie' -Value (ConvertTo-PodeCookieString -Cookie $cookie)
     return (ConvertTo-PodeCookie -Cookie $cookie)
 }
-
 <#
 .SYNOPSIS
     Retrieves a specified cookie from the incoming request.
 
 .DESCRIPTION
-    The `Get-PodeCookie` function retrieves a cookie from the incoming request. Optionally, it can unsign the cookie's value using a secret, with an additional option to extend the secret using the client request's UserAgent and RemoteIPAddress. It also provides the ability to return the raw .NET Cookie object for direct manipulation or deserialize serialized cookie values.
+    The `Get-PodeCookie` function retrieves a cookie from the incoming request. It can unsign the cookie's value using a specified secret, which can be extended with the client request's UserAgent and RemoteIPAddress if `-Strict` is specified. The function also allows for returning the raw .NET Cookie object for direct manipulation or deserializing serialized cookie values for more complex handling.
 
 .PARAMETER Name
-    The name of the cookie to retrieve.
+    The name of the cookie to retrieve. This parameter is mandatory.
 
 .PARAMETER Secret
-    The secret used to unsign the cookie's value. This parameter is optional and applicable only in the 'builtin' parameter set.
+    The secret used to unsign the cookie's value, ensuring the integrity and authenticity of the cookie data.
+    Applicable only in the 'BuiltIn' parameter set.
 
 .PARAMETER Strict
-    If specified, the secret is extended using the client's UserAgent and RemoteIPAddress. This parameter is optional and applicable only in the 'builtin' parameter set.
+    If specified, the secret is extended using the client's UserAgent and RemoteIPAddress, adding an extra layer of
+    security when unsigning the cookie. Applicable only in the 'BuiltIn' parameter set.
 
 .PARAMETER Raw
-    If specified, the cookie returned will be the raw .NET Cookie object, allowing for direct manipulation. This parameter is optional and applicable only in the 'builtin' parameter set.
+    If specified, the cookie returned will be the raw .NET Cookie object, allowing for direct manipulation of
+    the cookie. This is useful for scenarios where the full cookie object is needed. Applicable only in the 'BuiltIn' parameter set.
+
+.PARAMETER Deserialize
+    Indicates that the retrieved cookie value should be deserialized. When this switch is used, the value will be
+    interpreted based on the deserialization options provided. This parameter is mandatory in the 'Deserialize' parameter set.
 
 .PARAMETER NoExplode
-    Prevents deserialization from exploding arrays in the cookie value. This parameter is optional and applicable only in the 'Serialize' parameter set.
-
-.PARAMETER Serialize
-    Indicates that the retrieved cookie value should be deserialized. This parameter is mandatory in the 'Serialize' parameter set.
+    Prevents deserialization from exploding arrays in the cookie value, which is useful when handling comma-separated
+    values without expanding them into arrays. Applicable only when the `-Deserialize` switch is used.
 
 .EXAMPLE
     Get-PodeCookie -Name 'Views'
@@ -141,18 +145,22 @@ function Set-PodeCookie {
     Retrieves and unsigns the 'Views' cookie using the specified secret.
 
 .EXAMPLE
-    Get-PodeCookie -Name 'Session' -Serialize -NoExplode
+    Get-PodeCookie -Name 'Session' -Deserialize -NoExplode
     Retrieves and deserializes the 'Session' cookie value without exploding arrays.
 
 .EXAMPLE
     Get-PodeCookie -Name 'AuthToken' -Raw
     Retrieves the raw .NET Cookie object for the 'AuthToken' cookie, allowing for direct manipulation.
-#>
 
+.NOTES
+    This function should be used within a route's script block in a Pode server. The `-Deserialize` switch provides
+    advanced handling of serialized cookie values, while the `-Secret` and `-Strict` options offer secure methods for
+    unsigning cookies.
+#>
 function Get-PodeCookie {
     [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
     param(
-        [Parameter(Mandatory = $true, ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
         [Parameter(Mandatory = $true, ParameterSetName = 'BuiltIn')]
         [string]
         $Name,
@@ -169,13 +177,13 @@ function Get-PodeCookie {
         [switch]
         $Raw,
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(ParameterSetName = 'Deserialize')]
         [switch]
         $NoExplode,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
         [switch]
-        $Serialize
+        $Deserialize
     )
     if ($WebEvent) {
         # get the cookie from the request
@@ -188,7 +196,7 @@ function Get-PodeCookie {
             return $null
         }
 
-        if ($Serialize.IsPresent) {
+        if ($Deserialize.IsPresent) {
             $cookie.Value = ConvertFrom-PodeSerializedString -SerializedString $cookie.Value -Style 'Form' -Explode:(!$NoExplode)
         }
 

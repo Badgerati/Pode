@@ -137,40 +137,50 @@ function Test-PodeHeader {
 
 .DESCRIPTION
     The `Get-PodeHeader` function retrieves the value of a specified header from the incoming request.
-    Optionally, it can unsign the header's value using a secret, which can be extended with the client request's UserAgent and RemoteIPAddress if `-Strict` is specified. Additionally, it provides the ability to deserialize serialized header values.
+    It supports deserialization of header values and can optionally unsign the header using a specified secret.
+    The unsigning process can be further secured with the client's UserAgent and RemoteIPAddress if `-Strict` is specified.
 
 .PARAMETER Name
-    The name of the header to retrieve.
+    The name of the header to retrieve. This parameter is mandatory.
 
 .PARAMETER Secret
-    The secret used to unsign the header's value. This parameter is optional and applicable only in the 'builtin' parameter set.
+    The secret used to unsign the header's value. This option is useful when working with signed headers to ensure
+    the integrity and authenticity of the value. Applicable only in the 'BuiltIn' parameter set.
 
 .PARAMETER Strict
-    If specified, the secret is extended using the client's UserAgent and RemoteIPAddress. This parameter is optional and applicable only in the 'builtin' parameter set.
+    If specified, the secret is extended using the client's UserAgent and RemoteIPAddress, providing an additional
+    layer of security during the unsigning process. Applicable only in the 'BuiltIn' parameter set.
+
+.PARAMETER Deserialize
+    Indicates that the retrieved header value should be deserialized. When this switch is used, the value will be
+    interpreted based on the provided deserialization options. This parameter is mandatory in the 'Deserialize' parameter set.
 
 .PARAMETER Explode
-    Specifies whether the deserialization process should explode arrays. This parameter is optional and applicable only in the 'Serialize' parameter set.
-
-.PARAMETER Serialize
-    Indicates that the retrieved header value should be deserialized. This parameter is mandatory in the 'Serialize' parameter set.
+    Specifies whether the deserialization process should explode arrays in the header value. This is useful when
+    handling comma-separated values within the header. Applicable only when the `-Deserialize` switch is used.
 
 .EXAMPLE
     Get-PodeHeader -Name 'X-AuthToken'
     Retrieves the value of the 'X-AuthToken' header from the request.
 
 .EXAMPLE
-    Get-PodeHeader -Name 'X-SerializedHeader' -Serialize -Explode
+    Get-PodeHeader -Name 'X-SerializedHeader' -Deserialize -Explode
     Retrieves and deserializes the value of the 'X-SerializedHeader' header, exploding arrays if present.
 
 .EXAMPLE
     Get-PodeHeader -Name 'X-AuthToken' -Secret 'MySecret' -Strict
-    Retrieves and unsigns the 'X-AuthToken' header using the specified secret, extending it with UserAgent and RemoteIPAddress information.
-#>
+    Retrieves and unsigns the 'X-AuthToken' header using the specified secret, extending it with UserAgent and
+    RemoteIPAddress information for added security.
 
+.NOTES
+    This function should be used within a route's script block in a Pode server. The `-Deserialize` switch enables
+    advanced handling of serialized header values, while the `-Secret` and `-Strict` options provide secure unsigning
+    capabilities for signed headers.
+#>
 function Get-PodeHeader {
     [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
     param(
-        [Parameter(Mandatory = $true, ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
         [Parameter(Mandatory = $true, ParameterSetName = 'BuiltIn')]
         [string]
         $Name,
@@ -183,19 +193,19 @@ function Get-PodeHeader {
         [switch]
         $Strict,
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(ParameterSetName = 'Deserialize')]
         [switch]
         $Explode,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
         [switch]
-        $Serialize
+        $Deserialize
     )
     if ($WebEvent) {
         # get the value for the header from the request
         $header = $WebEvent.Request.Headers.$Name
 
-        if ($Serialize.IsPresent) {
+        if ($Deserialize.IsPresent) {
             return ConvertFrom-PodeSerializedString -SerializedString $header -Style 'Simple' -Explode:$Explode
         }
         # if a secret was supplied, attempt to unsign the header's value

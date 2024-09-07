@@ -2078,59 +2078,77 @@ function ConvertFrom-PodeSerializedString {
     Retrieves a specific parameter value from the current Pode web event.
 
 .DESCRIPTION
-    The `Get-PodePathParameter` function extracts and returns the value of a specified parameter from the current Pode web event.
-    This function is designed to access parameters passed in the URL path, query string, or body of a web request, making it useful in web applications to handle incoming data dynamically.
+    The `Get-PodePathParameter` function extracts and returns the value of a specified parameter
+    from the current Pode web event. This function can access parameters passed in the URL path, query string,
+    or body of a web request, making it useful in web applications to dynamically handle incoming data.
+
+    The function supports deserialization of parameter values when the `-Deserialize` switch is used.
+    This allows for interpreting serialized data structures, like arrays or complex objects, from the web request.
 
 .PARAMETER Name
     The name of the parameter to retrieve. This parameter is mandatory.
 
+.PARAMETER Deserialize
+    Specifies that the parameter value should be deserialized. When this switch is used, the value will be interpreted
+    based on the provided style and other deserialization options.
+
 .PARAMETER Explode
-    Specifies whether to explode arrays when deserializing the parameter value. This parameter is optional and applicable only in the 'Serialize' parameter set.
+    Specifies whether to explode arrays when deserializing the parameter value. This is useful when parameters contain
+    comma-separated values. Applicable only when the `-Deserialize` switch is used.
 
 .PARAMETER Style
-    Defines the serialization style to use when deserializing the parameter value. Valid options are 'Simple', 'Label', and 'Matrix'. The default is 'Simple'. This parameter is optional and applicable only in the 'Serialize' parameter set.
+    Defines the deserialization style to use when interpreting the parameter value. Valid options are 'Simple', 'Label',
+    and 'Matrix'. The default is 'Simple'. Applicable only when the `-Deserialize` switch is used.
 
 .PARAMETER KeyName
-    Specifies the key name to use when deserializing the parameter value. The default value is 'id'. This parameter is optional and applicable only in the 'Serialize' parameter set.
+    Specifies the key name to use when deserializing the parameter value. The default value is 'id'.
+    This option is useful for mapping the parameter data accurately during deserialization. Applicable only
+    when the `-Deserialize` switch is used.
 
 .EXAMPLE
     Get-PodePathParameter -Name 'action'
     Returns the value of the 'action' parameter from the current web event.
 
 .EXAMPLE
-    Get-PodePathParameter -Name 'item' -Serialize -Style 'Label' -Explode
-    Retrieves and deserializes the value of the 'item' parameter, using the 'Label' style and exploding arrays.
+    Get-PodePathParameter -Name 'item' -Deserialize -Style 'Label' -Explode
+    Retrieves and deserializes the value of the 'item' parameter using the 'Label' style and exploding arrays.
 
 .EXAMPLE
-    Get-PodePathParameter -Name 'id' -Serialize -KeyName 'userId'
+    Get-PodePathParameter -Name 'id' -Deserialize -KeyName 'userId'
     Deserializes the 'id' parameter using the key name 'userId'.
 
 .NOTES
     This function should be used within a route's script block in a Pode server.
+    The `-Deserialize` switch enables more advanced handling of complex data structures.
 #>
 function Get-PodePathParameter {
     [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
     param(
-        [Parameter(Mandatory, ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory, ParameterSetName = 'Deserialize')]
         [Parameter(Mandatory, ParameterSetName = 'BuiltIn')]
         [string]
         $Name,
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
+        [switch]
+        $Deserialize,
+
+        [Parameter(ParameterSetName = 'Deserialize')]
         [switch]
         $Explode,
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(ParameterSetName = 'Deserialize')]
         [ValidateSet('Simple', 'Label', 'Matrix')]
         [string]
         $Style = 'Simple',
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(ParameterSetName = 'Deserialize')]
         [string]
         $KeyName = 'id'
+
     )
     if ($WebEvent) {
-        if ($PSCmdlet.ParameterSetName -eq 'Serialize') {
+        if ($Deserialize.IsPresent) {
             return ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Parameters[$Name] -Style $Style -Explode:$Explode -KeyName $KeyName
         }
         return $WebEvent.Parameters[$Name]
@@ -2143,58 +2161,78 @@ function Get-PodePathParameter {
     Retrieves a specific query parameter value from the current Pode web event.
 
 .DESCRIPTION
-    The `Get-PodeQueryParameter` function extracts and returns the value of a specified query parameter from the current Pode web event. This function is designed to access query parameters passed in the URL of a web request, enabling the handling of incoming data in web applications.
+    The `Get-PodeQueryParameter` function extracts and returns the value of a specified query parameter
+    from the current Pode web event. This function is designed to access query parameters passed in the URL of a web request,
+    enabling the handling of incoming data in web applications.
+
+    The function supports deserialization of query parameter values when the `-Deserialize` switch is used,
+    allowing for interpretation of complex data structures from the query string.
 
 .PARAMETER Name
     The name of the query parameter to retrieve. This parameter is mandatory.
 
+.PARAMETER Deserialize
+    Specifies that the query parameter value should be deserialized. When this switch is used, the value will be
+    interpreted based on the provided style and other deserialization options.
+
 .PARAMETER NoExplode
-    Prevents deserialization from exploding arrays in the query parameter value. This parameter is optional and applicable only in the 'Serialize' parameter set.
+    Prevents deserialization from exploding arrays in the query parameter value. This is useful when handling
+    parameters that contain comma-separated values and when array expansion is not desired. Applicable only when
+    the `-Deserialize` switch is used.
 
 .PARAMETER Style
-    Defines the serialization style to use when deserializing the query parameter value. Valid options are 'Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'. The default is 'Form'. This parameter is optional and applicable only in the 'Serialize' parameter set.
+    Defines the deserialization style to use when interpreting the query parameter value. Valid options are 'Simple',
+    'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'. The default is 'Form'.
+    Applicable only when the `-Deserialize` switch is used.
 
 .PARAMETER KeyName
-    Specifies the key name to use when deserializing the query parameter value. The default value is 'id'. This parameter is optional and applicable only in the 'Serialize' parameter set.
+    Specifies the key name to use when deserializing the query parameter value. The default value is 'id'.
+    This option is useful for mapping the query parameter data accurately during deserialization. Applicable only
+    when the `-Deserialize` switch is used.
 
 .EXAMPLE
     Get-PodeQueryParameter -Name 'userId'
     Returns the value of the 'userId' query parameter from the current web event.
 
 .EXAMPLE
-    Get-PodeQueryParameter -Name 'filter' -Serialize -Style 'SpaceDelimited'
+    Get-PodeQueryParameter -Name 'filter' -Deserialize -Style 'SpaceDelimited'
     Retrieves and deserializes the value of the 'filter' query parameter, using the 'SpaceDelimited' style.
 
 .EXAMPLE
-    Get-PodeQueryParameter -Name 'data' -Serialize -NoExplode
+    Get-PodeQueryParameter -Name 'data' -Deserialize -NoExplode
     Deserializes the 'data' query parameter value without exploding arrays.
 
 .NOTES
-    This function should be used within a route's script block in a Pode server.
+    This function should be used within a route's script block in a Pode server. The `-Deserialize` switch enables
+    advanced handling of complex query parameter data structures.
 #>
 function Get-PodeQueryParameter {
     [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
     param(
-        [Parameter(Mandatory, ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory, ParameterSetName = 'Deserialize')]
         [Parameter(Mandatory, ParameterSetName = 'BuiltIn')]
         [string]
         $Name,
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
+        [switch]
+        $Deserialize,
+
+        [Parameter(ParameterSetName = 'Deserialize')]
         [switch]
         $NoExplode,
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(ParameterSetName = 'Deserialize')]
         [ValidateSet('Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
         [string]
         $Style = 'Form',
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(ParameterSetName = 'Deserialize')]
         [string]
         $KeyName = 'id'
     )
     if ($WebEvent) {
-        if ($PSCmdlet.ParameterSetName -eq 'Serialize') {
+        if ($Deserialize.IsPresent) {
             return ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Query[$Name] -Style $Style -Explode:(!$NoExplode) -KeyName $KeyName
         }
         return $WebEvent.Query[$Name]
@@ -2206,53 +2244,66 @@ function Get-PodeQueryParameter {
     Retrieves the body data from the current Pode web event.
 
 .DESCRIPTION
-    The `Get-PodeBodyData` function extracts and returns the data body of the current Pode web event.
+    The `Get-PodeBodyData` function extracts and returns the body data of the current Pode web event.
     This function is designed to access the main content sent in web requests, including methods such as PUT, POST, or any other HTTP methods that support a request body.
-    It also provides the ability to deserialize serialized body data.
+    It also supports deserialization of the body data, allowing for the interpretation of serialized content.
+
+.PARAMETER Deserialize
+    Specifies that the body data should be deserialized. When this switch is used, the body data will be interpreted
+    based on the provided style and other deserialization options.
 
 .PARAMETER NoExplode
-    Prevents deserialization from exploding arrays in the body data. This parameter is optional and applicable only in the 'Serialize' parameter set.
+    Prevents deserialization from exploding arrays in the body data. This is useful when handling parameters that
+    contain comma-separated values and when array expansion is not desired. Applicable only when the `-Deserialize`
+    switch is used.
 
 .PARAMETER Style
-    Defines the serialization style to use when deserializing the body data. Valid options are 'Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'. The default is 'Form'. This parameter is optional and applicable only in the 'Serialize' parameter set.
+    Defines the deserialization style to use when interpreting the body data. Valid options are 'Simple', 'Label',
+    'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'. The default is 'Form'. Applicable only
+    when the `-Deserialize` switch is used.
 
 .PARAMETER KeyName
-    Specifies the key name to use when deserializing the body data. The default value is 'id'. This parameter is optional and applicable only in the 'Serialize' parameter set.
+    Specifies the key name to use when deserializing the body data. The default value is 'id'. This option is useful
+    for mapping the body data accurately during deserialization. Applicable only when the `-Deserialize` switch is used.
 
 .EXAMPLE
     Get-PodeBodyData
     Returns the body data of the current web event.
 
 .EXAMPLE
-    Get-PodeBodyData -Serialize -Style 'Matrix'
+    Get-PodeBodyData -Deserialize -Style 'Matrix'
     Retrieves and deserializes the body data using the 'Matrix' style.
 
 .EXAMPLE
-    Get-PodeBodyData -Serialize -NoExplode
+    Get-PodeBodyData -Deserialize -NoExplode
     Deserializes the body data without exploding arrays.
 
 .NOTES
-    This function should be used within a route's script block in a Pode server.
+    This function should be used within a route's script block in a Pode server. The `-Deserialize` switch enables
+    advanced handling of complex body data structures.
 #>
-
 function Get-PodeBodyData {
     [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
     param(
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
+        [switch]
+        $Deserialize,
+
+        [Parameter(ParameterSetName = 'Deserialize')]
         [switch]
         $NoExplode,
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(ParameterSetName = 'Deserialize')]
         [ValidateSet('Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject')]
         [string]
         $Style = 'Form',
 
-        [Parameter(ParameterSetName = 'Serialize')]
+        [Parameter(ParameterSetName = 'Deserialize')]
         [string]
         $KeyName = 'id'
     )
     if ($WebEvent) {
-        if ($PSCmdlet.ParameterSetName -eq 'Serialize') {
+        if ($Deserialize.IsPresent) {
             return ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Data -Style $Style -Explode:(!$NoExplode) -KeyName $KeyName
         }
         return $WebEvent.Data
