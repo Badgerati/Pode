@@ -50,6 +50,8 @@ function Start-PodeWebSocketRunspace {
             [int]
             $ThreadId
         )
+        # Sets the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name "WebSocketEndpoint_$ThreadId"
 
         try {
             while ($Receiver.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -117,6 +119,8 @@ function Start-PodeWebSocketRunspace {
             [ValidateNotNull()]
             $Receiver
         )
+        # Sets the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name 'WebSocketEndpoint__KeepAlive'
 
         try {
             while ($Receiver.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
