@@ -287,4 +287,6 @@
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag은 Select-PodeOADefinition 'ScriptBlock' 내에서 사용할 수 없습니다."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 작업에는 요청 본문이 있을 수 없습니다.'
+    unsupportedSerializationTypeExceptionMessage                      = '지원되지 않거나 인식되지 않는 직렬화 형식입니다.'
 }
+

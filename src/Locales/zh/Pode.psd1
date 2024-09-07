@@ -287,4 +287,5 @@
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
+    unsupportedSerializationTypeExceptionMessage                      = '不支持或无法识别的序列化格式。'
 }

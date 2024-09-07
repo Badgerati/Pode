@@ -1365,3 +1365,947 @@ function ConvertFrom-PodeXml {
     return $oHash
 
 }
+
+
+
+<#
+.SYNOPSIS
+    Converts a hashtable to a serialized string using a specified serialization style.
+
+.DESCRIPTION
+    The ConvertTo-PodeSerializedString function takes a hashtable and converts it to a serialized string
+    according to the specified serialization style. It supports various serialization styles such as
+    'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+    An optional 'Explode' switch can be used to modify the serialization format for certain styles.
+
+.PARAMETER Hashtable
+    The hashtable to be serialized.
+
+.PARAMETER Style
+    The style of serialization to be used. Valid values are 'Simple', 'Label', 'Matrix', 'Query',
+    'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+
+.PARAMETER Explode
+    An optional switch to modify the serialization format for certain styles.
+
+.EXAMPLE
+    $hashtable = @{
+        name = 'value'
+        anotherName = 'anotherValue'
+    }
+    $serialized = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Query'
+    Write-Output $serialized
+
+.EXAMPLE
+    $hashtable = @{
+        name = 'value'
+        anotherName = 'anotherValue'
+    }
+    $serializedExplode = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'DeepObject' -Explode
+    Write-Output $serializedExplode
+#>
+function ConvertTo-PodeSerializedString {
+
+    param (
+        [Parameter(Mandatory, ValueFromPipeline = $true, Position = 0)]
+        [hashtable[]]
+        $Hashtable,
+
+        [Parameter()]
+        [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
+        [string]
+        $Style = 'Simple',
+
+        [Parameter()]
+        [switch]
+        $Explode
+    )
+    begin {
+        $pipelineValue = @()
+    }
+
+    process {
+        $pipelineValue += $_
+    }
+
+    end {
+        if ($pipelineValue.Count -gt 1) {
+            $Hashtables = $pipelineValue
+        }
+        else {
+            $Hashtables = $Hashtable
+        }
+        $serializedArray = @()
+        foreach ( $Hashtable in $Hashtables) {
+            switch ($Style) {
+                'Simple' {
+                    if ($Explode) {
+                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+                    }
+                    else {
+                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ','
+                    }
+                }
+                'Label' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { ".$_.$($Hashtable.""$_"")" }) -join ''
+                }
+                'Matrix' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { ";$_=$($Hashtable.""$_"")" }) -join ''
+                }
+                'Query' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+                }
+                'Form' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+                }
+                'SpaceDelimited' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ' '
+                }
+                'PipeDelimited' {
+                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '|'
+                }
+                'DeepObject' {
+                    if ($Explode) {
+                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($Hashtable.""$_"")" }) -join '&'
+                    }
+                    else {
+                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($Hashtable.""$_"")" }) -join ','
+                    }
+                }
+                default {
+                    # Unsupported or unrecognized serialization format
+                    throw ($PodeLocale.unsupportedSerializationTypeExceptionMessage)
+                }
+            }
+        }
+        return $serializedArray -join '&'
+    }
+}
+
+<#
+.SYNOPSIS
+    Converts a serialized string back into a hashtable, automatically detecting the serialization style.
+
+.DESCRIPTION
+    The ConvertFrom-PodeSerializedString function takes a serialized string and converts it back into a hashtable.
+    The function automatically detects the serialization style based on common delimiters and formats, such as
+    'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+    If the serialized string starts with a variable name followed by a colon (e.g., X-MyHeader:), the function
+    will encapsulate the result within a hashtable under that variable name.
+
+.PARAMETER SerializedString
+    The serialized string to be converted back into a hashtable.
+
+.PARAMETER Style
+    The serialization style to use for deserialization. Options are 'Simple', 'Label', 'Matrix', 'Query', 'Form',
+    'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+
+.PARAMETER Explode
+    Indicates whether the string uses exploded serialization (true) or not (false). This affects how arrays and objects are handled.
+
+.PARAMETER KeyName
+    Specifies the key name to match when processing certain styles, such as 'Matrix' and 'DeepObject'.
+
+.EXAMPLE
+    # Simple style, explode = true
+    $serialized = "name=value,anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Simple' -Explode
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Simple style, explode = false
+    $serialized = "name,value,anotherName,anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Simple'
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Label style, explode = true
+    $serialized = ".name.value.anotherName.anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Label' -Explode
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Label style, explode = false
+    $serialized = ".name,value,anotherName,anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Label'
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Matrix style, explode = true
+    $serialized = ";name=value;anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Matrix' -Explode
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Matrix style, explode = false
+    $serialized = ";id=3;id=4;id=5"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Matrix'
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Query style, explode = true
+    $serialized = "name=value&anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Query' -Explode
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Query style, explode = false
+    $serialized = "name=value,anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Query'
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Form style, explode = true
+    $serialized = "name=value&anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Form' -Explode
+    Write-Output $hashtable
+
+.EXAMPLE
+    # Form style, explode = false
+    $serialized = "name=value,anotherName=anotherValue"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Form'
+    Write-Output $hashtable
+
+.EXAMPLE
+    # SpaceDelimited style, explode = true
+    $serialized = "id=3&id=4&id=5"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'SpaceDelimited' -Explode
+    Write-Output $hashtable
+
+.EXAMPLE
+    # SpaceDelimited style, explode = false
+    $serialized = "id=3%204%205"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'SpaceDelimited'
+    Write-Output $hashtable
+
+.EXAMPLE
+    # PipeDelimited style, explode = true
+    $serialized = "id=3&id=4&id=5"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'PipeDelimited' -Explode
+    Write-Output $hashtable
+
+.EXAMPLE
+    # PipeDelimited style, explode = false
+    $serialized = "id=3|4|5"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'PipeDelimited'
+    Write-Output $hashtable
+
+.EXAMPLE
+    # DeepObject style, explode = true
+    $serialized = "myId[role]=admin&myId[firstName]=Alex"
+    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'DeepObject' -Explode -KeyName 'myId'
+    Write-Output $hashtable
+#>
+function ConvertFrom-PodeSerializedString {
+    param (
+        [Parameter(Mandatory, ValueFromPipeline = $true, Position = 0)]
+        [string] $SerializedString,
+
+        [Parameter()]
+        [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
+        [string]
+        $Style = 'Form',
+
+        [Parameter()]
+        [switch]
+        $Explode,
+
+        [Parameter()]
+        [string]
+        $KeyName = 'id'   # Default key name if not specified
+    )
+
+    process {
+        $SerializedString = $SerializedString.Replace('%20', ' ')
+        # Main deserialization logic based on style
+        switch ($Style) {
+            'Simple' {
+                # Check for header pattern and extract it if present
+                if ($SerializedString -match '^([a-zA-Z0-9_-]+):') {
+                    # Extract the variable name and strip it from the serialized string
+                    $headerName = $matches[1]
+                    $SerializedString = ($SerializedString -replace "^$($headerName):", '').Trim()
+                }
+
+                $segments = $SerializedString -split ','
+
+                # If there's only one segment, return it directly
+                if ($segments.Count -eq 1) {
+                    $result = $segments[0]
+                }
+                else {
+                    if ($Explode) {
+                        # Handling explode=true case
+
+                        # Check if the number of '=' is equal to the count of segments
+                        if ((($SerializedString -split '=').Count - 1) -eq $segments.Count) {
+                            $obj = @{}
+                            foreach ($pair in $segments) {
+                                if ($pair.Contains('=')) {
+                                    $key, $value = $pair -split '=', 2  # Split into exactly two parts
+                                    $obj[$key] = $value
+                                }
+                            }
+                            $result = $obj
+                        }
+                        else {
+                            # Return as an array if the explode conditions don't match
+                            $result = $segments
+                        }
+                    }
+                    else {
+                        # Handling explode=false case
+
+                        # Check if it's likely an object by checking if the count of segments is even
+                        if ($segments.Count % 2 -eq 0) {
+                            # Try to parse as an object
+                            $obj = @{}
+                            for ($i = 0; $i -lt $segments.Count; $i += 2) {
+                                $key = $segments[$i]
+                                # Validate the key format
+                                if ($key -match '^[a-zA-Z_][a-zA-Z0-9_]*$') {
+                                    $obj[$key] = $segments[$i + 1]
+                                }
+                                else {
+                                    # If the key is invalid, return the original segments as an array
+                                    $result = $segments
+                                }
+                            }
+                            # Return the object if all keys are valid
+                            $result = $obj
+                        }
+                        else {
+                            # If not an object, treat it as an array
+                            $result = $segments
+                        }
+                    }
+                }
+
+                if ($headerName) {
+                    return @{$headerName = $result }
+                }
+                else {
+                    $result
+                }
+
+            }
+            'Label' {
+                # Remove the leading dot (.) prefix from the serialized string
+                $SerializedString = $SerializedString.TrimStart('.')
+
+                # Split the string by dot
+                $segments = $SerializedString -split '\.'
+
+                # Handle the explode=true case
+                if ($Explode) {
+                    # Handling explode=true: each segment is a key=value pair
+                    $obj = @{}
+                    foreach ($segment in $segments) {
+                        if ($segment.Contains('=')) {
+                            $key, $value = $segment -split '=', 2  # Split into exactly two parts
+                            $obj[$key] = $value
+                        }
+                        else {
+                            # If a segment does not contain '=', treat it as an array element
+                            return $segments -split ','
+                        }
+                    }
+                    return $obj
+                }
+                else {
+                    # Handling explode=false: all segments form a combined structure
+                    # Split the string by commas within each segment
+                    $combinedSegments = ($SerializedString -split ',')
+
+                    # Check if it's likely an object by checking if the count is even
+                    if ($combinedSegments.Count % 2 -eq 0) {
+                        # Try to parse as an object
+                        $obj = @{}
+                        for ($i = 0; $i -lt $combinedSegments.Count; $i += 2) {
+                            $key = $combinedSegments[$i]
+
+                            # Validate if the key is a suitable key
+                            if ($key -match '^[a-zA-Z_][a-zA-Z0-9_]*$') {
+                                $value = $combinedSegments[$i + 1]
+                                $obj[$key] = $value
+                            }
+                            else {
+                                # If validation fails, return segments as array
+                                return $combinedSegments
+                            }
+                        }
+                        return $obj
+                    }
+
+                    # If not an object, return as an array
+                    return $combinedSegments
+                }
+            }
+            'Matrix' {
+                # Handle the explode=true case
+                if ($Explode) {
+                    # Remove the leading semicolon (;) prefix from the serialized string
+                    $SerializedString = $SerializedString.TrimStart(';')
+
+                    # Split by semicolon to get segments
+                    $segments = $SerializedString -split ';'
+
+                    # If each segment doesn't contain '=', treat it as an array
+                    if ($segments -notmatch '=') {
+                        # Return as an array of individual elements split by commas
+                        return $segments -split ','
+                    }
+
+                    # Initialize an empty hashtable to store key-value pairs
+                    $obj = @{}
+                    $values = @()
+
+
+                    foreach ($segment in $segments) {
+                        if ($segment.Contains('=')) {
+                            $key, $value = $segment -split '=', 2
+
+                            # If the key matches the specified key name
+                            if ($key -eq $KeyName) {
+                                $values += $value
+                            }
+                            else {
+                                # If a key doesn't match, treat as a normal key-value pair in the hashtable
+                                $obj[$key] = $value
+                            }
+                        }
+                    }
+
+                    # If all segments matched the specified key name, return the values as an array
+                    if ($values.Count -eq $segments.Count) {
+                        if ($values.Count -eq 1) {
+                            return $values[0]
+                        }
+                        return $values
+                    }
+
+                    # Merge values back into the object if any key matches the KeyName
+                    if ($values.Count -gt 0) {
+                        $obj[$KeyName] = if ($values.Count -eq 1) { $values[0] } else { $values }
+                    }
+
+                    # Return the hashtable if it contains any key-value pairs
+                    if ($obj.Count -gt 0) {
+                        return  $obj
+                    }
+                    else {
+                        return   $values
+                    }
+                }
+                else {
+                    # Handling explode=false:
+
+                    # Remove the leading semicolon (;) prefix from the serialized string
+                    $SerializedString = $SerializedString.TrimStart(";$KeyName=")
+
+                    # Split by semicolon to get segments
+                    $segments = $SerializedString -split ','
+
+                    # If there's only one segment, return it directly
+                    if ($segments.Count -eq 1) {
+                        return $segments[0]
+                    }
+
+                    # Check if it's likely an object by checking if the count of segments is even
+                    if ($segments.Count % 2 -eq 0) {
+                        # Try to parse as an object
+                        $obj = @{}
+                        for ($i = 0; $i -lt $segments.Count; $i += 2) {
+                            $key = $segments[$i]
+                            # Validate the key format
+                            if ($key -match '^[a-zA-Z_][a-zA-Z0-9_]*$') {
+                                $obj[$key] = $segments[$i + 1]
+                            }
+                            else {
+                                # If the key is invalid, return the original segments as an array
+                                return $segments
+                            }
+                        }
+                        # Return the object if all keys are valid
+                        return $obj
+                    }
+
+                    # If not an object, treat it as an array
+                    return $segments
+                }
+            }
+
+            'Form' {
+                # Check for header pattern and extract it if present
+                if ($SerializedString -match '^([a-zA-Z0-9_-]+):') {
+                    # Extract the variable name and strip it from the serialized string
+                    $headerName = $matches[1]
+                    $SerializedString = ($SerializedString -replace "^$($headerName):", '').Trim().TrimStart("$KeyName=")
+                }
+                else {
+                    if ($Explode) {
+                        # Remove the leading semicolon (;) prefix from the serialized string
+                        $SerializedString = $SerializedString.TrimStart('?')
+                    }
+                    else {
+                        # Remove the leading semicolon (;) prefix from the serialized string
+                        $SerializedString = $SerializedString.TrimStart("?$KeyName=")
+                    }
+                }
+
+                # Handle the explode=true case
+                if ($Explode) {
+                    # Split by semicolon to get segments
+                    $segments = $SerializedString -split '&'
+
+                    # If each segment doesn't contain '=', treat it as an array
+                    if ($segments -notmatch '=') {
+                        # Return as an array of individual elements split by commas
+                        $result = $segments -split ','
+                    }
+                    else {
+                        # Initialize an empty hashtable to store key-value pairs
+                        $obj = @{}
+                        $values = @()
+
+                        foreach ($segment in $segments) {
+                            if ($segment.Contains('=')) {
+                                $key, $value = $segment -split '=', 2
+
+                                # If the key matches the specified key name
+                                if ($key -eq $KeyName) {
+                                    $values += $value
+                                }
+                                else {
+                                    # If a key doesn't match, treat as a normal key-value pair in the hashtable
+                                    $obj[$key] = $value
+                                }
+                            }
+                        }
+
+                        # If all segments matched the specified key name, return the values as an array
+                        if ($values.Count -eq $segments.Count) {
+                            if ($values.Count -eq 1) {
+                                $result = $values[0]
+                            }
+                            else {
+                                $result = $values
+                            }
+                        }
+                        else {
+
+                            # Merge values back into the object if any key matches the KeyName
+                            if ($values.Count -gt 0) {
+                                $obj[$KeyName] = if ($values.Count -eq 1) { $values[0] } else { $values }
+                            }
+
+                            # Return the hashtable if it contains any key-value pairs
+                            if ($obj.Count -gt 0) {
+                                return  $obj
+                            }
+                            else {
+                                return   $values
+                            }
+                        }
+                    }
+                }
+                else {
+                    # Handling explode=false
+
+                    # Split by semicolon to get segments
+                    $segments = $SerializedString -split ','
+
+                    # If there's only one segment, return it directly
+                    if ($segments.Count -eq 1) {
+                        $result = $segments[0]
+                    }
+                    # Check if it's likely an object by checking if the count of segments is even
+                    elseif ($segments.Count % 2 -eq 0) {
+                        # Try to parse as an object
+                        $obj = @{}
+                        for ($i = 0; $i -lt $segments.Count; $i += 2) {
+                            $key = $segments[$i]
+                            # Validate the key format
+                            if ($key -match '^[a-zA-Z_][a-zA-Z0-9_]*$') {
+                                $obj[$key] = $segments[$i + 1]
+                            }
+                            else {
+                                # If the key is invalid, return the original segments as an array
+                                $result = $segments
+                                break
+                            }
+                        }
+                        if (!$result) {
+                            # Return the object if all keys are valid
+                            $result = $obj
+                        }
+                    }
+                    else {
+                        # If not an object, treat it as an array
+                        $result = $segments
+                    }
+
+                }
+
+                if ($headerName) {
+                    return @{$headerName = $result }
+                }
+                else {
+                    $result
+                }
+            }
+
+            'SpaceDelimited' {
+                if ($Explode) {
+                    # Remove the leading semicolon (;) prefix from the serialized string
+                    $SerializedString = $SerializedString.TrimStart('?')
+
+                    # For explode=true, split by '&' to treat each value as a separate occurrence
+                    $segments = $SerializedString -split '&'
+
+                    # Initialize an array to store values that match the specified KeyName
+                    $values = @()
+                    foreach ($segment in $segments) {
+                        if ($segment.Contains('=')) {
+                            $key, $value = $segment -split '=', 2
+                            # Only add values where the key matches the specified KeyName
+                            if ($key -eq $KeyName) {
+                                $values += $value
+                            }
+                        }
+                    }
+                    # Return the array of values that matched the KeyName
+                    return $values
+                }
+                else {
+                    # Remove the leading semicolon (;) prefix from the serialized string
+                    $SerializedString = $SerializedString.TrimStart('?id=')
+                    # For explode=false, split by space (%20) to handle the combined string format
+                    return $SerializedString -split ' '
+                }
+            }
+
+            'PipeDelimited' {
+                if ($Explode) {
+                    $SerializedString = $SerializedString.TrimStart('?')
+                    # For explode=true, split by '&' to treat each value as a separate occurrence
+                    $segments = $SerializedString -split '&'
+
+                    # Initialize an array to store values that match the specified KeyName
+                    $values = @()
+                    foreach ($segment in $segments) {
+                        if ($segment.Contains('=')) {
+                            $key, $value = $segment -split '=', 2
+                            # Only add values where the key matches the specified KeyName
+                            if ($key -eq $KeyName) {
+                                $values += $value
+                            }
+                        }
+                    }
+                    # Return the array of values that matched the KeyName
+                    return $values
+                }
+                else {
+                    # Remove the leading semicolon (;) prefix from the serialized string
+                    $SerializedString = $SerializedString.TrimStart('?id=')
+                    # For explode=false, split by space (%20) to handle the combined string format
+                    return $SerializedString -split '\|'
+                }
+            }
+
+            'DeepObject' {
+                $SerializedString = $SerializedString.TrimStart('?')
+
+                # Split the string by '&' to get each key-value pair
+                $segments = $SerializedString -split '&'
+
+                # Initialize an empty hashtable to store the nested key-value pairs
+                $obj = @{}
+                foreach ($segment in $segments) {
+                    if ($segment.Contains('=')) {
+                        # Split each segment by '=' into key and value
+                        $key, $value = $segment -split '=', 2
+
+                        # Extract the main key and nested keys using regex
+                        $allMatches = [regex]::Matches($key, '([^\[\]]+)')
+
+                        # Extract the main key (first match) and remaining nested keys
+                        $mainKey = $allMatches[0].Groups[1].Value
+                        # Manually extract remaining nested keys as a list of strings
+                        $nestedKeys = @()
+                        for ($i = 1; $i -lt $allMatches.Count; $i++) {
+                            $nestedKeys += $allMatches[$i].Groups[1].Value
+                        }
+
+                        # Only process the segment if the main key matches the specified KeyName
+                        if ($mainKey -eq $KeyName) {
+                            # Initialize a reference to the root object
+                            $current = $obj
+
+                            # Iterate over the nested keys to build the structure
+                            foreach ($nestedKey in $nestedKeys) {
+                                # If this is the last key, assign the value
+                                if ($nestedKey -eq $nestedKeys[-1]) {
+                                    $current[$nestedKey] = $value
+                                }
+                                else {
+                                    # Create a new hashtable if the nested key doesn't exist
+                                    if (-not $current.ContainsKey($nestedKey)) {
+                                        $current[$nestedKey] = @{}
+                                    }
+                                    # Move deeper into the nested structure
+                                    $current = $current[$nestedKey]
+                                }
+                            }
+                        }
+                    }
+                }
+
+                # Return the constructed hashtable with nested keys and values
+                return $obj
+            }
+
+            default {
+                # Unsupported or unrecognized serialization format
+                throw ($PodeLocale.unsupportedSerializationTypeExceptionMessage)
+            }
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    Retrieves a specific parameter value from the current Pode web event.
+
+.DESCRIPTION
+    The `Get-PodePathParameter` function extracts and returns the value of a specified parameter
+    from the current Pode web event. This function can access parameters passed in the URL path, query string,
+    or body of a web request, making it useful in web applications to dynamically handle incoming data.
+
+    The function supports deserialization of parameter values when the `-Deserialize` switch is used.
+    This allows for interpreting serialized data structures, like arrays or complex objects, from the web request.
+
+.PARAMETER Name
+    The name of the parameter to retrieve. This parameter is mandatory.
+
+.PARAMETER Deserialize
+    Specifies that the parameter value should be deserialized. When this switch is used, the value will be interpreted
+    based on the provided style and other deserialization options.
+
+.PARAMETER Explode
+    Specifies whether to explode arrays when deserializing the parameter value. This is useful when parameters contain
+    comma-separated values. Applicable only when the `-Deserialize` switch is used.
+
+.PARAMETER Style
+    Defines the deserialization style to use when interpreting the parameter value. Valid options are 'Simple', 'Label',
+    and 'Matrix'. The default is 'Simple'. Applicable only when the `-Deserialize` switch is used.
+
+.PARAMETER KeyName
+    Specifies the key name to use when deserializing the parameter value. The default value is 'id'.
+    This option is useful for mapping the parameter data accurately during deserialization. Applicable only
+    when the `-Deserialize` switch is used.
+
+.EXAMPLE
+    Get-PodePathParameter -Name 'action'
+    Returns the value of the 'action' parameter from the current web event.
+
+.EXAMPLE
+    Get-PodePathParameter -Name 'item' -Deserialize -Style 'Label' -Explode
+    Retrieves and deserializes the value of the 'item' parameter using the 'Label' style and exploding arrays.
+
+.EXAMPLE
+    Get-PodePathParameter -Name 'id' -Deserialize -KeyName 'userId'
+    Deserializes the 'id' parameter using the key name 'userId'.
+
+.NOTES
+    This function should be used within a route's script block in a Pode server.
+    The `-Deserialize` switch enables more advanced handling of complex data structures.
+#>
+function Get-PodePathParameter {
+    [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
+    param(
+        [Parameter(Mandatory, ParameterSetName = 'Deserialize')]
+        [Parameter(Mandatory, ParameterSetName = 'BuiltIn')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
+        [switch]
+        $Deserialize,
+
+        [Parameter(ParameterSetName = 'Deserialize')]
+        [switch]
+        $Explode,
+
+        [Parameter(ParameterSetName = 'Deserialize')]
+        [ValidateSet('Simple', 'Label', 'Matrix')]
+        [string]
+        $Style = 'Simple',
+
+        [Parameter(ParameterSetName = 'Deserialize')]
+        [string]
+        $KeyName = 'id'
+
+    )
+    if ($WebEvent) {
+        if ($Deserialize.IsPresent) {
+            return ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Parameters[$Name] -Style $Style -Explode:$Explode -KeyName $KeyName
+        }
+        return $WebEvent.Parameters[$Name]
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Retrieves a specific query parameter value from the current Pode web event.
+
+.DESCRIPTION
+    The `Get-PodeQueryParameter` function extracts and returns the value of a specified query parameter
+    from the current Pode web event. This function is designed to access query parameters passed in the URL of a web request,
+    enabling the handling of incoming data in web applications.
+
+    The function supports deserialization of query parameter values when the `-Deserialize` switch is used,
+    allowing for interpretation of complex data structures from the query string.
+
+.PARAMETER Name
+    The name of the query parameter to retrieve. This parameter is mandatory.
+
+.PARAMETER Deserialize
+    Specifies that the query parameter value should be deserialized. When this switch is used, the value will be
+    interpreted based on the provided style and other deserialization options.
+
+.PARAMETER NoExplode
+    Prevents deserialization from exploding arrays in the query parameter value. This is useful when handling
+    parameters that contain comma-separated values and when array expansion is not desired. Applicable only when
+    the `-Deserialize` switch is used.
+
+.PARAMETER Style
+    Defines the deserialization style to use when interpreting the query parameter value. Valid options are 'Simple',
+    'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'. The default is 'Form'.
+    Applicable only when the `-Deserialize` switch is used.
+
+.PARAMETER KeyName
+    Specifies the key name to use when deserializing the query parameter value. The default value is 'id'.
+    This option is useful for mapping the query parameter data accurately during deserialization. Applicable only
+    when the `-Deserialize` switch is used.
+
+.EXAMPLE
+    Get-PodeQueryParameter -Name 'userId'
+    Returns the value of the 'userId' query parameter from the current web event.
+
+.EXAMPLE
+    Get-PodeQueryParameter -Name 'filter' -Deserialize -Style 'SpaceDelimited'
+    Retrieves and deserializes the value of the 'filter' query parameter, using the 'SpaceDelimited' style.
+
+.EXAMPLE
+    Get-PodeQueryParameter -Name 'data' -Deserialize -NoExplode
+    Deserializes the 'data' query parameter value without exploding arrays.
+
+.NOTES
+    This function should be used within a route's script block in a Pode server. The `-Deserialize` switch enables
+    advanced handling of complex query parameter data structures.
+#>
+function Get-PodeQueryParameter {
+    [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
+    param(
+        [Parameter(Mandatory, ParameterSetName = 'Deserialize')]
+        [Parameter(Mandatory, ParameterSetName = 'BuiltIn')]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
+        [switch]
+        $Deserialize,
+
+        [Parameter(ParameterSetName = 'Deserialize')]
+        [switch]
+        $NoExplode,
+
+        [Parameter(ParameterSetName = 'Deserialize')]
+        [ValidateSet('Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
+        [string]
+        $Style = 'Form',
+
+        [Parameter(ParameterSetName = 'Deserialize')]
+        [string]
+        $KeyName = 'id'
+    )
+    if ($WebEvent) {
+        if ($Deserialize.IsPresent) {
+            return ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Query[$Name] -Style $Style -Explode:(!$NoExplode) -KeyName $KeyName
+        }
+        return $WebEvent.Query[$Name]
+    }
+}
+
+<#
+.SYNOPSIS
+    Retrieves the body data from the current Pode web event.
+
+.DESCRIPTION
+    The `Get-PodeBodyData` function extracts and returns the body data of the current Pode web event.
+    This function is designed to access the main content sent in web requests, including methods such as PUT, POST, or any other HTTP methods that support a request body.
+    It also supports deserialization of the body data, allowing for the interpretation of serialized content.
+
+.PARAMETER Deserialize
+    Specifies that the body data should be deserialized. When this switch is used, the body data will be interpreted
+    based on the provided style and other deserialization options.
+
+.PARAMETER NoExplode
+    Prevents deserialization from exploding arrays in the body data. This is useful when handling parameters that
+    contain comma-separated values and when array expansion is not desired. Applicable only when the `-Deserialize`
+    switch is used.
+
+.PARAMETER Style
+    Defines the deserialization style to use when interpreting the body data. Valid options are 'Simple', 'Label',
+    'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'. The default is 'Form'. Applicable only
+    when the `-Deserialize` switch is used.
+
+.PARAMETER KeyName
+    Specifies the key name to use when deserializing the body data. The default value is 'id'. This option is useful
+    for mapping the body data accurately during deserialization. Applicable only when the `-Deserialize` switch is used.
+
+.EXAMPLE
+    Get-PodeBodyData
+    Returns the body data of the current web event.
+
+.EXAMPLE
+    Get-PodeBodyData -Deserialize -Style 'Matrix'
+    Retrieves and deserializes the body data using the 'Matrix' style.
+
+.EXAMPLE
+    Get-PodeBodyData -Deserialize -NoExplode
+    Deserializes the body data without exploding arrays.
+
+.NOTES
+    This function should be used within a route's script block in a Pode server. The `-Deserialize` switch enables
+    advanced handling of complex body data structures.
+#>
+function Get-PodeBodyData {
+    [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
+    param(
+        [Parameter(Mandatory = $true, ParameterSetName = 'Deserialize')]
+        [switch]
+        $Deserialize,
+
+        [Parameter(ParameterSetName = 'Deserialize')]
+        [switch]
+        $NoExplode,
+
+        [Parameter(ParameterSetName = 'Deserialize')]
+        [ValidateSet('Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject')]
+        [string]
+        $Style = 'Form',
+
+        [Parameter(ParameterSetName = 'Deserialize')]
+        [string]
+        $KeyName = 'id'
+    )
+    if ($WebEvent) {
+        if ($Deserialize.IsPresent) {
+            return ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Data -Style $Style -Explode:(!$NoExplode) -KeyName $KeyName
+        }
+        return $WebEvent.Data
+    }
+}
