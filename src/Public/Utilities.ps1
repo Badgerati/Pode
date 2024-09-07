@@ -1790,7 +1790,12 @@ function ConvertFrom-PodeSerializedString {
                     }
 
                     # Return the hashtable if it contains any key-value pairs
-                    return $obj.Count -gt 0 ? $obj : $values
+                    if ($obj.Count -gt 0) {
+                        return  $obj
+                    }
+                    else {
+                        return   $values
+                    }
                 }
                 else {
                     # Handling explode=false:
@@ -1895,7 +1900,12 @@ function ConvertFrom-PodeSerializedString {
                             }
 
                             # Return the hashtable if it contains any key-value pairs
-                            $result = $obj.Count -gt 0 ? $obj : $values
+                            if ($obj.Count -gt 0) {
+                                return  $obj
+                            }
+                            else {
+                                return   $values
+                            }
                         }
                     }
                 }
