@@ -1,4 +1,4 @@
-# Query
+# Queries
 
 The following is an example of using data from a request's query string. To retrieve values from the query parameters, you can use the `Query` property on the `$WebEvent` variable in a route's logic.
 

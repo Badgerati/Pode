@@ -1,5 +1,5 @@
 
-# Path
+# Paths
 
 The following is an example of using values supplied on a request's URL using parameters. To retrieve values that match a request's URL parameters, you can use the `Parameters` property from the `$WebEvent` variable.
 
