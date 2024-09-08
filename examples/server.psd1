@@ -72,17 +72,5 @@
                 Enable = $true
             }
         }
-        AsyncRoutes = @{
-            HouseKeeping = @{
-                TimerInterval    = 30
-                RetentionMinutes = 10
-            }
-        }
-        Tasks       = @{
-            HouseKeeping = @{
-                TimerInterval    = 30
-                RetentionMinutes = 1
-            }
-        }
     }
 }
