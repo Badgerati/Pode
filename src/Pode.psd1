@@ -141,7 +141,12 @@
         'ConvertFrom-PodeXml',
         'Set-PodeDefaultFolder',
         'Get-PodeDefaultFolder',
-
+        'Get-PodeBodyData',
+        'Get-PodeQueryParameter',
+        'Get-PodePathParameter',
+        'ConvertFrom-PodeSerializedString',
+        'ConvertTo-PodeSerializedString',
+        
         # routes
         'Add-PodeRoute',
         'Add-PodeStaticRoute',
