@@ -2,14 +2,14 @@
 @{
     Severity     = @('Error', 'Warning', 'Information')
 
-    Rules = @{
+    Rules        = @{
         PSReviewUnusedParameter = @{
             CommandsToTraverse = @(
-                'Where-Object','Remove-PodeRoute'
+                'Where-Object', 'Remove-PodeRoute'
             )
         }
     }
-    ExcludeRules = @( 'PSAvoidUsingPlainTextForPassword','PSUseShouldProcessForStateChangingFunctions',
-    'PSAvoidUsingUsernameAndPasswordParams','PSUseProcessBlockForPipelineCommand','PSAvoidUsingConvertToSecureStringWithPlainText','PSReviewUnusedParameter' )
+    ExcludeRules = @( 'PSAvoidUsingPlainTextForPassword', 'PSUseShouldProcessForStateChangingFunctions',
+        'PSAvoidUsingUsernameAndPasswordParams', 'PSAvoidUsingConvertToSecureStringWithPlainText', 'PSReviewUnusedParameter' )
 
 }
