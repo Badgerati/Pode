@@ -1145,7 +1145,7 @@ function Join-PodeServerRoot {
 .EXAMPLE
     $myArray = "apple", "", "banana", "", "cherry"
     $filteredArray = Remove-PodeEmptyItemsFromArray -Array $myArray
-    Write-Host "Filtered array: $filteredArray"
+    Write-PodeHost "Filtered array: $filteredArray"
 
     This example removes empty items from the array and displays the filtered array.
 #>
@@ -1157,12 +1157,25 @@ function Remove-PodeEmptyItemsFromArray {
         [Parameter(ValueFromPipeline = $true)]
         $Array
     )
-
-    if ($null -eq $Array) {
-        return @()
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+    end {
+        # Set Array to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Array = $pipelineValue
+        }
+        if ($null -eq $Array) {
+            return @()
+        }
 
-    return @( @($Array -ne ([string]::Empty)) -ne $null )
+        return @( @($Array -ne ([string]::Empty)) -ne $null )
+    }
 }
 
 function Remove-PodeNullKeysFromHashtable {
@@ -1171,36 +1184,48 @@ function Remove-PodeNullKeysFromHashtable {
         [hashtable]
         $Hashtable
     )
+    begin {
+        $pipelineItemCount = 0
+    }
 
-    foreach ($key in ($Hashtable.Clone()).Keys) {
-        if ($null -eq $Hashtable[$key]) {
-            $null = $Hashtable.Remove($key)
-            continue
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
-
-        if (($Hashtable[$key] -is [string]) -and [string]::IsNullOrEmpty($Hashtable[$key])) {
-            $null = $Hashtable.Remove($key)
-            continue
-        }
-
-        if ($Hashtable[$key] -is [array]) {
-            if (($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
+        foreach ($key in ($Hashtable.Clone()).Keys) {
+            if ($null -eq $Hashtable[$key]) {
                 $null = $Hashtable.Remove($key)
                 continue
             }
 
-            foreach ($item in $Hashtable[$key]) {
-                if (($item -is [hashtable]) -or ($item -is [System.Collections.Specialized.OrderedDictionary])) {
-                    $item | Remove-PodeNullKeysFromHashtable
-                }
+            if (($Hashtable[$key] -is [string]) -and [string]::IsNullOrEmpty($Hashtable[$key])) {
+                $null = $Hashtable.Remove($key)
+                continue
             }
 
-            continue
-        }
+            if ($Hashtable[$key] -is [array]) {
+                if (($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
+                    $null = $Hashtable.Remove($key)
+                    continue
+                }
 
-        if (($Hashtable[$key] -is [hashtable]) -or ($Hashtable[$key] -is [System.Collections.Specialized.OrderedDictionary])) {
-            $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
-            continue
+                foreach ($item in $Hashtable[$key]) {
+                    if (($item -is [hashtable]) -or ($item -is [System.Collections.Specialized.OrderedDictionary])) {
+                        $item | Remove-PodeNullKeysFromHashtable
+                    }
+                }
+
+                continue
+            }
+
+            if (($Hashtable[$key] -is [hashtable]) -or ($Hashtable[$key] -is [System.Collections.Specialized.OrderedDictionary])) {
+                $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
+                continue
+            }
         }
     }
 }
@@ -1318,7 +1343,7 @@ function Get-PodeFileName {
 .EXAMPLE
     $exception = [System.Exception]::new("The network name is no longer available.")
     $isNetworkFailure = Test-PodeValidNetworkFailure -Exception $exception
-    Write-Host "Is network failure: $isNetworkFailure"
+    Write-PodeHost "Is network failure: $isNetworkFailure"
 
     This example tests whether the exception message "The network name is no longer available." indicates a network failure.
 #>
@@ -1353,30 +1378,32 @@ function ConvertFrom-PodeHeaderQValue {
         $Value
     )
 
-    $qs = [ordered]@{}
+    process {
+        $qs = [ordered]@{}
 
-    # return if no value
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        return $qs
-    }
-
-    # split the values up
-    $parts = @($Value -isplit ',').Trim()
-
-    # go through each part and check its q-value
-    foreach ($part in $parts) {
-        # default of 1 if no q-value
-        if ($part.IndexOf(';q=') -eq -1) {
-            $qs[$part] = 1.0
-            continue
+        # return if no value
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            return $qs
         }
 
-        # parse for q-value
-        $atoms = @($part -isplit ';q=')
-        $qs[$atoms[0]] = [double]$atoms[1]
-    }
+        # split the values up
+        $parts = @($Value -isplit ',').Trim()
 
-    return $qs
+        # go through each part and check its q-value
+        foreach ($part in $parts) {
+            # default of 1 if no q-value
+            if ($part.IndexOf(';q=') -eq -1) {
+                $qs[$part] = 1.0
+                continue
+            }
+
+            # parse for q-value
+            $atoms = @($part -isplit ';q=')
+            $qs[$atoms[0]] = [double]$atoms[1]
+        }
+
+        return $qs
+    }
 }
 
 function Get-PodeAcceptEncoding {
@@ -1645,7 +1672,7 @@ function New-PodeRequestException {
 
 function ConvertTo-PodeResponseContent {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(Position = 0, ValueFromPipeline = $true)]
         $InputObject,
 
         [Parameter()]
@@ -1663,100 +1690,101 @@ function ConvertTo-PodeResponseContent {
         [switch]
         $AsHtml
     )
+    process {
+        # split for the main content type
+        $ContentType = Split-PodeContentType -ContentType $ContentType
 
-    # split for the main content type
-    $ContentType = Split-PodeContentType -ContentType $ContentType
+        # if there is no content-type then convert straight to string
+        if ([string]::IsNullOrWhiteSpace($ContentType)) {
+            return ([string]$InputObject)
+        }
 
-    # if there is no content-type then convert straight to string
-    if ([string]::IsNullOrWhiteSpace($ContentType)) {
+        # run action for the content type
+        switch ($ContentType) {
+            { $_ -match '^(.*\/)?(.*\+)?json$' } {
+                if ($InputObject -isnot [string]) {
+                    if ($Depth -le 0) {
+                        return (ConvertTo-Json -InputObject $InputObject -Compress)
+                    }
+                    else {
+                        return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
+                    }
+                }
+
+                if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                    return '{}'
+                }
+            }
+
+            { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
+                if ($InputObject -isnot [string]) {
+                    if ($Depth -le 0) {
+                        return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
+                    }
+                    else {
+                        return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
+                    }
+                }
+
+                if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                    return '[]'
+                }
+            }
+
+            { $_ -match '^(.*\/)?(.*\+)?xml$' } {
+                if ($InputObject -isnot [string]) {
+                    $temp = @(foreach ($item in $InputObject) {
+                            New-Object psobject -Property $item
+                        })
+
+                    return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
+                }
+
+                if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                    return [string]::Empty
+                }
+            }
+
+            { $_ -ilike '*/csv' } {
+                if ($InputObject -isnot [string]) {
+                    $temp = @(foreach ($item in $InputObject) {
+                            New-Object psobject -Property $item
+                        })
+
+                    if (Test-PodeIsPSCore) {
+                        $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -IncludeTypeInformation:$false)
+                    }
+                    else {
+                        $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -NoTypeInformation)
+                    }
+
+                    return ($temp -join ([environment]::NewLine))
+                }
+
+                if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                    return [string]::Empty
+                }
+            }
+
+            { $_ -ilike '*/html' } {
+                if ($InputObject -isnot [string]) {
+                    return (($InputObject | ConvertTo-Html) -join ([environment]::NewLine))
+                }
+
+                if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                    return [string]::Empty
+                }
+            }
+
+            { $_ -ilike '*/markdown' } {
+                if ($AsHtml -and ($PSVersionTable.PSVersion.Major -ge 7)) {
+                    return ($InputObject | ConvertFrom-Markdown).Html
+                }
+            }
+        }
+
         return ([string]$InputObject)
     }
-
-    # run action for the content type
-    switch ($ContentType) {
-        { $_ -match '^(.*\/)?(.*\+)?json$' } {
-            if ($InputObject -isnot [string]) {
-                if ($Depth -le 0) {
-                    return (ConvertTo-Json -InputObject $InputObject -Compress)
-                }
-                else {
-                    return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
-                }
-            }
-
-            if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                return '{}'
-            }
-        }
-
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
-            if ($InputObject -isnot [string]) {
-                if ($Depth -le 0) {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
-                }
-                else {
-                    return (ConvertTo-PodeYamlInternal -InputObject $InputObject -Depth $Depth  )
-                }
-            }
-
-            if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                return '[]'
-            }
-        }
-
-        { $_ -match '^(.*\/)?(.*\+)?xml$' } {
-            if ($InputObject -isnot [string]) {
-                $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
-                    })
-
-                return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
-            }
-
-            if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                return [string]::Empty
-            }
-        }
-
-        { $_ -ilike '*/csv' } {
-            if ($InputObject -isnot [string]) {
-                $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
-                    })
-
-                if (Test-PodeIsPSCore) {
-                    $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -IncludeTypeInformation:$false)
-                }
-                else {
-                    $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -NoTypeInformation)
-                }
-
-                return ($temp -join ([environment]::NewLine))
-            }
-
-            if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                return [string]::Empty
-            }
-        }
-
-        { $_ -ilike '*/html' } {
-            if ($InputObject -isnot [string]) {
-                return (($InputObject | ConvertTo-Html) -join ([environment]::NewLine))
-            }
-
-            if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                return [string]::Empty
-            }
-        }
-
-        { $_ -ilike '*/markdown' } {
-            if ($AsHtml -and ($PSVersionTable.PSVersion.Major -ge 7)) {
-                return ($InputObject | ConvertFrom-Markdown).Html
-            }
-        }
-    }
-
-    return ([string]$InputObject)
 }
 
 function ConvertFrom-PodeRequestContent {
@@ -3291,13 +3319,25 @@ function Clear-PodeHashtableInnerKey {
         [hashtable]
         $InputObject
     )
-
-    if (Test-PodeIsEmpty $InputObject) {
-        return
+    begin {
+        $pipelineItemCount = 0
     }
 
-    $InputObject.Keys.Clone() | ForEach-Object {
-        $InputObject[$_].Clear()
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        if (Test-PodeIsEmpty $InputObject) {
+            return
+        }
+
+        $InputObject.Keys.Clone() | ForEach-Object {
+            $InputObject[$_].Clear()
+        }
     }
 }
 
@@ -3723,7 +3763,7 @@ function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $false)]
+        [parameter(Mandatory = $true)]
         [AllowNull()]
         $InputObject,
 
