@@ -83,6 +83,9 @@ function Add-PodeSchedule {
         $OnStart
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeSchedule' -ThrowError
 
@@ -160,6 +163,9 @@ function Set-PodeScheduleConcurrency {
         [int]
         $Maximum
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # error if <=0
     if ($Maximum -le 0) {
@@ -244,6 +250,9 @@ function Remove-PodeSchedule {
         $Name
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $null = $PodeContext.Schedules.Items.Remove($Name)
 }
 
@@ -260,6 +269,9 @@ Clear-PodeSchedules
 function Clear-PodeSchedules {
     [CmdletBinding()]
     param()
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Schedules.Items.Clear()
 }

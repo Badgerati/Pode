@@ -7,6 +7,9 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
+    # Mock Write-PodeTraceLog to avoid load Pode C# component
+    Mock Write-PodeTraceLog {}
+
     $PodeContext = @{ 'Server' = $null; }
 }
 

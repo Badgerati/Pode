@@ -54,12 +54,15 @@ function Add-PodeHandler {
         $ArgumentList
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeHandler' -ThrowError
 
     # ensure handler isn't already set
     if ($PodeContext.Server.Handlers[$Type].ContainsKey($Name)) {
-        # [Type] Name: Handler already defined 
+        # [Type] Name: Handler already defined
         throw ($PodeLocale.handlerAlreadyDefinedExceptionMessage -f $Type, $Name)
     }
 
@@ -109,6 +112,9 @@ function Remove-PodeHandler {
         $Name
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # ensure handler does exist
     if (!$PodeContext.Server.Handlers[$Type].ContainsKey($Name)) {
         return
@@ -139,6 +145,9 @@ function Clear-PodeHandlers {
         [string]
         $Type
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if (![string]::IsNullOrWhiteSpace($Type)) {
         $PodeContext.Server.Handlers[$Type].Clear()

@@ -2,11 +2,14 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 BeforeAll {
-    Add-Type -AssemblyName "System.Net.Http" -ErrorAction SilentlyContinue
+    Add-Type -AssemblyName 'System.Net.Http' -ErrorAction SilentlyContinue
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
+
+    # Mock Write-PodeTraceLog to avoid load Pode C# component
+    Mock Write-PodeTraceLog {}
 }
 
 Describe 'Get-PodeType' {
@@ -770,7 +773,7 @@ Describe 'Get-PodeEndpointInfo' {
     }
 
     It 'Throws an error for an invalid IP endpoint' {
-        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f  '700.0.0.a' ) #'*Failed to parse*'
+        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f '700.0.0.a' ) #'*Failed to parse*'
     }
 
     It 'Throws an error for an out-of-range IP endpoint' {
@@ -1142,7 +1145,9 @@ Describe 'Close-PodeServerInternal' {
         Mock Stop-PodeFileMonitor { }
         Mock Close-PodeDisposable { }
         Mock Remove-PodePSDrive { }
-        Mock Write-Host { } }
+        Mock Write-Host { }
+        Mock Disable-PodeLogging { }
+    }
 
     It 'Closes out pode, but with no done flag' {
         $PodeContext = @{ 'Server' = @{ 'Types' = 'Server' } }

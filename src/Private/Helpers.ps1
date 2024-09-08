@@ -554,7 +554,6 @@ function Get-PodeSubnetRange {
 function Add-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
         [string]
         $Type,
 
@@ -844,6 +843,8 @@ function Close-PodeServerInternal {
         [switch]
         $ShowDoneMessage
     )
+    #Disable Logging before closing
+    Disable-PodeLogging
 
     # ensure the token is cancelled
     if ($null -ne $PodeContext.Tokens.Cancellation) {
@@ -881,6 +882,56 @@ function Close-PodeServerInternal {
     if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
         Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
     }
+}
+
+<#
+.SYNOPSIS
+    Waits for the Pode server to start within a specified timeout period.
+
+.DESCRIPTION
+    This function waits for the Pode server to start by checking the server status at regular intervals.
+    If the server does not start within the specified timeout period, the function returns $false. Otherwise, it returns $true.
+    If the server is already started, it immediately returns $true.
+
+.PARAMETER CheckInterval
+    The interval in milliseconds between checks to see if the server has started. Default is 1000 milliseconds (1 second).
+
+.PARAMETER Timeout
+    The maximum amount of time in milliseconds to wait for the server to start. Default is 120000 milliseconds (120 seconds).
+
+.EXAMPLE
+    $result = Wait-PodeServerToStart -CheckInterval 1000 -Timeout 30000
+    if (-not $result) {
+        Write-Warning "The server did not start within the specified timeout period."
+    }
+#>
+function Wait-PodeServerToStart {
+    param (
+        [int]
+        $CheckInterval = 1000,
+        [int]
+        $Timeout = 120000
+    )
+
+    # Return immediately if the server is already started
+    if ($PodeContext.Server.Started) {
+        return $true
+    }
+    # Create a stopwatch to track the elapsed time
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
+    # Wait for the server to start before processing logs or timeout
+    while ( -not $PodeContext.Server.Started ) {
+        if ($stopwatch.ElapsedMilliseconds -ge $Timeout) {
+            return $false # Return false if timeout is reached
+        }
+        Start-Sleep -Milliseconds $CheckInterval
+    }
+
+    # Stop the stopwatch
+    $stopwatch.Stop()
+
+    return $true # Return true if the server started
 }
 
 function New-PodePSDrive {
@@ -1689,7 +1740,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+        { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
@@ -4036,3 +4087,63 @@ function Resolve-PodeObjectArray {
         return New-Object psobject -Property $Property
     }
 }
+
+<#
+.SYNOPSIS
+    Handles failure actions based on the provided parameters.
+
+.DESCRIPTION
+    This function processes failure scenarios by either ignoring the failure,
+    reporting it on the console and continuing, or reporting it on the console
+    and halting the server. The behavior is controlled by the 'FailureAction'
+    parameter.
+
+.PARAMETER Message
+    The message to be displayed in case of a failure.
+
+.PARAMETER FailureAction
+    Specifies the action to take in case of failure. Accepted values are:
+    - 'Ignore': Do nothing and continue execution.
+    - 'Report': Display the message on the console and continue execution.
+    - 'Halt': Display the message on the console and halt the server.
+
+.EXAMPLE
+    Invoke-PodeHandleFailure -Message "An error occurred." -FailureAction "Report"
+    This will display the message "An error occurred." on the console and continue execution.
+
+.EXAMPLE
+    Invoke-PodeHandleFailure -Message "Critical failure." -FailureAction "Halt"
+    This will display the message "Critical failure." on the console and halt the server.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Invoke-PodeHandleFailure {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Message,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        [ValidateSet('Ignore', 'Report', 'Halt' )]
+        $FailureAction
+
+    )
+    switch ($FailureAction.ToLowerInvariant()) {
+        'ignore' {
+            # Do nothing and continue
+        }
+        'report' {
+            # Report on console and continue
+            Write-PodeHost $Message -ForegroundColor Yellow
+        }
+        'halt' {
+            # Report on console and halt
+            Write-PodeHost $Message -ForegroundColor Red
+            Write-PodeHost 'Pode Server shutting down.' -ForegroundColor Red
+            Close-PodeServer
+        }
+    }
+}
+

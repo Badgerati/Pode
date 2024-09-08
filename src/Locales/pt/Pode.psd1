@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "Um parâmetro chamado '{0}' não foi fornecido na solicitação ou não há dados disponíveis."
     cacheStorageNotFoundForSetExceptionMessage                        = "Armazenamento em cache com o nome '{0}' não encontrado ao tentar definir o item em cache '{1}'."
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: Já definido.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'O registro de erros já está habilitado.'
     valueForUsingVariableNotFoundExceptionMessage                     = "Valor para '`$using:{0}' não pôde ser encontrado."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = 'A ferramenta de documentos RapidPdf não suporta OpenAPI 3.1'
     oauth2ClientSecretRequiredExceptionMessage                        = 'OAuth2 requer um Client Secret quando não se usa PKCE.'
@@ -281,10 +280,13 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "O esquema '{0}' fornecido para o validador de autenticação '{1}' requer um ScriptBlock válido."
     sseFailedToBroadcastExceptionMessage                              = 'SSE falhou em transmitir devido ao nível de transmissão SSE definido para {0}: {1}.'
     adModuleWindowsOnlyExceptionMessage                               = 'O módulo Active Directory está disponível apenas no Windows.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'O registro de solicitações já está habilitado.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duração inválida fornecida para Access-Control-Max-Age: {0}. Deve ser maior que 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'A definição OpenAPI com o nome {0} já existe.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag não pode ser usado dentro de um 'ScriptBlock' Select-PodeOADefinition."
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
+    loggingAlreadyEnabledExceptionMessage                             = "O registro '{0}' já foi habilitado."
+    invalidEncodingExceptionMessage                                   = 'Codificação inválida: {0}'
+    syslogProtocolExceptionMessage                                    = 'O protocolo Syslog só pode usar RFC3164 ou RFC5424.'
     definitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
     getRequestBodyNotAllowedExceptionMessage                          = 'As operações {0} não podem ter um corpo de solicitação.'
 }

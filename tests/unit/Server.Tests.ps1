@@ -7,12 +7,15 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
-
     $PodeContext = @{
         Server        = $null
         Metrics       = @{ Server = @{ StartTime = [datetime]::UtcNow } }
         RunspacePools = @{}
-    } }
+    }
+
+    # Mock Write-PodeTraceLog to avoid load Pode C# component
+    Mock Write-PodeTraceLog {}
+}
 
 Describe 'Start-PodeInternalServer' {
     BeforeAll {
@@ -20,7 +23,7 @@ Describe 'Start-PodeInternalServer' {
         Mock Invoke-PodeScriptBlock { }
         Mock New-PodeRunspaceState { }
         Mock New-PodeRunspacePool { }
-        Mock Start-PodeLoggingRunspace { }
+        Mock Start-PodeLoggerDispatcher { }
         Mock Start-PodeTimerRunspace { }
         Mock Start-PodeScheduleRunspace { }
         Mock Start-PodeGuiRunspace { }
@@ -106,6 +109,7 @@ Describe 'Restart-PodeInternalServer' {
         Mock Write-PodeErrorLog { }
         Mock Close-PodeDisposable { }
         Mock Invoke-PodeEvent { }
+        Mock Clear-PodeLogging { }
     }
     It 'Resetting the server values' {
         $PodeContext = @{
@@ -125,7 +129,9 @@ Describe 'Restart-PodeInternalServer' {
                     key = @{}
                 }
                 Logging         = @{
-                    Types = @{ 'key' = 'value' }
+                    Type          = @{ 'key' = 'value' }
+                    LogsToProcess = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+                    Method        = @{ 'key' = 'value' }
                 }
                 Middleware      = @{ 'key' = 'value' }
                 Endpoints       = @{ 'key' = 'value' }
@@ -243,7 +249,7 @@ Describe 'Restart-PodeInternalServer' {
         Restart-PodeInternalServer | Out-Null
 
         $PodeContext.Server.Routes['GET'].Count | Should -Be 0
-        $PodeContext.Server.Logging.Types.Count | Should -Be 0
+        $PodeContext.Server.Logging.Type.Count | Should -Be 0
         $PodeContext.Server.Middleware.Count | Should -Be 0
         $PodeContext.Server.Endware.Count | Should -Be 0
         $PodeContext.Server.Sessions.Count | Should -Be 0
