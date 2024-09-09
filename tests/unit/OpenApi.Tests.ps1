@@ -2869,7 +2869,7 @@ Describe 'OpenApi' {
         }
 
         it 'default' {
-            Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAContentMediaType -MediaType 'application/json' , 'application/xml', 'application/x-www-form-urlencoded' -Content 'Cat'  )
+            Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAContentMediaType -ContentType 'application/json' , 'application/xml', 'application/x-www-form-urlencoded' -Content 'Cat'  )
             $result = $PodeContext.Server.OpenAPI.Definitions['default'].components.requestBodies['PetBodySchema']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -2965,13 +2965,13 @@ Describe 'OpenApi' {
 
         # Test return type
         It 'Returns an OrderedHashtable' {
-            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
+            $example = New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
             $example | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
         }
 
         # Test output for a single MediaType
         It 'Correctly creates example for a single MediaType' {
-            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
+            $example = New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
             $example['application/json'].Keys -Contains 'user' | Should -Be $true
             $example['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true
             $example['application/json']['user'].externalValue -eq 'http://external.com' | Should -Be $true
@@ -2979,8 +2979,8 @@ Describe 'OpenApi' {
 
         # Test merging behavior
         It 'Correctly merges examples for multiple MediaTypes' {
-            $result = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary   'JSON Example' -Value '[]' |
-                New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Summary 'XML Example' -Value '<>'
+            $result = New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary   'JSON Example' -Value '[]' |
+                New-PodeOAExample -ContentType 'application/xml' -Name 'user' -Summary 'XML Example' -Value '<>'
 
             $result.Count -eq 2 | Should -Be $true
             $result['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true

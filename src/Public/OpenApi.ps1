@@ -2237,50 +2237,50 @@ function Add-PodeOAInfo {
 
 <#
 .SYNOPSIS
-Creates a new OpenAPI example.
+    Creates a new OpenAPI example.
 
 .DESCRIPTION
-Creates a new OpenAPI example.
+    Creates a new OpenAPI example.
 
-.PARAMETER ParamsList
-Used to pipeline multiple properties
+    .PARAMETER ParamsList
+    Used to pipeline multiple properties
 
-.PARAMETER MediaType
-The Media Type associated with the Example.
+.PARAMETER ContentType
+    The Media Content Type associated with the Example.
+
+    Alias: MediaType
 
 .PARAMETER Name
-The Name of the Example.
+    The Name of the Example.
 
 .PARAMETER Summary
-Short description for the example
+    Short description for the example
 
-
-.PARAMETER Description
-Long description for the example.
+    .PARAMETER Description
+    Long description for the example.
 
 .PARAMETER Reference
-A reference to a reusable component example
+    A reference to a reusable component example
 
 .PARAMETER Value
-Embedded literal example. The  value Parameter and ExternalValue parameter are mutually exclusive.
-To represent examples of media types that cannot naturally represented in JSON or YAML, use a string value to contain the example, escaping where necessary.
+    Embedded literal example. The  value Parameter and ExternalValue parameter are mutually exclusive.
+    To represent examples of media types that cannot naturally represented in JSON or YAML, use a string value to contain the example, escaping where necessary.
 
 .PARAMETER ExternalValue
-A URL that points to the literal example. This provides the capability to reference examples that cannot easily be included in JSON or YAML documents.
-The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
+    A URL that points to the literal example. This provides the capability to reference examples that cannot easily be included in JSON or YAML documents.
+    The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
 
 .PARAMETER DefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps distinguish between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps distinguish between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
+    New-PodeOAExample -ContentType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
 .EXAMPLE
-$example =
-    New-PodeOAExample -ContentMediaType 'application/json' -Name 'user' -Summary = 'User Example' -ExternalValue = 'http://foo.bar/examples/user-example.json'  |
-        New-PodeOAExample -ContentMediaType 'application/xml' -Name 'user' -Summary = 'User Example in XML' -ExternalValue = 'http://foo.bar/examples/user-example.xml'
-
+    $example =
+        New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary = 'User Example' -ExternalValue = 'http://foo.bar/examples/user-example.json'  |
+        New-PodeOAExample -ContentType 'application/xml' -Name 'user' -Summary = 'User Example in XML' -ExternalValue = 'http://foo.bar/examples/user-example.xml'
 #>
 function New-PodeOAExample {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
@@ -2292,8 +2292,10 @@ function New-PodeOAExample {
         [System.Collections.Specialized.OrderedDictionary ]
         $ParamsList,
 
+        [Parameter()]
+        [Alias('MediaType')]
         [string]
-        $MediaType,
+        $ContentType,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Inbuilt')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
@@ -2359,8 +2361,8 @@ function New-PodeOAExample {
             }
         }
         $param = [ordered]@{}
-        if ($MediaType) {
-            $param.$MediaType = [ordered]@{
+        if ($ContentType) {
+            $param.$ContentType = [ordered]@{
                 $Name = $Example
             }
         }
@@ -2548,7 +2550,7 @@ If supplied, the route passed in will be returned for further chaining.
     Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
         -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
         -Response (
-            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array)
+            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet'  -Array)
             New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
             New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
             New-PodeOAResponse -Default -Description 'Something is wrong'
@@ -2683,7 +2685,7 @@ This tag helps distinguish between different versions or types of API specificat
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-New-PodeOAResponse -StatusCode 200 -Content (  New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content(New-PodeOAIntProperty -Name 'userId' -Object) )
+New-PodeOAResponse -StatusCode 200 -Content (  New-PodeOAContentMediaType -ContentType 'application/json' -Content(New-PodeOAIntProperty -Name 'userId' -Object) )
 
 .EXAMPLE
 New-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
@@ -2693,10 +2695,10 @@ New-PodeOAResponse -StatusCode 200 -Reference 'OKResponse'
 
 .EXAMPLE
 Add-PodeOACallBack -Title 'test' -Path '$request.body#/id' -Method Post  -RequestBody (
-        New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentMediaType '*/*' -Content (New-PodeOAStringProperty -Name 'id'))
+        New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentType '*/*' -Content (New-PodeOAStringProperty -Name 'id'))
     ) `
     -Response (
-        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array) |
+        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet'  -Array) |
             New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
                 New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
             New-PodeOAResponse -Default   -Description 'Something is wrong'
@@ -2798,8 +2800,10 @@ function New-PodeOAResponse {
 .DESCRIPTION
     The New-PodeOAContentMediaType function generates media content type definitions suitable for use in OpenAPI specifications. It supports various media types and allows for the specification of content as either a single object or an array of objects.
 
-.PARAMETER MediaType
+.PARAMETER ContentType
     An array of strings specifying the media types to be defined. Media types should conform to standard MIME types (e.g., 'application/json', 'image/png'). The function validates these media types against a regular expression to ensure they are properly formatted.
+
+    Alias: MediaType
 
 .PARAMETER Content
     The content definition for the media type. This could be an object representing the structure of the content expected for the specified media types.
@@ -2835,20 +2839,20 @@ function New-PodeOAResponse {
         Set-PodeOARequest -PassThru -Parameters @(
             (New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query)
         ) |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
         Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
     This example demonstrates the use of New-PodeOAContentMediaType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
 
 .EXAMPLE
     $content = @{ type = 'string' }
     $mediaType = 'application/json'
-    New-PodeOAContentMediaType -MediaType $mediaType -Content $content
+    New-PodeOAContentMediaType -ContentType $mediaType -Content $content
     This example creates a media content type definition for 'application/json' with a simple string content type.
 
 .EXAMPLE
     $content = @{ type = 'object'; properties = @{ name = @{ type = 'string' } } }
     $mediaTypes = 'application/json', 'application/xml'
-    New-PodeOAContentMediaType -MediaType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
+    New-PodeOAContentMediaType -ContentType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
     This example demonstrates defining an array of objects for both 'application/json' and 'application/xml' media types, with a specified range for the number of items and a title.
 
 .EXAMPLE
@@ -2858,7 +2862,7 @@ function New-PodeOAResponse {
         Set-PodeOARequest -PassThru -Parameters @(
             (New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query)
         ) |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
         Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
     This example demonstrates the use of New-PodeOAContentMediaType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
 
@@ -2870,8 +2874,10 @@ function New-PodeOAContentMediaType {
     [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param (
+        [Parameter()]
+        [Alias('MediaType')]
         [string[]]
-        $MediaType = '*/*',
+        $ContentType = '*/*',
 
         [object]
         $Content,
@@ -2913,7 +2919,7 @@ function New-PodeOAContentMediaType {
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     $props = [ordered]@{}
-    foreach ($media in $MediaType) {
+    foreach ($media in $ContentType) {
         if ($media -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
             # Invalid 'content-type' found for schema: $media
             throw ($PodeLocale.invalidContentTypeForSchemaExceptionMessage -f $media)
@@ -3411,7 +3417,7 @@ Select-PodeOADefinition -Tag 'v3', 'v3.1'  -Script {
             New-PodeOAObjectProperty -XmlName 'order' |
             Add-PodeOAComponentSchema -Name 'Order'
 
-New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' |
+New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet' |
     Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store'
 
 }

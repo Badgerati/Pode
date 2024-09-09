@@ -604,7 +604,7 @@ You can use this tag to reference the specific API documentation, schema, or ver
 Add-PodeOAComponentCallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
     -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
     -Response (
-        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array)
+        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet'  -Array)
         New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
         New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
         New-PodeOAResponse -Default -Description 'Something is wrong'

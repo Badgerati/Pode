@@ -294,10 +294,10 @@ Some useful links:
 
     # Add OpenAPI component request bodies
     Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store' -Content (
-        New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet')
+        New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet')
 
     Add-PodeOAComponentRequestBody -Name 'UserArray' -Description 'List of user object' -Content (
-        New-PodeOAContentMediaType -MediaType 'application/json' -Content 'User' -Array)
+        New-PodeOAContentMediaType -ContentType 'application/json' -Content 'User' -Array)
 
 
 
@@ -343,9 +343,9 @@ Some useful links:
         } | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru |
             Set-PodeOARequest -RequestBody (
                 New-PodeOARequestBody -Description  'Update an existent pet in the store' -Required -Content (
-                    New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet'  )
+                    New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet'  )
             ) -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception'
@@ -381,9 +381,9 @@ Some useful links:
             }
         } | Set-PodeOARouteInfo -Summary 'Add a new pet to the store' -Description 'Add a new pet to the store' -Tags 'pet' -OperationId 'addPet' -PassThru |
             Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Description 'Create a new pet in the store' -Required  -Content (
-                    New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet'  )
+                    New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet'  )
             ) -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description  'Invalid input'
 
 
@@ -412,7 +412,7 @@ Some useful links:
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') |
                     ConvertTo-PodeOAParameter -In Query -Explode ) |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' -Array) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet' -Array) -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value' -PassThru |
                 Add-PodeOAResponse -StatusCode 415
 
@@ -440,7 +440,7 @@ Some useful links:
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAStringProperty -Name 'tags' -Description 'Tags to filter by' -Array |
                     ConvertTo-PodeOAParameter -In Query -Explode ) |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet' -Array) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet' -Array) -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid tag value' -PassThru |
                 Add-PodeOAResponse -StatusCode 415
 
@@ -473,7 +473,7 @@ Some useful links:
             Set-PodeOARequest -PassThru -Parameters (
                 New-PodeOAIntProperty -Name 'petId' -Description 'ID of pet to return'  -Format Int64 |
                     ConvertTo-PodeOAParameter -In Path -Required ) |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet') -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet') -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
                 Add-PodeOAResponse -StatusCode 415
@@ -550,7 +550,7 @@ Some useful links:
                                             (  New-PodeOAIntProperty -Name 'petId' -Format Int64 -Description 'ID of pet to update' -Required | ConvertTo-PodeOAParameter -In Path ),
                                             (  New-PodeOAStringProperty -Name 'additionalMetadata' -Description 'Additional Metadata' | ConvertTo-PodeOAParameter -In Query )
             ) -RequestBody (
-                New-PodeOARequestBody  -Content  ( New-PodeOAContentMediaType -MediaType 'application/octet-stream' -Upload )
+                New-PodeOARequestBody  -Content  ( New-PodeOAContentMediaType -ContentType 'application/octet-stream' -Upload )
             ) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = 'ApiResponse' }
 
@@ -598,7 +598,7 @@ Some useful links:
                 Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
             }
         } | Set-PodeOARouteInfo -Summary 'Place an order for a pet' -Description 'Place a new order in the store' -Tags 'store' -OperationId 'placeOrder' -PassThru |
-            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'Order'  )) -PassThru |
+            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'Order'  )) -PassThru |
             Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (@{ 'application/json' = 'Order' }) -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
@@ -628,7 +628,7 @@ Some useful links:
             Set-PodeOARequest -PassThru -Parameters @(
                                 (  New-PodeOAIntProperty -Name 'orderId' -Format Int64 -Description 'ID of order that needs to be fetched' -Required | ConvertTo-PodeOAParameter -In Path )
             ) |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml'  -Content 'Order'  ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml'  -Content 'Order'  ) -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'Order not found'
 
@@ -696,9 +696,9 @@ Some useful links:
                 Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
             }
         } | Set-PodeOARouteInfo -Summary 'Create user.' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'createUser' -PassThru |
-            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )) -PassThru |
+            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )) -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input' -PassThru |
-            Add-PodeOAResponse -Default -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml'  -Content 'User' )
+            Add-PodeOAResponse -Default -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml'  -Content 'User' )
 
 
         <#
@@ -742,8 +742,8 @@ Some useful links:
                 default { Write-PodeHtmlResponse -StatusCode 415 }
             }
         } | Set-PodeOARouteInfo -Summary 'Creates list of users with given input array.' -Description 'Creates list of users with given input array.' -Tags 'user' -OperationId 'createUsersWithListInput' -PassThru |
-            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType 'application/json' -Content 'User'  -Array)) -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml'  -Content 'User' -Array  ) -PassThru |
+            Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentType 'application/json' -Content 'User'  -Array)) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml'  -Content 'User' -Array  ) -PassThru |
             Add-PodeOAResponse -Default -Description 'successful operation'
 
 
@@ -776,7 +776,7 @@ Some useful links:
         } | Set-PodeOARouteInfo -Summary 'Logs user into the system.'  -Tags 'user' -OperationId 'loginUser' -PassThru |
             Set-PodeOARequest  -Parameters  (  New-PodeOAStringProperty -Name 'username' -Description 'The user name for login' | ConvertTo-PodeOAParameter -In Query ),
                                 (  New-PodeOAStringProperty -Name 'password' -Description 'The password for login in clear text' -Format Password | ConvertTo-PodeOAParameter -In Query ) -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'string' ) `
+            Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'string' ) `
                 -Headers (New-PodeOAIntProperty  -Name 'X-Rate-Limit' -Description 'calls per hour allowed by the user' -Format Int32),
                 (New-PodeOAStringProperty -Name 'X-Expires-After' -Description 'date in UTC when token expires' -Format Date-Time) -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'
@@ -814,7 +814,7 @@ Some useful links:
             }
         } | Set-PodeOARouteInfo -Summary 'Get user by user name'   -Tags 'user' -OperationId 'getUserByName' -PassThru |
             Set-PodeOARequest -Parameters (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be fetched. Use user1 for testing.' -Required | ConvertTo-PodeOAParameter -In Path ) -PassThru |
-            Add-PodeOAResponse -StatusCode 200 -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'User' ) -PassThru |
+            Add-PodeOAResponse -StatusCode 200 -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'User' ) -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
 
@@ -863,7 +863,7 @@ Some useful links:
         } | Set-PodeOARouteInfo -Summary 'Update user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'updateUser' -PassThru |
             Set-PodeOARequest -Parameters (  New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path ) `
                 -RequestBody ( New-PodeOARequestBody -Required -Description 'Update an existent user in the store' -Content (
-                    New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User'
+                    New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User'
                 )) -PassThru |
             Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found' -PassThru |
