@@ -728,20 +728,23 @@ function Add-PodeOAComponentPathItem {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    $_definitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     $refRoute = @{
         Method      = $Method.ToLower()
         NotPrepared = $true
         OpenApi     = @{
-            Responses      = $null
-            Parameters     = $null
-            RequestBody    = $null
-            callbacks      = [ordered]@{}
-            Authentication = @()
+            Responses          = $null
+            Parameters         = $null
+            RequestBody        = $null
+            callbacks          = @{}
+            Authentication     = @()
+            Servers            = @()
+            DefinitionTag      = $_definitionTag
+            IsDefTagConfigured = ($null -ne $DefinitionTag) #Definition Tag has been configured (Not default)
         }
     }
-    foreach ($tag in $DefinitionTag) {
+    foreach ($tag in $_definitionTag) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $tag  ) {
             # The 'pathItems' reusable component feature is not available in OpenAPI v3.0.
             throw ($PodeLocale.reusableComponentPathItemsNotAvailableInOpenApi30ExceptionMessage)

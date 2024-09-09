@@ -1584,7 +1584,7 @@ function Set-PodeOARouteInfo {
                 $r.OpenApi.IsDefTagConfigured = $true
             }
         }
-
+        
         if ($Summary) {
             $r.OpenApi.Summary = $Summary
         }
@@ -3364,7 +3364,7 @@ function Add-PodeOAWebhook {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    $_definitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     $refRoute = @{
         Method      = $Method.ToLower()
@@ -3373,11 +3373,13 @@ function Add-PodeOAWebhook {
             Responses      = @{}
             Parameters     = $null
             RequestBody    = $null
-            callbacks      = [ordered]@{}
+            callbacks      = @{}
             Authentication = @()
+            DefinitionTag      = $_definitionTag
+            IsDefTagConfigured = ($null -ne $DefinitionTag) #Definition Tag has been configured (Not default)
         }
     }
-    foreach ($tag in $DefinitionTag) {
+    foreach ($tag in $_definitionTag) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $tag ) {
             # The Webhooks feature is not supported in OpenAPI v3.0.x
             throw ($PodeLocale.webhooksFeatureNotSupportedInOpenApi30ExceptionMessage)

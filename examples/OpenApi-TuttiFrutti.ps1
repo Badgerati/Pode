@@ -951,7 +951,7 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 404 -Description 'User not found' -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
-
+#region Test remove route
 
             Add-PodeRoute -PassThru -Method Delete -Path '/usera/:username' -ScriptBlock {
                 Write-PodeJsonResponse -Value 'done' -StatusCode 200
@@ -966,7 +966,6 @@ Some useful links:
 
             Remove-PodeRoute -Method Delete -Path '/api/v3/usera/:username'
 
-
             Add-PodeRoute -PassThru -Method Delete -Path '/user/:username' -ScriptBlock {
                 Write-PodeJsonResponse -Value 'done' -StatusCode 200
             } | Set-PodeOARouteInfo -Summary 'Delete user' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'deleteUser' -PassThru |
@@ -976,7 +975,7 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
-
+#endregion
 
 
             Add-PodeOAExternalRoute -Method Get -Path '/stores/order/:orderId' -Servers (
