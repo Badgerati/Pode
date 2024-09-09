@@ -251,6 +251,7 @@ function Send-PodeWebSocket {
         $Message,
 
         [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 

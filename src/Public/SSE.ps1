@@ -227,6 +227,7 @@ function Send-PodeSseEvent {
         $Data,
 
         [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
@@ -242,12 +243,7 @@ function Send-PodeSseEvent {
 
     # jsonify the value
     if ($Data -isnot [string]) {
-        if ($Depth -le 0) {
-            $Data = (ConvertTo-Json -InputObject $Data -Compress)
-        }
-        else {
-            $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
-        }
+        $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
     }
 
     # send directly back to current connection

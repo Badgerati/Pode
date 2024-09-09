@@ -287,5 +287,7 @@
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
+    NonHashtableArrayElementExceptionMessage                          = '配列にハッシュテーブルではない要素が含まれています'
+    InputNotHashtableOrArrayOfHashtablesExceptionMessage              = '入力がハッシュテーブルまたはハッシュテーブルの配列ではありません'
 }
 

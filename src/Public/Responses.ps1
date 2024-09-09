@@ -479,7 +479,7 @@ function Write-PodeCsvResponse {
                 }
 
                 if ($Value -isnot [string]) {
-                    $Value = Resolve-PodeObjectArray -Property $Value
+                    $Value = ConvertTo-PodePSObject -InputObject $Value
 
                     if (Test-PodeIsPSCore) {
                         $Value = ($Value | ConvertTo-Csv -Delimiter ',' -IncludeTypeInformation:$false)
@@ -775,6 +775,12 @@ The Depth to generate the XML document - the larger this value the worse perform
 .PARAMETER StatusCode
 The status code to set against the response.
 
+.PARAMETER NoPropertyName
+Switch to handle hashtables without property names.
+
+.PARAMETER RootLabel
+The label that reppresent root. Used only when $Value is of type hashtable or NoPropertyName is used
+
 .EXAMPLE
 Write-PodeXmlResponse -Value '<root><name>Rick</name></root>'
 
@@ -829,7 +835,13 @@ function Write-PodeXmlResponse {
 
         [Parameter()]
         [int]
-        $StatusCode = 200
+        $StatusCode = 200,
+
+        [switch]
+        $NoPropertyName,
+
+        [string]
+        $RootLabel = 'root'
     )
     begin {
         $pipelineValue = @()
@@ -855,14 +867,9 @@ function Write-PodeXmlResponse {
                     $Value = $pipelineValue
                 }
 
-                if ($Value -isnot [string]) {
-                    $Value = Resolve-PodeObjectArray -Property $Value | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
-                }
-            }
-        }
+                $Value = ConvertTo-PodeXml -InputObject $Value -Depth $Depth -NoPropertyName:$NoPropertyName -RootLabel $RootLabel
 
-        if ([string]::IsNullOrWhiteSpace($Value)) {
-            $Value = [string]::Empty
+            }
         }
 
         Write-PodeTextResponse -Value $Value -ContentType $ContentType -StatusCode $StatusCode
@@ -1667,6 +1674,7 @@ function Send-PodeSignal {
         $ClientId,
 
         [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 

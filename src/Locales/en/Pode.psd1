@@ -287,5 +287,7 @@
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0} operations cannot have a Request Body.'
+    NonHashtableArrayElementExceptionMessage                          = 'Array contains non-hashtable element.'
+    InputNotHashtableOrArrayOfHashtablesExceptionMessage              = 'Input is not a hashtable or an array of hashtables.'
 }
 

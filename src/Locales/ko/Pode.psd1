@@ -287,4 +287,6 @@
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag은 Select-PodeOADefinition 'ScriptBlock' 내에서 사용할 수 없습니다."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 작업에는 요청 본문이 있을 수 없습니다.'
+    NonHashtableArrayElementExceptionMessage                          = '배열에 해시 테이블 요소가 포함되어 있지 않습니다'
+    InputNotHashtableOrArrayOfHashtablesExceptionMessage              = '입력이 해시 테이블 또는 해시 테이블 배열이 아닙니다'
 }

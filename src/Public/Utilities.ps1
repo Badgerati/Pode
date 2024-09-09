@@ -1363,5 +1363,121 @@ function ConvertFrom-PodeXml {
         }
     }
     return $oHash
+}
 
+<#
+.SYNOPSIS
+    Converts input objects to XML format for Pode.
+
+.DESCRIPTION
+    The ConvertTo-PodeXml function takes input objects, either from the pipeline or as an array of objects,
+    and converts them into XML format. This function supports converting hashtables and PSObjects, and it
+    can handle multiple objects inputted via the pipeline.
+
+.PARAMETER InputObject
+    The input objects to be converted to XML. This parameter is mandatory and accepts an array of PSObjects
+    from the pipeline.
+
+.PARAMETER Depth
+    The Depth to generate the XML document - the larger this value the worse performance gets.
+
+.PARAMETER NoPropertyName
+    A switch parameter that, when present, converts objects without considering property names.
+
+.PARAMETER RootLabel
+    The label that reppresent root. Used only when $InputObject is of type hashtable or NoPropertyName is used
+
+.INPUTS
+    [psobject[]]
+    Accepts an array of PSObjects.
+
+.OUTPUTS
+    [string]
+    Returns the XML representation of the input objects.
+
+.EXAMPLE
+    # Convert a single object to XML
+    $object = [PSCustomObject]@{Name='John'; Age=30}
+    $xml = ConvertTo-PodeXml -InputObject $object
+    Write-Output $xml
+
+.EXAMPLE
+    # Convert multiple objects from the pipeline to XML
+    $objects = @(
+        [PSCustomObject]@{Name='John'; Age=30},
+        [PSCustomObject]@{Name='Jane'; Age=25}
+    )
+    $objects | ConvertTo-PodeXml
+
+.EXAMPLE
+    # Convert a hashtable to XML
+    $hashTable = @{Name='John'; Age=30}
+    $xml = ConvertTo-PodeXml -InputObject $hashTable
+    Write-Output $xml
+#>
+function ConvertTo-PodeXml {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        [psobject[]]
+        $InputObject,
+
+        [Parameter()]
+        [ValidateRange(0, 100)]
+        [int]
+        $Depth = 10,
+
+        [switch]
+        $NoPropertyName,
+
+        [string]
+        $RootLabel = 'root'
+
+    )
+    begin {
+        $pipelineObject = @()
+    }
+
+    process {
+        $pipelineObject += $_
+    }
+
+    end {
+        if ($pipelineObject.Count -gt 1) {
+            $InputObject = $pipelineObject
+        }
+
+        if ($InputObject.Count -eq 1) {
+            $obj = $InputObject[0]
+        }
+        else {
+            $obj = $InputObject
+        }
+
+        if ($null -eq $obj) {
+            $xml = "<?xml version=""1.0"" encoding=""UTF-8""?><$RootLabel/>"
+        }
+        elseif ($obj -is [string]) {
+            if ([string]::IsNullOrWhiteSpace($obj)) {
+                $xml = "<?xml version=""1.0"" encoding=""UTF-8""?><$RootLabel/>"
+            }
+            else {
+                $xml = $obj
+            }
+        }
+        elseif ($obj -is [hashtable]) {
+            $xml = Convert-PodeHashTableToXml -Value $obj -RootLabel $RootLabel
+        }
+
+        else {
+            if ($NoPropertyName.IsPresent) {
+                $jsonObj = ConvertTo-Json -InputObject $obj -Depth $Depth -Compress -AsArray | ConvertFrom-Json -AsHashtable
+                $xml = Convert-PodeHashTableToXml -Value $jsonObj -RootLabel $RootLabel
+            }
+            else {
+                $xml = ConvertTo-PodePSObject -InputObject $obj | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation
+            }
+        }
+
+        return $xml
+    }
 }
