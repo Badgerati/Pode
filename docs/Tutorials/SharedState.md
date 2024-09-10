@@ -12,6 +12,8 @@ You can also use the State in combination with [`Lock-PodeObject`](../../Functio
 !!! warning
     If you omit the use of [`Lock-PodeObject`](../../Functions/Threading/Lock-PodeObject), you might run into errors due to multi-threading. Only omit if you are *absolutely confident* you do not need locking. (ie: you set in state once and then only ever retrieve, never updating the variable).
 
+!!! note Pode now offers a thread-safe option for shared state using Set-PodeState -Threadsafe. This enhancement uses PodeOrderedConcurrentDictionary, which allows thread-safe operations without needing Lock-PodeObject. See the section at the end for more details.
+
 ## Usage
 
 Where possible use the same casing for the `-Name` of state keys. When using [`Restore-PodeState`](../../Functions/State/Restore-PodeState) the state will become case-sensitive due to the nature of how `ConvertFrom-Json` works.
@@ -178,6 +180,77 @@ Start-PodeServer {
             # remove the hashtable from the state
             Remove-PodeState -Name 'hash' | Out-Null
         }
+    }
+}
+```
+
+
+## Thread-Safe State Enhancement
+
+Pode introduces a thread-safe enhancement for shared state using the `PodeOrderedConcurrentDictionary`. This feature allows thread-safe access and modifications to the shared state without the need for additional locking mechanisms like `Lock-PodeObject`.
+
+### How to Enable Thread-Safe Mode
+
+To enable thread-safe state management, use the `Set-PodeState -Threadsafe` command. This will configure the shared state to use `PodeOrderedConcurrentDictionary`, ensuring thread-safe operations.
+
+### Important Restrictions
+
+- The `+=` operator does not work correctly if the key is named `keys` or `values`. These terms are reserved internally for accessing the dictionary's keys and values collections.
+- To work around this restriction, use the bracket (`[]`) notation instead of `+=` when working with these reserved key names.
+
+**Examples:**
+
+```powershell
+# This will not work due to the reserved key name 'values'
+$state:hash3.values += (Get-Random -Minimum 0 -Maximum 10)
+
+# Correct approach using the bracket notation
+$state:hash3['values'] += (Get-Random -Minimum 0 -Maximum 10)
+
+# Using a non-reserved key name works as expected
+$state:hash3.myValues += (Get-Random -Minimum 0 -Maximum 10)
+```
+
+### Thread-Safe Full Example
+
+Here is an example showing how to use the thread-safe state enhancement without `Lock-PodeObject`:
+
+```powershell
+Start-PodeServer {
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
+
+    # Enable thread-safe shared state
+    Set-PodeState -Threadsafe
+
+    # create the shared variable
+    Set-PodeState -Name 'hash' -Value @{ 'values' = @(); } | Out-Null
+
+    # attempt to re-initialise the state (will do nothing if the file doesn't exist)
+    Restore-PodeState -Path './state.json'
+
+    # timer to add a random number to the shared state
+    Add-PodeTimer -Name 'forever' -Interval 2 -ScriptBlock {
+        # attempt to get the hashtable from the state
+        $hash = (Get-PodeState -Name 'hash')
+
+        # add a random number
+        $hash.values += (Get-Random -Minimum 0 -Maximum 10)
+
+        # save the state to file
+        Save-PodeState -Path './state.json'
+    }
+
+    # route to return the value of the hashtable from shared state
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        # get the hashtable from the state and return it
+        $hash = (Get-PodeState -Name 'hash')
+        Write-PodeJsonResponse -Value $hash
+    }
+
+    # route to remove the hashtable from shared state
+    Add-PodeRoute -Method Delete -Path '/' -ScriptBlock {
+        # remove the hashtable from the state
+        Remove-PodeState -Name 'hash' | Out-Null
     }
 }
 ```
