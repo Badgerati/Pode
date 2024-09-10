@@ -50,8 +50,25 @@ namespace Pode
             return removed;
         }
 
+        // Indexer to support [] access in PowerShell
+        public TValue this[TKey key]
+        {
+            get
+            {
+                if (_concurrentDictionary.TryGetValue(key, out TValue value))
+                {
+                    return value;
+                }
+                throw new KeyNotFoundException($"The key '{key}' was not found in the dictionary.");
+            }
+            set
+            {
+                AddOrUpdate(key, value);
+            }
+        }
+
         // Returns ordered keys
-        public IEnumerable<TKey> OrderedKeys
+        public IEnumerable<TKey> Keys
         {
             get
             {
@@ -63,7 +80,7 @@ namespace Pode
         }
 
         // Returns ordered values
-        public IEnumerable<TValue> OrderedValues
+        public IEnumerable<TValue> Values
         {
             get
             {

@@ -70,6 +70,7 @@ Start-PodeServer {
         Lock-PodeObject -ScriptBlock {
             $hash = (Get-PodeState -Name 'hash1')
             $hash.values += (Get-Random -Minimum 0 -Maximum 10)
+            Write-PodeHost  $hash.Values
             Save-PodeState -Path './state.json' -Scope Scope1 #-Exclude 'hash1'
         }
 

@@ -59,12 +59,12 @@ Start-PodeServer {
     }
 
     if ($null -eq ($hash = (Get-PodeState -Name 'hash2'))) {
-        $hash = Set-PodeState -Name 'hash2' -Value ([ordered]@{}) -Scope Scope0, Scope2
+        $hash = Set-PodeState -Name 'hash2' -Value ([ordered]@{ values = @() }) -Scope Scope0, Scope2
         $hash['values'] = @()
     }
 
     if ($null -eq $state:hash3) {
-        $state:hash3 = @{ values = @() }
+        $state:hash3 = ([ordered]@{ values = @() })
     }
 
     # create timer to update a hashtable and make it globally accessible
@@ -75,10 +75,11 @@ Start-PodeServer {
         $hash = (Get-PodeState -Name 'hash1')
         $hash.values += (Get-Random -Minimum 0 -Maximum 10)
         Save-PodeState -Path './state.json' -Scope Scope1 #-Exclude 'hash1'
-
+        
         # Lock-PodeObject  Is not required because of Set-PodeState -Threadsafe
-        $state:hash3.values += (Get-Random -Minimum 0 -Maximum 10)
-        write-podehost $PodeContext.Server.State -Explode -ShowType
+        # because of the ordered threadsafe PodeOrderedConcurrentDictionary
+        # `$hash3.values +=` doesn't work if you are using keys named 'keys' or 'values' use the [] form
+        $state:hash3['values'] += (Get-Random -Minimum 0 -Maximum 10)
     }
 
     # route to retrieve and return the value of the hashtable from global state
@@ -97,9 +98,13 @@ Start-PodeServer {
     Add-PodeRoute -Method Delete -Path '/array' -ScriptBlock {
         # Lock-PodeObject  Is not required because of Set-PodeState -Threadsafe
         $hash = (Set-PodeState -Name 'hash1' -Value @{})
-        write-podehost $hash -Explode -ShowType
-        write-podehost $PodeContext.Server.State -Explode -ShowType
         $hash.values = @()
+    }
+
+     # route to remove the hashtable from global state
+     Add-PodeRoute -Method Delete -Path '/array3' -ScriptBlock {
+        # Lock-PodeObject  Is not required because of Set-PodeState -Threadsafe
+        $state:hash3 = @{ values = @() }
     }
 
 }

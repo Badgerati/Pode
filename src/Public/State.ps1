@@ -1,24 +1,30 @@
 <#
 .SYNOPSIS
-Sets an object within the shared state.
+    Sets an object within the shared state of Pode.
 
 .DESCRIPTION
-Sets an object within the shared state.
+    Sets an object within the shared state, allowing shared data management across various scopes.
+    Supports thread-safe operations by converting the state to a concurrent dictionary when required.
 
 .PARAMETER Name
-The name of the state object.
+    Specifies the name of the state object, used as the key to identify the object within the shared state.
 
 .PARAMETER Value
-The value to set in the state.
+    Specifies the value to set in the state. This can be any object, such as a string, array, or hash table.
 
 .PARAMETER Scope
-An optional Scope for the state object, used when saving the state.
+    An optional array of scopes to categorize the state object, enabling specific management based on scope.
+
+.PARAMETER Threadsafe
+    Ensures the shared state operates in a thread-safe manner by converting it to a concurrent dictionary.
 
 .EXAMPLE
-Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
+    Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
+    Sets a hash table with a key-value pair in the shared state under the name 'Data'.
 
 .EXAMPLE
-Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
+    Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
+    Sets an array of user names within the shared state under the name 'Users' with specified scopes.
 #>
 function Set-PodeState {
     [CmdletBinding(DefaultParameterSetName = 'Builtin')]
@@ -32,57 +38,66 @@ function Set-PodeState {
         [string]
         $Name,
 
-        [Parameter( ParameterSetName = 'Builtin')]
+        [Parameter(ParameterSetName = 'Builtin')]
         [string[]]
         $Scope,
 
-        [Parameter( Mandatory = $true, ParameterSetName = 'ThreadSafe')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ThreadSafe')]
         [switch]
         $Threadsafe
     )
 
+    # Check if Pode has been initialized; if not, throw an exception
     if ($null -eq $PodeContext.Server.State) {
-        # Pode has not been initialized
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
+    # Convert the state to a concurrent dictionary if thread-safe operations are requested
     if ($Threadsafe.IsPresent) {
-        if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+        # If the state is already a concurrent dictionary, no conversion is needed
+        if (Test-PodeStateIsThreadSafe) {
             return
         }
-        $PodeContext.Server.State = ConvertTo-PodeConcurrentDictionary  -Hashtable $PodeContext.Server.State
+        # Convert the current state to a concurrent dictionary for thread safety
+        $PodeContext.Server.State = ConvertTo-PodeConcurrentDictionary -Hashtable $PodeContext.Server.State
         return
     }
 
+    # Set the scope to an empty array if none is provided
     if ($null -eq $Scope) {
         $Scope = @()
     }
 
-    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+    # Check if the state is a concurrent dictionary
+    if (Test-PodeStateIsThreadSafe) {
+        # Create a new concurrent dictionary item with case-insensitive keys
         $item = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase)
 
-        if ($Value -is [System.Collections.Specialized.OrderedDictionary]) {
-            $null = $item.TryAdd('Value', (ConvertTo-PodeConcurrentDictionary  -Hashtable $Value))
-        }   if ($Value -is [hashtable]) {
-            $null = $item.TryAdd('Value', (ConvertTo-PodeConcurrentDictionary  -Hashtable $Value))
-        }
-        else {
-            $null = $item.TryAdd('Value', $Value)
+        # If the value is an ordered dictionary or hashtable, convert it to a concurrent dictionary
+        if (($Value -is [System.Collections.Specialized.OrderedDictionary]) -or ($Value -is [hashtable])) {
+            $Value = (ConvertTo-PodeConcurrentDictionary -Hashtable $Value)
         }
 
-        $null = $item.TryAdd('Scope', $Scope)
-        $null = $PodeContext.Server.State.TryAdd($Name, $item  )
+        # Add the value to the dictionary
+        $item['Value'] = $Value
+
+        # Add the scope to the item
+        $item['Scope'] = $Scope
+
+        # Try to add the new item to the shared state
+        $PodeContext.Server.State[$Name] = $item
     }
     else {
+        # If not using a concurrent dictionary, add the item as a regular hashtable
         $PodeContext.Server.State[$Name] = @{
             Value = $Value
             Scope = $Scope
         }
     }
 
+    # Return the value that was set
     return $Value
 }
-
 
 
 <#
@@ -165,7 +180,7 @@ function Get-PodeStateNames {
         $Scope = @()
     }
 
-    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+    if (Test-PodeStateIsThreadSafe) {
         $tempState = $PodeContext.Server.State
         $keys = $tempState.Keys.clone()
     }
@@ -220,7 +235,7 @@ function Remove-PodeState {
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
-    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+    if (Test-PodeStateIsThreadSafe) {
         $item = ''
         $null = $PodeContext.Server.State.tryRemove($Name, [ref]$item)
         return $item.value
@@ -303,7 +318,7 @@ function Save-PodeState {
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # contruct the state to save (excludes, etc)
-    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+    if (Test-PodeStateIsThreadSafe) {
         $state = Convert-PodeConcurrentDictionaryToHashtable -concurrentDictionary $PodeContext.Server.State
     }
     else {
@@ -421,6 +436,11 @@ function Restore-PodeState {
         }
     }
 
+    # if the file is empty exit
+    if ($state.Count -eq 0){
+        return
+    }
+
     # Clone the keys
     $keys = $state.Keys.clone()
 
@@ -448,7 +468,7 @@ function Restore-PodeState {
     }
 
     #clone the state
-    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+    if (Test-PodeStateIsThreadSafe) {
         $PodeContext.Server.State = ConvertTo-PodeConcurrentDictionary $state
     }
     else {

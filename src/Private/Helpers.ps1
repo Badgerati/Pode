@@ -4070,9 +4070,6 @@ function Resolve-PodeObjectArray {
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-
-
-# Define a function to convert a hashtable to a ConcurrentDictionary
 function ConvertTo-PodeConcurrentDictionary {
     param (
         $Hashtable
@@ -4096,27 +4093,27 @@ function ConvertTo-PodeConcurrentDictionary {
             $value = ConvertTo-PodeConcurrentDictionary -hashtable $value
         }
 
-        $concurrentDictionary.TryAdd($key, $value) | Out-Null
+        $concurrentDictionary[$key]= $value
     }
 
     return $concurrentDictionary
 }
 
-
 <#
 .SYNOPSIS
-    Converts a ConcurrentDictionary to a hashtable.
+    Converts a ConcurrentDictionary or PodeOrderedConcurrentDictionary to a hashtable.
 
 .DESCRIPTION
-    The `Convert-PodeConcurrentDictionaryToHashtable` function takes a ConcurrentDictionary and converts
-    it into a hashtable. This function supports the recursive conversion of nested ConcurrentDictionary objects.
+    The `Convert-PodeConcurrentDictionaryToHashtable` function converts a ConcurrentDictionary or
+    PodeOrderedConcurrentDictionary into a hashtable. It supports the recursive conversion of nested
+    dictionaries, preserving the structure of the original input.
 
-.PARAMETER concurrentDictionary
-    The ConcurrentDictionary to be converted into a hashtable.
+.PARAMETER ConcurrentDictionary
+    The ConcurrentDictionary or PodeOrderedConcurrentDictionary to be converted into a hashtable.
 
 .OUTPUTS
     [hashtable]
-    Outputs a hashtable with the same keys and values as the input ConcurrentDictionary.
+    Outputs a hashtable with the same keys and values as the input dictionary.
 
 .EXAMPLE
     $concurrentDictionary = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -4125,30 +4122,67 @@ function ConvertTo-PodeConcurrentDictionary {
     $nestedConcurrentDictionary.TryAdd('SubKey1', 'SubValue1') | Out-Null
     $concurrentDictionary.TryAdd('Key2', $nestedConcurrentDictionary) | Out-Null
 
-    $hashtable = Convert-PodeConcurrentDictionaryToHashtable -concurrentDictionary $concurrentDictionary
-    # The variable $hashtable now contains a hashtable with the same structure as $concurrentDictionary
+    $hashtable = Convert-PodeConcurrentDictionaryToHashtable -ConcurrentDictionary $concurrentDictionary
+    # The variable $hashtable now contains a hashtable with the same structure as $concurrentDictionary.
+
+.NOTES
+    This function is primarily for internal use within Pode and may change in future releases.
 #>
 function Convert-PodeConcurrentDictionaryToHashtable {
     param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNull()]
+        [object] # Accepts both ConcurrentDictionary and PodeOrderedConcurrentDictionary
         $ConcurrentDictionary
     )
-    if (($value -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]] ) -or
-($value -is [Pode.PodeOrderedConcurrentDictionary[string, object]])) {
-        $hashtable = @{}
-        foreach ($key in $ConcurrentDictionary.Keys) {
 
-            $value = $ConcurrentDictionary[$key]
+    # Check if the input is a supported dictionary type; if not, return $null
+    if (! ($ConcurrentDictionary -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]] -or
+              $ConcurrentDictionary -is [Pode.PodeOrderedConcurrentDictionary[string, object]])) {
+          return $null
+    }
 
-            # Recursively convert nested ConcurrentDictionary objects
-            if (($value -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]] ) -or
-        ($value -is [Pode.PodeOrderedConcurrentDictionary[string, object]])) {
-                $value = Convert-PodeConcurrentDictionaryToHashtable -concurrentDictionary $value
-            }
+    # Create an empty hashtable to store converted values
+    $hashtable = @{}
 
-            $hashtable[$key] = $value
+    # Iterate through each key in the ConcurrentDictionary or PodeOrderedConcurrentDictionary
+    foreach ($key in $ConcurrentDictionary.Keys) {
+        $value = $ConcurrentDictionary[$key]
+
+        # Recursively convert nested ConcurrentDictionary or PodeOrderedConcurrentDictionary objects to hashtables
+        if ($value -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]] -or
+            $value -is [Pode.PodeOrderedConcurrentDictionary[string, object]]) {
+            $value = Convert-PodeConcurrentDictionaryToHashtable -ConcurrentDictionary $value
         }
 
-        return $hashtable
+        # Assign the value to the corresponding key in the hashtable
+        $hashtable[$key] = $value
     }
-    return $null
+
+    return $hashtable
+}
+
+
+
+<#
+.SYNOPSIS
+    Tests if the shared state in Pode is thread-safe.
+
+.DESCRIPTION
+    This function checks if the shared state object within Pode is a thread-safe concurrent dictionary.
+    It returns a boolean value indicating whether the state is thread-safe.
+
+.EXAMPLE
+    Test-PodeStateIsThreadSafe
+    Checks if the current state in Pode is a thread-safe concurrent dictionary.
+
+.OUTPUTS
+    [bool] True if the shared state is thread-safe, otherwise False.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeStateIsThreadSafe {
+    # Check if the type of the shared state is a ConcurrentDictionary, which is thread-safe
+    return $PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2'
 }
