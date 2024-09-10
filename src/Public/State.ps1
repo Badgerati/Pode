@@ -21,20 +21,24 @@ Set-PodeState -Name 'Data' -Value @{ 'Name' = 'Rick Sanchez' }
 Set-PodeState -Name 'Users' -Value @('user1', 'user2') -Scope General, Users
 #>
 function Set-PodeState {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Builtin')]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name,
-
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Builtin')]
         [object]
         $Value,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Builtin')]
+        [string]
+        $Name,
+
+        [Parameter( ParameterSetName = 'Builtin')]
         [string[]]
-        $Scope
+        $Scope,
+
+        [Parameter( Mandatory = $true, ParameterSetName = 'ThreadSafe')]
+        [switch]
+        $Threadsafe
     )
 
     if ($null -eq $PodeContext.Server.State) {
@@ -42,17 +46,44 @@ function Set-PodeState {
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
+    if ($Threadsafe.IsPresent) {
+        if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+            return
+        }
+        $PodeContext.Server.State = ConvertTo-PodeConcurrentDictionary  -Hashtable $PodeContext.Server.State
+        return
+    }
+
     if ($null -eq $Scope) {
         $Scope = @()
     }
 
-    $PodeContext.Server.State[$Name] = @{
-        Value = $Value
-        Scope = $Scope
+    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+        $item = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase)
+
+        if ($Value -is [System.Collections.Specialized.OrderedDictionary]) {
+            $null = $item.TryAdd('Value', (ConvertTo-PodeConcurrentDictionary  -Hashtable $Value))
+        }   if ($Value -is [hashtable]) {
+            $null = $item.TryAdd('Value', (ConvertTo-PodeConcurrentDictionary  -Hashtable $Value))
+        }
+        else {
+            $null = $item.TryAdd('Value', $Value)
+        }
+
+        $null = $item.TryAdd('Scope', $Scope)
+        $null = $PodeContext.Server.State.TryAdd($Name, $item  )
+    }
+    else {
+        $PodeContext.Server.State[$Name] = @{
+            Value = $Value
+            Scope = $Scope
+        }
     }
 
     return $Value
 }
+
+
 
 <#
 .SYNOPSIS
@@ -134,8 +165,14 @@ function Get-PodeStateNames {
         $Scope = @()
     }
 
-    $tempState = $PodeContext.Server.State.Clone()
-    $keys = $tempState.Keys
+    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+        $tempState = $PodeContext.Server.State
+        $keys = $tempState.Keys.clone()
+    }
+    else {
+        $tempState = $PodeContext.Server.State.Clone()
+        $keys = $tempState.Keys
+    }
 
     if ($Scope.Length -gt 0) {
         $keys = @(foreach ($key in $keys) {
@@ -181,6 +218,12 @@ function Remove-PodeState {
     if ($null -eq $PodeContext.Server.State) {
         # Pode has not been initialized
         throw ($PodeLocale.podeNotInitializedExceptionMessage)
+    }
+
+    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+        $item = ''
+        $null = $PodeContext.Server.State.tryRemove($Name, [ref]$item)
+        return $item.value
     }
 
     $value = $PodeContext.Server.State[$Name].Value
@@ -242,7 +285,8 @@ function Save-PodeState {
         $Include,
 
         [Parameter()]
-        [int16]
+        [ValidateRange(0, 100)]
+        [int]
         $Depth = 10,
 
         [switch]
@@ -259,7 +303,12 @@ function Save-PodeState {
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot
 
     # contruct the state to save (excludes, etc)
-    $state = $PodeContext.Server.State.Clone()
+    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+        $state = Convert-PodeConcurrentDictionaryToHashtable -concurrentDictionary $PodeContext.Server.State
+    }
+    else {
+        $state = $PodeContext.Server.State.Clone()
+    }
 
     # scopes
     if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
@@ -337,10 +386,13 @@ function Restore-PodeState {
         [string]
         $Path,
 
+        [Parameter()]
         [switch]
         $Merge,
 
-        [int16]
+        [Parameter()]
+        [ValidateRange(0, 100)]
+        [int]
         $Depth = 10
     )
 
@@ -369,9 +421,12 @@ function Restore-PodeState {
         }
     }
 
+    # Clone the keys
+    $keys = $state.Keys.clone()
+
     # check for no scopes, and add for backwards compat
     $convert = $false
-    foreach ($_key in $state.Clone().Keys) {
+    foreach ($_key in $keys) {
         if ($null -eq $state[$_key].Scope) {
             $convert = $true
             break
@@ -379,7 +434,7 @@ function Restore-PodeState {
     }
 
     if ($convert) {
-        foreach ($_key in $state.Clone().Keys) {
+        foreach ($_key in $keys) {
             $state[$_key] = @{
                 Value = $state[$_key]
                 Scope = @()
@@ -388,13 +443,18 @@ function Restore-PodeState {
     }
 
     # set the scope to the main context
-    if ($Merge) {
-        foreach ($_key in $state.Clone().Keys) {
-            $PodeContext.Server.State[$_key] = $state[$_key]
-        }
+    if (! $Merge) {
+        $PodeContext.Server.State.clear()
+    }
+
+    #clone the state
+    if ($PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2') {
+        $PodeContext.Server.State = ConvertTo-PodeConcurrentDictionary $state
     }
     else {
-        $PodeContext.Server.State = $state.Clone()
+        foreach ($_key in $keys) {
+            $PodeContext.Server.State[$_key] = $state[$_key]
+        }
     }
 }
 
