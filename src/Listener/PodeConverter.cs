@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Management.Automation;
@@ -34,7 +35,11 @@ namespace Pode
 
             if (type != "String")
             {
-                if (inputObject is OrderedDictionary)
+                if (inputObject.GetType().GetGenericTypeDefinition() == typeof(ConcurrentDictionary<,>))
+                {
+                    type = "hashtable";
+                }
+                else if (inputObject is OrderedDictionary)
                 {
                     type = "ordereddictionary";
                 }
@@ -45,6 +50,10 @@ namespace Pode
                 else if (inputObject is Hashtable)
                 {
                     type = "hashtable";
+                }
+                else if (inputObject.GetType().IsGenericType && inputObject.GetType().GetGenericTypeDefinition() == typeof(PodeOrderedConcurrentDictionary<,>))
+                {
+                    type = "ordereddictionary";
                 }
             }
 
