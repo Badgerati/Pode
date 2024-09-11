@@ -66,6 +66,17 @@ To enable deserialization, use the `-Deserialize` switch along with the followin
 - **`-NoExplode`**: Prevents deserialization from exploding arrays in the cookie value. This is useful when handling comma-separated values where array expansion is not desired.
 - **`-Deserialize`**: Indicates that the retrieved cookie value should be deserialized, interpreting the content based on the provided deserialization style and options.
 
+
+
+#### Supported Deserialization Styles
+
+| Style | Explode | URI Template | Primitive Value (id = 5) | Array (id = [3, 4, 5]) | Object (id = {"role": "admin", "firstName": "Alex"}) |
+|-------|---------|--------------|--------------------------|------------------------|------------------------------------------------------|
+| form* | true*   |              | Cookie: id=5             |                        |                                                      |
+| form  | false   | id={id}      | Cookie: id=5             | Cookie: id=3,4,5       | Cookie: id=role,admin,firstName,Alex                 |
+
+\* Default serialization method
+
 ### Example with Deserialization
 
 This example demonstrates deserialization of a cookie value:

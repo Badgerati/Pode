@@ -65,7 +65,7 @@ Start-PodeServer {
 
 ### Deserialization with Get-PodeBodyData
 
-The `Get-PodeBodyData` function can also deserialize body data from requests, allowing for more complex data handling scenarios. This feature is especially useful when dealing with serialized data structures that require specific interpretation styles.
+Typically the request body is encoded in Json,Xml or Yaml but if it's required the `Get-PodeBodyData` function can also deserialize body data from requests, allowing for more complex data handling scenarios where the only allowed ContentTypes are `application/x-www-form-urlencoded` or `multipart/form-data`. This feature can be especially useful when dealing with serialized data structures that require specific interpretation styles.
 
 To enable deserialization, use the `-Deserialize` switch along with the following options:
 

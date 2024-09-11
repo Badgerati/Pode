@@ -65,6 +65,22 @@ To enable deserialization, use the `-Deserialize` switch along with the followin
 - **`-Style`**: Defines the deserialization style (`'Simple'`, `'Label'`, `'Matrix'`, `'Form'`, `'SpaceDelimited'`, `'PipeDelimited'`, `'DeepObject'`) to interpret the query parameter value correctly. The default style is `'Form'`.
 - **`-KeyName`**: Specifies the key name to use when deserializing, allowing you to map the query parameter data accurately. The default value for `KeyName` is `'id'`.
 
+#### Supported Deserialization Styles
+
+
+| Style          | Explode | URI Template | Primitive Value (id = 5) | Array (id = [3, 4, 5]) | Object (id = {"role": "admin", "firstName": "Alex"}) |
+|----------------|---------|--------------|--------------------------|------------------------|------------------------------------------------------|
+| form*           | true*    | /users{?id*} | /users?id=5              | /users?id=3&id=4&id=5  | /users?role=admin&firstName=Alex                     |
+| form           | false   | /users{?id}  | /users?id=5              | /users?id=3,4,5        | /users?id=role,admin,firstName,Alex                  |
+| spaceDelimited | true    | /users{?id*} | n/a                      | /users?id=3&id=4&id=5  | n/a                                                  |
+| spaceDelimited | false   | n/a          | n/a                      | /users?id=3%204%205    | n/a                                                  |
+| pipeDelimited  | true    | /users{?id*} | n/a                      | /users?id=3&id=4&id=5  | n/a                                                  |
+| pipeDelimited   | false   | n/a              | n/a                      | /users?id=3|4|5              | n/a                                                              |
+| deepObject      | true    | n/a              | n/a                      | n/a                          | /users?id[role]=admin&id[firstName]=Alex                         |
+
+
+\* Default serialization method
+
 #### Example with Deserialization
 
 This example demonstrates deserialization of a query parameter with specific styles and options:

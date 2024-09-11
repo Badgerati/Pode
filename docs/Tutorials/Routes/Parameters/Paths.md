@@ -66,6 +66,19 @@ To enable deserialization, use the `-Deserialize` switch along with the followin
 - **`-Style`**: Defines the deserialization style (`'Simple'`, `'Label'`, or `'Matrix'`) to interpret the parameter value correctly. The default style is `'Simple'`.
 - **`-KeyName`**: Specifies the key name to use when deserializing, allowing you to map the parameter data accurately. The default value for `KeyName` is `'id'`.
 
+#### Supported Deserialization Styles
+
+| Style   | Explode | URI Template  | Primitive Value (id = 5) | Array (id = [3, 4, 5]) | Object (id = {"role": "admin", "firstName": "Alex"}) |
+|---------|---------|---------------|--------------------------|------------------------|------------------------------------------------------|
+| simple* | false*  | /users/{id}   | /users/5                 | /users/3,4,5           | /users/role,admin,firstName,Alex                     |
+| simple  | true    | /users/{id*}  | /users/5                 | /users/3,4,5           | /users/role=admin,firstName=Alex                     |
+| label   | false   | /users/{.id}  | /users/.5                | /users/.3,4,5          | /users/.role,admin,firstName,Alex                    |
+| label   | true    | /users/{.id*} | /users/.5                | /users/.3.4.5          | /users/.role=admin.firstName=Alex                    |
+| matrix  | false   | /users/{;id}  | /users/;id=5             | /users/;id=3,4,5       | /users/;id=role,admin,firstName,Alex                 |
+| matrix  | true    | /users/{;id*} | /users/;id=5             | /users/;id=3;id=4;id=5 | /users/;role=admin;firstName=Alex                    |
+
+\* Default serialization method
+
 #### Example with Deserialization
 
 This example demonstrates deserialization of a parameter that is styled and exploded as part of the request:

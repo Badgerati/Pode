@@ -63,6 +63,15 @@ To enable deserialization, use the `-Deserialize` switch along with the followin
 - **`-Explode`**: Specifies whether the deserialization process should explode arrays in the header value. This is useful when handling comma-separated values within the header.
 - **`-Deserialize`**: Indicates that the retrieved header value should be deserialized, interpreting the content based on the deserialization style and options.
 
+#### Supported Deserialization Styles
+
+| Style   | Explode | URI Template | Primitive Value (X-MyHeader = 5) | Array (X-MyHeader = [3, 4, 5]) | Object (X-MyHeader = {"role": "admin", "firstName": "Alex"}) |
+|---------|---------|--------------|----------------------------------|--------------------------------|--------------------------------------------------------------|
+| simple* | false*  | {id}         | X-MyHeader: 5                    | X-MyHeader: 3,4,5              | X-MyHeader: role,admin,firstName,Alex                        |
+| simple  | true    | {id*}        | X-MyHeader: 5                    | X-MyHeader: 3,4,5              | X-MyHeader: role=admin,firstName=Alex                        |
+
+\* Default serialization method
+
 ### Example with Deserialization
 
 This example demonstrates deserialization of a header value:
