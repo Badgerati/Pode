@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Management.Automation;
@@ -35,7 +36,7 @@ namespace Pode
 
             if (type != "String")
             {
-                if (inputObject.GetType().GetGenericTypeDefinition() == typeof(ConcurrentDictionary<,>))
+                if (inputObject.GetType().IsGenericType && inputObject.GetType().GetGenericTypeDefinition() == typeof(ConcurrentDictionary<,>))
                 {
                     type = "hashtable";
                 }
@@ -116,7 +117,11 @@ namespace Pode
                     }
                     else
                     {
-                        if (stringValue.StartsWith("#") || stringValue.StartsWith("[") || stringValue.StartsWith("]") || stringValue.StartsWith("@") || stringValue.StartsWith("{") || stringValue.StartsWith("}") || stringValue.StartsWith("!") || stringValue.StartsWith("*"))
+                        // Define the set of special characters that require wrapping in quotes
+                        var specialChars = new HashSet<char> { '#', '[', ']', '@', '{', '}', '!', '*' };
+
+                        // Check if the first character is in the special characters set
+                        if (stringValue.Length > 0 && specialChars.Contains(stringValue[0]))
                         {
                             output.AppendFormat("'{0}'", stringValue.Replace("'", "''"));
                         }
@@ -154,7 +159,7 @@ namespace Pode
                                 stringBuilder.Append(ToYaml(item.Value, depth, nestingLevel + increment));
                             }
                         }
-                        output.Append(stringBuilder.ToString());
+                        output.Append(stringBuilder);
                     }
                     else
                     {
@@ -188,7 +193,7 @@ namespace Pode
                                 stringBuilder.Append(ToYaml(item.Value, depth, nestingLevel + increment));
                             }
                         }
-                        output.Append(stringBuilder.ToString());
+                        output.Append(stringBuilder);
                     }
                     else
                     {

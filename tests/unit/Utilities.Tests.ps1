@@ -8,26 +8,30 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
-    if (!([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' })) {
-        $frameworkDescription = [System.Runtime.InteropServices.RuntimeInformation]::FrameworkDescription
-        $loaded = $false
-        if ($frameworkDescription -match '(\d+)\.(\d+)\.(\d+)') {
-            $majorVersion = [int]$matches[1]
 
-            for ($version = $majorVersion; $version -ge 6; $version--) {
-                $dllPath = "$($src)/Libs/net$version.0/Pode.dll"
-                if (Test-Path $dllPath) {
-                    Add-Type -LiteralPath $dllPath -ErrorAction Stop
-                    $loaded = $true
-                    break
-                }
-            }
+    $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
+    if (! $podeDll) {
+        # fetch the .net version and the libs path
+        $version = [System.Environment]::Version.Major
+        $libsPath = "$($src)/Libs"
+
+        # filter .net dll folders based on version above, and get path for latest version found
+        if (![string]::IsNullOrWhiteSpace($version)) {
+            $netFolder = Get-ChildItem -Path $libsPath -Directory -Force |
+                Where-Object { $_.Name -imatch "net[1-$($version)]" } |
+                Sort-Object -Property Name -Descending |
+                Select-Object -First 1 -ExpandProperty FullName
         }
 
-        if (-not $loaded) {
-            Add-Type -LiteralPath "$($src)/Libs/netstandard2.0/Pode.dll" -ErrorAction Stop
+        # use netstandard if no folder found
+        if ([string]::IsNullOrWhiteSpace($netFolder)) {
+            $netFolder = "$($libsPath)/netstandard2.0"
         }
+
+        # append Pode.dll and mount
+        Add-Type -LiteralPath "$($netFolder)/Pode.dll" -ErrorAction Stop
     }
+
     function Compare-Hashtable {
         param (
             [hashtable]$Hashtable1,
