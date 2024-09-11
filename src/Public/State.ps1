@@ -59,7 +59,7 @@ function Set-PodeState {
             return
         }
         # Convert the current state to a concurrent dictionary for thread safety
-        $PodeContext.Server.State = ConvertTo-PodeConcurrentDictionary -Hashtable $PodeContext.Server.State
+        $PodeContext.Server.State = ConvertTo-PodeConcurrentStructure -Hashtable $PodeContext.Server.State
         return
     }
 
@@ -75,7 +75,7 @@ function Set-PodeState {
 
         # If the value is an ordered dictionary or hashtable, convert it to a concurrent dictionary
         if (($Value -is [System.Collections.Specialized.OrderedDictionary]) -or ($Value -is [hashtable])) {
-            $Value = (ConvertTo-PodeConcurrentDictionary -Hashtable $Value)
+            $Value = (ConvertTo-PodeConcurrentStructure -Hashtable $Value)
         }
 
         # Add the value to the dictionary
@@ -319,7 +319,7 @@ function Save-PodeState {
 
     # contruct the state to save (excludes, etc)
     if (Test-PodeStateIsThreadSafe) {
-        $state = Convert-PodeConcurrentDictionaryToHashtable -concurrentDictionary $PodeContext.Server.State
+        $state = ConvertFrom-PodeConcurrentStructure -concurrentDictionary $PodeContext.Server.State
     }
     else {
         $state = $PodeContext.Server.State.Clone()
@@ -437,7 +437,7 @@ function Restore-PodeState {
     }
 
     # if the file is empty exit
-    if ($state.Count -eq 0){
+    if ($state.Count -eq 0) {
         return
     }
 
@@ -469,7 +469,7 @@ function Restore-PodeState {
 
     #clone the state
     if (Test-PodeStateIsThreadSafe) {
-        $PodeContext.Server.State = ConvertTo-PodeConcurrentDictionary $state
+        $PodeContext.Server.State = ConvertTo-PodeConcurrentStructure $state
     }
     else {
         foreach ($_key in $keys) {

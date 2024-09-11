@@ -2,11 +2,33 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 BeforeAll {
-    Add-Type -AssemblyName "System.Net.Http" -ErrorAction SilentlyContinue
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
+
+    $podeDll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Pode' }
+    if (! $podeDll) {
+        # fetch the .net version and the libs path
+        $version = [System.Environment]::Version.Major
+        $libsPath = "$($src)/Libs"
+
+        # filter .net dll folders based on version above, and get path for latest version found
+        if (![string]::IsNullOrWhiteSpace($version)) {
+            $netFolder = Get-ChildItem -Path $libsPath -Directory -Force |
+                Where-Object { $_.Name -imatch "net[1-$($version)]" } |
+                Sort-Object -Property Name -Descending |
+                Select-Object -First 1 -ExpandProperty FullName
+        }
+
+        # use netstandard if no folder found
+        if ([string]::IsNullOrWhiteSpace($netFolder)) {
+            $netFolder = "$($libsPath)/netstandard2.0"
+        }
+
+        # append Pode.dll and mount
+        Add-Type -LiteralPath "$($netFolder)/Pode.dll" -ErrorAction Stop
+    }
 }
 
 Describe 'Get-PodeType' {
@@ -770,7 +792,7 @@ Describe 'Get-PodeEndpointInfo' {
     }
 
     It 'Throws an error for an invalid IP endpoint' {
-        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f  '700.0.0.a' ) #'*Failed to parse*'
+        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f '700.0.0.a' ) #'*Failed to parse*'
     }
 
     It 'Throws an error for an out-of-range IP endpoint' {
@@ -1765,5 +1787,146 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
             $result = ConvertTo-PodeYamlInternal -InputObject $null
             $result | Should -Be ''
         }
+    }
+}
+
+Describe 'ConvertTo-PodeConcurrentStructure' {
+    BeforeAll {
+        # Sample data setup
+        $sampleHashtable = @{
+            Key1 = 'Value1'
+            Key2 = @{
+                SubKey1 = 'SubValue1'
+            }
+        }
+
+        $sampleOrderedDict = [System.Collections.Specialized.OrderedDictionary]::new()
+        $sampleOrderedDict.Add('Key1', 'Value1')
+        $sampleOrderedDict.Add('Key2', [System.Collections.Specialized.OrderedDictionary]::new())
+        $sampleOrderedDict['Key2'].Add('SubKey1', 'SubValue1')
+
+        $sampleArray = @($sampleHashtable, $sampleOrderedDict, 'StringValue')
+
+        # New sample data: hashtable with an array containing ordered dictionaries
+        $nestedArray = @(
+            [System.Collections.Specialized.OrderedDictionary]::new()
+        )
+        $nestedArray[0].Add('ArrayKey1', 'ArrayValue1')
+
+        $hashtableWithArray = @{
+            Key1        = 'Value1'
+            NestedArray = $nestedArray
+        }
+    }
+
+    It 'Converts hashtable to ConcurrentDictionary' {
+        $result = ConvertTo-PodeConcurrentStructure -InputObject $sampleHashtable
+
+        # Assertions
+        $result | Should -BeOfType 'System.Collections.Concurrent.ConcurrentDictionary[string,object]'
+        $result['Key1'] | Should -Be 'Value1'
+        $result['Key2'] | Should -BeOfType 'System.Collections.Concurrent.ConcurrentDictionary[string,object]'
+        $result['Key2']['SubKey1'] | Should -Be 'SubValue1'
+    }
+
+    It 'Converts OrderedDictionary to PodeOrderedConcurrentDictionary' {
+        $result = ConvertTo-PodeConcurrentStructure -InputObject $sampleOrderedDict
+
+        # Assertions
+        $result | Should -BeOfType 'Pode.PodeOrderedConcurrentDictionary[string,object]'
+        $result['Key1'] | Should -Be 'Value1'
+        $result['Key2'] | Should -BeOfType 'Pode.PodeOrderedConcurrentDictionary[string,object]'
+        $result['Key2']['SubKey1'] | Should -Be 'SubValue1'
+    }
+
+    It 'Converts array with mixed types' {
+        $result = ConvertTo-PodeConcurrentStructure -InputObject $sampleArray
+
+        # Assertions
+        $result.GetType().FullName | Should -Be 'System.Collections.ArrayList+SyncArrayList'
+        $result[0].GetType().Name | Should -Be 'ConcurrentDictionary`2'
+        $result[1].GetType().Name | Should -Be 'PodeOrderedConcurrentDictionary`2'
+        $result[2] | Should -BeOfType 'string'
+    }
+
+    It 'Returns non-hashtable objects unchanged' {
+        $result = ConvertTo-PodeConcurrentStructure -InputObject 'StringValue'
+
+        # Assertions
+        $result | Should -Be 'StringValue'
+    }
+
+    It 'Converts hashtable with nested array of ordered dictionaries' {
+        $result = ConvertTo-PodeConcurrentStructure -InputObject $hashtableWithArray
+
+        # Assertions
+        $result.GetType().Name | Should -Be 'ConcurrentDictionary`2'
+        $result['Key1'] | Should -Be 'Value1'
+        $result['NestedArray'].GetType().FullName | Should -Be 'System.Collections.ArrayList+SyncArrayList'
+        $result['NestedArray'][0].GetType().Name | Should -Be 'PodeOrderedConcurrentDictionary`2'
+        $result['NestedArray'][0]['ArrayKey1'] | Should -Be 'ArrayValue1'
+    }
+}
+
+
+
+Describe 'ConvertFrom-PodeConcurrentStructure' {
+    BeforeAll {
+        # Sample data setup
+        # ConcurrentDictionary with nested structure
+        $concurrentDictionary = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
+        $concurrentDictionary.TryAdd('Key1', 'Value1') | Out-Null
+        $nestedConcurrentDictionary = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
+        $nestedConcurrentDictionary.TryAdd('SubKey1', 'SubValue1') | Out-Null
+        $concurrentDictionary.TryAdd('Key2', $nestedConcurrentDictionary) | Out-Null
+
+        # PodeOrderedConcurrentDictionary setup
+        $orderedDict = [Pode.PodeOrderedConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
+        $orderedDict.TryAdd('OrderedKey1', 'OrderedValue1') | Out-Null
+
+        # Synchronized ArrayList setup
+        $syncArrayList = [System.Collections.ArrayList]::Synchronized([System.Collections.ArrayList]::new())
+        $syncArrayList.Add($concurrentDictionary) | Out-Null
+        $syncArrayList.Add($orderedDict) | Out-Null
+        $syncArrayList.Add('SimpleValue') | Out-Null
+    }
+
+    It 'Converts ConcurrentDictionary to Hashtable' {
+        $result = ConvertFrom-PodeConcurrentStructure -InputObject $concurrentDictionary
+
+        # Assertions
+        $result | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
+        $result['Key1'] | Should -Be 'Value1'
+        $result['Key2'] | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
+        $result['Key2']['SubKey1'] | Should -Be 'SubValue1'
+    }
+
+    It 'Converts PodeOrderedConcurrentDictionary to Hashtable' {
+        $result = ConvertFrom-PodeConcurrentStructure -InputObject $orderedDict
+
+        # Assertions
+        $result | Should -BeOfType 'hashtable'
+        $result['OrderedKey1'] | Should -Be 'OrderedValue1'
+    }
+
+    It 'Converts Synchronized ArrayList to object[]' {
+        $result = ConvertFrom-PodeConcurrentStructure -InputObject $syncArrayList
+
+        # Assertions
+        $result.GetType().FullName | Should -Be 'System.Object[]'
+        $result[0] | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
+        $result[0]['Key1'] | Should -Be 'Value1'
+        $result[0]['Key2'] | Should -BeOfType 'System.Collections.Specialized.OrderedDictionary'
+        $result[0]['Key2']['SubKey1'] | Should -Be 'SubValue1'
+        $result[1] | Should -BeOfType 'hashtable'
+        $result[1]['OrderedKey1'] | Should -Be 'OrderedValue1'
+        $result[2] | Should -Be 'SimpleValue'
+    }
+
+    It 'Returns non-dictionary objects unchanged' {
+        $result = ConvertFrom-PodeConcurrentStructure -InputObject 'StringValue'
+
+        # Assertions
+        $result | Should -Be 'StringValue'
     }
 }
