@@ -27,6 +27,14 @@ Describe 'OpenAPI integration tests' {
             Start-Process 'powershell' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -PortV3 $PortV3 -PortV3_1 $PortV3_1 -DisableTermination"  -NoNewWindow
         }
 
+        function Compare-StringRnLn {
+            param (
+                [string]$InputString1,
+                [string]$InputString2
+            )
+            return ($InputString1.Trim() -replace "`r`n|`n|`r", "`n") -eq ($InputString2.Trim() -replace "`r`n|`n|`r", "`n")
+        }
+
         function Convert-PsCustomObjectToOrderedHashtable {
             [CmdletBinding()]
             param (
@@ -113,6 +121,9 @@ Describe 'OpenAPI integration tests' {
                     return $true
                 }
                 else {
+                    if($value1 -is [string] -and $value2 -is [string]){
+                    return  Compare-StringRnLn $value1 $value2
+                    }
                     # Check if the values are equal
                     return $value1 -eq $value2
                 }
