@@ -1809,7 +1809,7 @@ function Enable-PodeOAViewer {
             OpenApi           = "$($OpenApiUrl)?format=yaml"
             DarkMode          = $DarkMode
             DefinitionTag     = $DefinitionTag
-            SwaggerEditorDist = 'https://unpkg.com/swagger-editor-dist@5'
+            SwaggerEditorDist = 'https://unpkg.com/swagger-editor-dist@4'
         }
         Add-PodeRoute -Method Get -Path $Path `
             -Middleware $Middleware -ArgumentList $meta `
