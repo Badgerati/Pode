@@ -2877,19 +2877,19 @@ Describe 'OpenApi' {
             $result.description | Should -Be 'Pet in the store'
             $result.content | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $result.content.Count | Should -Be 3
-            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.Count | Should -Be 1
-            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.schema.Count | Should -Be 1
             $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/xml' | Should -BeOfType [hashtable]
+            $result.content.'application/xml' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.Count | Should -Be 1
-            $result.content.'application/xml'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/xml'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.schema.Count | Should -Be 1
             $result.content.'application/xml'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.Count | Should -Be 1
-            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.schema.Count | Should -Be 1
             $result.content.'application/x-www-form-urlencoded'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             $result.required | Should -BeTrue
@@ -2904,19 +2904,19 @@ Describe 'OpenApi' {
             $result.description | Should -Be 'Pet in the store'
             $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.Count | Should -Be 3
-            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.Count | Should -Be 1
-            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.schema.Count | Should -Be 1
             $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/xml' | Should -BeOfType [hashtable]
+            $result.content.'application/xml' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.Count | Should -Be 1
-            $result.content.'application/xml'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/xml'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.schema.Count | Should -Be 1
             $result.content.'application/xml'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.Count | Should -Be 1
-            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.schema.Count | Should -Be 1
             $result.content.'application/x-www-form-urlencoded'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             $result.required | Should -BeTrue

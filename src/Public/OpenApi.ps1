@@ -899,7 +899,7 @@ function New-PodeOARequestBody {
     foreach ($tag in $DefinitionTag) {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'builtin' {
-                $param = @{content = ConvertTo-PodeOAObjectSchema -DefinitionTag $tag -Content $Content -Properties:$Properties }
+                $param = [ordered]@{content = ConvertTo-PodeOAObjectSchema -DefinitionTag $tag -Content $Content -Properties:$Properties }
 
                 if ($Required.IsPresent) {
                     $param['required'] = $Required.IsPresent
@@ -924,7 +924,7 @@ function New-PodeOARequestBody {
 
             'reference' {
                 Test-PodeOAComponentInternal -Field requestBodies -DefinitionTag $tag -Name $Reference -PostValidation
-                $param = @{
+                $param = [ordered]@{
                     '$ref' = "#/components/requestBodies/$Reference"
                 }
             }
@@ -1809,7 +1809,7 @@ function Enable-PodeOAViewer {
             OpenApi           = "$($OpenApiUrl)?format=yaml"
             DarkMode          = $DarkMode
             DefinitionTag     = $DefinitionTag
-            SwaggerEditorDist = 'https://unpkg.com/swagger-editor-dist@4'
+            SwaggerEditorDist = 'https://unpkg.com/swagger-editor-dist@5'
         }
         Add-PodeRoute -Method Get -Path $Path `
             -Middleware $Middleware -ArgumentList $meta `
@@ -2641,7 +2641,7 @@ function Add-PodeOACallBack {
                 if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
                     $r.OpenApi.CallBacks[$tag] = [ordered]@{}
                 }
-                $r.OpenApi.CallBacks[$tag].$Name = @{
+                $r.OpenApi.CallBacks[$tag].$Name = [ordered]@{
                     '$ref' = "#/components/callbacks/$Reference"
                 }
             }
@@ -2859,13 +2859,13 @@ function New-PodeOAResponse {
     This example demonstrates the use of New-PodeOAContentMediaType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
 
 .EXAMPLE
-    $content = @{ type = 'string' }
+    $content = [ordered]@{ type = 'string' }
     $mediaType = 'application/json'
     New-PodeOAContentMediaType -ContentType $mediaType -Content $content
     This example creates a media content type definition for 'application/json' with a simple string content type.
 
 .EXAMPLE
-    $content = @{ type = 'object'; properties = @{ name = @{ type = 'string' } } }
+    $content = [ordered]@{ type = 'object'; properties = [ordered]@{ name = @{ type = 'string' } } }
     $mediaTypes = 'application/json', 'application/xml'
     New-PodeOAContentMediaType -ContentType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
     This example demonstrates defining an array of objects for both 'application/json' and 'application/xml' media types, with a specified range for the number of items and a title.
@@ -2941,14 +2941,14 @@ function New-PodeOAContentMediaType {
         }
         if ($Upload.IsPresent) {
             if ( $media -ieq 'multipart/form-data' -and $Content) {
-                $Content = @{'__upload' = @{
+                $Content = [ordered]@{'__upload' = [ordered]@{
                         'content'              = $Content
                         'partContentMediaType' = $PartContentMediaType
                     }
                 }
             }
             else {
-                $Content = @{'__upload' = @{
+                $Content = [ordered]@{'__upload' = [ordered]@{
                         'contentEncoding' = $ContentEncoding
                     }
                 }
@@ -3100,7 +3100,7 @@ function New-PodeOAResponseLink {
                 $Name = $Reference
             }
             $link = [ordered]@{
-                $Name = @{
+                $Name = [ordered]@{
                     '$ref' = "#/components/links/$Reference"
                 }
             }

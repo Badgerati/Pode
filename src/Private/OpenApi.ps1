@@ -59,7 +59,7 @@ function ConvertTo-PodeOAObjectSchema {
     $types = [string[]]$Content.Keys
     foreach ($type in $types) {
         # Initialize schema structure for the type
-        $obj[$type] = @{ }
+        $obj[$type] = [ordered]@{ }
 
         # Handle upload content, array structures, and shared component schema references
         if ($Content[$type].__upload) {
@@ -136,12 +136,12 @@ function ConvertTo-PodeOAObjectSchema {
                 #Check for empty reference
                 if (@('string', 'integer' , 'number', 'boolean' ) -icontains $item) {
                     if ($isArray) {
-                        $obj[$type].schema.items = @{
+                        $obj[$type].schema.items = [ordered]@{
                             'type' = $item.ToLower()
                         }
                     }
                     else {
-                        $obj[$type].schema = @{
+                        $obj[$type].schema = [ordered]@{
                             'type' = $item.ToLower()
                         }
                     }
@@ -149,12 +149,12 @@ function ConvertTo-PodeOAObjectSchema {
                 else {
                     Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
                     if ($isArray) {
-                        $obj[$type].schema.items = @{
+                        $obj[$type].schema.items = [ordered]@{
                             '$ref' = "#/components/schemas/$($item)"
                         }
                     }
                     else {
-                        $obj[$type].schema = @{
+                        $obj[$type].schema = [ordered]@{
                             '$ref' = "#/components/schemas/$($item)"
                         }
                     }
@@ -174,8 +174,8 @@ function ConvertTo-PodeOAObjectSchema {
             }
             if ($Properties) {
                 if ($item.Name) {
-                    $obj[$type].schema = @{
-                        'properties' = @{
+                    $obj[$type].schema = [ordered]@{
+                        'properties' = [ordered]@{
                             $item.Name = $result
                         }
                     }
@@ -324,7 +324,7 @@ function ConvertTo-PodeOAOfProperty {
     # Initialize the schema with the 'Of' type
     if ($Property.name) {
         $schema = [ordered]@{
-            $Property.name = @{
+            $Property.name = [ordered]@{
                 $Property.type = @()
             }
         }
@@ -345,10 +345,10 @@ function ConvertTo-PodeOAOfProperty {
                 # Validate the schema component and add a reference to it
                 Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $prop -PostValidation
                 if ($Property.name) {
-                    $schema[$Property.name][$Property.type] += @{ '$ref' = "#/components/schemas/$prop" }
+                    $schema[$Property.name][$Property.type] += [ordered]@{ '$ref' = "#/components/schemas/$prop" }
                 }
                 else {
-                    $schema[$Property.type] += @{ '$ref' = "#/components/schemas/$prop" }
+                    $schema[$Property.type] += [ordered]@{ '$ref' = "#/components/schemas/$prop" }
                 }
             }
             else {
@@ -390,7 +390,7 @@ function ConvertTo-PodeOAOfProperty {
     A mandatory string parameter specifying the definition context used for schema validation and compatibility checks with OpenAPI versions.
 
 .EXAMPLE
-    $propertyDetails = @{
+    $propertyDetails = [ordered]@{
         type = 'string';
         description = 'A sample property';
     }
@@ -554,7 +554,7 @@ function ConvertTo-PodeOASchemaProperty {
         $schema['type'] = 'array'
         if ($Property.type -ieq 'schema') {
             Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
-            $schema['items'] = @{ '$ref' = "#/components/schemas/$($Property['schema'])" }
+            $schema['items'] = [ordered]@{ '$ref' = "#/components/schemas/$($Property['schema'])" }
         }
         else {
             $Property.array = $false
@@ -569,7 +569,7 @@ function ConvertTo-PodeOASchemaProperty {
             }
 
             if ($Property.xmlItemName) {
-                $schema.items.xml = @{'name' = $Property.xmlItemName }
+                $schema.items.xml = [ordered]@{'name' = $Property.xmlItemName }
             }
         }
         return $schema
@@ -583,7 +583,7 @@ function ConvertTo-PodeOASchemaProperty {
         # schema refs
         if ($Property.type -ieq 'schema') {
             Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
-            $schema = @{
+            $schema = [ordered]@{
                 '$ref' = "#/components/schemas/$($Property['schema'])"
             }
         }
@@ -597,7 +597,7 @@ function ConvertTo-PodeOASchemaProperty {
         # are we using an object?
         $Property.object = $false
 
-        $schema = @{
+        $schema = [ordered]@{
             type       = 'object'
             properties = (ConvertTo-PodeOASchemaObjectProperty -DefinitionTag $DefinitionTag -Properties $Property)
         }
@@ -786,14 +786,14 @@ function Set-PodeOpenApiRouteValue {
                     #if scope is empty means 'any role' => assign an empty array
                     $sctValue = @()
                 }
-                $pm.security += @{ $sct = $sctValue }
+                $pm.security += [ordered]@{ $sct = $sctValue }
             }
             elseif ($sct -eq '%_allowanon_%') {
                 #allow anonymous access
                 $pm.security += [ordered]@{}
             }
             else {
-                $pm.security += @{$sct = @() }
+                $pm.security += [ordered]@{$sct = @() }
             }
         }
     }
@@ -802,7 +802,7 @@ function Set-PodeOpenApiRouteValue {
     }
     else {
         # Set responses or default to '204 No Content' if not specified
-        $pm.responses = @{'204' = @{'description' = (Get-PodeStatusDescription -StatusCode 204) } }
+        $pm.responses = [ordered]@{'204' = [ordered]@{'description' = (Get-PodeStatusDescription -StatusCode 204) } }
     }
     # Return the processed route properties
     return $pm
@@ -830,7 +830,7 @@ Mandatory. A tag that identifies the specific OpenAPI definition to be generated
 Ordered dictionary representing the OpenAPI definition, which can be further processed into JSON or YAML format.
 
 .EXAMPLE
-$metaInfo = @{
+$metaInfo = [ordered]@{
 Title = "My API";
 Version = "v1";
 Description = "This is my API description."
@@ -923,7 +923,7 @@ function Get-PodeOpenApiDefinitionInternal {
             $keys = [string[]]$Definition.webhooks.Keys
             foreach ($key in $keys) {
                 if ($Definition.webhooks[$key].NotPrepared) {
-                    $Definition.webhooks[$key] = @{
+                    $Definition.webhooks[$key] = [ordered]@{
                         $Definition.webhooks[$key].Method = Set-PodeOpenApiRouteValue -Route $Definition.webhooks[$key] -DefinitionTag $DefinitionTag
                     }
                 }
@@ -971,7 +971,7 @@ function Get-PodeOpenApiDefinitionInternal {
             $keys = [string[]]$components.pathItems.Keys
             foreach ($key in $keys) {
                 if ($components.pathItems[$key].NotPrepared) {
-                    $components.pathItems[$key] = @{
+                    $components.pathItems[$key] = [ordered]@{
                         $components.pathItems[$key].Method = Set-PodeOpenApiRouteValue -Route $components.pathItems[$key] -DefinitionTag $DefinitionTag
                     }
                 }
@@ -1020,7 +1020,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 if ($authType.Arguments.Description) {
                     $_authObj.description = $authType.Arguments.Description
                 }
-                $_authObj.flows = @{
+                $_authObj.flows = [ordered]@{
                     $oAuthFlow = [ordered]@{
                     }
                 }
@@ -1048,7 +1048,7 @@ function Get-PodeOpenApiDefinitionInternal {
                 }
             }
             else {
-                $_authObj = @{
+                $_authObj = [ordered]@{
                     type   = $authType.Scheme.ToLowerInvariant()
                     scheme = $authType.Name.ToLowerInvariant()
                 }
@@ -1113,8 +1113,8 @@ function Get-PodeOpenApiDefinitionInternal {
 
                 $pm = Set-PodeOpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
                 if ($pm.responses.Count -eq 0) {
-                    $pm.responses += @{
-                        'default' = @{'description' = 'No description' }
+                    $pm.responses += [ordered]@{
+                        'default' = [ordered]@{'description' = 'No description' }
                     }
                 }
                 $def.paths[$_route.OpenApi.Path][$method] = $pm
@@ -1138,12 +1138,12 @@ function Get-PodeOpenApiDefinitionInternal {
 
                         $serverDef = $null
                         if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Name)) {
-                            $serverDef = @{
+                            $serverDef = [ordered]@{
                                 url = (Get-PodeEndpointByName -Name $_route.Endpoint.Name).Url
                             }
                         }
                         else {
-                            $serverDef = @{
+                            $serverDef = [ordered]@{
                                 url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
                             }
                         }
@@ -1280,8 +1280,8 @@ function Get-PodeOABaseObject {
             }
             externalPath     = [ordered]@{}
             defaultResponses = [ordered]@{
-                '200'     = @{ description = 'OK' }
-                'default' = @{ description = 'Internal server error' }
+                '200'     = [ordered]@{ description = 'OK' }
+                'default' = [ordered]@{ description = 'Internal server error' }
             }
             operationId      = @()
         }
@@ -1400,7 +1400,7 @@ function Set-PodeOAAuth {
                     })
                 # Add anonymous access if allowed
                 if ($AllowAnon) {
-                    $r.OpenApi.Authentication += @{'%_allowanon_%' = '' }
+                    $r.OpenApi.Authentication += [ordered]@{'%_allowanon_%' = '' }
                 }
             }
         }
@@ -1472,8 +1472,8 @@ function Set-PodeOAGlobalAuth {
             }
 
             # Update the OpenAPI definition with the authentication information
-            $PodeContext.Server.OpenAPI.Definitions[$tag].Security += @{
-                Definition = @{ "$($authName -replace '\s+', '')" = $Scopes }
+            $PodeContext.Server.OpenAPI.Definitions[$tag].Security += [ordered]@{
+                Definition = [ordered]@{ "$($authName -replace '\s+', '')" = $Scopes }
                 Route      = (ConvertTo-PodeRouteRegex -Path $Route)
             }
         }
@@ -1495,13 +1495,13 @@ function Set-PodeOAGlobalAuth {
     A string identifier for the specific set of schema definitions under which references should be resolved.
 
 .EXAMPLE
-    $schema = @{
+    $schema = [ordered]@{
         type = 'object';
-        properties = @{
-            name = @{
+        properties = [ordered]@{
+            name = [ordered]@{
                 type = 'string'
             };
-            details = @{
+            details = [ordered]@{
                 '$ref' = '#/components/schemas/UserDetails'
             }
         };
@@ -1805,7 +1805,7 @@ function ConvertTo-PodeOAHeaderProperty {
                 $elems.$($e.name).description = $e.description
             }
             # Define the schema, including the type and any additional properties
-            $elems.$($e.name).schema = @{
+            $elems.$($e.name).schema = [ordered]@{
                 type = $($e.type)
             }
             foreach ($k in $e.keys) {
@@ -1942,7 +1942,7 @@ function New-PodeOResponseInternal {
     # Handle response referencing an existing component
     if ($Params.Reference) {
         Test-PodeOAComponentInternal -Field responses -DefinitionTag $DefinitionTag -Name $Params.Reference -PostValidation
-        $response = @{
+        $response = [ordered]@{
             '$ref' = "#/components/responses/$($Params.Reference)"
         }
     }
@@ -1964,7 +1964,7 @@ function New-PodeOResponseInternal {
                     $_headers = [ordered]@{}
                     foreach ($h in $Params.Headers) {
                         Test-PodeOAComponentInternal -Field headers -DefinitionTag $DefinitionTag -Name $h -PostValidation
-                        $_headers[$h] = @{
+                        $_headers[$h] = [ordered]@{
                             '$ref' = "#/components/headers/$h"
                         }
                     }

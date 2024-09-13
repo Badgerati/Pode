@@ -737,7 +737,7 @@ function Add-PodeOAComponentPathItem {
             Responses          = $null
             Parameters         = $null
             RequestBody        = $null
-            callbacks          = @{}
+            callbacks          = [ordered]@{}
             Authentication     = @()
             Servers            = @()
             DefinitionTag      = $_definitionTag
