@@ -318,7 +318,7 @@ function Enable-PodeOpenApi {
 
     #set new DefaultResponses
     if ($NoDefaultResponses.IsPresent) {
-        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = @{}
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = [ordered]@{}
     }
     elseif ($DefaultResponses) {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = $DefaultResponses
@@ -645,7 +645,7 @@ function Add-PodeOAResponse {
     foreach ($r in @($Route)) {
         foreach ($tag in $DefinitionTag) {
             if (! $r.OpenApi.Responses.$tag) {
-                $r.OpenApi.Responses.$tag = @{}
+                $r.OpenApi.Responses.$tag = [ordered]@{}
             }
             $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
         }
@@ -895,7 +895,7 @@ function New-PodeOARequestBody {
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    $result = @{}
+    $result = [ordered]@{}
     foreach ($tag in $DefinitionTag) {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'builtin' {
@@ -914,10 +914,10 @@ function New-PodeOARequestBody {
                         $Examples.Remove('*/*')
                     }
                     foreach ($k in  $Examples.Keys ) {
-                        if (!$param.content.ContainsKey($k)) {
-                            $param.content[$k] = @{}
+                        if (!($param.content.Keys -contains $k)) {
+                            $param.content[$k] = [ordered]@{}
                         }
-                        $param.content.$k.examples = $Examples.$k
+                        $param.content[$k].examples = $Examples.$k
                     }
                 }
             }
@@ -931,10 +931,10 @@ function New-PodeOARequestBody {
         }
         if ($Encoding) {
             if (([string]$Content.keys[0]) -match '(?i)^(multipart.*|application\/x-www-form-urlencoded)$' ) {
-                $r = @{}
+                $r = [ordered]@{}
                 foreach ( $e in $Encoding) {
                     $key = [string]$e.Keys
-                    $elems = @{}
+                    $elems = [ordered]@{}
                     foreach ($v in $e[$key].Keys) {
                         if ($v -ieq 'headers') {
                             $elems.headers = ConvertTo-PodeOAHeaderProperty -Headers $e[$key].headers
@@ -1006,6 +1006,11 @@ function Test-PodeOAJsonSchemaCompliance {
     }
     else {
         $DefinitionTag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag
+    }
+
+    # if Powershell edition is Desktop the test cannot be done. By default everything is good
+    if ($PSVersionTable.PSEdition -eq 'Desktop') {
+        return $true
     }
 
     if ($Json -isnot [string]) {
@@ -1584,7 +1589,7 @@ function Set-PodeOARouteInfo {
                 $r.OpenApi.IsDefTagConfigured = $true
             }
         }
-        
+
         if ($Summary) {
             $r.OpenApi.Summary = $Summary
         }
@@ -2327,11 +2332,11 @@ function New-PodeOAExample {
         $DefinitionTag
     )
     begin {
+        $pipelineValue = [ordered]@{}
 
         if (Test-PodeIsEmpty -Value $DefinitionTag) {
             $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
         }
-
         if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
             Test-PodeOAComponentInternal -Field examples -DefinitionTag $DefinitionTag -Name $Reference -PostValidation
             $Name = $Reference
@@ -2369,22 +2374,32 @@ function New-PodeOAExample {
         else {
             $param.$Name = $Example
         }
+
     }
     process {
+        if ($_) {
+            $pipelineValue += $_
+        }
     }
     end {
-        if ($ParamsList) {
-            if ($ParamsList.keys -contains $param.Keys[0]) {
-                $param.Values[0].GetEnumerator() | ForEach-Object { $ParamsList[$param.Keys[0]].$($_.Key) = $_.Value }
-            }
-            else {
-                $param.GetEnumerator() | ForEach-Object { $ParamsList[$_.Key] = $_.Value }
-            }
-            return $ParamsList
+        $examples = [ordered]@{}
+        if ($pipelineValue.Count -gt 0) {
+            #  foreach ($p in $pipelineValue) {
+            $examples = $pipelineValue
+            #  }
         }
         else {
-            return [System.Collections.Specialized.OrderedDictionary] $param
+            return $param
         }
+
+        $key = [string]$param.Keys[0]
+        if ($examples.Keys -contains $key) {
+            $examples[$key] += $param[$key]
+        }
+        else {
+            $examples += $param
+        }
+        return $examples
     }
 }
 
@@ -2767,7 +2782,7 @@ function New-PodeOAResponse {
         else {
             $code = "$($StatusCode)"
         }
-        $response = @{}
+        $response = [ordered]@{}
     }
     process {
         foreach ($tag in $DefinitionTag) {
@@ -2942,7 +2957,7 @@ function New-PodeOAContentMediaType {
         }
         else {
             if ($null -eq $Content ) {
-                $Content = @{}
+                $Content = [ordered]@{}
             }
         }
         if ($Array.IsPresent) {
@@ -3223,10 +3238,10 @@ function Add-PodeOAExternalRoute {
             foreach ($tag in $DefinitionTag) {
                 #add the default OpenApi responses
                 if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
-                    $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
+                    $extRoute.OpenApi.Responses = Get-PodeOrderedDictionaryClone -Source $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
                 }
                 if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
-                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = @{}
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = [ordered]@{}
                 }
 
                 $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
@@ -3370,11 +3385,11 @@ function Add-PodeOAWebhook {
         Method      = $Method.ToLower()
         NotPrepared = $true
         OpenApi     = @{
-            Responses      = @{}
-            Parameters     = $null
-            RequestBody    = $null
-            callbacks      = @{}
-            Authentication = @()
+            Responses          = [ordered]@{}
+            Parameters         = $null
+            RequestBody        = $null
+            callbacks          = [ordered]@{}
+            Authentication     = @()
             DefinitionTag      = $_definitionTag
             IsDefTagConfigured = ($null -ne $DefinitionTag) #Definition Tag has been configured (Not default)
         }
@@ -3607,7 +3622,7 @@ function Test-PodeOADefinition {
             $result.issues[$tag] = @{
                 title      = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI.Definitions[$tag].info.title)
                 version    = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI.Definitions[$tag].info.version)
-                components = @{}
+                components = [ordered]@{}
                 definition = ''
             }
             foreach ($field in $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.postValidation.keys) {

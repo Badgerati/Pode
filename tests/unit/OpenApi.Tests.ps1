@@ -1680,10 +1680,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -1709,10 +1709,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -1745,10 +1745,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -1775,10 +1775,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -2875,7 +2875,7 @@ Describe 'OpenApi' {
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'Pet in the store'
-            $result.content | Should -BeOfType [hashtable]
+            $result.content | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $result.content.Count | Should -Be 3
             $result.content.'application/json' | Should -BeOfType [hashtable]
             $result.content.'application/json'.Count | Should -Be 1
@@ -2902,7 +2902,7 @@ Describe 'OpenApi' {
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'Pet in the store'
-            $result.content | Should -BeOfType [hashtable]
+            $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.Count | Should -Be 3
             $result.content.'application/json' | Should -BeOfType [hashtable]
             $result.content.'application/json'.Count | Should -Be 1
@@ -3198,7 +3198,7 @@ Describe 'OpenApi' {
                 (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
             )
             $Pet.type | Should -be 'object'
-            $Pet.xml | Should -BeOfType [hashtable]
+            $Pet.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $Pet.xml.Count | Should -Be 1
             $Pet.xml.name | Should -Be 'pet'
             $Pet.name | Should -Be 'Pet'
@@ -3253,7 +3253,7 @@ Describe 'OpenApi' {
                 New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold') |
                 New-PodeOAObjectProperty -Name 'Pet' -XmlName 'pet'
             $Pet.type | Should -be 'object'
-            $Pet.xml | Should -BeOfType [hashtable]
+            $Pet.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $Pet.xml.Count | Should -Be 1
             $Pet.xml.name | Should -Be 'pet'
             $Pet.name | Should -Be 'Pet'

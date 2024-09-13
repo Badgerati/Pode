@@ -4036,3 +4036,20 @@ function Resolve-PodeObjectArray {
         return New-Object psobject -Property $Property
     }
 }
+
+
+function Get-PodeOrderedDictionaryClone {
+    param (
+        [System.Collections.Specialized.OrderedDictionary]$Original
+    )
+
+    # Create a new ordered dictionary to hold the clone
+    $clone = [System.Collections.Specialized.OrderedDictionary]::new()
+
+    # Copy each key-value pair from the original to the clone
+    foreach ($key in $Original.Keys) {
+        $clone.Add($key, $Original[$key])
+    }
+
+    return $clone
+}

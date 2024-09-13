@@ -118,7 +118,7 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
     # Enable OpenAPI documentation
 
-    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses
+    Enable-PodeOpenApi -Path '/docs/openapi' -OpenApiVersion '3.0.3' -EnableSchemaValidation:($PSVersionTable.PSEdition -eq 'Core') -DisableMinimalDefinitions -NoDefaultResponses
 
     # Add external documentation link for Swagger
     $swaggerDocs = New-PodeOAExternalDoc -Description 'Find out more about Swagger' -Url 'http://swagger.io'
@@ -137,7 +137,7 @@ Some useful links:
 '@
 
 
-    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
+    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0.3' -Version 1.0.17 -Description $InfoDescription -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io'
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'
 

@@ -7,6 +7,18 @@
     It includes multiple endpoints, OpenAPI documentation, various route definitions, authentication schemes,
     and middleware for enhanced API functionality.
 
+.PARAMETER PortV3
+    The port on which the Pode server will listen for OpenAPI v3. Default is 8080.
+
+.PARAMETER PortV3_1
+    The port on which the Pode server will listen for OpenAPI v3_1. Default is 8081.
+
+.PARAMETER Quiet
+    Suppresses output when the server is running.
+
+.PARAMETER DisableTermination
+    Prevents the server from being terminated.
+
 .EXAMPLE
     To run the sample: ./OpenApi-TuttiFrutti.ps1
 
@@ -24,6 +36,20 @@
     Author: Pode Team
     License: MIT License
 #>
+param(
+    [Parameter()]
+    [int]
+    $PortV3 = 8080,
+
+    [int]
+    $PortV3_1 = 8081,
+
+    [switch]
+    $Quiet,
+
+    [switch]
+    $DisableTermination
+)
 
 try {
     # Determine the script path and Pode module path
@@ -40,9 +66,9 @@ try {
 }
 catch { throw }
 
-Start-PodeServer -Threads 2 -ScriptBlock {
-    Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -Default -Name 'endpoint_v3'
-    Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http -Default -Name 'endpoint_v3.1'
+Start-PodeServer  -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination -ScriptBlock {
+    Add-PodeEndpoint -Address localhost -Port $PortV3 -Protocol Http -Default -Name 'endpoint_v3'
+    Add-PodeEndpoint -Address localhost -Port $PortV3_1 -Protocol Http -Default -Name 'endpoint_v3.1'
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
     $InfoDescription = @'
 This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about Swagger at [http://swagger.io](http://swagger.io).
@@ -55,8 +81,8 @@ Some useful links:
 - [The source API definition for the Pet Store](https://github.com/swagger-api/swagger-petstore/blob/master/src/main/resources/openapi.yaml)
 '@
 
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0' -OpenApiVersion '3.0.3' -EnableSchemaValidation:($PSVersionTable.PSEdition -eq 'Core') -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3' -EndpointName  'endpoint_v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1' -OpenApiVersion '3.1.0' -EnableSchemaValidation:($PSVersionTable.PSEdition -eq 'Core') -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
 
     $swaggerDocs | Add-PodeOAExternalDoc  -DefinitionTag 'v3', 'v3.1'
@@ -531,6 +557,12 @@ Some useful links:
     }
     Add-PodeAuthMiddleware -Name test -Authentication 'test' -Route '/api/*'
     Select-PodeOADefinition -Tag 'v3.1', 'v3' -Scriptblock {
+
+        Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
+            Close-PodeServer
+        } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
+
+
         Add-PodeRouteGroup -Path '/api/v3'    -Routes {
             #PUT
             Add-PodeRoute -PassThru -Method Put -Path '/pet' -ScriptBlock {
@@ -648,14 +680,6 @@ Some useful links:
                 ) |
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet' -Array) -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
-
-
-
-
-
-
-
-
 
             Add-PodeRoute -PassThru -Method get -Path '/pet/findByTag' -Authentication 'test' -Scope 'read' -ScriptBlock {
                 Write-PodeJsonResponse -Value 'done' -StatusCode 200
@@ -951,7 +975,7 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 404 -Description 'User not found' -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
-#region Test remove route
+            #region Test remove route
 
             Add-PodeRoute -PassThru -Method Delete -Path '/usera/:username' -ScriptBlock {
                 Write-PodeJsonResponse -Value 'done' -StatusCode 200
@@ -975,7 +999,7 @@ Some useful links:
                 Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
-#endregion
+            #endregion
 
 
             Add-PodeOAExternalRoute -Method Get -Path '/stores/order/:orderId' -Servers (

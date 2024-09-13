@@ -53,7 +53,7 @@ function ConvertTo-PodeOAObjectSchema {
     }
     # convert each schema to OpenAPI format
     # Initialize an empty hashtable for the schema
-    $obj = @{}
+    $obj = [ordered]@{}
 
     # Process each content type
     $types = [string[]]$Content.Keys
@@ -162,12 +162,12 @@ function ConvertTo-PodeOAObjectSchema {
             }
             else {
                 # Create an empty content
-                $obj[$type] = @{}
+                $obj[$type] = [ordered]@{}
             }
         }
         else {
             if ($item.Count -eq 0) {
-                $result = @{}
+                $result = [ordered]@{}
             }
             else {
                 $result = ($item | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
@@ -608,7 +608,7 @@ function ConvertTo-PodeOASchemaProperty {
     }
 
     if ($Property.type -ieq 'object') {
-        $schema['properties'] = @{}
+        $schema['properties'] = [ordered]@{}
         foreach ($prop in $Property.properties) {
             if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type) {
                 switch ($prop.type.ToLower()) {
@@ -696,7 +696,7 @@ function ConvertTo-PodeOASchemaObjectProperty {
     )
 
     # Initialize an empty hashtable for the schema
-    $schema = @{}
+    $schema = [ordered]@{}
 
     # Iterate over each property and convert to OpenAPI schema property if applicable
     foreach ($prop in $Properties) {
@@ -790,7 +790,7 @@ function Set-PodeOpenApiRouteValue {
             }
             elseif ($sct -eq '%_allowanon_%') {
                 #allow anonymous access
-                $pm.security += @{}
+                $pm.security += [ordered]@{}
             }
             else {
                 $pm.security += @{$sct = @() }
@@ -988,7 +988,7 @@ function Get-PodeOpenApiDefinitionInternal {
             $authType = (Find-PodeAuth -Name $authName).Scheme
             $_authName = ($authName -replace '\s+', '')
 
-            $_authObj = @{}
+            $_authObj = [ordered]@{}
 
             if ($authType.Scheme -ieq 'apikey') {
                 $_authObj = [ordered]@{
@@ -1035,7 +1035,7 @@ function Get-PodeOpenApiDefinitionInternal {
                     $_authObj.flows.$oAuthFlow.refreshUrl = $authType.Arguments.Urls.Refresh
                 }
 
-                $_authObj.flows.$oAuthFlow.scopes = @{}
+                $_authObj.flows.$oAuthFlow.scopes = [ordered]@{}
                 if ($authType.Arguments.Scopes ) {
                     foreach ($scope in $authType.Arguments.Scopes) {
                         if ($PodeContext.Server.Authorisations.Methods.ContainsKey($scope) -and $PodeContext.Server.Authorisations.Methods[$scope].Scheme.Type -ieq 'Scope' -and $PodeContext.Server.Authorisations.Methods[$scope].Description) {
@@ -1107,7 +1107,7 @@ function Get-PodeOpenApiDefinitionInternal {
 
                 # add path to defintion
                 if ($null -eq $def.paths[$_route.OpenApi.Path]) {
-                    $def.paths[$_route.OpenApi.Path] = @{}
+                    $def.paths[$_route.OpenApi.Path] = [ordered]@{}
                 }
                 # add path's http method to defintition
 
@@ -1163,7 +1163,7 @@ function Get-PodeOpenApiDefinitionInternal {
             foreach ($method in $extPath.keys) {
                 $_route = $extPath[$method]
                 if (! ( $def.paths.keys -ccontains $_route.Path)) {
-                    $def.paths[$_route.OpenAPI.Path] = @{}
+                    $def.paths[$_route.OpenAPI.Path] = [ordered]@{}
                 }
                 $pm = Set-PodeOpenApiRouteValue -Route $_route -DefinitionTag $DefinitionTag
                 # add path's http method to defintition
@@ -1267,19 +1267,19 @@ function Get-PodeOABaseObject {
             schemaJson       = @{}
             viewer           = @{}
             postValidation   = @{
-                schemas         = @{}
-                responses       = @{}
-                parameters      = @{}
-                examples        = @{}
-                requestBodies   = @{}
-                headers         = @{}
-                securitySchemes = @{}
-                links           = @{}
-                callbacks       = @{}
-                pathItems       = @{}
+                schemas         = [ordered]@{}
+                responses       = [ordered]@{}
+                parameters      = [ordered]@{}
+                examples        = [ordered]@{}
+                requestBodies   = [ordered]@{}
+                headers         = [ordered]@{}
+                securitySchemes = [ordered]@{}
+                links           = [ordered]@{}
+                callbacks       = [ordered]@{}
+                pathItems       = [ordered]@{}
             }
             externalPath     = [ordered]@{}
-            defaultResponses = @{
+            defaultResponses = [ordered]@{
                 '200'     = @{ description = 'OK' }
                 'default' = @{ description = 'Internal server error' }
             }
@@ -1736,7 +1736,7 @@ function New-PodeOAPropertyInternal {
 
     if ($Params.XmlName -or $Params.XmlNamespace -or $Params.XmlPrefix -or $Params.XmlAttribute.IsPresent -or $Params.XmlWrapped.IsPresent) {
 
-        $param.xml = @{}
+        $param.xml = [ordered]@{}
 
         if ($Params.XmlName) { $param.xml.name = $Params.XmlName }
 
@@ -1794,12 +1794,12 @@ function ConvertTo-PodeOAHeaderProperty {
         $Headers
     )
 
-    $elems = @{}
+    $elems = [ordered]@{}
 
     foreach ($e in $Headers) {
         # Ensure each header has a name
         if ($e.name) {
-            $elems.$($e.name) = @{}
+            $elems.$($e.name) = [ordered]@{}
             # Add description if present
             if ($e.description) {
                 $elems.$($e.name).description = $e.description
@@ -1961,7 +1961,7 @@ function New-PodeOResponseInternal {
                     $_headers = ConvertTo-PodeOAHeaderProperty -Headers $Params.Headers
                 }
                 else {
-                    $_headers = @{}
+                    $_headers = [ordered]@{}
                     foreach ($h in $Params.Headers) {
                         Test-PodeOAComponentInternal -Field headers -DefinitionTag $DefinitionTag -Name $h -PostValidation
                         $_headers[$h] = @{

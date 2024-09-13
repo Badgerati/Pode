@@ -107,8 +107,8 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
 
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.2' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses  -EndpointName  'endpoint_v3'
-    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.0'     -OpenApiVersion '3.0.3' -EnableSchemaValidation:($PSVersionTable.PSEdition -eq 'Core') -DisableMinimalDefinitions -NoDefaultResponses  -EndpointName  'endpoint_v3'
+    Enable-PodeOpenApi -Path '/docs/openapi/v3.1'     -OpenApiVersion '3.1.0' -EnableSchemaValidation:($PSVersionTable.PSEdition -eq 'Core') -DisableMinimalDefinitions -NoDefaultResponses -DefinitionTag 'v3.1' -EndpointName 'endpoint_v3.1'
     $swaggerDocs = New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io'
     $swaggerDocs | Add-PodeOAExternalDoc   -DefinitionTag 'v3.0.3', 'v3.1'
 
@@ -126,13 +126,15 @@ Some useful links:
 '@
 
 
-    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
+    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0.3' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3.0.3'
 
-    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.1' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
+    Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.1.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3.1'
 
-    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint' -DefinitionTag 'v3.0.3', 'v3.1'
+    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'V3 Endpoint' -DefinitionTag 'v3.0.3'
+    Add-PodeOAServerEndpoint -url '/api/v3' -Description 'V3.1 Endpoint' -DefinitionTag 'v3.1'
+    Add-PodeOAServerEndpoint -url '/api' -Description 'Default Endpoint' -DefinitionTag 'v3.0.3','v3.1'
 
     #OpenAPI 3.0
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.0.3'
