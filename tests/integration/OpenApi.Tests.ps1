@@ -18,7 +18,6 @@ Describe 'OpenAPI integration tests' {
         }
         $PortV3 = 8080
         $PortV3_1 = 8081
-        $Endpoint = "http://127.0.0.1:$($PortV3)"
         $scriptPath = "$($PSScriptRoot)\..\..\examples\OpenApi-TuttiFrutti.ps1"
         if ($PSVersionTable.PsVersion -gt [version]'6.0') {
             Start-Process 'pwsh' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -PortV3 $PortV3 -PortV3_1 $PortV3_1 -DisableTermination"   -NoNewWindow
@@ -160,7 +159,7 @@ Describe 'OpenAPI integration tests' {
 
     AfterAll {
         Start-Sleep -Seconds 5
-        Invoke-RestMethod -Uri "$($Endpoint)/close" -Method Post | Out-Null
+        Invoke-RestMethod -Uri "http://localhost:$($PortV3)/close" -Method Post | Out-Null
 
     }
 
