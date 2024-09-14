@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = '视图文件夹名称已存在: {0}'
     noNameForWebSocketResetExceptionMessage                           = '没有提供要重置的 WebSocket 的名称。'
     mergeDefaultAuthNotInListExceptionMessage                         = "MergeDefault 身份验证 '{0}' 不在提供的身份验证列表中。"
-    descriptionRequiredExceptionMessage                               = '描述是必需的。'
+    descriptionRequiredExceptionMessage                               = '路径:{0} 响应:{1} 需要描述'
     pageNameShouldBeAlphaNumericExceptionMessage                      = '页面名称应为有效的字母数字值: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = '默认值不是布尔值且不属于枚举。'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'OpenApi 组件架构 {0} 不存在。'
@@ -285,7 +285,8 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = '提供的 Access-Control-Max-Age 时长无效：{0}。应大于 0。'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
     taskProcessDoesNotExistExceptionMessage                           = "任务进程 '{0}' 不存在。"
     scheduleProcessDoesNotExistExceptionMessage                       = "计划进程 '{0}' 不存在。"
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
+    getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
 }

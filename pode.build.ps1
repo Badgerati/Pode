@@ -344,6 +344,43 @@ Task DocsDeps ChocoDeps, {
     Install-PodeBuildModule PlatyPS
 }
 
+Task IndexSamples {
+    $examplesPath = './examples'
+    if (!(Test-Path -PathType Container -Path $examplesPath)) {
+        return
+    }
+
+    # List of directories to exclude
+    $sampleMarkDownPath = './docs/Getting-Started/Samples.md'
+    $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
+        'Authentication', 'certs', 'logs', 'relative', 'routes')
+
+    # Convert exlusion list into single regex pattern for directory matching
+    $dirSeparator = [IO.Path]::DirectorySeparatorChar
+    $excludeDirs = "\$($dirSeparator)($($excludeDirs -join '|'))\$($dirSeparator)"
+
+    # build the page content
+    Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse -File -Force |
+        Where-Object {
+            $_.FullName -inotmatch $excludeDirs
+        } |
+        Sort-Object -Property FullName |
+        ForEach-Object {
+            Write-Verbose "Processing Sample: $($_.FullName)"
+
+            # get the script help
+            $help = Get-Help -Name $_.FullName -ErrorAction Stop
+
+            # add help content
+            $urlFileName = ($_.FullName -isplit 'examples')[1].Trim('\/') -replace '[\\/]', '/'
+            $markdownContent += "## [$($_.BaseName)](https://github.com/Badgerati/Pode/blob/develop/examples/$($urlFileName))`n`n"
+            $markdownContent += "**Synopsis**`n`n$($help.Synopsis)`n`n"
+            $markdownContent += "**Description**`n`n$($help.Description.Text)`n`n"
+        }
+
+    Write-Output "Write Markdown document for the sample files to $($sampleMarkDownPath)"
+    Set-Content -Path $sampleMarkDownPath -Value "# Sample Scripts`n`n$($markdownContent)" -Force
+}
 
 <#
 # Building
@@ -501,7 +538,7 @@ Task TestNoBuild TestDeps, {
     else {
         $Script:TestStatus = Invoke-Pester -Configuration $configuration
     }
-    if ($originalUICulture){
+    if ($originalUICulture) {
         Write-Output "Restore UICulture to $originalUICulture"
         # restore original UICulture
         [System.Threading.Thread]::CurrentThread.CurrentUICulture = $originalUICulture
@@ -510,7 +547,6 @@ Task TestNoBuild TestDeps, {
 
 # Synopsis: Run tests after a build
 Task Test Build, TestNoBuild
-
 
 # Synopsis: Check if any of the tests failed
 Task CheckFailedTests {
@@ -545,7 +581,7 @@ Task Docs DocsDeps, DocsHelpBuild, {
 }
 
 # Synopsis: Build the function help documentation
-Task DocsHelpBuild DocsDeps, Build, {
+Task DocsHelpBuild IndexSamples, DocsDeps, Build, {
     # import the local module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
     Import-Module ./src/Pode.psm1 -Force | Out-Null
@@ -599,7 +635,7 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 #>
 
 # Synopsis: Clean the build enviroment
-Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener
+Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
 
 # Synopsis: Clean the Deliverable folder
 Task CleanDeliverable {
@@ -654,7 +690,13 @@ Task CleanListener {
     Write-Host "Cleanup $path done"
 }
 
-
+Task CleanDocs {
+    $path = './docs/Getting-Started/Samples.md'
+    if (Test-Path -Path $path -PathType Leaf) {
+        Write-Host "Removing $path"
+        Remove-Item -Path $path -Force | Out-Null
+    }
+}
 <#
 # Local module management
 #>

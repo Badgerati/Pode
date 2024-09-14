@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'ビューのフォルダ名は既に存在します: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'リセットする WebSocket の名前が指定されていません。'
     mergeDefaultAuthNotInListExceptionMessage                         = "MergeDefault認証'{0}'は提供された認証リストにありません。"
-    descriptionRequiredExceptionMessage                               = '説明が必要です。'
+    descriptionRequiredExceptionMessage                               = 'パス:{0} 応答:{1} に説明が必要です'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'ページ名は有効な英数字である必要があります: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'デフォルト値は boolean ではなく、enum に含まれていません。'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'OpenApi コンポーネントスキーマ {0} は存在しません。'
@@ -285,8 +285,8 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = '無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
     taskProcessDoesNotExistExceptionMessage                           = 'タスクプロセスが存在しません: {0}'
     scheduleProcessDoesNotExistExceptionMessage                       = 'スケジュールプロセスが存在しません: {0}'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
+    getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
 }
-

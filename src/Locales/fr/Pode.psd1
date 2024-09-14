@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'Le nom du dossier Views existe déjà: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Aucun Nom fourni pour réinitialiser le WebSocket.'
     mergeDefaultAuthNotInListExceptionMessage                         = "L'authentification MergeDefault '{0}' n'est pas dans la liste d'authentification fournie."
-    descriptionRequiredExceptionMessage                               = 'Une description est requise.'
+    descriptionRequiredExceptionMessage                               = 'Une description est requise pour le chemin:{0} Réponse:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'Le nom de la page doit être une valeur alphanumérique valide: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = "La valeur par défaut n'est pas un booléen et ne fait pas partie de l'énumération."
     openApiComponentSchemaDoesNotExistExceptionMessage                = "Le schéma du composant OpenApi {0} n'existe pas."
@@ -285,8 +285,9 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'La définition OpenAPI nommée {0} existe déjà.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
-    DefinitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
     taskProcessDoesNotExistExceptionMessage                           = "Le processus de la tâche '{0}' n'existe pas."
     scheduleProcessDoesNotExistExceptionMessage                       = "Le processus de l'horaire '{0}' n'existe pas."
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
+    getRequestBodyNotAllowedExceptionMessage                          = 'Les opérations {0} ne peuvent pas avoir de corps de requête.'
 }
 

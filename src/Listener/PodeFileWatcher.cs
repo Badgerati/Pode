@@ -16,10 +16,12 @@ namespace Pode
         {
             Name = name;
 
-            FileWatcher = new RecoveringFileSystemWatcher(path);
-            FileWatcher.IncludeSubdirectories = includeSubdirectories;
-            FileWatcher.InternalBufferSize = internalBufferSize;
-            FileWatcher.NotifyFilter = notifyFilters;
+            FileWatcher = new RecoveringFileSystemWatcher(path)
+            {
+                IncludeSubdirectories = includeSubdirectories,
+                InternalBufferSize = internalBufferSize,
+                NotifyFilter = notifyFilters
+            };
 
             EventsRegistered = new HashSet<PodeFileWatcherChangeType>();
             RegisterEvent(PodeFileWatcherChangeType.Errored);

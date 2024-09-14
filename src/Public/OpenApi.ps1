@@ -118,9 +118,11 @@ function Enable-PodeOpenApi {
         [string]
         $RouteFilter = '/*',
 
+        [Parameter()]
         [string[]]
         $EndpointName,
 
+        [Parameter()]
         [object[]]
         $Middleware,
 
@@ -144,21 +146,26 @@ function Enable-PodeOpenApi {
         [switch]
         $RestrictRoutes,
 
+        [Parameter()]
         [ValidateSet('View', 'Download')]
         [String]
         $Mode = 'view',
 
+        [Parameter()]
         [ValidateSet('Json', 'Json-Compress', 'Yaml')]
         [String]
         $MarkupLanguage = 'Json',
 
+        [Parameter()]
         [switch]
         $EnableSchemaValidation,
 
+        [Parameter()]
         [ValidateRange(1, 100)]
         [int]
         $Depth = 20,
 
+        [Parameter()]
         [switch]
         $DisableMinimalDefinitions,
 
@@ -170,6 +177,7 @@ function Enable-PodeOpenApi {
         [switch]
         $NoDefaultResponses,
 
+        [Parameter()]
         [string]
         $DefinitionTag
 
@@ -771,6 +779,11 @@ function Set-PodeOARequest {
         }
 
         if ($null -ne $RequestBody) {
+            # Only 'POST', 'PUT', 'PATCH' can have a request body
+            if (('POST', 'PUT', 'PATCH') -inotcontains $r.Method ) {
+                # {0} operations cannot have a Request Body.
+                throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
+            }
             $r.OpenApi.RequestBody = $RequestBody
         }
 
@@ -1564,7 +1577,7 @@ function Set-PodeOARouteInfo {
         if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
             if ($r.OpenApi.IsDefTagConfigured ) {
                 # Definition Tag for a Route cannot be changed.
-                throw ($PodeLocale.DefinitionTagChangeNotAllowedExceptionMessage)
+                throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
             }
             else {
                 $r.OpenApi.DefinitionTag = $DefinitionTag
