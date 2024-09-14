@@ -8,39 +8,38 @@ function Start-PodeTaskHousekeeper {
     }
 
     Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval 30 -ScriptBlock {
-        if ($PodeContext.Tasks.Results.Count -eq 0) {
-            return
+        try {
+            if ($PodeContext.Tasks.Processes.Count -eq 0) {
+                return
+            }
+
+            $now = [datetime]::UtcNow
+
+            foreach ($key in $PodeContext.Tasks.Processes.Keys.Clone()) {
+                try {
+                    $process = $PodeContext.Tasks.Processes[$key]
+
+                    # has it completed or expire? then dispose and remove
+                    if ((($null -ne $process.CompletedTime) -and ($process.CompletedTime.AddMinutes(1) -lt $now)) -or ($process.ExpireTime -lt $now)) {
+                        Close-PodeTaskInternal -Process $process
+                        continue
+                    }
+
+                    # if completed, and no completed time, set it
+                    if ($process.Runspace.Handler.IsCompleted -and ($null -eq $process.CompletedTime)) {
+                        $process.CompletedTime = $now
+                    }
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
+            }
+
+            $process = $null
         }
-
-        $now = [datetime]::UtcNow
-
-        foreach ($key in $PodeContext.Tasks.Results.Keys.Clone()) {
-            $result = $PodeContext.Tasks.Results[$key]
-
-            # has it force expired?
-            if ($result.ExpireTime -lt $now) {
-                Close-PodeTaskInternal -Result $result
-                continue
-            }
-
-            # is it completed?
-            if (!$result.Runspace.Handler.IsCompleted) {
-                continue
-            }
-
-            # is a completed time set?
-            if ($null -eq $result.CompletedTime) {
-                $result.CompletedTime = [datetime]::UtcNow
-                continue
-            }
-
-            # is it expired by completion? if so, dispose and remove
-            if ($result.CompletedTime.AddMinutes(1) -lt $now) {
-                Close-PodeTaskInternal -Result $result
-            }
+        catch {
+            $_ | Write-PodeErrorLog
         }
-
-        $result = $null
     }
 }
 
@@ -48,21 +47,22 @@ function Close-PodeTaskInternal {
     param(
         [Parameter()]
         [hashtable]
-        $Result
+        $Process
     )
 
-    if ($null -eq $Result) {
+    if ($null -eq $Process) {
         return
     }
 
-    Close-PodeDisposable -Disposable $Result.Runspace.Pipeline
-    Close-PodeDisposable -Disposable $Result.Result
-    $null = $PodeContext.Tasks.Results.Remove($Result.ID)
+    Close-PodeDisposable -Disposable $Process.Runspace.Pipeline
+    Close-PodeDisposable -Disposable $Process.Result
+    $null = $PodeContext.Tasks.Processes.Remove($Process.ID)
 }
 
 function Invoke-PodeInternalTask {
     param(
         [Parameter(Mandatory = $true)]
+        [hashtable]
         $Task,
 
         [Parameter()]
@@ -71,63 +71,148 @@ function Invoke-PodeInternalTask {
 
         [Parameter()]
         [int]
-        $Timeout = -1
+        $Timeout = -1,
+
+        [Parameter()]
+        [ValidateSet('Default', 'Create', 'Start')]
+        [string]
+        $TimeoutFrom = 'Default'
     )
 
     try {
+        # generate processId for task
+        $processId = New-PodeGuid
+
         # setup event param
         $parameters = @{
-            Event = @{
-                Lockable = $PodeContext.Threading.Lockables.Global
-                Sender   = $Task
-                Metadata = @{}
-            }
+            ProcessId    = $processId
+            ArgumentList = $ArgumentList
         }
 
-        # add any task args
-        foreach ($key in $Task.Arguments.Keys) {
-            $parameters[$key] = $Task.Arguments[$key]
+        # what's the timeout values to use?
+        if ($TimeoutFrom -eq 'Default') {
+            $TimeoutFrom = $Task.Timeout.From
         }
 
-        # add adhoc task invoke args
-        if (($null -ne $ArgumentList) -and ($ArgumentList.Count -gt 0)) {
-            foreach ($key in $ArgumentList.Keys) {
-                $parameters[$key] = $ArgumentList[$key]
-            }
+        if ($Timeout -eq -1) {
+            $Timeout = $Task.Timeout.Value
         }
 
-        # add any using variables
-        if ($null -ne $Task.UsingVariables) {
-            foreach ($usingVar in $Task.UsingVariables) {
-                $parameters[$usingVar.NewName] = $usingVar.Value
-            }
+        # what is the expire time if using "create" timeout?
+        $expireTime = [datetime]::MaxValue
+        $createTime = [datetime]::UtcNow
+
+        if (($TimeoutFrom -ieq 'Create') -and ($Timeout -ge 0)) {
+            $expireTime = $createTime.AddSeconds($Timeout)
         }
 
-        $name = New-PodeGuid
+        # add task process
         $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
-        $runspace = Add-PodeRunspace -Type Tasks -ScriptBlock (($Task.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
-
-        if ($Timeout -ge 0) {
-            $expireTime = [datetime]::UtcNow.AddSeconds($Timeout)
-        }
-        else {
-            $expireTime = [datetime]::MaxValue
-        }
-
-        $PodeContext.Tasks.Results[$name] = @{
-            ID            = $name
+        $PodeContext.Tasks.Processes[$processId] = @{
+            ID            = $processId
             Task          = $Task.Name
-            Runspace      = $runspace
+            Runspace      = $null
             Result        = $result
+            CreateTime    = $createTime
+            StartTime     = $null
             CompletedTime = $null
             ExpireTime    = $expireTime
-            Timeout       = $Timeout
+            Timeout       = @{
+                Value = $Timeout
+                From  = $TimeoutFrom
+            }
+            State         = 'Pending'
         }
 
-        return $PodeContext.Tasks.Results[$name]
+        # start the task runspace
+        $scriptblock = Get-PodeTaskScriptBlock
+        $runspace = Add-PodeRunspace -Type Tasks -ScriptBlock $scriptblock -Parameters $parameters -OutputStream $result -PassThru
+
+        # add runspace to process
+        $PodeContext.Tasks.Processes[$processId].Runspace = $runspace
+
+        # return the task process
+        return $PodeContext.Tasks.Processes[$processId]
     }
     catch {
         $_ | Write-PodeErrorLog
+    }
+}
+
+function Get-PodeTaskScriptBlock {
+    return {
+        param($ProcessId, $ArgumentList)
+
+        try {
+            $process = $PodeContext.Tasks.Processes[$ProcessId]
+            if ($null -eq $process) {
+                # Task process does not exist: $ProcessId
+                throw ($PodeLocale.taskProcessDoesNotExistExceptionMessage -f $ProcessId)
+            }
+
+            # set the start time and state
+            $process.StartTime = [datetime]::UtcNow
+            $process.State = 'Running'
+
+            # set the expire time of timeout based on "start" time
+            if (($process.Timeout.From -ieq 'Start') -and ($process.Timeout.Value -ge 0)) {
+                $process.ExpireTime = $process.StartTime.AddSeconds($process.Timeout.Value)
+            }
+
+            # get the task, error if not found
+            $task = $PodeContext.Tasks.Items[$process.Task]
+            if ($null -eq $task) {
+                # Task does not exist
+                throw ($PodeLocale.taskDoesNotExistExceptionMessage -f $process.Task)
+            }
+
+            # build the script arguments
+            $TaskEvent = @{
+                Lockable  = $PodeContext.Threading.Lockables.Global
+                Sender    = $Task
+                Timestamp = [DateTime]::UtcNow
+                Metadata  = @{}
+            }
+
+            $_args = @{ Event = $TaskEvent }
+
+            if ($null -ne $task.Arguments) {
+                foreach ($key in $task.Arguments.Keys) {
+                    $_args[$key] = $task.Arguments[$key]
+                }
+            }
+
+            if ($null -ne $ArgumentList) {
+                foreach ($key in $ArgumentList.Keys) {
+                    $_args[$key] = $ArgumentList[$key]
+                }
+            }
+
+            # add any using variables
+            if ($null -ne $task.UsingVariables) {
+                foreach ($usingVar in $task.UsingVariables) {
+                    $_args[$usingVar.NewName] = $usingVar.Value
+                }
+            }
+
+            # invoke the script from the task
+            Invoke-PodeScriptBlock -ScriptBlock $task.Script -Arguments $_args -Scoped -Splat -Return
+
+            # set the state to completed
+            $process.State = 'Completed'
+        }
+        catch {
+            # update the state
+            if ($null -ne $process) {
+                $process.State = 'Failed'
+            }
+
+            # log the error
+            $_ | Write-PodeErrorLog
+        }
+        finally {
+            Invoke-PodeGC
+        }
     }
 }
 
@@ -168,7 +253,8 @@ function Wait-PodeNetTaskInternal {
 
     # if the main task isnt complete, it timed out
     if (($null -ne $timeoutTask) -and (!$Task.IsCompleted)) {
-        throw [System.TimeoutException]::new($PodeLocale.taskTimedOutExceptionMessage -f $Timeout) #"Task has timed out after $($Timeout)ms")
+        # "Task has timed out after $($Timeout)ms")
+        throw [System.TimeoutException]::new($PodeLocale.taskTimedOutExceptionMessage -f $Timeout)
     }
 
     # only return a value if the result has one

@@ -286,5 +286,7 @@
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
     DefinitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
+    taskProcessDoesNotExistExceptionMessage                           = "Taakproces '{0}' bestaat niet."
+    scheduleProcessDoesNotExistExceptionMessage                       = "Schema-proces '{0}' bestaat niet."
 }
 

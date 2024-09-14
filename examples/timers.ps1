@@ -30,7 +30,7 @@ Start-PodeServer {
     # runs forever, but skips the first 3 "loops" - is paused for 15secs then loops every 5secs
     Add-PodeTimer -Name 'pause-first-3' -Interval 5 -ScriptBlock {
         'Skip 3 then run' | Out-PodeHost
-      Write-PodeHost $TimerEvent -Explode -ShowType
+        Write-PodeHost $TimerEvent -Explode -ShowType
     } -Skip 3
 
     # runs every 5secs, but only runs for 3 "loops" (ie, 15secs)
