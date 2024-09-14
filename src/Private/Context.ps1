@@ -526,15 +526,10 @@ function New-PodeRunspacePool {
     # setup main runspace pool
     $threadsCounts = @{
         Default  = 3
-        # Timer    = 1
         Log      = 1
         Schedule = 1
         Misc     = 1
     }
-
-    # if (!(Test-PodeTimersExist)) {
-    #     $threadsCounts.Timer = 0
-    # }
 
     if (!(Test-PodeSchedulesExist)) {
         $threadsCounts.Schedule = 0

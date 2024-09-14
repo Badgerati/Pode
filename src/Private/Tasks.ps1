@@ -169,7 +169,7 @@ function Get-PodeTaskScriptBlock {
             # build the script arguments
             $TaskEvent = @{
                 Lockable  = $PodeContext.Threading.Lockables.Global
-                Sender    = $Task
+                Sender    = $task
                 Timestamp = [DateTime]::UtcNow
                 Metadata  = @{}
             }
