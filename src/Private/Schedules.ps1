@@ -18,27 +18,36 @@ function Start-PodeScheduleRunspace {
         return
     }
 
-    Add-PodeSchedule -Name '__pode_schedule_housekeeper__' -Cron '@minutely' -ScriptBlock {
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name '__pode_schedule_housekeeper__'
+    Add-PodeTimer -Name '__pode_schedule_housekeeper__' -Interval 30 -ScriptBlock {
+        try {
+            # Sets the name of the current runspace
+            Set-PodeCurrentRunspaceName -Name '__pode_schedule_housekeeper__'
 
-        if ($PodeContext.Schedules.Processes.Count -eq 0) {
-            return
-        }
-
-        foreach ($key in $PodeContext.Schedules.Processes.Keys.Clone()) {
-            $process = $PodeContext.Schedules.Processes[$key]
-
-            # is it completed?
-            if (!$process.Runspace.Handler.IsCompleted) {
-                continue
+            if ($PodeContext.Schedules.Processes.Count -eq 0) {
+                return
             }
 
-            # dispose and remove the schedule process
-            Close-PodeScheduleInternal -Process $process
-        }
+            $now = [datetime]::UtcNow
 
-        $process = $null
+            foreach ($key in $PodeContext.Schedules.Processes.Keys.Clone()) {
+                try {
+                    $process = $PodeContext.Schedules.Processes[$key]
+
+                    # if it's completed or expired, dispose and remove
+                    if ($process.Runspace.Handler.IsCompleted -or ($process.ExpireTime -lt $now)) {
+                        Close-PodeScheduleInternal -Process $process
+                    }
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
+            }
+
+            $process = $null
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
     }
 
     $script = {
@@ -48,29 +57,9 @@ function Start-PodeScheduleRunspace {
         # select the schedules that trigger on-start
         $_now = [DateTime]::Now
 
-        $PodeContext.Schedules.Items.Values |
-            Where-Object {
-                $_.OnStart
-            } | ForEach-Object {
-                Invoke-PodeInternalSchedule -Schedule $_
-            }
-
-        # complete any schedules
-        Complete-PodeInternalSchedule -Now $_now
-
-        # first, sleep for a period of time to get to 00 seconds (start of minute)
-        Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
-
-        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-            $_now = [DateTime]::Now
-
-            # select the schedules that need triggering
             $PodeContext.Schedules.Items.Values |
                 Where-Object {
-                    !$_.Completed -and
-                    (($null -eq $_.StartTime) -or ($_.StartTime -le $_now)) -and
-                    (($null -eq $_.EndTime) -or ($_.EndTime -ge $_now)) -and
-                    (Test-PodeCronExpressions -Expressions $_.Crons -DateTime $_now)
+                    $_.OnStart
                 } | ForEach-Object {
                     Invoke-PodeInternalSchedule -Schedule $_
                 }
@@ -78,8 +67,46 @@ function Start-PodeScheduleRunspace {
             # complete any schedules
             Complete-PodeInternalSchedule -Now $_now
 
-            # cron expression only goes down to the minute, so sleep for 1min
+            # first, sleep for a period of time to get to 00 seconds (start of minute)
             Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
+
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                try {
+                    $_now = [DateTime]::Now
+
+                    # select the schedules that need triggering
+                    $PodeContext.Schedules.Items.Values |
+                        Where-Object {
+                            !$_.Completed -and
+                            (($null -eq $_.StartTime) -or ($_.StartTime -le $_now)) -and
+                            (($null -eq $_.EndTime) -or ($_.EndTime -ge $_now)) -and
+                            (Test-PodeCronExpressions -Expressions $_.Crons -DateTime $_now)
+                        } | ForEach-Object {
+                            try {
+                                Invoke-PodeInternalSchedule -Schedule $_
+                            }
+                            catch {
+                                $_ | Write-PodeErrorLog
+                            }
+                        }
+
+                    # complete any schedules
+                    Complete-PodeInternalSchedule -Now $_now
+
+                    # cron expression only goes down to the minute, so sleep for 1min
+                    Start-Sleep -Seconds (60 - [DateTime]::Now.Second)
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
+            }
+        }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
         }
     }
 
@@ -134,17 +161,11 @@ function Complete-PodeInternalSchedule {
         $Now
     )
 
-    # add any schedules to remove that have exceeded their end time
-    $Schedules = @($PodeContext.Schedules.Items.Values |
-            Where-Object { (($null -ne $_.EndTime) -and ($_.EndTime -lt $Now)) })
-
-    if (($null -eq $Schedules) -or ($Schedules.Length -eq 0)) {
-        return
-    }
-
     # set any expired schedules as being completed
-    $Schedules | ForEach-Object {
-        $_.Completed = $true
+    foreach ($schedule in $PodeContext.Schedules.Items.Values) {
+        if (($null -ne $schedule.EndTime) -and ($schedule.EndTime -lt $Now)) {
+            $schedule.Completed = $true
+        }
     }
 }
 
@@ -188,6 +209,7 @@ function Invoke-PodeInternalSchedule {
 function Invoke-PodeInternalScheduleLogic {
     param(
         [Parameter(Mandatory = $true)]
+        [hashtable]
         $Schedule,
 
         [Parameter()]
@@ -196,44 +218,120 @@ function Invoke-PodeInternalScheduleLogic {
     )
 
     try {
+        # generate processId for schedule
+        $processId = New-PodeGuid
+
         # setup event param
         $parameters = @{
-            Event = @{
-                Lockable = $PodeContext.Threading.Lockables.Global
-                Sender   = $Schedule
-                Metadata = @{}
-            }
+            ProcessId    = $processId
+            ArgumentList = $ArgumentList
         }
 
-        # add any schedule args
-        foreach ($key in $Schedule.Arguments.Keys) {
-            $parameters[$key] = $Schedule.Arguments[$key]
+        # what is the expire time if using "create" timeout?
+        $expireTime = [datetime]::MaxValue
+        $createTime = [datetime]::UtcNow
+
+        if (($Schedule.Timeout.From -ieq 'Create') -and ($Schedule.Timeout.Value -ge 0)) {
+            $expireTime = $createTime.AddSeconds($Schedule.Timeout.Value)
         }
 
-        # add adhoc schedule invoke args
-        if (($null -ne $ArgumentList) -and ($ArgumentList.Count -gt 0)) {
-            foreach ($key in $ArgumentList.Keys) {
-                $parameters[$key] = $ArgumentList[$key]
-            }
+        # add the schedule process
+        $PodeContext.Schedules.Processes[$processId] = @{
+            ID         = $processId
+            Schedule   = $Schedule.Name
+            Runspace   = $null
+            CreateTime = $createTime
+            StartTime  = $null
+            ExpireTime = $expireTime
+            Timeout    = $Schedule.Timeout
+            State      = 'Pending'
         }
 
-        # add any using variables
-        if ($null -ne $Schedule.UsingVariables) {
-            foreach ($usingVar in $Schedule.UsingVariables) {
-                $parameters[$usingVar.NewName] = $usingVar.Value
-            }
-        }
+        # start the schedule runspace
+        $scriptblock = Get-PodeScheduleScriptBlock
+        $runspace = Add-PodeRunspace -Type Schedules -ScriptBlock $scriptblock -Parameters $parameters -PassThru
 
-        $name = New-PodeGuid
-        $runspace = Add-PodeRunspace -Type Schedules -ScriptBlock (($Schedule.Script).GetNewClosure()) -Parameters $parameters -PassThru
-
-        $PodeContext.Schedules.Processes[$name] = @{
-            ID       = $name
-            Schedule = $Schedule.Name
-            Runspace = $runspace
-        }
+        # add runspace to process
+        $PodeContext.Schedules.Processes[$processId].Runspace = $runspace
     }
     catch {
         $_ | Write-PodeErrorLog
+    }
+}
+
+function Get-PodeScheduleScriptBlock {
+    return {
+        param($ProcessId, $ArgumentList)
+
+        try {
+            # get the schedule process, error if not found
+            $process = $PodeContext.Schedules.Processes[$ProcessId]
+            if ($null -eq $process) {
+                # Schedule process does not exist: $ProcessId
+                throw ($PodeLocale.scheduleProcessDoesNotExistExceptionMessage -f $ProcessId)
+            }
+
+            # set start time and state
+            $process.StartTime = [datetime]::UtcNow
+            $process.State = 'Running'
+
+            # set expire time if timeout based on "start" time
+            if (($process.Timeout.From -ieq 'Start') -and ($process.Timeout.Value -ge 0)) {
+                $process.ExpireTime = $process.StartTime.AddSeconds($process.Timeout.Value)
+            }
+
+            # get the schedule, error if not found
+            $schedule = Find-PodeSchedule -Name $process.Schedule
+            if ($null -eq $schedule) {
+                throw ($PodeLocale.scheduleDoesNotExistExceptionMessage -f $process.Schedule)
+            }
+
+            # build the script arguments
+            $ScheduleEvent = @{
+                Lockable  = $PodeContext.Threading.Lockables.Global
+                Sender    = $schedule
+                Timestamp = [DateTime]::UtcNow
+                Metadata  = @{}
+            }
+
+            $_args = @{ Event = $ScheduleEvent }
+
+            if ($null -ne $schedule.Arguments) {
+                foreach ($key in $schedule.Arguments.Keys) {
+                    $_args[$key] = $schedule.Arguments[$key]
+                }
+            }
+
+            if ($null -ne $ArgumentList) {
+                foreach ($key in $ArgumentList.Keys) {
+                    $_args[$key] = $ArgumentList[$key]
+                }
+            }
+
+            # add any using variables
+            if ($null -ne $schedule.UsingVariables) {
+                foreach ($usingVar in $schedule.UsingVariables) {
+                    $_args[$usingVar.NewName] = $usingVar.Value
+                }
+            }
+
+            # invoke the script from the schedule
+            Invoke-PodeScriptBlock -ScriptBlock $schedule.Script -Arguments $_args -Scoped -Splat
+
+            # set state to completed
+            $process.State = 'Completed'
+        }
+        catch {
+            # update the state
+            if ($null -ne $process) {
+                $process.State = 'Failed'
+            }
+
+            # log the error
+            $_ | Write-PodeErrorLog
+        }
+        finally {
+            Invoke-PodeGC
+        }
     }
 }

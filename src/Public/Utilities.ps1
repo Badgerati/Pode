@@ -1366,7 +1366,22 @@ function ConvertFrom-PodeXml {
 
 }
 
+<#
+.SYNOPSIS
+Invokes the garbage collector.
 
+.DESCRIPTION
+Invokes the garbage collector.
+
+.EXAMPLE
+Invoke-PodeGC
+#>
+function Invoke-PodeGC {
+    [CmdletBinding()]
+    param()
+
+    [System.GC]::Collect()
+}
 
 <#
 .SYNOPSIS
@@ -1416,7 +1431,6 @@ function Set-PodeCurrentRunspaceName {
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-
 function Get-PodeCurrentRunspaceName {
     # Get the current runspace
     $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace

@@ -285,6 +285,8 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
     renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
+    taskProcessDoesNotExistExceptionMessage                           = 'عملية المهمة غير موجودة: {0}'
+    scheduleProcessDoesNotExistExceptionMessage                       = 'عملية الجدول الزمني غير موجودة: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
     getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
 }
