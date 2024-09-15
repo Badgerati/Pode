@@ -285,7 +285,8 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ongeldige Access-Control-Max-Age duur opgegeven: {0}. Moet groter zijn dan 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
+    taskProcessDoesNotExistExceptionMessage                           = "Taakproces '{0}' bestaat niet."
+    scheduleProcessDoesNotExistExceptionMessage                       = "Schema-proces '{0}' bestaat niet."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}-operaties kunnen geen Request Body hebben.'
 }
-

@@ -146,7 +146,8 @@
         'Get-PodePathParameter',
         'ConvertFrom-PodeSerializedString',
         'ConvertTo-PodeSerializedString',
-        
+        'Invoke-PodeGC',
+
         # routes
         'Add-PodeRoute',
         'Add-PodeStaticRoute',
@@ -189,6 +190,7 @@
         'Use-PodeSchedules',
         'Test-PodeSchedule',
         'Clear-PodeSchedules',
+        'Get-PodeScheduleProcess',
 
         # timers
         'Add-PodeTimer',
@@ -212,6 +214,7 @@
         'Close-PodeTask',
         'Test-PodeTaskCompleted',
         'Wait-PodeTask',
+        'Get-PodeTaskProcess',
 
         # middleware
         'Add-PodeMiddleware',
