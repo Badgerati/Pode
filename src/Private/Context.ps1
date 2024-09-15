@@ -117,9 +117,9 @@ function New-PodeContext {
     }
 
     $ctx.Tasks = @{
-        Enabled      = ($EnablePool -icontains 'tasks')
-        Items        = @{}
-        Results      = @{}
+        Enabled        = ($EnablePool -icontains 'tasks')
+        Items          = @{}
+        Processes      = @{}
         HouseKeeping = @{
             TimerInterval    = 30
             RetentionMinutes = 1
@@ -159,6 +159,7 @@ function New-PodeContext {
         Tasks       = 2
         WebSockets  = 2
         AsyncRoutes = 0
+        Timers     = 1
     }
 
     # set socket details for pode server
@@ -449,6 +450,7 @@ function New-PodeContext {
     $ctx.RunspacePools['Gui'] = $null
     $ctx.RunspacePools['Tasks'] = $null
     $ctx.RunspacePools['Files'] = $null
+    $ctx.RunspacePools['Timers'] = $null
 
     # threading locks, etc.
     $ctx.Threading.Lockables = @{
@@ -540,14 +542,9 @@ function New-PodeRunspacePool {
     # setup main runspace pool
     $threadsCounts = @{
         Default  = 3
-        Timer    = 1
         Log      = 1
         Schedule = 1
         Misc     = 1
-    }
-
-    if (!(Test-PodeTimersExist)) {
-        $threadsCounts.Timer = 0
     }
 
     if (!(Test-PodeSchedulesExist)) {
@@ -605,6 +602,14 @@ function New-PodeRunspacePool {
         }
 
         New-PodeWebSocketReceiver
+    }
+
+    # setup timer runspace pool -if we have any timers
+    if (Test-PodeTimersExist) {
+        $PodeContext.RunspacePools.Timers = @{
+            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Timers, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
     }
 
     # setup schedule runspace pool -if we have any schedules

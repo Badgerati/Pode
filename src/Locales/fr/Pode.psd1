@@ -292,6 +292,8 @@
     invalidQueryElementExceptionMessage                               = "La requête fournie est invalide. {0} n'est pas un élément valide pour une requête."
     setPodeAsyncProgressExceptionMessage                              = "Set-PodeAsyncRouteProgress ne peut être utilisé qu'à l'intérieur d'un Scriptblock de Route Asynchrone."
     progressLimitLowerThanCurrentExceptionMessage                     = 'Une limite de progression ne peut pas être inférieure à la progression actuelle.'
+    taskProcessDoesNotExistExceptionMessage                           = "Le processus de la tâche '{0}' n'existe pas."
+    scheduleProcessDoesNotExistExceptionMessage                       = "Le processus de l'horaire '{0}' n'existe pas."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} varie entre différentes définitions OpenAPI.'
     routeNotMarkedAsAsyncExceptionMessage                             = "La route '{0}' n'est pas marquée comme une route asynchrone."

@@ -285,6 +285,8 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = '提供的 Access-Control-Max-Age 时长无效：{0}。应大于 0。'
     openApiDefinitionAlreadyExistsExceptionMessage                    = '名为 {0} 的 OpenAPI 定义已存在。'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag 不能在 Select-PodeOADefinition 'ScriptBlock' 内使用。"
+    taskProcessDoesNotExistExceptionMessage                           = "任务进程 '{0}' 不存在。"
+    scheduleProcessDoesNotExistExceptionMessage                       = "计划进程 '{0}' 不存在。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
     invalidQueryFormatExceptionMessage                                = '提供的查询格式无效。'
     asyncIdDoesNotExistExceptionMessage                               = '异步 {0} 不存在。'

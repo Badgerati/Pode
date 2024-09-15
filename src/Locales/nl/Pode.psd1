@@ -292,6 +292,8 @@
     invalidQueryElementExceptionMessage                               = 'De opgegeven query is ongeldig. {0} is geen geldig element voor een query.'
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress kan alleen worden gebruikt binnen een Async Route Scriptblock.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Een voortgangslimiet kan niet lager zijn dan de huidige voortgang.'
+    taskProcessDoesNotExistExceptionMessage                           = "Taakproces '{0}' bestaat niet."
+    scheduleProcessDoesNotExistExceptionMessage                       = "Schema-proces '{0}' bestaat niet."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} verschilt tussen verschillende OpenAPI-definities.'
     routeNotMarkedAsAsyncExceptionMessage                             = "De route '{0}' is niet gemarkeerd als een asynchrone route."

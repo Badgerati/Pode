@@ -292,6 +292,8 @@
     invalidQueryElementExceptionMessage                               = 'La consulta proporcionada no es válida. {0} no es un elemento válido para una consulta.'
     setPodeAsyncProgressExceptionMessage                              = 'Set-PodeAsyncRouteProgress solo se puede usar dentro de un Scriptblock de Ruta Asíncrona.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'Un límite de progreso no puede ser inferior al progreso actual.'
+    taskProcessDoesNotExistExceptionMessage                           = "El proceso de la tarea '{0}' no existe."
+    scheduleProcessDoesNotExistExceptionMessage                       = "El proceso del programación '{0}' no existe."
     definitionTagChangeNotAllowedExceptionMessage                     = 'La etiqueta de definición para una Route no se puede cambiar.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} varía entre diferentes definiciones de OpenAPI.'
     routeNotMarkedAsAsyncExceptionMessage                             = "La ruta '{0}' no está marcada como una Ruta Asíncrona."

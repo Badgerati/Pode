@@ -292,6 +292,8 @@
     invalidQueryElementExceptionMessage                               = 'الاستعلام المقدم غير صالح. {0} ليس عنصرًا صالحًا للاستعلام.'
     setPodeAsyncProgressExceptionMessage                              = 'يمكن استخدام Set-PodeAsyncRouteProgress فقط داخل كتلة نصية لمسار غير متزامن.'
     progressLimitLowerThanCurrentExceptionMessage                     = 'لا يمكن أن يكون حد التقدم أقل من التقدم الحالي.'
+    taskProcessDoesNotExistExceptionMessage                           = 'عملية المهمة غير موجودة: {0}'
+    scheduleProcessDoesNotExistExceptionMessage                       = 'عملية الجدول الزمني غير موجودة: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
     openApiDefinitionsMismatchExceptionMessage                        = '{0} يختلف بين تعريفات OpenAPI المختلفة.'
     routeNotMarkedAsAsyncExceptionMessage                             = "المسار '{0}' لم يتم وضع علامة عليه كمسار غير متزامن."

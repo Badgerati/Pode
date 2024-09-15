@@ -17,6 +17,12 @@ A literal, or relative, path to a file containing a ScriptBlock for the Task's l
 .PARAMETER ArgumentList
 A hashtable of arguments to supply to the Task's ScriptBlock.
 
+.PARAMETER Timeout
+A Timeout, in seconds, to abort running the Task process. (Default: -1 [never timeout])
+
+.PARAMETER TimeoutFrom
+Where to start the Timeout from, either 'Create', 'Start'. (Default: 'Create')
+
 .EXAMPLE
 Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
 
@@ -40,7 +46,16 @@ function Add-PodeTask {
 
         [Parameter()]
         [hashtable]
-        $ArgumentList
+        $ArgumentList,
+
+        [Parameter()]
+        [int]
+        $Timeout = -1,
+
+        [Parameter()]
+        [ValidateSet('Create', 'Start')]
+        [string]
+        $TimeoutFrom = 'Create'
     )
     # ensure the task doesn't already exist
     if ($PodeContext.Tasks.Items.ContainsKey($Name)) {
@@ -63,6 +78,10 @@ function Add-PodeTask {
         Script         = $ScriptBlock
         UsingVariables = $usingVars
         Arguments      = (Protect-PodeValue -Value $ArgumentList -Default @{})
+        Timeout        = @{
+            Value = $Timeout
+            From  = $TimeoutFrom
+        }
     }
 }
 
@@ -118,6 +137,7 @@ Invoke a Task.
 
 .DESCRIPTION
 Invoke a Task either asynchronously or synchronously, with support for returning values.
+The function returns the Task process onbject which was triggered.
 
 .PARAMETER Name
 The Name of the Task.
@@ -126,10 +146,16 @@ The Name of the Task.
 A hashtable of arguments to supply to the Task's ScriptBlock.
 
 .PARAMETER Timeout
-A Timeout, in seconds, to abort running the task. (Default: -1 [never timeout])
+A Timeout, in seconds, to abort running the Task process. (Default: -1 [never timeout])
+
+.PARAMETER TimeoutFrom
+Where to start the Timeout from, either 'Default', 'Create', or 'Start'. (Default: 'Default' - will use the value from Add-PodeTask)
 
 .PARAMETER Wait
-If supplied, Pode will wait until the Task has finished executing, and then return any values.
+If supplied, Pode will wait until the Task process has finished executing, and then return any values.
+
+.OUTPUTS
+The triggered Task process.
 
 .EXAMPLE
 Invoke-PodeTask -Name 'Example1' -Wait -Timeout 5
@@ -155,6 +181,11 @@ function Invoke-PodeTask {
         [int]
         $Timeout = -1,
 
+        [Parameter()]
+        [ValidateSet('Default', 'Create', 'Start')]
+        [string]
+        $TimeoutFrom = 'Default',
+
         [switch]
         $Wait
     )
@@ -166,7 +197,7 @@ function Invoke-PodeTask {
     }
 
     # run task logic
-    $task = Invoke-PodeInternalTask -Task $PodeContext.Tasks.Items[$Name] -ArgumentList $ArgumentList -Timeout $Timeout
+    $task = Invoke-PodeInternalTask -Task $PodeContext.Tasks.Items[$Name] -ArgumentList $ArgumentList -Timeout $Timeout -TimeoutFrom $TimeoutFrom
 
     # wait, and return result?
     if ($Wait) {
@@ -365,18 +396,18 @@ function Close-PodeTask {
         $Task
     )
 
-    Close-PodeTaskInternal -Result $Task
+    Close-PodeTaskInternal -Process $Task
 }
 
 <#
 .SYNOPSIS
-Test if a running Task has completed.
+Test if a running Task process has completed.
 
 .DESCRIPTION
-Test if a running Task has completed.
+Test if a running Task process has completed.
 
 .PARAMETER Task
-The Task to be check.
+The Task process to be check. The process returned by either Invoke-PodeTask or Get-PodeTaskProcess.
 
 .EXAMPLE
 Invoke-PodeTask -Name 'Example1' | Test-PodeTaskCompleted
@@ -395,13 +426,13 @@ function Test-PodeTaskCompleted {
 
 <#
 .SYNOPSIS
-Waits for a task to finish, and returns a result if there is one.
+Waits for a Task process to finish, and returns a result if there is one.
 
 .DESCRIPTION
-Waits for a task to finish, and returns a result if there is one.
+Waits for a Task process to finish, and returns a result if there is one.
 
 .PARAMETER Task
-The task to wait on.
+The Task process to wait on. The process returned by either Invoke-PodeTask or Get-PodeTaskProcess.
 
 .PARAMETER Timeout
 An optional Timeout in milliseconds.
@@ -434,4 +465,93 @@ function Wait-PodeTask {
 
     # Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]
     throw ($PodeLocale.invalidTaskTypeExceptionMessage)
+}
+
+
+<#
+.SYNOPSIS
+Get all Task Processes.
+
+.DESCRIPTION
+Get all Task Processes, with support for filtering. These are the processes created when using Invoke-PodeTask.
+
+.PARAMETER Name
+An optional Name of the Task to filter by, can be one or more.
+
+.PARAMETER Id
+An optional ID of the Task process to filter by, can be one or more.
+
+.PARAMETER State
+An optional State of the Task process to filter by, can be one or more.
+
+.EXAMPLE
+Get-PodeTaskProcess
+
+.EXAMPLE
+Get-PodeTaskProcess -Name 'TaskName'
+
+.EXAMPLE
+Get-PodeTaskProcess -Id 'TaskId'
+
+.EXAMPLE
+Get-PodeTaskProcess -State 'Running'
+#>
+function Get-PodeTaskProcess {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Id,
+
+        [Parameter()]
+        [ValidateSet('All', 'Pending', 'Running', 'Completed', 'Failed')]
+        [string[]]
+        $State = 'All'
+    )
+
+    $processes = $PodeContext.Tasks.Processes.Values
+
+    # filter processes by name
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $processes = @(foreach ($_name in $Name) {
+                foreach ($process in $processes) {
+                    if ($process.Task -ine $_name) {
+                        continue
+                    }
+
+                    $process
+                }
+            })
+    }
+
+    # filter processes by id
+    if (($null -ne $Id) -and ($Id.Length -gt 0)) {
+        $processes = @(foreach ($_id in $Id) {
+                foreach ($process in $processes) {
+                    if ($process.ID -ine $_id) {
+                        continue
+                    }
+
+                    $process
+                }
+            })
+    }
+
+    # filter processes by status
+    if ($State -inotcontains 'All') {
+        $processes = @(foreach ($process in $processes) {
+                if ($State -inotcontains $process.State) {
+                    continue
+                }
+
+                $process
+            })
+    }
+
+    # return processes
+    return $processes
 }

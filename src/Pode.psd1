@@ -141,6 +141,7 @@
         'ConvertFrom-PodeXml',
         'Set-PodeDefaultFolder',
         'Get-PodeDefaultFolder',
+        'Invoke-PodeGC',
 
         # routes
         'Add-PodeRoute',
@@ -202,6 +203,7 @@
         'Use-PodeSchedules',
         'Test-PodeSchedule',
         'Clear-PodeSchedules',
+        'Get-PodeScheduleProcess',
 
         # timers
         'Add-PodeTimer',
@@ -225,6 +227,7 @@
         'Close-PodeTask',
         'Test-PodeTaskCompleted',
         'Wait-PodeTask',
+        'Get-PodeTaskProcess',
 
         # middleware
         'Add-PodeMiddleware',
