@@ -2476,7 +2476,7 @@ function ConvertFrom-PodeSerializedString {
     Defines the deserialization style to use when interpreting the parameter value. Valid options are 'Simple', 'Label',
     and 'Matrix'. The default is 'Simple'. Applicable only when the `-Deserialize` switch is used.
 
-.PARAMETER KeyName
+.PARAMETER ParameterName
     Specifies the key name to use when deserializing the parameter value. The default value is 'id'.
     This option is useful for mapping the parameter data accurately during deserialization. Applicable only
     when the `-Deserialize` switch is used.
@@ -2525,7 +2525,7 @@ function Get-PodePathParameter {
     )
     if ($WebEvent) {
         if ($Deserialize.IsPresent) {
-            return ConvertFrom-PodeSerializedString -SerializedInput $WebEvent.Parameters[$Name] -Style $Style -Explode:$Explode -KeyName $ParameterName
+            return ConvertFrom-PodeSerializedString -SerializedInput $WebEvent.Parameters[$Name] -Style $Style -Explode:$Explode -ParameterName $ParameterName
         }
         return $WebEvent.Parameters[$Name]
     }
@@ -2561,7 +2561,7 @@ function Get-PodePathParameter {
     'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'. The default is 'Form'.
     Applicable only when the `-Deserialize` switch is used.
 
-.PARAMETER KeyName
+.PARAMETER ParameterName
     Specifies the key name to use when deserializing the query parameter value. The default value is 'id'.
     This option is useful for mapping the query parameter data accurately during deserialization. Applicable only
     when the `-Deserialize` switch is used.
@@ -2609,7 +2609,7 @@ function Get-PodeQueryParameter {
     )
     if ($WebEvent) {
         if ($Deserialize.IsPresent) {
-            return ConvertFrom-PodeSerializedString -SerializedInput $WebEvent.Query[$Name] -Style $Style -Explode:(!$NoExplode) -KeyName $ParameterName
+            return ConvertFrom-PodeSerializedString -SerializedInput $WebEvent.Query[$Name] -Style $Style -Explode:(!$NoExplode) -ParameterName $ParameterName
         }
         return $WebEvent.Query[$Name]
     }
@@ -2638,7 +2638,7 @@ function Get-PodeQueryParameter {
     'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'. The default is 'Form'. Applicable only
     when the `-Deserialize` switch is used.
 
-.PARAMETER KeyName
+.PARAMETER ParameterName
     Specifies the key name to use when deserializing the body data. The default value is 'id'. This option is useful
     for mapping the body data accurately during deserialization. Applicable only when the `-Deserialize` switch is used.
 
@@ -2680,7 +2680,7 @@ function Get-PodeBodyData {
     )
     if ($WebEvent) {
         if ($Deserialize.IsPresent) {
-            return ConvertFrom-PodeSerializedString -SerializedInput $WebEvent.Data -Style $Style -Explode:(!$NoExplode) -KeyName $ParameterName
+            return ConvertFrom-PodeSerializedString -SerializedInput $WebEvent.Data -Style $Style -Explode:(!$NoExplode) -ParameterName $ParameterName
         }
         return $WebEvent.Data
     }
