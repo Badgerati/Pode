@@ -102,4 +102,6 @@ Start-PodeServer {
 
 In this example, `Get-PodeCookie` is used to deserialize the `Session` cookie, interpreting it according to the provided deserialization options. The `-NoExplode` switch ensures that any arrays within the cookie value are not expanded during deserialization.
 
+For further information regarding serialization, please refer to the [RFC6570](https://tools.ietf.org/html/rfc6570).
+
 For further information on general usage and retrieving cookies, please refer to the [Headers Documentation](Cookies.md).

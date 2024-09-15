@@ -97,4 +97,6 @@ Start-PodeServer {
 
 In this example, `Get-PodeHeader` is used to deserialize the `X-SerializedHeader` header, interpreting it according to the provided deserialization options. The `-Explode` switch ensures that any arrays within the header value are properly expanded during deserialization.
 
+For further information regarding serialization, please refer to the [RFC6570](https://tools.ietf.org/html/rfc6570).
+
 For further information on general usage and retrieving headers, please refer to the [Headers Documentation](Headers.md).

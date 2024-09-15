@@ -1401,6 +1401,11 @@ function ConvertFrom-PodeXml {
     }
     $serializedExplode = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'DeepObject' -Explode
     Write-Output $serializedExplode
+
+.NOTES
+    Additional info regarding serialization
+    https://swagger.io/docs/specification/serialization/
+    https://tools.ietf.org/html/rfc6570
 #>
 function ConvertTo-PodeSerializedString {
 
@@ -1481,11 +1486,11 @@ function ConvertTo-PodeSerializedString {
                         break
                     }
 
-                    # Not defined by RFC
+                    # Not defined by RFC 6570.
                     'SpaceDelimited' {
                         $serializedArray += ''
                     }
-                    # Not defined by RFC
+                    # Not defined by RFC 6570.
                     'PipeDelimited' {
                         $serializedArray += ''
                     }
@@ -1536,7 +1541,7 @@ function ConvertTo-PodeSerializedString {
                 }
 
                 'Form' {
-                    if ($Explode) {  # Not defined by RFC
+                    if ($Explode) {  # Not defined by RFC 6570.
                         $serializedArray += ''
                     }
                     else {
@@ -1545,7 +1550,7 @@ function ConvertTo-PodeSerializedString {
                     break
                 }
 
-                # Not defined by RFC
+                # Not defined by RFC 6570.
                 'DeepObject' {
                       $serializedArray += ''
                 }
@@ -1670,6 +1675,11 @@ function ConvertTo-PodeSerializedString {
     $serialized = "myId[role]=admin&myId[firstName]=Alex"
     $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'DeepObject' -Explode -KeyName 'myId'
     Write-Output $hashtable
+
+.NOTES
+    Additional info regarding serialization
+    https://swagger.io/docs/specification/serialization/
+    https://tools.ietf.org/html/rfc6570
 #>
 function ConvertFrom-PodeSerializedString {
     param (

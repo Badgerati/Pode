@@ -104,3 +104,5 @@ Start-PodeServer {
 ```
 
 In this example, the `Get-PodePathParameter` function is used to deserialize the `itemId` parameter, interpreting it according to the specified style (`Label`) and handling arrays if present (`-Explode`). The default `KeyName` is `'id'`, but it can be customized as needed. This approach allows for dynamic and precise handling of incoming request data, making your Pode routes more versatile and resilient.
+
+For further information regarding serialization, please refer to the [RFC6570](https://tools.ietf.org/html/rfc6570).

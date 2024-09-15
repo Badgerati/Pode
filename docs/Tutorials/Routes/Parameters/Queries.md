@@ -103,3 +103,5 @@ Start-PodeServer {
 ```
 
 In this example, the `Get-PodeQueryParameter` function is used to deserialize the `filter` query parameter, interpreting it according to the specified style (`SpaceDelimited`) and preventing array explosion (`-NoExplode`). This approach allows for dynamic and precise handling of complex query data, enhancing the flexibility of your Pode routes.
+
+For further information regarding serialization, please refer to the [RFC6570](https://tools.ietf.org/html/rfc6570).
