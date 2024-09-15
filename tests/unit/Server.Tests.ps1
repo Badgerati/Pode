@@ -40,6 +40,7 @@ Describe 'Start-PodeInternalServer' {
         Mock Invoke-PodeEvent { }
         Mock Write-Verbose { }
         Mock Add-PodeScopedVariablesInbuilt { }
+        Mock Write-PodeHost { }
     }
 
     It 'Calls one-off script logic' {
@@ -227,11 +228,11 @@ Describe 'Restart-PodeInternalServer' {
                 Processes = @{}
             }
             Tasks     = @{
-                Enabled = $true
-                Items   = @{
+                Enabled   = $true
+                Items     = @{
                     key = 'value'
                 }
-                Results = @{}
+                Processes = @{}
             }
             Fim       = @{
                 Enabled = $true

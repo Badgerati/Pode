@@ -1674,8 +1674,18 @@ Describe 'New-PodeCron' {
 
 Describe 'ConvertTo-PodeYaml Tests' {
     BeforeAll {
-        $PodeContext = @{ Server = @{InternalCache = @{} } }
+        $PodeContext = @{
+            Server = @{
+                InternalCache = @{}
+                Web           = @{
+                    OpenApi = @{
+                        UsePodeYamlInternal = $true
+                    }
+                }
+            }
+        }
     }
+
     Context 'When converting basic types' {
         It 'Converts strings correctly' {
             $result = 'hello world' | ConvertTo-PodeYaml

@@ -126,6 +126,29 @@ Get-PodeSchedule -Name Name1
 Get-PodeSchedule -Name Name1, Name2
 ```
 
+## Getting Schedule Processes
+
+You can retrieve a list of processes triggered by Schedules via [`Get-PodeScheduleProcess`](../../Functions/Schedules/Get-PodeScheduleProcess) - this will return processes created either by a Schedule's natural time-based trigger, or via [`Invoke-PodeSchedule`](../../Functions/Schedules/Invoke-PodeSchedule).
+
+You can either retrieve all processes, or filter them by Schedule Name, or Process ID/Status:
+
+```powershell
+# retrieves all schedule processes
+Get-PodeScheduleProcess
+
+# retrieves all schedule processes for the "ScheduleName" process
+Get-PodeScheduleProcess -Name 'ScheduleName'
+
+# retrieves the schedule process with ID "ScheduleId"
+Get-PodeScheduleProcess -Id 'ScheduleId'
+
+# retrieves all running schedule processes
+Get-PodeScheduleProcess -State 'Running'
+
+# retrieves all pending schedule processes for "ScheduleName"
+Get-PodeScheduleProcess -Name 'ScheduleName' -State 'Running'
+```
+
 ## Next Trigger Time
 
 When you retrieve a Schedule using [`Get-PodeSchedule`](../../Functions/Schedules/Get-PodeSchedule), each Schedule object will already have its next trigger time as `NextTriggerTime`. However, if you want to get a trigger time further ino the future than this, then you can use the [`Get-PodeScheduleNextTrigger`](../../Functions/Schedules/Get-PodeScheduleNextTrigger) function.

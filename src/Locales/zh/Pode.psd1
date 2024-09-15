@@ -287,6 +287,8 @@
     loggingAlreadyEnabledExceptionMessage                             = "日志记录 '{0}' 已启用。"
     invalidEncodingExceptionMessage                                   = '无效的编码: {0}'
     syslogProtocolExceptionMessage                                    = 'Syslog 协议只能使用 RFC3164 或 RFC5424。'
+    taskProcessDoesNotExistExceptionMessage                           = "任务进程 '{0}' 不存在。"
+    scheduleProcessDoesNotExistExceptionMessage                       = "计划进程 '{0}' 不存在。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
 }

@@ -287,6 +287,8 @@
     loggingAlreadyEnabledExceptionMessage                             = "El registro '{0}' ya ha sido habilitado."
     invalidEncodingExceptionMessage                                   = 'Codificación inválida: {0}'
     syslogProtocolExceptionMessage                                    = 'El protocolo Syslog solo puede usar RFC3164 o RFC5424.'
+    taskProcessDoesNotExistExceptionMessage                           = "El proceso de la tarea '{0}' no existe."
+    scheduleProcessDoesNotExistExceptionMessage                       = "El proceso del programación '{0}' no existe."
     definitionTagChangeNotAllowedExceptionMessage                     = 'La etiqueta de definición para una Route no se puede cambiar.'
     getRequestBodyNotAllowedExceptionMessage                          = 'Las operaciones {0} no pueden tener un cuerpo de solicitud.'
 }

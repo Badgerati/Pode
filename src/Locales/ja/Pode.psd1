@@ -287,6 +287,8 @@
     loggingAlreadyEnabledExceptionMessage                             = "ログ記録 '{0}' は既に有効になっています。"
     invalidEncodingExceptionMessage                                   = '無効なエンコーディング: {0}'
     syslogProtocolExceptionMessage                                    = 'SyslogプロトコルはRFC3164またはRFC5424のみを使用できます。'
+    taskProcessDoesNotExistExceptionMessage                           = 'タスクプロセスが存在しません: {0}'
+    scheduleProcessDoesNotExistExceptionMessage                       = 'スケジュールプロセスが存在しません: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
 }

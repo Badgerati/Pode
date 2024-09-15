@@ -287,6 +287,8 @@
     loggingAlreadyEnabledExceptionMessage                             = "تم تمكين تسجيل '{0}' بالفعل."
     invalidEncodingExceptionMessage                                   = 'ترميز غير صالح: {0}'
     syslogProtocolExceptionMessage                                    = 'يمكن لبروتوكول Syslog استخدام RFC3164 أو RFC5424 فقط.'
+    taskProcessDoesNotExistExceptionMessage                           = 'عملية المهمة غير موجودة: {0}'
+    scheduleProcessDoesNotExistExceptionMessage                       = 'عملية الجدول الزمني غير موجودة: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
     getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
   }

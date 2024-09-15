@@ -26,6 +26,12 @@ A DateTime for when the Schedule should stop triggering, and be removed.
 .PARAMETER ArgumentList
 A hashtable of arguments to supply to the Schedule's ScriptBlock.
 
+.PARAMETER Timeout
+An optional timeout, in seconds, for the Schedule's logic. (Default: -1 [never timeout])
+
+.PARAMETER TimeoutFrom
+An optional timeout from either 'Create' or 'Start'. (Default: 'Create')
+
 .PARAMETER FilePath
 A literal, or relative, path to a file containing a ScriptBlock for the Schedule's logic.
 
@@ -78,6 +84,15 @@ function Add-PodeSchedule {
         [Parameter()]
         [hashtable]
         $ArgumentList,
+
+        [Parameter()]
+        [int]
+        $Timeout = -1,
+
+        [Parameter()]
+        [ValidateSet('Create', 'Start')]
+        [string]
+        $TimeoutFrom = 'Create',
 
         [switch]
         $OnStart
@@ -140,6 +155,10 @@ function Add-PodeSchedule {
         Arguments       = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart         = $OnStart
         Completed       = ($null -eq $nextTrigger)
+        Timeout         = @{
+            Value = $Timeout
+            From  = $TimeoutFrom
+        }
     }
 }
 
@@ -557,4 +576,92 @@ function Use-PodeSchedules {
     )
 
     Use-PodeFolder -Path $Path -DefaultPath 'schedules'
+}
+
+<#
+.SYNOPSIS
+Get all Schedule Processes.
+
+.DESCRIPTION
+Get all Schedule Processes, with support for filtering.
+
+.PARAMETER Name
+An optional Name of the Schedule to filter by, can be one or more.
+
+.PARAMETER Id
+An optional ID of the Schedule process to filter by, can be one or more.
+
+.PARAMETER State
+An optional State of the Schedule process to filter by, can be one or more.
+
+.EXAMPLE
+Get-PodeScheduleProcess
+
+.EXAMPLE
+Get-PodeScheduleProcess -Name 'ScheduleName'
+
+.EXAMPLE
+Get-PodeScheduleProcess -Id 'ScheduleId'
+
+.EXAMPLE
+Get-PodeScheduleProcess -State 'Running'
+#>
+function Get-PodeScheduleProcess {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Id,
+
+        [Parameter()]
+        [ValidateSet('All', 'Pending', 'Running', 'Completed', 'Failed')]
+        [string[]]
+        $State = 'All'
+    )
+
+    $processes = $PodeContext.Schedules.Processes.Values
+
+    # filter processes by name
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $processes = @(foreach ($_name in $Name) {
+                foreach ($process in $processes) {
+                    if ($process.Schedule -ine $_name) {
+                        continue
+                    }
+
+                    $process
+                }
+            })
+    }
+
+    # filter processes by id
+    if (($null -ne $Id) -and ($Id.Length -gt 0)) {
+        $processes = @(foreach ($_id in $Id) {
+                foreach ($process in $processes) {
+                    if ($process.ID -ine $_id) {
+                        continue
+                    }
+
+                    $process
+                }
+            })
+    }
+
+    # filter processes by status
+    if ($State -inotcontains 'All') {
+        $processes = @(foreach ($process in $processes) {
+                if ($State -inotcontains $process.State) {
+                    continue
+                }
+
+                $process
+            })
+    }
+
+    # return processes
+    return $processes
 }
