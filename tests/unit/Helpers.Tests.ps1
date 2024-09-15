@@ -2,7 +2,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 BeforeAll {
-    Add-Type -AssemblyName "System.Net.Http" -ErrorAction SilentlyContinue
+    Add-Type -AssemblyName 'System.Net.Http' -ErrorAction SilentlyContinue
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
@@ -770,7 +770,7 @@ Describe 'Get-PodeEndpointInfo' {
     }
 
     It 'Throws an error for an invalid IP endpoint' {
-        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f  '700.0.0.a' ) #'*Failed to parse*'
+        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f '700.0.0.a' ) #'*Failed to parse*'
     }
 
     It 'Throws an error for an out-of-range IP endpoint' {
@@ -1663,10 +1663,6 @@ Describe 'New-PodeCron' {
         { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage $PodeLocale.cannotSupplyIntervalForYearExceptionMessage #'Cannot supply interval value for every year'
     }
 }
-
-
-
-
 
 Describe 'ConvertTo-PodeYamlInternal Tests' {
     Context 'When converting basic types' {

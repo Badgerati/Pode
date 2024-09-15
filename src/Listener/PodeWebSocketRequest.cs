@@ -13,7 +13,7 @@ namespace Pode
 
         public int ContentLength
         {
-            get => (RawBody == default(byte[]) ? 0 : RawBody.Length);
+            get => RawBody == default(byte[]) ? 0 : RawBody.Length;
         }
 
         private string _body = string.Empty;
@@ -39,7 +39,7 @@ namespace Pode
         public void Dispose()
         {
             WebSocket.Receiver.RemoveProcessingWebSocketRequest(this);
-            RawBody = default(byte[]);
+            RawBody = default;
             _body = string.Empty;
         }
 
