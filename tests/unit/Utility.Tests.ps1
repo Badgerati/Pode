@@ -407,23 +407,80 @@ Describe 'ConvertTo-PodeSerializedString' {
         function SortSerializedString {
             param (
                 [string] $SerializedString,
-                [string] $Delimiter
+                [string] $Delimiter,
+                [switch] $GroupPairs,
+                [string] $SkipHead = '',
+                [string] $RemovePattern = ''
             )
 
-            $pairs = $SerializedString -split $Delimiter
-            $sortedPairs = $pairs | Sort-Object
-            return $sortedPairs -join $Delimiter
+            # If a head to skip is specified, separate it from the rest of the string
+            if ($SkipHead -and $SerializedString.StartsWith($SkipHead)) {
+                # Extract the head and the rest of the string
+                $head = $SkipHead
+                $SerializedString = $SerializedString.Substring($SkipHead.Length)
+            }
+            else {
+                $head = ''
+            }
+
+            # Split the remaining string into individual elements
+            $elements = $SerializedString -split $Delimiter
+
+            # Apply pattern removal if specified
+            if ($RemovePattern) {
+                $elements = $elements.ForEach({
+                        $_ -replace $RemovePattern, ''
+                    })
+            }
+
+            if ($GroupPairs) {
+                # Group elements into pairs (key-value)
+                $pairs = for ($i = 0; $i -lt $elements.Count; $i += 2) {
+                    # Check if the next element exists to avoid a trailing delimiter
+                    if ($i + 1 -lt $elements.Count) {
+                        "$($elements[$i])$Delimiter$($elements[$i + 1])"
+                    }
+                    else {
+                        # If the last element doesn't have a pair, add it as is
+                        $elements[$i]
+                    }
+                }
+
+                # Sort the pairs
+                $sortedPairs = $pairs | Sort-Object
+
+                # Join sorted pairs back into a single string
+                $sortedString = $sortedPairs -join $Delimiter
+            }
+            else {
+                # Sort elements individually without grouping into pairs
+                $sortedElements = $elements | Sort-Object
+
+                # Join sorted elements back into a single string
+                $sortedString = $sortedElements -join $Delimiter
+            }
+
+            # Reattach the head (if any) at the start of the sorted string
+            $result = "$head$sortedString"
+
+            # Remove any trailing delimiter that may have been inadvertently added
+            if ($result.EndsWith($Delimiter)) {
+                $result = $result.Substring(0, $result.Length - 1)
+            }
+
+            return $result
         }
     }
     It 'should convert hashtable to Simple style serialized string' {
         $hashtable = @{
             name        = 'value'
             anotherName = 'anotherValue'
+            number      = 10
         }
         $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Simple'
-        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ','
-        $expected = 'name=value,anotherName=anotherValue'
-        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ','
+        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ',' -GroupPairs
+        $expected = 'name,value,number,10,anotherName,anotherValue'
+        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ',' -GroupPairs
         $sortedResult | Should -Be $sortedExpected
     }
 
@@ -431,11 +488,12 @@ Describe 'ConvertTo-PodeSerializedString' {
         $hashtable = @{
             name        = 'value'
             anotherName = 'anotherValue'
+            number      = 10
         }
         $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Simple' -Explode
-        $sortedResult = SortSerializedString -SerializedString $result -Delimiter '&'
-        $expected = 'name=value&anotherName=anotherValue'
-        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter '&'
+        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ','
+        $expected = 'name=value,number=10,anotherName=anotherValue'
+        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ','
         $sortedResult | Should -Be $sortedExpected
     }
 
@@ -443,32 +501,52 @@ Describe 'ConvertTo-PodeSerializedString' {
         $hashtable = @{
             name        = 'value'
             anotherName = 'anotherValue'
+            number      = 10
         }
         $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Label'
-        $result -eq '.name.value.anotherName.anotherValue' -or $result -eq '.anotherName.anotherValue.name.value' | Should -BeTrue
+
+        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ',' -SkipHead '.'
+        $expected = '.anotherName,anotherValue,number,10,name,value'
+        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ',' -SkipHead '.'
+        $sortedResult | Should -Be $sortedExpected
+    }
+
+    It 'should convert hashtable to Label style serialized string with Explode' {
+        $hashtable = @{
+            name        = 'value'
+            anotherName = 'anotherValue'
+            number      = 10
+        }
+        $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Label' -Explode
+        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ',' -SkipHead '.'
+        $expected = '.anotherName=anotherValue,number=10,name=value'
+        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ',' -SkipHead '.'
+        $sortedResult | Should -Be $sortedExpected
     }
 
     It 'should convert hashtable to Matrix style serialized string' {
         $hashtable = @{
             name        = 'value'
             anotherName = 'anotherValue'
+            number      = 10
         }
         $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Matrix'
-        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ';'
-        $expected = ';name=value;anotherName=anotherValue'
-        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ';'
+        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ',' -GroupPairs -SkipHead ';id='
+        $expected = ';id=name,value,number,10,anotherName,anotherValue'
+        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ',' -GroupPairs -SkipHead ';id='
         $sortedResult | Should -Be $sortedExpected
     }
 
-    It 'should convert hashtable to Query style serialized string' {
+    It 'should convert hashtable to Matrix style serialized string with Explode' {
         $hashtable = @{
             name        = 'value'
             anotherName = 'anotherValue'
+            number      = 10
         }
-        $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Query'
-        $sortedResult = SortSerializedString -SerializedString $result -Delimiter '&'
-        $expected = 'name=value&anotherName=anotherValue'
-        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter '&'
+        $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Matrix' -Explode
+        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ';' -SkipHead ';'
+        $expected = ';name=value;number=10;anotherName=anotherValue'
+        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ';' -SkipHead ';'
         $sortedResult | Should -Be $sortedExpected
     }
 
@@ -476,66 +554,109 @@ Describe 'ConvertTo-PodeSerializedString' {
         $hashtable = @{
             name        = 'value'
             anotherName = 'anotherValue'
+            number      = 10
         }
         $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Form'
-        $sortedResult = SortSerializedString -SerializedString $result -Delimiter '&'
-        $expected = 'name=value&anotherName=anotherValue'
-        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter '&'
+        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ',' -GroupPairs -SkipHead '?id='
+        $expected = '?id=name,value,number,10,anotherName,anotherValue'
+        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ',' -GroupPairs -SkipHead '?id='
         $sortedResult | Should -Be $sortedExpected
     }
 
-    It 'should convert hashtable to SpaceDelimited style serialized string' {
+    It 'should convert hashtable to Form style serialized string with Explode' {
         $hashtable = @{
             name        = 'value'
             anotherName = 'anotherValue'
+            number      = 10
         }
-        $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'SpaceDelimited'
-        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ' '
-        $expected = 'name=value anotherName=anotherValue'
-        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ' '
+        $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Form' -Explode
+        $sortedResult = SortSerializedString -SerializedString $result -Delimiter '&' -SkipHead '?'
+        $expected = '?name=value&number=10&anotherName=anotherValue'
+        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter '&' -SkipHead '?'
         $sortedResult | Should -Be $sortedExpected
     }
 
-    It 'should convert hashtable to PipeDelimited style serialized string' {
-        $hashtable = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
-        }
-        $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'PipeDelimited'
-        $sortedResult = SortSerializedString -SerializedString $result -Delimiter '|'
-        $expected = 'name=value|anotherName=anotherValue'
-        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter '|'
-        $sortedResult | Should -Be $sortedExpected
-    }
+
 
     It 'should convert hashtable to DeepObject style serialized string' {
         $hashtable = @{
             name        = 'value'
             anotherName = 'anotherValue'
+            number      = 10
         }
-        $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'DeepObject'
-        $sortedResult = SortSerializedString -SerializedString $result -Delimiter ','
-        $expected = 'name[name]=value,anotherName[anotherName]=anotherValue'
-        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter ','
+        $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'DeepObject' -Explode
+        $sortedResult = SortSerializedString -SerializedString $result -Delimiter '&'  -SkipHead '?'  -RemovePattern 'id\[|\]'
+        $expected = '?id[name]=value&id[number]=10&id[anotherName]=anotherValue'
+        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter '&' -SkipHead '?'  -RemovePattern 'id\[|\]'
         $sortedResult | Should -Be $sortedExpected
     }
 
-    It 'should convert hashtable to DeepObject style serialized string with Explode' {
-        $hashtable = @{
-            name        = 'value'
-            anotherName = 'anotherValue'
-        }
-        $result = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'DeepObject' -Explode
-        $sortedResult = SortSerializedString -SerializedString $result -Delimiter '&'
-        $expected = 'name[name]=value&anotherName[anotherName]=anotherValue'
-        $sortedExpected = SortSerializedString -SerializedString $expected -Delimiter '&'
-        $sortedResult | Should -Be $sortedExpected
+    It 'should convert array to Simple style serialized string' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'Simple'
+        $result | Should -Be '3,4,5'
     }
+
+    It 'should convert array to Simple style serialized string with Explode' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'Simple' -Explode
+        $result | Should -Be '3,4,5'
+    }
+
+    It 'should convert array to Label style serialized string' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'Label'
+        $result | Should -Be '.3,4,5'
+    }
+
+    It 'should convert array to Label style serialized string with Explode' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'Label' -Explode
+        $result | Should -Be '.3,4,5'
+    }
+
+    It 'should convert array to Matrix style serialized string' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'Matrix'
+        $result | Should -Be ';id=3,4,5'
+    }
+
+    It 'should convert array to Matrix style serialized string with Explode' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'Matrix' -Explode
+        $result | Should -Be ';id=3;id=4;id=5'
+    }
+
+    It 'should convert array to SpaceDelimited style serialized string' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'SpaceDelimited'
+        $result | Should -Be '?id=3%204%205'
+    }
+
+    It 'should convert array to SpaceDelimited style serialized string with Explode' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'SpaceDelimited' -Explode
+        $result | Should -Be '?id=3&id=4&id=5'
+    }
+
+    It 'should convert array to PipeDelimited style serialized string' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'PipeDelimited'
+        $result | Should -Be  '?id=3|4|5'
+    }
+
+    It 'should convert array to PipeDelimited style serialized string with Explode' {
+        $array = @(3, 4, 5)
+        $result =  $array |ConvertTo-PodeSerializedString  -Style 'PipeDelimited' -Explode
+        $result | Should -Be '?id=3&id=4&id=5'
+    }
+
 
     It 'should throw an error for unsupported serialization type' {
         $hashtable = @{
             name        = 'value'
             anotherName = 'anotherValue'
+            number      = 10
         }
         { ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Unsupported' } | Should -Throw
     }

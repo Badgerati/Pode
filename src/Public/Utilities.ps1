@@ -1406,11 +1406,11 @@ function ConvertTo-PodeSerializedString {
 
     param (
         [Parameter(Mandatory, ValueFromPipeline = $true, Position = 0)]
-        [hashtable[]]
+        [psobject[]]
         $Hashtable,
 
         [Parameter()]
-        [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
+        [ValidateSet('Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
         [string]
         $Style = 'Simple',
 
@@ -1434,45 +1434,126 @@ function ConvertTo-PodeSerializedString {
             $Hashtables = $Hashtable
         }
         $serializedArray = @()
-        foreach ( $Hashtable in $Hashtables) {
-            switch ($Style) {
-                'Simple' {
-                    if ($Explode) {
-                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
+
+        if ($Hashtables[0] -is [hashtable]) {
+            foreach ( $Hashtable in $Hashtables) {
+                switch ($Style) {
+                    'Simple' {
+                        if ($Explode) {
+                            $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ','
+                        }
+                        else {
+                            $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_),$($Hashtable.""$_"")" }) -join ','
+                        }
+                        break
                     }
-                    else {
-                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ','
+                    'Label' {
+                        if ($Explode) {
+                            $serializedArray += ".$(($Hashtable.Keys | ForEach-Object { "$_=$($Hashtable.""$_"")" }) -join ',')"
+                        }
+                        else {
+                            $serializedArray += ".$(($Hashtable.Keys | ForEach-Object { "$_,$($Hashtable.""$_"")" }) -join ',')"
+                        }
+                        break
                     }
-                }
-                'Label' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { ".$_.$($Hashtable.""$_"")" }) -join ''
-                }
-                'Matrix' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { ";$_=$($Hashtable.""$_"")" }) -join ''
-                }
-                'Query' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
-                }
-                'Form' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&'
-                }
-                'SpaceDelimited' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ' '
-                }
-                'PipeDelimited' {
-                    $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '|'
-                }
-                'DeepObject' {
-                    if ($Explode) {
-                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($Hashtable.""$_"")" }) -join '&'
+                    'Matrix' {
+                        if ($Explode) {
+                            $serializedArray += ($Hashtable.Keys | ForEach-Object { ";$_=$($Hashtable.""$_"")" }) -join ''
+                        }
+                        else {
+                            $serializedArray += ";id=$(($Hashtable.Keys | ForEach-Object { "$_,$($Hashtable.""$_"")" }) -join ',')"
+                        }
+                        break
                     }
-                    else {
-                        $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)[$($_)]=$($Hashtable.""$_"")" }) -join ','
+
+                    'Form' {
+                        if ($Explode) {
+                            $serializedArray += "?$(($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&')"
+                        }
+                        else {
+                            $serializedArray += "?id=$(($Hashtable.Keys | ForEach-Object { "$($_),$($Hashtable.""$_"")" }) -join ',')"
+                        }
+                        break
                     }
+
+                    'DeepObject' {
+                        $serializedArray += "?$(($Hashtable.Keys | ForEach-Object { "id[$($_)]=$($Hashtable.""$_"")" }) -join '&')"
+                        break
+                    }
+
+                    # Not defined by RFC
+                    'SpaceDelimited' {
+                        $serializedArray += ''
+                    }
+                    # Not defined by RFC
+                    'PipeDelimited' {
+                        $serializedArray += ''
+                    }
+
                 }
             }
         }
-        return $serializedArray -join '&'
+        else {
+            switch ($Style) {
+                'Simple' {
+                    # explode and not explode return the same result
+                    $serializedArray += $Hashtables -join ','
+                    break
+                }
+                'Label' {
+                    # explode and not explode return the same result
+                    $serializedArray += ".$($Hashtables -join ',')"
+
+                    break
+                }
+                'Matrix' {
+                    if ($Explode) {
+                        $serializedArray += ";id=$($Hashtables -join ';id=')"
+                    }
+                    else {
+                        $serializedArray += ";id=$($Hashtables -join ',')"
+                    }
+                    break
+                }
+                'SpaceDelimited' {
+                    if ($Explode) {
+                        $serializedArray += "?id=$($Hashtables -join '&id=')"
+                    }
+                    else {
+                        $serializedArray += "?id=$($Hashtables -join '%20')"
+                    }
+                    break
+                }
+
+                'PipeDelimited' {
+                    if ($Explode) {
+                        $serializedArray += "?id=$($Hashtables -join '&id=')"
+                    }
+                    else {
+                        $serializedArray += "?id=$($Hashtables -join '|')"
+                    }
+                    break
+                }
+
+                'Form' {
+                    if ($Explode) {  # Not defined by RFC
+                        $serializedArray += ''
+                    }
+                    else {
+                        $serializedArray += "id=$($Hashtables -join ',')"
+                    }
+                    break
+                }
+
+                # Not defined by RFC
+                'DeepObject' {
+                      $serializedArray += ''
+                }
+
+
+            }
+        }
+        return $serializedArray
     }
 }
 
@@ -2058,7 +2139,7 @@ function ConvertFrom-PodeSerializedString {
                 # Return the constructed hashtable with nested keys and values
                 return $obj
             }
- 
+
         }
     }
 }
