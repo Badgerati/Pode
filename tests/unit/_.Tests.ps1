@@ -7,7 +7,7 @@ BeforeDiscovery {
 
     # List of directories to exclude
     $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
-        'Authentication', 'certs', 'logs', 'relative', 'routes')
+        'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues')
 
     # Convert exlusion list into single regex pattern for directory matching
     $dirSeparator = [IO.Path]::DirectorySeparatorChar
@@ -15,9 +15,9 @@ BeforeDiscovery {
 
     # get the example scripts
     $ps1Files = @(Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse -File -Force |
-        Where-Object {
-            $_.FullName -inotmatch $excludeDirs
-        }).FullName
+            Where-Object {
+                $_.FullName -inotmatch $excludeDirs
+            }).FullName
 }
 
 BeforeAll {
