@@ -12,7 +12,6 @@ function Find-PodeSchedule {
 function Test-PodeSchedulesExist {
     return (($null -ne $PodeContext.Schedules) -and (($PodeContext.Schedules.Enabled) -or ($PodeContext.Schedules.Items.Count -gt 0)))
 }
-
 function Start-PodeScheduleRunspace {
     if (!(Test-PodeSchedulesExist)) {
         return
@@ -51,11 +50,12 @@ function Start-PodeScheduleRunspace {
     }
 
     $script = {
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name 'Scheduler_Trigger'
+        try {
+            # Sets the name of the current runspace
+            Set-PodeCurrentRunspaceName -Name 'Scheduler_Trigger'
 
-        # select the schedules that trigger on-start
-        $_now = [DateTime]::Now
+            # select the schedules that trigger on-start
+            $_now = [DateTime]::Now
 
             $PodeContext.Schedules.Items.Values |
                 Where-Object {
