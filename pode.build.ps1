@@ -353,7 +353,7 @@ Task IndexSamples {
     # List of directories to exclude
     $sampleMarkDownPath = './docs/Getting-Started/Samples.md'
     $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
-        'Authentication', 'certs', 'logs', 'relative', 'routes')
+        'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues')
 
     # Convert exlusion list into single regex pattern for directory matching
     $dirSeparator = [IO.Path]::DirectorySeparatorChar

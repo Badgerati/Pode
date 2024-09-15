@@ -554,7 +554,7 @@ function Get-PodeSubnetRange {
 function Add-PodeRunspace {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files', 'Timers')]
         [string]
         $Type,
 
@@ -747,9 +747,9 @@ function Close-PodeRunspace {
             }
 
             # dispose of task runspaces
-            if ($PodeContext.Tasks.Results.Count -gt 0) {
-                foreach ($key in $PodeContext.Tasks.Results.Keys.Clone()) {
-                    Close-PodeTaskInternal -Result $PodeContext.Tasks.Results[$key]
+            if ($PodeContext.Tasks.Processes.Count -gt 0) {
+                foreach ($key in $PodeContext.Tasks.Processes.Keys.Clone()) {
+                    Close-PodeTaskInternal -Process $PodeContext.Tasks.Processes[$key]
                 }
             }
 
@@ -774,7 +774,7 @@ function Close-PodeRunspace {
         }
 
         # garbage collect
-        [GC]::Collect()
+        Invoke-PodeGC
     }
     catch {
         $_ | Write-PodeErrorLog

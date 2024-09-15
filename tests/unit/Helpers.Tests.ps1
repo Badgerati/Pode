@@ -2,6 +2,7 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 BeforeAll {
+    Add-Type -AssemblyName 'System.Net.Http' -ErrorAction SilentlyContinue
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
@@ -1691,8 +1692,18 @@ Describe 'New-PodeCron' {
 
 Describe 'ConvertTo-PodeYaml Tests' {
     BeforeAll {
-        $PodeContext = @{ Server = @{InternalCache = @{} } }
+        $PodeContext = @{
+            Server = @{
+                InternalCache = @{}
+                Web           = @{
+                    OpenApi = @{
+                        UsePodeYamlInternal = $true
+                    }
+                }
+            }
+        }
     }
+
     Context 'When converting basic types' {
         It 'Converts strings correctly' {
             $result = 'hello world' | ConvertTo-PodeYaml
