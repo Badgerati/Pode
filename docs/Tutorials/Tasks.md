@@ -51,7 +51,7 @@ Add-PodeTask -Name 'Example' -ArgumentList @{ Name = 'Rick'; Environment = 'Mult
 }
 ```
 
-Tasks parameters **must** be bound in the param block in order to be used, but the values for the paramters can be set through the `-ArgumentList` hashtable parameter in either the Add-PodeTask definition or when invoking the task. The following snippet would populate the parameters to the task with the same values as the above example but the `-ArgumentList` parameter is populated during invocation. Note that Keys in the `-ArgumentList` hashtable parameter set during invocation override the same Keys set during task creation: 
+Tasks parameters **must** be bound in the param block in order to be used, but the values for the paramters can be set through the `-ArgumentList` hashtable parameter in either the Add-PodeTask definition or when invoking the task. The following snippet would populate the parameters to the task with the same values as the above example but the `-ArgumentList` parameter is populated during invocation. Note that Keys in the `-ArgumentList` hashtable parameter set during invocation override the same Keys set during task creation:
 
 ```powershell
 Add-PodeTask -Name 'Example' -ScriptBlock {
@@ -184,6 +184,29 @@ Get-PodeTask -Name Example1
 Get-PodeTask -Name Example1, Example2
 ```
 
+## Getting Task Processes
+
+You can retrieve a list of processes triggered by Tasks via [`Get-PodeTaskProcess`](../../Functions/Tasks/Get-PodeTaskProcess) - this will return processes created via [`Invoke-PodeTask`](../../Functions/Tasks/Invoke-PodeTask).
+
+You can either retrieve all processes, or filter them by Task Name, or Process ID/Status:
+
+```powershell
+# retrieves all task processes
+Get-PodeTaskProcess
+
+# retrieves all task processes for the "TaskName" process
+Get-PodeTaskProcess -Name 'TaskName'
+
+# retrieves the task process with ID "TaskId"
+Get-PodeTaskProcess -Id 'TaskId'
+
+# retrieves all running task processes
+Get-PodeTaskProcess -State 'Running'
+
+# retrieves all pending task processes for "TaskName"
+Get-PodeTaskProcess -Name 'TaskName' -State 'Running'
+```
+
 ## Task Object
 
 !!! warning
@@ -191,8 +214,8 @@ Get-PodeTask -Name Example1, Example2
 
 The following is the structure of the Task object internally, as well as the object that is returned from [`Get-PodeTask`](../../Functions/Tasks/Get-PodeTask):
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| Name | string | The name of the Task |
-| Script | scriptblock | The scriptblock of the Task |
-| Arguments | hashtable | The arguments supplied from ArgumentList |
+| Name      | Type        | Description                              |
+| --------- | ----------- | ---------------------------------------- |
+| Name      | string      | The name of the Task                     |
+| Script    | scriptblock | The scriptblock of the Task              |
+| Arguments | hashtable   | The arguments supplied from ArgumentList |

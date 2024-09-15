@@ -1466,4 +1466,22 @@ function ConvertFrom-PodeXml {
         return $oHash
     }
 
+    return $oHash
+}
+
+<#
+.SYNOPSIS
+Invokes the garbage collector.
+
+.DESCRIPTION
+Invokes the garbage collector.
+
+.EXAMPLE
+Invoke-PodeGC
+#>
+function Invoke-PodeGC {
+    [CmdletBinding()]
+    param()
+
+    [System.GC]::Collect()
 }

@@ -66,11 +66,11 @@ function Start-PodeInternalServer {
             # start runspace for loggers
             Start-PodeLoggingRunspace
 
-            # start runspace for timers
-            Start-PodeTimerRunspace
-
             # start runspace for schedules
             Start-PodeScheduleRunspace
+
+            # start runspace for timers
+            Start-PodeTimerRunspace
 
             # start runspace for gui
             Start-PodeGuiRunspace
@@ -254,7 +254,7 @@ function Restart-PodeInternalServer {
 
         # clear tasks
         $PodeContext.Tasks.Items.Clear()
-        $PodeContext.Tasks.Results.Clear()
+        $PodeContext.Tasks.Processes.Clear()
 
         # clear file watchers
         $PodeContext.Fim.Items.Clear()

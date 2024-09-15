@@ -285,6 +285,8 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ungültige Access-Control-Max-Age-Dauer angegeben: {0}. Sollte größer als 0 sein.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'Die OpenAPI-Definition mit dem Namen {0} existiert bereits.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kann nicht innerhalb eines 'ScriptBlock' von Select-PodeOADefinition verwendet werden."
+    taskProcessDoesNotExistExceptionMessage                           = "Der Aufgabenprozess '{0}' existiert nicht."
+    scheduleProcessDoesNotExistExceptionMessage                       = "Der Aufgabenplanerprozess '{0}' existiert nicht."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitionstag für eine Route kann nicht geändert werden.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}-Operationen können keinen Anforderungstext haben.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
