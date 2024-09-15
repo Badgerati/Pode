@@ -17,7 +17,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
                 AsyncRoutes = @{
                     Enabled      = $true
                     Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                    Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                    Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                     HouseKeeping = @{
                         TimerInterval    = 30
                         RetentionMinutes = 10
@@ -104,7 +104,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
                 AsyncRoutes = @{
                     Enabled      = $true
                     Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                    Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                    Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                     HouseKeeping = @{
                         TimerInterval    = 30
                         RetentionMinutes = 10
@@ -276,7 +276,7 @@ Describe 'Get-PodeAsyncRouteOperation' {
             AsyncRoutes = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -294,7 +294,7 @@ Describe 'Get-PodeAsyncRouteOperation' {
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
         $asyncOperationDetails['AsyncRouteId'] = 'PesterTest1'
-        $PodeContext.AsyncRoutes.Results[$operationId1] = $asyncOperationDetails
+        $PodeContext.AsyncRoutes.Processes[$operationId1] = $asyncOperationDetails
 
 
         $operationId2 = '123e4567-e89b-12d3-a456-426614174001'
@@ -305,7 +305,7 @@ Describe 'Get-PodeAsyncRouteOperation' {
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
         $asyncOperationDetails['AsyncRouteId'] = 'PesterTest2'
-        $PodeContext.AsyncRoutes.Results[$operationId2] = $asyncOperationDetails
+        $PodeContext.AsyncRoutes.Processes[$operationId2] = $asyncOperationDetails
 
         $operationId3 = '123e4567-e89b-12d3-a456-426614174002'
         $asyncOperationDetails = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
@@ -315,7 +315,7 @@ Describe 'Get-PodeAsyncRouteOperation' {
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
         $asyncOperationDetails['AsyncRouteId'] = 'PesterTest3'
-        $PodeContext.AsyncRoutes.Results[$operationId3] = $asyncOperationDetails
+        $PodeContext.AsyncRoutes.Processes[$operationId3] = $asyncOperationDetails
 
     }
 
@@ -399,7 +399,7 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
             AsyncRoutes = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -418,7 +418,7 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
         $asyncOperationDetails['AsyncRouteId'] = 'PesterTest1'
-        $PodeContext.AsyncRoutes.Results[$operationId1] = $asyncOperationDetails
+        $PodeContext.AsyncRoutes.Processes[$operationId1] = $asyncOperationDetails
 
 
         $operationId2 = '123e4567-e89b-12d3-a456-426614174001'
@@ -429,7 +429,7 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
         $asyncOperationDetails['AsyncRouteId'] = 'PesterTest2'
-        $PodeContext.AsyncRoutes.Results[$operationId2] = $asyncOperationDetails
+        $PodeContext.AsyncRoutes.Processes[$operationId2] = $asyncOperationDetails
 
         $operationId3 = '123e4567-e89b-12d3-a456-426614174002'
         $asyncOperationDetails = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
@@ -439,7 +439,7 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
         $asyncOperationDetails['CreationTime'] = Get-Date
         $asyncOperationDetails['ExpireTime'] = ($asyncOperationDetails['CreationTime']).AddMinutes(10)
         $asyncOperationDetails['AsyncRouteId'] = 'PesterTest3'
-        $PodeContext.AsyncRoutes.Results[$operationId3] = $asyncOperationDetails
+        $PodeContext.AsyncRoutes.Processes[$operationId3] = $asyncOperationDetails
 
     }
 
@@ -466,10 +466,10 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
         foreach ($r in $result) {
             switch ($r.Id ) {
                 $operationId1 {
-                    $r | Should -Be $PodeContext.AsyncRoutes.Results[$operationId1]
+                    $r | Should -Be $PodeContext.AsyncRoutes.Processes[$operationId1]
                 }
                 $operationId3 {
-                    $r | Should -Be $PodeContext.AsyncRoutes.Results[$operationId3]
+                    $r | Should -Be $PodeContext.AsyncRoutes.Processes[$operationId3]
                 }
                 $operationId2 {
                     # Fail the test if this case is hit
@@ -573,29 +573,12 @@ Describe 'Add-PodeAsyncRouteSse' {
         Mock -CommandName 'Send-PodeSseEvent'
         Mock -CommandName 'Write-PodeErrorLog'
 
-        # Mock Pode Context
-        $PodeContext = @{
-            AsyncRoutes = @{
-                Items   = @{
-                    'ExamplePool' = @{
-                        Sse = $null
-                    }
-                }
-                Results = @{
-                    '12345' = @{
-                        Runspace = [pscustomobject]@{ Handler = [pscustomobject]@{ IsCompleted = $false } }
-                        State    = 'Completed'
-                        Result   = 'Success'
-                    }
-                }
-            }
-        }
         # Mock data setup
         $PodeContext = @{
             AsyncRoutes = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -613,7 +596,7 @@ Describe 'Add-PodeAsyncRouteSse' {
         $asyncOperationDetails['AsyncRouteId'] = 'PesterTest1'
         $asyncOperationDetails['Result'] = 'Success'
         $asyncOperationDetails['Runspace'] = [pscustomobject]@{ Handler = [pscustomobject]@{ IsCompleted = $false } }
-        $PodeContext.AsyncRoutes.Results[$operationId1] = $asyncOperationDetails
+        $PodeContext.AsyncRoutes.Processes[$operationId1] = $asyncOperationDetails
 
         $PodeContext.AsyncRoutes.Items['ExamplePool'] = @{
             Sse = $null
@@ -687,7 +670,7 @@ Describe 'Set-PodeAsyncRoute' {
             AsyncRoutes   = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -764,7 +747,7 @@ Describe 'Stop-PodeAsyncRouteOperation' {
             AsyncRoutes   = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Results      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -802,7 +785,7 @@ Describe 'Stop-PodeAsyncRouteOperation' {
             $mockOperation['CompletedTime'] = $null
             $mockOperation['Runspace'] = [pscustomobject]@{ Pipeline = [TestRunspacePipeline]::new() }
 
-            $PodeContext.AsyncRoutes.Results[$mockOperation.Id] = $mockOperation
+            $PodeContext.AsyncRoutes.Processes[$mockOperation.Id] = $mockOperation
         }
 
         It 'Should abort the operation and finalize it' {
@@ -812,7 +795,7 @@ Describe 'Stop-PodeAsyncRouteOperation' {
             $result = Stop-PodeAsyncRouteOperation -Id $operationId
 
             # Assertions
-            $operation = $PodeContext.AsyncRoutes.Results[$operationId]
+            $operation = $PodeContext.AsyncRoutes.Processes[$operationId]
             $operation.State | Should -Be 'Aborted'
             $operation.Error | Should -Be 'Aborted by System'
             $operation.CompletedTime | Should -Not -Be $null
@@ -828,7 +811,7 @@ Describe 'Stop-PodeAsyncRouteOperation' {
             $result = Stop-PodeAsyncRouteOperation -Id $operationId -Raw
 
             # Assertions
-            $result | Should -Be $PodeContext.AsyncRoutes.Results[$operationId]
+            $result | Should -Be $PodeContext.AsyncRoutes.Processes[$operationId]
         }
     }
 

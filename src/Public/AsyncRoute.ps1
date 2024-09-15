@@ -1403,7 +1403,7 @@ function Add-PodeAsyncRouteSse {
             }
 
             $id = $WebEvent.Query['Id']
-            if (!$PodeContext.AsyncRoutes.Results.ContainsKey($id)) {
+            if (!$PodeContext.AsyncRoutes.Processes.ContainsKey($id)) {
                 try {
                     throw ($PodeLocale.asyncIdDoesNotExistExceptionMessage -f $id)
                 }
@@ -1413,7 +1413,7 @@ function Add-PodeAsyncRouteSse {
                     return
                 }
             }
-            $AsyncResult = $PodeContext.AsyncRoutes.Results[$Id]
+            $AsyncResult = $PodeContext.AsyncRoutes.Processes[$Id]
 
             $AsyncResult['Sse']['State'] = 'Waiting'
 
@@ -1585,18 +1585,18 @@ function Get-PodeAsyncRouteOperation {
 
     # Filter the async routes based on Id and AsyncRouteId
     if (![string]::IsNullOrEmpty($Id)) {
-        $result = $PodeContext.AsyncRoutes.Results[$Id]
+        $result = $PodeContext.AsyncRoutes.Processes[$Id]
     }
     elseif (! [string]::IsNullOrEmpty($AsyncRouteId)) {
-        foreach ($key in $PodeContext.AsyncRoutes.Results.Keys) {
-            if ($PodeContext.AsyncRoutes.Results[$key]['AsyncRouteId'] -ieq $AsyncRouteId) {
-                $result = $PodeContext.AsyncRoutes.Results[$key]
+        foreach ($key in $PodeContext.AsyncRoutes.Processes.Keys) {
+            if ($PodeContext.AsyncRoutes.Processes[$key]['AsyncRouteId'] -ieq $AsyncRouteId) {
+                $result = $PodeContext.AsyncRoutes.Processes[$key]
                 break
             }
         }
     }
     else {
-        $result = $PodeContext.AsyncRoutes.Results
+        $result = $PodeContext.AsyncRoutes.Processes
     }
 
     if ($null -eq $result) {
@@ -1657,8 +1657,8 @@ function Stop-PodeAsyncRouteOperation {
         [switch]
         $Raw
     )
-    if ($PodeContext.AsyncRoutes.Results.ContainsKey($Id )) {
-        $async = $PodeContext.AsyncRoutes.Results[$Id]
+    if ($PodeContext.AsyncRoutes.Processes.ContainsKey($Id )) {
+        $async = $PodeContext.AsyncRoutes.Processes[$Id]
         $async['State'] = 'Aborted'
         $async['Error'] = 'Aborted by System'
         $async['CompletedTime'] = [datetime]::UtcNow
@@ -1697,7 +1697,7 @@ function Test-PodeAsyncRouteOperation {
         [string]
         $Id
     )
-    return ($PodeContext.AsyncRoutes.Results.ContainsKey($Id ))
+    return ($PodeContext.AsyncRoutes.Processes.ContainsKey($Id ))
 }
 
 
@@ -1794,7 +1794,7 @@ function Set-PodeAsyncRouteProgress {
         # Set-PodeAsyncRouteProgress can only be used inside an Async Route Scriptblock.
         throw $PodeLocale.setPodeAsyncProgressExceptionMessage
     }
-    $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
+    $asyncResult = $PodeContext.AsyncRoutes.Processes[$___async___id___]
 
     # Initialize progress if not already set, for non-tick operations
     if ($PSCmdlet.ParameterSetName -ne 'Tick' -and $PSCmdlet.ParameterSetName -ne 'SetValue') {
@@ -1911,7 +1911,7 @@ function Set-PodeAsyncRouteProgress {
 #>
 function Get-PodeAsyncRouteProgress {
     if ($___async___id___) {
-        return $PodeContext.AsyncRoutes.Results[$___async___id___]['Progress']
+        return $PodeContext.AsyncRoutes.Processes[$___async___id___]['Progress']
     }
     else {
         throw $PodeLocale.setPodeAsyncProgressExceptionMessage

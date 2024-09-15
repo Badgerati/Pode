@@ -129,7 +129,7 @@ function New-PodeContext {
     $ctx.AsyncRoutes = @{
         Enabled             = $true
         Items               = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-        Results             = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+        Processes            = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
         HouseKeeping        = @{
             TimerInterval    = 30
             RetentionMinutes = 10

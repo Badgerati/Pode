@@ -41,10 +41,10 @@ function Get-PodeAsyncRouteScriptblock {
     $enhancedScriptBlockTemplate = {
         <# Param #>
         # Sometimes the key is not available when the process starts. Workaround: wait 2 seconds
-        if (!$PodeContext.AsyncRoutes.Results.ContainsKey($___async___id___)) {
+        if (!$PodeContext.AsyncRoutes.Processes.ContainsKey($___async___id___)) {
             Start-Sleep 2
         }
-        if (!$PodeContext.AsyncRoutes.Results.ContainsKey($___async___id___)) {
+        if (!$PodeContext.AsyncRoutes.Processes.ContainsKey($___async___id___)) {
             try {
                 throw ($PodeLocale.asyncIdDoesNotExistExceptionMessage -f $___async___id___)
             }
@@ -54,7 +54,7 @@ function Get-PodeAsyncRouteScriptblock {
             }
         }
 
-        $asyncResult = $PodeContext.AsyncRoutes.Results[$___async___id___]
+        $asyncResult = $PodeContext.AsyncRoutes.Processes[$___async___id___]
             ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "$($asyncResult.AsyncRouteId)_$___async___id___"
         try {
             $asyncResult['StartingTime'] = [datetime]::UtcNow
@@ -82,7 +82,7 @@ function Get-PodeAsyncRouteScriptblock {
             # Log the error
             $_ | Write-PodeErrorLog
 
-            # Store the error in the AsyncRoutes results
+            # Store the error in the AsyncRoutes Processes
             $asyncResult['Error'] = $_.ToString()
 
         }
@@ -311,16 +311,16 @@ function Start-PodeAsyncRoutesHousekeeper {
     # Add a new timer with the specified $Context.Server.AsyncRoute.TimerInterval and script block
     Add-PodeTimer -Name '__pode_asyncroutes_housekeeper__' -Interval  $PodeContext.AsyncRoutes.HouseKeeping.TimerInterval  -ScriptBlock {
         ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = '__pode_asyncroutes_housekeeper__'
-        # Return if there are no async route results
-        if ($PodeContext.AsyncRoutes.Results.Count -eq 0) {
+        # Return if there are no async route Processes
+        if ($PodeContext.AsyncRoutes.Processes.Count -eq 0) {
             return
         }
 
         $now = [datetime]::UtcNow
         $RetentionMinutes = $PodeContext.AsyncRoutes.HouseKeeping.RetentionMinutes
         # Iterate over the keys of the async route results
-        foreach ($key in $PodeContext.AsyncRoutes.Results.Keys.Clone()) {
-            $result = $PodeContext.AsyncRoutes.Results[$key]
+        foreach ($key in $PodeContext.AsyncRoutes.Processes.Keys.Clone()) {
+            $result = $PodeContext.AsyncRoutes.Processes[$key]
 
             if ($result) {
                 # Check if the task is completed
@@ -330,7 +330,7 @@ function Start-PodeAsyncRoutesHousekeeper {
                         if ($result['CompletedTime'] -and $result['CompletedTime'].AddMinutes($RetentionMinutes) -le $now) {
                             $result['Runspace'].Pipeline.Dispose()
                             $v = 0
-                            $removed = $PodeContext.AsyncRoutes.Results.TryRemove($key, [ref]$v)
+                            $removed = $PodeContext.AsyncRoutes.Processes.TryRemove($key, [ref]$v)
                             Write-Verbose "Key $key Removed: $removed"
                         }
                     }
@@ -421,11 +421,11 @@ function Search-PodeAsyncRouteTask {
 
     # Initialize an array to store the matched elements
     $matchedElements = @()
-    # Check if there are any async route results to search
-    if ($PodeContext.AsyncRoutes.Results.count -gt 0) {
-        # Clone the keys of the results to iterate over them
-        foreach ($rkey in $PodeContext.AsyncRoutes.Results.keys.Clone()) {
-            $result = $PodeContext.AsyncRoutes.Results[$rkey]
+    # Check if there are any async route Processes to search
+    if ($PodeContext.AsyncRoutes.Processes.count -gt 0) {
+        # Clone the keys of the Processes to iterate over them
+        foreach ($rkey in $PodeContext.AsyncRoutes.Processes.keys.Clone()) {
+            $result = $PodeContext.AsyncRoutes.Processes[$rkey]
 
             # If permission checking is enabled, validate the user's permissions
             if ($CheckPermission.IsPresent) {
@@ -853,7 +853,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
                 }
             }
             # Store the result in the Pode context
-            $PodeContext.AsyncRoutes.Results[$Id] = $asyncOperation
+            $PodeContext.AsyncRoutes.Processes[$Id] = $asyncOperation
 
             # Return the result of the asynchronous operation
             $res = Export-PodeAsyncRouteInfo -Async $asyncOperation
@@ -911,8 +911,8 @@ function Get-PodeAsyncGetScriptBlock {
         $responseMediaType = Get-PodeHeader -Name 'Accept'
 
         # Check if we have a result for this async route operation
-        if ($PodeContext.AsyncRoutes.Results.ContainsKey($id)) {
-            $async = $PodeContext.AsyncRoutes.Results[$id]
+        if ($PodeContext.AsyncRoutes.Processes.ContainsKey($id)) {
+            $async = $PodeContext.AsyncRoutes.Processes[$id]
             # Check if the user is authorized to perform this operation
             if ($async['User']) {
                 if ($WebEvent.Auth.User) {
@@ -1000,8 +1000,8 @@ function Get-PodeAsyncRouteStopScriptBlock {
         $responseMediaType = Get-PodeHeader -Name 'Accept'
 
         # Check if the task Id exists in the async routes results
-        if ($PodeContext.AsyncRoutes.Results.ContainsKey($id)) {
-            $async = $PodeContext.AsyncRoutes.Results[$id]
+        if ($PodeContext.AsyncRoutes.Processes.ContainsKey($id)) {
+            $async = $PodeContext.AsyncRoutes.Processes[$id]
 
             # If the task is not completed
             if (!$async['Runspace'].Handler.IsCompleted) {
