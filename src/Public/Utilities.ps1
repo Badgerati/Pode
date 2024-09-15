@@ -1365,326 +1365,615 @@ function ConvertFrom-PodeXml {
     return $oHash
 
 }
-
 <#
 .SYNOPSIS
-    Converts a hashtable to a serialized string using a specified serialization style.
+    Converts an object (hashtable or array) to a serialized string using a specified serialization style.
 
 .DESCRIPTION
-    The ConvertTo-PodeSerializedString function takes a hashtable and converts it to a serialized string
-    according to the specified serialization style. It supports various serialization styles such as
-    'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
-    An optional 'Explode' switch can be used to modify the serialization format for certain styles.
-
-.PARAMETER Hashtable
-    The hashtable to be serialized.
-
-.PARAMETER Style
-    The style of serialization to be used. Valid values are 'Simple', 'Label', 'Matrix', 'Query',
+    The `ConvertTo-PodeSerializedString` function takes a hashtable or array and converts it into a serialized string
+    according to the specified serialization style. It supports various styles such as 'Simple', 'Label', 'Matrix',
     'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
 
+    By default, parameter names and values are URL-encoded to ensure safe inclusion in URLs. You can disable URL encoding
+    by using the `-NoUrlEncode` switch.
+
+    An optional `-Explode` switch can be used to modify the serialization format for certain styles, altering how arrays
+    and objects are represented in the serialized string.
+
+.PARAMETER InputObject
+    The object to be serialized. This can be a hashtable (or ordered dictionary) or an array. Supports pipeline input.
+
+.PARAMETER Style
+    The serialization style to use. Valid values are 'Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited',
+    'PipeDelimited', and 'DeepObject'. Defaults to 'Simple'.
+
 .PARAMETER Explode
-    An optional switch to modify the serialization format for certain styles.
+    An optional switch to modify the serialization format for certain styles. When used, arrays and objects are
+    serialized in an expanded form.
+
+.PARAMETER NoUrlEncode
+    An optional switch to disable URL encoding of the serialized output. By default, parameter names and values are
+    URL-encoded individually. Use this switch if you require the output without URL encoding.
+
+.PARAMETER ParameterName
+    Specifies the name of the parameter to use in the serialized output. Defaults to 'id' if not specified.
 
 .EXAMPLE
-    $hashtable = @{
+    $item = @{
         name = 'value'
         anotherName = 'anotherValue'
     }
-    $serialized = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'Query'
+    $serialized = ConvertTo-PodeSerializedString -InputObject $item -Style 'Form'
     Write-Output $serialized
 
+    # Output:
+    # ?id=name%2Cvalue%2CanotherName%2CanotherValue
+
 .EXAMPLE
-    $hashtable = @{
+    $item = @{
         name = 'value'
         anotherName = 'anotherValue'
     }
-    $serializedExplode = ConvertTo-PodeSerializedString -Hashtable $hashtable -Style 'DeepObject' -Explode
+    $serializedExplode = ConvertTo-PodeSerializedString -InputObject $item -Style 'DeepObject' -Explode
     Write-Output $serializedExplode
 
+    # Output:
+    # ?id[name]=value&id[anotherName]=anotherValue
+
+.EXAMPLE
+    $array = @('3', '4', '5')
+    $serialized = ConvertTo-PodeSerializedString -InputObject $array -Style 'SpaceDelimited' -Explode
+    Write-Output $serialized
+
+    # Output:
+    # ?id=3&id=4&id=5
+
+.EXAMPLE
+    $array = @('3', '4', '5')
+    $serialized = ConvertTo-PodeSerializedString -InputObject $array -Style 'SpaceDelimited' -NoUrlEncode
+    Write-Output $serialized
+
+    # Output:
+    # ?id=3 4 5
+
+.EXAMPLE
+    $item = @{
+        'user name' = 'Alice & Bob'
+        'role' = 'Admin/User'
+    }
+    $serialized = ConvertTo-PodeSerializedString -InputObject $item -Style 'Form' -ParameterName 'account' -NoUrlEncode
+    Write-Output $serialized
+
+    # Output:
+    # ?account=user name,Alice & Bob,role,Admin/User
+
 .NOTES
-    Additional info regarding serialization
-    https://swagger.io/docs/specification/serialization/
-    https://tools.ietf.org/html/rfc6570
+    - 'SpaceDelimited' and 'PipeDelimited' styles for hashtables are not implemented as they are not defined by RFC 6570.
+    - The 'Form' style with 'Explode' for arrays is not implemented for the same reason.
+    - The 'Explode' option for 'SpaceDelimited' and 'PipeDelimited' styles for arrays is implemented as per the OpenAPI Specification.
+
+    Additional information regarding serialization:
+    - OpenAPI Specification Serialization: https://swagger.io/docs/specification/serialization/
+    - RFC 6570 - URI Template: https://tools.ietf.org/html/rfc6570
 #>
 function ConvertTo-PodeSerializedString {
-
     param (
         [Parameter(Mandatory, ValueFromPipeline = $true, Position = 0)]
         [psobject[]]
-        $Hashtable,
+        $InputObject,
 
         [Parameter()]
-        [ValidateSet('Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
+        [ValidateSet('Simple', 'Label', 'Matrix', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject')]
         [string]
         $Style = 'Simple',
 
         [Parameter()]
         [switch]
-        $Explode
+        $Explode,
+
+        [Parameter()]
+        [switch]
+        $NoUrlEncode,
+
+        [Parameter()]
+        [string]
+        $ParameterName = 'id'  # Default parameter name
     )
+
     begin {
+        # Initialize an array to collect pipeline input
         $pipelineValue = @()
     }
 
     process {
+        # Collect each input object from the pipeline
         $pipelineValue += $_
     }
 
     end {
+        # Determine if multiple objects were provided via pipeline
         if ($pipelineValue.Count -gt 1) {
-            $Hashtables = $pipelineValue
+            $inputObjects = $pipelineValue
         }
         else {
-            $Hashtables = $Hashtable
+            $inputObjects = $InputObject
         }
+
+        # Initialize an array to store the serialized strings
         $serializedArray = @()
 
-        if ($Hashtables[0] -is [hashtable]) {
-            foreach ( $Hashtable in $Hashtables) {
+        # return '' if the inputObjects is null
+        if($null -eq $inputObjects){
+            return ''
+        }
+
+        # Check if there are input objects to process
+        if ( $inputObjects.Count -gt 0) {
+
+            # Check if the first input object is a hashtable or ordered dictionary
+            if ($inputObjects[0] -is [hashtable] -or $inputObjects[0] -is [System.Collections.Specialized.OrderedDictionary]) {
+
+                # Process each hashtable item
+                foreach ($item in $inputObjects) {
+                    switch ($Style) {
+
+                        'Simple' {
+                            # Handle 'Simple' style for hashtables
+                            if ($Explode) {
+                                # Serialize each key-value pair with '=' and join with ','
+                                $serializedArray += ( ($item.Keys | ForEach-Object {
+                                    $key = $_
+                                    $value = $item[$_]
+                                    # URL-encode unless $NoUrlEncode is specified
+                                    if (-not $NoUrlEncode) {
+                                        $key = [uri]::EscapeDataString($key)
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    "$key=$value"
+                                }) -join ',' )
+                            }
+                            else {
+                                # Serialize each key-value pair with ',' and join with ','
+                                $serializedArray += ( ($item.Keys | ForEach-Object {
+                                    $key = $_
+                                    $value = $item[$_]
+                                    if (-not $NoUrlEncode) {
+                                        $key = [uri]::EscapeDataString($key)
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    "$key,$value"
+                                }) -join ',' )
+                            }
+                            break
+                        }
+
+                        'Label' {
+                            # Handle 'Label' style for hashtables
+                            if ($Explode) {
+                                # Prepend '.' and serialize each key-value pair with '='
+                                $serializedArray += '.' + ( ($item.Keys | ForEach-Object {
+                                    $key = $_
+                                    $value = $item[$_]
+                                    if (-not $NoUrlEncode) {
+                                        $key = [uri]::EscapeDataString($key)
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    "$key=$value"
+                                }) -join ',' )
+                            }
+                            else {
+                                # Prepend '.' and serialize each key-value pair with ','
+                                $serializedArray += '.' + ( ($item.Keys | ForEach-Object {
+                                    $key = $_
+                                    $value = $item[$_]
+                                    if (-not $NoUrlEncode) {
+                                        $key = [uri]::EscapeDataString($key)
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    "$key,$value"
+                                }) -join ',' )
+                            }
+                            break
+                        }
+
+                        'Matrix' {
+                            # Handle 'Matrix' style for hashtables
+                            if ($Explode) {
+                                # Serialize each key-value pair with ';' prefix
+                                $serializedArray += ( ($item.Keys | ForEach-Object {
+                                    $key = $_
+                                    $value = $item[$_]
+                                    if (-not $NoUrlEncode) {
+                                        $key = [uri]::EscapeDataString($key)
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    ";$key=$value"
+                                }) -join '' )
+                            }
+                            else {
+                                # Serialize key-value pairs into a single parameter
+                                $valueString = ( ($item.Keys | ForEach-Object {
+                                    $key = $_
+                                    $value = $item[$_]
+                                    if (-not $NoUrlEncode) {
+                                        $key = [uri]::EscapeDataString($key)
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    "$key,$value"
+                                }) -join ',' )
+                                # Encode parameter name if necessary
+                                if (-not $NoUrlEncode) {
+                                    $parameterName = [uri]::EscapeDataString($ParameterName)
+                                }
+                                else {
+                                    $parameterName = $ParameterName
+                                }
+                                $serializedArray += ";$parameterName=$valueString"
+                            }
+                            break
+                        }
+
+                        'Form' {
+                            # Handle 'Form' style for hashtables
+                            if ($Explode) {
+                                # Serialize each key-value pair as query parameters
+                                $serializedArray += '?' + ( ($item.Keys | ForEach-Object {
+                                    $key = $_
+                                    $value = $item[$_]
+                                    if (-not $NoUrlEncode) {
+                                        $key = [uri]::EscapeDataString($key)
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    "$key=$value"
+                                }) -join '&' )
+                            }
+                            else {
+                                # Serialize key-value pairs into a single query parameter
+                                $valueString = ( ($item.Keys | ForEach-Object {
+                                    $key = $_
+                                    $value = $item[$_]
+                                    if (-not $NoUrlEncode) {
+                                        $key = [uri]::EscapeDataString($key)
+                                        $value = [uri]::EscapeDataString($value)
+                                    }
+                                    "$key,$value"
+                                }) -join ',' )
+                                if (-not $NoUrlEncode) {
+                                    $parameterName = [uri]::EscapeDataString($ParameterName)
+                                }
+                                else {
+                                    $parameterName = $ParameterName
+                                }
+                                $serializedArray += "?$parameterName=$valueString"
+                            }
+                            break
+                        }
+
+                        'DeepObject' {
+                            # Handle 'DeepObject' style for hashtables
+                            # Encode parameter name once outside the loop
+                            if (-not $NoUrlEncode) {
+                                $parameterNameEncoded = [uri]::EscapeDataString($ParameterName)
+                            }
+                            else {
+                                $parameterNameEncoded = $ParameterName
+                            }
+                            # Serialize each key-value pair using bracket notation
+                            $serializedArray += '?' + ( ($item.Keys | ForEach-Object {
+                                $key = $_
+                                $value = $item[$_]
+                                if (-not $NoUrlEncode) {
+                                    $key = [uri]::EscapeDataString($key)
+                                    $value = [uri]::EscapeDataString($value)
+                                }
+                                "$parameterNameEncoded`[$key`]=$value"
+                            }) -join '&' )
+                            break
+                        }
+
+                        # Styles not defined for hashtables
+                        'SpaceDelimited' {
+                            $serializedArray += ''
+                            Write-Verbose "Serialization for objects using '$Style' style is not defined by RFC 6570."
+                        }
+
+                        'PipeDelimited' {
+                            $serializedArray += ''
+                            Write-Verbose "Serialization for objects using '$Style' style is not defined by RFC 6570."
+                        }
+                    }
+                }
+            }
+            else {
+                # Process input as an array
                 switch ($Style) {
+
                     'Simple' {
-                        if ($Explode) {
-                            $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join ','
-                        }
-                        else {
-                            $serializedArray += ($Hashtable.Keys | ForEach-Object { "$($_),$($Hashtable.""$_"")" }) -join ','
-                        }
+                        # Handle 'Simple' style for arrays
+                        # Both 'Explode' and non-'Explode' result in the same output
+                        $serializedArray += ( ($inputObjects | ForEach-Object {
+                            $value = $_
+                            if (-not $NoUrlEncode) {
+                                $value = [uri]::EscapeDataString($value)
+                            }
+                            $value
+                        }) -join ',' )
                         break
                     }
+
                     'Label' {
-                        if ($Explode) {
-                            $serializedArray += ".$(($Hashtable.Keys | ForEach-Object { "$_=$($Hashtable.""$_"")" }) -join ',')"
+                        # Handle 'Label' style for arrays
+                        $serializedArray += '.' + ( ($inputObjects | ForEach-Object {
+                            $value = $_
+                            if (-not $NoUrlEncode) {
+                                $value = [uri]::EscapeDataString($value)
+                            }
+                            $value
+                        }) -join ',' )
+                        break
+                    }
+
+                    'Matrix' {
+                        # Handle 'Matrix' style for arrays
+                        if (-not $NoUrlEncode) {
+                            $parameterName = [uri]::EscapeDataString($ParameterName)
                         }
                         else {
-                            $serializedArray += ".$(($Hashtable.Keys | ForEach-Object { "$_,$($Hashtable.""$_"")" }) -join ',')"
+                            $parameterName = $ParameterName
+                        }
+                        if ($Explode) {
+                            # Serialize each value with parameter name
+                            $serializedArray += ';' + ( ($inputObjects | ForEach-Object {
+                                $value = $_
+                                if (-not $NoUrlEncode) {
+                                    $value = [uri]::EscapeDataString($value)
+                                }
+                                "$parameterName=$value"
+                            }) -join ';' )
+                        }
+                        else {
+                            # Serialize values into a single parameter
+                            $valueString = ( ($inputObjects | ForEach-Object {
+                                $value = $_
+                                if (-not $NoUrlEncode) {
+                                    $value = [uri]::EscapeDataString($value)
+                                }
+                                $value
+                            }) -join ',' )
+                            $serializedArray += ";$parameterName=$valueString"
                         }
                         break
                     }
-                    'Matrix' {
-                        if ($Explode) {
-                            $serializedArray += ($Hashtable.Keys | ForEach-Object { ";$_=$($Hashtable.""$_"")" }) -join ''
+
+                    'SpaceDelimited' {
+                        # Handle 'SpaceDelimited' style for arrays
+                        if (-not $NoUrlEncode) {
+                            $parameterName = [uri]::EscapeDataString($ParameterName)
                         }
                         else {
-                            $serializedArray += ";id=$(($Hashtable.Keys | ForEach-Object { "$_,$($Hashtable.""$_"")" }) -join ',')"
+                            $parameterName = $ParameterName
+                        }
+                        if ($Explode) {
+                            # Serialize each value as a separate parameter
+                            $valueStrings = $inputObjects | ForEach-Object {
+                                $value = $_
+                                if (-not $NoUrlEncode) {
+                                    $value = [uri]::EscapeDataString($value)
+                                }
+                                "$parameterName=$value"
+                            }
+                            $serializedArray += '?' + ($valueStrings -join '&')
+                        }
+                        else {
+                            # Join values with a space
+                            $valueString = ($inputObjects -join ' ')
+                            if (-not $NoUrlEncode) {
+                                $valueString = [uri]::EscapeDataString($valueString)
+                            }
+                            $serializedArray += "?$parameterName=$valueString"
+                        }
+                        break
+                    }
+
+                    'PipeDelimited' {
+                        # Handle 'PipeDelimited' style for arrays
+                        if (-not $NoUrlEncode) {
+                            $parameterName = [uri]::EscapeDataString($ParameterName)
+                        }
+                        else {
+                            $parameterName = $ParameterName
+                        }
+                        if ($Explode) {
+                            # Serialize each value as a separate parameter
+                            $valueStrings = $inputObjects | ForEach-Object {
+                                $value = $_
+                                if (-not $NoUrlEncode) {
+                                    $value = [uri]::EscapeDataString($value)
+                                }
+                                "$parameterName=$value"
+                            }
+                            $serializedArray += '?' + ($valueStrings -join '&')
+                        }
+                        else {
+                            # Join values with a pipe '|'
+                            $valueString = ($inputObjects -join '|')
+                            if (-not $NoUrlEncode) {
+                                $valueString = [uri]::EscapeDataString($valueString)
+                            }
+                            $serializedArray += "?$parameterName=$valueString"
                         }
                         break
                     }
 
                     'Form' {
-                        if ($Explode) {
-                            $serializedArray += "?$(($Hashtable.Keys | ForEach-Object { "$($_)=$($Hashtable.""$_"")" }) -join '&')"
+                        # Handle 'Form' style for arrays
+                        if (-not $NoUrlEncode) {
+                            $parameterName = [uri]::EscapeDataString($ParameterName)
                         }
                         else {
-                            $serializedArray += "?id=$(($Hashtable.Keys | ForEach-Object { "$($_),$($Hashtable.""$_"")" }) -join ',')"
+                            $parameterName = $ParameterName
+                        }
+                        if ($Explode) {
+                            # 'Explode' is not defined for arrays in 'Form' style
+                            $serializedArray += ''
+                            Write-Verbose "Serialization for array using '$Style' style with 'Explode' is not defined by RFC 6570."
+                        }
+                        else {
+                            # Serialize values into a single parameter
+                            $valueString = ( ($inputObjects | ForEach-Object {
+                                $value = $_
+                                if (-not $NoUrlEncode) {
+                                    $value = [uri]::EscapeDataString($value)
+                                }
+                                $value
+                            }) -join ',' )
+                            $serializedArray += "$parameterName=$valueString"
                         }
                         break
                     }
 
+                    # 'DeepObject' is not defined for arrays
                     'DeepObject' {
-                        $serializedArray += "?$(($Hashtable.Keys | ForEach-Object { "id[$($_)]=$($Hashtable.""$_"")" }) -join '&')"
-                        break
-                    }
-
-                    # Not defined by RFC 6570.
-                    'SpaceDelimited' {
                         $serializedArray += ''
+                        Write-Verbose "Serialization for arrays using '$Style' style is not defined by RFC 6570."
                     }
-                    # Not defined by RFC 6570.
-                    'PipeDelimited' {
-                        $serializedArray += ''
-                    }
-
                 }
             }
         }
-        else {
-            switch ($Style) {
-                'Simple' {
-                    # explode and not explode return the same result
-                    $serializedArray += $Hashtables -join ','
-                    break
-                }
-                'Label' {
-                    # explode and not explode return the same result
-                    $serializedArray += ".$($Hashtables -join ',')"
 
-                    break
-                }
-                'Matrix' {
-                    if ($Explode) {
-                        $serializedArray += ";id=$($Hashtables -join ';id=')"
-                    }
-                    else {
-                        $serializedArray += ";id=$($Hashtables -join ',')"
-                    }
-                    break
-                }
-                'SpaceDelimited' {
-                    if ($Explode) {
-                        $serializedArray += "?id=$($Hashtables -join '&id=')"
-                    }
-                    else {
-                        $serializedArray += "?id=$($Hashtables -join '%20')"
-                    }
-                    break
-                }
-
-                'PipeDelimited' {
-                    if ($Explode) {
-                        $serializedArray += "?id=$($Hashtables -join '&id=')"
-                    }
-                    else {
-                        $serializedArray += "?id=$($Hashtables -join '|')"
-                    }
-                    break
-                }
-
-                'Form' {
-                    if ($Explode) {  # Not defined by RFC 6570.
-                        $serializedArray += ''
-                    }
-                    else {
-                        $serializedArray += "id=$($Hashtables -join ',')"
-                    }
-                    break
-                }
-
-                # Not defined by RFC 6570.
-                'DeepObject' {
-                      $serializedArray += ''
-                }
-
-
-            }
-        }
+        # Return the serialized string(s)
         return $serializedArray
     }
 }
 
+
 <#
 .SYNOPSIS
-    Converts a serialized string back into a hashtable, automatically detecting the serialization style.
+    Converts a serialized string back into its original data structure based on the specified serialization style.
 
 .DESCRIPTION
-    The ConvertFrom-PodeSerializedString function takes a serialized string and converts it back into a hashtable.
-    The function automatically detects the serialization style based on common delimiters and formats, such as
-    'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
-    If the serialized string starts with a variable name followed by a colon (e.g., X-MyHeader:), the function
-    will encapsulate the result within a hashtable under that variable name.
+    The `ConvertFrom-PodeSerializedString` function takes a serialized string and converts it back into its original data structure (e.g., hashtable, array).
+    The function requires the serialization style to be specified via the `-Style` parameter.
+    Supported styles are 'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+    The function also accepts an optional `-Explode` switch to indicate whether the string uses exploded serialization.
+    The `-ParameterName` parameter can be used to specify the key name when processing certain styles, such as 'Matrix' and 'DeepObject'.
 
-.PARAMETER SerializedString
-    The serialized string to be converted back into a hashtable.
+.PARAMETER SerializedInput
+    The serialized string to be converted back into its original data structure.
 
 .PARAMETER Style
-    The serialization style to use for deserialization. Options are 'Simple', 'Label', 'Matrix', 'Query', 'Form',
-    'SpaceDelimited', 'PipeDelimited', and 'DeepObject'.
+    The serialization style to use for deserialization. Options are 'Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', and 'DeepObject'. The default is 'Form'.
 
 .PARAMETER Explode
-    Indicates whether the string uses exploded serialization (true) or not (false). This affects how arrays and objects are handled.
+    Indicates whether the string uses exploded serialization (`-Explode`) or not (omit `-Explode`). This affects how arrays and objects are handled.
 
-.PARAMETER KeyName
-    Specifies the key name to match when processing certain styles, such as 'Matrix' and 'DeepObject'.
+.PARAMETER ParameterName
+    Specifies the key name to match when processing certain styles, such as 'Matrix' and 'DeepObject'. The default is 'id'.
+
+.PARAMETER UrlDecode
+    If specified, the function will decode the input string using URL decoding before processing it. This is useful
+    for handling serialized inputs that include URL-encoded characters, such as `%20` for spaces.
 
 .EXAMPLE
     # Simple style, explode = true
     $serialized = "name=value,anotherName=anotherValue"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Simple' -Explode
-    Write-Output $hashtable
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Simple' -Explode
+    Write-Output $result
 
 .EXAMPLE
     # Simple style, explode = false
     $serialized = "name,value,anotherName,anotherValue"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Simple'
-    Write-Output $hashtable
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Simple'
+    Write-Output $result
 
 .EXAMPLE
     # Label style, explode = true
-    $serialized = ".name.value.anotherName.anotherValue"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Label' -Explode
-    Write-Output $hashtable
+    $serialized = ".name=value.anotherName=anotherValue"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Label' -Explode
+    Write-Output $result
 
 .EXAMPLE
     # Label style, explode = false
     $serialized = ".name,value,anotherName,anotherValue"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Label'
-    Write-Output $hashtable
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Label'
+    Write-Output $result
 
 .EXAMPLE
     # Matrix style, explode = true
     $serialized = ";name=value;anotherName=anotherValue"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Matrix' -Explode
-    Write-Output $hashtable
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Matrix' -Explode
+    Write-Output $result
 
 .EXAMPLE
     # Matrix style, explode = false
-    $serialized = ";id=3;id=4;id=5"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Matrix'
-    Write-Output $hashtable
+    $serialized = ";id=3,4,5"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Matrix' -ParameterName 'id'
+    Write-Output $result
 
 .EXAMPLE
     # Query style, explode = true
-    $serialized = "name=value&anotherName=anotherValue"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Query' -Explode
-    Write-Output $hashtable
+    $serialized = "?name=value&anotherName=anotherValue"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Query' -Explode
+    Write-Output $result
 
 .EXAMPLE
     # Query style, explode = false
-    $serialized = "name=value,anotherName=anotherValue"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Query'
-    Write-Output $hashtable
+    $serialized = "?name,value,anotherName,anotherValue"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Query'
+    Write-Output $result
 
 .EXAMPLE
     # Form style, explode = true
-    $serialized = "name=value&anotherName=anotherValue"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Form' -Explode
-    Write-Output $hashtable
+    $serialized = "?name=value&anotherName=anotherValue"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Form' -Explode
+    Write-Output $result
 
 .EXAMPLE
     # Form style, explode = false
-    $serialized = "name=value,anotherName=anotherValue"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'Form'
-    Write-Output $hashtable
+    $serialized = "?name,value,anotherName,anotherValue"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'Form'
+    Write-Output $result
 
 .EXAMPLE
     # SpaceDelimited style, explode = true
-    $serialized = "id=3&id=4&id=5"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'SpaceDelimited' -Explode
-    Write-Output $hashtable
+    $serialized = "?id=3&id=4&id=5"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'SpaceDelimited' -Explode -ParameterName 'id'
+    Write-Output $result
 
 .EXAMPLE
     # SpaceDelimited style, explode = false
-    $serialized = "id=3%204%205"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'SpaceDelimited'
-    Write-Output $hashtable
+    $serialized = "?id=3%204%205"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'SpaceDelimited' -ParameterName 'id'
+    Write-Output $result
 
 .EXAMPLE
     # PipeDelimited style, explode = true
-    $serialized = "id=3&id=4&id=5"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'PipeDelimited' -Explode
-    Write-Output $hashtable
+    $serialized = "?id=3&id=4&id=5"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'PipeDelimited' -Explode -ParameterName 'id'
+    Write-Output $result
 
 .EXAMPLE
     # PipeDelimited style, explode = false
-    $serialized = "id=3|4|5"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'PipeDelimited'
-    Write-Output $hashtable
+    $serialized = "?id=3|4|5"
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'PipeDelimited' -ParameterName 'id'
+    Write-Output $result
 
 .EXAMPLE
-    # DeepObject style, explode = true
+    # DeepObject style
     $serialized = "myId[role]=admin&myId[firstName]=Alex"
-    $hashtable = ConvertFrom-PodeSerializedString -SerializedString $serialized -Style 'DeepObject' -Explode -KeyName 'myId'
-    Write-Output $hashtable
+    $result = ConvertFrom-PodeSerializedString -SerializedInput $serialized -Style 'DeepObject' -ParameterName 'myId'
+    Write-Output $result
 
 .NOTES
-    Additional info regarding serialization
-    https://swagger.io/docs/specification/serialization/
-    https://tools.ietf.org/html/rfc6570
+    For more information on serialization styles, refer to:
+    - https://swagger.io/docs/specification/serialization/
+    - https://tools.ietf.org/html/rfc6570
 #>
+
 function ConvertFrom-PodeSerializedString {
     param (
         [Parameter(Mandatory, ValueFromPipeline = $true, Position = 0)]
-        [string] $SerializedString,
+        [string] $SerializedInput,
 
         [Parameter()]
         [ValidateSet('Simple', 'Label', 'Matrix', 'Query', 'Form', 'SpaceDelimited', 'PipeDelimited', 'DeepObject' )]
@@ -1697,22 +1986,28 @@ function ConvertFrom-PodeSerializedString {
 
         [Parameter()]
         [string]
-        $KeyName = 'id'   # Default key name if not specified
+        $ParameterName = 'id', # Default key name if not specified
+
+        [Parameter()]
+        [switch]
+        $UrlDecode
     )
 
     process {
-        $SerializedString = $SerializedString.Replace('%20', ' ')
+        if($UrlDecode){
+            $SerializedInput = [System.Web.HttpUtility]::UrlDecode($SerializedInput)
+        }
         # Main deserialization logic based on style
         switch ($Style) {
             'Simple' {
                 # Check for header pattern and extract it if present
-                if ($SerializedString -match '^([a-zA-Z0-9_-]+):') {
+                if ($SerializedInput -match '^([a-zA-Z0-9_-]+):') {
                     # Extract the variable name and strip it from the serialized string
                     $headerName = $matches[1]
-                    $SerializedString = ($SerializedString -replace "^$($headerName):", '').Trim()
+                    $SerializedInput = ($SerializedInput -replace "^$($headerName):", '').Trim()
                 }
 
-                $segments = $SerializedString -split ','
+                $segments = $SerializedInput -split ','
 
                 # If there's only one segment, return it directly
                 if ($segments.Count -eq 1) {
@@ -1723,7 +2018,7 @@ function ConvertFrom-PodeSerializedString {
                         # Handling explode=true case
 
                         # Check if the number of '=' is equal to the count of segments
-                        if ((($SerializedString -split '=').Count - 1) -eq $segments.Count) {
+                        if ((($SerializedInput -split '=').Count - 1) -eq $segments.Count) {
                             $obj = @{}
                             foreach ($pair in $segments) {
                                 if ($pair.Contains('=')) {
@@ -1770,16 +2065,16 @@ function ConvertFrom-PodeSerializedString {
                     return @{$headerName = $result }
                 }
                 else {
-                    $result
+                    return $result
                 }
 
             }
             'Label' {
                 # Remove the leading dot (.) prefix from the serialized string
-                $SerializedString = $SerializedString.TrimStart('.')
+                $SerializedInput = $SerializedInput.TrimStart('.')
 
                 # Split the string by dot
-                $segments = $SerializedString -split '\.'
+                $segments = $SerializedInput -split '\.'
 
                 # Handle the explode=true case
                 if ($Explode) {
@@ -1800,7 +2095,7 @@ function ConvertFrom-PodeSerializedString {
                 else {
                     # Handling explode=false: all segments form a combined structure
                     # Split the string by commas within each segment
-                    $combinedSegments = ($SerializedString -split ',')
+                    $combinedSegments = ($SerializedInput -split ',')
 
                     # Check if it's likely an object by checking if the count is even
                     if ($combinedSegments.Count % 2 -eq 0) {
@@ -1830,10 +2125,10 @@ function ConvertFrom-PodeSerializedString {
                 # Handle the explode=true case
                 if ($Explode) {
                     # Remove the leading semicolon (;) prefix from the serialized string
-                    $SerializedString = $SerializedString.TrimStart(';')
+                    $SerializedInput = $SerializedInput.TrimStart(';')
 
                     # Split by semicolon to get segments
-                    $segments = $SerializedString -split ';'
+                    $segments = $SerializedInput -split ';'
 
                     # If each segment doesn't contain '=', treat it as an array
                     if ($segments -notmatch '=') {
@@ -1851,7 +2146,7 @@ function ConvertFrom-PodeSerializedString {
                             $key, $value = $segment -split '=', 2
 
                             # If the key matches the specified key name
-                            if ($key -eq $KeyName) {
+                            if ($key -eq $ParameterName) {
                                 $values += $value
                             }
                             else {
@@ -1871,25 +2166,25 @@ function ConvertFrom-PodeSerializedString {
 
                     # Merge values back into the object if any key matches the KeyName
                     if ($values.Count -gt 0) {
-                        $obj[$KeyName] = if ($values.Count -eq 1) { $values[0] } else { $values }
+                        $obj[$ParameterName] = if ($values.Count -eq 1) { $values[0] } else { $values }
                     }
 
                     # Return the hashtable if it contains any key-value pairs
                     if ($obj.Count -gt 0) {
-                        return  $obj
+                        return $obj
                     }
                     else {
-                        return   $values
+                        return $values
                     }
                 }
                 else {
                     # Handling explode=false:
 
                     # Remove the leading semicolon (;) prefix from the serialized string
-                    $SerializedString = $SerializedString.TrimStart(";$KeyName=")
+                    $SerializedInput = $SerializedInput.TrimStart(";$ParameterName=")
 
                     # Split by semicolon to get segments
-                    $segments = $SerializedString -split ','
+                    $segments = $SerializedInput -split ','
 
                     # If there's only one segment, return it directly
                     if ($segments.Count -eq 1) {
@@ -1922,26 +2217,26 @@ function ConvertFrom-PodeSerializedString {
 
             'Form' {
                 # Check for header pattern and extract it if present
-                if ($SerializedString -match '^([a-zA-Z0-9_-]+):') {
+                if ($SerializedInput -match '^([a-zA-Z0-9_-]+):') {
                     # Extract the variable name and strip it from the serialized string
                     $headerName = $matches[1]
-                    $SerializedString = ($SerializedString -replace "^$($headerName):", '').Trim().TrimStart("$KeyName=")
+                    $SerializedInput = ($SerializedInput -replace "^$($headerName):", '').Trim().TrimStart("$ParameterName=")
                 }
                 else {
                     if ($Explode) {
                         # Remove the leading semicolon (;) prefix from the serialized string
-                        $SerializedString = $SerializedString.TrimStart('?')
+                        $SerializedInput = $SerializedInput.TrimStart('?')
                     }
                     else {
                         # Remove the leading semicolon (;) prefix from the serialized string
-                        $SerializedString = $SerializedString.TrimStart("?$KeyName=")
+                        $SerializedInput = $SerializedInput.TrimStart("?$ParameterName=")
                     }
                 }
 
                 # Handle the explode=true case
                 if ($Explode) {
                     # Split by semicolon to get segments
-                    $segments = $SerializedString -split '&'
+                    $segments = $SerializedInput -split '&'
 
                     # If each segment doesn't contain '=', treat it as an array
                     if ($segments -notmatch '=') {
@@ -1958,7 +2253,7 @@ function ConvertFrom-PodeSerializedString {
                                 $key, $value = $segment -split '=', 2
 
                                 # If the key matches the specified key name
-                                if ($key -eq $KeyName) {
+                                if ($key -eq $ParameterName) {
                                     $values += $value
                                 }
                                 else {
@@ -1981,15 +2276,15 @@ function ConvertFrom-PodeSerializedString {
 
                             # Merge values back into the object if any key matches the KeyName
                             if ($values.Count -gt 0) {
-                                $obj[$KeyName] = if ($values.Count -eq 1) { $values[0] } else { $values }
+                                $obj[$ParameterName] = if ($values.Count -eq 1) { $values[0] } else { $values }
                             }
 
                             # Return the hashtable if it contains any key-value pairs
                             if ($obj.Count -gt 0) {
-                                return  $obj
+                                return $obj
                             }
                             else {
-                                return   $values
+                                return $values
                             }
                         }
                     }
@@ -1998,7 +2293,7 @@ function ConvertFrom-PodeSerializedString {
                     # Handling explode=false
 
                     # Split by semicolon to get segments
-                    $segments = $SerializedString -split ','
+                    $segments = $SerializedInput -split ','
 
                     # If there's only one segment, return it directly
                     if ($segments.Count -eq 1) {
@@ -2036,17 +2331,17 @@ function ConvertFrom-PodeSerializedString {
                     return @{$headerName = $result }
                 }
                 else {
-                    $result
+                    return $result
                 }
             }
 
             'SpaceDelimited' {
                 if ($Explode) {
                     # Remove the leading semicolon (;) prefix from the serialized string
-                    $SerializedString = $SerializedString.TrimStart('?')
+                    $SerializedInput = $SerializedInput.TrimStart('?')
 
                     # For explode=true, split by '&' to treat each value as a separate occurrence
-                    $segments = $SerializedString -split '&'
+                    $segments = $SerializedInput -split '&'
 
                     # Initialize an array to store values that match the specified KeyName
                     $values = @()
@@ -2054,7 +2349,7 @@ function ConvertFrom-PodeSerializedString {
                         if ($segment.Contains('=')) {
                             $key, $value = $segment -split '=', 2
                             # Only add values where the key matches the specified KeyName
-                            if ($key -eq $KeyName) {
+                            if ($key -eq $ParameterName) {
                                 $values += $value
                             }
                         }
@@ -2063,18 +2358,18 @@ function ConvertFrom-PodeSerializedString {
                     return $values
                 }
                 else {
-                    # Remove the leading semicolon (;) prefix from the serialized string
-                    $SerializedString = $SerializedString.TrimStart('?id=')
+                    # Remove the leading semicolon '?id=' prefix from the serialized string
+                    $SerializedInput = $SerializedInput.TrimStart('?id=')
                     # For explode=false, split by space (%20) to handle the combined string format
-                    return $SerializedString -split ' '
+                    return $SerializedInput -split ' '
                 }
             }
 
             'PipeDelimited' {
                 if ($Explode) {
-                    $SerializedString = $SerializedString.TrimStart('?')
+                    $SerializedInput = $SerializedInput.TrimStart('?')
                     # For explode=true, split by '&' to treat each value as a separate occurrence
-                    $segments = $SerializedString -split '&'
+                    $segments = $SerializedInput -split '&'
 
                     # Initialize an array to store values that match the specified KeyName
                     $values = @()
@@ -2082,7 +2377,7 @@ function ConvertFrom-PodeSerializedString {
                         if ($segment.Contains('=')) {
                             $key, $value = $segment -split '=', 2
                             # Only add values where the key matches the specified KeyName
-                            if ($key -eq $KeyName) {
+                            if ($key -eq $ParameterName) {
                                 $values += $value
                             }
                         }
@@ -2091,18 +2386,18 @@ function ConvertFrom-PodeSerializedString {
                     return $values
                 }
                 else {
-                    # Remove the leading semicolon (;) prefix from the serialized string
-                    $SerializedString = $SerializedString.TrimStart('?id=')
-                    # For explode=false, split by space (%20) to handle the combined string format
-                    return $SerializedString -split '\|'
+                    # Remove the leading '?id=' prefix from the serialized string
+                    $SerializedInput = $SerializedInput.TrimStart('?id=')
+                    # For explode=false, split by | to handle the combined string format
+                    return $SerializedInput -split '\|'
                 }
             }
 
             'DeepObject' {
-                $SerializedString = $SerializedString.TrimStart('?')
+                $SerializedInput = $SerializedInput.TrimStart('?')
 
                 # Split the string by '&' to get each key-value pair
-                $segments = $SerializedString -split '&'
+                $segments = $SerializedInput -split '&'
 
                 # Initialize an empty hashtable to store the nested key-value pairs
                 $obj = @{}
@@ -2123,7 +2418,7 @@ function ConvertFrom-PodeSerializedString {
                         }
 
                         # Only process the segment if the main key matches the specified KeyName
-                        if ($mainKey -eq $KeyName) {
+                        if ($mainKey -eq $ParameterName) {
                             # Initialize a reference to the root object
                             $current = $obj
 
@@ -2225,12 +2520,12 @@ function Get-PodePathParameter {
 
         [Parameter(ParameterSetName = 'Deserialize')]
         [string]
-        $KeyName = 'id'
+        $ParameterName = 'id'
 
     )
     if ($WebEvent) {
         if ($Deserialize.IsPresent) {
-            return ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Parameters[$Name] -Style $Style -Explode:$Explode -KeyName $KeyName
+            return ConvertFrom-PodeSerializedString -SerializedInput $WebEvent.Parameters[$Name] -Style $Style -Explode:$Explode -KeyName $ParameterName
         }
         return $WebEvent.Parameters[$Name]
     }
@@ -2310,11 +2605,11 @@ function Get-PodeQueryParameter {
 
         [Parameter(ParameterSetName = 'Deserialize')]
         [string]
-        $KeyName = 'id'
+        $ParameterName = 'id'
     )
     if ($WebEvent) {
         if ($Deserialize.IsPresent) {
-            return ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Query[$Name] -Style $Style -Explode:(!$NoExplode) -KeyName $KeyName
+            return ConvertFrom-PodeSerializedString -SerializedInput $WebEvent.Query[$Name] -Style $Style -Explode:(!$NoExplode) -KeyName $ParameterName
         }
         return $WebEvent.Query[$Name]
     }
@@ -2381,11 +2676,11 @@ function Get-PodeBodyData {
 
         [Parameter(ParameterSetName = 'Deserialize')]
         [string]
-        $KeyName = 'id'
+        $ParameterName = 'id'
     )
     if ($WebEvent) {
         if ($Deserialize.IsPresent) {
-            return ConvertFrom-PodeSerializedString -SerializedString $WebEvent.Data -Style $Style -Explode:(!$NoExplode) -KeyName $KeyName
+            return ConvertFrom-PodeSerializedString -SerializedInput $WebEvent.Data -Style $Style -Explode:(!$NoExplode) -KeyName $ParameterName
         }
         return $WebEvent.Data
     }
