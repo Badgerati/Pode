@@ -1,33 +1,36 @@
 <#
 .SYNOPSIS
-Adds a new Task.
+    Adds a new Task.
 
 .DESCRIPTION
-Adds a new Task, which can be asynchronously or synchronously invoked.
+    Adds a new Task, which can be asynchronously or synchronously invoked.
 
 .PARAMETER Name
-The Name of the Task.
+    The Name of the Task.
 
 .PARAMETER ScriptBlock
-The script for the Task.
+    The script for the Task.
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Task's logic.
+    A literal, or relative, path to a file containing a ScriptBlock for the Task's logic.
 
 .PARAMETER ArgumentList
-A hashtable of arguments to supply to the Task's ScriptBlock.
+    A hashtable of arguments to supply to the Task's ScriptBlock.
 
 .PARAMETER Timeout
-A Timeout, in seconds, to abort running the Task process. (Default: -1 [never timeout])
+    A Timeout, in seconds, to abort running the Task process. (Default: -1 [never timeout])
 
 .PARAMETER TimeoutFrom
-Where to start the Timeout from, either 'Create', 'Start'. (Default: 'Create')
+    Where to start the Timeout from, either 'Create', 'Start'. (Default: 'Create')
+
+.PARAMETER DisableRunspaceNaming
+    If supplied, the runspace name will not be set for the Schedule's ScriptBlock.
 
 .EXAMPLE
-Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
+    Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
 
 .EXAMPLE
-Add-PodeTask -Name 'Example1' -ScriptBlock { return Get-SomeObject }
+    Add-PodeTask -Name 'Example1' -ScriptBlock { return Get-SomeObject }
 #>
 function Add-PodeTask {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -55,7 +58,10 @@ function Add-PodeTask {
         [Parameter()]
         [ValidateSet('Create', 'Start')]
         [string]
-        $TimeoutFrom = 'Create'
+        $TimeoutFrom = 'Create',
+
+        [switch]
+        $DisableRunspaceNaming
     )
     # ensure the task doesn't already exist
     if ($PodeContext.Tasks.Items.ContainsKey($Name)) {
@@ -66,6 +72,12 @@ function Add-PodeTask {
     # if we have a file path supplied, load that path as a scriptblock
     if ($PSCmdlet.ParameterSetName -ieq 'file') {
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
+    }
+
+    # Check if the runspace naming feature is not disabled
+    if (! $DisableRunspaceNaming) {
+        # Set the runspace name by adding the specified name to the ScriptBlock
+        $ScriptBlock = Add-PodeRunspaceNameToScriptblock -ScriptBlock $ScriptBlock -Name $Name
     }
 
     # check for scoped vars

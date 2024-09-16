@@ -12,8 +12,6 @@ function Start-PodeTaskHousekeeper {
             if ($PodeContext.Tasks.Processes.Count -eq 0) {
                 return
             }
-            # Sets the name of the current runspace
-            Set-PodeCurrentRunspaceName -Name '__pode_task_housekeeper__'
 
             $now = [datetime]::UtcNow
 

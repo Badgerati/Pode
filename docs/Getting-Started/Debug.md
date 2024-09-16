@@ -185,22 +185,33 @@ In Pode, internal runspaces are automatically assigned distinct names. This nami
 
 ### Customizing Runspace Names
 
-To provide clarity and better manageability, you can set custom names for runspaces within your Pode tasks or schedules. This can be achieved using the `Set-PodeCurrentRunspaceName` cmdlet. By assigning meaningful names to your runspaces, you can easily identify and work with them, especially during debugging or performance monitoring.
+By default, Pode’s Tasks, Schedules, and Timers use their own names to label their associated runspaces, making it easier to identify them during debugging and monitoring.
+
+However, if you wish to use a different name for the runspace, you can invoke `Add-PodeTask`, `Add-PodeSchedule`, or `Add-PodeTimer` with the `-DisableRunspaceNaming` parameter.
+Then, within the script block, you can use the Set-PodeCurrentRunspaceName cmdlet to assign any custom name you prefer.
 
 Another useful cmdlet is `Get-PodeCurrentRunspaceName`, which retrieves the current runspace's name. This can be helpful if you need to log or display the runspace name dynamically.
 
 ### Example
 
-Here is an example demonstrating how to set a custom name for a runspace in a Pode task:
+Here is an updated example demonstrating how to set a custom runspace name in a Pode task:
 
 ```powershell
-Add-PodeTask -Name 'Test2' -ScriptBlock {
+Add-PodeTask -Name 'Test2' -DisableRunspaceNaming -ScriptBlock {
     param($value)
     # Set a custom name for the current runspace
-    Set-PodeCurrentRunspaceName -Name 'Test2'
+    Set-PodeCurrentRunspaceName -Name 'My Fancy Runspace'
     Start-Sleep -Seconds 10
     "A $($value) is never late, it arrives exactly when it means to" | Out-Default
 }
 ```
 
-In this example, the `Set-PodeCurrentRunspaceName` cmdlet is used to assign the name 'Test2' to the runspace executing the task. This makes it easier to identify the runspace in logs or during debugging sessions.
+In this example, the `Set-PodeCurrentRunspaceName` cmdlet is used to assign the custom name 'My Fancy Runspace' to the runspace executing the task, enhancing identification during debugging or in logs.
+
+### Retrieving Runspace Names
+
+Another useful cmdlet is `Get-PodeCurrentRunspaceName`, which retrieves the current runspace's name. This cmdlet can be particularly helpful if you need to log or display the runspace name dynamically during execution. It allows you to track and manage runspaces effectively, especially in complex scenarios where multiple runspaces are running concurrently.
+
+```powershell
+ Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-PodeHost "Runspace name: $(Get-PodeCurrentRunspaceName)" }
+ ```

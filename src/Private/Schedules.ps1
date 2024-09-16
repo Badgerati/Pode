@@ -19,8 +19,6 @@ function Start-PodeScheduleRunspace {
 
     Add-PodeTimer -Name '__pode_schedule_housekeeper__' -Interval 30 -ScriptBlock {
         try {
-            # Sets the name of the current runspace
-            Set-PodeCurrentRunspaceName -Name '__pode_schedule_housekeeper__'
 
             if ($PodeContext.Schedules.Processes.Count -eq 0) {
                 return

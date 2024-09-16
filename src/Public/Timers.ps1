@@ -1,45 +1,48 @@
 <#
 .SYNOPSIS
-Adds a new Timer with logic to periodically invoke.
+    Adds a new Timer with logic to periodically invoke.
 
 .DESCRIPTION
-Adds a new Timer with logic to periodically invoke, with options to only run a specific number of times.
+    Adds a new Timer with logic to periodically invoke, with options to only run a specific number of times.
 
 .PARAMETER Name
-The Name of the Timer.
+    The Name of the Timer.
 
 .PARAMETER Interval
-The number of seconds to periodically invoke the Timer's ScriptBlock.
+    The number of seconds to periodically invoke the Timer's ScriptBlock.
 
 .PARAMETER ScriptBlock
-The script for the Timer.
+    The script for the Timer.
 
 .PARAMETER Limit
-The number of times the Timer should be invoked before being removed. (If 0, it will run indefinitely)
+    The number of times the Timer should be invoked before being removed. (If 0, it will run indefinitely)
 
 .PARAMETER Skip
-The number of "invokes" to skip before the Timer actually runs.
+    The number of "invokes" to skip before the Timer actually runs.
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Timer's ScriptBlock.
+    An array of arguments to supply to the Timer's ScriptBlock.
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Timer's logic.
+    A literal, or relative, path to a file containing a ScriptBlock for the Timer's logic.
 
 .PARAMETER OnStart
-If supplied, the timer will trigger when the server starts.
+    If supplied, the timer will trigger when the server starts.
+
+.PARAMETER DisableRunspaceNaming
+    If supplied, the runspace name will not be set for the Schedule's ScriptBlock.
 
 .EXAMPLE
-Add-PodeTimer -Name 'Hello' -Interval 10 -ScriptBlock { 'Hello, world!' | Out-Default }
+    Add-PodeTimer -Name 'Hello' -Interval 10 -ScriptBlock { 'Hello, world!' | Out-Default }
 
 .EXAMPLE
-Add-PodeTimer -Name 'RunOnce' -Interval 1 -Limit 1 -ScriptBlock { /* logic */ }
+    Add-PodeTimer -Name 'RunOnce' -Interval 1 -Limit 1 -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeTimer -Name 'RunAfter60secs' -Interval 10 -Skip 6 -ScriptBlock { /* logic */ }
+    Add-PodeTimer -Name 'RunAfter60secs' -Interval 10 -Skip 6 -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeTimer -Name 'Args' -Interval 2 -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
+    Add-PodeTimer -Name 'Args' -Interval 2 -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
 #>
 function Add-PodeTimer {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -73,7 +76,10 @@ function Add-PodeTimer {
         $ArgumentList,
 
         [switch]
-        $OnStart
+        $OnStart,
+
+        [switch]
+        $DisableRunspaceNaming
     )
 
     # error if serverless
@@ -106,6 +112,12 @@ function Add-PodeTimer {
     # if we have a file path supplied, load that path as a scriptblock
     if ($PSCmdlet.ParameterSetName -ieq 'file') {
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
+    }
+
+    # Check if the runspace naming feature is not disabled
+    if (! $DisableRunspaceNaming) {
+        # Set the runspace name by adding the specified name to the ScriptBlock
+        $ScriptBlock = Add-PodeRunspaceNameToScriptblock -ScriptBlock $ScriptBlock -Name $Name
     }
 
     # check for scoped vars
