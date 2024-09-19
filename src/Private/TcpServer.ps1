@@ -78,14 +78,8 @@ function Start-PodeTcpServer {
         param(
             [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
-            $Listener,
-
-            [Parameter(Mandatory = $true)]
-            [int]
-            $ThreadId
+            $Listener
         )
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name "TCPEndpoint_$ThreadId"
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -197,7 +191,7 @@ function Start-PodeTcpServer {
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.General | ForEach-Object {
-        Add-PodeRunspace -Type Tcp -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type Tcp -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener }
     }
 
     # script to keep tcp server listening until cancelled
@@ -207,8 +201,6 @@ function Start-PodeTcpServer {
             [ValidateNotNull()]
             $Listener
         )
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name 'TCPEndpoint_KeepAlive'
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -228,7 +220,7 @@ function Start-PodeTcpServer {
         }
     }
 
-    Add-PodeRunspace -Type Tcp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    Add-PodeRunspace -Type Tcp -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {

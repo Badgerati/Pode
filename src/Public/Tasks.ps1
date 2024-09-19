@@ -23,9 +23,6 @@
 .PARAMETER TimeoutFrom
     Where to start the Timeout from, either 'Create', 'Start'. (Default: 'Create')
 
-.PARAMETER DisableRunspaceNaming
-    If supplied, the runspace name will not be set for the Schedule's ScriptBlock.
-
 .EXAMPLE
     Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
 
@@ -58,10 +55,7 @@ function Add-PodeTask {
         [Parameter()]
         [ValidateSet('Create', 'Start')]
         [string]
-        $TimeoutFrom = 'Create',
-
-        [switch]
-        $DisableRunspaceNaming
+        $TimeoutFrom = 'Create'
     )
     # ensure the task doesn't already exist
     if ($PodeContext.Tasks.Items.ContainsKey($Name)) {
@@ -72,12 +66,6 @@ function Add-PodeTask {
     # if we have a file path supplied, load that path as a scriptblock
     if ($PSCmdlet.ParameterSetName -ieq 'file') {
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
-    }
-
-    # Check if the runspace naming feature is not disabled
-    if (! $DisableRunspaceNaming) {
-        # Set the runspace name by adding the specified name to the ScriptBlock
-        $ScriptBlock = Add-PodeRunspaceNameToScriptblock -ScriptBlock $ScriptBlock -Name $Name
     }
 
     # check for scoped vars

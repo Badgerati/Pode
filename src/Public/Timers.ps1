@@ -29,9 +29,6 @@
 .PARAMETER OnStart
     If supplied, the timer will trigger when the server starts.
 
-.PARAMETER DisableRunspaceNaming
-    If supplied, the runspace name will not be set for the Schedule's ScriptBlock.
-
 .EXAMPLE
     Add-PodeTimer -Name 'Hello' -Interval 10 -ScriptBlock { 'Hello, world!' | Out-Default }
 
@@ -76,10 +73,7 @@ function Add-PodeTimer {
         $ArgumentList,
 
         [switch]
-        $OnStart,
-
-        [switch]
-        $DisableRunspaceNaming
+        $OnStart
     )
 
     # error if serverless
@@ -112,12 +106,6 @@ function Add-PodeTimer {
     # if we have a file path supplied, load that path as a scriptblock
     if ($PSCmdlet.ParameterSetName -ieq 'file') {
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
-    }
-
-    # Check if the runspace naming feature is not disabled
-    if (! $DisableRunspaceNaming) {
-        # Set the runspace name by adding the specified name to the ScriptBlock
-        $ScriptBlock = Add-PodeRunspaceNameToScriptblock -ScriptBlock $ScriptBlock -Name $Name
     }
 
     # check for scoped vars

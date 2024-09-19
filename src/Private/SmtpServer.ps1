@@ -82,14 +82,8 @@ function Start-PodeSmtpServer {
         param(
             [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
-            $Listener,
-
-            [Parameter(Mandatory = $true)]
-            [int]
-            $ThreadId
+            $Listener
         )
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name "SMTPEndpoint_$ThreadId"
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -179,7 +173,7 @@ function Start-PodeSmtpServer {
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.General | ForEach-Object {
-        Add-PodeRunspace -Type Smtp -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type Smtp -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener }
     }
 
     # script to keep smtp server listening until cancelled
@@ -189,8 +183,6 @@ function Start-PodeSmtpServer {
             [ValidateNotNull()]
             $Listener
         )
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name 'SMTPEndpoint_KeepAlive'
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -210,7 +202,7 @@ function Start-PodeSmtpServer {
         }
     }
 
-    Add-PodeRunspace -Type Smtp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    Add-PodeRunspace -Type Smtp -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {

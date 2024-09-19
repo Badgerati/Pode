@@ -49,8 +49,6 @@ function Start-PodeScheduleRunspace {
 
     $script = {
         try {
-            # Sets the name of the current runspace
-            Set-PodeCurrentRunspaceName -Name 'Scheduler_Trigger'
 
             # select the schedules that trigger on-start
             $_now = [DateTime]::Now
@@ -108,7 +106,7 @@ function Start-PodeScheduleRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Main -ScriptBlock $script -NoProfile
+    Add-PodeRunspace -Type Main -Name 'ScheduleHouseKeeper' -ScriptBlock $script -NoProfile
 }
 
 function Close-PodeScheduleInternal {
@@ -232,7 +230,6 @@ function Invoke-PodeInternalScheduleLogic {
         if (($Schedule.Timeout.From -ieq 'Create') -and ($Schedule.Timeout.Value -ge 0)) {
             $expireTime = $createTime.AddSeconds($Schedule.Timeout.Value)
         }
-
         # add the schedule process
         $PodeContext.Schedules.Processes[$processId] = @{
             ID         = $processId
@@ -247,8 +244,7 @@ function Invoke-PodeInternalScheduleLogic {
 
         # start the schedule runspace
         $scriptblock = Get-PodeScheduleScriptBlock
-        $runspace = Add-PodeRunspace -Type Schedules -ScriptBlock $scriptblock -Parameters $parameters -PassThru
-
+        $runspace = Add-PodeRunspace -Type Schedules -Name $Schedule.Name -ScriptBlock $scriptblock -Parameters $parameters -PassThru
         # add runspace to process
         $PodeContext.Schedules.Processes[$processId].Runspace = $runspace
     }

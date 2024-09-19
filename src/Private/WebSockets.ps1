@@ -44,14 +44,8 @@ function Start-PodeWebSocketRunspace {
         param(
             [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
-            $Receiver,
-
-            [Parameter(Mandatory = $true)]
-            [int]
-            $ThreadId
+            $Receiver
         )
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name "WebSocketEndpoint_$ThreadId"
 
         try {
             while ($Receiver.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -109,7 +103,7 @@ function Start-PodeWebSocketRunspace {
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.WebSockets | ForEach-Object {
-        Add-PodeRunspace -Type WebSockets -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type WebSockets -Name 'Listener' -Id $_ -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver }
     }
 
     # script to keep websocket server receiving until cancelled
@@ -119,8 +113,6 @@ function Start-PodeWebSocketRunspace {
             [ValidateNotNull()]
             $Receiver
         )
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name 'WebSocketEndpoint__KeepAlive'
 
         try {
             while ($Receiver.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -140,5 +132,5 @@ function Start-PodeWebSocketRunspace {
         }
     }
 
-    Add-PodeRunspace -Type WebSockets -ScriptBlock $waitScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver } -NoProfile
+    Add-PodeRunspace -Type WebSockets -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver } -NoProfile
 }

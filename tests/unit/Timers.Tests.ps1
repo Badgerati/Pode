@@ -71,7 +71,7 @@ Describe 'Add-PodeTimer' {
 
     It 'Adds new timer to session with no limit' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1 -DisableRunspaceNaming
+        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1 
 
         $timer = $PodeContext.Timers.Items['test']
         $timer | Should -Not -Be $null
@@ -87,7 +87,7 @@ Describe 'Add-PodeTimer' {
 
     It 'Adds new timer to session with limit' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        Add-PodeTimer -Name 'test' -Interval 3 -ScriptBlock { Write-Host 'hello' } -Limit 2 -Skip 1 -DisableRunspaceNaming
+        Add-PodeTimer -Name 'test' -Interval 3 -ScriptBlock { Write-Host 'hello' } -Limit 2 -Skip 1
 
         $timer = $PodeContext.Timers.Items['test']
         $timer | Should -Not -Be $null
@@ -148,7 +148,7 @@ Describe 'Get-PodeTimer' {
 Describe 'Remove-PodeTimer' {
     It 'Adds new timer and then removes it' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -DisableRunspaceNaming
+        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' }
 
         $timer = $PodeContext.Timers.Items['test']
         $timer.Name | Should -Be 'test'
@@ -178,7 +178,7 @@ Describe 'Clear-PodeTimers' {
 Describe 'Edit-PodeTimer' {
     It 'Adds a new timer, then edits the interval' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello1' } -DisableRunspaceNaming
+        Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello1' }
         $PodeContext.Timers.Items['test1'].Interval | Should -Be 1
         $PodeContext.Timers.Items['test1'].Script.ToString() | Should -Be ({ Write-Host 'hello1' }).ToString()
 
@@ -189,7 +189,7 @@ Describe 'Edit-PodeTimer' {
 
     It 'Adds a new timer, then edits the script' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello1' } -DisableRunspaceNaming
+        Add-PodeTimer -Name 'test1' -Interval 1 -ScriptBlock { Write-Host 'hello1' }
         $PodeContext.Timers.Items['test1'].Interval | Should -Be 1
         $PodeContext.Timers.Items['test1'].Script.ToString() | Should -Be ({ Write-Host 'hello1' }).ToString()
 

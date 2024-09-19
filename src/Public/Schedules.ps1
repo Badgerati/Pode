@@ -38,9 +38,6 @@
 .PARAMETER OnStart
     If supplied, the schedule will trigger when the server starts, regardless if the cron-expression matches the current time.
 
-.PARAMETER DisableRunspaceNaming
-    If supplied, the runspace name will not be set for the Schedule's ScriptBlock.
-
 .EXAMPLE
     Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logic */ }
 
@@ -98,10 +95,7 @@ function Add-PodeSchedule {
         $TimeoutFrom = 'Create',
 
         [switch]
-        $OnStart,
-
-        [switch]
-        $DisableRunspaceNaming
+        $OnStart
     )
 
     # error if serverless
@@ -133,12 +127,6 @@ function Add-PodeSchedule {
     # if we have a file path supplied, load that path as a scriptblock
     if ($PSCmdlet.ParameterSetName -ieq 'file') {
         $ScriptBlock = Convert-PodeFileToScriptBlock -FilePath $FilePath
-    }
-
-    # Check if the runspace naming feature is not disabled
-    if (! $DisableRunspaceNaming) {
-        # Set the runspace name by adding the specified name to the ScriptBlock
-        $ScriptBlock = Add-PodeRunspaceNameToScriptblock -ScriptBlock $ScriptBlock -Name $Name
     }
 
     # check for scoped vars

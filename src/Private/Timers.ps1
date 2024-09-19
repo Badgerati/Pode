@@ -20,8 +20,6 @@ function Start-PodeTimerRunspace {
 
     $script = {
         try {
-            # Sets the name of the current runspace
-            Set-PodeCurrentRunspaceName -Name 'Timer'
 
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 try {
@@ -82,7 +80,7 @@ function Start-PodeTimerRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Timers -ScriptBlock $script
+    Add-PodeRunspace -Type Timers -Name "Scheduler" -ScriptBlock $script
 }
 
 function Invoke-PodeInternalTimer {

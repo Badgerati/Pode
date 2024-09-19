@@ -1,92 +1,6 @@
-function Add-PodeRunspaceNameToScriptblock {
-    param (
-        [ScriptBlock]$ScriptBlock,
-        [string]$Name
-    )
-
-    # Convert the scriptblock to a string
-    $scriptBlockString = $ScriptBlock.ToString()
-    if ($scriptBlockString.contains('Set-PodeCurrentRunspaceName')) {
-        Write-PodeHost "'Set-PodeCurrentRunspaceName' already there"
-    }
-    # Check for a param block and insert the desired line after it
-    $pattern = '(\s*param\s*\([^\)]*\)\s*)' #'(\{\s*|\s*)param\s*\([^\)]*\)\s*'
-
-    # Check for a param block and insert the desired line after it
-    if ($scriptBlockString -match $pattern) {
-        # Insert Set-PodeCurrentRunspaceName after the param block
-        $modifiedScriptBlockString = $scriptBlockString -replace $pattern,"`${1}Set-PodeCurrentRunspaceName -Name '$Name'`n"
-    }
-    else {
-        # If no param block is found, add Set-PodeCurrentRunspaceName at the beginning
-        $modifiedScriptBlockString = "Set-PodeCurrentRunspaceName -Name `"$Name`"`n$scriptBlockString"
-    }
-
-    # Convert the modified string back into a scriptblock
-    return [ScriptBlock]::Create($modifiedScriptBlockString)
-}
-
 <#
 .SYNOPSIS
-    Opens a runspace for Pode server operations based on the specified type.
-
-.DESCRIPTION
-    This function initializes a runspace for Pode server tasks by importing necessary
-    modules, adding PowerShell drives, and setting the state of the runspace pool to 'Ready'.
-    If an error occurs during the initialization, the state is adjusted to 'Error' if it
-    was previously set to 'waiting', and the error details are outputted.
-
-.PARAMETER Type
-    The type of the runspace pool to open. This parameter only accepts predefined values,
-    ensuring the runspace pool corresponds to a supported server operation type. The valid
-    types are: Main, Signals, Schedules, Gui, Web, Smtp, Tcp, Tasks, WebSockets, Files.
-
-.EXAMPLE
-    Open-PodeRunspace -Type "Web"
-
-    Opens a runspace for the 'Web' type, setting it ready for handling web server tasks.
-
-.NOTES
-    This function is not invoked directly but indirectly by `Add-PodeRunspace` function using
-    $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
-#>
-function Open-PodeRunspace {
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
-        [string]
-        $Type
-    )
-
-    try {
-        # Importing internal Pode modules necessary for the runspace operations.
-        Import-PodeModulesInternal
-
-        # Adding PowerShell drives required by the runspace.
-        Add-PodePSDrivesInternal
-
-        # Setting the state of the runspace pool to 'Ready', indicating it is ready to process requests.
-        $PodeContext.RunspacePools[$Type].State = 'Ready'
-    }
-    catch {
-        # If an error occurs and the current state is 'waiting', set it to 'Error'.
-        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
-            $PodeContext.RunspacePools[$Type].State = 'Error'
-        }
-
-        # Outputting the error to the default output stream, including the stack trace.
-        $_ | Out-Default
-        $_.ScriptStackTrace | Out-Default
-
-        # Rethrowing the error to be handled further up the call stack.
-        throw
-    }
-}
-
-
-<#
-.SYNOPSIS
-    Adds a new runspace to Pode with specified type and script block.
+    Adds a new runspace to Pode with the specified type and script block.
 
 .DESCRIPTION
     The `Add-PodeRunspace` function creates a new PowerShell runspace within Pode
@@ -149,30 +63,72 @@ function Add-PodeRunspace {
         $NoProfile,
 
         [switch]
-        $PassThru
+        $PassThru,
+
+        [string]
+        $Name,
+
+        [string]
+        $Id = '1'
     )
 
     try {
-        # create powershell pipelines
+        # Define the script block to open the runspace and set its state.
+        $openRunspaceScript = {
+            param($Type, $Name, $NoProfile)
+            try {
+                # Set the runspace name.
+                Set-PodeCurrentRunspaceName -Name $Name
+
+                if (!$NoProfile) {
+                    # Import necessary internal Pode modules for the runspace.
+                    Import-PodeModulesInternal
+
+                    # Add required PowerShell drives.
+                    Add-PodePSDrivesInternal
+                }
+
+                # Mark the runspace as 'Ready' to process requests.
+                $PodeContext.RunspacePools[$Type].State = 'Ready'
+            }
+            catch {
+                # Handle errors, setting the runspace state to 'Error' if applicable.
+                if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
+                    $PodeContext.RunspacePools[$Type].State = 'Error'
+                }
+
+                # Output the error details to the default stream and rethrow.
+                $_ | Out-Default
+                $_.ScriptStackTrace | Out-Default
+                throw
+            }
+        }
+
+        # Create a PowerShell pipeline.
         $ps = [powershell]::Create()
         $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
 
-        # load modules/drives
-        if (!$NoProfile) {
-            $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
-        }
+        # Add the script block and parameters to the pipeline.
+        $null = $ps.AddScript($openRunspaceScript)
+        $null = $ps.AddParameters(
+            @{
+                'Type'      = $Type
+                'Name'      = "Pode_$($Type)_$($Name)_$($Id)"
+                'NoProfile' = $NoProfile.IsPresent
+            }
+        )
 
-        # load main script
+        # Add the main script block to the pipeline.
         $null = $ps.AddScript($ScriptBlock)
 
-        # load parameters
+        # Add any provided parameters to the script block.
         if (!(Test-PodeIsEmpty $Parameters)) {
             $Parameters.Keys | ForEach-Object {
                 $null = $ps.AddParameter($_, $Parameters[$_])
             }
         }
 
-        # start the pipeline
+        # Begin invoking the pipeline, with or without output streaming.
         if ($null -eq $OutputStream) {
             $pipeline = $ps.BeginInvoke()
         }
@@ -180,20 +136,16 @@ function Add-PodeRunspace {
             $pipeline = $ps.BeginInvoke($OutputStream, $OutputStream)
         }
 
-        # do we need to remember this pipeline? sorry, what did you say?
+        # Handle forgetting, returning, or storing the pipeline.
         if ($Forget) {
             $null = $pipeline
         }
-
-        # or do we need to return it for custom processing? ie: tasks
         elseif ($PassThru) {
             return @{
                 Pipeline = $ps
                 Handler  = $pipeline
             }
         }
-
-        # or store it here for later clean-up
         else {
             $PodeContext.Runspaces += @{
                 Pool     = $Type
@@ -204,6 +156,7 @@ function Add-PodeRunspace {
         }
     }
     catch {
+        # Log and throw any exceptions encountered during execution.
         $_ | Write-PodeErrorLog
         throw $_.Exception
     }
@@ -350,3 +303,19 @@ function Close-PodeRunspace {
         throw $_.Exception
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

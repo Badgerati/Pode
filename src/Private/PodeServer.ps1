@@ -108,14 +108,8 @@ function Start-PodeWebServer {
         $listenScript = {
             param(
                 [Parameter(Mandatory = $true)]
-                $Listener,
-
-                [Parameter(Mandatory = $true)]
-                [int]
-                $ThreadId
+                $Listener
             )
-            # Sets the name of the current runspace
-            Set-PodeCurrentRunspaceName -Name "HttpEndpoint_$ThreadId"
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -282,7 +276,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Web -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+            Add-PodeRunspace -Type Web -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener }
         }
     }
 
@@ -294,8 +288,6 @@ function Start-PodeWebServer {
                 [Parameter(Mandatory = $true)]
                 $Listener
             )
-            # Sets the name of the current runspace
-            Set-PodeCurrentRunspaceName -Name 'WsEndpoint'
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -359,7 +351,7 @@ function Start-PodeWebServer {
             }
         }
 
-        Add-PodeRunspace -Type Signals -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
+        Add-PodeRunspace -Type Signals -Name 'Listener' -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
     }
 
     # only if WS endpoint
@@ -368,14 +360,8 @@ function Start-PodeWebServer {
         $clientScript = {
             param(
                 [Parameter(Mandatory = $true)]
-                $Listener,
-
-                [Parameter(Mandatory = $true)]
-                [int]
-                $ThreadId
+                $Listener
             )
-            # Sets the name of the current runspace
-            Set-PodeCurrentRunspaceName -Name "WsEndpoint_$ThreadId"
 
             try {
                 while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -444,7 +430,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Signals -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+            Add-PodeRunspace -Type Signals -Name 'Broadcaster' -Id $_ -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener }
         }
     }
 
@@ -455,8 +441,6 @@ function Start-PodeWebServer {
             [ValidateNotNull()]
             $Listener
         )
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name "Listener_KeepAlive"
 
         try {
             while ($Listener.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -476,12 +460,13 @@ function Start-PodeWebServer {
         }
     }
 
-    $waitType = 'Web'
-    if (!(Test-PodeEndpointByProtocolType -Type Http)) {
-        $waitType = 'Signals'
-    }
 
-    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener} -NoProfile
+    if (Test-PodeEndpointByProtocolType -Type Http) {
+        Add-PodeRunspace -Type 'Web' -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    }
+    else {
+        Add-PodeRunspace -Type 'Signals' -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    }
 
     # browse to the first endpoint, if flagged
     if ($Browse) {

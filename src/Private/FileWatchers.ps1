@@ -54,14 +54,8 @@ function Start-PodeFileWatcherRunspace {
     $watchScript = {
         param(
             [Parameter(Mandatory = $true)]
-            $Watcher,
-
-            [Parameter(Mandatory = $true)]
-            [int]
-            $ThreadId
+            $Watcher
         )
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name "FileWatcher_$ThreadId"
 
         try {
             while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -135,7 +129,7 @@ function Start-PodeFileWatcherRunspace {
     }
 
     1..$PodeContext.Threads.Files | ForEach-Object {
-        Add-PodeRunspace -Type Files -ScriptBlock $watchScript -Parameters @{ 'Watcher' = $watcher; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type Files -Name 'Watcher' -Id $_ -ScriptBlock $watchScript -Parameters @{ 'Watcher' = $watcher }
     }
 
     # script to keep file watcher server alive until cancelled
@@ -144,8 +138,6 @@ function Start-PodeFileWatcherRunspace {
             [Parameter(Mandatory = $true)]
             $Watcher
         )
-        # Sets the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name 'FileWatcher_KeepAlive'
 
         try {
             while ($Watcher.IsConnected -and !$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
@@ -165,5 +157,5 @@ function Start-PodeFileWatcherRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Files -ScriptBlock $waitScript -Parameters @{ 'Watcher' = $watcher } -NoProfile
+    Add-PodeRunspace -Type Files -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Watcher' = $watcher } -NoProfile
 }

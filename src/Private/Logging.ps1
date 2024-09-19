@@ -376,9 +376,6 @@ function Start-PodeLoggingRunspace {
 
     $script = {
         try {
-            # Sets the name of the current runspace
-            Set-PodeCurrentRunspaceName -Name 'Logging'
-
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 try {
                     # if there are no logs to process, just sleep for a few seconds - but after checking the batch
@@ -455,7 +452,7 @@ function Start-PodeLoggingRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Main -ScriptBlock $script
+    Add-PodeRunspace -Type Main -Name 'Logging' -ScriptBlock $script
 }
 
 <#

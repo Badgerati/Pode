@@ -65,7 +65,7 @@ Describe 'Add-PodeSchedule' {
         $start = ([DateTime]::Now.AddHours(3))
         $end = ([DateTime]::Now.AddHours(5))
 
-        Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end -DisableRunspaceNaming
+        Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
 
         $schedule = $PodeContext.Schedules.Items['test']
         $schedule | Should -Not -Be $null
@@ -81,7 +81,7 @@ Describe 'Add-PodeSchedule' {
         $PodeContext = @{ 'Schedules' = @{ Items = @{} }; }
         $end = ([DateTime]::Now.AddHours(5))
 
-        Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -EndTime $end -DisableRunspaceNaming
+        Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -EndTime $end
 
         $schedule = $PodeContext.Schedules.Items['test']
         $schedule | Should -Not -Be $null
@@ -97,7 +97,7 @@ Describe 'Add-PodeSchedule' {
         $PodeContext = @{ 'Schedules' = @{ Items = @{} }; }
         $start = ([DateTime]::Now.AddHours(3))
 
-        Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start -DisableRunspaceNaming
+        Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -StartTime $start
 
         $schedule = $PodeContext.Schedules.Items['test']
         $schedule | Should -Not -Be $null
@@ -112,7 +112,7 @@ Describe 'Add-PodeSchedule' {
     It 'Adds new schedule with just a cron' {
         $PodeContext = @{ 'Schedules' = @{ Items = @{} }; }
 
-        Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' } -DisableRunspaceNaming
+        Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock { Write-Host 'hello' }
 
         $schedule = $PodeContext.Schedules.Items['test']
         $schedule | Should -Not -Be $null
@@ -129,7 +129,7 @@ Describe 'Add-PodeSchedule' {
         $start = ([DateTime]::Now.AddHours(3))
         $end = ([DateTime]::Now.AddHours(5))
 
-        Add-PodeSchedule -Name 'test' -Cron @('@minutely', '@hourly') -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end -DisableRunspaceNaming
+        Add-PodeSchedule -Name 'test' -Cron @('@minutely', '@hourly') -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end 
 
         $schedule = $PodeContext.Schedules.Items['test']
         $schedule | Should -Not -Be $null
@@ -318,7 +318,7 @@ Describe 'Clear-PodeSchedules' {
 Describe 'Edit-PodeSchedule' {
     It 'Adds a new schedule, then edits the cron' {
         $PodeContext = @{ 'Schedules' = @{ Items = @{} }; }
-        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello1' } -DisableRunspaceNaming
+        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello1' }
         $PodeContext.Schedules.Items['test1'].Crons.Length | Should -Be 1
         $PodeContext.Schedules.Items['test1'].Script.ToString() | Should -Be ({ Write-Host 'hello1' }).ToString()
 
@@ -329,7 +329,7 @@ Describe 'Edit-PodeSchedule' {
 
     It 'Adds a new schedule, then edits the script' {
         $PodeContext = @{ 'Schedules' = @{ Items = @{} }; }
-        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello1' } -DisableRunspaceNaming
+        Add-PodeSchedule -Name 'test1' -Cron '@hourly' -ScriptBlock { Write-Host 'hello1' }
         $PodeContext.Schedules.Items['test1'].Crons.Length | Should -Be 1
         $PodeContext.Schedules.Items['test1'].Script.ToString() | Should -Be ({ Write-Host 'hello1' }).ToString()
 
