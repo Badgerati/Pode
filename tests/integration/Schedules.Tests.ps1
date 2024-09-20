@@ -1,4 +1,5 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseUsingScopeModifierInNewRunspaces', '', Justification = 'Using ArgumentList')]
 param()
 
 Describe 'Schedules' {
@@ -22,7 +23,7 @@ Describe 'Schedules' {
 
                 Set-PodeState -Name 'test3' -Value @{eventList = @() }
 
-                Add-PodeSchedule -Name 'predefined' -Cron '* * * * *' -Limit 2 -ScriptBlock {
+                Add-PodeSchedule -Name 'TestEvents' -Cron '* * * * *' -Limit 2 -ScriptBlock {
                     param($Event, $Message1, $Message2)
                     Lock-PodeObject -ScriptBlock {
                         $test3 = (Get-PodeState -Name 'test3')
@@ -52,10 +53,11 @@ Describe 'Schedules' {
 
                 # adhoc invoke a schedule's logic
                 Add-PodeRoute -Method Post -Path '/eventlist/run' -ScriptBlock {
-                    Invoke-PodeSchedule -Name 'predefined' -ArgumentList @{
+                    Invoke-PodeSchedule -Name 'TestEvents' -ArgumentList @{
                         Message1 = 'Hello!'
                         Message2 = 'Bye!'
                     }
+                    Write-PodeJsonResponse -Value ( @{Result = 'ok' }  )
                 }
 
                 # test1
@@ -93,20 +95,22 @@ Describe 'Schedules' {
         Get-Job -Name 'Pode' | Remove-Job -Force
     }
 
-
-    It 'schedule updates state value - full cron' {
+    It 'Invoke schedule events' {
+        $result = Invoke-RestMethod -Uri "$($Endpoint)/eventlist/run" -Method post
+        $result.Result | Should -Be 'OK'
+    }
+    It 'Schedule updates state value - full cron' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/test1" -Method Get
         $result.Result | Should -Be 1337
     }
 
-    It 'schedule updates state value - short cron' {
+    It 'Schedule updates state value - short cron' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/test2" -Method Get
         $result.Result | Should -Be 314
     }
 
-    It 'schedule events' {
-        Invoke-RestMethod -Uri "$($Endpoint)/eventlist/run" -Method post
-        Start-Sleep 10
+    It 'Check schedule events result' {
+
         for ($i = 0; $i -lt 20; $i++) {
             $result = Invoke-RestMethod -Uri "$($Endpoint)/eventlist" -Method Get
             if ($result.ready) {
@@ -118,7 +122,7 @@ Describe 'Schedules' {
         $result.Count | Should -Be 2
         $result.eventList.GetType() | Should -Be 'System.Object[]'
         $result.eventList.Count | Should -Be 2
-        $result.eventList[0].Message1 | Should -Be "Hello!"
+        $result.eventList[0].Message1 | Should -Be 'Hello!'
         $result.eventList[0].Message2 | Should -Be 'Bye!'
         $result.eventList[0].Message | Should -Be 'Hello, world!'
         $result.eventList[0].Last | Should -BeNullOrEmpty
