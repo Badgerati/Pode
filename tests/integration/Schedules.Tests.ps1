@@ -18,6 +18,46 @@ Describe 'Schedules' {
                     Close-PodeServer
                 }
 
+                # schedule minutely using predefined cron
+
+                Set-PodeState -Name 'test3' -Value @{eventList = @() }
+
+                Add-PodeSchedule -Name 'predefined' -Cron '* * * * *' -Limit 2 -ScriptBlock {
+                    param($Event, $Message1, $Message2)
+                    Lock-PodeObject -ScriptBlock {
+                        $test3 = (Get-PodeState -Name 'test3')
+                        $test3.eventList += @{
+                            message    = 'Hello, world!'
+                            'Last'     = $Event.Sender.LastTriggerTime
+                            'Next'     = $Event.Sender.NextTriggerTime
+                            'Message1' = $Message1
+                            'Message2' = $Message2
+                        }
+                    }
+                }
+
+
+                Add-PodeRoute -Method Get -Path '/eventlist' -ScriptBlock {
+                    Lock-PodeObject -ScriptBlock {
+                        $test3 = (Get-PodeState -Name 'test3')
+                        if ($test3.eventList.Count -gt 1) {
+                            Write-PodeJsonResponse -Value  @{ ready = $true ; count = $test3.eventList.Count; eventList = $test3.eventList }
+                        }
+                        else {
+                            Write-PodeJsonResponse -Value  @{ ready = $false ; count = $test3.eventList.Count; }
+                        }
+                    }
+                }
+
+
+                # adhoc invoke a schedule's logic
+                Add-PodeRoute -Method Post -Path '/eventlist/run' -ScriptBlock {
+                    Invoke-PodeSchedule -Name 'predefined' -ArgumentList @{
+                        Message1 = 'Hello!'
+                        Message2 = 'Bye!'
+                    }
+                }
+
                 # test1
                 Set-PodeState -Name 'Test1' -Value 0
                 Add-PodeSchedule -Name 'Test1' -Cron '* * * * *' -ScriptBlock {
@@ -63,4 +103,32 @@ Describe 'Schedules' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/test2" -Method Get
         $result.Result | Should -Be 314
     }
+
+    It 'schedule events' {
+        Invoke-RestMethod -Uri "$($Endpoint)/eventlist/run" -Method post
+        Start-Sleep 10
+        for ($i = 0; $i -lt 20; $i++) {
+            $result = Invoke-RestMethod -Uri "$($Endpoint)/eventlist" -Method Get
+            if ($result.ready) {
+                break
+            }
+            Start-Sleep -Seconds 10
+        }
+        $result.ready | Should -BeTrue
+        $result.Count | Should -Be 2
+        $result.eventList.GetType() | Should -Be 'System.Object[]'
+        $result.eventList.Count | Should -Be 2
+        $result.eventList[0].Message1 | Should -Be "Hello!"
+        $result.eventList[0].Message2 | Should -Be 'Bye!'
+        $result.eventList[0].Message | Should -Be 'Hello, world!'
+        $result.eventList[0].Last | Should -BeNullOrEmpty
+        $result.eventList[0].next | Should -not -BeNullOrEmpty
+
+        $result.eventList[1].Message1 | Should -BeNullOrEmpty
+        $result.eventList[1].Message2 | Should -BeNullOrEmpty
+        $result.eventList[1].Message | Should -Be 'Hello, world!'
+        $result.eventList[1].Last | Should -not -BeNullOrEmpty
+        $result.eventList[1].next | Should -not -BeNullOrEmpty
+    }
+
 }
