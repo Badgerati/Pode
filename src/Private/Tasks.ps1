@@ -126,7 +126,7 @@ function Invoke-PodeInternalTask {
 
         # start the task runspace
         $scriptblock = Get-PodeTaskScriptBlock
-        $runspace = Add-PodeRunspace -Type Tasks -ScriptBlock $scriptblock -Parameters $parameters -OutputStream $result -PassThru
+        $runspace = Add-PodeRunspace -Type Tasks -Name $Task.Name -ScriptBlock $scriptblock -Parameters $parameters -OutputStream $result -PassThru
 
         # add runspace to process
         $PodeContext.Tasks.Processes[$processId].Runspace = $runspace
