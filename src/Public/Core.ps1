@@ -130,6 +130,10 @@ function Start-PodeServer {
         [switch]
         $EnableBreakpoints
     )
+    # Store the name of the current runspace
+    $previousRunspaceName = Get-PodeCurrentRunspaceName
+    # Sets the name of the current runspace
+    Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
     # ensure the session is clean
     $PodeContext = $null
@@ -235,6 +239,9 @@ function Start-PodeServer {
 
         # clean the session
         $PodeContext = $null
+
+        # Restore the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name $previousRunspaceName
     }
 }
 
