@@ -142,9 +142,9 @@ function Start-PodeServer {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }    # Store the name of the current runspace
-    $previousRunspaceName = Get-PodeCurrentRunspaceName
-    # Sets the name of the current runspace
-    Set-PodeCurrentRunspaceName -Name 'PodeServer'
+        $previousRunspaceName = Get-PodeCurrentRunspaceName
+        # Sets the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
         # ensure the session is clean
         $PodeContext = $null
@@ -248,11 +248,12 @@ function Start-PodeServer {
             # clean the runspaces and tokens
             Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
 
-        # clean the session
-        $PodeContext = $null
+            # clean the session
+            $PodeContext = $null
 
-        # Restore the name of the current runspace
-        Set-PodeCurrentRunspaceName -Name $previousRunspaceName
+            # Restore the name of the current runspace
+            Set-PodeCurrentRunspaceName -Name $previousRunspaceName
+        }
     }
 }
 
