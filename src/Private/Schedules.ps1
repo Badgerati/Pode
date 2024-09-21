@@ -13,13 +13,13 @@ function Test-PodeSchedulesExist {
     return (($null -ne $PodeContext.Schedules) -and (($PodeContext.Schedules.Enabled) -or ($PodeContext.Schedules.Items.Count -gt 0)))
 }
 function Start-PodeScheduleRunspace {
+
     if (!(Test-PodeSchedulesExist)) {
         return
     }
 
     Add-PodeTimer -Name '__pode_schedule_housekeeper__' -Interval 30 -ScriptBlock {
         try {
-
             if ($PodeContext.Schedules.Processes.Count -eq 0) {
                 return
             }
@@ -106,7 +106,7 @@ function Start-PodeScheduleRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Main -Name 'ScheduleHouseKeeper' -ScriptBlock $script -NoProfile
+    Add-PodeRunspace -Type Main -Name 'Schedules' -ScriptBlock $script -NoProfile
 }
 
 function Close-PodeScheduleInternal {

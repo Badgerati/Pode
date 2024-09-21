@@ -177,9 +177,9 @@ The steps to attach to the Pode process are as follows:
 
 
 
-## Customizing and Managing Runspace Names in Pode
+## Managing Runspace Names
 
-### Distinguishing Runspace Names in Pode
+### Internal Runspace Naming
 
 In Pode, internal runspaces are automatically assigned distinct names. This built-in naming convention is crucial for identifying and managing runspaces efficiently, particularly during debugging or when monitoring multiple concurrent processes.
 
@@ -209,7 +209,7 @@ Set-PodeCurrentRunspaceName -Name 'Custom Runspace Name'
 
 This cmdlet sets a custom name for the runspace, making it easier to track during execution.
 
-### Example
+#### Example
 
 Here’s an example that demonstrates how to set a custom runspace name in a Pode task:
 
@@ -235,7 +235,7 @@ Get-PodeCurrentRunspaceName
 
 This cmdlet returns the name of the current runspace, allowing for easier tracking and management in complex scenarios with multiple concurrent runspaces.
 
-### Example
+#### Example
 
 Here’s an example that uses `Get-PodeCurrentRunspaceName` to output the runspace name during the execution of a schedule:
 

@@ -108,7 +108,11 @@ function Start-PodeWebServer {
         $listenScript = {
             param(
                 [Parameter(Mandatory = $true)]
-                $Listener
+                $Listener,
+
+                [Parameter(Mandatory = $true)]
+                [int]
+                $ThreadId
             )
 
             try {
@@ -276,7 +280,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Web -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener }
+            Add-PodeRunspace -Type Web -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
     }
 
@@ -360,7 +364,11 @@ function Start-PodeWebServer {
         $clientScript = {
             param(
                 [Parameter(Mandatory = $true)]
-                $Listener
+                $Listener,
+
+                [Parameter(Mandatory = $true)]
+                [int]
+                $ThreadId
             )
 
             try {
@@ -430,7 +438,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Signals -Name 'Broadcaster' -Id $_ -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener }
+            Add-PodeRunspace -Type Signals -Name 'Broadcaster' -Id $_ -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
     }
 

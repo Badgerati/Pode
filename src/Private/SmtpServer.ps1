@@ -82,7 +82,11 @@ function Start-PodeSmtpServer {
         param(
             [Parameter(Mandatory = $true)]
             [ValidateNotNull()]
-            $Listener
+            $Listener,
+
+            [Parameter(Mandatory = $true)]
+            [int]
+            $ThreadId
         )
 
         try {
@@ -173,7 +177,7 @@ function Start-PodeSmtpServer {
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.General | ForEach-Object {
-        Add-PodeRunspace -Type Smtp -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener }
+        Add-PodeRunspace -Type Smtp -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep smtp server listening until cancelled

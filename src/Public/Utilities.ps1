@@ -1363,7 +1363,6 @@ function ConvertFrom-PodeXml {
         }
     }
     return $oHash
-
 }
 
 <#
