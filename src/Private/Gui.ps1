@@ -136,5 +136,5 @@ function Start-PodeGuiRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Gui -ScriptBlock $script
+    Add-PodeRunspace -Type Gui -Name 'Watcher' -ScriptBlock $script
 }

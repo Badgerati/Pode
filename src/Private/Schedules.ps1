@@ -12,8 +12,8 @@ function Find-PodeSchedule {
 function Test-PodeSchedulesExist {
     return (($null -ne $PodeContext.Schedules) -and (($PodeContext.Schedules.Enabled) -or ($PodeContext.Schedules.Items.Count -gt 0)))
 }
-
 function Start-PodeScheduleRunspace {
+
     if (!(Test-PodeSchedulesExist)) {
         return
     }
@@ -49,6 +49,7 @@ function Start-PodeScheduleRunspace {
 
     $script = {
         try {
+
             # select the schedules that trigger on-start
             $_now = [DateTime]::Now
 
@@ -105,7 +106,7 @@ function Start-PodeScheduleRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Main -ScriptBlock $script -NoProfile
+    Add-PodeRunspace -Type Main -Name 'Schedules' -ScriptBlock $script -NoProfile
 }
 
 function Close-PodeScheduleInternal {
@@ -229,7 +230,6 @@ function Invoke-PodeInternalScheduleLogic {
         if (($Schedule.Timeout.From -ieq 'Create') -and ($Schedule.Timeout.Value -ge 0)) {
             $expireTime = $createTime.AddSeconds($Schedule.Timeout.Value)
         }
-
         # add the schedule process
         $PodeContext.Schedules.Processes[$processId] = @{
             ID         = $processId
@@ -244,8 +244,7 @@ function Invoke-PodeInternalScheduleLogic {
 
         # start the schedule runspace
         $scriptblock = Get-PodeScheduleScriptBlock
-        $runspace = Add-PodeRunspace -Type Schedules -ScriptBlock $scriptblock -Parameters $parameters -PassThru
-
+        $runspace = Add-PodeRunspace -Type Schedules -Name $Schedule.Name -ScriptBlock $scriptblock -Parameters $parameters -PassThru
         # add runspace to process
         $PodeContext.Schedules.Processes[$processId].Runspace = $runspace
     }
