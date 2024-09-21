@@ -452,7 +452,7 @@ function Start-PodeLoggingRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Main -ScriptBlock $script
+    Add-PodeRunspace -Type Main -Name 'Logging' -ScriptBlock $script
 }
 
 <#

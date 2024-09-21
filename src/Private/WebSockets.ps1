@@ -39,7 +39,7 @@ function Start-PodeWebSocketRunspace {
         return
     }
 
-    # script for listening out of for incoming requests
+    # script for listening out of for incoming requests (Receiver)
     $receiveScript = {
         param(
             [Parameter(Mandatory = $true)]
@@ -107,7 +107,7 @@ function Start-PodeWebSocketRunspace {
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.WebSockets | ForEach-Object {
-        Add-PodeRunspace -Type WebSockets -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type WebSockets -Name 'Receiver' -Id $_ -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver; 'ThreadId' = $_ }
     }
 
     # script to keep websocket server receiving until cancelled
@@ -136,5 +136,5 @@ function Start-PodeWebSocketRunspace {
         }
     }
 
-    Add-PodeRunspace -Type WebSockets -ScriptBlock $waitScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver } -NoProfile
+    Add-PodeRunspace -Type WebSockets -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver } -NoProfile
 }

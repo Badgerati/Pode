@@ -146,6 +146,8 @@
         'Get-PodePathParameter',
         'ConvertFrom-PodeSerializedString',
         'ConvertTo-PodeSerializedString',
+        'Get-PodeCurrentRunspaceName',
+        'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',
 
         # routes
