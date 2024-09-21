@@ -74,7 +74,7 @@ Describe 'Add-PodeTimer' {
 
     It 'Adds new timer to session with no limit' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
+        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1 
 
         $timer = $PodeContext.Timers.Items['test']
         $timer | Should -Not -Be $null

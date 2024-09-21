@@ -1,33 +1,33 @@
 <#
 .SYNOPSIS
-Adds a new Task.
+    Adds a new Task.
 
 .DESCRIPTION
-Adds a new Task, which can be asynchronously or synchronously invoked.
+    Adds a new Task, which can be asynchronously or synchronously invoked.
 
 .PARAMETER Name
-The Name of the Task.
+    The Name of the Task.
 
 .PARAMETER ScriptBlock
-The script for the Task.
+    The script for the Task.
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Task's logic.
+    A literal, or relative, path to a file containing a ScriptBlock for the Task's logic.
 
 .PARAMETER ArgumentList
-A hashtable of arguments to supply to the Task's ScriptBlock.
+    A hashtable of arguments to supply to the Task's ScriptBlock.
 
 .PARAMETER Timeout
-A Timeout, in seconds, to abort running the Task process. (Default: -1 [never timeout])
+    A Timeout, in seconds, to abort running the Task process. (Default: -1 [never timeout])
 
 .PARAMETER TimeoutFrom
-Where to start the Timeout from, either 'Create', 'Start'. (Default: 'Create')
+    Where to start the Timeout from, either 'Create', 'Start'. (Default: 'Create')
 
 .EXAMPLE
-Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
+    Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
 
 .EXAMPLE
-Add-PodeTask -Name 'Example1' -ScriptBlock { return Get-SomeObject }
+    Add-PodeTask -Name 'Example1' -ScriptBlock { return Get-SomeObject }
 #>
 function Add-PodeTask {
     [CmdletBinding(DefaultParameterSetName = 'Script')]

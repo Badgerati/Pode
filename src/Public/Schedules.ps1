@@ -1,54 +1,54 @@
 <#
 .SYNOPSIS
-Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
+    Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
 
 .DESCRIPTION
-Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
+    Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
 
 .PARAMETER Name
-The Name of the Schedule.
+    The Name of the Schedule.
 
 .PARAMETER Cron
-One, or an Array, of Cron Expressions to define when the Schedule should trigger.
+    One, or an Array, of Cron Expressions to define when the Schedule should trigger.
 
 .PARAMETER ScriptBlock
-The script defining the Schedule's logic.
+    The script defining the Schedule's logic.
 
 .PARAMETER Limit
-The number of times the Schedule should trigger before being removed.
+    The number of times the Schedule should trigger before being removed.
 
 .PARAMETER StartTime
-A DateTime for when the Schedule should start triggering.
+    A DateTime for when the Schedule should start triggering.
 
 .PARAMETER EndTime
-A DateTime for when the Schedule should stop triggering, and be removed.
+    A DateTime for when the Schedule should stop triggering, and be removed.
 
 .PARAMETER ArgumentList
-A hashtable of arguments to supply to the Schedule's ScriptBlock.
+    A hashtable of arguments to supply to the Schedule's ScriptBlock.
 
 .PARAMETER Timeout
-An optional timeout, in seconds, for the Schedule's logic. (Default: -1 [never timeout])
+    An optional timeout, in seconds, for the Schedule's logic. (Default: -1 [never timeout])
 
 .PARAMETER TimeoutFrom
-An optional timeout from either 'Create' or 'Start'. (Default: 'Create')
+    An optional timeout from either 'Create' or 'Start'. (Default: 'Create')
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Schedule's logic.
+    A literal, or relative, path to a file containing a ScriptBlock for the Schedule's logic.
 
 .PARAMETER OnStart
-If supplied, the schedule will trigger when the server starts, regardless if the cron-expression matches the current time.
+    If supplied, the schedule will trigger when the server starts, regardless if the cron-expression matches the current time.
 
 .EXAMPLE
-Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logic */ }
+    Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeSchedule -Name 'RunEveryTuesday' -Cron '0 0 * * TUE' -ScriptBlock { /* logic */ }
+    Add-PodeSchedule -Name 'RunEveryTuesday' -Cron '0 0 * * TUE' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeSchedule -Name 'StartAfter2days' -Cron '@hourly' -StartTime [DateTime]::Now.AddDays(2) -ScriptBlock { /* logic */ }
+    Add-PodeSchedule -Name 'StartAfter2days' -Cron '@hourly' -StartTime [DateTime]::Now.AddDays(2) -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeSchedule -Name 'Args' -Cron '@minutely' -ScriptBlock { /* logic */ } -ArgumentList @{ Arg1 = 'value' }
+    Add-PodeSchedule -Name 'Args' -Cron '@minutely' -ScriptBlock { /* logic */ } -ArgumentList @{ Arg1 = 'value' }
 #>
 function Add-PodeSchedule {
     [CmdletBinding(DefaultParameterSetName = 'Script')]

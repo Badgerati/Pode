@@ -130,6 +130,10 @@ function Start-PodeServer {
         [switch]
         $EnableBreakpoints
     )
+    # Store the name of the current runspace
+    $previousRunspaceName = Get-PodeCurrentRunspaceName
+    # Sets the name of the current runspace
+    Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
     # Record the operation on the trace log
     Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
@@ -241,6 +245,9 @@ function Start-PodeServer {
 
         # clean the session
         $PodeContext = $null
+
+        # Restore the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name $previousRunspaceName
     }
 }
 
