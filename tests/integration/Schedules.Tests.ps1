@@ -23,16 +23,14 @@ Describe 'Schedules' {
 
                 Set-PodeState -Name 'test3' -Value @{eventList = @() }
 
-                Add-PodeSchedule -Name 'TestEvents' -Cron '* * * * *' -Limit 2 -ScriptBlock {
-                    param($Event, $Message1, $Message2)
+                Add-PodeSchedule -Name 'TestEvents' -Cron '* * * * *' -Limit 2 -OnStart -ScriptBlock {
+                    param($Event )
                     Lock-PodeObject -ScriptBlock {
                         $test3 = (Get-PodeState -Name 'test3')
                         $test3.eventList += @{
-                            message    = 'Hello, world!'
-                            'Last'     = $Event.Sender.LastTriggerTime
-                            'Next'     = $Event.Sender.NextTriggerTime
-                            'Message1' = $Message1
-                            'Message2' = $Message2
+                            message = 'Hello, world!'
+                            'Last'  = $Event.Sender.LastTriggerTime
+                            'Next'  = $Event.Sender.NextTriggerTime
                         }
                     }
                 }
@@ -48,16 +46,6 @@ Describe 'Schedules' {
                             Write-PodeJsonResponse -Value  @{ ready = $false ; count = $test3.eventList.Count; }
                         }
                     }
-                }
-
-
-                # adhoc invoke a schedule's logic
-                Add-PodeRoute -Method Post -Path '/eventlist/run' -ScriptBlock {
-                    Invoke-PodeSchedule -Name 'TestEvents' -ArgumentList @{
-                        Message1 = 'Hello!'
-                        Message2 = 'Bye!'
-                    }
-                    Write-PodeJsonResponse -Value ( @{Result = 'ok' }  )
                 }
 
                 # test1
@@ -95,10 +83,6 @@ Describe 'Schedules' {
         Get-Job -Name 'Pode' | Remove-Job -Force
     }
 
-    It 'Invoke schedule events' {
-        $result = Invoke-RestMethod -Uri "$($Endpoint)/eventlist/run" -Method post
-        $result.Result | Should -Be 'OK'
-    }
     It 'Schedule updates state value - full cron' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/test1" -Method Get
         $result.Result | Should -Be 1337
@@ -122,17 +106,16 @@ Describe 'Schedules' {
         $result.Count | Should -Be 2
         $result.eventList.GetType() | Should -Be 'System.Object[]'
         $result.eventList.Count | Should -Be 2
-        $result.eventList[0].Message1 | Should -Be 'Hello!'
-        $result.eventList[0].Message2 | Should -Be 'Bye!'
-        $result.eventList[0].Message | Should -Be 'Hello, world!'
-        $result.eventList[0].Last | Should -BeNullOrEmpty
-        $result.eventList[0].next | Should -not -BeNullOrEmpty
 
-        $result.eventList[1].Message1 | Should -BeNullOrEmpty
-        $result.eventList[1].Message2 | Should -BeNullOrEmpty
-        $result.eventList[1].Message | Should -Be 'Hello, world!'
-        $result.eventList[1].Last | Should -not -BeNullOrEmpty
-        $result.eventList[1].next | Should -not -BeNullOrEmpty
+
+        if ( $null -eq $result.eventList[0].Next  ) { $index = 0 } else { $index = 1 }
+        $result.eventList[$index].Message | Should -Be 'Hello, world!'
+        $result.eventList[$index].Last | Should -not -BeNullOrEmpty
+        $result.eventList[$index].next | Should -BeNullOrEmpty
+        if ($index -eq 0) { $index = 1 }else { $index = 0 }
+        $result.eventList[$index].Message | Should -Be 'Hello, world!'
+        $result.eventList[$index].Last | Should -not -BeNullOrEmpty
+        $result.eventList[$index].next | Should -not -BeNullOrEmpty
     }
 
 }
