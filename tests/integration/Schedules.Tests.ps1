@@ -122,17 +122,18 @@ Describe 'Schedules' {
         $result.Count | Should -Be 2
         $result.eventList.GetType() | Should -Be 'System.Object[]'
         $result.eventList.Count | Should -Be 2
-        $result.eventList[0].Message1 | Should -Be 'Hello!'
-        $result.eventList[0].Message2 | Should -Be 'Bye!'
-        $result.eventList[0].Message | Should -Be 'Hello, world!'
-        $result.eventList[0].Last | Should -BeNullOrEmpty
-        $result.eventList[0].next | Should -not -BeNullOrEmpty
-
-        $result.eventList[1].Message1 | Should -BeNullOrEmpty
-        $result.eventList[1].Message2 | Should -BeNullOrEmpty
-        $result.eventList[1].Message | Should -Be 'Hello, world!'
-        $result.eventList[1].Last | Should -not -BeNullOrEmpty
-        $result.eventList[1].next | Should -not -BeNullOrEmpty
+        if ( $result.eventList[0].Message1 -eq 'Hello!' ) { $index = 0 } else { $index = 1 }
+        $result.eventList[$index].Message1 | Should -Be 'Hello!'
+        $result.eventList[$index].Message2 | Should -Be 'Bye!'
+        $result.eventList[$index].Message | Should -Be 'Hello, world!'
+        $result.eventList[$index].Last | Should -BeNullOrEmpty
+        $result.eventList[$index].next | Should -not -BeNullOrEmpty
+        if ($index -eq 0) { $index = 1 }else { $index = 0 }
+        $result.eventList[$index].Message1 | Should -BeNullOrEmpty
+        $result.eventList[$index].Message2 | Should -BeNullOrEmpty
+        $result.eventList[$index].Message | Should -Be 'Hello, world!'
+        $result.eventList[$index].Last | Should -not -BeNullOrEmpty
+        $result.eventList[$index].next | Should -not -BeNullOrEmpty
     }
 
 }
