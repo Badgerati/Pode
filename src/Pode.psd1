@@ -143,6 +143,8 @@
         'Get-PodeDefaultFolder',
         'ConvertTo-PodeYaml',
         'ConvertFrom-PodeYaml',
+        'Get-PodeCurrentRunspaceName',
+        'Set-PodeCurrentRunspaceName',
         'Invoke-PodeGC',
 
         # routes

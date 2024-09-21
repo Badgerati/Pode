@@ -129,7 +129,7 @@ Describe 'Add-PodeSchedule' {
         $start = ([DateTime]::Now.AddHours(3))
         $end = ([DateTime]::Now.AddHours(5))
 
-        Add-PodeSchedule -Name 'test' -Cron @('@minutely', '@hourly') -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+        Add-PodeSchedule -Name 'test' -Cron @('@minutely', '@hourly') -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end 
 
         $schedule = $PodeContext.Schedules.Items['test']
         $schedule | Should -Not -Be $null
