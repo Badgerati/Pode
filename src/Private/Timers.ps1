@@ -20,6 +20,7 @@ function Start-PodeTimerRunspace {
 
     $script = {
         try {
+
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 try {
                     $_now = [DateTime]::Now
@@ -79,7 +80,7 @@ function Start-PodeTimerRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Timers -ScriptBlock $script
+    Add-PodeRunspace -Type Timers -Name "Scheduler" -ScriptBlock $script
 }
 
 function Invoke-PodeInternalTimer {

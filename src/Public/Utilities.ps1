@@ -1372,7 +1372,6 @@ function ConvertFrom-PodeXml {
             $oHash.$childname += (ConvertFrom-PodeXml $child)
         }
     }
-
     return $oHash
 }
 
