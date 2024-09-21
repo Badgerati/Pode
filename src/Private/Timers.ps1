@@ -19,50 +19,71 @@ function Start-PodeTimerRunspace {
     }
 
     $script = {
-        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-            $_now = [DateTime]::Now
+        try {
 
-            # only run timers that haven't completed, and have a next trigger in the past
-            $PodeContext.Timers.Items.Values | Where-Object {
-                !$_.Completed -and ($_.OnStart -or ($_.NextTriggerTime -le $_now))
-            } | ForEach-Object {
-                $_.OnStart = $false
-                $_.Count++
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                try {
+                    $_now = [DateTime]::Now
 
-                # set last trigger to current next trigger
-                if ($null -ne $_.NextTriggerTime) {
-                    $_.LastTriggerTime = $_.NextTriggerTime
-                }
-                else {
-                    $_.LastTriggerTime = [datetime]::Now
-                }
+                    # only run timers that haven't completed, and have a next trigger in the past
+                    foreach ($timer in $PodeContext.Timers.Items.Values) {
+                        if ($timer.Completed -or (!$timer.OnStart -and ($timer.NextTriggerTime -gt $_now))) {
+                            continue
+                        }
 
-                # has the timer completed?
-                if (($_.Limit -gt 0) -and ($_.Count -ge $_.Limit)) {
-                    $_.Completed = $true
-                }
+                        try {
+                            $timer.OnStart = $false
+                            $timer.Count++
 
-                # next trigger
-                if (!$_.Completed) {
-                    $_.NextTriggerTime = $_now.AddSeconds($_.Interval)
-                }
-                else {
-                    $_.NextTriggerTime = $null
-                }
+                            # set last trigger to current next trigger
+                            if ($null -ne $timer.NextTriggerTime) {
+                                $timer.LastTriggerTime = $timer.NextTriggerTime
+                            }
+                            else {
+                                $timer.LastTriggerTime = $_now
+                            }
 
-                # run the timer
-                Invoke-PodeInternalTimer -Timer $_
+                            # has the timer completed?
+                            if (($timer.Limit -gt 0) -and ($timer.Count -ge $timer.Limit)) {
+                                $timer.Completed = $true
+                            }
+
+                            # next trigger
+                            if (!$timer.Completed) {
+                                $timer.NextTriggerTime = $_now.AddSeconds($timer.Interval)
+                            }
+                            else {
+                                $timer.NextTriggerTime = $null
+                            }
+
+                            # run the timer
+                            Invoke-PodeInternalTimer -Timer $timer
+                        }
+                        catch {
+                            $_ | Write-PodeErrorLog
+                        }
+                    }
+
+                    Start-Sleep -Seconds 1
+                }
+                catch {
+                    $_ | Write-PodeErrorLog
+                }
             }
-
-            Start-Sleep -Seconds 1
+        }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
         }
     }
 
-    Add-PodeRunspace -Type Main -ScriptBlock $script
+    Add-PodeRunspace -Type Timers -Name "Scheduler" -ScriptBlock $script
 }
 
 function Invoke-PodeInternalTimer {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
     param(
         [Parameter(Mandatory = $true)]
@@ -74,10 +95,11 @@ function Invoke-PodeInternalTimer {
     )
 
     try {
-        $global:TimerEvent = @{
-            Lockable = $PodeContext.Threading.Lockables.Global
-            Sender   = $Timer
-            Metadata = @{}
+        $TimerEvent = @{
+            Lockable  = $PodeContext.Threading.Lockables.Global
+            Sender    = $Timer
+            Timestamp = [DateTime]::UtcNow
+            Metadata  = @{}
         }
 
         # add main timer args
@@ -92,9 +114,12 @@ function Invoke-PodeInternalTimer {
         }
 
         # invoke timer
-        $null = Invoke-PodeScriptBlock -ScriptBlock $Timer.Script -Arguments $_args -UsingVariables $Timer.UsingVariables -Scoped -Splat
+        Invoke-PodeScriptBlock -ScriptBlock $Timer.Script.GetNewClosure() -Arguments $_args -UsingVariables $Timer.UsingVariables -Scoped -Splat -NoNewClosure
     }
     catch {
         $_ | Write-PodeErrorLog
+    }
+    finally {
+        Invoke-PodeGC
     }
 }
