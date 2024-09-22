@@ -126,7 +126,6 @@ function New-PodeContext {
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Threading -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
@@ -853,7 +852,6 @@ function New-PodeStateContext {
             Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
             Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
             Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
-            Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
             Add-Member -MemberType NoteProperty -Name Threading -Value $Context.Threading -PassThru |
             Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
 }
