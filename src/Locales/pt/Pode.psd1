@@ -291,4 +291,5 @@
     scheduleProcessDoesNotExistExceptionMessage                       = "O processo do cronograma '{0}' não existe."
     definitionTagChangeNotAllowedExceptionMessage                     = 'A Tag de definição para uma Route não pode ser alterada.'
     getRequestBodyNotAllowedExceptionMessage                          = 'As operações {0} não podem ter um corpo de solicitação.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'
 }

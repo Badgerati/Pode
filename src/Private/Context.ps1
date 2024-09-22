@@ -117,7 +117,7 @@ function New-PodeContext {
     }
 
     # basic context object
-    $ctx = New-Object -TypeName psobject |
+    $ctx =  [PSCustomObject]::new() |
         Add-Member -MemberType NoteProperty -Name Threads -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
@@ -126,6 +126,7 @@ function New-PodeContext {
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Threading -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
@@ -331,7 +332,7 @@ function New-PodeContext {
     $ctx.Server.EndpointsMap = @{}
 
     # general encoding for the server
-    $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
+    $ctx.Server.Encoding = [System.Text.UTF8Encoding]::new()
 
     # setup gui details
     $ctx.Server.Gui = @{}
@@ -458,8 +459,8 @@ function New-PodeContext {
 
     # create new cancellation tokens
     $ctx.Tokens = @{
-        Cancellation = New-Object System.Threading.CancellationTokenSource
-        Restart      = New-Object System.Threading.CancellationTokenSource
+        Cancellation = [System.Threading.CancellationTokenSource]::new()
+        Restart      = [System.Threading.CancellationTokenSource]::new()
     }
 
     # middleware that needs to run
@@ -548,10 +549,10 @@ function New-PodeRunspaceState {
     $session = New-PodeStateContext -Context $PodeContext
 
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeLocale', $PodeLocale, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $session, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PODE_SCOPE_RUNSPACE', $true, $null)
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeLocale', $PodeLocale, $null),
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeContext', $session, $null),
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('Console', $Host, $null),
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PODE_SCOPE_RUNSPACE', $true, $null)
     )
 
     foreach ($var in $variables) {
@@ -843,7 +844,7 @@ function New-PodeStateContext {
         $Context
     )
 
-    return (New-Object -TypeName psobject |
+    return ([PSCustomObject]::new() |
             Add-Member -MemberType NoteProperty -Name Threads -Value $Context.Threads -PassThru |
             Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
             Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
@@ -852,6 +853,7 @@ function New-PodeStateContext {
             Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
             Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
             Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
+            Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
             Add-Member -MemberType NoteProperty -Name Threading -Value $Context.Threading -PassThru |
             Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
 }

@@ -341,10 +341,10 @@ function Restart-PodeInternalServer {
 
         # recreate the session tokens
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        $PodeContext.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource
+        $PodeContext.Tokens.Cancellation = [System.Threading.CancellationTokenSource]::new()
 
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-        $PodeContext.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
+        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext

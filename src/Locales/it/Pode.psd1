@@ -291,4 +291,5 @@
     scheduleProcessDoesNotExistExceptionMessage                       = "Il processo della programma '{0}' non esiste."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Il tag di definizione per una Route non può essere cambiato.'
     getRequestBodyNotAllowedExceptionMessage                          = 'Le operazioni {0} non possono avere un corpo della richiesta.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'La compressione dello stream non è supportata per la codifica {0}'
 }

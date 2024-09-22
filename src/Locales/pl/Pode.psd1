@@ -291,4 +291,5 @@
     scheduleProcessDoesNotExistExceptionMessage                       = "Proces harmonogramu '{0}' nie istnieje."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Tag definicji dla Route nie może zostać zmieniony.'
     getRequestBodyNotAllowedExceptionMessage                          = 'Operacje {0} nie mogą mieć treści żądania.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
 }
