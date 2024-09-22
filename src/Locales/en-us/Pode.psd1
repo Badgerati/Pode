@@ -153,7 +153,6 @@
     parameterNotSuppliedInRequestExceptionMessage                     = "A parameter called '{0}' was not supplied in the request or has no data available."
     cacheStorageNotFoundForSetExceptionMessage                        = "Cache storage with name '{0}' not found when attempting to set cached item '{1}'"
     methodPathAlreadyDefinedExceptionMessage                          = '[{0}] {1}: Already defined.'
-    errorLoggingAlreadyEnabledExceptionMessage                        = 'Error Logging has already been enabled.'
     valueForUsingVariableNotFoundExceptionMessage                     = "Value for '`$using:{0}' could not be found."
     rapidPdfDoesNotSupportOpenApi31ExceptionMessage                   = "The Document tool RapidPdf doesn't support OpenAPI 3.1"
     oauth2ClientSecretRequiredExceptionMessage                        = 'OAuth2 requires a Client Secret when not using PKCE.'
@@ -281,10 +280,13 @@
     invalidSchemeForAuthValidatorExceptionMessage                     = "The supplied '{0}' Scheme for the '{1}' authentication validator requires a valid ScriptBlock."
     sseFailedToBroadcastExceptionMessage                              = 'SSE failed to broadcast due to defined SSE broadcast level for {0}: {1}'
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory module only available on Windows OS.'
-    requestLoggingAlreadyEnabledExceptionMessage                      = 'Request Logging has already been enabled.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI definition named {0} already exists.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
+    loggingAlreadyEnabledExceptionMessage                             = "Logging '{0}' has already been enabled."
+    invalidEncodingExceptionMessage                                   = 'Invalid encoding: {0}'
+    syslogProtocolExceptionMessage                                    = 'The Syslog protocol can use only RFC3164 or RFC5424.'
     taskProcessDoesNotExistExceptionMessage                           = 'Task process does not exist: {0}'
     scheduleProcessDoesNotExistExceptionMessage                       = 'Schedule process does not exist: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
