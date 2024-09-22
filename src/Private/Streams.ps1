@@ -125,7 +125,7 @@ function ConvertFrom-PodeValueToByteArray {
 
     # Initialize a buffer to read data in chunks
     $buffer = [byte[]]::new(64 * 1024)
-    $ms = New-Object -TypeName System.IO.MemoryStream
+    $ms = [System.IO.MemoryStream]::new()
     $read = 0
 
     # Read data from the stream and write it to the memory stream
@@ -289,4 +289,38 @@ function Remove-PodeNewLineBytesFromArray {
     }
 
     return $Bytes[0..$length]
+}
+
+function Get-PodeCompressionStream {
+    param (
+        [Parameter(Mandatory = $true)]
+        [System.IO.Stream]
+        $InputStream,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('gzip', 'deflate')]
+        [string]
+        $Encoding,
+
+        [Parameter(Mandatory = $true)]
+        [System.IO.Compression.CompressionMode]
+        $Mode
+    )
+
+    $leaveOpen = $Mode -eq [System.IO.Compression.CompressionMode]::Compress
+
+    switch ($Encoding.ToLower()) {
+        'gzip' {
+            return [System.IO.Compression.GZipStream]::new($InputStream, $Mode, $leaveOpen)
+        }
+
+        'deflate' {
+            return [System.IO.Compression.DeflateStream]::new($InputStream, $Mode, $leaveOpen)
+        }
+
+        default {
+            #TODO: localize
+            throw "Unsupported encoding: $Encoding"
+        }
+    }
 }

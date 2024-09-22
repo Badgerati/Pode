@@ -22,7 +22,7 @@ function Start-PodeAzFuncServer {
             $request = $Data.Request
 
             # setup the response
-            $response = New-Object -TypeName HttpResponseContext
+            $response = [HttpResponseContext]::new()
             $response.StatusCode = 200
             $response.Headers = @{}
 

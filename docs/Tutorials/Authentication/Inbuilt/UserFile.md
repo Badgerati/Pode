@@ -20,14 +20,14 @@ The default users file is `./users.json` at the root of the server. You can supp
 
 The users file is a JSON array of user objects, each user object must contain the following (metadata is optional):
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| Username | string | The user's username |
-| Name | string | The user's fullname |
-| Email | string | The user's email address |
-| Password | string | Either a SHA256 or an HMAC SHA256 of the user's password |
-| Groups | string[] | An array of groups which the the user is a member |
-| Metadata | psobject | Custom metadata for the user |
+| Name     | Type     | Description                                              |
+| -------- | -------- | -------------------------------------------------------- |
+| Username | string   | The user's username                                      |
+| Name     | string   | The user's fullname                                      |
+| Email    | string   | The user's email address                                 |
+| Password | string   | Either a SHA256 or an HMAC SHA256 of the user's password |
+| Groups   | string[] | An array of groups which the the user is a member        |
+| Metadata | psobject | Custom metadata for the user                             |
 
 For example:
 
@@ -66,7 +66,7 @@ Regardless of whether the password is a standard SHA256 hash or HMAC hash, the h
 ```powershell
 function ConvertTo-SHA256([string]$String)
 {
-    $SHA256 = New-Object System.Security.Cryptography.SHA256Managed
+    $SHA256 = [System.Security.Cryptography.SHA256Managed]::new()
     $SHA256Hash = $SHA256.ComputeHash([Text.Encoding]::ASCII.GetBytes($String))
     $SHA256HashString = [Convert]::ToBase64String($SHA256Hash)
     return $SHA256HashString
@@ -77,7 +77,7 @@ function ConvertTo-SHA256([string]$String)
 
 ```powershell
 function ConvertTo-HMACSHA256([string]$String, [string]$Secret) {
-    $HMACSHA256 = New-Object System.Security.Cryptography.HMACSHA256
+    $HMACSHA256 = [System.Security.Cryptography.HMACSHA256]::new()
     $HMACSHA256.Secret = [Text.Encoding]::ASCII.GetBytes($Secret)
     $HMACSHA256Hash = $HMACSHA256.ComputeHash([Text.Encoding]::ASCII.GetBytes($String))
     $HMACSHA256HashString = [Convert]::ToBase64String($HMACSHA256Hash)
@@ -89,13 +89,13 @@ function ConvertTo-HMACSHA256([string]$String, [string]$Secret) {
 
 The User object returned, and accessible on Routes, and other functions via the [web event](../../../WebEvent)'s `$WebEvent.Auth.User` property, will contain the following information:
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| Username | string | The user's username |
-| Name | string | The user's fullname |
-| Email | string | The user's email address |
-| Groups | string[] | An array of groups which the the user is a member |
-| Metadata | psobject | Custom metadata for the user |
+| Name     | Type     | Description                                       |
+| -------- | -------- | ------------------------------------------------- |
+| Username | string   | The user's username                               |
+| Name     | string   | The user's fullname                               |
+| Email    | string   | The user's email address                          |
+| Groups   | string[] | An array of groups which the the user is a member |
+| Metadata | psobject | Custom metadata for the user                      |
 
 Such as:
 
