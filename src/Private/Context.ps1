@@ -72,6 +72,7 @@ function New-PodeContext {
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Tasks -Value @{} -PassThru |
+        Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
@@ -791,6 +792,21 @@ function Close-PodeRunspacePool {
     Write-Verbose "RunspacePools closed [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
 }
 
+
+<#
+.SYNOPSIS
+    Creates a new Pode state context object from an existing context.
+
+.DESCRIPTION
+    The New-PodeStateContext function constructs a new PSCustomObject that represents the current state of various Pode components. It extracts specific properties from the provided context object and organizes them into a structured format for easier management and monitoring.
+
+.PARAMETER Context
+    The existing context object containing Pode state information. This parameter is mandatory and must not be null.
+
+.EXAMPLE
+    # Load the vars into the share state
+    $session =  New-PodeStateContext -Context $PodeContext
+#>
 function New-PodeStateContext {
     param(
         [Parameter(Mandatory = $true)]
@@ -803,6 +819,7 @@ function New-PodeStateContext {
             Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
             Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
             Add-Member -MemberType NoteProperty -Name Tasks -Value $Context.Tasks -PassThru |
+            Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value $Context.AsyncRoutes -PassThru |
             Add-Member -MemberType NoteProperty -Name Fim -Value $Context.Fim -PassThru |
             Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
             Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
