@@ -299,4 +299,5 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "路由 '{0}' 未标记为异步路由。"
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "函数 '{0}' 不能在同一路由 '{1}' 上多次调用。"
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
+    unsupportedStreamCompressionEncodingExceptionMessage              = '不支持的流压缩编码: {0}'
 }

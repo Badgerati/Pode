@@ -299,4 +299,5 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "경로 '{0}' 이(가) 비동기 경로로 표시되지 않았습니다."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "함수 '{0}' 를 동일한 경로 '{1}' 에 대해 여러 번 호출할 수 없습니다."
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 작업에는 요청 본문이 있을 수 없습니다.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
 }

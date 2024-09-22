@@ -299,4 +299,5 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "De route '{0}' is niet gemarkeerd als een asynchrone route."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "De functie '{0}' kan niet meerdere keren worden aangeroepen voor dezelfde route '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = '{0}-operaties kunnen geen Request Body hebben.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'Niet-ondersteunde streamcompressie-encodering: {0}'
 }

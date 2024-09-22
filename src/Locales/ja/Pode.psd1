@@ -299,4 +299,5 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "ルート '{0}' は非同期ルートとしてマークされていません。"
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "関数 '{0}' を同じルート '{1}' に対して複数回呼び出すことはできません。"
     getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
 }

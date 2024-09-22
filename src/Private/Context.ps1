@@ -67,12 +67,11 @@ function New-PodeContext {
     }
 
     # basic context object
-    $ctx = New-Object -TypeName psobject |
+    $ctx = [PSCustomObject]::new() |
         Add-Member -MemberType NoteProperty -Name Threads -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name Tasks -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value @{} -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
         Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
@@ -293,7 +292,7 @@ function New-PodeContext {
     $ctx.Server.EndpointsMap = @{}
 
     # general encoding for the server
-    $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
+    $ctx.Server.Encoding = [System.Text.UTF8Encoding]::new()
 
     # setup gui details
     $ctx.Server.Gui = @{}
@@ -420,12 +419,12 @@ function New-PodeContext {
 
     # create new cancellation tokens
     $ctx.Tokens = @{
-        Cancellation = New-Object System.Threading.CancellationTokenSource
-        Restart      = New-Object System.Threading.CancellationTokenSource
+        Cancellation = [System.Threading.CancellationTokenSource]::new()
+        Restart      = [System.Threading.CancellationTokenSource]::new()
     }
 
     # requests that should be logged
-    $ctx.LogsToProcess = New-Object System.Collections.ArrayList
+    $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()
@@ -511,10 +510,10 @@ function New-PodeRunspaceState {
     $session = New-PodeStateContext -Context $PodeContext
 
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeLocale', $PodeLocale, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $session, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PODE_SCOPE_RUNSPACE', $true, $null)
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeLocale', $PodeLocale, $null),
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeContext', $session, $null),
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('Console', $Host, $null),
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PODE_SCOPE_RUNSPACE', $true, $null)
     )
 
     foreach ($var in $variables) {
@@ -799,12 +798,11 @@ function New-PodeStateContext {
         $Context
     )
 
-    return (New-Object -TypeName psobject |
+    return ([PSCustomObject]::new() |
             Add-Member -MemberType NoteProperty -Name Threads -Value $Context.Threads -PassThru |
             Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
             Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
             Add-Member -MemberType NoteProperty -Name Tasks -Value $Context.Tasks -PassThru |
-            Add-Member -MemberType NoteProperty -Name AsyncRoutes -Value $Context.AsyncRoutes -PassThru |
             Add-Member -MemberType NoteProperty -Name Fim -Value $Context.Fim -PassThru |
             Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
             Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |

@@ -299,4 +299,5 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "المسار '{0}' لم يتم وضع علامة عليه كمسار غير متزامن."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "لا يمكن استدعاء الدالة '{0}' عدة مرات لنفس المسار '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
 }

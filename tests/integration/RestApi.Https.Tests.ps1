@@ -21,7 +21,7 @@ Describe 'REST API Requests' {
                     }
                 }
 '@
-            [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+            [System.Net.ServicePointManager]::CertificatePolicy = [TrustAllCertsPolicy]::new()
         }
         else {
             if ($version -ge [version]'7.4.0') {
@@ -279,8 +279,8 @@ Describe 'REST API Requests' {
 
         # compress the message using gzip
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($message)
-        $ms = New-Object -TypeName System.IO.MemoryStream
-        $gzip = New-Object System.IO.Compression.GZipStream($ms, [IO.Compression.CompressionMode]::Compress, $true)
+        $ms = [System.IO.MemoryStream]::new()
+        $gzip = [System.IO.Compression.GZipStream]::new($ms, [IO.Compression.CompressionMode]::Compress, $true)
         $gzip.Write($bytes, 0, $bytes.Length)
         $gzip.Close()
 
@@ -317,8 +317,8 @@ Describe 'REST API Requests' {
 
         # compress the message using deflate
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($message)
-        $ms = New-Object -TypeName System.IO.MemoryStream
-        $deflate = New-Object System.IO.Compression.DeflateStream($ms, [IO.Compression.CompressionMode]::Compress, $true)
+        $ms = [System.IO.MemoryStream]::new()
+        $deflate = [System.IO.Compression.DeflateStream]::new($ms, [IO.Compression.CompressionMode]::Compress, $true)
         $deflate.Write($bytes, 0, $bytes.Length)
         $deflate.Close()
 
@@ -356,8 +356,8 @@ Describe 'REST API Requests' {
 
         # compress the message using gzip
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($message)
-        $ms = New-Object -TypeName System.IO.MemoryStream
-        $gzip = New-Object System.IO.Compression.GZipStream($ms, [IO.Compression.CompressionMode]::Compress, $true)
+        $ms = [System.IO.MemoryStream]::new()
+        $gzip = [System.IO.Compression.GZipStream]::new($ms, [IO.Compression.CompressionMode]::Compress, $true)
         $gzip.Write($bytes, 0, $bytes.Length)
         $gzip.Close()
 

@@ -299,4 +299,5 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "La ruta '{0}' no está marcada como una Ruta Asíncrona."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "La función '{0}' no se puede invocar varias veces para la misma ruta '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = 'Las operaciones {0} no pueden tener un cuerpo de solicitud.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'La codificación de compresión de transmisión no es compatible: {0}'
 }
