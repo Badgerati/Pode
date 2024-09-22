@@ -289,4 +289,5 @@
     scheduleProcessDoesNotExistExceptionMessage                       = 'عملية الجدول الزمني غير موجودة: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
     getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
 }

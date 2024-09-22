@@ -108,10 +108,11 @@ Describe 'Restart-PodeInternalServer' {
         Mock Close-PodeDisposable { }
         Mock Invoke-PodeEvent { }
     }
+
     It 'Resetting the server values' {
         $PodeContext = @{
             Tokens    = @{
-                Cancellation = [ystem.Threading.CancellationTokenSource]::new()
+                Cancellation = [System.Threading.CancellationTokenSource]::new()
                 Restart      = [System.Threading.CancellationTokenSource]::new()
             }
             Server    = @{

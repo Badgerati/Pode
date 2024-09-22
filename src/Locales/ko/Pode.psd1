@@ -289,4 +289,5 @@
     scheduleProcessDoesNotExistExceptionMessage                       = '스케줄 프로세스가 존재하지 않습니다: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 작업에는 요청 본문이 있을 수 없습니다.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
 }

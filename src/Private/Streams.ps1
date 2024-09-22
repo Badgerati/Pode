@@ -319,8 +319,8 @@ function Get-PodeCompressionStream {
         }
 
         default {
-            #TODO: localize
-            throw "Unsupported encoding: $Encoding"
+            # Unsupported stream compression encoding: $Encoding
+            throw ($PodeLocale.unsupportedStreamCompressionEncodingExceptionMessage -f $Encoding)
         }
     }
 }

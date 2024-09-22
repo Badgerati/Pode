@@ -54,14 +54,13 @@ Describe 'Localization Check' {
         }
     }
 
-
-    It 'Check `throw` is not using a static string in [<_>]' -ForEach  ($sourceFiles) {
+    It "Check 'throw' is not using a static string in [<_>]" -ForEach  ($sourceFiles) {
         ( Get-Content -Path $_ -Raw) -match 'throw\s*["\'']' | Should -BeFalse
     }
 
     Describe  'Verifying Language [<_>]' -ForEach  ($languageDirs) {
 
-        BeforeAll { 
+        BeforeAll {
             $content = Import-LocalizedData -FileName 'Pode.psd1' -BaseDirectory $localizationDir -UICulture (Split-Path $_ -Leaf)
         }
         it 'Language resource file exist' {
