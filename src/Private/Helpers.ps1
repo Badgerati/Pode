@@ -152,7 +152,7 @@ function Test-PodeIsAdminUser {
     }
 
     try {
-        $principal = New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
+        $principal = [System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent())
         if ($null -eq $principal) {
             return $false
         }
@@ -550,7 +550,7 @@ function Get-PodeSubnetRange {
         'IP'      = ($ip_parts -join '.')
     }
 }
- 
+
 
 function Get-PodeConsoleKey {
     if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
@@ -1477,7 +1477,7 @@ function ConvertTo-PodeResponseContent {
         { $_ -match '^(.*\/)?(.*\+)?xml$' } {
             if ($InputObject -isnot [string]) {
                 $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
+                        [pscustomobject]$item
                     })
 
                 return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
@@ -1491,7 +1491,7 @@ function ConvertTo-PodeResponseContent {
         { $_ -ilike '*/csv' } {
             if ($InputObject -isnot [string]) {
                 $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
+                        [pscustomobject]$item
                     })
 
                 if (Test-PodeIsPSCore) {
@@ -1575,10 +1575,10 @@ function ConvertFrom-PodeRequestContent {
             # if the request is compressed, attempt to uncompress it
             if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
                 # create a compressed stream to decompress the req bytes
-                $ms = New-Object -TypeName System.IO.MemoryStream
+                $ms = [System.IO.MemoryStream]::new()
                 $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
                 $null = $ms.Seek(0, 0)
-                $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
+                $stream = Get-PodeCompressionStream -InputStream $ms -Encoding $TransferEncoding -Mode Decompress
 
                 # read the decompressed bytes
                 $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Request.ContentEncoding
@@ -3724,7 +3724,7 @@ function Resolve-PodeObjectArray {
     if ($Property -is [hashtable]) {
         # If the hashtable has only one item, convert it to a PowerShell object
         if ($Property.Count -eq 1) {
-            return New-Object psobject -Property $Property
+            return [pscustomobject]$Property
         }
         else {
             # If the hashtable has more than one item, recursively resolve each item
@@ -3746,6 +3746,6 @@ function Resolve-PodeObjectArray {
     }
     else {
         # For any other type, convert it to a PowerShell object
-        return New-Object psobject -Property $Property
+        return [pscustomobject]$Property
     }
 }

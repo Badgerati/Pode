@@ -232,7 +232,7 @@ function Remove-PodeSessionInternal {
 }
 
 function Get-PodeSessionInMemStore {
-    $store = New-Object -TypeName psobject
+    $store = [psobject]::new()
 
     # add in-mem storage
     $store | Add-Member -MemberType NoteProperty -Name Memory -Value @{}
