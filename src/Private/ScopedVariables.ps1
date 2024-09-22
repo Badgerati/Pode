@@ -305,8 +305,8 @@ function Convert-PodeScopedVariableUsingVariable {
         $UsingVariables
     )
     # Create a list of variable expressions for replacement
-    $varsList = New-Object 'System.Collections.Generic.List`1[System.Management.Automation.Language.VariableExpressionAst]'
-    $newParams = New-Object System.Collections.ArrayList
+    $varsList = [System.Collections.Generic.List[System.Management.Automation.Language.VariableExpressionAst]]::new()
+    $newParams = [System.Collections.ArrayList]::new()
 
     foreach ($usingVar in $UsingVariables) {
         foreach ($subExp in $usingVar.SubExpressions) {
