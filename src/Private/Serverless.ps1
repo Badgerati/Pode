@@ -22,7 +22,7 @@ function Start-PodeAzFuncServer {
             $request = $Data.Request
 
             # setup the response
-            $response = New-Object -TypeName HttpResponseContext
+            $response = New-PodeAzFuncResponse
             $response.StatusCode = 200
             $response.Headers = @{}
 
@@ -123,6 +123,10 @@ function Start-PodeAzFuncServer {
         $_ | Write-PodeErrorLog
         throw $_.Exception
     }
+}
+
+function New-PodeAzFuncResponse {
+    return [HttpResponseContext]::new()
 }
 
 function Start-PodeAwsLambdaServer {

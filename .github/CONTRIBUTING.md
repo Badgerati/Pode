@@ -30,6 +30,7 @@ The following is a set of guidelines for contributing to Pode on GitHub. These a
       - [Where-Object](#where-object)
       - [Select-Object](#select-object)
       - [Measure-Object](#measure-object)
+      - [New-Object](#new-object)
 
 ## Code of Conduct
 
@@ -244,4 +245,16 @@ Instead of using the `Measure-Object` commandlet, please use either the `.Length
 # use these instead
 (@(1, 2, 3)).Length
 (@{ Name = 'Rick' }).Count
+```
+
+#### New-Object
+
+Instead of using the `New-Object` commandlet, please use `::new()` as this is far faster than the former.
+
+```powershell
+# instead of
+$stream = New-Object System.IO.MemoryStream
+
+# do this
+$stream = [System.IO.MemoryStream]::new()
 ```
