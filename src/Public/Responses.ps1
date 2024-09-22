@@ -249,8 +249,8 @@ function Write-PodeTextResponse {
         # check if we need to compress the response
         if ($PodeContext.Server.Web.Compression.Enabled -and ![string]::IsNullOrWhiteSpace($WebEvent.AcceptEncoding)) {
             try {
-                $ms = New-Object -TypeName System.IO.MemoryStream
-                $stream = New-Object "System.IO.Compression.$($WebEvent.AcceptEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Compress, $true)
+                $ms = [System.IO.MemoryStream]::new()
+                $stream = Get-PodeCompressionStream -InputStream $ms -Encoding $WebEvent.AcceptEncoding -Mode Compress
                 $stream.Write($Bytes, 0, $Bytes.Length)
                 $stream.Close()
                 $ms.Position = 0
@@ -274,7 +274,7 @@ function Write-PodeTextResponse {
         $res.ContentLength64 = $Bytes.Length
 
         try {
-            $ms = New-Object -TypeName System.IO.MemoryStream
+            $ms = [System.IO.MemoryStream]::new()
             $ms.Write($Bytes, 0, $Bytes.Length)
             $ms.WriteTo($res.OutputStream)
         }

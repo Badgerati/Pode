@@ -289,4 +289,5 @@
     scheduleProcessDoesNotExistExceptionMessage                       = "Schema-proces '{0}' bestaat niet."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}-operaties kunnen geen Request Body hebben.'
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'Niet-ondersteunde streamcompressie-encodering: {0}'
 }

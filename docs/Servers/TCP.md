@@ -172,14 +172,14 @@ Start-PodeServer {
 
 Verbs will be passed the `$TcpEvent` object, that contains the Request, Response, and other properties:
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| Request | object | The raw Request object |
-| Response | object | The raw Response object |
-| Lockable | hashtable | A synchronized hashtable that can be used with `Lock-PodeObject` |
-| Endpoint | hashtable | Contains the Address and Protocol of the endpoint being hit - such as "pode.example.com" or "127.0.0.2", or HTTP or HTTPS for the Protocol |
-| Parameters | hashtable | Contains the parsed parameter values from the Verb's path |
-| Timestamp | datetime | The current date and time of the Request |
+| Name       | Type      | Description                                                                                                                                |
+| ---------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Request    | object    | The raw Request object                                                                                                                     |
+| Response   | object    | The raw Response object                                                                                                                    |
+| Lockable   | hashtable | A synchronized hashtable that can be used with `Lock-PodeObject`                                                                           |
+| Endpoint   | hashtable | Contains the Address and Protocol of the endpoint being hit - such as "pode.example.com" or "127.0.0.2", or HTTP or HTTPS for the Protocol |
+| Parameters | hashtable | Contains the parsed parameter values from the Verb's path                                                                                  |
+| Timestamp  | datetime  | The current date and time of the Request                                                                                                   |
 
 ## Test Send
 
@@ -189,11 +189,11 @@ The following function can be used to test sending messages to a TCP server. Thi
 function Send-TCPMessage($Endpoint, $Port, $Message) {
     # Setup connection
     $Address = [System.Net.IPAddress]::Parse([System.Net.Dns]::GetHostAddresses($EndPoint))
-    $Socket = New-Object System.Net.Sockets.TCPClient($Address,$Port)
+    $Socket = [System.Net.Sockets.TcpClient]::new($Address, $Port)
 
-    # Setup stream wrtier
+    # Setup stream writer
     $Stream = $Socket.GetStream()
-    $Writer = New-Object System.IO.StreamWriter($Stream)
+    $Writer = [System.IO.StreamWriter]::new($Stream)
 
     # Write message to stream
     $Writer.WriteLine($Message)
