@@ -31,7 +31,7 @@ Describe 'Get-PodeLogger' {
 Describe 'Write-PodeLog' {
     It 'Does nothing when logging disabled' {
         Mock Test-PodeLoggerEnabled { return $false }
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
+        $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
         Write-PodeLog -Name 'test' -InputObject 'test'
 
@@ -40,7 +40,7 @@ Describe 'Write-PodeLog' {
 
     It 'Adds a log item' {
         Mock Test-PodeLoggerEnabled { return $true }
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
+        $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
         Write-PodeLog -Name 'test' -InputObject 'test'
 
@@ -53,7 +53,7 @@ Describe 'Write-PodeLog' {
 Describe 'Write-PodeErrorLog' {
     It 'Does nothing when logging disabled' {
         Mock Test-PodeLoggerEnabled { return $false }
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
+        $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
         Write-PodeLog -Name 'test' -InputObject 'test'
 
@@ -67,7 +67,7 @@ Describe 'Write-PodeErrorLog' {
                 }
             } }
 
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
+        $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
         try { throw 'some error' }
         catch {
@@ -85,7 +85,7 @@ Describe 'Write-PodeErrorLog' {
                 }
             } }
 
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
+        $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
         $exp = [exception]::new('some error')
         Write-PodeErrorLog -Exception $exp
@@ -101,7 +101,7 @@ Describe 'Write-PodeErrorLog' {
                 }
             } }
 
-        $PodeContext = @{ LogsToProcess = New-Object System.Collections.ArrayList }
+        $PodeContext = @{ LogsToProcess = [System.Collections.ArrayList]::new() }
 
         $exp = [exception]::new('some error')
         Write-PodeErrorLog -Exception $exp -Level Verbose
