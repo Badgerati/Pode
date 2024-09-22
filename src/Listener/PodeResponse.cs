@@ -195,7 +195,7 @@ namespace Pode
             }
         }
 
-        public async Task<string> SetSseConnection(PodeSseScope scope, string clientId, string name, string group, int retry, bool allowAllOrigins)
+        public async Task<string> SetSseConnection(PodeSseScope scope, string clientId, string name, string group, int retry, bool allowAllOrigins, string asyncRouteTaskId = null)
         {
             // do nothing for no scope
             if (scope == PodeSseScope.None)
@@ -235,7 +235,11 @@ namespace Pode
             // send headers, and open event
             await Send().ConfigureAwait(false);
             await SendSseRetry(retry).ConfigureAwait(false);
-            await SendSseEvent("pode.open", $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\"}}").ConfigureAwait(false);
+            string sseEvent = (string.IsNullOrEmpty(asyncRouteTaskId)) ?
+            $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\"}}" :
+            $"{{\"clientId\":\"{clientId}\",\"group\":\"{group}\",\"name\":\"{name}\",\"asyncRouteTaskId\":\"{asyncRouteTaskId}\"}}";
+
+            await SendSseEvent("pode.open", sseEvent).ConfigureAwait(false);
 
             // if global, cache connection in listener
             if (scope == PodeSseScope.Global)

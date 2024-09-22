@@ -54,40 +54,50 @@ function Get-PodeAsyncRouteScriptblock {
             }
         }
 
-        $asyncResult = $PodeContext.AsyncRoutes.Processes[$___async___id___]
-            ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "$($asyncResult.AsyncRouteId)_$___async___id___"
+        $asyncProcess = $PodeContext.AsyncRoutes.Processes[$___async___id___]
+
+        # Copy the Sse content to the user's WebEvent object
+        if ($asyncProcess.ContainsKey('Sse')) {
+            # wait for the SSE object to be available on this thread
+            if (! $asyncProcess['Sse'].ContainsKey('ClientId')) {
+                Start-Sleep 1
+            }
+            $WebEvent.Sse = $asyncProcess['Sse']
+        }
+
+
         try {
-            $asyncResult['StartingTime'] = [datetime]::UtcNow
+            $asyncProcess['StartingTime'] = [datetime]::UtcNow
 
             # Set the state to 'Running'
-            $asyncResult['State'] = 'Running'
+            $asyncProcess['State'] = 'Running'
 
             $___result___ = & { # Original ScriptBlock Start
                 <# ScriptBlock #>
                 # Original ScriptBlock End
             }
             if ($___result___) {
-                $asyncResult['Result'] = $___result___
+                $asyncProcess['Result'] = $___result___
             }
             # Set the completed time
-            $asyncResult['CompletedTime'] = [datetime]::UtcNow
+            $asyncProcess['CompletedTime'] = [datetime]::UtcNow
         }
         catch {
-            if (! $asyncResult.ContainsKey('CompletedTime')) {
-                $asyncResult['CompletedTime'] = [datetime]::UtcNow
+            if (! $asyncProcess.ContainsKey('CompletedTime')) {
+                $asyncProcess['CompletedTime'] = [datetime]::UtcNow
             }
             # Set the state to 'Failed' in case of error
-            $asyncResult['State'] = 'Failed'
+            $asyncProcess['State'] = 'Failed'
 
             # Log the error
             $_ | Write-PodeErrorLog
 
             # Store the error in the AsyncRoutes Processes
-            $asyncResult['Error'] = $_.ToString()
+            $asyncProcess['Error'] = $_.ToString()
 
         }
         finally {
-            Complete-PodeAsyncRouteOperation -AsyncResult $asyncResult
+            Complete-PodeAsyncRouteOperation -AsyncProcess $asyncProcess
         }
     }
 
@@ -172,18 +182,18 @@ function Test-PodeAsyncRouteScriptblockInvalidCommand {
 .DESCRIPTION
     The `Complete-PodeAsyncRouteOperation` function finalizes an asynchronous script's execution by setting its state to 'Completed' if it is still running and logs the completion time. It also manages callbacks by sending requests to a specified callback URL with appropriate headers and content types. If Server-Sent Events (SSE) are enabled, the function will send events based on the execution state.
 
-.PARAMETER AsyncResult
+.PARAMETER AsyncProcess
     A [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]] that contains the results and state information of the asynchronous script.
 
 .EXAMPLE
-    $asyncResult = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
+    $asyncProcess = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()
     $webEvent = @{
         Request = @{
             Url = 'http://example.com/request'
         }
         Method = 'GET'
     }
-    Complete-PodeAsyncRouteOperation -AsyncResult $asyncResult -WebEvent $webEvent
+    Complete-PodeAsyncRouteOperation -AsyncProcess $asyncProcess -WebEvent $webEvent
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
@@ -192,39 +202,39 @@ function Complete-PodeAsyncRouteOperation {
     param (
         [Parameter(Mandatory = $true)]
         [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]
-        $AsyncResult
+        $AsyncProcess
     )
     # Set the completed time if not already set
-    if (! $AsyncResult.ContainsKey('CompletedTime') -or ($null -eq $AsyncResult['CompletedTime'])) {
-        $AsyncResult['CompletedTime'] = [datetime]::UtcNow
+    if (! $AsyncProcess.ContainsKey('CompletedTime') -or ($null -eq $AsyncProcess['CompletedTime'])) {
+        $AsyncProcess['CompletedTime'] = [datetime]::UtcNow
     }
 
     # Ensure state is set to 'Completed' if it was still 'Running'
-    if ($AsyncResult['State'] -eq 'Running') {
-        $AsyncResult['State'] = 'Completed'
+    if ($AsyncProcess['State'] -eq 'Running') {
+        $AsyncProcess['State'] = 'Completed'
     }
 
 
-    if ($AsyncResult['Timer']) {
+    if ($AsyncProcess['Timer']) {
         # Closes and disposes of the timer
-        Close-PodeAsyncRouteTimer -Operation $AsyncResult
+        Close-PodeAsyncRouteTimer -Operation $AsyncProcess
     }
 
     # Ensure Progress is set to 100 if in use
-    if ($AsyncResult.ContainsKey('Progress')) {
-        $AsyncResult['Progress'] = 100
+    if ($AsyncProcess.ContainsKey('Progress')) {
+        $AsyncProcess['Progress'] = 100
     }
 
     try {
-        if ($AsyncResult['CallbackSettings']) {
+        if ($AsyncProcess['CallbackSettings']) {
 
             # Resolve the callback URL, method, content type, and headers
-            $callbackUrl = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].UrlField).Value
-            $method = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].Method -DefaultValue 'Post').Value
-            $contentType = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncResult['CallbackSettings'].ContentType).Value
+            $callbackUrl = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncProcess['CallbackSettings'].UrlField).Value
+            $method = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncProcess['CallbackSettings'].Method -DefaultValue 'Post').Value
+            $contentType = (Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $AsyncProcess['CallbackSettings'].ContentType).Value
             $headers = @{}
-            foreach ($key in $AsyncResult['CallbackSettings'].HeaderFields.Keys) {
-                $value = Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $key -DefaultValue $AsyncResult['HeaderFields'][$key]
+            foreach ($key in $AsyncProcess['CallbackSettings'].HeaderFields.Keys) {
+                $value = Convert-PodeAsyncRouteCallBackRuntimeExpression -Variable $key -DefaultValue $AsyncProcess['HeaderFields'][$key]
                 if ($value) {
                     $headers[$value.Key] = $value.Value
                 }
@@ -232,22 +242,22 @@ function Complete-PodeAsyncRouteOperation {
 
             # Prepare the body for the callback
             $body = @{
-                Url       = $AsyncResult['Url']
-                Method    = $AsyncResult['Method']
-                EventName = $AsyncResult['CallbackSettings'].EventName
-                State     = $AsyncResult['State']
+                Url       = $AsyncProcess['Url']
+                Method    = $AsyncProcess['Method']
+                EventName = $AsyncProcess['CallbackSettings'].EventName
+                State     = $AsyncProcess['State']
             }
-            switch ($AsyncResult['State']) {
+            switch ($AsyncProcess['State']) {
                 'Failed' {
-                    $body.Error = $AsyncResult['Error']
+                    $body.Error = $AsyncProcess['Error']
                 }
                 'Completed' {
-                    if ($AsyncResult['CallbackSettings'].SendResult -and $AsyncResult['Result']) {
-                        $body.Result = $AsyncResult['Result']
+                    if ($AsyncProcess['CallbackSettings'].SendResult -and $AsyncProcess['Result']) {
+                        $body.Result = $AsyncProcess['Result']
                     }
                 }
                 'Aborted' {
-                    $body.Error = $AsyncResult['Error']
+                    $body.Error = $AsyncProcess['Error']
                 }
             }
 
@@ -259,21 +269,21 @@ function Complete-PodeAsyncRouteOperation {
             }
 
             # Store callback information in the async result
-            $AsyncResult['CallbackUrl'] = $callbackUrl
-            $AsyncResult['CallbackInfoState'] = 'Running'
-            $AsyncResult['CallbackTentative'] = 0
+            $AsyncProcess['CallbackUrl'] = $callbackUrl
+            $AsyncProcess['CallbackInfoState'] = 'Running'
+            $AsyncProcess['CallbackTentative'] = 0
 
             # Attempt to invoke the callback up to 3 times
             for ($i = 0; $i -le 3; $i++) {
                 try {
-                    $AsyncResult['CallbackTentative'] = $AsyncResult['CallbackTentative'] + 1
+                    $AsyncProcess['CallbackTentative'] = $AsyncProcess['CallbackTentative'] + 1
                     $null = Invoke-RestMethod -Uri $callbackUrl -Method $method -Headers $headers -Body $cBody -ContentType $contentType -ErrorAction Stop
-                    $AsyncResult['CallbackInfoState'] = 'Completed'
+                    $AsyncProcess['CallbackInfoState'] = 'Completed'
                     break
                 }
                 catch {
                     $_ | Write-PodeErrorLog
-                    $AsyncResult['CallbackInfoState'] = 'Failed'
+                    $AsyncProcess['CallbackInfoState'] = 'Failed'
                     Start-Sleep -Seconds 2
                 }
             }
@@ -282,7 +292,7 @@ function Complete-PodeAsyncRouteOperation {
     catch {
         # Log any errors encountered during the callback process
         $_ | Write-PodeErrorLog
-        $AsyncResult['CallbackInfoState'] = 'Failed'
+        $AsyncProcess['CallbackInfoState'] = 'Failed'
     }
 
 }
@@ -345,7 +355,7 @@ function Start-PodeAsyncRoutesHousekeeper {
                         $result['State'] = 'Aborted'
                         $result['Error'] = 'Timeout'
                         $result['Runspace'].Pipeline.Dispose()
-                        Complete-PodeAsyncRouteOperation -AsyncResult $result
+                        Complete-PodeAsyncRouteOperation -AsyncProcess $result
                     }
                     catch {
                         $_ | Write-PodeErrorLog
@@ -752,8 +762,8 @@ function Get-PodeAsyncRouteSetScriptBlock {
                 }
             }
 
-            $webEvent_ToClone.Response = $webEvent.Response
-            #     Write-PodeHost  $webEvent_ToClone.Response -explode -ShowType -Label 'webEvent_ToClone.Response'
+         #   $webEvent_ToClone.Response = $webEvent.Response
+
             # Setup event parameters
             $parameters = @{
                 Event            = @{
@@ -764,6 +774,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
                 WebEvent         = Copy-PodeDeepClone -InputObject $webEvent_ToClone
                 ___async___id___ = $id
             }
+            $parameters.WebEvent['Response']=$webEvent.Response
             # Add any task arguments
             foreach ($key in $asyncRouteTask.Arguments.Keys) {
                 $parameters[$key] = $asyncRouteTask.Arguments[$key]
@@ -781,7 +792,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
 
             # Initialize the result and runspace for the async route task
             $result = [System.Management.Automation.PSDataCollection[psobject]]::new()
-            $runspace = Add-PodeRunspace -Type $asyncRouteTask.AsyncRouteId -ScriptBlock (($asyncRouteTask.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru
+            $runspace = Add-PodeRunspace -Type $asyncRouteTask.AsyncRouteId -ScriptBlock (($asyncRouteTask.Script).GetNewClosure()) -Parameters $parameters -OutputStream $result -PassThru -Name $asyncRouteTask.AsyncRouteId -Id $id
 
             # Set the expiration time based on the timeout value
             if ($asyncRouteTask.Timeout -ge 0) {
@@ -814,8 +825,6 @@ function Get-PodeAsyncRouteSetScriptBlock {
                 $sseObject['Url'] = "$($asyncRouteTask['Sse'].Name)?Id=$Id"
                 $sseObject['State'] = 'NotStarted'
                 $asyncOperation['Sse'] = $sseObject
-
-                Write-PodeHost $asyncOperation['Sse'] -explode
             }
 
             # Add user information if available
@@ -1020,7 +1029,7 @@ function Get-PodeAsyncRouteStopScriptBlock {
                             $async['Error'] = 'Aborted by the user'
                             $async['CompletedTime'] = [datetime]::UtcNow
                             $async['Runspace'].Pipeline.Dispose()
-                            Complete-PodeAsyncRouteOperation -AsyncResult $async
+                            Complete-PodeAsyncRouteOperation -AsyncProcess $async
 
                             # Create a summary of the task
                             $export = Export-PodeAsyncRouteInfo -Async $async

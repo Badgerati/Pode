@@ -1393,16 +1393,17 @@ function Add-PodeAsyncRouteSse {
 
         $sseScriptBlock = {
             param($SseGroup)
+            $id = $WebEvent.Query['Id']
 
             if ([string]::IsNullOrEmpty($SseGroup)) {
-                write-podehost "webEvent.Route.Path=$($webEvent.Route.Path)"
-                ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local -Group $SseGroup
+                ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local -Group $SseGroup -AsyncRouteTaskId $id
             }
             else {
-                ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local
+                ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local -AsyncRouteTaskId $id
             }
 
-            $id = $WebEvent.Query['Id']
+            $PodeContext.AsyncRoutes.Processes[$id]['Sse'] = Copy-PodeDeepClone -InputObject $WebEvent.Sse
+
             if (!$PodeContext.AsyncRoutes.Processes.ContainsKey($id)) {
                 try {
                     throw ($PodeLocale.asyncIdDoesNotExistExceptionMessage -f $id)
@@ -1663,7 +1664,7 @@ function Stop-PodeAsyncRouteOperation {
         $async['Error'] = 'Aborted by System'
         $async['CompletedTime'] = [datetime]::UtcNow
         $async['Runspace'].Pipeline.Dispose()
-        Complete-PodeAsyncRouteOperation -AsyncResult $async
+        Complete-PodeAsyncRouteOperation -AsyncProcess $async
         return  Export-PodeAsyncRouteInfo -Async $async -Raw:$Raw
     }
     throw ($PodeLocale.asyncRouteOperationDoesNotExistExceptionMessage -f $Id)

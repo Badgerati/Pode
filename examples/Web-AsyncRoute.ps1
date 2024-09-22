@@ -74,6 +74,10 @@
 
     $response_Mindy_asyncWaitForever = Invoke-RestMethod -Uri "http://localhost:8080/task?Id=$($response_Mindy_asyncWaitForever.Id)" -Method Delete -Headers $mindyCommonHeaders
 
+.EXAMPLE
+    For the Sse example, you need a web browser the support Sse protocol. For example, you can use Google Chrome. and open the url http://localhost:8080/test/sse.
+
+
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-AsyncRoute.ps1
 
@@ -396,22 +400,23 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
     } -PassThru | Set-PodeOARouteInfo -Summary 'Hello from the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
 
 
-    Add-PodeRoute  -PassThru -Method Get -Path '/events' -ScriptBlock {
-        # ConvertTo-PodeSseConnection -Name 'Events' -Scope Local -Group 'Test events'
+    Add-PodeRoute  -PassThru -Method Get -Path '/sse' -ScriptBlock {
+
         $msg = "Start - Hello there! The datetime is: $([datetime]::Now.TimeOfDay)"
-        write-podehost $msg
-        Send-PodeSseEvent   -Data $msg -FromEvent #-name 'Events' -Group 'Test events' #-FromEvent
-        write-podehost 'PodeSseEvent sent'
+
+        Send-PodeSseEvent   -Data $msg -FromEvent
+
         Start-Sleep -Seconds 10
+
         $msg = "End -Hello there! The datetime is: $([datetime]::Now.TimeOfDay)"
-        write-podehost $msg
-        Send-PodeSseEvent   -Data $msg  -FromEvent #-name 'Events' -Group 'Test events' #-FromEvent
-        write-podehost 'PodeSseEvent sent'
+
+        Send-PodeSseEvent   -Data $msg  -FromEvent
+
         return @{'message' = 'Done' }
     } | Set-PodeAsyncRoute -ResponseContentType 'application/json'  -MaxRunspaces 2  -PassThru |
         Add-PodeAsyncRouteSse -SseGroup 'Test events'
 
-    Add-PodeRoute -method Get -Path '/html/events' -ScriptBlock {
+    Add-PodeRoute -method Get -Path '/test/sse' -ScriptBlock {
         Write-PodeHtmlResponse -StatusCode 200 -Value  @'
 <!DOCTYPE html>
 <html lang="en">
@@ -427,7 +432,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
 
     <script>
         // Fetch the EventSource URL
-        fetch('http://localhost:8080/events')
+        fetch('http://localhost:8080/sse')
             .then(response => response.json())
             .then(data => {
                 // Log the full data received from the RESTful call
@@ -478,16 +483,19 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
                 });
                 sse.addEventListener('message', (e) => {
                     var data = JSON.parse(e.data);
-                    let updateInfo = data.updateInfo;
+                    let state = data.State;
+                    let result= data.Result;
 
                     // Handle the update event
                     outputDiv.innerHTML += `
                         <p><strong>message Event:</strong></p>
-                        <p>Update Info: ${updateInfo}</p>
+                        <p>State Info: ${state}</p>
+                        <p>Result    : ${result}</p>
                         <hr>
                     `;
 
-                    console.log(`Update Info: ${updateInfo}`);
+                    console.log(`State Info: ${state}`);
+                    console.log(`Result    : ${result}`);
                 });
                 sse.addEventListener('events', (e) => {
                     var data = JSON.parse(e.data);

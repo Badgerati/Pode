@@ -27,6 +27,9 @@ An optional ClientId to use for the SSE connection, this value will be signed if
 .PARAMETER AllowAllOrigins
 If supplied, then Access-Control-Allow-Origin will be set to * on the response.
 
+.PARAMETER AsyncRouteTaskId
+This optional AsyncRouteTaskId is used internally to identify the Asynct Route task that is opening this SSE connection, and then used to send events to these connection.
+
 .PARAMETER Force
 If supplied, the Accept header of the request will be ignored; attempting to configure an SSE connection even if the header isn't "text/event-stream".
 
@@ -69,11 +72,16 @@ function ConvertTo-PodeSseConnection {
         [string]
         $ClientId,
 
+        [Parameter()]
+        [string]
+        $AsyncRouteTaskId,
+
         [switch]
         $AllowAllOrigins,
 
         [switch]
         $Force
+
     )
 
     # check Accept header - unless forcing
@@ -91,7 +99,7 @@ function ConvertTo-PodeSseConnection {
     $ClientId = New-PodeSseClientId -ClientId $ClientId
 
     # set and send SSE headers
-    $ClientId = Wait-PodeTask -Task $WebEvent.Response.SetSseConnection($Scope, $ClientId, $Name, $Group, $RetryDuration, $AllowAllOrigins.IsPresent)
+    $ClientId = Wait-PodeTask -Task $WebEvent.Response.SetSseConnection($Scope, $ClientId, $Name, $Group, $RetryDuration, $AllowAllOrigins.IsPresent,$AsyncRouteTaskId)
 
     # create SSE property on WebEvent
     $WebEvent.Sse = @{
@@ -100,6 +108,10 @@ function ConvertTo-PodeSseConnection {
         ClientId    = $ClientId
         LastEventId = Get-PodeHeader -Name 'Last-Event-ID'
         IsLocal     = ($Scope -ieq 'local')
+    }
+
+    if ($AsyncRouteTaskId) {
+        $WebEvent.Sse['asyncRouteTaskId'] = $AsyncRouteTaskId
     }
 }
 
