@@ -290,4 +290,5 @@
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}-operaties kunnen geen Request Body hebben.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "De functie '{0}' accepteert geen array als pipeline-invoer."
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'Niet-ondersteunde streamcompressie-encodering: {0}'
 }

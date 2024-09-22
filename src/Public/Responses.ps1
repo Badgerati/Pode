@@ -270,20 +270,20 @@ function Write-PodeTextResponse {
                 }
             }
 
-            # check if we need to compress the response
-            if ($PodeContext.Server.Web.Compression.Enabled -and ![string]::IsNullOrWhiteSpace($WebEvent.AcceptEncoding)) {
-                try {
-                    $ms = New-Object -TypeName System.IO.MemoryStream
-                    $stream = New-Object "System.IO.Compression.$($WebEvent.AcceptEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Compress, $true)
-                    $stream.Write($Bytes, 0, $Bytes.Length)
+        # check if we need to compress the response
+        if ($PodeContext.Server.Web.Compression.Enabled -and ![string]::IsNullOrWhiteSpace($WebEvent.AcceptEncoding)) {
+            try {
+                $ms = [System.IO.MemoryStream]::new()
+                $stream = Get-PodeCompressionStream -InputStream $ms -Encoding $WebEvent.AcceptEncoding -Mode Compress
+                $stream.Write($Bytes, 0, $Bytes.Length)
+                $stream.Close()
+                $ms.Position = 0
+                $Bytes = $ms.ToArray()
+            }
+            finally {
+                if ($null -ne $stream) {
                     $stream.Close()
-                    $ms.Position = 0
-                    $Bytes = $ms.ToArray()
                 }
-                finally {
-                    if ($null -ne $stream) {
-                        $stream.Close()
-                    }
 
                     if ($null -ne $ms) {
                         $ms.Close()
@@ -297,15 +297,15 @@ function Write-PodeTextResponse {
             # write the content to the response stream
             $res.ContentLength64 = $Bytes.Length
 
-            try {
-                $ms = New-Object -TypeName System.IO.MemoryStream
-                $ms.Write($Bytes, 0, $Bytes.Length)
-                $ms.WriteTo($res.OutputStream)
+        try {
+            $ms = [System.IO.MemoryStream]::new()
+            $ms.Write($Bytes, 0, $Bytes.Length)
+            $ms.WriteTo($res.OutputStream)
+        }
+        catch {
+            if ((Test-PodeValidNetworkFailure $_.Exception)) {
+                return
             }
-            catch {
-                if ((Test-PodeValidNetworkFailure $_.Exception)) {
-                    return
-                }
 
                 $_ | Write-PodeErrorLog
                 throw

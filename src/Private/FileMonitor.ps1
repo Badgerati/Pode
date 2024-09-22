@@ -9,15 +9,13 @@ function Start-PodeFileMonitor {
     $filter = '*.*'
 
     # setup the file monitor
-    $watcher = New-Object System.IO.FileSystemWatcher $folder, $filter -Property @{
-        IncludeSubdirectories = $true
-        NotifyFilter          = [System.IO.NotifyFilters]'FileName,LastWrite,CreationTime'
-    }
-
+    $watcher = [System.IO.FileSystemWatcher]::new($folder, $filter)
+    $watcher.IncludeSubdirectories = $true
+    $watcher.NotifyFilter = [System.IO.NotifyFilters]'FileName,LastWrite,CreationTime'
     $watcher.EnableRaisingEvents = $true
 
     # setup the monitor timer - only restart server after changes + 2s of no changes
-    $timer = New-Object System.Timers.Timer
+    $timer = [System.Timers.Timer]::new()
     $timer.AutoReset = $false
     $timer.Interval = 2000
 

@@ -290,4 +290,5 @@
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitionstag für eine Route kann nicht geändert werden.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}-Operationen können keinen Anforderungstext haben.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'Die Stream-Komprimierungskodierung wird nicht unterstützt: {0}'
 }
