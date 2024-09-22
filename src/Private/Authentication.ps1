@@ -2180,22 +2180,29 @@ function Get-PodeAuthADGroupAll {
 }
 
 function Get-PodeAuthDomainName {
-    if (Test-PodeIsUnix) {
-        $dn = (dnsdomainname)
-        if ([string]::IsNullOrWhiteSpace($dn)) {
-            $dn = (/usr/sbin/realm list --name-only)
-        }
+    $domain = $null
 
-        return $dn
+    if (Test-PodeIsMacOS) {
+        $domain = (scutil --dns | grep -m 1 'search domain\[0\]' | cut -d ':' -f 2)
+    }
+    elseif (Test-PodeIsUnix) {
+        $domain = (dnsdomainname)
+        if ([string]::IsNullOrWhiteSpace($domain)) {
+            $domain = (/usr/sbin/realm list --name-only)
+        }
     }
     else {
         $domain = $env:USERDNSDOMAIN
         if ([string]::IsNullOrWhiteSpace($domain)) {
             $domain = (Get-CimInstance -Class Win32_ComputerSystem -Verbose:$false).Domain
         }
-
-        return $domain
     }
+
+    if (![string]::IsNullOrEmpty($domain)) {
+        $domain = $domain.Trim()
+    }
+
+    return $domain
 }
 
 function Find-PodeAuth {
