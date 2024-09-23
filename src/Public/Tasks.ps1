@@ -483,7 +483,6 @@ function Wait-PodeTask {
         throw ($PodeLocale.invalidTaskTypeExceptionMessage)
     }
 }
- 
 
 <#
 .SYNOPSIS
