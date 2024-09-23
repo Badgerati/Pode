@@ -213,8 +213,11 @@ Send-PodeSseEvent -Name 'Actions' -Group 'admins' -Data @{ Message = 'A message'
 Send-PodeSseEvent -Name 'Actions' -Data @{ Message = 'A message' } -ID 123 -EventType 'action'
 #>
 function Send-PodeSseEvent {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'AsyncRoute')]
     param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        $Data,
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Name')]
         [string]
         $Name,
@@ -235,67 +238,84 @@ function Send-PodeSseEvent {
         [string]
         $EventType,
 
-        [Parameter(Mandatory = $true)]
-        $Data,
-
         [Parameter()]
         [int]
         $Depth = 10,
 
         [Parameter(ParameterSetName = 'WebEvent')]
         [switch]
-        $FromEvent
+        $FromEvent,
+
+        [Parameter(ParameterSetName = 'AsyncRoute')]
+        [switch]
+        $AsyncRoute
     )
-
-    # do nothing if no value
-    if (($null -eq $Data) -or ([string]::IsNullOrEmpty($Data))) {
-        return
+    begin {
+        $pipelineValue = @()
     }
 
-    # jsonify the value
-    if ($Data -isnot [string]) {
-        if ($Depth -le 0) {
-            $Data = (ConvertTo-Json -InputObject $Data -Compress)
-        }
-        else {
-            $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Value') {
+            $pipelineValue += $_
         }
     }
 
-    # if inside an async route wait for ClientId to be syncronized
-    if ($WebEvent.Async -and $FromEvent) {
-        while (!($WebEvent.ContainsKey('Sse') -and $WebEvent.Sse.ContainsKey('ClientId'))) {
-            Start-Sleep -Milliseconds 100
+    end {
+        if ($pipelineValue.Count -gt 1) {
+            $Data = $pipelineValue
         }
-    }
 
-    # send directly back to current connection
-    if ($FromEvent -and $WebEvent.Sse.IsLocal) {
-        $null = Wait-PodeTask -Task $WebEvent.Response.SendSseEvent($EventType, $Data, $Id)
-        return
-    }
+        # do nothing if no value
+        if (($null -eq $Data) -or ([string]::IsNullOrEmpty($Data))) {
+            return
+        }
 
-    # from event and global?
-    if ($FromEvent) {
-        $Name = $WebEvent.Sse.Name
-        $Group = $WebEvent.Sse.Group
-        $ClientId = $WebEvent.Sse.ClientId
-    }
+        # jsonify the value
+        if ($Data -isnot [string]) {
+            if ($Depth -le 0) {
+                $Data = (ConvertTo-Json -InputObject $Data -Compress)
+            }
+            else {
+                $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
+            }
+        }
 
-    # error if no name
-    if ([string]::IsNullOrEmpty($Name)) {
-        # An SSE connection Name is required, either from -Name or $WebEvent.Sse.Name
-        throw ($PodeLocale.sseConnectionNameRequiredExceptionMessage)
-    }
+        # if inside an async route wait for ClientId to be syncronized
+        if ($WebEvent.Async -and $FromEvent) {
+            while (!($WebEvent.ContainsKey('Sse') -and $WebEvent.Sse.ContainsKey('ClientId'))) {
+                Start-Sleep -Milliseconds 100
+            }
+        }
 
-    # check if broadcast level
-    if (!(Test-PodeSseBroadcastLevel -Name $Name -Group $Group -ClientId $ClientId)) {
-        # SSE failed to broadcast due to defined SSE broadcast level
-        throw ($PodeLocale.sseFailedToBroadcastExceptionMessage -f $Name, (Get-PodeSseBroadcastLevel -Name $Name))
-    }
+        # send directly back to current connection
+        if ($FromEvent -and $WebEvent.Sse.IsLocal) {
+            $null = Wait-PodeTask -Task $WebEvent.Response.SendSseEvent($EventType, $Data, $Id)
+            return
+        }
 
-    # send event
-    $PodeContext.Server.Http.Listener.SendSseEvent($Name, $Group, $ClientId, $EventType, $Data, $Id)
+        # from event and global?
+        if ($FromEvent) {
+            $Name = $WebEvent.Sse.Name
+            $Group = $WebEvent.Sse.Group
+            $ClientId = $WebEvent.Sse.ClientId
+        }
+
+        # error if no name
+        if ([string]::IsNullOrEmpty($Name)) {
+            # An SSE connection Name is required, either from -Name or $WebEvent.Sse.Name
+            throw ($PodeLocale.sseConnectionNameRequiredExceptionMessage)
+        }
+
+        # check if broadcast level
+        if (!(Test-PodeSseBroadcastLevel -Name $Name -Group $Group -ClientId $ClientId)) {
+            # SSE failed to broadcast due to defined SSE broadcast level
+            throw ($PodeLocale.sseFailedToBroadcastExceptionMessage -f $Name, (Get-PodeSseBroadcastLevel -Name $Name))
+        }
+
+        # send event
+        $PodeContext.Server.Http.Listener.SendSseEvent($Name, $Group, $ClientId, $EventType, $Data, $Id)
+
+    }
 }
 
 <#
