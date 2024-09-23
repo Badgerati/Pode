@@ -68,7 +68,7 @@ Add-PodeRoute -PassThru -Method Post -Path '/asyncWithCallback' -ScriptBlock {
     -CallbackContentType 'application/json' `
     -CallbackMethod '$request.body#/callbackMethod' `
     -CallbackHeaderFields @{ 'Custom-Header' = '$request.header.CustomHeader' } `
-    -CallbackSendResult `
+    -SendResult `
     -EventName 'AsyncCompleted'
 ```
 
@@ -83,7 +83,7 @@ Add-PodeRoute -PassThru -Method Post -Path '/asyncWithCallback' -ScriptBlock {
     - `-CallbackContentType` specifies the content type for the callback request.
     - `-CallbackMethod` sets the HTTP method for the callback request, using a runtime expression based on the request body.
     - `-CallbackHeaderFields` includes custom header fields in the callback request, using a runtime expression based on the request headers.
-    - `-CallbackSendResult` ensures that the result of the async route task is sent in the callback request.
+    - `-SendResult` ensures that the result of the async route task is sent in the callback request.
     - `-EventName` specifies the event name for the callback.
 
 This setup ensures that when the asynchronous task completes, a request will be made to the specified callback URL with the defined settings, including the result of the async route task, using runtime expressions to dynamically set the callback parameters.

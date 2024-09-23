@@ -258,7 +258,7 @@ Start-PodeServer -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTerminatio
         return @{ InnerValue = $using:uMessage }
     } | Set-PodeOARouteInfo -Summary 'Async with callback with Using variable' -OperationId 'asyncUsingCallback' -DefinitionTag 'Default', 'v3.1'  -PassThru |
         Set-PodeAsyncRoute -ResponseContentType 'application/json', 'application/yaml'  -Timeout 300 -PassThru |
-        Add-PodeAsyncRouteCallback -PassThru -CallbackSendResult | Set-PodeOARequest  -RequestBody (
+        Add-PodeAsyncRouteCallback -PassThru -SendResult | Set-PodeOARequest  -RequestBody (
             New-PodeOARequestBody -Content @{'application/json' = (New-PodeOAStringProperty -Name 'callbackUrl' -Format Uri -Object -Example 'http://localhost:8080/receive/callback') }
         )
 

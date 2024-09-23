@@ -954,7 +954,7 @@ function Set-PodeAsyncRoutePermission {
     - 'http://example.com/callback'
     - 'https://api.example.com/callback
 
-.PARAMETER CallbackSendResult
+.PARAMETER SendResult
     If specified, sends the result of the callback.
 
 .PARAMETER EventName
@@ -1024,7 +1024,7 @@ function  Add-PodeAsyncRouteCallback {
 
         [Parameter()]
         [switch]
-        $CallbackSendResult,
+        $SendResult,
 
         [Parameter()]
         [string]
@@ -1051,7 +1051,7 @@ function  Add-PodeAsyncRouteCallback {
         $CallbackSettings = @{
             UrlField     = $CallbackUrl
             ContentType  = $CallbackContentType
-            SendResult   = $CallbackSendResult.ToBool()
+            SendResult   = $SendResult.IsPresent
             Method       = $CallbackMethod
             HeaderFields = $CallbackHeaderFields
         }
@@ -1351,6 +1351,9 @@ function Set-PodeAsyncRoute {
 .PARAMETER SseGroup
     Specifies the group for the SSE connection. If not provided, the group will be set to the path of the route.
 
+.PARAMETER SendResult
+    If specified, sends the result upon completion of the async operation.
+
 .OUTPUTS
     Hashtable[]
 
@@ -1384,7 +1387,12 @@ function Add-PodeAsyncRouteSse {
 
         [Parameter()]
         [string]
-        $SseGroup
+        $SseGroup,
+
+        [Parameter()]
+        [switch]
+        $SendResult
+
     )
 
     Begin {
@@ -1392,7 +1400,7 @@ function Add-PodeAsyncRouteSse {
         $pipelineValue = @()
 
         $sseScriptBlock = {
-            param($SseGroup)
+            param($SseGroup, $SendResult)
             $id = $WebEvent.Query['Id']
 
             if ([string]::IsNullOrEmpty($SseGroup)) {
@@ -1413,43 +1421,44 @@ function Add-PodeAsyncRouteSse {
                     return
                 }
             }
-            $AsyncResult = $PodeContext.AsyncRoutes.Processes[$Id]
+            $Process = $PodeContext.AsyncRoutes.Processes[$Id]
 
             $webEventSse = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
             foreach ($key in $WebEvent['Sse'].Keys) {
                 $webEventSse[$key] = $WebEvent.Sse[$key]
             }
-            $AsyncResult.WebEvent['Sse'] = $webEventSse
+            $Process.WebEvent['Sse'] = $webEventSse
 
-            $AsyncResult['Sse']['State'] = 'Waiting'
+            $Process['Sse']['State'] = 'Waiting'
 
-            while (!$AsyncResult['Runspace'].Handler.IsCompleted) {
+            while (!$Process['Runspace'].Handler.IsCompleted) {
                 start-sleep 1
             }
 
             try {
-                switch ($AsyncResult['State']) {
+                switch ($Process['State']) {
                     'Failed' {
-                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Error = $AsyncResult['Error'] }
+                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $Process['State']; Error = $Process['Error'] }
                     }
                     'Completed' {
-                        if ($AsyncResult['Result']) {
-                            $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Result = $AsyncResult['Result'] }
+                        if ($Process['Result'] -and $SendResult) {
+                            $null = Send-PodeSseEvent -FromEvent -Data @{ State = $Process['State']; Result = $Process['Result'] }
                         }
                         else {
                             $null = Send-PodeSseEvent -FromEvent -Data @{ State = 'Completed' }
                         }
                     }
                     'Aborted' {
-                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $AsyncResult['State']; Error = $AsyncResult['Error'] }
+                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $Process['State']; Error = $Process['Error'] }
                     }
                 }
-                $AsyncResult['Sse']['State'] = 'Completed'
+                $Process['Sse']['State'] = 'Completed'
+                start-sleep 1
             }
             catch {
                 # Log any errors encountered during SSE handling
                 $_ | Write-PodeErrorLog
-                $AsyncResult['Sse']['State'] = 'Failed'
+                $Process['Sse']['State'] = 'Failed'
             }
 
         }
@@ -1478,7 +1487,7 @@ function Add-PodeAsyncRouteSse {
                 throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.Path)
             }
 
-            $sseRoute = Add-PodeRoute -PassThru -method Get -Path "$($r.Path)_events" -ArgumentList $SseGroup `
+            $sseRoute = Add-PodeRoute -PassThru -method Get -Path "$($r.Path)_events" -ArgumentList $SseGroup, $SendResult.IsPresent `
                 -ScriptBlock $sseScriptBlock
 
             $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId]['Sse'] = @{
