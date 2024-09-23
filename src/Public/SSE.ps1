@@ -99,7 +99,7 @@ function ConvertTo-PodeSseConnection {
     $ClientId = New-PodeSseClientId -ClientId $ClientId
 
     # set and send SSE headers
-    $ClientId = Wait-PodeTask -Task $WebEvent.Response.SetSseConnection($Scope, $ClientId, $Name, $Group, $RetryDuration, $AllowAllOrigins.IsPresent,$AsyncRouteTaskId)
+    $ClientId = Wait-PodeTask -Task $WebEvent.Response.SetSseConnection($Scope, $ClientId, $Name, $Group, $RetryDuration, $AllowAllOrigins.IsPresent, $AsyncRouteTaskId)
 
     # create SSE property on WebEvent
     $WebEvent.Sse = @{
@@ -259,6 +259,13 @@ function Send-PodeSseEvent {
         }
         else {
             $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
+        }
+    }
+
+    # if inside an async route wait for ClientId to be syncronized
+    if ($WebEvent.Async -and $FromEvent) {
+        while (!($WebEvent.ContainsKey('Sse') -and $WebEvent.Sse.ContainsKey('ClientId'))) {
+            Start-Sleep -Milliseconds 100
         }
     }
 

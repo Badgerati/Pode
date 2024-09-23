@@ -117,9 +117,9 @@ function New-PodeContext {
     }
 
     $ctx.Tasks = @{
-        Enabled        = ($EnablePool -icontains 'tasks')
-        Items          = @{}
-        Processes      = @{}
+        Enabled      = ($EnablePool -icontains 'tasks')
+        Items        = @{}
+        Processes    = @{}
         HouseKeeping = @{
             TimerInterval    = 30
             RetentionMinutes = 1
@@ -129,7 +129,7 @@ function New-PodeContext {
     $ctx.AsyncRoutes = @{
         Enabled             = $true
         Items               = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-        Processes            = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+        Processes           = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
         HouseKeeping        = @{
             TimerInterval    = 30
             RetentionMinutes = 10
@@ -159,7 +159,7 @@ function New-PodeContext {
         Tasks       = 2
         WebSockets  = 2
         AsyncRoutes = 0
-        Timers     = 1
+        Timers      = 1
     }
 
     # set socket details for pode server

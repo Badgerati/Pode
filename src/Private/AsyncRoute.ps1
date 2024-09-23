@@ -56,16 +56,6 @@ function Get-PodeAsyncRouteScriptblock {
 
         $asyncProcess = $PodeContext.AsyncRoutes.Processes[$___async___id___]
 
-        # Copy the Sse content to the user's WebEvent object
-        if ($asyncProcess.ContainsKey('Sse')) {
-            # wait for the SSE object to be available on this thread
-            if (! $asyncProcess['Sse'].ContainsKey('ClientId')) {
-                Start-Sleep 1
-            }
-            $WebEvent.Sse = $asyncProcess['Sse']
-        }
-
-
         try {
             $asyncProcess['StartingTime'] = [datetime]::UtcNow
 
@@ -750,9 +740,10 @@ function Get-PodeAsyncRouteSetScriptBlock {
             $id = Invoke-PodeScriptBlock -ScriptBlock  $WebEvent.Route.AsyncRouteTaskIdGenerator -Return
 
             # Make a deepcopy of webEvent
-            $webEvent_ToClone = @{Route = @{} }
+            $webEvent_ToClone = @{} #[System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            $webEvent_ToClone['Route'] = @{}
             foreach ($key in $webEvent.Keys) {
-                if (!('OnEnd', 'Middleware', 'Route', 'Response' -contains $key)) {
+                if (!('OnEnd', 'Middleware', 'Route', 'Sse', 'Response' -contains $key)) {
                     $webEvent_ToClone[$key] = $webEvent[$key]
                 }
             }
@@ -762,8 +753,11 @@ function Get-PodeAsyncRouteSetScriptBlock {
                 }
             }
 
-         #   $webEvent_ToClone.Response = $webEvent.Response
-
+            $clone = Copy-PodeDeepClone -InputObject $webEvent_ToClone
+            $concurrentClone = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            foreach ($key in $clone.Keys) {
+                $concurrentClone[$key] = $clone[$key]
+            }
             # Setup event parameters
             $parameters = @{
                 Event            = @{
@@ -771,10 +765,11 @@ function Get-PodeAsyncRouteSetScriptBlock {
                     Sender   = $asyncRouteTask
                     Metadata = @{}
                 }
-                WebEvent         = Copy-PodeDeepClone -InputObject $webEvent_ToClone
+                WebEvent         = $concurrentClone
                 ___async___id___ = $id
             }
-            $parameters.WebEvent['Response']=$webEvent.Response
+            $parameters.WebEvent['Response'] = $webEvent.Response
+            $parameters.WebEvent['Async'] = $true
             # Add any task arguments
             foreach ($key in $asyncRouteTask.Arguments.Keys) {
                 $parameters[$key] = $asyncRouteTask.Arguments[$key]
@@ -817,6 +812,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
             $asyncOperation['CallbackSettings'] = $asyncRouteTask.CallbackSettings
             $asyncOperation['Cancellable'] = $asyncRouteTask.Cancellable
             $asyncOperation['Timeout'] = $asyncRouteTask.Timeout
+            $asyncOperation['WebEvent'] = $parameters.WebEvent
 
             if ($asyncRouteTask.ContainsKey('Sse')) {
                 $sseObject = [System.Collections.Concurrent.ConcurrentDictionary[string, psobject]]::new()

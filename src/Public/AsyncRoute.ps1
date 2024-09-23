@@ -1402,7 +1402,6 @@ function Add-PodeAsyncRouteSse {
                 ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local -AsyncRouteTaskId $id
             }
 
-            $PodeContext.AsyncRoutes.Processes[$id]['Sse'] = Copy-PodeDeepClone -InputObject $WebEvent.Sse
 
             if (!$PodeContext.AsyncRoutes.Processes.ContainsKey($id)) {
                 try {
@@ -1415,6 +1414,12 @@ function Add-PodeAsyncRouteSse {
                 }
             }
             $AsyncResult = $PodeContext.AsyncRoutes.Processes[$Id]
+
+            $webEventSse = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            foreach ($key in $WebEvent['Sse'].Keys) {
+                $webEventSse[$key] = $WebEvent.Sse[$key]
+            }
+            $AsyncResult.WebEvent['Sse'] = $webEventSse
 
             $AsyncResult['Sse']['State'] = 'Waiting'
 
