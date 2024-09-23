@@ -514,8 +514,6 @@ function New-PodeLoggingMethod {
                 $enanchedScriptBlock = {
                     param($MethodId)
 
-                    ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingCustomMethod_$MethodId"
-
                     $log = @{}
                     while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                         Start-Sleep -Milliseconds 100

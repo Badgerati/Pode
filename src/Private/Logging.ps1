@@ -20,8 +20,6 @@ function Get-PodeLoggingTerminalMethod {
     return {
         param($MethodId)
 
-        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingTerminalMethod_$MethodId"
-
         if ($PodeContext.Server.Quiet) {
             return
         }
@@ -67,8 +65,6 @@ function Get-PodeLoggingFileMethod {
     return {
         param($MethodId)
 
-        # Set the name of the default runspace
-        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingFileMethod_$MethodId"
         $log = @{}
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             Start-Sleep -Milliseconds 100
@@ -297,8 +293,6 @@ function Get-PodeLoggingSysLogMethod {
             return $value
         }
 
-        # Set the name of the default runspace
-        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingSysLogMethod_$MethodId"
         $log = @{}
         $socketCreated = $false
         try {
@@ -436,8 +430,6 @@ function Get-PodeLoggingRestfulMethod {
     return {
         param($MethodId)
 
-        # Set the name of the default runspace
-        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingRestfulMethod_$MethodId"
         $log = @{}
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             Start-Sleep -Milliseconds 100
@@ -558,8 +550,6 @@ function Get-PodeLoggingEventViewerMethod {
     return {
         param($MethodId)
 
-        # Set the name of the default runspace
-        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = "LoggingEventViewerMethod_$MethodId"
         $log = @{}
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             Start-Sleep -Milliseconds 100
@@ -1138,7 +1128,6 @@ function Start-PodeLoggerDispatcher {
     }
 
     $scriptBlock = {
-        ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace).Name = 'LoggerDispatcher'
 
         $log = @{}
         # Wait for the server to start before processing logs
@@ -1249,14 +1238,14 @@ function Start-PodeLoggerDispatcher {
             foreach ($methodId in $uniqueMethodIds) {
                 if ($null -ne $PodeContext.Server.Logging.Method[$methodId]) {
                     $PodeContext.Server.Logging.Method[$methodId].Queue = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-                    $PodeContext.Server.Logging.Method[$methodId].Runspace = Add-PodeRunspace -PassThru -Type Logs -ScriptBlock $PodeContext.Server.Logging.Method[$methodId].ScriptBlock -Parameters @{ MethodId = $methodId }
+                    $PodeContext.Server.Logging.Method[$methodId].Runspace = Add-PodeRunspace -PassThru -Type Logs -ScriptBlock $PodeContext.Server.Logging.Method[$methodId].ScriptBlock -Parameters @{ MethodId = $methodId } -Name 'Method' -Id $methodId | Out-Null
                 }
             }
         }
     }
 
     # Add the logger dispatcher runspace
-    Add-PodeRunspace -Type Logs -ScriptBlock $scriptBlock
+    Add-PodeRunspace -Type Logs -ScriptBlock $scriptBlock -Name 'Dispatcher'
 }
 
 <#
