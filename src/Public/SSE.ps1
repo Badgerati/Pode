@@ -201,8 +201,11 @@ Send-PodeSseEvent -Name 'Actions' -Group 'admins' -Data @{ Message = 'A message'
 Send-PodeSseEvent -Name 'Actions' -Data @{ Message = 'A message' } -ID 123 -EventType 'action'
 #>
 function Send-PodeSseEvent {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'WebEvent')]
     param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        $Data,
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Name')]
         [string]
         $Name,
@@ -223,9 +226,6 @@ function Send-PodeSseEvent {
         [string]
         $EventType,
 
-        [Parameter(Mandatory = $true)]
-        $Data,
-
         [Parameter()]
         [int]
         $Depth = 10,
@@ -235,50 +235,64 @@ function Send-PodeSseEvent {
         $FromEvent
     )
 
-    # do nothing if no value
-    if (($null -eq $Data) -or ([string]::IsNullOrEmpty($Data))) {
-        return
-    }
 
-    # jsonify the value
-    if ($Data -isnot [string]) {
-        if ($Depth -le 0) {
-            $Data = (ConvertTo-Json -InputObject $Data -Compress)
-        }
-        else {
-            $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
+    begin {
+        $pipelineValue = @()
+        # do nothing if no value
+        if (($null -eq $Data) -or ([string]::IsNullOrEmpty($Data))) {
+            return
         }
     }
 
-    # send directly back to current connection
-    if ($FromEvent -and $WebEvent.Sse.IsLocal) {
-        $null = Wait-PodeTask -Task $WebEvent.Response.SendSseEvent($EventType, $Data, $Id)
-        return
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Value') {
+            $pipelineValue += $_
+        }
     }
 
-    # from event and global?
-    if ($FromEvent) {
-        $Name = $WebEvent.Sse.Name
-        $Group = $WebEvent.Sse.Group
-        $ClientId = $WebEvent.Sse.ClientId
-    }
+    end {
+        if ($pipelineValue.Count -gt 1) {
+            $Data = $pipelineValue
+        }
+        # jsonify the value
+        if ($Data -isnot [string]) {
+            if ($Depth -le 0) {
+                $Data = (ConvertTo-Json -InputObject $Data -Compress)
+            }
+            else {
+                $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
+            }
+        }
 
-    # error if no name
-    if ([string]::IsNullOrEmpty($Name)) {
-        # An SSE connection Name is required, either from -Name or $WebEvent.Sse.Name
-        throw ($PodeLocale.sseConnectionNameRequiredExceptionMessage)
-    }
+        # send directly back to current connection
+        if ($FromEvent -and $WebEvent.Sse.IsLocal) {
+            $null = Wait-PodeTask -Task $WebEvent.Response.SendSseEvent($EventType, $Data, $Id)
+            return
+        }
 
-    # check if broadcast level
-    if (!(Test-PodeSseBroadcastLevel -Name $Name -Group $Group -ClientId $ClientId)) {
-        # SSE failed to broadcast due to defined SSE broadcast level
-        throw ($PodeLocale.sseFailedToBroadcastExceptionMessage -f $Name, (Get-PodeSseBroadcastLevel -Name $Name))
-    }
+        # from event and global?
+        if ($FromEvent) {
+            $Name = $WebEvent.Sse.Name
+            $Group = $WebEvent.Sse.Group
+            $ClientId = $WebEvent.Sse.ClientId
+        }
 
-    # send event
-    $PodeContext.Server.Http.Listener.SendSseEvent($Name, $Group, $ClientId, $EventType, $Data, $Id)
+        # error if no name
+        if ([string]::IsNullOrEmpty($Name)) {
+            # An SSE connection Name is required, either from -Name or $WebEvent.Sse.Name
+            throw ($PodeLocale.sseConnectionNameRequiredExceptionMessage)
+        }
+
+        # check if broadcast level
+        if (!(Test-PodeSseBroadcastLevel -Name $Name -Group $Group -ClientId $ClientId)) {
+            # SSE failed to broadcast due to defined SSE broadcast level
+            throw ($PodeLocale.sseFailedToBroadcastExceptionMessage -f $Name, (Get-PodeSseBroadcastLevel -Name $Name))
+        }
+
+        # send event
+        $PodeContext.Server.Http.Listener.SendSseEvent($Name, $Group, $ClientId, $EventType, $Data, $Id)
+    }
 }
-
 <#
 .SYNOPSIS
 Close one or more SSE connections.
