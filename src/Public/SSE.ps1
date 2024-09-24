@@ -213,7 +213,7 @@ Send-PodeSseEvent -Name 'Actions' -Group 'admins' -Data @{ Message = 'A message'
 Send-PodeSseEvent -Name 'Actions' -Data @{ Message = 'A message' } -ID 123 -EventType 'action'
 #>
 function Send-PodeSseEvent {
-    [CmdletBinding(DefaultParameterSetName = 'AsyncRoute')]
+    [CmdletBinding(DefaultParameterSetName = 'WebEvent')]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
         $Data,
@@ -244,11 +244,7 @@ function Send-PodeSseEvent {
 
         [Parameter(ParameterSetName = 'WebEvent')]
         [switch]
-        $FromEvent,
-
-        [Parameter(ParameterSetName = 'AsyncRoute')]
-        [switch]
-        $AsyncRoute
+        $FromEvent 
     )
     begin {
         $pipelineValue = @()
