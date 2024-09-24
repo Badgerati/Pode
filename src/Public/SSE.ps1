@@ -239,13 +239,15 @@ function Send-PodeSseEvent {
         $EventType,
 
         [Parameter()]
+        [ValidateRange(0, 100)]
         [int]
         $Depth = 10,
 
         [Parameter(ParameterSetName = 'WebEvent')]
         [switch]
-        $FromEvent 
+        $FromEvent
     )
+
     begin {
         $pipelineValue = @()
     }
@@ -268,12 +270,7 @@ function Send-PodeSseEvent {
 
         # jsonify the value
         if ($Data -isnot [string]) {
-            if ($Depth -le 0) {
-                $Data = (ConvertTo-Json -InputObject $Data -Compress)
-            }
-            else {
-                $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
-            }
+            $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
         }
 
         # if inside an async route wait for ClientId to be syncronized

@@ -1421,44 +1421,44 @@ function Add-PodeAsyncRouteSse {
                     return
                 }
             }
-            $Process = $PodeContext.AsyncRoutes.Processes[$Id]
+            $process = $PodeContext.AsyncRoutes.Processes[$Id]
 
             $webEventSse = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
             foreach ($key in $WebEvent['Sse'].Keys) {
                 $webEventSse[$key] = $WebEvent.Sse[$key]
             }
-            $Process.WebEvent['Sse'] = $webEventSse
+            $process.WebEvent['Sse'] = $webEventSse
 
-            $Process['Sse']['State'] = 'Waiting'
+            $process['Sse']['State'] = 'Waiting'
 
-            while (!$Process['Runspace'].Handler.IsCompleted) {
+            while (!$process['Runspace'].Handler.IsCompleted) {
                 start-sleep 1
             }
 
             try {
-                switch ($Process['State']) {
+                switch ($process['State']) {
                     'Failed' {
-                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $Process['State']; Error = $Process['Error'] }
+                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $process['State']; Error = $process['Error'] } -EventType 'pode.taskCompleted'
                     }
                     'Completed' {
-                        if ($Process['Result'] -and $SendResult) {
-                            $null = Send-PodeSseEvent -FromEvent -Data @{ State = $Process['State']; Result = $Process['Result'] }
+                        if ($process['Result'] -and $SendResult) {
+                            $null = Send-PodeSseEvent -FromEvent -Data @{ State = $process['State']; Result = $process['Result'] } -EventType 'pode.taskCompleted'
                         }
                         else {
-                            $null = Send-PodeSseEvent -FromEvent -Data @{ State = 'Completed' }
+                            $null = Send-PodeSseEvent -FromEvent -Data @{ State = 'Completed' } -EventType 'pode.taskCompleted'
                         }
                     }
                     'Aborted' {
-                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $Process['State']; Error = $Process['Error'] }
+                        $null = Send-PodeSseEvent -FromEvent -Data @{ State = $process['State']; Error = $process['Error'] } -EventType 'pode.taskCompleted'
                     }
                 }
-                $Process['Sse']['State'] = 'Completed'
+                $process['Sse']['State'] = 'Completed'
                 start-sleep 1
             }
             catch {
                 # Log any errors encountered during SSE handling
                 $_ | Write-PodeErrorLog
-                $Process['Sse']['State'] = 'Failed'
+                $process['Sse']['State'] = 'Failed'
             }
 
         }
@@ -1801,7 +1801,13 @@ function Set-PodeAsyncRouteProgress {
         [int] $DurationSeconds,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'SetValue')]
-        [double] $Value
+        [double] $Value,
+
+        [Parameter(ParameterSetName = 'TimeBased')]
+        [Parameter(ParameterSetName = 'StartEnd')]
+        [Parameter(ParameterSetName = 'SetValue')]
+        [double[]]
+        $SseEvents
     )
 
     # Ensure this function is used within an async route
@@ -1809,20 +1815,20 @@ function Set-PodeAsyncRouteProgress {
         # Set-PodeAsyncRouteProgress can only be used inside an Async Route Scriptblock.
         throw $PodeLocale.setPodeAsyncProgressExceptionMessage
     }
-    $asyncResult = $PodeContext.AsyncRoutes.Processes[$___async___id___]
+    $process = $PodeContext.AsyncRoutes.Processes[$___async___id___]
 
     # Initialize progress if not already set, for non-tick operations
     if ($PSCmdlet.ParameterSetName -ne 'Tick' -and $PSCmdlet.ParameterSetName -ne 'SetValue') {
-        if (!$asyncResult.ContainsKey('Progress')) {
+        if (!$process.ContainsKey('Progress')) {
             if ( $UseDecimalProgress.IsPresent) {
-                $asyncResult['Progress'] = [double] 0
+                $process['Progress'] = [double] 0
             }
             else {
-                $asyncResult['Progress'] = [int] 0
+                $process['Progress'] = [int] 0
             }
         }
 
-        if ($MaxProgress -le $asyncResult['Progress']) {
+        if ($MaxProgress -le $process['Progress']) {
             # A Progress limit cannot be lower than the current progress.
             throw $PodeLocale.progressLimitLowerThanCurrentExceptionMessage
         }
@@ -1832,70 +1838,82 @@ function Set-PodeAsyncRouteProgress {
         'StartEnd' {
             # Calculate total ticks and tick to progress ratio
             $totalTicks = [math]::ceiling(($End - $Start) / $Steps)
-            if ($asyncResult['Progress'] -is [double]) {
-                $asyncResult['TickToProgress'] = ($MaxProgress - $asyncResult['Progress']) / $totalTicks
+            if ($process['Progress'] -is [double]) {
+                $process['TickToProgress'] = ($MaxProgress - $process['Progress']) / $totalTicks
             }
             else {
-                $asyncResult['TickToProgress'] = [Math]::Floor(($MaxProgress - $asyncResult['Progress']) / $totalTicks)
+                $process['TickToProgress'] = [Math]::Floor(($MaxProgress - $process['Progress']) / $totalTicks)
             }
         }
         'Tick' {
             # Increment progress by TickToProgress value
-            $asyncResult['Progress'] = $asyncResult['Progress'] + $asyncResult['TickToProgress']
+            $process['Progress'] = $process['Progress'] + $process['TickToProgress']
 
             # Ensure Progress does not exceed the specified limit
-            if ($asyncResult['Progress'] -ge $MaxProgress) {
-                if ($asyncResult['Progress'] -is [double]) {
-                    $asyncResult['Progress'] = $MaxProgress - 0.01
+            if ($process['Progress'] -ge $MaxProgress) {
+                if ($process['Progress'] -is [double]) {
+                    $process['Progress'] = $MaxProgress - 0.01
                 }
                 else {
-                    $asyncResult['Progress'] = $MaxProgress - 1
+                    $process['Progress'] = $MaxProgress - 1
                 }
             }
         }
         'TimeBased' {
             # Calculate tick interval and progress increment per tick
             $totalTicks = [math]::ceiling($DurationSeconds / $IntervalSeconds)
-            if ($asyncResult['Progress'] -is [double]) {
-                $asyncResult['TickToProgress'] = ($MaxProgress - $asyncResult['Progress']) / $totalTicks
+            if ($process['Progress'] -is [double]) {
+                $process['TickToProgress'] = ($MaxProgress - $process['Progress']) / $totalTicks
             }
             else {
-                $asyncResult['TickToProgress'] = [Math]::Floor(($MaxProgress - $asyncResult['Progress']) / $totalTicks)
+                $process['TickToProgress'] = [Math]::Floor(($MaxProgress - $process['Progress']) / $totalTicks)
             }
 
             # Start the scheduler
-            $asyncResult['eventName'] = "TimerEvent_$___async___id___"
-            $asyncResult['Timer'] = [System.Timers.Timer]::new()
-            $asyncResult['Timer'].Interval = $IntervalSeconds * 1000
-            $null = Register-ObjectEvent -InputObject $asyncResult['Timer'] -EventName Elapsed -SourceIdentifier  $asyncResult['eventName'] -MessageData @{AsyncResult = $asyncResult; MaxProgress = $MaxProgress } -Action {
-                $asyncResult = $Event.MessageData.AsyncResult
+            $process['eventName'] = "TimerEvent_$___async___id___"
+            $process['Timer'] = [System.Timers.Timer]::new()
+            $process['Timer'].Interval = $IntervalSeconds * 1000
+            $null = Register-ObjectEvent -InputObject $process['Timer'] -EventName Elapsed -SourceIdentifier  $process['eventName'] `
+                -MessageData @{AsyncResult = $process; MaxProgress = $MaxProgress; SseEvents = $SseEvents } -Action {
+                $process = $Event.MessageData.AsyncResult
                 $MaxProgress = $Event.MessageData.MaxProgress
-
+                $SseEvents = $Event.MessageData.SseEvents
                 # Increment progress by TickToProgress value
-                $asyncResult['Progress'] = $asyncResult['Progress'] + $asyncResult['TickToProgress']
+                $process['Progress'] = $process['Progress'] + $process['TickToProgress']
+
+                if ( $SseEvents -and $process.ContainsKey('Sse')) {
+                    if ($SseEvents -contains $process['Progress'] ) {
+                        $null = Send-PodeSseEvent -FromEvent -Data @{ Progress = $process['Progress'] } -EventType 'pode.progress'
+                    }
+                }
 
                 # Check if progress has reached or exceeded MaxProgress
-                if ($asyncResult['Progress'] -gt $MaxProgress) {
+                if ($process['Progress'] -gt $MaxProgress) {
                     # Closes and disposes of the timer
-                    Close-PodeAsyncRouteTimer -Operation  $asyncResult
+                    Close-PodeAsyncRouteTimer -Operation  $process
 
-                    if ($asyncResult['Progress'] -is [double]) {
-                        $asyncResult['Progress'] = $MaxProgress - 0.01
+                    if ($process['Progress'] -is [double]) {
+                        $process['Progress'] = $MaxProgress - 0.01
                     }
                     else {
-                        $asyncResult['Progress'] = $MaxProgress - 1
+                        $process['Progress'] = $MaxProgress - 1
                     }
                 }
             }
-            $asyncResult['Timer'].Enabled = $true
+            $process['Timer'].Enabled = $true
         }
         'SetValue' {
             if ( $UseDecimalProgress.IsPresent -or ($Value % 1 -ne 0) ) {
-                $asyncResult['Progress'] = $Value
+                $process['Progress'] = $Value
             }
             else {
-                $asyncResult['Progress'] = [int]$Value
+                $process['Progress'] = [int]$Value
             }
+        }
+    }
+    if ( $SseEvents -and $WebEvent.Sse) {
+        if ($SseEvents -contains $process['Progress'] ) {
+            $null = Send-PodeSseEvent -FromEvent -Data @{ Progress = $process['Progress'] } -EventType 'pode.progress'
         }
     }
 }
