@@ -1315,25 +1315,6 @@ Describe 'Out-PodeHost' {
     }
 }
 
-Describe 'Remove-PodeNullKeysFromHashtable' {
-    It 'Removes all null values keys' {
-        $ht = @{
-            Value1 = $null
-            Value2 = @{
-                Value3 = @()
-                Value4 = $null
-            }
-        }
-
-        $ht | Remove-PodeNullKeysFromHashtable
-
-        $ht.ContainsKey('Value1') | Should -Be $false
-        $ht.ContainsKey('Value2') | Should -Be $true
-        $ht.Value2.ContainsKey('Value3') | Should -Be $true
-        $ht.Value2.ContainsKey('Value4') | Should -Be $false
-    }
-}
-
 Describe 'Get-PodeDefaultPort' {
     It 'Returns default port for http' {
         Get-PodeDefaultPort -Protocol Http | Should -Be 8080

@@ -924,80 +924,19 @@ function Remove-PodeEmptyItemsFromArray {
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         $Array
     )
-    begin {
-        # Initialize an array to hold piped-in values
-        $pipelineValue = @()
+    # Set Array to the array of values
+    if ($pipelineValue.Count -gt 1) {
+        $Array = $pipelineValue
     }
-    process {
-        # Add the current piped-in value to the array
-        $pipelineValue += $_
-    }
-    end {
-        # Set Array to the array of values
-        if ($pipelineValue.Count -gt 1) {
-            $Array = $pipelineValue
-        }
-        if ($null -eq $Array) {
-            return @()
-        }
-
-        return @( @($Array -ne ([string]::Empty)) -ne $null )
-    }
-}
-
-function Remove-PodeNullKeysFromHashtable {
-    param(
-        [Parameter(ValueFromPipeline = $true)]
-        [hashtable]
-        $Hashtable
-    )
-    begin {
-        $pipelineItemCount = 0
+    if ($null -eq $Array) {
+        return @()
     }
 
-    process {
-        $pipelineItemCount++
-    }
+    return @( @($Array -ne ([string]::Empty)) -ne $null )
 
-    end {
-        if ($pipelineItemCount -gt 1) {
-            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
-        }
-        foreach ($key in ($Hashtable.Clone()).Keys) {
-            if ($null -eq $Hashtable[$key]) {
-                $null = $Hashtable.Remove($key)
-                continue
-            }
-
-            if (($Hashtable[$key] -is [string]) -and [string]::IsNullOrEmpty($Hashtable[$key])) {
-                $null = $Hashtable.Remove($key)
-                continue
-            }
-
-            if ($Hashtable[$key] -is [array]) {
-                if (($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
-                    $null = $Hashtable.Remove($key)
-                    continue
-                }
-
-                foreach ($item in $Hashtable[$key]) {
-                    if (($item -is [hashtable]) -or ($item -is [System.Collections.Specialized.OrderedDictionary])) {
-                        $item | Remove-PodeNullKeysFromHashtable
-                    }
-                }
-
-                continue
-            }
-
-            if (($Hashtable[$key] -is [hashtable]) -or ($Hashtable[$key] -is [System.Collections.Specialized.OrderedDictionary])) {
-                $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
-                continue
-            }
-        }
-    }
 }
 
 <#
@@ -1143,7 +1082,7 @@ function Test-PodeValidNetworkFailure {
 
 function ConvertFrom-PodeHeaderQValue {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         [string]
         $Value
     )
@@ -1442,7 +1381,7 @@ function New-PodeRequestException {
 
 function ConvertTo-PodeResponseContent {
     param(
-        [Parameter(Position = 0, ValueFromPipeline = $true)]
+        [Parameter()]
         $InputObject,
 
         [Parameter()]
@@ -1460,31 +1399,30 @@ function ConvertTo-PodeResponseContent {
         [switch]
         $AsHtml
     )
-    process {
-        # split for the main content type
-        $ContentType = Split-PodeContentType -ContentType $ContentType
+    # split for the main content type
+    $ContentType = Split-PodeContentType -ContentType $ContentType
 
-        # if there is no content-type then convert straight to string
-        if ([string]::IsNullOrWhiteSpace($ContentType)) {
-            return ([string]$InputObject)
-        }
+    # if there is no content-type then convert straight to string
+    if ([string]::IsNullOrWhiteSpace($ContentType)) {
+        return ([string]$InputObject)
+    }
 
-        # run action for the content type
-        switch ($ContentType) {
-            { $_ -match '^(.*\/)?(.*\+)?json$' } {
-                if ($InputObject -isnot [string]) {
-                    if ($Depth -le 0) {
-                        return (ConvertTo-Json -InputObject $InputObject -Compress)
-                    }
-                    else {
-                        return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
-                    }
+    # run action for the content type
+    switch ($ContentType) {
+        { $_ -match '^(.*\/)?(.*\+)?json$' } {
+            if ($InputObject -isnot [string]) {
+                if ($Depth -le 0) {
+                    return (ConvertTo-Json -InputObject $InputObject -Compress)
                 }
-
-                if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                    return '{}'
+                else {
+                    return (ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress)
                 }
             }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return '{}'
+            }
+        }
 
         { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
@@ -1496,10 +1434,10 @@ function ConvertTo-PodeResponseContent {
                 }
             }
 
-                if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                    return '[]'
-                }
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return '[]'
             }
+        }
 
         { $_ -match '^(.*\/)?(.*\+)?xml$' } {
             if ($InputObject -isnot [string]) {
@@ -1507,13 +1445,13 @@ function ConvertTo-PodeResponseContent {
                         [pscustomobject]$item
                     })
 
-                    return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
-                }
-
-                if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                    return [string]::Empty
-                }
+                return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
             }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return [string]::Empty
+            }
+        }
 
         { $_ -ilike '*/csv' } {
             if ($InputObject -isnot [string]) {
@@ -1521,40 +1459,39 @@ function ConvertTo-PodeResponseContent {
                         [pscustomobject]$item
                     })
 
-                    if (Test-PodeIsPSCore) {
-                        $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -IncludeTypeInformation:$false)
-                    }
-                    else {
-                        $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -NoTypeInformation)
-                    }
-
-                    return ($temp -join ([environment]::NewLine))
+                if (Test-PodeIsPSCore) {
+                    $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -IncludeTypeInformation:$false)
+                }
+                else {
+                    $temp = ($temp | ConvertTo-Csv -Delimiter $Delimiter -NoTypeInformation)
                 }
 
-                if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                    return [string]::Empty
-                }
+                return ($temp -join ([environment]::NewLine))
             }
 
-            { $_ -ilike '*/html' } {
-                if ($InputObject -isnot [string]) {
-                    return (($InputObject | ConvertTo-Html) -join ([environment]::NewLine))
-                }
-
-                if ([string]::IsNullOrWhiteSpace($InputObject)) {
-                    return [string]::Empty
-                }
-            }
-
-            { $_ -ilike '*/markdown' } {
-                if ($AsHtml -and ($PSVersionTable.PSVersion.Major -ge 7)) {
-                    return ($InputObject | ConvertFrom-Markdown).Html
-                }
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return [string]::Empty
             }
         }
 
-        return ([string]$InputObject)
+        { $_ -ilike '*/html' } {
+            if ($InputObject -isnot [string]) {
+                return (($InputObject | ConvertTo-Html) -join ([environment]::NewLine))
+            }
+
+            if ([string]::IsNullOrWhiteSpace($InputObject)) {
+                return [string]::Empty
+            }
+        }
+
+        { $_ -ilike '*/markdown' } {
+            if ($AsHtml -and ($PSVersionTable.PSVersion.Major -ge 7)) {
+                return ($InputObject | ConvertFrom-Markdown).Html
+            }
+        }
     }
+
+    return ([string]$InputObject)
 }
 
 function ConvertFrom-PodeRequestContent {
@@ -3085,29 +3022,17 @@ function Find-PodeModuleFile {
 #>
 function Clear-PodeHashtableInnerKey {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         [hashtable]
         $InputObject
     )
-    begin {
-        $pipelineItemCount = 0
+
+    if (Test-PodeIsEmpty $InputObject) {
+        return
     }
 
-    process {
-        $pipelineItemCount++
-    }
-
-    end {
-        if ($pipelineItemCount -gt 1) {
-            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
-        }
-        if (Test-PodeIsEmpty $InputObject) {
-            return
-        }
-
-        $InputObject.Keys.Clone() | ForEach-Object {
-            $InputObject[$_].Clear()
-        }
+    $InputObject.Keys.Clone() | ForEach-Object {
+        $InputObject[$_].Clear()
     }
 }
 

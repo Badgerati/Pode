@@ -133,7 +133,7 @@ This is an internal function and may change in future releases of Pode.
 function Write-PodeFileResponseInternal {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
         $Path,
@@ -159,80 +159,68 @@ function Write-PodeFileResponseInternal {
         [switch]
         $FileBrowser
     )
-    begin {
-        $pipelineItemCount = 0
+
+    # Attempt to retrieve information about the path
+    $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
+
+    if (!$pathinfo) {
+        return
     }
 
-    process {
-        $pipelineItemCount++
+    # Check if the path is a directory
+    if ( $pathInfo.PSIsContainer) {
+        # If directory browsing is enabled, use the directory response function
+        Write-PodeDirectoryResponseInternal -Path $Path
     }
+    else {
+        # are we dealing with a dynamic file for the view engine? (ignore html)
+        # Determine if the file is dynamic and should be processed by the view engine
+        $mainExt = $pathInfo.Extension.TrimStart('.')
 
-    end {
-        if ($pipelineItemCount -gt 1) {
-            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
-        }
-        # Attempt to retrieve information about the path
-        $pathInfo = Test-PodePath -Path $Path -Force -ReturnItem -FailOnDirectory:(!$FileBrowser)
-
-        if (!$pathinfo) {
-            return
-        }
-
-        # Check if the path is a directory
-        if ( $pathInfo.PSIsContainer) {
-            # If directory browsing is enabled, use the directory response function
-            Write-PodeDirectoryResponseInternal -Path $Path
-        }
-        else {
-            # are we dealing with a dynamic file for the view engine? (ignore html)
-            # Determine if the file is dynamic and should be processed by the view engine
-            $mainExt = $pathInfo.Extension.TrimStart('.')
-
-            # generate dynamic content
-            if (![string]::IsNullOrWhiteSpace($mainExt) -and (
+        # generate dynamic content
+        if (![string]::IsNullOrWhiteSpace($mainExt) -and (
         ($mainExt -ieq 'pode') -or
         ($mainExt -ieq $PodeContext.Server.ViewEngine.Extension -and $PodeContext.Server.ViewEngine.IsDynamic)
-                )
-            ) {
-                # Process dynamic content with the view engine
-                $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
+            )
+        ) {
+            # Process dynamic content with the view engine
+            $content = Get-PodeFileContentUsingViewEngine -Path $Path -Data $Data
 
-                # Determine the correct content type for the response
-                # get the sub-file extension, if empty, use original
-                $subExt = [System.IO.Path]::GetExtension($pathInfo.BaseName).TrimStart('.')
+            # Determine the correct content type for the response
+            # get the sub-file extension, if empty, use original
+            $subExt = [System.IO.Path]::GetExtension($pathInfo.BaseName).TrimStart('.')
 
-                $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
+            $subExt = (Protect-PodeValue -Value $subExt -Default $mainExt)
 
-                $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
+            $ContentType = (Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $subExt))
 
-                # Write the processed content as the HTTP response
-                Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
+            # Write the processed content as the HTTP response
+            Write-PodeTextResponse -Value $content -ContentType $ContentType -StatusCode $StatusCode
+        }
+        # this is a static file
+        else {
+            try {
+                if (Test-PodeIsPSCore) {
+                    $content = (Get-Content -Path $Path -Raw -AsByteStream)
+                }
+                else {
+                    $content = (Get-Content -Path $Path -Raw -Encoding byte)
+                }
+                # Determine and set the content type for static files
+                $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
+                # Write the file content as the HTTP response
+                Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
+                return
             }
-            # this is a static file
-            else {
-                try {
-                    if (Test-PodeIsPSCore) {
-                        $content = (Get-Content -Path $Path -Raw -AsByteStream)
-                    }
-                    else {
-                        $content = (Get-Content -Path $Path -Raw -Encoding byte)
-                    }
-                    # Determine and set the content type for static files
-                    $ContentType = Protect-PodeValue -Value $ContentType -Default (Get-PodeContentType -Extension $mainExt)
-                    # Write the file content as the HTTP response
-                    Write-PodeTextResponse -Bytes $content -ContentType $ContentType -MaxAge $MaxAge -StatusCode $StatusCode -Cache:$Cache
-                    return
-                }
-                catch [System.UnauthorizedAccessException] {
-                    $statusCode = 401
-                }
-                catch {
-                    $statusCode = 400
-                }
-                # If the file does not exist, set the HTTP response status code appropriately
-                Set-PodeResponseStatus -Code $StatusCode
-
+            catch [System.UnauthorizedAccessException] {
+                $statusCode = 401
             }
+            catch {
+                $statusCode = 400
+            }
+            # If the file does not exist, set the HTTP response status code appropriately
+            Set-PodeResponseStatus -Code $StatusCode
+
         }
     }
 }
