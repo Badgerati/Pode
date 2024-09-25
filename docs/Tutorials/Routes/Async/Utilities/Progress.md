@@ -14,10 +14,34 @@ The `Set-PodeAsyncRouteProgress` function manages the progress of an asynchronou
 - **Start and End Progress with Ticks**: Define a starting and ending progress value, with optional steps to increment progress. Use ticks to advance the progress in this scenario.
 - **Time-based Progress**: Automatically increment progress over a specified duration with interval-based ticks.
 - **Set Specific Progress Value**: Directly set the progress to a specific value.
+- **SSE Integration**: If `Server-Sent Events (Sse)` is configured for the route, a 'pode.progress' event is automatically sent to the web client, providing real-time updates on the task's progress.
+
 
 #### Example Usage
 
+
+
 ##### Start and End Progress with Ticks
+
+```powershell
+Add-PodeRoute -PassThru -Method Post -Path '/process-data' -ScriptBlock {
+    $data = Get-PodeBody
+    Set-PodeAsyncRouteProgress -Start 0 -End 100 -Steps 5
+
+    # Simulate long-running task
+    for ($i = 0; $i -le 100; $i += 5) {
+        Set-PodeAsyncRouteProgress -Tick
+        Start-Sleep 1
+    }
+
+    return @{ message = "Processing completed" }
+} | Set-PodeAsyncRoute
+```
+
+In this example:
+- An async route processes data and sends progress updates using `Set-PodeAsyncRouteProgress`.
+
+##### Multiple Start and End Progress with Ticks
 
 ```powershell
 Add-PodeRoute -PassThru -Method Get -Path '/SumOfSquareRoot' -ScriptBlock {
@@ -45,6 +69,8 @@ Add-PodeRoute -PassThru -Method Get -Path '/SumOfSquareRoot' -ScriptBlock {
 In this example:
 - The first progress runs from 0 to 80 with a default step of 1, representing progress as a decimal number.
 - The second progress runs from 80 to 100 with a step of 4, also representing progress as a decimal number.
+
+
 
 ##### Time-based Progress
 
@@ -97,7 +123,3 @@ Add-PodeRoute -PassThru -Method Get '/process' {
     Write-PodeHost "Current Progress: $progress"
 } | Set-PodeAsyncRoute -ResponseContentType 'application/json'
 ```
-
-#### Parameters
-
-This function is intended to be used inside an asynchronous route scriptblock to get the current progress of the task.

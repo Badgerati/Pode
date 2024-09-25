@@ -1260,7 +1260,7 @@ function Set-PodeAsyncRoute {
 
         foreach ($r in $Route) {
             # Check if the route is already marked as an Async Route
-            if ( $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncRouteId) -or $r.IsAsync) {
+            if ( $r.IsAsync) {
                 # The function cannot be invoked multiple times for the same route
                 throw ($PodeLocale.functionCannotBeInvokedMultipleTimesExceptionMessage -f $MyInvocation.MyCommand.Name, $r.Path)
             }
@@ -1271,35 +1271,40 @@ function Set-PodeAsyncRoute {
             # Set the Route as Async
             $r.IsAsync = $true
 
+            # Assing an unique Id to the async route
+            $asyncRouteId = "__$($r.method)$($r.Path)_$($r.Endpoint.Name)_".Replace('/', '_')
+            $r.AsyncRouteId = $asyncRouteId
+
             # Assign the Id generator
             if ($IdGenerator) {
-                $r.AsyncRouteTaskIdGenerator = $IdGenerator
+                $asyncRouteTaskIdGenerator = $IdGenerator
             }
             else {
-                $r.AsyncRouteTaskIdGenerator = { return (New-PodeGuid) }
+                $asyncRouteTaskIdGenerator = { return (New-PodeGuid) }
             }
 
             # Store the route's async route task definition in Pode context
-            $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId] = @{
-                AsyncRouteId     = $r.AsyncRouteId
-                Script           = Get-PodeAsyncRouteScriptblock -ScriptBlock $r.Logic
-                UsingVariables   = $r.UsingVariables
-                Arguments        = (Protect-PodeValue -Value $r.Arguments -Default @{})
-                CallbackSettings = $null
-                Cancellable      = !($NotCancellable.IsPresent)
-                MinRunspaces     = $MinRunspaces
-                MaxRunspaces     = $MaxRunspaces
-                Timeout          = $Timeout
-                Permission       = @{}
+            $PodeContext.AsyncRoutes.Items[$asyncRouteId] = @{
+                AsyncRouteId              = $asyncRouteId
+                Script                    = Get-PodeAsyncRouteScriptblock -ScriptBlock $r.Logic
+                UsingVariables            = $r.UsingVariables
+                Arguments                 = (Protect-PodeValue -Value $r.Arguments -Default @{})
+                CallbackSettings          = $null
+                Cancellable               = !($NotCancellable.IsPresent)
+                MinRunspaces              = $MinRunspaces
+                MaxRunspaces              = $MaxRunspaces
+                Timeout                   = $Timeout
+                Permission                = @{}
+                AsyncRouteTaskIdGenerator = $asyncRouteTaskIdGenerator
             }
 
             #Set thread count
             $PodeContext.Threads.AsyncRoutes += $MaxRunspaces
-            if (! $PodeContext.RunspacePools.ContainsKey($r.AsyncRouteId)) {
-                $PodeContext.RunspacePools[$r.AsyncRouteId] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+            if (! $PodeContext.RunspacePools.ContainsKey($asyncRouteId)) {
+                $PodeContext.RunspacePools[$asyncRouteId] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
 
-                $PodeContext.RunspacePools[$r.AsyncRouteId]['Pool'] = New-PodeRunspacePoolNetWrapper -MinRunspaces $MinRunspaces -MaxRunspaces $MaxRunspaces -RunspaceState $PodeContext.RunspaceState
-                $PodeContext.RunspacePools[$r.AsyncRouteId]['State'] = 'Waiting'
+                $PodeContext.RunspacePools[$asyncRouteId]['Pool'] = New-PodeRunspacePoolNetWrapper -MinRunspaces $MinRunspaces -MaxRunspaces $MaxRunspaces -RunspaceState $PodeContext.RunspaceState
+                $PodeContext.RunspacePools[$asyncRouteId]['State'] = 'Waiting'
 
             }
             # Replace the Route logic with this that allow to execute the original logic asynchronously
@@ -1392,17 +1397,18 @@ function Add-PodeAsyncRouteSse {
         [Parameter()]
         [switch]
         $SendResult
-
     )
 
     Begin {
-        # Initialize an array to hold piped-in values
+        # Initialize an array to store piped-in routes
         $pipelineValue = @()
 
+        # Define the SSE script block to handle client-server communication over SSE
         $sseScriptBlock = {
             param($SseGroup, $SendResult)
-            $id = $WebEvent.Query['Id']
+            $id = $WebEvent.Query['Id']  # Capture the async operation ID from the query string
 
+            # Determine the SSE group to use, fallback to the route path if none specified
             if ([string]::IsNullOrEmpty($SseGroup)) {
                 ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local -Group $SseGroup -AsyncRouteTaskId $id
             }
@@ -1410,37 +1416,44 @@ function Add-PodeAsyncRouteSse {
                 ConvertTo-PodeSseConnection -Name $webEvent.Route.Path -Scope Local -AsyncRouteTaskId $id
             }
 
-
+            # Check if the process for the async route exists
             if (!$PodeContext.AsyncRoutes.Processes.ContainsKey($id)) {
                 try {
+                    # Throw an exception if the process is not found
                     throw ($PodeLocale.asyncIdDoesNotExistExceptionMessage -f $id)
                 }
                 catch {
-                    # Log the error
+                    # Log the error and exit
                     $_ | Write-PodeErrorLog
                     return
                 }
             }
-            $process = $PodeContext.AsyncRoutes.Processes[$Id]
+            $process = $PodeContext.AsyncRoutes.Processes[$Id]  # Retrieve the async process by ID
 
+            # Initialize an SSE dictionary for the event
             $webEventSse = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
             foreach ($key in $WebEvent['Sse'].Keys) {
-                $webEventSse[$key] = $WebEvent.Sse[$key]
+                $webEventSse[$key] = $WebEvent.Sse[$key]  # Copy SSE data
             }
-            $process.WebEvent['Sse'] = $webEventSse
+            $process.WebEvent['Sse'] = $webEventSse  # Store the SSE data in the process object
 
+            # Set the initial state of the SSE process to 'Waiting'
             $process['Sse']['State'] = 'Waiting'
 
+            # Wait until the async runspace is completed
             while (!$process['Runspace'].Handler.IsCompleted) {
                 start-sleep 1
             }
 
             try {
+                # Handle the completion of the async operation based on its state
                 switch ($process['State']) {
                     'Failed' {
+                        # Send an SSE event if the process failed
                         $null = Send-PodeSseEvent -FromEvent -Data @{ State = $process['State']; Error = $process['Error'] } -EventType 'pode.taskCompleted'
                     }
                     'Completed' {
+                        # Send the result or a generic completion message if successful
                         if ($process['Result'] -and $SendResult) {
                             $null = Send-PodeSseEvent -FromEvent -Data @{ State = $process['State']; Result = $process['Result'] } -EventType 'pode.taskCompleted'
                         }
@@ -1449,54 +1462,57 @@ function Add-PodeAsyncRouteSse {
                         }
                     }
                     'Aborted' {
+                        # Handle aborted async operations
                         $null = Send-PodeSseEvent -FromEvent -Data @{ State = $process['State']; Error = $process['Error'] } -EventType 'pode.taskCompleted'
                     }
                 }
+                # Mark the SSE process state as completed
                 $process['Sse']['State'] = 'Completed'
                 start-sleep 1
             }
             catch {
-                # Log any errors encountered during SSE handling
+                # Log any errors encountered and set the state to 'Failed'
                 $_ | Write-PodeErrorLog
                 $process['Sse']['State'] = 'Failed'
             }
-
         }
     }
 
     process {
-        # Add the current piped-in value to the array
+        # Collect the piped-in route(s)
         $pipelineValue += $_
     }
 
     End {
-        # Set Route to the array of values if multiple values are piped in
+        # If multiple routes are piped in, assign them to $Route
         if ($pipelineValue.Count -gt 1) {
             $Route = $pipelineValue
         }
 
+        # Throw an error if Route is null
         if ($null -eq $Route) {
-            # The parameter 'Route' cannot be null
             throw ($PodeLocale.routeParameterCannotBeNullExceptionMessage)
         }
 
         foreach ($r in $Route) {
-            # Check if the route is marked as an Async Route
+            # Ensure the route is marked as an Async Route
             if (! $PodeContext.AsyncRoutes.Items.ContainsKey($r.AsyncRouteId) -or ! $r.IsAsync) {
-                # The route '{0}' is not marked as an Async Route.
-                throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.Path)
+                throw ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f $r.Path)  # Throw error if not async
             }
 
+            # Create the SSE route with the '_events' suffix
             $sseRoute = Add-PodeRoute -PassThru -method Get -Path "$($r.Path)_events" -ArgumentList $SseGroup, $SendResult.IsPresent `
-                -ScriptBlock $sseScriptBlock
+                -ScriptBlock $sseScriptBlock  # The new route handles SSE
 
+            # Store the SSE route information in the async route context
             $PodeContext.AsyncRoutes.Items[$r.AsyncRouteId]['Sse'] = @{
                 Group = $SseGroup
                 Name  = "$($r.Path)_events"
                 Route = $sseRoute
             }
         }
-        # Return the route information if PassThru is specified
+
+        # Return the route object if PassThru is specified
         if ($PassThru) {
             return $Route
         }
@@ -1804,17 +1820,19 @@ function Set-PodeAsyncRouteProgress {
         [double] $Value
     )
 
-    # Ensure this function is used within an async route
+    # Ensure the function is used inside an async route
     if (!$___async___id___) {
-        # Set-PodeAsyncRouteProgress can only be used inside an Async Route Scriptblock.
+        # Throw an error if not in an async route context
         throw $PodeLocale.setPodeAsyncProgressExceptionMessage
     }
+    # Retrieve the async process using the task ID
     $process = $PodeContext.AsyncRoutes.Processes[$___async___id___]
 
-    # Initialize progress if not already set, for non-tick operations
+    # Initialize progress if not set yet and not using 'Tick' or 'SetValue' modes
     if ($PSCmdlet.ParameterSetName -ne 'Tick' -and $PSCmdlet.ParameterSetName -ne 'SetValue') {
         if (!$process.ContainsKey('Progress')) {
-            if ( $UseDecimalProgress.IsPresent) {
+            # Initialize progress to 0, using a decimal or integer based on the presence of the switch
+            if ($UseDecimalProgress.IsPresent) {
                 $process['Progress'] = [double] 0
             }
             else {
@@ -1822,15 +1840,16 @@ function Set-PodeAsyncRouteProgress {
             }
         }
 
+        # Throw an error if MaxProgress is less than the current progress
         if ($MaxProgress -le $process['Progress']) {
-            # A Progress limit cannot be lower than the current progress.
             throw $PodeLocale.progressLimitLowerThanCurrentExceptionMessage
         }
     }
 
+    # Handle progress updates based on the parameter set
     switch ($PSCmdlet.ParameterSetName) {
         'StartEnd' {
-            # Calculate total ticks and tick to progress ratio
+            # Calculate total ticks and tick-to-progress ratio
             $totalTicks = [math]::ceiling(($End - $Start) / $Steps)
             if ($process['Progress'] -is [double]) {
                 $process['TickToProgress'] = ($MaxProgress - $process['Progress']) / $totalTicks
@@ -1840,10 +1859,10 @@ function Set-PodeAsyncRouteProgress {
             }
         }
         'Tick' {
-            # Increment progress by TickToProgress value
+            # Increment progress by the TickToProgress value
             $process['Progress'] = $process['Progress'] + $process['TickToProgress']
 
-            # Ensure Progress does not exceed the specified limit
+            # Ensure progress does not exceed MaxProgress
             if ($process['Progress'] -ge $MaxProgress) {
                 if ($process['Progress'] -is [double]) {
                     $process['Progress'] = $MaxProgress - 0.01
@@ -1854,7 +1873,7 @@ function Set-PodeAsyncRouteProgress {
             }
         }
         'TimeBased' {
-            # Calculate tick interval and progress increment per tick
+            # Calculate the total number of ticks and the progress increment per tick
             $totalTicks = [math]::ceiling($DurationSeconds / $IntervalSeconds)
             if ($process['Progress'] -is [double]) {
                 $process['TickToProgress'] = ($MaxProgress - $process['Progress']) / $totalTicks
@@ -1863,20 +1882,21 @@ function Set-PodeAsyncRouteProgress {
                 $process['TickToProgress'] = [Math]::Floor(($MaxProgress - $process['Progress']) / $totalTicks)
             }
 
-            # Start the scheduler
+            # Initialize a timer for time-based progress updates
             $process['eventName'] = "TimerEvent_$___async___id___"
             $process['Timer'] = [System.Timers.Timer]::new()
             $process['Timer'].Interval = $IntervalSeconds * 1000
+            # Register an event for the timer to handle periodic progress updates
             $null = Register-ObjectEvent -InputObject $process['Timer'] -EventName Elapsed -SourceIdentifier  $process['eventName'] `
                 -MessageData @{AsyncResult = $process; MaxProgress = $MaxProgress } -Action {
                 $process = $Event.MessageData.AsyncResult
                 $MaxProgress = $Event.MessageData.MaxProgress
-                # Increment progress by TickToProgress value
+                # Increment progress by the TickToProgress value
                 $process['Progress'] = $process['Progress'] + $process['TickToProgress']
 
-                # Check if progress has reached or exceeded MaxProgress
+                # Check if progress exceeds MaxProgress and stop the timer if so
                 if ($process['Progress'] -gt $MaxProgress) {
-                    # Closes and disposes of the timer
+                    # Close and dispose of the timer when max progress is reached
                     Close-PodeAsyncRouteTimer -Operation  $process
 
                     if ($process['Progress'] -is [double]) {
@@ -1887,15 +1907,17 @@ function Set-PodeAsyncRouteProgress {
                     }
                 }
 
-                # Send Sse event if available
-                if ( $process.ContainsKey('Sse')) {
+                # If SSE is available, send the current progress via SSE
+                if ($process.ContainsKey('Sse')) {
                     $null = Send-PodeSseEvent -FromEvent -Data $process['Progress'] -EventType 'pode.progress'
                 }
             }
+            # Enable the timer to start the progress updates
             $process['Timer'].Enabled = $true
         }
         'SetValue' {
-            if ( $UseDecimalProgress.IsPresent -or ($Value % 1 -ne 0) ) {
+            # Directly set the progress value, using decimal or integer based on the context
+            if ($UseDecimalProgress.IsPresent -or ($Value % 1 -ne 0)) {
                 $process['Progress'] = $Value
             }
             else {
@@ -1903,11 +1925,12 @@ function Set-PodeAsyncRouteProgress {
             }
         }
     }
-    if ( $WebEvent.Sse) {
+
+    # If SSE is enabled, send progress updates via SSE
+    if ($WebEvent.Sse) {
         $null = Send-PodeSseEvent -FromEvent -Data $process['Progress'] -EventType 'pode.progress'
     }
 }
-
 
 <#
 .SYNOPSIS

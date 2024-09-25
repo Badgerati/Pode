@@ -17,7 +17,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
                 AsyncRoutes = @{
                     Enabled      = $true
                     Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                    Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                    Processes    = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                     HouseKeeping = @{
                         TimerInterval    = 30
                         RetentionMinutes = 10
@@ -104,7 +104,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
                 AsyncRoutes = @{
                     Enabled      = $true
                     Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                    Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                    Processes    = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                     HouseKeeping = @{
                         TimerInterval    = 30
                         RetentionMinutes = 10
@@ -276,7 +276,7 @@ Describe 'Get-PodeAsyncRouteOperation' {
             AsyncRoutes = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes    = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -399,7 +399,7 @@ Describe 'Get-PodeAsyncRouteOperationByFilter' {
             AsyncRoutes = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes    = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -578,7 +578,7 @@ Describe 'Add-PodeAsyncRouteSse' {
             AsyncRoutes = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes    = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -670,7 +670,7 @@ Describe 'Set-PodeAsyncRoute' {
             AsyncRoutes   = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes    = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -683,20 +683,20 @@ Describe 'Set-PodeAsyncRoute' {
 
 
     It 'Should correctly mark a route as async and set runspaces' {
-        $route = @{ Path = '/async'; AsyncRouteId = 'AsyncPool'; IsAsync = $false; Logic = {} }
+        $route = @{Method = 'Get'; Path = '/async'; IsAsync = $false; Logic = {} }
         Mock -CommandName 'New-PodeRunspacePoolNetWrapper' -MockWith { return @{} }
         $result = Set-PodeAsyncRoute -Route $route -MaxRunspaces 3 -MinRunspaces 2 -PassThru
 
         $result | Should -BeOfType 'hashtable'
         $result.IsAsync | Should -Be $true
 
-        $PodeContext.AsyncRoutes.Items['AsyncPool'].MinRunspaces | Should -Be 2
-        $PodeContext.AsyncRoutes.Items['AsyncPool'].MaxRunspaces | Should -Be 3
+        $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].MinRunspaces | Should -Be 2
+        $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].MaxRunspaces | Should -Be 3
         $PodeContext.Threads.AsyncRoutes | Should -Be 3
     }
 
     It 'Should throw an exception if attempting to invoke for a route already marked as async' {
-        $route = @{ Path = '/async'; AsyncRouteId = 'AsyncPool'; IsAsync = $true; Logic = {} }
+        $route = @{ Path = '/async'; IsAsync = $true; Logic = {} }
 
         {
             Set-PodeAsyncRoute -Route $route
@@ -704,30 +704,30 @@ Describe 'Set-PodeAsyncRoute' {
     }
 
     It 'Should handle a custom IdGenerator script block' {
-        $route = @{ Path = '/async'; AsyncRouteId = 'AsyncPool'; IsAsync = $false; Logic = {} }
+        $route = @{ Path = '/async'; IsAsync = $false; Logic = {} }
 
         $idGenScript = { return 'CustomId' }
-        Set-PodeAsyncRoute -Route $route -IdGenerator $idGenScript
+        $result = Set-PodeAsyncRoute -Route $route -IdGenerator $idGenScript -PassThru
 
-        $route.AsyncRouteTaskIdGenerator.Invoke() | Should -Be 'CustomId'
+        $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].AsyncRouteTaskIdGenerator.Invoke() | Should -Be 'CustomId'
     }
 
     It 'Should use default IdGenerator if none is provided' {
-        $route = @{ Path = '/async'; AsyncRouteId = 'AsyncPool'; IsAsync = $false; Logic = {} }
+        $route = @{ Path = '/async'; IsAsync = $false; Logic = {} }
 
-        Set-PodeAsyncRoute -Route $route
+        $result = Set-PodeAsyncRoute -Route $route -PassThru
 
-        $id = $route.AsyncRouteTaskIdGenerator.Invoke()
+        $id = $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].AsyncRouteTaskIdGenerator.Invoke()
 
         $id -match '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' | Should -Be $true  # Checks if the generated Id is a valid GUID
     }
 
     It 'Should respect the Timeout parameter' {
-        $route = @{ Path = '/async'; AsyncRouteId = 'AsyncPool'; IsAsync = $false; Logic = {} }
+        $route = @{ Path = '/async'; IsAsync = $false; Logic = {} }
 
-        Set-PodeAsyncRoute -Route $route -Timeout 600
+        $result = Set-PodeAsyncRoute -Route $route -Timeout 600 -PassThru
 
-        $PodeContext.AsyncRoutes.Items['AsyncPool'].Timeout | Should -Be 600
+        $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].Timeout | Should -Be 600
     }
 
 }
@@ -747,7 +747,7 @@ Describe 'Stop-PodeAsyncRouteOperation' {
             AsyncRoutes   = @{
                 Enabled      = $true
                 Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                Processes      = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                Processes    = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
                     RetentionMinutes = 10
@@ -828,9 +828,9 @@ Describe 'Stop-PodeAsyncRouteOperation' {
 
 Describe 'Add-PodeAsyncRouteGet' {
     # Mocking the dependencies
-     BeforeAll {
+    BeforeAll {
         # Mock the Get-PodeAsyncRouteOAName function
-         Mock -CommandName Get-PodeAsyncRouteOAName -MockWith {
+        Mock -CommandName Get-PodeAsyncRouteOAName -MockWith {
             return @{
                 TaskIdName = 'taskId'
                 OATypeName = 'AsyncTaskType'
@@ -840,13 +840,14 @@ Describe 'Add-PodeAsyncRouteGet' {
         # Mock the Add-PodeRoute function
         Mock -CommandName Add-PodeRoute -MockWith {
             return @{
-             Path = $Path; AsyncRouteId = "__Get$($Path)__".Replace('/', '_'); IsAsync = $false; Logic = {} ;OpenApi=@{}}
+                Path = $Path; AsyncRouteId = "__Get$($Path)__".Replace('/', '_'); IsAsync = $false; Logic = {} ; OpenApi = @{}
+            }
         }
 
         # Mock the Set-PodeOARequest, Add-PodeOAResponse, New-PodeOAStringProperty, and New-PodeOAObjectProperty functions
-       Mock -CommandName Set-PodeOARequest -MockWith { return $args[0] }
-       #  Mock -CommandName Add-PodeOAResponse -MockWith { return $args[0] }
-           Mock -CommandName New-PodeOAStringProperty -MockWith { return @{} }
+        Mock -CommandName Set-PodeOARequest -MockWith { return $args[0] }
+        #  Mock -CommandName Add-PodeOAResponse -MockWith { return $args[0] }
+        Mock -CommandName New-PodeOAStringProperty -MockWith { return @{} }
         Mock -CommandName New-PodeOAObjectProperty -MockWith { return @{} }#>
     }
 

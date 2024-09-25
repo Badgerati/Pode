@@ -733,10 +733,8 @@ function Get-PodeAsyncRouteSetScriptBlock {
             # Retrieve the task to be executed asynchronously
             $asyncRouteTask = $PodeContext.AsyncRoutes.Items[$WebEvent.Route.AsyncRouteId]
 
-            # Invoke the internal async route task
-            #      $asyncOperation = Invoke-PodeAsyncRoute
             # Generate an Id for the async route task, using the provided IdGenerator or a new GUID
-            $id = Invoke-PodeScriptBlock -ScriptBlock  $WebEvent.Route.AsyncRouteTaskIdGenerator -Return
+            $id = Invoke-PodeScriptBlock -ScriptBlock  $asyncRouteTask.AsyncRouteTaskIdGenerator -Return
 
             # Make a deepcopy of webEvent
             $webEventClone = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()

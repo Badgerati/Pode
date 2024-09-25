@@ -46,32 +46,47 @@ catch { throw }
 # or just:
 # Import-Module Pode
 
-
+# Start the Pode server with 6 threads
 Start-PodeServer -Threads 6 {
 
+    # Add an HTTP endpoint on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http -DualMode
+    # Enable logging for asynchronous SSE events, logs stored in the script's path under /logs
     New-PodeLoggingMethod -name 'asyncSse' -File  -Path "$ScriptPath/logs" | Enable-PodeErrorLogging
 
+    # Define an asynchronous SSE route at the '/sse' path
     Add-PodeRoute  -PassThru -Method Get -Path '/sse' -ScriptBlock {
+        # Set progress for the asynchronous route, simulating progress updates over 23 seconds
         Set-PodeAsyncRouteProgress -IntervalSeconds 2 -DurationSeconds 23 -MaxProgress 100
+
+        # First SSE event with a message about the current time
         $msg = "Start - Hello there! The datetime is: $([datetime]::Now.TimeOfDay)"
         Send-PodeSseEvent -Data $msg -FromEvent
+
+        # Simulate a delay between messages (10 seconds)
         for ($i = 0; $i -lt 10; $i++) {
             Start-Sleep -Seconds 1
         }
+
+        # Second SSE event with a new message after the delay
         $msg = "InTheMiddle - Hello there! The datetime is: $([datetime]::Now.TimeOfDay)"
         Send-PodeSseEvent -Data $msg  -FromEvent
 
+        # Another delay between the second and final messages
         for ($i = 0; $i -lt 10; $i++) {
             Start-Sleep -Seconds 1
         }
+
+        # Final SSE event after all operations are done
         $msg = "End - Hello there! The datetime is: $([datetime]::Now.TimeOfDay)"
         Send-PodeSseEvent   -Data $msg  -FromEvent
 
+        # Return a JSON response to the client indicating the operation is complete
         return @{'message' = 'Done' }
     } | Set-PodeAsyncRoute -ResponseContentType 'application/json'  -MaxRunspaces 4  -PassThru |
         Add-PodeAsyncRouteSse -SseGroup 'Test events' -SendResult
 
+    # Add a static route to serve files located in the /AsyncRoute directory
     Add-PodeStaticRoute -Path '/' -File "$ScriptPath/AsyncRoute"
 
 }
