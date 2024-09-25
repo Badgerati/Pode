@@ -4,181 +4,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EventSource Example</title>
+    <title>SSE Test Launcher</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>EventSource Demo</h1>
-    <p>Listening for events...</p>
-    <div id="output"></div> <!-- A div to display the event data -->
+    <h1>SSE Test Launcher</h1>
+    <p>Click the button below to launch the SSE test page.</p>
+
+    <button onclick="launchSseTest()">Launch SSE Test</button>
 
     <script>
-        function isJsonString(str) {
-            try {
-                JSON.parse(str);
-            } catch (e) {
-                return false;
-            }
-            return true;
+        function launchSseTest() {
+            // Opens sse_test.html in a new tab
+            window.open('sse_test.html', '_blank');
         }
-        // Fetch the EventSource URL
-        fetch('http://localhost:8081/sse')
-            .then(response => response.json())
-            .then(data => {
-                // Log the full data received from the RESTful call
-                console.log('Received RESTful data:', data);
-
-                // Retrieve the Name from the Sse hashtable
-                const eventSourceName = data.Sse.Url;
-                const eventSourceUrl = `${eventSourceName}`;
-
-                // Log the constructed EventSource URL
-                console.log('Constructed EventSource URL:', eventSourceUrl);
-
-                // Initialize EventSource with the retrieved name
-                const sse = new EventSource(eventSourceUrl);
-                const outputDiv = document.getElementById('output');
-
-                sse.addEventListener('pode.open', (e) => {
-                    var data = JSON.parse(e.data);
-                    let clientId = data.clientId;
-                    let group = data.group;
-                    let name = data.name;
-                    let asyncRouteTaskId = data.asyncRouteTaskId;
-
-                    // Display the data on the webpage
-                    outputDiv.innerHTML += `
-                        <p><strong>pode.open Event:</strong></p>
-                        <p>Client ID: ${clientId}</p>
-                        <p>Group: ${group}</p>
-                        <p>Name: ${name}</p>
-                        <p>AsyncRouteTaskId: ${asyncRouteTaskId}</p>
-                        <hr>
-                    `;
-
-                    console.log(`Client ID: ${clientId}`);
-                    console.log(`Group: ${group}`);
-                    console.log(`Name: ${name}`);
-                    console.log(`AsyncRouteTaskId: ${asyncRouteTaskId}`);
-                });
-
-                sse.addEventListener('pode.close', (e) => {
-                    console.log('Closing SSE connection.');
-                    outputDiv.innerHTML += `
-                        <p><strong>pode.close Event:</strong></p>
-                        <p>Connection is closing.</p>
-                        <hr>
-                    `;
-                    sse.close();
-                });
-                sse.addEventListener('message', (e) => {
-                    if (isJsonString(e.data)) {
-                        var data = JSON.parse(e.data);
-                        let state = data.State;
-                        let result = data.Result;
-
-                        // Handle the update event
-                        outputDiv.innerHTML += `
-                            <p><strong>message Event:</strong></p>
-                            <p>State Info: ${state}</p>
-                            <p>Result    : ${result}</p>
-                            <hr>
-                        `;
-
-                        console.log(`State Info: ${state}`);
-                        console.log(`Result    : ${result}`);
-                    } else {
-                        outputDiv.innerHTML += `
-                        <p><strong>Message Event:</strong></p>
-                        <p>Data: ${e.data}</p>
-                        <hr>
-                    `;
-                    }
-                });
-
-                sse.addEventListener('pode.taskCompleted', (e) => {
-                    var data = JSON.parse(e.data);
-                    let state = data.State;
-                    let result;
-
-                    // Check if Result is a string or an object
-                    if (typeof data.Result === 'string' && isJsonString(data.Result)) {
-                        result = JSON.parse(data.Result);
-                    } else if (typeof data.Result === 'object') {
-                        result = data.Result; // Already a valid object
-                    } else {
-                        result = 'No result attached';
-                    }
-
-                    // Handle the update event
-                    outputDiv.innerHTML += `
-                        <p><strong>pode.taskCompleted Event:</strong></p>
-                        <p>State Info: ${state}</p>
-                        <p>Result    : ${JSON.stringify(result)}</p> <!-- Convert result to string -->
-                        <hr>
-                    `;
-
-                    console.log(`State Info: ${state}`);
-                    console.log(`Result    : ${result}`);
-                });
-
-
-                sse.addEventListener('pode.progress', (e) => {
-                    var data = JSON.parse(e.data);
-                    let progress = data.Progress;
-                    let result = data.Result;
-
-                    // Handle the update event
-                    outputDiv.innerHTML += `
-                        <p><strong>pode.progress Event:</strong></p>
-                        <p>Progress: ${progress}%</p>
-                        <hr>
-                    `;
-                    console.log(`Progress: ${progress}%`);
-                });
-
-                sse.addEventListener('events', (e) => {
-                    var data = JSON.parse(e.data);
-                    let updateInfo = data.updateInfo;
-
-                    // Handle the update event
-                    outputDiv.innerHTML += `
-                        <p><strong>pode.update Event:</strong></p>
-                        <p>Update Info: ${updateInfo}</p>
-                        <hr>
-                    `;
-
-                    console.log(`Update Info: ${updateInfo}`);
-                });
-
-                sse.onmessage = function(event) {
-                    console.log("Received an event:", event);
-                    outputDiv.innerHTML += `
-                        <p><strong>General Message Event:</strong></p>
-                        <p>Data: ${event.data}</p>
-                        <hr>
-                    `;
-                };
-
-
-
-                sse.addEventListener('pode.error', (e) => {
-                    var data = JSON.parse(e.data);
-                    let errorMessage = data.errorMessage;
-
-                    // Handle the error event
-                    outputDiv.innerHTML += `
-                        <p><strong>pode.error Event:</strong></p>
-                        <p>Error Message: ${errorMessage}</p>
-                        <hr>
-                    `;
-
-                    console.error(`Error Message: ${errorMessage}`);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching the EventSource name:', error);
-            });
     </script>
 </body>
 
