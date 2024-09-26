@@ -1272,7 +1272,7 @@ function Set-PodeAsyncRoute {
             $r.IsAsync = $true
 
             # Assing an unique Id to the async route
-            $asyncRouteId = "__$($r.method)$($r.Path)_$($r.Endpoint.Name)_".Replace('/', '_')
+            if ($r.Endpoint.Name) { $asyncRouteId = "$($r.Endpoint.Name):[$($r.method)]$($r.Path)" } else { $asyncRouteId = "[$($r.method)]$($r.Path)" }
 
             # Assign the Id generator
             if ($IdGenerator) {
