@@ -731,7 +731,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
             $responseMediaType = Get-PodeHeader -Name 'Accept'
 
             # Retrieve the task to be executed asynchronously
-            $asyncRouteTask = $PodeContext.AsyncRoutes.Items[$WebEvent.Route.AsyncRouteId]
+            $asyncRouteTask = $WebEvent.Route.Async
 
             # Generate an Id for the async route task, using the provided IdGenerator or a new GUID
             $id = Invoke-PodeScriptBlock -ScriptBlock  $asyncRouteTask.AsyncRouteTaskIdGenerator -Return

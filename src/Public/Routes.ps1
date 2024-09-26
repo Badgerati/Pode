@@ -431,6 +431,7 @@ function Add-PodeRoute {
                     Method           = $_method
                     Path             = $Path
                     IsAsync          = $false
+                    Async            = @{}
                     OpenApi          = @{
                         Path               = $OpenApiPath
                         Responses          = $DefaultResponse
@@ -1702,19 +1703,15 @@ function Remove-PodeRoute {
     foreach ($r in $route) {
         # remove the runspace
         if ($r.IsAsync) {
-            $asyncRouteId = $r.AsyncRouteId
+            $asyncRouteId = $r.Async.AsyncRouteId
             if ( $asyncRouteId -and $PodeContext.RunspacePools.ContainsKey($asyncRouteId)) {
+                $PodeContext.Threads.AsyncRoutes -= $r.Async.MaxRunspaces
                 if ( ! $PodeContext.RunspacePools[$asyncRouteId].Pool.IsDisposed) {
                     $PodeContext.RunspacePools[$asyncRouteId].Pool.BeginClose($null, $null)
                     Close-PodeDisposable -Disposable ($PodeContext.RunspacePools[$asyncRouteId].Pool)
                 }
                 $v = ''
                 $null = $PodeContext.RunspacePools.TryRemove($asyncRouteId, [ref]$v)
-            }
-            if ( $PodeContext.AsyncRoutes.Items.ContainsKey($asyncRouteId)) {
-                $PodeContext.Threads.AsyncRoutes -= $PodeContext.AsyncRoutes.Items[$asyncRouteId].MaxRunspaces
-                $v = ''
-                $null = $PodeContext.AsyncRoutes.Items.TryRemove( $asyncRouteId, [ref]$v)
             }
         }
 

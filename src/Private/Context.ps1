@@ -128,7 +128,6 @@ function New-PodeContext {
 
     $ctx.AsyncRoutes = @{
         Enabled             = $true
-        Items               = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
         Processes           = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
         HouseKeeping        = @{
             TimerInterval    = 30
@@ -500,30 +499,7 @@ function New-PodeContext {
     # return the new context
     return $ctx
 }
-
-function New-PodeRunspaceState {
-    # create the state, and add the pode modules
-    $state = [initialsessionstate]::CreateDefault()
-    $state.ImportPSModule($PodeContext.Server.PodeModule.DataPath)
-    $state.ImportPSModule($PodeContext.Server.PodeModule.InternalPath)
-
-    # load the vars into the share state
-    $session = New-PodeStateContext -Context $PodeContext
-
-    $variables = @(
-        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeLocale', $PodeLocale, $null),
-        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeContext', $session, $null),
-        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('Console', $Host, $null),
-        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PODE_SCOPE_RUNSPACE', $true, $null)
-    )
-
-    foreach ($var in $variables) {
-        $state.Variables.Add($var)
-    }
-
-    $PodeContext.RunspaceState = $state
-}
-
+ 
 <#
 .SYNOPSIS
     Creates and initializes runspace pools for various Pode components.
@@ -646,152 +622,6 @@ function New-PodeRunspacePool {
         $PodeContext.RunspacePools.Gui.Pool.ApartmentState = 'STA'
     }
 }
-
-<#
-.SYNOPSIS
-    Opens and initializes runspace pools for various Pode components.
-
-.DESCRIPTION
-    This function opens and initializes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It asynchronously opens the pools and waits for them to be in the 'Opened' state. If any pool fails to open, it reports an error.
-
-.OUTPUTS
-    Opens and initializes runspace pools for various Pode components.
-#>
-function Open-PodeRunspacePool {
-    if ($PodeContext.Server.IsServerless) {
-        return
-    }
-
-    $start = [datetime]::Now
-    Write-Verbose 'Opening RunspacePools'
-
-    # open pools async
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if ($null -eq $item) {
-            continue
-        }
-
-        $item.Pool.ThreadOptions = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread
-        $item.Pool.CleanupInterval = [timespan]::FromMinutes(5)
-        $item.Result = $item.Pool.BeginOpen($null, $null)
-    }
-
-    # wait for them all to open
-    $queue = @($PodeContext.RunspacePools.Keys)
-
-    while ($queue.Length -gt 0) {
-        foreach ($key in $queue) {
-            $item = $PodeContext.RunspacePools[$key]
-            if ($null -eq $item) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                continue
-            }
-
-            if ($item.Pool.RunspacePoolStateInfo.State -iin @('Opened', 'Broken')) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
-            }
-        }
-
-        if ($queue.Length -gt 0) {
-            Start-Sleep -Milliseconds 100
-        }
-    }
-
-    # report errors for failed pools
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if ($null -eq $item) {
-            continue
-        }
-
-        if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
-            $item.Pool.EndOpen($item.Result) | Out-Default
-            throw ($PodeLocale.failedToOpenRunspacePoolExceptionMessage -f $key) #"Failed to open RunspacePool: $($key)"
-        }
-    }
-
-    Write-Verbose "RunspacePools opened [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
-}
-
-<#
-.SYNOPSIS
-    Closes and disposes runspace pools for various Pode components.
-
-.DESCRIPTION
-    This function closes and disposes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It asynchronously closes the pools and waits for them to be in the 'Closed' state. If any pool fails to close, it reports an error.
-
-.OUTPUTS
-    Closes and disposes runspace pools for various Pode components.
-#>
-function Close-PodeRunspacePool {
-    if ($PodeContext.Server.IsServerless -or ($null -eq $PodeContext.RunspacePools)) {
-        return
-    }
-
-    $start = [datetime]::Now
-    Write-Verbose 'Closing RunspacePools'
-
-    # close pools async
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if (($null -eq $item) -or ($item.Pool.IsDisposed)) {
-            continue
-        }
-
-        $item.Result = $item.Pool.BeginClose($null, $null)
-    }
-
-    # wait for them all to close
-    $queue = @($PodeContext.RunspacePools.Keys)
-
-    while ($queue.Length -gt 0) {
-        foreach ($key in $queue) {
-            $item = $PodeContext.RunspacePools[$key]
-            if ($null -eq $item) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                continue
-            }
-
-            if ($item.Pool.RunspacePoolStateInfo.State -iin @('Closed', 'Broken')) {
-                $queue = ($queue | Where-Object { $_ -ine $key })
-                Write-Verbose "RunspacePool for $($key): $($item.Pool.RunspacePoolStateInfo.State) [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
-            }
-        }
-
-        if ($queue.Length -gt 0) {
-            Start-Sleep -Milliseconds 100
-        }
-    }
-
-    # report errors for failed pools
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if ($null -eq $item) {
-            continue
-        }
-
-        if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
-            $item.Pool.EndClose($item.Result) | Out-Default
-            # Failed to close RunspacePool
-            throw ($PodeLocale.failedToCloseRunspacePoolExceptionMessage -f $key)
-        }
-    }
-
-    # dispose pools
-    foreach ($key in $PodeContext.RunspacePools.Keys) {
-        $item = $PodeContext.RunspacePools[$key]
-        if (($null -eq $item) -or ($item.Pool.IsDisposed)) {
-            continue
-        }
-
-        Close-PodeDisposable -Disposable $item.Pool
-    }
-
-    Write-Verbose "RunspacePools closed [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
-}
-
 
 <#
 .SYNOPSIS

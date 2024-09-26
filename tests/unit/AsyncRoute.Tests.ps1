@@ -29,9 +29,8 @@ Describe 'Set-PodeAsyncRoutePermission' {
             $route = @{
                 AsyncRouteId = 'testRoute'
                 IsAsync      = $true
+                Async        = @{Permission = @{} }
             }
-            $PodeContext.AsyncRoutes.Items[$route.AsyncRouteId] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-            $PodeContext.AsyncRoutes.Items[$route.AsyncRouteId].Permission = @{}
             # Sample users, groups, roles, and scopes
             $users = @('user1', 'user2')
             $groups = @('group1', 'group2')
@@ -42,7 +41,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
         It 'should add Read permissions for users, groups, roles, and scopes' {
             Set-PodeAsyncRoutePermission -Route $route -Type 'Read' -Users $users -Groups $groups -Roles $roles -Scopes $scopes
 
-            $permissions = $PodeContext.AsyncRoutes.Items['testRoute'].Permission.Read
+            $permissions = $route.Async.Permission.Read
 
             $permissions.Users | Should -Be $users
             $permissions.Groups | Should -Be $groups
@@ -53,7 +52,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
         It 'should add Write permissions for users, groups, roles, and scopes' {
             Set-PodeAsyncRoutePermission -Route $route -Type 'Write' -Users $users -Groups $groups -Roles $roles -Scopes $scopes
 
-            $permissions = $PodeContext.AsyncRoutes.Items['testRoute'].Permission.Write
+            $permissions = $route.Async.Permission.Write
 
             $permissions.Users | Should -Be $users
             $permissions.Groups | Should -Be $groups
@@ -73,26 +72,21 @@ Describe 'Set-PodeAsyncRoutePermission' {
 
         It 'should handle multiple routes piped in' {
             $routes = @(
-                @{ AsyncRouteId = 'route1' ; IsAsync = $true },
-                @{ AsyncRouteId = 'route2' ; IsAsync = $true }
+                @{ AsyncRouteId = 'route1' ; IsAsync = $true ; Async = @{ Permission = @{} } },
+                @{ AsyncRouteId = 'route2' ; IsAsync = $true ; Async = @{ Permission = @{} } }
             )
 
-            $PodeContext.AsyncRoutes.Items['route1'] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-            $PodeContext.AsyncRoutes.Items['route1'].Permission = @{}
-            $PodeContext.AsyncRoutes.Items['route2'] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-            $PodeContext.AsyncRoutes.Items['route2'].Permission = @{}
             $routes | Set-PodeAsyncRoutePermission -Type 'Read' -Users $users
-
-            $PodeContext.AsyncRoutes.Items['route1'].Permission.Read.Users | Should -Be $users
-            $PodeContext.AsyncRoutes.Items['route2'].Permission.Read.Users | Should -Be $users
+            $routes[0].Async.Permission.Read.Users | Should -Be $users
+            $routes[1].Async.Permission.Read.Users | Should -Be $users
         }
 
         It 'should initialize the Permission object if not already present' {
-            $PodeContext.AsyncRoutes.Items['testRoute'] = @{Permission = @{Read = @{Users = @('user3') } } }
+            $route.Async = @{Permission = @{Read = @{Users = @('user3') } } }
 
             Set-PodeAsyncRoutePermission -Route $route -Type 'Read' -Users $users
 
-            $PodeContext.AsyncRoutes.Items['testRoute'].Permission.Read.Users | Should -Be ( @('user3') + $users )
+            $route.Async.Permission.Read.Users | Should -Be ( @('user3') + $users )
         }
     }
 
@@ -116,23 +110,20 @@ Describe 'Set-PodeAsyncRoutePermission' {
             $route = @{
                 AsyncRouteId = 'testRoute'
                 IsAsync      = $true
-            }
-            $PodeContext.AsyncRoutes.Items['testRoute'] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-
-            # Initialize permissions for testing remove functionality
-            $PodeContext.AsyncRoutes.Items['testRoute'] = @{
-                Permission = @{
-                    Read  = @{
-                        Users  = @('user1', 'user2')
-                        Groups = @('group1', 'group2')
-                        Roles  = @('role1', 'role2')
-                        Scopes = @('scope1', 'scope2')
-                    }
-                    Write = @{
-                        Users  = @('user3', 'user4')
-                        Groups = @('group3', 'group4')
-                        Roles  = @('role3', 'role4')
-                        Scopes = @('scope3', 'scope4')
+                Async        = @{
+                    Permission = @{
+                        Read  = @{
+                            Users  = @('user1', 'user2')
+                            Groups = @('group1', 'group2')
+                            Roles  = @('role1', 'role2')
+                            Scopes = @('scope1', 'scope2')
+                        }
+                        Write = @{
+                            Users  = @('user3', 'user4')
+                            Groups = @('group3', 'group4')
+                            Roles  = @('role3', 'role4')
+                            Scopes = @('scope3', 'scope4')
+                        }
                     }
                 }
             }
@@ -141,7 +132,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
         It 'should remove specified users from Read permissions' {
             Set-PodeAsyncRoutePermission -Route $route -Type 'Read' -Users @('user1') -Remove
 
-            $permissions = $PodeContext.AsyncRoutes.Items['testRoute'].Permission.Read
+            $permissions = $route.Async.Permission.Read
 
             $permissions.Users | Should -Not -Contain 'user1'
             $permissions.Users | Should -Contain 'user2'
@@ -150,7 +141,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
         It 'should remove specified groups from Write permissions' {
             Set-PodeAsyncRoutePermission -Route $route -Type 'Write' -Groups @('group3') -Remove
 
-            $permissions = $PodeContext.AsyncRoutes.Items['testRoute'].Permission.Write
+            $permissions = $route.Async.Permission.Write
 
             $permissions.Groups | Should -Not -Contain 'group3'
             $permissions.Groups | Should -Contain 'group4'
@@ -159,7 +150,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
         It 'should remove specified roles from Read permissions' {
             Set-PodeAsyncRoutePermission -Route $route -Type 'Read' -Roles @('role1') -Remove
 
-            $permissions = $PodeContext.AsyncRoutes.Items['testRoute'].Permission.Read
+            $permissions = $route.Async.Permission.Read
 
             $permissions.Roles | Should -Not -Contain 'role1'
             $permissions.Roles | Should -Contain 'role2'
@@ -168,7 +159,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
         It 'should remove specified scopes from Write permissions' {
             Set-PodeAsyncRoutePermission -Route $route -Type 'Write' -Scopes @('scope3') -Remove
 
-            $permissions = $PodeContext.AsyncRoutes.Items['testRoute'].Permission.Write
+            $permissions = $route.Async.Permission.Write
 
             $permissions.Scopes | Should -Not -Contain 'scope3'
             $permissions.Scopes | Should -Contain 'scope4'
@@ -177,7 +168,7 @@ Describe 'Set-PodeAsyncRoutePermission' {
         It 'should do nothing if the item to remove does not exist' {
             Set-PodeAsyncRoutePermission -Route $route -Type 'Read' -Users @('nonexistentuser') -Remove
 
-            $permissions = $PodeContext.AsyncRoutes.Items['testRoute'].Permission.Read
+            $permissions = $route.Async.Permission.Read
 
             $permissions.Users | Should -Contain 'user1'
             $permissions.Users | Should -Contain 'user2'
@@ -577,7 +568,6 @@ Describe 'Add-PodeAsyncRouteSse' {
         $PodeContext = @{
             AsyncRoutes = @{
                 Enabled      = $true
-                Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 Processes    = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
@@ -598,9 +588,6 @@ Describe 'Add-PodeAsyncRouteSse' {
         $asyncOperationDetails['Runspace'] = [pscustomobject]@{ Handler = [pscustomobject]@{ IsCompleted = $false } }
         $PodeContext.AsyncRoutes.Processes[$operationId1] = $asyncOperationDetails
 
-        $PodeContext.AsyncRoutes.Items['ExamplePool'] = @{
-            Sse = $null
-        }
 
     }
 
@@ -609,35 +596,36 @@ Describe 'Add-PodeAsyncRouteSse' {
             $route = @{
                 Path         = '/not-async'
                 AsyncRouteId = 'not-async'
-                IsAsync      = $true
+                IsAsync      = $false
             } | Add-PodeAsyncRouteSse
         } | Should -Throw -ExpectedMessage ($PodeLocale.routeNotMarkedAsAsyncExceptionMessage -f '/not-async')
     }
 
     It 'Should add SSE route for a valid async route' {
-        $route = @{ Path = '/events'; AsyncRouteId = 'ExamplePool'; IsAsync = $true }
+        $route = @{ Path = '/events'; AsyncRouteId = 'ExamplePool'; IsAsync = $true; Async = @{} }
 
         $result = Add-PodeAsyncRouteSse -Route $route -PassThru
 
         $result | Should -BeOfType 'hashtable'
         $result.Path | Should -Be '/events'
-        $PodeContext.AsyncRoutes.Items['ExamplePool'].Sse.Name | Should -Be '/events_events'
+        $route.Async.Sse.Name | Should -Be '/events_events'
     }
 
     It 'Should handle multiple routes piped in' {
         $routes = @(
-            @{ Path = '/events1'; AsyncRouteId = 'ExamplePool'; IsAsync = $true },
-            @{ Path = '/events2'; AsyncRouteId = 'ExamplePool'; IsAsync = $true }
+            @{ Path = '/events1'; AsyncRouteId = 'ExamplePool'; IsAsync = $true ; Async = @{} },
+            @{ Path = '/events2'; AsyncRouteId = 'ExamplePool'; IsAsync = $true ; Async = @{} }
         )
 
         $result = $routes | Add-PodeAsyncRouteSse -PassThru
 
         $result | Should -HaveCount 2
-        $PodeContext.AsyncRoutes.Items['ExamplePool'].Sse.Name | Should -Be '/events2_events'
+        $routes[0].Async.Sse.Name | Should -Be '/events1_events'
+        $routes[1].Async.Sse.Name | Should -Be '/events2_events'
     }
 
     It 'Should return the modified route object when PassThru is specified' {
-        $route = @{ Path = '/events'; AsyncRouteId = 'ExamplePool'; IsAsync = $true }
+        $route = @{ Path = '/events'; AsyncRouteId = 'ExamplePool'; IsAsync = $true; Async = @{} }
 
         $result = Add-PodeAsyncRouteSse -Route $route -PassThru
 
@@ -690,8 +678,8 @@ Describe 'Set-PodeAsyncRoute' {
         $result | Should -BeOfType 'hashtable'
         $result.IsAsync | Should -Be $true
 
-        $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].MinRunspaces | Should -Be 2
-        $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].MaxRunspaces | Should -Be 3
+        $route.Async.MinRunspaces | Should -Be 2
+        $route.Async.MaxRunspaces | Should -Be 3
         $PodeContext.Threads.AsyncRoutes | Should -Be 3
     }
 
@@ -709,7 +697,7 @@ Describe 'Set-PodeAsyncRoute' {
         $idGenScript = { return 'CustomId' }
         $result = Set-PodeAsyncRoute -Route $route -IdGenerator $idGenScript -PassThru
 
-        $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].AsyncRouteTaskIdGenerator.Invoke() | Should -Be 'CustomId'
+        $route.Async.AsyncRouteTaskIdGenerator.Invoke() | Should -Be 'CustomId'
     }
 
     It 'Should use default IdGenerator if none is provided' {
@@ -717,7 +705,7 @@ Describe 'Set-PodeAsyncRoute' {
 
         $result = Set-PodeAsyncRoute -Route $route -PassThru
 
-        $id = $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].AsyncRouteTaskIdGenerator.Invoke()
+        $id = $route.Async.AsyncRouteTaskIdGenerator.Invoke()
 
         $id -match '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' | Should -Be $true  # Checks if the generated Id is a valid GUID
     }
@@ -727,7 +715,7 @@ Describe 'Set-PodeAsyncRoute' {
 
         $result = Set-PodeAsyncRoute -Route $route -Timeout 600 -PassThru
 
-        $PodeContext.AsyncRoutes.Items[$result.AsyncRouteId].Timeout | Should -Be 600
+        $result.Async.Timeout | Should -Be 600
     }
 
 }
@@ -746,7 +734,6 @@ Describe 'Stop-PodeAsyncRouteOperation' {
 
             AsyncRoutes   = @{
                 Enabled      = $true
-                Items        = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 Processes    = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 HouseKeeping = @{
                     TimerInterval    = 30
