@@ -604,7 +604,7 @@ You can use this tag to reference the specific API documentation, schema, or ver
 Add-PodeOAComponentCallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
     -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
     -Response (
-        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array)
+        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet'  -Array)
         New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
         New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
         New-PodeOAResponse -Default -Description 'Something is wrong'
@@ -728,27 +728,30 @@ function Add-PodeOAComponentPathItem {
         $DefinitionTag
     )
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    $_definitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     $refRoute = @{
         Method      = $Method.ToLower()
         NotPrepared = $true
         OpenApi     = @{
-            Responses      = $null
-            Parameters     = $null
-            RequestBody    = $null
-            callbacks      = [ordered]@{}
-            Authentication = @()
+            Responses          = $null
+            Parameters         = $null
+            RequestBody        = $null
+            callbacks          = [ordered]@{}
+            Authentication     = @()
+            Servers            = @()
+            DefinitionTag      = $_definitionTag
+            IsDefTagConfigured = ($null -ne $DefinitionTag) #Definition Tag has been configured (Not default)
         }
     }
-    foreach ($tag in $DefinitionTag) {
+    foreach ($tag in $_definitionTag) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $tag  ) {
             # The 'pathItems' reusable component feature is not available in OpenAPI v3.0.
             throw ($PodeLocale.reusableComponentPathItemsNotAvailableInOpenApi30ExceptionMessage)
         }
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
-            $refRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
+            $refRoute.OpenApi.Responses = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
         }
         $PodeContext.Server.OpenAPI.Definitions[$tag].components.pathItems[$Name] = $refRoute
     }
