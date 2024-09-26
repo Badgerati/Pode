@@ -212,7 +212,7 @@ Add-PodeRoute -Method Get -Path '/api/users/:userId' -ScriptBlock {
         }
     } -PassThru |
         Add-PodeOAResponse -StatusCode 200 -Description 'A user object' -Content (
-            New-PodeOAContentMediaType -ContentMediaType 'application/json' -Array -Content (
+            New-PodeOAContentMediaType -ContentType 'application/json' -Array -Content (
                 New-PodeOAStringProperty -Name 'Name' |
                     New-PodeOAIntProperty -Name 'UserId' |
                     New-PodeOAObjectProperty
@@ -288,7 +288,7 @@ Add-PodeRoute -Method Patch -Path '/api/users' -ScriptBlock {
 } -PassThru |
     Set-PodeOARequest -RequestBody (
         New-PodeOARequestBody -Required -Content (
-        New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content (  New-PodeOAStringProperty -Name 'Name'| New-PodeOAIntProperty -Name 'UserId'| New-PodeOAObjectProperty ) )
+        New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content (  New-PodeOAStringProperty -Name 'Name'| New-PodeOAIntProperty -Name 'UserId'| New-PodeOAObjectProperty ) )
 
     )
 ```
@@ -310,4 +310,3 @@ The expected payload would look as follows:
 
 ```
 
-  

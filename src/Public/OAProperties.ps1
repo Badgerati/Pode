@@ -361,7 +361,7 @@ function New-PodeOAMultiTypeProperty {
                 $param.properties = @()
             }
             if ($DiscriminatorProperty) {
-                $param.discriminator = @{
+                $param.discriminator = [ordered]@{
                     'propertyName' = $DiscriminatorProperty
                 }
                 if ($DiscriminatorMapping) {
@@ -1539,8 +1539,8 @@ New-PodeOAObjectProperty -Name 'user' -Properties @('<ARRAY_OF_PROPERTIES>')
 .EXAMPLE
 New-PodeOABoolProperty -Name 'enabled' -Required|
     New-PodeOAObjectProperty  -Name 'extraProperties'  -AdditionalProperties [ordered]@{
-        "property1" = @{ "type" = "string"; "description" = "Description for property1" };
-        "property2" = @{ "type" = "integer"; "format" = "int32" }
+        "property1" = [ordered]@{ "type" = "string"; "description" = "Description for property1" };
+        "property2" = [ordered]@{ "type" = "integer"; "format" = "int32" }
 }
 #>
 function New-PodeOAObjectProperty {
@@ -1663,7 +1663,7 @@ function New-PodeOAObjectProperty {
             $PropertiesFromPipeline = $true
         }
         if ($DiscriminatorProperty) {
-            $param.discriminator = @{
+            $param.discriminator = [ordered]@{
                 'propertyName' = $DiscriminatorProperty
             }
             if ($DiscriminatorMapping) {
@@ -1854,7 +1854,7 @@ function Merge-PodeOAProperty {
                 # The parameter 'Discriminator' is incompatible with `allOf`
                 throw ($PodeLocale.discriminatorIncompatibleWithAllOfExceptionMessage)
             }
-            $param.discriminator = @{
+            $param.discriminator = [ordered]@{
                 'propertyName' = $DiscriminatorProperty
             }
             if ($DiscriminatorMapping) {
