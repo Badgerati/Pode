@@ -51,7 +51,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncUsingNotCancellable__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncUsingNotCancellable'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $false
         }
@@ -62,7 +62,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncUsingCancellable__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncUsingCancellable'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $true
         }
@@ -80,7 +80,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncUsing__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncUsing'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $true
         }
@@ -91,7 +91,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncStateNoColumn__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncStateNoColumn'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $true
         }
@@ -102,7 +102,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncState__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncState'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $true
         }
@@ -113,7 +113,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncParam__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncParam'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $true
         }
@@ -126,7 +126,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'M0R7Y302'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncUsingNotCancellable__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncUsingNotCancellable'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $false
         }
@@ -137,7 +137,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'M0R7Y302'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncUsingCancellable__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncUsingCancellable'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $true
         }
@@ -155,7 +155,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'M0R7Y302'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncUsing__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncUsing'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $true
         }
@@ -170,7 +170,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'M0R7Y302'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncState__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncState'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $true
         }
@@ -181,7 +181,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'M0R7Y302'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncParam__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncParam'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $true
         }
@@ -192,7 +192,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'M0R7Y302'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncInfiniteLoopTimeout__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncInfiniteLoopTimeout'
             $response.State | Should -BeIn @('NotStarted', 'Running')
             $response.Cancellable | Should -Be $false
         }
@@ -216,7 +216,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncInfiniteLoop__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncInfiniteLoop'
             $response.State | Should -BeIn 'Running'
             $response.Cancellable | Should -Be $true
         }
@@ -226,7 +226,7 @@ Describe 'ASYNC REST API Requests' {
             # Assertions to validate the response
             $response | Should -Not -BeNullOrEmpty
             $response.User | Should -Be 'MINDY021'
-            $response.AsyncRouteId | Should -Be '__Put_auth_asyncInfiniteLoop__'
+            $response.AsyncRouteId | Should -Be '[Put]/auth/asyncInfiniteLoop'
             $response.State | Should -BeIn 'Aborted'
             $response.Error | Should -BeIn 'Aborted by the user'
             $response.Cancellable | Should -Be $true
@@ -265,19 +265,19 @@ Describe 'ASYNC REST API Requests' {
             $response | Should -Not -BeNullOrEmpty
             $response.Count | Should -Be 7
             $response.state.where({ $_ -eq 'Aborted' }).count | Should -Be 1
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncUsingCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncUsing__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncUsingNotCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncInfiniteLoop__' }).State | Should -Be 'Aborted'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncParam__' }).Result.InnerValue | Should -Be 'comming as argument'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncStateNoColumn__' }).Result.InnerValue | Should -Be 'coming from a PodeState'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncState__' }).Result.InnerValue | Should -Be 'coming from a PodeState'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncUsingCancellable' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncUsing' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncUsingNotCancellable' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncInfiniteLoop' }).State | Should -Be 'Aborted'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncParam' }).Result.InnerValue | Should -Be 'comming as argument'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncStateNoColumn' }).Result.InnerValue | Should -Be 'coming from a PodeState'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncState' }).Result.InnerValue | Should -Be 'coming from a PodeState'
         }
         it 'Morty results' {
             $counter = 0
             do {
                 $body = @{'AsyncRouteId' = @{
-                        'value' = '__Put_auth_asyncInfiniteLoopTimeout__'
+                        'value' = '[Put]/auth/asyncInfiniteLoopTimeout'
                         'op'    = 'NE'
                     }
                 } | ConvertTo-Json
@@ -288,17 +288,17 @@ Describe 'ASYNC REST API Requests' {
             $response | Should -Not -BeNullOrEmpty
             $response.Count | Should -Be 5
             $response.state.where({ $_ -eq 'Aborted' }).count | Should -Be 0
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncUsingCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncUsing__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncUsingNotCancellable__' }).Result.InnerValue | Should -Be 'coming from using'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncParam__' }).Result.InnerValue | Should -Be 'comming as argument'
-            $response.where({ $_.AsyncRouteId -eq '__Put_auth_asyncState__' }).Result.InnerValue | Should -Be 'coming from a PodeState'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncUsingCancellable' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncUsing' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncUsingNotCancellable' }).Result.InnerValue | Should -Be 'coming from using'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncParam' }).Result.InnerValue | Should -Be 'comming as argument'
+            $response.where({ $_.AsyncRouteId -eq '[Put]/auth/asyncState' }).Result.InnerValue | Should -Be 'coming from a PodeState'
         }
 
         it 'Timeout' {
             do {
                 $body = @{'AsyncRouteId' = @{
-                        'value' = '__Put_auth_asyncInfiniteLoopTimeout__'
+                        'value' = '[Put]/auth/asyncInfiniteLoopTimeout'
                         'op'    = 'EQ'
                     }
                 } | ConvertTo-Json
