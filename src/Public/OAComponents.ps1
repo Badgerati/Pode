@@ -751,7 +751,7 @@ function Add-PodeOAComponentPathItem {
         }
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
-            $refRoute.OpenApi.Responses = Copy-PodeDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
+            $refRoute.OpenApi.Responses = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
         }
         $PodeContext.Server.OpenAPI.Definitions[$tag].components.pathItems[$Name] = $refRoute
     }

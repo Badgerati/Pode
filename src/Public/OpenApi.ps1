@@ -3238,7 +3238,7 @@ function Add-PodeOAExternalRoute {
             foreach ($tag in $DefinitionTag) {
                 #add the default OpenApi responses
                 if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
-                    $extRoute.OpenApi.Responses = Copy-PodeDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
+                    $extRoute.OpenApi.Responses = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
                 }
                 if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
                     $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = [ordered]@{}
