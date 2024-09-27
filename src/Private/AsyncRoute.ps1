@@ -748,7 +748,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
                         $webEventClone[$key] = $webEvent[$key]
                     }
                     else {
-                        $webEventClone[$key] = Copy-PodeDeepClone -InputObject $webEvent[$key]
+                        $webEventClone[$key] = Copy-PodeObjectDeepClone -InputObject $webEvent[$key]
                     }
                 }
             }
@@ -825,7 +825,7 @@ function Get-PodeAsyncRouteSetScriptBlock {
             if ($WebEvent.Auth.User) {
                 $asyncOperation['User'] = $WebEvent.Auth.User[$PodeContext.AsyncRoutes.UserFieldIdentifier]
                 # Make a deepcopy of the permission object
-                $asyncOperation['Permission'] = ($asyncRouteTask.Permission | Copy-PodeDeepClone)
+                $asyncOperation['Permission'] = Copy-PodeObjectDeepClone -InputObject $asyncRouteTask.Permission
             }
 
             # Add the request URL and method
