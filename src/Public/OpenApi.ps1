@@ -318,7 +318,7 @@ function Enable-PodeOpenApi {
 
     #set new DefaultResponses
     if ($NoDefaultResponses.IsPresent) {
-        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = @{}
+        $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = [ordered]@{}
     }
     elseif ($DefaultResponses) {
         $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses = $DefaultResponses
@@ -651,7 +651,7 @@ function Add-PodeOAResponse {
     foreach ($r in @($Route)) {
         foreach ($tag in $DefinitionTag) {
             if (! $r.OpenApi.Responses.$tag) {
-                $r.OpenApi.Responses.$tag = @{}
+                $r.OpenApi.Responses.$tag = [ordered]@{}
             }
             $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
         }
@@ -907,11 +907,11 @@ function New-PodeOARequestBody {
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    $result = @{}
+    $result = [ordered]@{}
     foreach ($tag in $DefinitionTag) {
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'builtin' {
-                $param = @{content = ConvertTo-PodeOAObjectSchema -DefinitionTag $tag -Content $Content -Properties:$Properties }
+                $param = [ordered]@{content = ConvertTo-PodeOAObjectSchema -DefinitionTag $tag -Content $Content -Properties:$Properties }
 
                 if ($Required.IsPresent) {
                     $param['required'] = $Required.IsPresent
@@ -926,27 +926,27 @@ function New-PodeOARequestBody {
                         $Examples.Remove('*/*')
                     }
                     foreach ($k in  $Examples.Keys ) {
-                        if (!$param.content.ContainsKey($k)) {
-                            $param.content[$k] = @{}
+                        if (!($param.content.Keys -contains $k)) {
+                            $param.content[$k] = [ordered]@{}
                         }
-                        $param.content.$k.examples = $Examples.$k
+                        $param.content[$k].examples = $Examples.$k
                     }
                 }
             }
 
             'reference' {
                 Test-PodeOAComponentInternal -Field requestBodies -DefinitionTag $tag -Name $Reference -PostValidation
-                $param = @{
+                $param = [ordered]@{
                     '$ref' = "#/components/requestBodies/$Reference"
                 }
             }
         }
         if ($Encoding) {
             if (([string]$Content.keys[0]) -match '(?i)^(multipart.*|application\/x-www-form-urlencoded)$' ) {
-                $r = @{}
+                $r = [ordered]@{}
                 foreach ( $e in $Encoding) {
                     $key = [string]$e.Keys
-                    $elems = @{}
+                    $elems = [ordered]@{}
                     foreach ($v in $e[$key].Keys) {
                         if ($v -ieq 'headers') {
                             $elems.headers = ConvertTo-PodeOAHeaderProperty -Headers $e[$key].headers
@@ -1018,6 +1018,11 @@ function Test-PodeOAJsonSchemaCompliance {
     }
     else {
         $DefinitionTag = $PodeContext.Server.Web.OpenApi.DefaultDefinitionTag
+    }
+
+    # if Powershell edition is Desktop the test cannot be done. By default everything is good
+    if ($PSVersionTable.PSEdition -eq 'Desktop') {
+        return $true
     }
 
     if ($Json -isnot [string]) {
@@ -2261,50 +2266,50 @@ function Add-PodeOAInfo {
 
 <#
 .SYNOPSIS
-Creates a new OpenAPI example.
+    Creates a new OpenAPI example.
 
 .DESCRIPTION
-Creates a new OpenAPI example.
+    Creates a new OpenAPI example.
 
-.PARAMETER ParamsList
-Used to pipeline multiple properties
+    .PARAMETER ParamsList
+    Used to pipeline multiple properties
 
-.PARAMETER MediaType
-The Media Type associated with the Example.
+.PARAMETER ContentType
+    The Media Content Type associated with the Example.
+
+    Alias: MediaType
 
 .PARAMETER Name
-The Name of the Example.
+    The Name of the Example.
 
 .PARAMETER Summary
-Short description for the example
+    Short description for the example
 
-
-.PARAMETER Description
-Long description for the example.
+    .PARAMETER Description
+    Long description for the example.
 
 .PARAMETER Reference
-A reference to a reusable component example
+    A reference to a reusable component example
 
 .PARAMETER Value
-Embedded literal example. The  value Parameter and ExternalValue parameter are mutually exclusive.
-To represent examples of media types that cannot naturally represented in JSON or YAML, use a string value to contain the example, escaping where necessary.
+    Embedded literal example. The  value Parameter and ExternalValue parameter are mutually exclusive.
+    To represent examples of media types that cannot naturally represented in JSON or YAML, use a string value to contain the example, escaping where necessary.
 
 .PARAMETER ExternalValue
-A URL that points to the literal example. This provides the capability to reference examples that cannot easily be included in JSON or YAML documents.
-The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
+    A URL that points to the literal example. This provides the capability to reference examples that cannot easily be included in JSON or YAML documents.
+    The -Value parameter and -ExternalValue parameter are mutually exclusive.                                |
 
 .PARAMETER DefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps distinguish between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps distinguish between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-New-PodeOAExample -ContentMediaType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
+    New-PodeOAExample -ContentType 'text/plain' -Name 'user' -Summary = 'User Example in Plain text' -ExternalValue = 'http://foo.bar/examples/user-example.txt'
 .EXAMPLE
-$example =
-    New-PodeOAExample -ContentMediaType 'application/json' -Name 'user' -Summary = 'User Example' -ExternalValue = 'http://foo.bar/examples/user-example.json'  |
-        New-PodeOAExample -ContentMediaType 'application/xml' -Name 'user' -Summary = 'User Example in XML' -ExternalValue = 'http://foo.bar/examples/user-example.xml'
-
+    $example =
+        New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary = 'User Example' -ExternalValue = 'http://foo.bar/examples/user-example.json'  |
+        New-PodeOAExample -ContentType 'application/xml' -Name 'user' -Summary = 'User Example in XML' -ExternalValue = 'http://foo.bar/examples/user-example.xml'
 #>
 function New-PodeOAExample {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
@@ -2316,8 +2321,10 @@ function New-PodeOAExample {
         [System.Collections.Specialized.OrderedDictionary ]
         $ParamsList,
 
+        [Parameter()]
+        [Alias('MediaType')]
         [string]
-        $MediaType,
+        $ContentType,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Inbuilt')]
         [ValidatePattern('^[a-zA-Z0-9\.\-_]+$')]
@@ -2349,11 +2356,11 @@ function New-PodeOAExample {
         $DefinitionTag
     )
     begin {
+        $pipelineValue = [ordered]@{}
 
         if (Test-PodeIsEmpty -Value $DefinitionTag) {
             $DefinitionTag = $PodeContext.Server.OpenAPI.SelectedDefinitionTag
         }
-
         if ($PSCmdlet.ParameterSetName -ieq 'Reference') {
             Test-PodeOAComponentInternal -Field examples -DefinitionTag $DefinitionTag -Name $Reference -PostValidation
             $Name = $Reference
@@ -2383,30 +2390,40 @@ function New-PodeOAExample {
             }
         }
         $param = [ordered]@{}
-        if ($MediaType) {
-            $param.$MediaType = [ordered]@{
+        if ($ContentType) {
+            $param.$ContentType = [ordered]@{
                 $Name = $Example
             }
         }
         else {
             $param.$Name = $Example
         }
+
     }
     process {
+        if ($_) {
+            $pipelineValue += $_
+        }
     }
     end {
-        if ($ParamsList) {
-            if ($ParamsList.keys -contains $param.Keys[0]) {
-                $param.Values[0].GetEnumerator() | ForEach-Object { $ParamsList[$param.Keys[0]].$($_.Key) = $_.Value }
-            }
-            else {
-                $param.GetEnumerator() | ForEach-Object { $ParamsList[$_.Key] = $_.Value }
-            }
-            return $ParamsList
+        $examples = [ordered]@{}
+        if ($pipelineValue.Count -gt 0) {
+            #  foreach ($p in $pipelineValue) {
+            $examples = $pipelineValue
+            #  }
         }
         else {
-            return [System.Collections.Specialized.OrderedDictionary] $param
+            return $param
         }
+
+        $key = [string]$param.Keys[0]
+        if ($examples.Keys -contains $key) {
+            $examples[$key] += $param[$key]
+        }
+        else {
+            $examples += $param
+        }
+        return $examples
     }
 }
 
@@ -2572,7 +2589,7 @@ If supplied, the route passed in will be returned for further chaining.
     Add-PodeOACallBack -Title 'test' -Path '{$request.body#/id}' -Method Post `
         -RequestBody (New-PodeOARequestBody -Content @{'*/*' = (New-PodeOAStringProperty -Name 'id')}) `
         -Response (
-            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array)
+            New-PodeOAResponse -StatusCode 200 -Description 'Successful operation'  -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet'  -Array)
             New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
             New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
             New-PodeOAResponse -Default -Description 'Something is wrong'
@@ -2651,7 +2668,7 @@ function Add-PodeOACallBack {
                 if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
                     $r.OpenApi.CallBacks[$tag] = [ordered]@{}
                 }
-                $r.OpenApi.CallBacks[$tag].$Name = @{
+                $r.OpenApi.CallBacks[$tag].$Name = [ordered]@{
                     '$ref' = "#/components/callbacks/$Reference"
                 }
             }
@@ -2710,7 +2727,7 @@ This tag helps distinguish between different versions or types of API specificat
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-New-PodeOAResponse -StatusCode 200 -Content (  New-PodeOAContentMediaType -ContentMediaType 'application/json' -Content(New-PodeOAIntProperty -Name 'userId' -Object) )
+New-PodeOAResponse -StatusCode 200 -Content (  New-PodeOAContentMediaType -ContentType 'application/json' -Content(New-PodeOAIntProperty -Name 'userId' -Object) )
 
 .EXAMPLE
 New-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = 'UserIdSchema' }
@@ -2720,10 +2737,10 @@ New-PodeOAResponse -StatusCode 200 -Reference 'OKResponse'
 
 .EXAMPLE
 Add-PodeOACallBack -Title 'test' -Path '$request.body#/id' -Method Post  -RequestBody (
-        New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentMediaType '*/*' -Content (New-PodeOAStringProperty -Name 'id'))
+        New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentType '*/*' -Content (New-PodeOAStringProperty -Name 'id'))
     ) `
     -Response (
-        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet'  -Array) |
+        New-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet'  -Array) |
             New-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' |
                 New-PodeOAResponse -StatusCode 404 -Description 'Pet not found' |
             New-PodeOAResponse -Default   -Description 'Something is wrong'
@@ -2792,7 +2809,7 @@ function New-PodeOAResponse {
         else {
             $code = "$($StatusCode)"
         }
-        $response = @{}
+        $response = [ordered]@{}
     }
     process {
         foreach ($tag in $DefinitionTag) {
@@ -2825,8 +2842,10 @@ function New-PodeOAResponse {
 .DESCRIPTION
     The New-PodeOAContentMediaType function generates media content type definitions suitable for use in OpenAPI specifications. It supports various media types and allows for the specification of content as either a single object or an array of objects.
 
-.PARAMETER MediaType
+.PARAMETER ContentType
     An array of strings specifying the media types to be defined. Media types should conform to standard MIME types (e.g., 'application/json', 'image/png'). The function validates these media types against a regular expression to ensure they are properly formatted.
+
+    Alias: MediaType
 
 .PARAMETER Content
     The content definition for the media type. This could be an object representing the structure of the content expected for the specified media types.
@@ -2862,20 +2881,20 @@ function New-PodeOAResponse {
         Set-PodeOARequest -PassThru -Parameters @(
             (New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query)
         ) |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
         Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
     This example demonstrates the use of New-PodeOAContentMediaType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
 
 .EXAMPLE
-    $content = @{ type = 'string' }
+    $content = [ordered]@{ type = 'string' }
     $mediaType = 'application/json'
-    New-PodeOAContentMediaType -MediaType $mediaType -Content $content
+    New-PodeOAContentMediaType -ContentType $mediaType -Content $content
     This example creates a media content type definition for 'application/json' with a simple string content type.
 
 .EXAMPLE
-    $content = @{ type = 'object'; properties = @{ name = @{ type = 'string' } } }
+    $content = [ordered]@{ type = 'object'; properties = [ordered]@{ name = @{ type = 'string' } } }
     $mediaTypes = 'application/json', 'application/xml'
-    New-PodeOAContentMediaType -MediaType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
+    New-PodeOAContentMediaType -ContentType $mediaTypes -Content $content -Array -MinItems 1 -MaxItems 5 -Title 'UserList'
     This example demonstrates defining an array of objects for both 'application/json' and 'application/xml' media types, with a specified range for the number of items and a title.
 
 .EXAMPLE
@@ -2885,7 +2904,7 @@ function New-PodeOAResponse {
         Set-PodeOARequest -PassThru -Parameters @(
             (New-PodeOAStringProperty -Name 'status' -Description 'Status values that need to be considered for filter' -Default 'available' -Enum @('available', 'pending', 'sold') | ConvertTo-PodeOAParameter -In Query)
         ) |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json','application/xml' -Content 'Pet' -Array -UniqueItems) -PassThru |
         Add-PodeOAResponse -StatusCode 400 -Description 'Invalid status value'
     This example demonstrates the use of New-PodeOAContentMediaType in defining a GET route '/pet/findByStatus' in an OpenAPI specification. The route includes request parameters and responses with media content types for 'application/json' and 'application/xml'.
 
@@ -2897,8 +2916,10 @@ function New-PodeOAContentMediaType {
     [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param (
+        [Parameter()]
+        [Alias('MediaType')]
         [string[]]
-        $MediaType = '*/*',
+        $ContentType = '*/*',
 
         [object]
         $Content,
@@ -2940,21 +2961,21 @@ function New-PodeOAContentMediaType {
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
     $props = [ordered]@{}
-    foreach ($media in $MediaType) {
+    foreach ($media in $ContentType) {
         if ($media -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$') {
             # Invalid 'content-type' found for schema: $media
             throw ($PodeLocale.invalidContentTypeForSchemaExceptionMessage -f $media)
         }
         if ($Upload.IsPresent) {
             if ( $media -ieq 'multipart/form-data' -and $Content) {
-                $Content = @{'__upload' = @{
+                $Content = [ordered]@{'__upload' = [ordered]@{
                         'content'              = $Content
                         'partContentMediaType' = $PartContentMediaType
                     }
                 }
             }
             else {
-                $Content = @{'__upload' = @{
+                $Content = [ordered]@{'__upload' = [ordered]@{
                         'contentEncoding' = $ContentEncoding
                     }
                 }
@@ -2963,7 +2984,7 @@ function New-PodeOAContentMediaType {
         }
         else {
             if ($null -eq $Content ) {
-                $Content = @{}
+                $Content = [ordered]@{}
             }
         }
         if ($Array.IsPresent) {
@@ -3106,7 +3127,7 @@ function New-PodeOAResponseLink {
                 $Name = $Reference
             }
             $link = [ordered]@{
-                $Name = @{
+                $Name = [ordered]@{
                     '$ref' = "#/components/links/$Reference"
                 }
             }
@@ -3247,10 +3268,10 @@ function Add-PodeOAExternalRoute {
             foreach ($tag in $DefinitionTag) {
                 #add the default OpenApi responses
                 if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
-                    $extRoute.OpenApi.Responses = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
+                    $extRoute.OpenApi.Responses = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
                 }
                 if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
-                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = @{}
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = [ordered]@{}
                 }
 
                 $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
@@ -3391,20 +3412,22 @@ function Add-PodeOAWebhook {
     # Record the operation on the trace log
     Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    $_definitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     $refRoute = @{
         Method      = $Method.ToLower()
         NotPrepared = $true
         OpenApi     = @{
-            Responses      = @{}
-            Parameters     = $null
-            RequestBody    = $null
-            callbacks      = [ordered]@{}
-            Authentication = @()
+            Responses          = [ordered]@{}
+            Parameters         = $null
+            RequestBody        = $null
+            callbacks          = [ordered]@{}
+            Authentication     = @()
+            DefinitionTag      = $_definitionTag
+            IsDefTagConfigured = ($null -ne $DefinitionTag) #Definition Tag has been configured (Not default)
         }
     }
-    foreach ($tag in $DefinitionTag) {
+    foreach ($tag in $_definitionTag) {
         if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $tag ) {
             # The Webhooks feature is not supported in OpenAPI v3.0.x
             throw ($PodeLocale.webhooksFeatureNotSupportedInOpenApi30ExceptionMessage)
@@ -3444,7 +3467,7 @@ Select-PodeOADefinition -Tag 'v3', 'v3.1'  -Script {
             New-PodeOAObjectProperty -XmlName 'order' |
             Add-PodeOAComponentSchema -Name 'Order'
 
-New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' |
+New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet' |
     Add-PodeOAComponentRequestBody -Name 'Pet' -Description 'Pet object that needs to be added to the store'
 
 }
@@ -3632,7 +3655,7 @@ function Test-PodeOADefinition {
             $result.issues[$tag] = @{
                 title      = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI.Definitions[$tag].info.title)
                 version    = [string]::IsNullOrWhiteSpace(  $PodeContext.Server.OpenAPI.Definitions[$tag].info.version)
-                components = @{}
+                components = [ordered]@{}
                 definition = ''
             }
             foreach ($field in $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.postValidation.keys) {

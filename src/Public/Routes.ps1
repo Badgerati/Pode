@@ -400,9 +400,9 @@ function Add-PodeRoute {
 
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses) {
-            $DefaultResponse = @{}
+            $DefaultResponse = [ordered]@{}
             foreach ($tag in $DefinitionTag) {
-                $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
+                 $DefaultResponse[$tag] = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
             }
         }
 
@@ -1716,14 +1716,16 @@ function Remove-PodeRoute {
 
     # select the candidate route for deletion
     $route = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
-            $_.Endpoint.Name -ine $EndpointName
+            $_.Endpoint.Name -ieq $EndpointName
         })
 
-    # remove the operationId from the openapi operationId list
-    if ($route.OpenAPI) {
-        foreach ( $tag  in  $route.OpenAPI.DefinitionTag) {
-            if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $route.OpenAPI.OperationId)) {
-                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $route.OpenAPI.OperationId }
+    foreach ($r in $route) {
+        # remove the operationId from the openapi operationId list
+        if ($r.OpenAPI) {
+            foreach ( $tag in $r.OpenAPI.DefinitionTag) {
+                if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $route.OpenAPI.OperationId)) {
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $route.OpenAPI.OperationId }
+                }
             }
         }
     }
