@@ -926,11 +926,7 @@ function Remove-PodeEmptyItemsFromArray {
     param(
         [Parameter()]
         $Array
-    )
-    # Set Array to the array of values
-    if ($pipelineValue.Count -gt 1) {
-        $Array = $pipelineValue
-    }
+    ) 
     if ($null -eq $Array) {
         return @()
     }

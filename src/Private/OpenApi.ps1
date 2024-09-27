@@ -40,42 +40,45 @@ function ConvertTo-PodeOAObjectSchema {
 
     )
     begin {
-        $pipelineItemCount = 0
+        $pipelineItemCount = 0  # Initialize counter to track items in the pipeline.
     }
 
     process {
-
-        $pipelineItemCount++
+        $pipelineItemCount++  # Increment the counter for each item in the pipeline.
     }
 
     end {
+        # Throw an error if more than one item is passed in the pipeline.
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
-        # Ensure all content types are valid MIME types
+
+        # Ensure all content types are valid MIME types.
         foreach ($type in $Content.Keys) {
             if ($type -inotmatch '^(application|audio|image|message|model|multipart|text|video|\*)\/[\w\.\-\*]+(;[\s]*(charset|boundary)=[\w\.\-\*]+)*$|^"\*\/\*"$') {
                 # Invalid content-type found for schema: $($type)
                 throw ($PodeLocale.invalidContentTypeForSchemaExceptionMessage -f $type)
             }
         }
-        # manage generic schema json conversion issue
-        if ( $Content.ContainsKey('*/*')) {
-            $Content['"*/*"'] = $Content['*/*']
+
+        # Manage a specific case where a generic schema conversion issue may arise.
+        if ($Content.ContainsKey('*/*')) {
+            $Content['"*/*"'] = $Content['*/*']  # Adjust the key format for schema compatibility.
             $Content.Remove('*/*')
         }
-        # convert each schema to OpenAPI format
-        # Initialize an empty hashtable for the schema
+
+        # Initialize an empty hashtable for the schema object.
         $obj = @{}
 
-        # Process each content type
+        # Get all the content keys (MIME types) to iterate through.
         $types = [string[]]$Content.Keys
         foreach ($type in $types) {
-            # Initialize schema structure for the type
-            $obj[$type] = @{ }
+            # Initialize schema structure for each type.
+            $obj[$type] = @{}
 
-            # Handle upload content, array structures, and shared component schema references
+            # Handle file upload content, arrays, and shared component schema references.
             if ($Content[$type].__upload) {
+                # Check if the content is an array.
                 if ($Content[$type].__array) {
                     $upload = $Content[$type].__content.__upload
                 }
@@ -83,10 +86,12 @@ function ConvertTo-PodeOAObjectSchema {
                     $upload = $Content[$type].__upload
                 }
 
-                if ($type -ieq 'multipart/form-data' -and $upload.content ) {
-                    if ((Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag ) -and $upload.partContentMediaType) {
-                        foreach ($key in $upload.content.Properties ) {
-                            if ($key.type -eq 'string' -and $key.format -and $key.format -ieq 'binary' -or $key.format -ieq 'base64') {
+                # Handle specific multipart/form-data content processing.
+                if ($type -ieq 'multipart/form-data' -and $upload.content) {
+                    if ((Test-PodeOAVersion -Version 3.1 -DefinitionTag $DefinitionTag) -and $upload.partContentMediaType) {
+                        # Iterate through properties to set content media type and remove format for binaries.
+                        foreach ($key in $upload.content.Properties) {
+                            if ($key.type -eq 'string' -and ($key.format -ieq 'binary' -or $key.format -ieq 'base64')) {
                                 $key.ContentMediaType = $PartContentMediaType
                                 $key.remove('format')
                                 break
@@ -96,6 +101,7 @@ function ConvertTo-PodeOAObjectSchema {
                     $newContent = $upload.content
                 }
                 else {
+                    # Handle OpenAPI v3.0 specific content encoding.
                     if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag) {
                         $newContent = [ordered]@{
                             'type'   = 'string'
@@ -103,6 +109,7 @@ function ConvertTo-PodeOAObjectSchema {
                         }
                     }
                     else {
+                        # Handle Base64 content encoding.
                         if ($ContentEncoding -ieq 'Base64') {
                             $newContent = [ordered]@{
                                 'type'            = 'string'
@@ -111,6 +118,8 @@ function ConvertTo-PodeOAObjectSchema {
                         }
                     }
                 }
+
+                # Update the content with the new encoding information.
                 if ($Content[$type].__array) {
                     $Content[$type].__content = $newContent
                 }
@@ -119,6 +128,7 @@ function ConvertTo-PodeOAObjectSchema {
                 }
             }
 
+            # Process arrays and object properties based on content type.
             if ($Content[$type].__array) {
                 $isArray = $true
                 $item = $Content[$type].__content
@@ -126,16 +136,17 @@ function ConvertTo-PodeOAObjectSchema {
                     'type'  = 'array'
                     'items' = $null
                 }
-                if ( $Content[$type].__title) {
+                # Include additional metadata if present.
+                if ($Content[$type].__title) {
                     $obj[$type].schema.title = $Content[$type].__title
                 }
-                if ( $Content[$type].__uniqueItems) {
+                if ($Content[$type].__uniqueItems) {
                     $obj[$type].schema.uniqueItems = $Content[$type].__uniqueItems
                 }
-                if ( $Content[$type].__maxItems) {
+                if ($Content[$type].__maxItems) {
                     $obj[$type].schema.__maxItems = $Content[$type].__maxItems
                 }
-                if ( $Content[$type].minItems) {
+                if ($Content[$type].minItems) {
                     $obj[$type].schema.minItems = $Content[$type].__minItems
                 }
             }
@@ -143,11 +154,12 @@ function ConvertTo-PodeOAObjectSchema {
                 $item = $Content[$type]
                 $isArray = $false
             }
-            # Add set schema objects or empty content
+
+            # Add schema objects or handle empty content.
             if ($item -is [string]) {
-                if (![string]::IsNullOrEmpty($item )) {
-                    #Check for empty reference
-                    if (@('string', 'integer' , 'number', 'boolean' ) -icontains $item) {
+                if (![string]::IsNullOrEmpty($item)) {
+                    # Handle basic type definitions or references.
+                    if (@('string', 'integer', 'number', 'boolean') -icontains $item) {
                         if ($isArray) {
                             $obj[$type].schema.items = @{
                                 'type' = $item.ToLower()
@@ -160,6 +172,7 @@ function ConvertTo-PodeOAObjectSchema {
                         }
                     }
                     else {
+                        # Handle component references.
                         Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $item -PostValidation
                         if ($isArray) {
                             $obj[$type].schema.items = @{
@@ -174,17 +187,20 @@ function ConvertTo-PodeOAObjectSchema {
                     }
                 }
                 else {
-                    # Create an empty content
+                    # Create an empty content entry.
                     $obj[$type] = @{}
                 }
             }
             else {
                 if ($item.Count -eq 0) {
-                    $result = @{}
+                    $result = @{}  # Create an empty object if the item count is zero.
                 }
                 else {
+                    # Convert each property to a PodeOpenAPI schema property.
                     $result = ($item | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
                 }
+
+                # Handle the Properties parameter case.
                 if ($Properties) {
                     if ($item.Name) {
                         $obj[$type].schema = @{
@@ -194,11 +210,12 @@ function ConvertTo-PodeOAObjectSchema {
                         }
                     }
                     else {
-                        # The Properties parameters cannot be used if the Property has no name
+                        # Throw an error if Properties parameter is used without a name.
                         throw ($PodeLocale.propertiesParameterWithoutNameExceptionMessage)
                     }
                 }
                 else {
+                    # Assign the resulting schema to the correct array or object location.
                     if ($isArray) {
                         $obj[$type].schema.items = $result
                     }
@@ -209,7 +226,7 @@ function ConvertTo-PodeOAObjectSchema {
             }
         }
 
-        return $obj
+        return $obj  # Return the final OpenAPI schema object.
     }
 }
 

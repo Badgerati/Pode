@@ -245,9 +245,7 @@ function Send-PodeSseEvent {
     }
 
     process {
-        if ($PSCmdlet.ParameterSetName -eq 'Value') {
             $pipelineValue += $_
-        }
     }
 
     end {

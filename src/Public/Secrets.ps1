@@ -674,19 +674,18 @@ function Update-PodeSecret {
             # No Secret named has been mounted
             throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
         }
-        # Initialize an array to hold piped-in values
-        $pipelineValue = @()
+
+        $pipelineItemCount = 0  # Initialize counter to track items in the pipeline.
     }
 
     process {
-        # Add the current piped-in value to the array
-        $pipelineValue += $_
+        $pipelineItemCount++  # Increment the counter for each item in the pipeline.
     }
 
     end {
-        # Set InputObject to the array of values
-        if ($pipelineValue.Count -gt 1) {
-            $InputObject = $pipelineValue
+        # Throw an error if more than one item is passed in the pipeline.
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
 
         # make sure the value type is correct
@@ -923,19 +922,18 @@ function Set-PodeSecret {
             # No Secret Vault with the name has been registered
             throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
         }
-        # Initialize an array to hold piped-in values
-        $pipelineValue = @()
+
+        $pipelineItemCount = 0  # Initialize counter to track items in the pipeline.
     }
 
     process {
-        # Add the current piped-in value to the array
-        $pipelineValue += $_
+        $pipelineItemCount++  # Increment the counter for each item in the pipeline.
     }
 
     end {
-        # Set InputObject to the array of values
-        if ($pipelineValue.Count -gt 1) {
-            $InputObject = $pipelineValue
+        # Throw an error if more than one item is passed in the pipeline.
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
 
         # make sure the value type is correct
