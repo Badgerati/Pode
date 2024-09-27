@@ -44,7 +44,7 @@ Add-PodeRoute -PassThru -Method Post -Path '/user' -ScriptBlock {
         Write-PodeHtmlResponse -StatusCode 405 -Value  ($Validate.message -join ', ')
     }
 } | Set-PodeOARouteInfo -Summary 'Create user.' -Description 'This can only be done by the logged in user.' -Tags 'user' -OperationId 'createUser' -PassThru |
-    Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )) -PassThru |
+    Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )) -PassThru |
     Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input' -PassThru |
-    Add-PodeOAResponse -Default -Content (New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml'  -Content 'User' )
+    Add-PodeOAResponse -Default -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml'  -Content 'User' )
 ```
