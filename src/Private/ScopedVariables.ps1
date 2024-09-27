@@ -69,7 +69,7 @@ function Add-PodeScopedVariableInbuiltSecret {
 
 function Add-PodeScopedVariableInbuiltSession {
     Add-PodeScopedVariable -Name 'session' `
-        -SetReplace "`$WebEvent.Session.Data.'{{name}}'" `
+        -SetReplace "`$WebEvent.Session.Data.'{{name}}' = " `
         -GetReplace "`$WebEvent.Session.Data.'{{name}}'"
 }
 
