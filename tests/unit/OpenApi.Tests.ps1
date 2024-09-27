@@ -1680,10 +1680,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -1709,10 +1709,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -1745,10 +1745,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -1775,10 +1775,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -2869,27 +2869,27 @@ Describe 'OpenApi' {
         }
 
         it 'default' {
-            Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAContentMediaType -MediaType 'application/json' , 'application/xml', 'application/x-www-form-urlencoded' -Content 'Cat'  )
+            Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAContentMediaType -ContentType 'application/json' , 'application/xml', 'application/x-www-form-urlencoded' -Content 'Cat'  )
             $result = $PodeContext.Server.OpenAPI.Definitions['default'].components.requestBodies['PetBodySchema']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'Pet in the store'
-            $result.content | Should -BeOfType [hashtable]
+            $result.content | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $result.content.Count | Should -Be 3
-            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.Count | Should -Be 1
-            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.schema.Count | Should -Be 1
             $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/xml' | Should -BeOfType [hashtable]
+            $result.content.'application/xml' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.Count | Should -Be 1
-            $result.content.'application/xml'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/xml'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.schema.Count | Should -Be 1
             $result.content.'application/xml'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.Count | Should -Be 1
-            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.schema.Count | Should -Be 1
             $result.content.'application/x-www-form-urlencoded'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             $result.required | Should -BeTrue
@@ -2902,21 +2902,21 @@ Describe 'OpenApi' {
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'Pet in the store'
-            $result.content | Should -BeOfType [hashtable]
+            $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.Count | Should -Be 3
-            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.Count | Should -Be 1
-            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.schema.Count | Should -Be 1
             $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/xml' | Should -BeOfType [hashtable]
+            $result.content.'application/xml' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.Count | Should -Be 1
-            $result.content.'application/xml'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/xml'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.schema.Count | Should -Be 1
             $result.content.'application/xml'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.Count | Should -Be 1
-            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.schema.Count | Should -Be 1
             $result.content.'application/x-www-form-urlencoded'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             $result.required | Should -BeTrue
@@ -2965,13 +2965,13 @@ Describe 'OpenApi' {
 
         # Test return type
         It 'Returns an OrderedHashtable' {
-            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
+            $example = New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
             $example | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
         }
 
         # Test output for a single MediaType
         It 'Correctly creates example for a single MediaType' {
-            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
+            $example = New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
             $example['application/json'].Keys -Contains 'user' | Should -Be $true
             $example['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true
             $example['application/json']['user'].externalValue -eq 'http://external.com' | Should -Be $true
@@ -2979,8 +2979,8 @@ Describe 'OpenApi' {
 
         # Test merging behavior
         It 'Correctly merges examples for multiple MediaTypes' {
-            $result = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary   'JSON Example' -Value '[]' |
-                New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Summary 'XML Example' -Value '<>'
+            $result = New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary   'JSON Example' -Value '[]' |
+                New-PodeOAExample -ContentType 'application/xml' -Name 'user' -Summary 'XML Example' -Value '<>'
 
             $result.Count -eq 2 | Should -Be $true
             $result['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true
@@ -3200,7 +3200,7 @@ Describe 'OpenApi' {
                 (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
             )
             $Pet.type | Should -be 'object'
-            $Pet.xml | Should -BeOfType [hashtable]
+            $Pet.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $Pet.xml.Count | Should -Be 1
             $Pet.xml.name | Should -Be 'pet'
             $Pet.name | Should -Be 'Pet'
@@ -3255,7 +3255,7 @@ Describe 'OpenApi' {
                 New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold') |
                 New-PodeOAObjectProperty -Name 'Pet' -XmlName 'pet'
             $Pet.type | Should -be 'object'
-            $Pet.xml | Should -BeOfType [hashtable]
+            $Pet.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $Pet.xml.Count | Should -Be 1
             $Pet.xml.name | Should -Be 'pet'
             $Pet.name | Should -Be 'Pet'

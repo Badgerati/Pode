@@ -397,9 +397,9 @@ function Add-PodeRoute {
 
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses) {
-            $DefaultResponse = @{}
+            $DefaultResponse = [ordered]@{}
             foreach ($tag in $DefinitionTag) {
-                $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
+                 $DefaultResponse[$tag] = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
             }
         }
 

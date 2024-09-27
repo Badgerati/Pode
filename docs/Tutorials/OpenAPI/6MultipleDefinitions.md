@@ -118,9 +118,9 @@ Select-PodeOADefinition -Tag 'v3', 'v3.1'  -ScriptBlock {
             } | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru |
                 Set-PodeOARequest -RequestBody (
                     New-PodeOARequestBody -Description  'Update an existent pet in the store' -Required -Content (
-                        New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet'  )
+                        New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet'  )
                 ) -PassThru |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception'

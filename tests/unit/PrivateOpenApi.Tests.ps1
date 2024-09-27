@@ -373,7 +373,7 @@ Describe 'PrivateOpenApi' {
             $result.Count | Should -Be 2
             $result['prop1'].processed | Should -Be $true
             $result['prop2'].processed | Should -Be $true
-            $result.ContainsKey('prop3') | Should -Be $false
+            $result.keys -contains 'prop3' | Should -Be $false
         }
 
         It 'Forms valid schema object for non-excluded properties' {
@@ -400,7 +400,7 @@ Describe 'PrivateOpenApi' {
             }
             $result = ConvertTo-PodeOAObjectSchema -Content $content -DefinitionTag 'myTag'
 
-            $result.ContainsKey('application/json') | Should -Be $true
+            $result.Keys -contains 'application/json' | Should -Be $true
             $result['application/json'].schema.type | Should -Be 'string'
         }
 
