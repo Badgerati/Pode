@@ -2189,12 +2189,13 @@ Describe 'OpenApi' {
             $Route = @{
                 OpenApi = @{
                     Path           = '/test'
-                    Responses      = @{
+                    Responses      = [ordered]@{
                         '200'     = @{ description = 'OK' }
                         'default' = @{ description = 'Internal server error' }
                     }
-                    Parameters          = $null
-                    RequestBody         = $null
+                    Parameters         = [ordered]@{}
+                    RequestBody        = [ordered]@{}
+                    callbacks          = [ordered]@{}
                     Authentication      = @()
                     DefinitionTag       = @('Default')
                     IsDefTagConfigured  = $false
@@ -3113,7 +3114,10 @@ Describe 'OpenApi' {
             $route = @{
                 Method = 'GET'
                 OpenApi = @{
-                    Parameters=@{}
+                    Responses          = [ordered]@{}
+                    Parameters         = [ordered]@{}
+                    RequestBody        = [ordered]@{}
+                    callbacks          = [ordered]@{}
                 }
             }
             $parameters = @(

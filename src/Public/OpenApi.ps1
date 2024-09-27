@@ -3235,9 +3235,9 @@ function Add-PodeOAExternalRoute {
                 Local   = $false
                 OpenApi = @{
                     Path           = $OpenApiPath
-                    Responses      = $null
-                    Parameters     = $null
-                    RequestBody    = $null
+                    Responses      = [ordered]@{}
+                    Parameters     = [ordered]@{}
+                    RequestBody    = [ordered]@{}
                     callbacks      = [ordered]@{}
                     Authentication = @()
                     Servers        = $Servers
@@ -3395,8 +3395,8 @@ function Add-PodeOAWebhook {
         NotPrepared = $true
         OpenApi     = @{
             Responses          = [ordered]@{}
-            Parameters         = $null
-            RequestBody        = $null
+            Parameters         = [ordered]@{}
+            RequestBody        = [ordered]@{}
             callbacks          = [ordered]@{}
             Authentication     = @()
             DefinitionTag      = $_definitionTag

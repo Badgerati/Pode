@@ -734,9 +734,9 @@ function Add-PodeOAComponentPathItem {
         Method      = $Method.ToLower()
         NotPrepared = $true
         OpenApi     = @{
-            Responses          = $null
-            Parameters         = $null
-            RequestBody        = $null
+            Responses          = [ordered]@{}
+            Parameters         = [ordered]@{}
+            RequestBody        = [ordered]@{}
             callbacks          = [ordered]@{}
             Authentication     = @()
             Servers            = @()

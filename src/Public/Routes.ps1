@@ -875,8 +875,8 @@ function Add-PodeStaticRoute {
                 OpenApi           = @{
                     Path           = $OpenApiPath
                     Responses      = @{}
-                    Parameters     = $null
-                    RequestBody    = $null
+                    Parameters     = [ordered]@{}
+                    RequestBody    = [ordered]@{}
                     CallBacks      = @{}
                     Authentication = @()
                     Servers        = @()
