@@ -193,7 +193,7 @@ function ConvertTo-PodeOAObjectSchema {
             }
             else {
                 if ($item.Count -eq 0) {
-                    $result =[ordered]@{}  # Create an empty object if the item count is zero.
+                    $result = [ordered]@{}  # Create an empty object if the item count is zero.
                 }
                 else {
                     # Convert each property to a PodeOpenAPI schema property.
@@ -504,69 +504,69 @@ function ConvertTo-PodeOASchemaProperty {
             $schema['readOnly'] = $Property.readOnly
         }
 
-    if ($Property.example) {
-        if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
-            $schema['example'] = $Property.example
-        }
-        else {
-            if ($Property.example -is [Array]) {
-                $schema['examples'] = $Property.example
+        if ($Property.example) {
+            if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
+                $schema['example'] = $Property.example
             }
             else {
-                $schema['examples'] = @( $Property.example)
+                if ($Property.example -is [Array]) {
+                    $schema['examples'] = $Property.example
+                }
+                else {
+                    $schema['examples'] = @( $Property.example)
+                }
             }
         }
-    }
-    if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
-        if ($Property.ContainsKey('minimum')) {
-            $schema['minimum'] = $Property.minimum
-        }
+        if (Test-PodeOAVersion -Version 3.0 -DefinitionTag $DefinitionTag ) {
+            if ($Property.ContainsKey('minimum')) {
+                $schema['minimum'] = $Property.minimum
+            }
 
-        if ($Property.ContainsKey('maximum')) {
-            $schema['maximum'] = $Property.maximum
-        }
+            if ($Property.ContainsKey('maximum')) {
+                $schema['maximum'] = $Property.maximum
+            }
 
             if ($Property.exclusiveMaximum) {
                 $schema['exclusiveMaximum'] = $Property.exclusiveMaximum
             }
 
-        if ($Property.exclusiveMinimum) {
-            $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
-        }
-    }
-    else {
-        if ($Property.ContainsKey('maximum')) {
-            if ($Property.exclusiveMaximum) {
-                $schema['exclusiveMaximum'] = $Property.maximum
-            }
-            else {
-                $schema['maximum'] = $Property.maximum
-            }
-        }
-        if ($Property.ContainsKey('minimum')) {
             if ($Property.exclusiveMinimum) {
-                $schema['exclusiveMinimum'] = $Property.minimum
-            }
-            else {
-                $schema['minimum'] = $Property.minimum
+                $schema['exclusiveMinimum'] = $Property.exclusiveMinimum
             }
         }
-    }
-    if ($Property.multipleOf) {
-        $schema['multipleOf'] = $Property.multipleOf
-    }
+        else {
+            if ($Property.ContainsKey('maximum')) {
+                if ($Property.exclusiveMaximum) {
+                    $schema['exclusiveMaximum'] = $Property.maximum
+                }
+                else {
+                    $schema['maximum'] = $Property.maximum
+                }
+            }
+            if ($Property.ContainsKey('minimum')) {
+                if ($Property.exclusiveMinimum) {
+                    $schema['exclusiveMinimum'] = $Property.minimum
+                }
+                else {
+                    $schema['minimum'] = $Property.minimum
+                }
+            }
+        }
+        if ($Property.multipleOf) {
+            $schema['multipleOf'] = $Property.multipleOf
+        }
 
         if ($Property.pattern) {
             $schema['pattern'] = $Property.pattern
         }
 
-    if ($Property.ContainsKey('minLength')) {
-        $schema['minLength'] = $Property.minLength
-    }
+        if ($Property.ContainsKey('minLength')) {
+            $schema['minLength'] = $Property.minLength
+        }
 
-    if ($Property.ContainsKey('maxLength')) {
-        $schema['maxLength'] = $Property.maxLength
-    }
+        if ($Property.ContainsKey('maxLength')) {
+            $schema['maxLength'] = $Property.maxLength
+        }
 
         if ($Property.xml ) {
             $schema['xml'] = $Property.xml
@@ -581,91 +581,91 @@ function ConvertTo-PodeOASchemaProperty {
             }
         }
 
-    # are we using an array?
-    if ($Property.array) {
-        if ($Property.ContainsKey('maxItems') ) {
-            $schema['maxItems'] = $Property.maxItems
-        }
+        # are we using an array?
+        if ($Property.array) {
+            if ($Property.ContainsKey('maxItems') ) {
+                $schema['maxItems'] = $Property.maxItems
+            }
 
-        if ($Property.ContainsKey('minItems') ) {
-            $schema['minItems'] = $Property.minItems
-        }
+            if ($Property.ContainsKey('minItems') ) {
+                $schema['minItems'] = $Property.minItems
+            }
 
             if ($Property.uniqueItems ) {
                 $schema['uniqueItems'] = $Property.uniqueItems
             }
 
-        $schema['type'] = 'array'
-        if ($Property.type -ieq 'schema') {
-            Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
-            $schema['items'] = [ordered]@{ '$ref' = "#/components/schemas/$($Property['schema'])" }
+            $schema['type'] = 'array'
+            if ($Property.type -ieq 'schema') {
+                Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
+                $schema['items'] = [ordered]@{ '$ref' = "#/components/schemas/$($Property['schema'])" }
+            }
+            else {
+                $Property.array = $false
+                if ($Property.xml) {
+                    $xmlFromProperties = $Property.xml
+                    $Property.Remove('xml')
+                }
+                $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
+                $Property.array = $true
+                if ($xmlFromProperties) {
+                    $Property.xml = $xmlFromProperties
+                }
+
+                if ($Property.xmlItemName) {
+                    $schema.items.xml = [ordered]@{'name' = $Property.xmlItemName }
+                }
+            }
+            return $schema
         }
         else {
-            $Property.array = $false
-            if ($Property.xml) {
-                $xmlFromProperties = $Property.xml
-                $Property.Remove('xml')
-            }
-            $schema['items'] = ($Property | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag)
-            $Property.array = $true
-            if ($xmlFromProperties) {
-                $Property.xml = $xmlFromProperties
+            #format is not applicable to array
+            if ($Property.format) {
+                $schema['format'] = $Property.format
             }
 
-            if ($Property.xmlItemName) {
-                $schema.items.xml = [ordered]@{'name' = $Property.xmlItemName }
+            # schema refs
+            if ($Property.type -ieq 'schema') {
+                Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
+                $schema = [ordered]@{
+                    '$ref' = "#/components/schemas/$($Property['schema'])"
+                }
+            }
+            #only if it's not an array
+            if ($Property.enum ) {
+                $schema['enum'] = $Property.enum
             }
         }
-        return $schema
-    }
-    else {
-        #format is not applicable to array
-        if ($Property.format) {
-            $schema['format'] = $Property.format
-        }
-
-        # schema refs
-        if ($Property.type -ieq 'schema') {
-            Test-PodeOAComponentInternal -Field schemas -DefinitionTag $DefinitionTag -Name $Property['schema'] -PostValidation
-            $schema = [ordered]@{
-                '$ref' = "#/components/schemas/$($Property['schema'])"
-            }
-        }
-        #only if it's not an array
-        if ($Property.enum ) {
-            $schema['enum'] = $Property.enum
-        }
-    }
 
         if ($Property.object) {
             # are we using an object?
             $Property.object = $false
 
-        $schema = [ordered]@{
-            type       = 'object'
-            properties = (ConvertTo-PodeOASchemaObjectProperty -DefinitionTag $DefinitionTag -Properties $Property)
+            $schema = [ordered]@{
+                type       = 'object'
+                properties = (ConvertTo-PodeOASchemaObjectProperty -DefinitionTag $DefinitionTag -Properties $Property)
+            }
+            $Property.object = $true
+            if ($Property.required) {
+                $schema['required'] = @($Property.name)
+            }
         }
-        $Property.object = $true
-        if ($Property.required) {
-            $schema['required'] = @($Property.name)
-        }
-    }
 
-    if ($Property.type -ieq 'object') {
-        $schema['properties'] = [ordered]@{}
-        foreach ($prop in $Property.properties) {
-            if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type) {
-                switch ($prop.type.ToLower()) {
-                    'allof' { $prop.type = 'allOf' }
-                    'oneof' { $prop.type = 'oneOf' }
-                    'anyof' { $prop.type = 'anyOf' }
-                }
-                if ($prop.name) {
-                    $schema['properties'] += ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $prop
-                }
-                else {
-                    $schema += ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $prop
-                }
+        if ($Property.type -ieq 'object') {
+            $schema['properties'] = [ordered]@{}
+            foreach ($prop in $Property.properties) {
+                if ( @('allOf', 'oneOf', 'anyOf') -icontains $prop.type) {
+                    switch ($prop.type.ToLower()) {
+                        'allof' { $prop.type = 'allOf' }
+                        'oneof' { $prop.type = 'oneOf' }
+                        'anyof' { $prop.type = 'anyOf' }
+                    }
+                    if ($prop.name) {
+                        $schema['properties'] += ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $prop
+                    }
+                    else {
+                        $schema += ConvertTo-PodeOAofProperty -DefinitionTag $DefinitionTag -Property $prop
+                    }
 
                 }
             }
@@ -688,19 +688,19 @@ function ConvertTo-PodeOASchemaProperty {
                 $schema['minProperties'] = $Property.minProperties
             }
 
-        if ($Property.maxProperties) {
-            $schema['maxProperties'] = $Property.maxProperties
-        }
-        #Fix an issue when additionalProperties has an assigned value of $false
-        if ($Property.ContainsKey('additionalProperties')) {
-            if ($Property.additionalProperties) {
-                $schema['additionalProperties'] = $Property.additionalProperties | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
+            if ($Property.maxProperties) {
+                $schema['maxProperties'] = $Property.maxProperties
             }
-            else {
-                #the value is $false
-                $schema['additionalProperties'] = $false
+            #Fix an issue when additionalProperties has an assigned value of $false
+            if ($Property.ContainsKey('additionalProperties')) {
+                if ($Property.additionalProperties) {
+                    $schema['additionalProperties'] = $Property.additionalProperties | ConvertTo-PodeOASchemaProperty -DefinitionTag $DefinitionTag
+                }
+                else {
+                    #the value is $false
+                    $schema['additionalProperties'] = $false
+                }
             }
-        }
 
             if ($Property.discriminator) {
                 $schema['discriminator'] = $Property.discriminator
@@ -1849,46 +1849,43 @@ function ConvertTo-PodeOAHeaderProperty {
     begin {
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
-
-
-    $elems = @{}
-
-}
-
-process {
-    # Add the current piped-in value to the array
-    $pipelineValue += $_
-}
-
-end {
-    # Set Headers to the array of values
-    if ($pipelineValue.Count -gt 1) {
-        $Headers = $pipelineValue
+        $elems = [ordered]@{}
     }
 
-    foreach ($e in $Headers) {
-        # Ensure each header has a name
-        if ($e.name) {
-            $elems.$($e.name) = @{}
-            # Add description if present
-            if ($e.description) {
-                $elems.$($e.name).description = $e.description
-            }
-            # Define the schema, including the type and any additional properties
-            $elems.$($e.name).schema = @{
-                type = $($e.type)
-            }
-            foreach ($k in $e.keys) {
-                if (@('name', 'description') -notcontains $k) {
-                    $elems.$($e.name).schema.$k = $e.$k
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        # Set Headers to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Headers = $pipelineValue
+        }
+
+        foreach ($e in $Headers) {
+            # Ensure each header has a name
+            if ($e.name) {
+                $elems.$($e.name) = @{}
+                # Add description if present
+                if ($e.description) {
+                    $elems.$($e.name).description = $e.description
+                }
+                # Define the schema, including the type and any additional properties
+                $elems.$($e.name).schema = @{
+                    type = $($e.type)
+                }
+                foreach ($k in $e.keys) {
+                    if (@('name', 'description') -notcontains $k) {
+                        $elems.$($e.name).schema.$k = $e.$k
+                    }
                 }
             }
+            else {
+                # Header requires a name when used in an encoding context
+                throw ($PodeLocale.headerMustHaveNameInEncodingContextExceptionMessage)
+            }
         }
-        else {
-            # Header requires a name when used in an encoding context
-            throw ($PodeLocale.headerMustHaveNameInEncodingContextExceptionMessage)
-        }
-    }
 
         return $elems
     }
