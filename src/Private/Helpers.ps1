@@ -3699,6 +3699,72 @@ function Resolve-PodeObjectArray {
     }
 }
 
+<#
+.SYNOPSIS
+    Creates a deep clone of a PSObject by serializing and deserializing the object.
+
+.DESCRIPTION
+    The Copy-PodeObjectDeepClone function takes a PSObject as input and creates a deep clone of it.
+    This is achieved by serializing the object using the PSSerializer class, and then
+    deserializing it back into a new instance. This method ensures that nested objects, arrays,
+    and other complex structures are copied fully, without sharing references between the original
+    and the cloned object.
+
+.PARAMETER InputObject
+    The PSObject that you want to deep clone. This object will be serialized and then deserialized
+    to create a deep copy.
+
+.PARAMETER Depth
+    Specifies the depth for the serialization. The depth controls how deeply nested objects
+    and properties are serialized. The default value is 10.
+
+.INPUTS
+    [PSObject] - The function accepts a PSObject to deep clone.
+
+.OUTPUTS
+    [PSObject] - The function returns a new PSObject that is a deep clone of the original.
+
+.EXAMPLE
+    $originalObject = [PSCustomObject]@{
+        Name = 'John Doe'
+        Age = 30
+        Address = [PSCustomObject]@{
+            Street = '123 Main St'
+            City = 'Anytown'
+            Zip = '12345'
+        }
+    }
+
+    $clonedObject = $originalObject | Copy-PodeObjectDeepClone -Deep 15
+
+    # The $clonedObject is now a deep clone of $originalObject.
+    # Changes to $clonedObject will not affect $originalObject and vice versa.
+
+.NOTES
+    This function uses the System.Management.Automation.PSSerializer class, which is available in
+    PowerShell 5.1 and later versions. The default depth parameter is set to 10 to handle nested
+    objects appropriately, but it can be customized via the -Deep parameter.
+    This is an internal function and may change in future releases of Pode.
+#>
+function Copy-PodeObjectDeepClone {
+    param (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [PSObject]$InputObject,
+
+        [Parameter()]
+        [int]$Depth = 10
+    )
+
+    process {
+        # Serialize the object to XML format using PSSerializer
+        # The depth parameter controls how deeply nested objects are serialized
+        $xmlSerializer = [System.Management.Automation.PSSerializer]::Serialize($InputObject, $Depth)
+
+        # Deserialize the XML back into a new PSObject, creating a deep clone of the original
+        return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
+    }
+}
+
 
 
 <#
