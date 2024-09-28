@@ -926,7 +926,7 @@ function Remove-PodeEmptyItemsFromArray {
     param(
         [Parameter()]
         $Array
-    ) 
+    )
     if ($null -eq $Array) {
         return @()
     }

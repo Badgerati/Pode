@@ -143,7 +143,7 @@ function Add-PodeFileWatcher {
 
     # test if we have the file watcher already
     if (Test-PodeFileWatcher -Name $Name) {
-        # A File Watcher named has already been defined 
+        # A File Watcher named has already been defined
         throw ($PodeLocale.fileWatcherAlreadyDefinedExceptionMessage -f $Name)
     }
 
@@ -292,6 +292,7 @@ Removes all File Watchers.
 Clear-PodeFileWatchers
 #>
 function Clear-PodeFileWatchers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -315,6 +316,7 @@ Use-PodeFileWatchers
 Use-PodeFileWatchers -Path './my-watchers'
 #>
 function Use-PodeFileWatchers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
