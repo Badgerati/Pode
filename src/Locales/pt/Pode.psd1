@@ -283,7 +283,6 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Duração inválida fornecida para Access-Control-Max-Age: {0}. Deve ser maior que 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'A definição OpenAPI com o nome {0} já existe.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag não pode ser usado dentro de um 'ScriptBlock' Select-PodeOADefinition."
-    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     loggingAlreadyEnabledExceptionMessage                             = "O registro '{0}' já foi habilitado."
     invalidEncodingExceptionMessage                                   = 'Codificação inválida: {0}'
     syslogProtocolExceptionMessage                                    = 'O protocolo Syslog só pode usar RFC3164 ou RFC5424.'

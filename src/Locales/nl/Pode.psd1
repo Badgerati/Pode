@@ -283,7 +283,6 @@
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ongeldige Access-Control-Max-Age duur opgegeven: {0}. Moet groter zijn dan 0.'
     openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI-definitie met de naam {0} bestaat al.'
     renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kan niet worden gebruikt binnen een Select-PodeOADefinition 'ScriptBlock'."
-    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "De functie '{0}' accepteert geen array als pipeline-invoer."
     loggingAlreadyEnabledExceptionMessage                             = "Logging '{0}' is al ingeschakeld."
     invalidEncodingExceptionMessage                                   = 'Ongeldige codering: {0}'
     syslogProtocolExceptionMessage                                    = 'Het Syslog-protocol kan alleen RFC3164 of RFC5424 gebruiken.'
