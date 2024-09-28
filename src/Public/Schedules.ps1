@@ -277,6 +277,7 @@ Removes all Schedules.
 Clear-PodeSchedules
 #>
 function Clear-PodeSchedules {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -556,6 +557,7 @@ Use-PodeSchedules
 Use-PodeSchedules -Path './my-schedules'
 #>
 function Use-PodeSchedules {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

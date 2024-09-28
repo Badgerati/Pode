@@ -399,7 +399,7 @@ function Add-PodeRoute {
         if ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses) {
             $DefaultResponse = [ordered]@{}
             foreach ($tag in $DefinitionTag) {
-                 $DefaultResponse[$tag] = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
+                $DefaultResponse[$tag] = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
             }
         }
 
@@ -1835,6 +1835,7 @@ Clear-PodeRoutes
 Clear-PodeRoutes -Method Get
 #>
 function Clear-PodeRoutes {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -1864,6 +1865,7 @@ Removes all added static Routes.
 Clear-PodeStaticRoutes
 #>
 function Clear-PodeStaticRoutes {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -1881,6 +1883,7 @@ Removes all added Signal Routes.
 Clear-PodeSignalRoutes
 #>
 function Clear-PodeSignalRoutes {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -2598,6 +2601,7 @@ Use-PodeRoutes
 Use-PodeRoutes -Path './my-routes' -IfExists Skip
 #>
 function Use-PodeRoutes {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
