@@ -60,17 +60,21 @@ Start-PodeServer -Threads 2 {
     Enable-PodeSessionMiddleware -Duration 120 -Extend
 
     # setup form auth against user file (<form> in HTML)
-    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './users/users.json' -FailureUrl '/login' -SuccessUrl '/'
+    New-PodeAuthScheme -Form | Add-PodeAuthUserFile -Name 'Login' -FilePath './users/users.json' -FailureUrl '/login' -SuccessUrl '/' -ScriptBlock {
+        param($user)
+        return @{ User = $user }
+    }
 
 
     # home page:
     # redirects to login page if not authenticated
     Add-PodeRoute -Method Get -Path '/' -Authentication Login -ScriptBlock {
         $WebEvent.Session.Data.Views++
+        $session:TestData | Out-Default
 
         Write-PodeViewResponse -Path 'auth-home' -Data @{
             Username = $WebEvent.Auth.User.Name
-            Views = $WebEvent.Session.Data.Views
+            Views    = $WebEvent.Session.Data.Views
         }
     }
 
