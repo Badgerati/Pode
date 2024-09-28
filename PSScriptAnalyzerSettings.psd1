@@ -24,6 +24,8 @@
         'PSAvoidUsingUsernameAndPasswordParams',
         'PSUseProcessBlockForPipelineCommand',
         'PSAvoidUsingConvertToSecureStringWithPlainText',
-        'PSReviewUnusedParameter'
+        'PSReviewUnusedParameter',
+        'PSAvoidAssignmentToAutomaticVariable'
     )
+
 }
