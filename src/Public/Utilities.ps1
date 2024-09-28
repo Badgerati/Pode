@@ -612,6 +612,9 @@ $Arguments = @(Merge-PodeScriptblockArguments -ArgumentList $Arguments -UsingVar
 $Arguments = @(Merge-PodeScriptblockArguments -UsingVariables $UsingVariables)
 #>
 function Merge-PodeScriptblockArguments {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
+    [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter()]
         [object[]]

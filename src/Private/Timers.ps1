@@ -80,7 +80,7 @@ function Start-PodeTimerRunspace {
         }
     }
 
-    Add-PodeRunspace -Type Timers -Name "Scheduler" -ScriptBlock $script
+    Add-PodeRunspace -Type Timers -Name 'Scheduler' -ScriptBlock $script
 }
 
 function Invoke-PodeInternalTimer {

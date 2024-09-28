@@ -131,6 +131,7 @@ $names = Get-PodeStateNames -Scope '<scope>'
 $names = Get-PodeStateNames -Pattern '^\w+[0-9]{0,2}$'
 #>
 function Get-PodeStateNames {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
