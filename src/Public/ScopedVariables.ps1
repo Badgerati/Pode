@@ -23,6 +23,7 @@ $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock
 $ScriptBlock = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -Exclude Session, Using
 #>
 function Convert-PodeScopedVariables {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     [OutputType([scriptblock])]
@@ -301,6 +302,10 @@ Removes all Scoped Variables.
 Clear-PodeScopedVariables
 #>
 function Clear-PodeScopedVariables {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
+    [CmdletBinding()]
+    param()
+
     $null = $PodeContext.Server.ScopedVariables.Clear()
 }
 
@@ -357,6 +362,7 @@ Use-PodeScopedVariables
 Use-PodeScopedVariables -Path './my-vars'
 #>
 function Use-PodeScopedVariables {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

@@ -18,7 +18,8 @@
 #>
 
 function Set-PodeCurrentRunspaceName {
-    param (
+    [CmdletBinding()]
+    param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name
@@ -26,7 +27,7 @@ function Set-PodeCurrentRunspaceName {
 
     # Get the current runspace
     $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
-     # Set the name of the current runspace if the name is not already set
+    # Set the name of the current runspace if the name is not already set
     if ( $currentRunspace.Name -ne $Name) {
         # Set the name of the current runspace
         $currentRunspace.Name = $Name
@@ -49,6 +50,9 @@ function Set-PodeCurrentRunspaceName {
     This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeCurrentRunspaceName {
+    [CmdletBinding()]
+    param()
+
     # Get the current runspace
     $currentRunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
 
