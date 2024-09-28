@@ -48,9 +48,10 @@ function Set-PodeState {
     )
 
     # Check if Pode has been initialized; if not, throw an exception
-    if ($null -eq $PodeContext.Server.State) {
-        throw ($PodeLocale.podeNotInitializedExceptionMessage)
-    }
+    begin {
+        if ($null -eq $PodeContext.Server.State) {
+                throw ($PodeLocale.podeNotInitializedExceptionMessage)
+        }
 
     # Convert the state to a concurrent dictionary if thread-safe operations are requested
     if ($Threadsafe.IsPresent) {
@@ -64,9 +65,24 @@ function Set-PodeState {
     }
 
     # Set the scope to an empty array if none is provided
-    if ($null -eq $Scope) {
-        $Scope = @()
+        if ($null -eq $Scope) {
+            $Scope = @()
+        }
+
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
+
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        # Set Value to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Value = $pipelineValue
+        }
 
     # Check if the state is a concurrent dictionary
     if (Test-PodeStateIsThreadSafe) {
@@ -95,8 +111,9 @@ function Set-PodeState {
         }
     }
 
-    # Return the value that was set
+        # Return the value that was set
     return $Value
+    }
 }
 
 

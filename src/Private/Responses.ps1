@@ -133,7 +133,7 @@ This is an internal function and may change in future releases of Pode.
 function Write-PodeFileResponseInternal {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
         $Path,
