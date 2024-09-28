@@ -379,6 +379,7 @@ Remove all Lockables.
 Clear-PodeLockables
 #>
 function Clear-PodeLockables {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -676,6 +677,7 @@ Removes all Mutexes.
 Clear-PodeMutexes
 #>
 function Clear-PodeMutexes {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -995,6 +997,7 @@ Removes all Semaphores.
 Clear-PodeSemaphores
 #>
 function Clear-PodeSemaphores {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 

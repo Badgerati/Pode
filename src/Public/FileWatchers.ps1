@@ -298,6 +298,7 @@ Removes all File Watchers.
 Clear-PodeFileWatchers
 #>
 function Clear-PodeFileWatchers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -324,6 +325,7 @@ Use-PodeFileWatchers
 Use-PodeFileWatchers -Path './my-watchers'
 #>
 function Use-PodeFileWatchers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

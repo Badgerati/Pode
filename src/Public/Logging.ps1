@@ -1131,7 +1131,8 @@ Clears all Logging methods that have been configured.
 .EXAMPLE
 Clear-PodeLogger
 #>
-function Clear-PodeLogger {
+function Clear-PodeLoggers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 

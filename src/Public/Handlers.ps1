@@ -138,6 +138,7 @@ The Type of Handlers to remove.
 Clear-PodeHandlers -Type Smtp
 #>
 function Clear-PodeHandlers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -176,6 +177,7 @@ Use-PodeHandlers
 Use-PodeHandlers -Path './my-handlers'
 #>
 function Use-PodeHandlers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

@@ -229,6 +229,7 @@ The Type to use.
 Set-PodeSecurityFrameOptions -Type SameOrigin
 #>
 function Set-PodeSecurityFrameOptions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -251,6 +252,7 @@ Removes definition for the X-Frame-Options header.
 Remove-PodeSecurityFrameOptions
 #>
 function Remove-PodeSecurityFrameOptions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -1071,6 +1073,7 @@ Set a value for the X-Content-Type-Options header to "nosniff".
 Set-PodeSecurityContentTypeOptions
 #>
 function Set-PodeSecurityContentTypeOptions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -1088,6 +1091,7 @@ Removes definitions for the X-Content-Type-Options header.
 Remove-PodeSecurityContentTypeOptions
 #>
 function Remove-PodeSecurityContentTypeOptions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 

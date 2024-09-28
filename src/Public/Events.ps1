@@ -205,6 +205,7 @@ Use-PodeEvents
 Use-PodeEvents -Path './my-events'
 #>
 function Use-PodeEvents {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

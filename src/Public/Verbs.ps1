@@ -182,6 +182,7 @@ Removes all added Verbs.
 Clear-PodeVerbs
 #>
 function Clear-PodeVerbs {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -270,6 +271,7 @@ Use-PodeVerbs
 Use-PodeVerbs -Path './my-verbs'
 #>
 function Use-PodeVerbs {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

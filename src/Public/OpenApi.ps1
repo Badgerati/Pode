@@ -657,15 +657,15 @@ function Add-PodeOAResponse {
             $code = "$($StatusCode)"
         }
 
-    # add the respones to the routes
-    foreach ($r in @($Route)) {
-        foreach ($tag in $DefinitionTag) {
-            if (! $r.OpenApi.Responses.$tag) {
-                $r.OpenApi.Responses.$tag = [ordered]@{}
+        # add the respones to the routes
+        foreach ($r in @($Route)) {
+            foreach ($tag in $DefinitionTag) {
+                if (! $r.OpenApi.Responses.$tag) {
+                    $r.OpenApi.Responses.$tag = [ordered]@{}
+                }
+                $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
             }
-            $r.OpenApi.Responses.$tag[$code] = New-PodeOResponseInternal  -DefinitionTag $tag -Params $PSBoundParameters
         }
-    }
 
         if ($PassThru) {
             return $Route
@@ -821,16 +821,16 @@ function Set-PodeOARequest {
                 $r.OpenApi.Parameters = @($Parameters)
             }
 
-        if ($null -ne $RequestBody) {
-            # Only 'POST', 'PUT', 'PATCH' can have a request body
-            if (('POST', 'PUT', 'PATCH') -inotcontains $r.Method ) {
-                # {0} operations cannot have a Request Body.
-                throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
+            if ($null -ne $RequestBody) {
+                # Only 'POST', 'PUT', 'PATCH' can have a request body
+                if (('POST', 'PUT', 'PATCH') -inotcontains $r.Method ) {
+                    # {0} operations cannot have a Request Body.
+                    throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
+                }
+                $r.OpenApi.RequestBody = $RequestBody
             }
-            $r.OpenApi.RequestBody = $RequestBody
-        }
 
-    }
+        }
 
         if ($PassThru) {
             return $Route
@@ -904,6 +904,7 @@ New-PodeOARequestBody -Content @{'multipart/form-data' =
 function New-PodeOARequestBody {
     [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
     [OutputType([hashtable])]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [string]
@@ -1372,27 +1373,27 @@ function ConvertTo-PodeOAParameter {
                     $prop['allowReserved'] = $AllowReserved.IsPresent
                 }
 
-            if ($Example ) {
-                $prop.example = $Example
-            }
-            elseif ($Examples) {
-                $prop.examples = $Examples
-            }
-        }
-    }
-    elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
-        # return a reference
-        Test-PodeOAComponentInternal -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
-        $prop = [ordered]@{
-            '$ref' = "#/components/parameters/$Reference"
-        }
-        foreach ($tag in $DefinitionTag) {
-            if ($PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters.$Reference.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
-                Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Reference -Append
+                if ($Example ) {
+                    $prop.example = $Example
+                }
+                elseif ($Examples) {
+                    $prop.examples = $Examples
+                }
             }
         }
-    }
-    else {
+        elseif ($PSCmdlet.ParameterSetName -ieq 'Reference') {
+            # return a reference
+            Test-PodeOAComponentInternal -Field parameters  -DefinitionTag $DefinitionTag  -Name $Reference -PostValidation
+            $prop = [ordered]@{
+                '$ref' = "#/components/parameters/$Reference"
+            }
+            foreach ($tag in $DefinitionTag) {
+                if ($PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters.$Reference.In -eq 'Header' -and $PodeContext.Server.Security.autoHeaders) {
+                    Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value $Reference -Append
+                }
+            }
+        }
+        else {
 
             if (!$Name ) {
                 if ($Property.name) {
@@ -1648,17 +1649,17 @@ function Set-PodeOARouteInfo {
 
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    foreach ($r in @($Route)) {
-        if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
-            if ($r.OpenApi.IsDefTagConfigured ) {
-                # Definition Tag for a Route cannot be changed.
-                throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
+        foreach ($r in @($Route)) {
+            if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
+                if ($r.OpenApi.IsDefTagConfigured ) {
+                    # Definition Tag for a Route cannot be changed.
+                    throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
+                }
+                else {
+                    $r.OpenApi.DefinitionTag = $DefinitionTag
+                    $r.OpenApi.IsDefTagConfigured = $true
+                }
             }
-            else {
-                $r.OpenApi.DefinitionTag = $DefinitionTag
-                $r.OpenApi.IsDefTagConfigured = $true
-            }
-        }
 
             if ($OperationId) {
                 if ($Route.Count -gt 1) {
@@ -2739,28 +2740,28 @@ function Add-PodeOACallBack {
 
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    foreach ($r in @($Route)) {
-        foreach ($tag in $DefinitionTag) {
-            if ($Reference) {
-                Test-PodeOAComponentInternal -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
-                if (!$Name) {
-                    $Name = $Reference
+        foreach ($r in @($Route)) {
+            foreach ($tag in $DefinitionTag) {
+                if ($Reference) {
+                    Test-PodeOAComponentInternal -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
+                    if (!$Name) {
+                        $Name = $Reference
+                    }
+                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                        $r.OpenApi.CallBacks[$tag] = [ordered]@{}
+                    }
+                    $r.OpenApi.CallBacks[$tag].$Name = [ordered]@{
+                        '$ref' = "#/components/callbacks/$Reference"
+                    }
                 }
-                if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
-                    $r.OpenApi.CallBacks[$tag] = [ordered]@{}
+                else {
+                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                        $r.OpenApi.CallBacks[$tag] = [ordered]@{}
+                    }
+                    $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
                 }
-                $r.OpenApi.CallBacks[$tag].$Name = [ordered]@{
-                    '$ref' = "#/components/callbacks/$Reference"
-                }
-            }
-            else {
-                if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
-                    $r.OpenApi.CallBacks[$tag] = [ordered]@{}
-                }
-                $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
             }
         }
-    }
 
         if ($PassThru) {
             return $Route
@@ -3337,36 +3338,36 @@ function Add-PodeOAExternalRoute {
     end {
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'builtin' {
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'builtin' {
 
-            # ensure the route has appropriate slashes
-            $Path = Update-PodeRouteSlash -Path $Path
-            $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-            $Path = Resolve-PodePlaceholder -Path $Path
-            $extRoute = @{
-                Method  = $Method.ToLower()
-                Path    = $Path
-                Local   = $false
-                OpenApi = @{
-                    Path           = $OpenApiPath
-                    Responses      = $null
-                    Parameters     = $null
-                    RequestBody    = $null
-                    callbacks      = [ordered]@{}
-                    Authentication = @()
-                    Servers        = $Servers
-                    DefinitionTag  = $DefinitionTag
+                # ensure the route has appropriate slashes
+                $Path = Update-PodeRouteSlash -Path $Path
+                $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+                $Path = Resolve-PodePlaceholder -Path $Path
+                $extRoute = @{
+                    Method  = $Method.ToLower()
+                    Path    = $Path
+                    Local   = $false
+                    OpenApi = @{
+                        Path           = $OpenApiPath
+                        Responses      = $null
+                        Parameters     = $null
+                        RequestBody    = $null
+                        callbacks      = [ordered]@{}
+                        Authentication = @()
+                        Servers        = $Servers
+                        DefinitionTag  = $DefinitionTag
+                    }
                 }
-            }
-            foreach ($tag in $DefinitionTag) {
-                #add the default OpenApi responses
-                if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
-                    $extRoute.OpenApi.Responses = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
-                }
-                if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
-                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = [ordered]@{}
-                }
+                foreach ($tag in $DefinitionTag) {
+                    #add the default OpenApi responses
+                    if ( $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses) {
+                        $extRoute.OpenApi.Responses = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
+                    }
+                    if (! (Test-PodeOAComponentExternalPath -DefinitionTag $tag -Name $Path)) {
+                        $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath[$Path] = [ordered]@{}
+                    }
 
                     $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.externalPath.$Path[$Method] = $extRoute
                 }

@@ -1105,6 +1105,7 @@ The Name of the Authentication method.
 if (Test-PodeAuthExists -Name BasicAuth) { ... }
 #>
 function Test-PodeAuthExists {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     [OutputType([bool])]
     param(

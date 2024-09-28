@@ -217,6 +217,7 @@ Removes all Timers.
 Clear-PodeTimers
 #>
 function Clear-PodeTimers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -379,6 +380,7 @@ Use-PodeTimers
 Use-PodeTimers -Path './my-timers'
 #>
 function Use-PodeTimers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
