@@ -172,33 +172,46 @@ function Add-PodeAccess {
         [string]
         $Match = 'One'
     )
-
-    # check name unique
-    if (Test-PodeAccessExists -Name $Name) {
-        throw ($PodeLocale.accessMethodAlreadyDefinedExceptionMessage -f $Name) #"Access method already defined: $($Name)"
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # parse using variables in validator scriptblock
-    $scriptObj = $null
-    if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $scriptObj = @{
-            Script         = $ScriptBlock
-            UsingVariables = $usingScriptVars
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
-    }
+        # check name unique
+        if (Test-PodeAccessExists -Name $Name) {
+            # Access method already defined: $($Name)
+            throw ($PodeLocale.accessMethodAlreadyDefinedExceptionMessage -f $Name)
+        }
 
-    # add access object
-    $PodeContext.Server.Authorisations.Methods[$Name] = @{
-        Name        = $Name
-        Description = $Description
-        Scheme      = $Scheme
-        ScriptBlock = $scriptObj
-        Arguments   = $ArgumentList
-        Match       = $Match.ToLowerInvariant()
-        Cache       = @{}
-        Merged      = $false
-        Parent      = $null
+        # parse using variables in validator scriptblock
+        $scriptObj = $null
+        if (!(Test-PodeIsEmpty $ScriptBlock)) {
+            $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $scriptObj = @{
+                Script         = $ScriptBlock
+                UsingVariables = $usingScriptVars
+            }
+        }
+
+        # add access object
+        $PodeContext.Server.Authorisations.Methods[$Name] = @{
+            Name        = $Name
+            Description = $Description
+            Scheme      = $Scheme
+            ScriptBlock = $scriptObj
+            Arguments   = $ArgumentList
+            Match       = $Match.ToLowerInvariant()
+            Cache       = @{}
+            Merged      = $false
+            Parent      = $null
+        }
     }
 }
 
@@ -381,7 +394,6 @@ function Test-PodeAccessExists {
         [string]
         $Name
     )
-
     return $PodeContext.Server.Authorisations.Methods.ContainsKey($Name)
 }
 
@@ -604,8 +616,9 @@ function Remove-PodeAccess {
         [string]
         $Name
     )
-
-    $null = $PodeContext.Server.Authorisations.Methods.Remove($Name)
+    process {
+        $null = $PodeContext.Server.Authorisations.Methods.Remove($Name)
+    }
 }
 
 <#
