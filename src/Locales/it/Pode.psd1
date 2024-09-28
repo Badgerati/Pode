@@ -291,5 +291,6 @@
     scheduleProcessDoesNotExistExceptionMessage                       = "Il processo della programma '{0}' non esiste."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Il tag di definizione per una Route non può essere cambiato.'
     getRequestBodyNotAllowedExceptionMessage                          = 'Le operazioni {0} non possono avere un corpo della richiesta.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La funzione '{0}' non accetta una matrice come input della pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La compressione dello stream non è supportata per la codifica {0}'
 }

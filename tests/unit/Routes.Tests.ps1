@@ -638,6 +638,11 @@ Describe 'ConvertTo-PodeRoute' {
         Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
     }
 
+    It 'Calls Add-PodeRoute twice for commands by pipe' {
+        @('Get-ChildItem', 'Invoke-Expression') |  ConvertTo-PodeRoute   -NoOpenApi
+        Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
+    }
+
     It 'Calls Add-PodeRoute twice for module commands' {
         ConvertTo-PodeRoute -Module Example -NoOpenApi
         Assert-MockCalled Add-PodeRoute -Times 2 -Scope It

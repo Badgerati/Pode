@@ -158,7 +158,7 @@ Invoke-PodeTimer -Name 'timer-name'
 function Invoke-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -166,15 +166,16 @@ function Invoke-PodeTimer {
         [object[]]
         $ArgumentList = $null
     )
+    process {
+        # ensure the timer exists
+        if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
+            # Timer 'Name' does not exist
+            throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
+        }
 
-    # ensure the timer exists
-    if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-        # Timer 'Name' does not exist
-        throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
+        # run timer logic
+        Invoke-PodeInternalTimer -Timer $PodeContext.Timers.Items[$Name] -ArgumentList $ArgumentList
     }
-
-    # run timer logic
-    Invoke-PodeInternalTimer -Timer $PodeContext.Timers.Items[$Name] -ArgumentList $ArgumentList
 }
 
 <#
@@ -193,15 +194,16 @@ Remove-PodeTimer -Name 'SaveState'
 function Remove-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name
     )
-
+    process {
     # Record the operation on the trace log
     Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
-    $null = $PodeContext.Timers.Items.Remove($Name)
+        $null = $PodeContext.Timers.Items.Remove($Name)
+    }
 }
 
 <#
@@ -249,7 +251,7 @@ Edit-PodeTimer -Name 'Hello' -Interval 10
 function Edit-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -265,30 +267,31 @@ function Edit-PodeTimer {
         [object[]]
         $ArgumentList
     )
+    process {
+        # ensure the timer exists
+        if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
+            # Timer 'Name' does not exist
+            throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
+        }
 
-    # ensure the timer exists
-    if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-        # Timer 'Name' does not exist
-        throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
-    }
+        $_timer = $PodeContext.Timers.Items[$Name]
 
-    $_timer = $PodeContext.Timers.Items[$Name]
+        # edit interval if supplied
+        if ($Interval -gt 0) {
+            $_timer.Interval = $Interval
+        }
 
-    # edit interval if supplied
-    if ($Interval -gt 0) {
-        $_timer.Interval = $Interval
-    }
+        # edit scriptblock if supplied
+        if (!(Test-PodeIsEmpty $ScriptBlock)) {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $_timer.Script = $ScriptBlock
+            $_timer.UsingVariables = $usingVars
+        }
 
-    # edit scriptblock if supplied
-    if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $_timer.Script = $ScriptBlock
-        $_timer.UsingVariables = $usingVars
-    }
-
-    # edit arguments if supplied
-    if (!(Test-PodeIsEmpty $ArgumentList)) {
-        $_timer.Arguments = $ArgumentList
+        # edit arguments if supplied
+        if (!(Test-PodeIsEmpty $ArgumentList)) {
+            $_timer.Arguments = $ArgumentList
+        }
     }
 }
 

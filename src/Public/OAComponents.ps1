@@ -85,7 +85,7 @@ function Add-PodeOAComponentResponse {
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
     foreach ($tag in $DefinitionTag) {
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.responses[$Name] = New-PodeOResponseInternal -DefinitionTag $tag  -Params $PSBoundParameters
+        $PodeContext.Server.OpenAPI.Definitions[$tag].components.responses[$Name] = New-PodeOResponseInternal -DefinitionTag $tag -Params $PSBoundParameters
     }
 }
 
@@ -134,7 +134,7 @@ function Add-PodeOAComponentSchema {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [Alias('Schema')]
         [hashtable]
         $Component,
@@ -145,37 +145,48 @@ function Add-PodeOAComponentSchema {
         [string[]]
         $DefinitionTag
     )
+    begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+        $pipelineItemCount = 0
+    }
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    process {
+        $pipelineItemCount++
+    }
 
-    foreach ($tag in $DefinitionTag) {
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
-        if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaValidation) {
-            try {
-                $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty  -DefinitionTag $tag) | Resolve-PodeOAReference -DefinitionTag $tag
-                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
-                    'available' = $true
-                    'schema'    = $modifiedComponent
-                    'json'      = $modifiedComponent | ConvertTo-Json -depth $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.depth
-                }
-            }
-            catch {
-                if ($_.ToString().StartsWith('Validation of schema with')) {
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+        foreach ($tag in $DefinitionTag) {
+            $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name] = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag)
+            if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaValidation) {
+                try {
+                    $modifiedComponent = ($Component | ConvertTo-PodeOASchemaProperty -DefinitionTag $tag) | Resolve-PodeOAReference -DefinitionTag $tag
                     $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
-                        'available' = $false
+                        'available' = $true
+                        'schema'    = $modifiedComponent
+                        'json'      = $modifiedComponent | ConvertTo-Json -Depth $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.depth
+                    }
+                }
+                catch {
+                    if ($_.ToString().StartsWith('Validation of schema with')) {
+                        $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.schemaJson[$Name] = @{
+                            'available' = $false
+                        }
                     }
                 }
             }
-        }
 
-        if ($Description) {
-            $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name].description = $Description
+            if ($Description) {
+                $PodeContext.Server.OpenAPI.Definitions[$tag].components.schemas[$Name].description = $Description
+            }
         }
     }
-
 }
 
 
@@ -227,29 +238,40 @@ function Add-PodeOAComponentHeader {
         [string]
         $Description,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Schema,
 
         [string[]]
         $DefinitionTag
     )
+    begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-
-    foreach ($tag in $DefinitionTag) {
-        $param = [ordered]@{
-            'schema' = ($Schema | ConvertTo-PodeOASchemaProperty -NoDescription -DefinitionTag $tag)
-        }
-        if ( $Description) {
-            $param['description'] = $Description
-        }
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.headers[$Name] = $param
+        $pipelineItemCount = 0
     }
 
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+        foreach ($tag in $DefinitionTag) {
+            $param = [ordered]@{
+                'schema' = ($Schema | ConvertTo-PodeOASchemaProperty -NoDescription -DefinitionTag $tag)
+            }
+            if ( $Description) {
+                $param['description'] = $Description
+            }
+            $PodeContext.Server.OpenAPI.Definitions[$tag].components.headers[$Name] = $param
+        }
+    }
 }
 
 
@@ -303,7 +325,7 @@ function Add-PodeOAComponentRequestBody {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [Alias('ContentSchemas')]
         [hashtable]
         $Content,
@@ -319,23 +341,35 @@ function Add-PodeOAComponentRequestBody {
         [string[]]
         $DefinitionTag
     )
+    begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+        $pipelineItemCount = 0
+    }
 
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+    process {
+        $pipelineItemCount++
+    }
 
-    foreach ($tag in $DefinitionTag) {
-        $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema -DefinitionTag $tag) }
-
-        if ($Required.IsPresent) {
-            $param['required'] = $Required.IsPresent
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
-        if ( $Description) {
-            $param['description'] = $Description
+        foreach ($tag in $DefinitionTag) {
+            $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema -DefinitionTag $tag) }
+
+            if ($Required.IsPresent) {
+                $param['required'] = $Required.IsPresent
+            }
+
+            if ( $Description) {
+                $param['description'] = $Description
+            }
+            $PodeContext.Server.OpenAPI.Definitions[$tag].components.requestBodies[$Name] = $param
         }
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.requestBodies[$Name] = $param
     }
 
 }
@@ -379,32 +413,44 @@ function Add-PodeOAComponentParameter {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Parameter,
 
         [string[]]
         $DefinitionTag
     )
+    begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
-    $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
-
-    foreach ($tag in $DefinitionTag) {
-        if ([string]::IsNullOrWhiteSpace($Name)) {
-            if ($Parameter.name) {
-                $Name = $Parameter.name
-            }
-            else {
-                # The Parameter has no name. Please provide a name to this component using the `Name` parameter
-                throw ($PodeLocale.parameterHasNoNameExceptionMessage)
-            }
-        }
-        $PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters[$Name] = $Parameter
+        $pipelineItemCount = 0
     }
 
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+        foreach ($tag in $DefinitionTag) {
+            if ([string]::IsNullOrWhiteSpace($Name)) {
+                if ($Parameter.name) {
+                    $Name = $Parameter.name
+                }
+                else {
+                    # The Parameter has no name. Please provide a name to this component using the `Name` parameter
+                    throw ($PodeLocale.parameterHasNoNameExceptionMessage)
+                }
+            }
+            $PodeContext.Server.OpenAPI.Definitions[$tag].components.parameters[$Name] = $Parameter
+        }
+    }
 }
 
 <#
@@ -923,7 +969,7 @@ function Remove-PodeOAComponent {
 }
 
 if (!(Test-Path Alias:Enable-PodeOpenApiViewer)) {
-    New-Alias Enable-PodeOpenApiViewer -Value  Enable-PodeOAViewer
+    New-Alias Enable-PodeOpenApiViewer -Value Enable-PodeOAViewer
 }
 
 if (!(Test-Path Alias:Enable-PodeOA)) {

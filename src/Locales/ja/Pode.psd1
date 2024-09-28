@@ -291,5 +291,6 @@
     scheduleProcessDoesNotExistExceptionMessage                       = 'スケジュールプロセスが存在しません: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
     getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
 }

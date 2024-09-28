@@ -967,7 +967,7 @@ function Join-PodeServerRoot {
 .EXAMPLE
     $myArray = "apple", "", "banana", "", "cherry"
     $filteredArray = Remove-PodeEmptyItemsFromArray -Array $myArray
-    Write-Host "Filtered array: $filteredArray"
+    Write-PodeHost "Filtered array: $filteredArray"
 
     This example removes empty items from the array and displays the filtered array.
 #>
@@ -976,55 +976,15 @@ function Remove-PodeEmptyItemsFromArray {
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         $Array
-    )
-
+    ) 
     if ($null -eq $Array) {
         return @()
     }
 
     return @( @($Array -ne ([string]::Empty)) -ne $null )
-}
 
-function Remove-PodeNullKeysFromHashtable {
-    param(
-        [Parameter(ValueFromPipeline = $true)]
-        [hashtable]
-        $Hashtable
-    )
-
-    foreach ($key in ($Hashtable.Clone()).Keys) {
-        if ($null -eq $Hashtable[$key]) {
-            $null = $Hashtable.Remove($key)
-            continue
-        }
-
-        if (($Hashtable[$key] -is [string]) -and [string]::IsNullOrEmpty($Hashtable[$key])) {
-            $null = $Hashtable.Remove($key)
-            continue
-        }
-
-        if ($Hashtable[$key] -is [array]) {
-            if (($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
-                $null = $Hashtable.Remove($key)
-                continue
-            }
-
-            foreach ($item in $Hashtable[$key]) {
-                if (($item -is [hashtable]) -or ($item -is [System.Collections.Specialized.OrderedDictionary])) {
-                    $item | Remove-PodeNullKeysFromHashtable
-                }
-            }
-
-            continue
-        }
-
-        if (($Hashtable[$key] -is [hashtable]) -or ($Hashtable[$key] -is [System.Collections.Specialized.OrderedDictionary])) {
-            $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
-            continue
-        }
-    }
 }
 
 <#
@@ -1140,7 +1100,7 @@ function Get-PodeFileName {
 .EXAMPLE
     $exception = [System.Exception]::new("The network name is no longer available.")
     $isNetworkFailure = Test-PodeValidNetworkFailure -Exception $exception
-    Write-Host "Is network failure: $isNetworkFailure"
+    Write-PodeHost "Is network failure: $isNetworkFailure"
 
     This example tests whether the exception message "The network name is no longer available." indicates a network failure.
 #>
@@ -1170,35 +1130,37 @@ function Test-PodeValidNetworkFailure {
 
 function ConvertFrom-PodeHeaderQValue {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         [string]
         $Value
     )
 
-    $qs = [ordered]@{}
+    process {
+        $qs = [ordered]@{}
 
-    # return if no value
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        return $qs
-    }
-
-    # split the values up
-    $parts = @($Value -isplit ',').Trim()
-
-    # go through each part and check its q-value
-    foreach ($part in $parts) {
-        # default of 1 if no q-value
-        if ($part.IndexOf(';q=') -eq -1) {
-            $qs[$part] = 1.0
-            continue
+        # return if no value
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            return $qs
         }
 
-        # parse for q-value
-        $atoms = @($part -isplit ';q=')
-        $qs[$atoms[0]] = [double]$atoms[1]
-    }
+        # split the values up
+        $parts = @($Value -isplit ',').Trim()
 
-    return $qs
+        # go through each part and check its q-value
+        foreach ($part in $parts) {
+            # default of 1 if no q-value
+            if ($part.IndexOf(';q=') -eq -1) {
+                $qs[$part] = 1.0
+                continue
+            }
+
+            # parse for q-value
+            $atoms = @($part -isplit ';q=')
+            $qs[$atoms[0]] = [double]$atoms[1]
+        }
+
+        return $qs
+    }
 }
 
 function Get-PodeAcceptEncoding {
@@ -1467,7 +1429,7 @@ function New-PodeRequestException {
 
 function ConvertTo-PodeResponseContent {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         $InputObject,
 
         [Parameter()]
@@ -1485,7 +1447,6 @@ function ConvertTo-PodeResponseContent {
         [switch]
         $AsHtml
     )
-
     # split for the main content type
     $ContentType = Split-PodeContentType -ContentType $ContentType
 
@@ -3109,7 +3070,7 @@ function Find-PodeModuleFile {
 #>
 function Clear-PodeHashtableInnerKey {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         [hashtable]
         $InputObject
     )
@@ -3545,7 +3506,7 @@ function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $false)]
+        [parameter(Mandatory = $true)]
         [AllowNull()]
         $InputObject,
 
