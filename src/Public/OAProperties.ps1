@@ -174,7 +174,7 @@ New-PodeOAMultiTypeProperty -Name 'password' -type string,object -Format Passwor
 function New-PodeOAMultiTypeProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -401,6 +401,7 @@ function New-PodeOAMultiTypeProperty {
         }
     }
 }
+
 <#
 .SYNOPSIS
 Creates a new OpenAPI integer property.
@@ -541,7 +542,7 @@ function New-PodeOAIntProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true)]
         [hashtable[]]
         $ParamsList,
 
@@ -800,7 +801,7 @@ New-PodeOANumberProperty -Name 'gravity' -Default 9.8
 function New-PodeOANumberProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1055,7 +1056,7 @@ New-PodeOAStringProperty -Name 'password' -Format Password
 function New-PodeOAStringProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1301,7 +1302,7 @@ function New-PodeOABoolProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true)]
         [hashtable[]]
         $ParamsList,
 
@@ -1547,7 +1548,7 @@ function New-PodeOAObjectProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow = $true , Position = 0 )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1767,7 +1768,7 @@ function Merge-PodeOAProperty {
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
