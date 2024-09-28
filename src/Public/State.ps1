@@ -50,21 +50,21 @@ function Set-PodeState {
     # Check if Pode has been initialized; if not, throw an exception
     begin {
         if ($null -eq $PodeContext.Server.State) {
-                throw ($PodeLocale.podeNotInitializedExceptionMessage)
+            throw ($PodeLocale.podeNotInitializedExceptionMessage)
         }
 
-    # Convert the state to a concurrent dictionary if thread-safe operations are requested
-    if ($Threadsafe.IsPresent) {
-        # If the state is already a concurrent dictionary, no conversion is needed
-        if (Test-PodeStateIsThreadSafe) {
+        # Convert the state to a concurrent dictionary if thread-safe operations are requested
+        if ($Threadsafe.IsPresent) {
+            # If the state is already a concurrent dictionary, no conversion is needed
+            if (Test-PodeStateIsThreadSafe) {
+                return
+            }
+            # Convert the current state to a concurrent dictionary for thread safety
+            $PodeContext.Server.State = ConvertTo-PodeConcurrentStructure -Hashtable $PodeContext.Server.State
             return
         }
-        # Convert the current state to a concurrent dictionary for thread safety
-        $PodeContext.Server.State = ConvertTo-PodeConcurrentStructure -Hashtable $PodeContext.Server.State
-        return
-    }
 
-    # Set the scope to an empty array if none is provided
+        # Set the scope to an empty array if none is provided
         if ($null -eq $Scope) {
             $Scope = @()
         }
@@ -84,35 +84,35 @@ function Set-PodeState {
             $Value = $pipelineValue
         }
 
-    # Check if the state is a concurrent dictionary
-    if (Test-PodeStateIsThreadSafe) {
-        # Create a new concurrent dictionary item with case-insensitive keys
-        $item = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase)
+        # Check if the state is a concurrent dictionary
+        if (Test-PodeStateIsThreadSafe) {
+            # Create a new concurrent dictionary item with case-insensitive keys
+            $item = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase)
 
-        # If the value is an ordered dictionary or hashtable, convert it to a concurrent dictionary
-        if (($Value -is [System.Collections.Specialized.OrderedDictionary]) -or ($Value -is [hashtable])) {
-            $Value = (ConvertTo-PodeConcurrentStructure -Hashtable $Value)
+            # If the value is an ordered dictionary or hashtable, convert it to a concurrent dictionary
+            if (($Value -is [System.Collections.Specialized.OrderedDictionary]) -or ($Value -is [hashtable])) {
+                $Value = (ConvertTo-PodeConcurrentStructure -Hashtable $Value)
+            }
+
+            # Add the value to the dictionary
+            $item['Value'] = $Value
+
+            # Add the scope to the item
+            $item['Scope'] = $Scope
+
+            # Try to add the new item to the shared state
+            $PodeContext.Server.State[$Name] = $item
         }
-
-        # Add the value to the dictionary
-        $item['Value'] = $Value
-
-        # Add the scope to the item
-        $item['Scope'] = $Scope
-
-        # Try to add the new item to the shared state
-        $PodeContext.Server.State[$Name] = $item
-    }
-    else {
-        # If not using a concurrent dictionary, add the item as a regular hashtable
-        $PodeContext.Server.State[$Name] = @{
-            Value = $Value
-            Scope = $Scope
+        else {
+            # If not using a concurrent dictionary, add the item as a regular hashtable
+            $PodeContext.Server.State[$Name] = @{
+                Value = $Value
+                Scope = $Scope
+            }
         }
-    }
 
         # Return the value that was set
-    return $Value
+        return $Value
     }
 }
 
