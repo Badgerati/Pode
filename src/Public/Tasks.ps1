@@ -196,8 +196,8 @@ function Invoke-PodeTask {
             throw ($PodeLocale.taskDoesNotExistExceptionMessage -f $Name)
         }
 
-    # run task logic
-    $task = Invoke-PodeInternalTask -Task $PodeContext.Tasks.Items[$Name] -ArgumentList $ArgumentList -Timeout $Timeout -TimeoutFrom $TimeoutFrom
+        # run task logic
+        $task = Invoke-PodeInternalTask -Task $PodeContext.Tasks.Items[$Name] -ArgumentList $ArgumentList -Timeout $Timeout -TimeoutFrom $TimeoutFrom
 
         # wait, and return result?
         if ($Wait) {
@@ -245,6 +245,7 @@ Removes all Tasks.
 Clear-PodeTasks
 #>
 function Clear-PodeTasks {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -368,6 +369,7 @@ Use-PodeTasks
 Use-PodeTasks -Path './my-tasks'
 #>
 function Use-PodeTasks {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

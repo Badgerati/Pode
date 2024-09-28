@@ -25,7 +25,9 @@
         'PSUseProcessBlockForPipelineCommand',
         'PSAvoidUsingConvertToSecureStringWithPlainText',
         'PSReviewUnusedParameter',
-        'PSAvoidAssignmentToAutomaticVariable'
+        'PSAvoidAssignmentToAutomaticVariable',
+        'PSUseBOMForUnicodeEncodedFile',
+        'PSAvoidTrailingWhitespace'
     )
 
 }
