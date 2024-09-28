@@ -2086,7 +2086,7 @@ Describe 'OpenApi' {
                 {
                     Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                 (New-PodeOAObjectProperty  -Properties  @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')))
-                # Discriminator parameter is not compatible with allOf
+                        # Discriminator parameter is not compatible with allOf
                     ) } | Should -Throw -ExpectedMessage $PodeLocale.discriminatorIncompatibleWithAllOfExceptionMessage
             }
 
@@ -2184,7 +2184,7 @@ Describe 'OpenApi' {
 
 
 
-    Context 'Set-PodeOARouteInfo' {
+    Context 'Set-PodeOARouteInfo single route' {
         BeforeEach {
             $Route = @{
                 OpenApi = @{
@@ -2241,6 +2241,74 @@ Describe 'OpenApi' {
             $result.OpenApi.tags | Should -Be  'pet'
             $result.OpenApi.swagger | Should -BeTrue
             $result.OpenApi.deprecated | Should -BeNullOrEmpty
+        }
+    }
+
+    Context 'Set-PodeOARouteInfo multi routes' {
+        BeforeEach {
+            $Route = @(@{
+                    OpenApi = @{
+                        Path           = '/test'
+                        Responses      = @{
+                            '200'     = @{ description = 'OK' }
+                            'default' = @{ description = 'Internal server error' }
+                        }
+                        Parameters     = $null
+                        RequestBody    = $null
+                        Authentication = @()
+                        DefinitionTag  = @('Default')
+                    }
+                },
+                @{
+                    OpenApi = @{
+                        Path           = '/test2'
+                        Responses      = @{
+                            '200'     = @{ description = 'OK' }
+                            'default' = @{ description = 'Internal server error' }
+                        }
+                        Parameters     = $null
+                        RequestBody    = $null
+                        Authentication = @()
+                        DefinitionTag  = @('Default')
+                    }
+                })
+
+            Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc  (New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io')
+        }
+
+        It 'No switches' {
+            $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet'
+            $Route.OpenApi | Should -Not -BeNullOrEmpty
+            $Route.OpenApi.Summary | Should -Be @('Update an existing pet', 'Update an existing pet')
+            $Route.OpenApi.description | Should -Be @('Update an existing pet by Id', 'Update an existing pet by Id')
+            $Route.OpenApi.tags | Should -Be  @('pet', 'pet')
+            $Route.OpenApi.swagger | Should -BeTrue
+            $Route.OpenApi.deprecated | Should -BeNullOrEmpty
+        }
+        It 'Deprecated' {
+            $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet'   -Deprecated
+            $Route.OpenApi | Should -Not -BeNullOrEmpty
+            $Route.OpenApi.Summary | Should -Be @('Update an existing pet', 'Update an existing pet')
+            $Route.OpenApi.description | Should -Be @('Update an existing pet by Id', 'Update an existing pet by Id')
+            $Route.OpenApi.tags | Should -Be  @('pet', 'pet')
+            $Route.OpenApi.swagger | Should -BeTrue
+            $Route.OpenApi.deprecated | Should -BeTrue
+        }
+
+        It 'PassThru' {
+            $result = $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -PassThru
+            $result | Should -Not -BeNullOrEmpty
+            $result.OpenApi | Should -Not -BeNullOrEmpty
+            $Route.OpenApi.Summary | Should -Be @('Update an existing pet', 'Update an existing pet')
+            $Route.OpenApi.description | Should -Be @('Update an existing pet by Id', 'Update an existing pet by Id')
+            $Route.OpenApi.tags | Should -Be  @('pet', 'pet')
+            $result.OpenApi.swagger | Should -BeTrue
+            $result.OpenApi.deprecated | Should -BeNullOrEmpty
+        }
+
+        It 'PassThru with OperationID' {
+            { $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru } |
+                Should -Throw -ExpectedMessage ($PodeLocale.operationIdMustBeUniqueForArrayExceptionMessage -f 'updatePet') #'OperationID: {0} has to be unique and cannot be applied to an array.'
         }
     }
 
@@ -3044,16 +3112,16 @@ Describe 'OpenApi' {
             $PodeContext = @{
                 Server = @{
                     OpenAPI = @{
-                        Definitions = @{
+                        Definitions                 = @{
                             'oldTag' = @{
                                 # Mock definition details
                                 Description = 'Old tag description'
                             }
                         }
-                        SelectedDefinitionTag = 'oldTag'
+                        SelectedDefinitionTag       = 'oldTag'
                         DefinitionTagSelectionStack = [System.Collections.Stack]@()
                     }
-                    Web = @{
+                    Web     = @{
                         OpenApi = @{
                             DefaultDefinitionTag = 'oldTag'
                         }
@@ -3131,7 +3199,7 @@ Describe 'OpenApi' {
 
         It 'Sets RequestBody on the route if method is POST' {
             $route = @{
-                Method = 'POST'
+                Method  = 'POST'
                 OpenApi = @{}
             }
             $requestBody = @{ Content = 'application/json' }
@@ -3143,7 +3211,7 @@ Describe 'OpenApi' {
 
         It 'Throws an exception if RequestBody is set on a method that does not allow it' {
             $route = @{
-                Method = 'GET'
+                Method  = 'GET'
                 OpenApi = @{}
             }
             $requestBody = @{ Content = 'application/json' }
@@ -3155,7 +3223,7 @@ Describe 'OpenApi' {
 
         It 'Returns the route when PassThru is used' {
             $route = @{
-                Method = 'POST'
+                Method  = 'POST'
                 OpenApi = @{}
             }
 
@@ -3166,7 +3234,7 @@ Describe 'OpenApi' {
 
         It 'Does not set RequestBody if not provided' {
             $route = @{
-                Method = 'PUT'
+                Method  = 'PUT'
                 OpenApi = @{}
             }
 

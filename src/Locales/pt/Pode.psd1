@@ -299,5 +299,6 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "A rota '{0}' não está marcada como uma Rota Assíncrona."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "A função '{0}' não pode ser invocada várias vezes para a mesma rota '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = 'As operações {0} não podem ter um corpo de solicitação.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'
 }

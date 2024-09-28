@@ -299,5 +299,6 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "Trasa '{0}' nie jest oznaczona jako trasa asynchroniczna."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "Funkcja '{0}' nie może być wywoływana wielokrotnie dla tej samej trasy '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = 'Operacje {0} nie mogą mieć treści żądania.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
 }

@@ -263,22 +263,35 @@ function Send-PodeSseEvent {
             $Data = $pipelineValue
         }
 
-        # do nothing if no value
-        if (($null -eq $Data) -or ([string]::IsNullOrEmpty($Data))) {
-            return
+    begin {
+        $pipelineValue = @()
+    }
+
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Value') {
+            $pipelineValue += $_
+        }
+    }
+
+    end {
+        if ($pipelineValue.Count -gt 1) {
+            $Data = $pipelineValue
         }
 
-        # jsonify the value
-        if ($Data -isnot [string]) {
+    # do nothing if no value
+    if (($null -eq $Data) -or ([string]::IsNullOrEmpty($Data))) {
+        return
+    }
+
+    # jsonify the value
+    if ($Data -isnot [string]) {
+        if ($Depth -le 0) {
+            $Data = (ConvertTo-Json -InputObject $Data -Compress)
+        }
+        else {
             $Data = (ConvertTo-Json -InputObject $Data -Depth $Depth -Compress)
         }
-
-        # if inside an async route wait for ClientId to be syncronized
-        if ($WebEvent.Async -and $FromEvent) {
-            while (!($WebEvent.ContainsKey('Sse') -and $WebEvent.Sse.ContainsKey('ClientId'))) {
-                Start-Sleep -Milliseconds 100
-            }
-        }
+    }
 
         # send directly back to current connection
         if ($FromEvent -and $WebEvent.Sse.IsLocal) {
@@ -305,10 +318,8 @@ function Send-PodeSseEvent {
             throw ($PodeLocale.sseFailedToBroadcastExceptionMessage -f $Name, (Get-PodeSseBroadcastLevel -Name $Name))
         }
 
-        # send event
-        $PodeContext.Server.Http.Listener.SendSseEvent($Name, $Group, $ClientId, $EventType, $Data, $Id)
-
-    }
+    # send event
+    $PodeContext.Server.Http.Listener.SendSseEvent($Name, $Group, $ClientId, $EventType, $Data, $Id)
 }
 
 <#

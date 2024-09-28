@@ -39,7 +39,7 @@ function Lock-PodeObject {
     [CmdletBinding(DefaultParameterSetName = 'Object')]
     [OutputType([object])]
     param(
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Object')]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Object')]
         [object]
         $Object,
 
@@ -61,29 +61,41 @@ function Lock-PodeObject {
         [switch]
         $CheckGlobal
     )
-
-    try {
-        if ([string]::IsNullOrEmpty($Name)) {
-            Enter-PodeLockable -Object $Object -Timeout $Timeout -CheckGlobal:$CheckGlobal
-        }
-        else {
-            Enter-PodeLockable -Name $Name -Timeout $Timeout -CheckGlobal:$CheckGlobal
-        }
-
-        if ($null -ne $ScriptBlock) {
-            Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure -Return:$Return
-        }
+    begin {
+        $pipelineItemCount = 0
     }
-    catch {
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
+
+    process {
+        $pipelineItemCount++
     }
-    finally {
-        if ([string]::IsNullOrEmpty($Name)) {
-            Exit-PodeLockable -Object $Object
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
-        else {
-            Exit-PodeLockable -Name $Name
+        try {
+            if ([string]::IsNullOrEmpty($Name)) {
+                Enter-PodeLockable -Object $Object -Timeout $Timeout -CheckGlobal:$CheckGlobal
+            }
+            else {
+                Enter-PodeLockable -Name $Name -Timeout $Timeout -CheckGlobal:$CheckGlobal
+            }
+
+            if ($null -ne $ScriptBlock) {
+                Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -NoNewClosure -Return:$Return
+            }
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+        finally {
+            if ([string]::IsNullOrEmpty($Name)) {
+                Exit-PodeLockable -Object $Object
+            }
+            else {
+                Exit-PodeLockable -Name $Name
+            }
         }
     }
 }
@@ -218,7 +230,7 @@ Enter-PodeLockable -Name 'LockName' -Timeout 5000
 function Enter-PodeLockable {
     [CmdletBinding(DefaultParameterSetName = 'Object')]
     param(
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Object')]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Object')]
         [object]
         $Object,
 
@@ -233,40 +245,52 @@ function Enter-PodeLockable {
         [switch]
         $CheckGlobal
     )
-
-    # get object by name if set
-    if (![string]::IsNullOrEmpty($Name)) {
-        $Object = Get-PodeLockable -Name $Name
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # if object is null, default to global
-    if ($null -eq $Object) {
-        $Object = $PodeContext.Threading.Lockables.Global
+    process {
+        $pipelineItemCount++
     }
 
-    # check if value type and throw
-    if ($Object -is [valuetype]) {
-        # Cannot lock a [ValueType]
-        throw ($PodeLocale.cannotLockValueTypeExceptionMessage)
-    }
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        # get object by name if set
+        if (![string]::IsNullOrEmpty($Name)) {
+            $Object = Get-PodeLockable -Name $Name
+        }
 
-    # check if null and throw
-    if ($null -eq $Object) {
-        # Cannot lock an object that is null
-        throw ($PodeLocale.cannotLockNullObjectExceptionMessage)
-    }
+        # if object is null, default to global
+        if ($null -eq $Object) {
+            $Object = $PodeContext.Threading.Lockables.Global
+        }
 
-    # check if the global lockable is locked
-    if ($CheckGlobal) {
-        Lock-PodeObject -Object $PodeContext.Threading.Lockables.Global -ScriptBlock {} -Timeout $Timeout
-    }
+        # check if value type and throw
+        if ($Object -is [valuetype]) {
+            # Cannot lock a [ValueType]
+            throw ($PodeLocale.cannotLockValueTypeExceptionMessage)
+        }
 
-    # attempt to acquire lock
-    $locked = $false
-    [System.Threading.Monitor]::TryEnter($Object.SyncRoot, $Timeout, [ref]$locked)
-    if (!$locked) {
-        # Failed to acquire a lock on the object
-        throw ($PodeLocale.failedToAcquireLockExceptionMessage)
+        # check if null and throw
+        if ($null -eq $Object) {
+            # Cannot lock an object that is null
+            throw ($PodeLocale.cannotLockNullObjectExceptionMessage)
+        }
+
+        # check if the global lockable is locked
+        if ($CheckGlobal) {
+            Lock-PodeObject -Object $PodeContext.Threading.Lockables.Global -ScriptBlock {} -Timeout $Timeout
+        }
+
+        # attempt to acquire lock
+        $locked = $false
+        [System.Threading.Monitor]::TryEnter($Object.SyncRoot, $Timeout, [ref]$locked)
+        if (!$locked) {
+            # Failed to acquire a lock on the object
+            throw ($PodeLocale.failedToAcquireLockExceptionMessage)
+        }
     }
 }
 
@@ -292,7 +316,7 @@ Exit-PodeLockable -Name 'LockName'
 function Exit-PodeLockable {
     [CmdletBinding(DefaultParameterSetName = 'Object')]
     param(
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Object')]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Object')]
         [object]
         $Object,
 
@@ -300,32 +324,44 @@ function Exit-PodeLockable {
         [string]
         $Name
     )
-
-    # get object by name if set
-    if (![string]::IsNullOrEmpty($Name)) {
-        $Object = Get-PodeLockable -Name $Name
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # if object is null, default to global
-    if ($null -eq $Object) {
-        $Object = $PodeContext.Threading.Lockables.Global
+    process {
+        $pipelineItemCount++
     }
 
-    # check if value type and throw
-    if ($Object -is [valuetype]) {
-        # Cannot unlock a [ValueType]
-        throw ($PodeLocale.cannotUnlockValueTypeExceptionMessage)
-    }
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        # get object by name if set
+        if (![string]::IsNullOrEmpty($Name)) {
+            $Object = Get-PodeLockable -Name $Name
+        }
 
-    # check if null and throw
-    if ($null -eq $Object) {
-        # Cannot unlock an object that is null
-        throw ($PodeLocale.cannotUnlockNullObjectExceptionMessage)
-    }
+        # if object is null, default to global
+        if ($null -eq $Object) {
+            $Object = $PodeContext.Threading.Lockables.Global
+        }
 
-    if ([System.Threading.Monitor]::IsEntered($Object.SyncRoot)) {
-        [System.Threading.Monitor]::Pulse($Object.SyncRoot)
-        [System.Threading.Monitor]::Exit($Object.SyncRoot)
+        # check if value type and throw
+        if ($Object -is [valuetype]) {
+            # Cannot unlock a [ValueType]
+            throw ($PodeLocale.cannotUnlockValueTypeExceptionMessage)
+        }
+
+        # check if null and throw
+        if ($null -eq $Object) {
+            # Cannot unlock an object that is null
+            throw ($PodeLocale.cannotUnlockNullObjectExceptionMessage)
+        }
+
+        if ([System.Threading.Monitor]::IsEntered($Object.SyncRoot)) {
+            [System.Threading.Monitor]::Pulse($Object.SyncRoot)
+            [System.Threading.Monitor]::Exit($Object.SyncRoot)
+        }
     }
 }
 

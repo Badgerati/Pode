@@ -299,5 +299,6 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "Il percorso '{0}' non è asincrono."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "La funzione '{0}' non può essere invocata più volte per lo stesso percorso '{1}'."
     getRequestBodyNotAllowedExceptionMessage                          = 'Le operazioni {0} non possono avere un corpo della richiesta.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La funzione '{0}' non accetta una matrice come input della pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La compressione dello stream non è supportata per la codifica {0}'
 }

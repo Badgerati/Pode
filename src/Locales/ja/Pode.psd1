@@ -299,5 +299,6 @@
     routeNotMarkedAsAsyncExceptionMessage                             = "ルート '{0}' は非同期ルートとしてマークされていません。"
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "関数 '{0}' を同じルート '{1}' に対して複数回呼び出すことはできません。"
     getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
 }
