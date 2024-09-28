@@ -57,6 +57,7 @@ Clears all of the flash messages currently stored in the session.
 Clear-PodeFlashMessages
 #>
 function Clear-PodeFlashMessages {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -127,6 +128,7 @@ Returns all of the names for each of the messages currently being stored. This d
 Get-PodeFlashMessageNames
 #>
 function Get-PodeFlashMessageNames {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     param()

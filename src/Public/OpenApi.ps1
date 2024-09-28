@@ -904,6 +904,7 @@ New-PodeOARequestBody -Content @{'multipart/form-data' =
 function New-PodeOARequestBody {
     [CmdletBinding(DefaultParameterSetName = 'BuiltIn' )]
     [OutputType([hashtable])]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Reference')]
         [string]

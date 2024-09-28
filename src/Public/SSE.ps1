@@ -253,7 +253,7 @@ function Send-PodeSseEvent {
     }
 
     process {
-            $pipelineValue += $_
+        $pipelineValue += $_
     }
 
     end {

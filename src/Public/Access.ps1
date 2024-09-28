@@ -388,6 +388,7 @@ The Name of the Access method.
 if (Test-PodeAccessExists -Name 'Example') { }
 #>
 function Test-PodeAccessExists {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
