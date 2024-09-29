@@ -130,8 +130,8 @@ function Register-PodeSecretVault {
         if ($PodeContext.Server.Secrets.Vaults[$Name].AutoImported) {
             $autoImported = ' from auto-importing'
         }
-
-        throw "A Secret Vault with the name '$($Name)' has already been registered$($autoImported)"
+        # A Secret Vault with the name {0} has already been registered{1}
+        throw ($PodeLocale.secretVaultAlreadyRegisteredAutoImportExceptionMessage -f $Name, $autoImported)
     }
 
     # base vault config
@@ -261,7 +261,8 @@ function Unlock-PodeSecretVault {
 
     # has the vault been registered?
     if (!(Test-PodeSecretVault -Name $Name)) {
-        throw "No Secret Vault with the name '$($Name)' has been registered"
+        # No Secret Vault with the name has been registered
+        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
     }
 
     # get vault
@@ -290,7 +291,8 @@ function Unlock-PodeSecretVault {
     if ($null -ne $expiry) {
         $expiry = ([datetime]$expiry).ToUniversalTime()
         if ($expiry -le [datetime]::UtcNow) {
-            throw "Secret Vault unlock expiry date is in the past (UTC): $($expiry)"
+            # Secret Vault unlock expiry date is in the past (UTC)
+            throw ($PodeLocale.secretVaultUnlockExpiryDateInPastExceptionMessage -f $expiry)
         }
 
         $vault.Unlock.Expiry = $expiry
@@ -435,17 +437,20 @@ function Mount-PodeSecret {
 
     # has the secret been mounted already?
     if (Test-PodeSecret -Name $Name) {
-        throw "A Secret with the name '$($Name)' has already been mounted"
+        # A Secret with the name has already been mounted
+        throw ($PodeLocale.secretAlreadyMountedExceptionMessage -f $Name)
     }
 
     # does the vault exist?
     if (!(Test-PodeSecretVault -Name $Vault)) {
-        throw "No Secret Vault with the name '$($Vault)' has been registered"
+        # No Secret Vault with the name has been registered
+        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
     }
 
     # check properties
     if (!(Test-PodeIsEmpty $Property) -and !(Test-PodeIsEmpty $ExpandProperty)) {
-        throw 'You can only provide one of either Property or ExpandPropery, but not both'
+        # Parameters 'Property' and 'ExpandPropery' are mutually exclusive
+        throw ($PodeLocale.parametersMutuallyExclusiveExceptionMessage -f 'Property' , 'ExpandPropery')
     }
 
     # which cache value?
@@ -508,7 +513,8 @@ function Dismount-PodeSecret {
     # do nothing if the secret hasn't been mounted, unless Remove is specified
     if (!(Test-PodeSecret -Name $Name)) {
         if ($Remove) {
-            throw "No Secret with the name '$($Name)' has been mounted to be removed from a Secret Vault"
+            # No Secret named has been mounted
+            throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
         }
 
         return
@@ -550,7 +556,8 @@ function Get-PodeSecret {
 
     # has the secret been mounted?
     if (!(Test-PodeSecret -Name $Name)) {
-        throw "No Secret with the name '$($Name)' has been mounted"
+        # No Secret named has been mounted
+        throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
     }
 
     # get the secret and vault
@@ -653,7 +660,7 @@ function Update-PodeSecret {
         $Name,
 
         #> byte[], string, securestring, pscredential, hashtable
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true )]
         [object]
         $InputObject,
 
@@ -661,41 +668,56 @@ function Update-PodeSecret {
         [hashtable]
         $Metadata
     )
-
-    # has the secret been mounted?
-    if (!(Test-PodeSecret -Name $Name)) {
-        throw "No Secret with the name '$($Name)' has been mounted"
-    }
-
-    # make sure the value type is correct
-    $InputObject = Protect-PodeSecretValueType -Value $InputObject
-
-    # get the secret and vault
-    $secret = $PodeContext.Server.Secrets.Keys[$Name]
-
-    # reset the cache if enabled
-    if ($secret.Cache.Enabled) {
-        $secret.Cache.Value = $InputObject
-        $secret.Cache.Expiry = [datetime]::UtcNow.AddMinutes($secret.Cache.Ttl)
-    }
-
-    # if we're expanding a property, convert this to a hashtable
-    if ($secret.Properties.Enabled -and $secret.Properties.Expand) {
-        $InputObject = @{
-            "$($secret.Properties.Fields)" = $InputObject
+    begin {
+        # has the secret been mounted?
+        if (!(Test-PodeSecret -Name $Name)) {
+            # No Secret named has been mounted
+            throw ($PodeLocale.noSecretNamedMountedExceptionMessage -f $Name)
         }
+
+        $pipelineItemCount = 0  # Initialize counter to track items in the pipeline.
     }
 
-    # set the secret depending on vault type
-    $vault = $PodeContext.Server.Secrets.Vaults[$secret.Vault]
-    Lock-PodeObject -Name $vault.LockableName -ScriptBlock {
-        switch ($vault.Type) {
-            'custom' {
-                Set-PodeSecretCustomKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata -ArgumentList $secret.Arguments
-            }
+    process {
+        $pipelineItemCount++  # Increment the counter for each item in the pipeline.
+    }
 
-            'secretmanagement' {
-                Set-PodeSecretManagementKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata
+    end {
+        # Throw an error if more than one item is passed in the pipeline.
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+
+        # make sure the value type is correct
+        $InputObject = Protect-PodeSecretValueType -Value $InputObject
+
+        # get the secret and vault
+        $secret = $PodeContext.Server.Secrets.Keys[$Name]
+
+        # reset the cache if enabled
+        if ($secret.Cache.Enabled) {
+            $secret.Cache.Value = $InputObject
+            $secret.Cache.Expiry = [datetime]::UtcNow.AddMinutes($secret.Cache.Ttl)
+        }
+
+        # if we're expanding a property, convert this to a hashtable
+        if ($secret.Properties.Enabled -and $secret.Properties.Expand) {
+            $InputObject = @{
+                "$($secret.Properties.Fields)" = $InputObject
+            }
+        }
+
+        # set the secret depending on vault type
+        $vault = $PodeContext.Server.Secrets.Vaults[$secret.Vault]
+        Lock-PodeObject -Name $vault.LockableName -ScriptBlock {
+            switch ($vault.Type) {
+                'custom' {
+                    Set-PodeSecretCustomKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata -ArgumentList $secret.Arguments
+                }
+
+                'secretmanagement' {
+                    Set-PodeSecretManagementKey -Vault $secret.Vault -Key $secret.Key -Value $InputObject -Metadata $Metadata
+                }
             }
         }
     }
@@ -738,7 +760,8 @@ function Remove-PodeSecret {
 
     # has the vault been registered?
     if (!(Test-PodeSecretVault -Name $Vault)) {
-        throw "No Secret Vault with the name '$($Vault)' has been registered"
+        # No Secret Vault with the name has been registered
+        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
     }
 
     # remove the secret depending on vault type
@@ -810,7 +833,8 @@ function Read-PodeSecret {
 
     # has the vault been registered?
     if (!(Test-PodeSecretVault -Name $Vault)) {
-        throw "No Secret Vault with the name '$($Vault)' has been registered"
+        # No Secret Vault with the name has been registered
+        throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
     }
 
     # fetch the secret depending on vault type
@@ -880,7 +904,7 @@ function Set-PodeSecret {
         $Vault,
 
         #> byte[], string, securestring, pscredential, hashtable
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [object]
         $InputObject,
 
@@ -892,25 +916,40 @@ function Set-PodeSecret {
         [object[]]
         $ArgumentList
     )
+    begin {
+        # has the vault been registered?
+        if (!(Test-PodeSecretVault -Name $Vault)) {
+            # No Secret Vault with the name has been registered
+            throw ($PodeLocale.noSecretVaultRegisteredExceptionMessage -f $Vault)
+        }
 
-    # has the vault been registered?
-    if (!(Test-PodeSecretVault -Name $Vault)) {
-        throw "No Secret Vault with the name '$($Vault)' has been registered"
+        $pipelineItemCount = 0  # Initialize counter to track items in the pipeline.
     }
 
-    # make sure the value type is correct
-    $InputObject = Protect-PodeSecretValueType -Value $InputObject
+    process {
+        $pipelineItemCount++  # Increment the counter for each item in the pipeline.
+    }
 
-    # set the secret depending on vault type
-    $_vault = $PodeContext.Server.Secrets.Vaults[$Vault]
-    Lock-PodeObject -Name $_vault.LockableName -ScriptBlock {
-        switch ($_vault.Type) {
-            'custom' {
-                Set-PodeSecretCustomKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata -ArgumentList $ArgumentList
-            }
+    end {
+        # Throw an error if more than one item is passed in the pipeline.
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
 
-            'secretmanagement' {
-                Set-PodeSecretManagementKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata
+        # make sure the value type is correct
+        $InputObject = Protect-PodeSecretValueType -Value $InputObject
+
+        # set the secret depending on vault type
+        $_vault = $PodeContext.Server.Secrets.Vaults[$Vault]
+        Lock-PodeObject -Name $_vault.LockableName -ScriptBlock {
+            switch ($_vault.Type) {
+                'custom' {
+                    Set-PodeSecretCustomKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata -ArgumentList $ArgumentList
+                }
+
+                'secretmanagement' {
+                    Set-PodeSecretManagementKey -Vault $Vault -Key $Key -Value $InputObject -Metadata $Metadata
+                }
             }
         }
     }

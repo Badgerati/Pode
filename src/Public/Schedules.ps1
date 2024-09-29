@@ -1,48 +1,54 @@
 <#
 .SYNOPSIS
-Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
+    Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
 
 .DESCRIPTION
-Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
+    Adds a new Schedule with logic to periodically invoke, defined using Cron Expressions.
 
 .PARAMETER Name
-The Name of the Schedule.
+    The Name of the Schedule.
 
 .PARAMETER Cron
-One, or an Array, of Cron Expressions to define when the Schedule should trigger.
+    One, or an Array, of Cron Expressions to define when the Schedule should trigger.
 
 .PARAMETER ScriptBlock
-The script defining the Schedule's logic.
+    The script defining the Schedule's logic.
 
 .PARAMETER Limit
-The number of times the Schedule should trigger before being removed.
+    The number of times the Schedule should trigger before being removed.
 
 .PARAMETER StartTime
-A DateTime for when the Schedule should start triggering.
+    A DateTime for when the Schedule should start triggering.
 
 .PARAMETER EndTime
-A DateTime for when the Schedule should stop triggering, and be removed.
+    A DateTime for when the Schedule should stop triggering, and be removed.
 
 .PARAMETER ArgumentList
-A hashtable of arguments to supply to the Schedule's ScriptBlock.
+    A hashtable of arguments to supply to the Schedule's ScriptBlock.
+
+.PARAMETER Timeout
+    An optional timeout, in seconds, for the Schedule's logic. (Default: -1 [never timeout])
+
+.PARAMETER TimeoutFrom
+    An optional timeout from either 'Create' or 'Start'. (Default: 'Create')
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Schedule's logic.
+    A literal, or relative, path to a file containing a ScriptBlock for the Schedule's logic.
 
 .PARAMETER OnStart
-If supplied, the schedule will trigger when the server starts, regardless if the cron-expression matches the current time.
+    If supplied, the schedule will trigger when the server starts, regardless if the cron-expression matches the current time.
 
 .EXAMPLE
-Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logic */ }
+    Add-PodeSchedule -Name 'RunEveryMinute' -Cron '@minutely' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeSchedule -Name 'RunEveryTuesday' -Cron '0 0 * * TUE' -ScriptBlock { /* logic */ }
+    Add-PodeSchedule -Name 'RunEveryTuesday' -Cron '0 0 * * TUE' -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeSchedule -Name 'StartAfter2days' -Cron '@hourly' -StartTime [DateTime]::Now.AddDays(2) -ScriptBlock { /* logic */ }
+    Add-PodeSchedule -Name 'StartAfter2days' -Cron '@hourly' -StartTime [DateTime]::Now.AddDays(2) -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeSchedule -Name 'Args' -Cron '@minutely' -ScriptBlock { /* logic */ } -ArgumentList @{ Arg1 = 'value' }
+    Add-PodeSchedule -Name 'Args' -Cron '@minutely' -ScriptBlock { /* logic */ } -ArgumentList @{ Arg1 = 'value' }
 #>
 function Add-PodeSchedule {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -79,6 +85,15 @@ function Add-PodeSchedule {
         [hashtable]
         $ArgumentList,
 
+        [Parameter()]
+        [int]
+        $Timeout = -1,
+
+        [Parameter()]
+        [ValidateSet('Create', 'Start')]
+        [string]
+        $TimeoutFrom = 'Create',
+
         [switch]
         $OnStart
     )
@@ -88,21 +103,25 @@ function Add-PodeSchedule {
 
     # ensure the schedule doesn't already exist
     if ($PodeContext.Schedules.Items.ContainsKey($Name)) {
-        throw "[Schedule] $($Name): Schedule already defined"
+        # [Schedule] Name: Schedule already defined
+        throw ($PodeLocale.scheduleAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # ensure the limit is valid
     if ($Limit -lt 0) {
-        throw "[Schedule] $($Name): Cannot have a negative limit"
+        # [Schedule] Name: Cannot have a negative limit
+        throw ($PodeLocale.scheduleCannotHaveNegativeLimitExceptionMessage -f $Name)
     }
 
     # ensure the start/end dates are valid
     if (($null -ne $EndTime) -and ($EndTime -lt [DateTime]::Now)) {
-        throw "[Schedule] $($Name): The EndTime value must be in the future"
+        # [Schedule] Name: The EndTime value must be in the future
+        throw ($PodeLocale.scheduleEndTimeMustBeInFutureExceptionMessage -f $Name)
     }
 
     if (($null -ne $StartTime) -and ($null -ne $EndTime) -and ($EndTime -le $StartTime)) {
-        throw "[Schedule] $($Name): Cannot have a StartTime after the EndTime"
+        # [Schedule] Name: Cannot have a 'StartTime' after the 'EndTime'
+        throw ($PodeLocale.scheduleStartTimeAfterEndTimeExceptionMessage -f $Name)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -114,7 +133,7 @@ function Add-PodeSchedule {
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
     # add the schedule
-    $parsedCrons = ConvertFrom-PodeCronExpressions -Expressions @($Cron)
+    $parsedCrons = ConvertFrom-PodeCronExpression -Expression @($Cron)
     $nextTrigger = Get-PodeCronNextEarliestTrigger -Expressions $parsedCrons -StartTime $StartTime -EndTime $EndTime
 
     $PodeContext.Schedules.Enabled = $true
@@ -133,6 +152,10 @@ function Add-PodeSchedule {
         Arguments       = (Protect-PodeValue -Value $ArgumentList -Default @{})
         OnStart         = $OnStart
         Completed       = ($null -eq $nextTrigger)
+        Timeout         = @{
+            Value = $Timeout
+            From  = $TimeoutFrom
+        }
     }
 }
 
@@ -159,7 +182,8 @@ function Set-PodeScheduleConcurrency {
 
     # error if <=0
     if ($Maximum -le 0) {
-        throw "Maximum concurrent schedules must be >=1 but got: $($Maximum)"
+        # Maximum concurrent schedules must be >=1 but got
+        throw ($PodeLocale.maximumConcurrentSchedulesInvalidExceptionMessage -f $Maximum)
     }
 
     # ensure max > min
@@ -169,7 +193,8 @@ function Set-PodeScheduleConcurrency {
     }
 
     if ($_min -gt $Maximum) {
-        throw "Maximum concurrent schedules cannot be less than the minimum of $($_min) but got: $($Maximum)"
+        # Maximum concurrent schedules cannot be less than the minimum of $_min but got $Maximum
+        throw ($PodeLocale.maximumConcurrentSchedulesLessThanMinimumExceptionMessage -f $_min, $Maximum)
     }
 
     # set the max schedules
@@ -209,7 +234,8 @@ function Invoke-PodeSchedule {
 
     # ensure the schedule exists
     if (!$PodeContext.Schedules.Items.ContainsKey($Name)) {
-        throw "Schedule '$($Name)' does not exist"
+        # Schedule 'Name' does not exist
+        throw ($PodeLocale.scheduleDoesNotExistExceptionMessage -f $Name)
     }
 
     # run schedule logic
@@ -251,6 +277,7 @@ Removes all Schedules.
 Clear-PodeSchedules
 #>
 function Clear-PodeSchedules {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -304,14 +331,15 @@ function Edit-PodeSchedule {
 
     # ensure the schedule exists
     if (!$PodeContext.Schedules.Items.ContainsKey($Name)) {
-        throw "Schedule '$($Name)' does not exist"
+        # Schedule 'Name' does not exist
+        throw ($PodeLocale.scheduleDoesNotExistExceptionMessage -f $Name)
     }
 
     $_schedule = $PodeContext.Schedules.Items[$Name]
 
     # edit cron if supplied
     if (!(Test-PodeIsEmpty $Cron)) {
-        $_schedule.Crons = (ConvertFrom-PodeCronExpressions -Expressions @($Cron))
+        $_schedule.Crons = (ConvertFrom-PodeCronExpression -Expression @($Cron))
         $_schedule.CronsRaw = $Cron
         $_schedule.NextTriggerTime = Get-PodeCronNextEarliestTrigger -Expressions $_schedule.Crons -StartTime $_schedule.StartTime -EndTime $_schedule.EndTime
     }
@@ -487,18 +515,21 @@ function Get-PodeScheduleNextTrigger {
 
     # ensure the schedule exists
     if (!$PodeContext.Schedules.Items.ContainsKey($Name)) {
-        throw "Schedule '$($Name)' does not exist"
+        # Schedule 'Name' does not exist
+        throw ($PodeLocale.scheduleDoesNotExistExceptionMessage -f $Name)
     }
 
     $_schedule = $PodeContext.Schedules.Items[$Name]
 
     # ensure date is after start/before end
     if (($null -ne $DateTime) -and ($null -ne $_schedule.StartTime) -and ($DateTime -lt $_schedule.StartTime)) {
-        throw "Supplied date is before the start time of the schedule at $($_schedule.StartTime)"
+        # Supplied date is before the start time of the schedule at $_schedule.StartTime
+        throw ($PodeLocale.suppliedDateBeforeScheduleStartTimeExceptionMessage -f $_schedule.StartTime)
     }
 
     if (($null -ne $DateTime) -and ($null -ne $_schedule.EndTime) -and ($DateTime -gt $_schedule.EndTime)) {
-        throw "Supplied date is after the end time of the schedule at $($_schedule.EndTime)"
+        # Supplied date is after the end time of the schedule at $_schedule.EndTime
+        throw ($PodeLocale.suppliedDateAfterScheduleEndTimeExceptionMessage -f $_schedule.EndTime)
     }
 
     # get the next trigger
@@ -526,6 +557,7 @@ Use-PodeSchedules
 Use-PodeSchedules -Path './my-schedules'
 #>
 function Use-PodeSchedules {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -534,4 +566,92 @@ function Use-PodeSchedules {
     )
 
     Use-PodeFolder -Path $Path -DefaultPath 'schedules'
+}
+
+<#
+.SYNOPSIS
+Get all Schedule Processes.
+
+.DESCRIPTION
+Get all Schedule Processes, with support for filtering.
+
+.PARAMETER Name
+An optional Name of the Schedule to filter by, can be one or more.
+
+.PARAMETER Id
+An optional ID of the Schedule process to filter by, can be one or more.
+
+.PARAMETER State
+An optional State of the Schedule process to filter by, can be one or more.
+
+.EXAMPLE
+Get-PodeScheduleProcess
+
+.EXAMPLE
+Get-PodeScheduleProcess -Name 'ScheduleName'
+
+.EXAMPLE
+Get-PodeScheduleProcess -Id 'ScheduleId'
+
+.EXAMPLE
+Get-PodeScheduleProcess -State 'Running'
+#>
+function Get-PodeScheduleProcess {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Id,
+
+        [Parameter()]
+        [ValidateSet('All', 'Pending', 'Running', 'Completed', 'Failed')]
+        [string[]]
+        $State = 'All'
+    )
+
+    $processes = $PodeContext.Schedules.Processes.Values
+
+    # filter processes by name
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $processes = @(foreach ($_name in $Name) {
+                foreach ($process in $processes) {
+                    if ($process.Schedule -ine $_name) {
+                        continue
+                    }
+
+                    $process
+                }
+            })
+    }
+
+    # filter processes by id
+    if (($null -ne $Id) -and ($Id.Length -gt 0)) {
+        $processes = @(foreach ($_id in $Id) {
+                foreach ($process in $processes) {
+                    if ($process.ID -ine $_id) {
+                        continue
+                    }
+
+                    $process
+                }
+            })
+    }
+
+    # filter processes by status
+    if ($State -inotcontains 'All') {
+        $processes = @(foreach ($process in $processes) {
+                if ($State -inotcontains $process.State) {
+                    continue
+                }
+
+                $process
+            })
+    }
+
+    # return processes
+    return $processes
 }

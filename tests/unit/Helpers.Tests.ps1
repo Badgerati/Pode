@@ -1,9 +1,12 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 BeforeAll {
+    Add-Type -AssemblyName 'System.Net.Http' -ErrorAction SilentlyContinue
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 Describe 'Get-PodeType' {
@@ -258,7 +261,7 @@ Describe 'Test-PodeIPAddress' {
 Describe 'ConvertTo-PodeIPAddress' {
     Context 'Null values' {
         It 'Throws error for null' {
-            { ConvertTo-PodeIPAddress -Address $null } | Should -Throw -ExpectedMessage '*the argument is null*'
+            { ConvertTo-PodeIPAddress -Address $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,ConvertTo-PodeIPAddress'
         }
     }
 
@@ -283,11 +286,11 @@ Describe 'ConvertTo-PodeIPAddress' {
 Describe 'Test-PodeIPAddressLocal' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodeIPAddressLocal -IP ([string]::Empty) } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressLocal -IP ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressLocal'
         }
 
         It 'Throws error for null' {
-            { Test-PodeIPAddressLocal -IP $null } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressLocal -IP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressLocal'
         }
     }
 
@@ -311,11 +314,11 @@ Describe 'Test-PodeIPAddressLocal' {
 Describe 'Test-PodeIPAddressLocalOrAny' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodeIPAddressLocalOrAny -IP ([string]::Empty) } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressLocalOrAny -IP ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressLocalOrAny'
         }
 
         It 'Throws error for null' {
-            { Test-PodeIPAddressLocalOrAny -IP $null } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressLocalOrAny -IP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressLocalOrAny'
         }
     }
 
@@ -347,11 +350,11 @@ Describe 'Test-PodeIPAddressLocalOrAny' {
 Describe 'Test-PodeIPAddressAny' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodeIPAddressAny -IP ([string]::Empty) } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressAny -IP ([string]::Empty) } | Should -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressAny'
         }
 
         It 'Throws error for null' {
-            { Test-PodeIPAddressAny -IP $null } | Should -Throw -ExpectedMessage '*because it is an empty*'
+            { Test-PodeIPAddressAny -IP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorEmptyStringNotAllowed,Test-PodeIPAddressAny'
         }
     }
 
@@ -401,7 +404,7 @@ Describe 'Get-PodeIPAddress' {
         }
 
         It 'Throws error for invalid IP' {
-            { Get-PodeIPAddress -IP '~fake.net' } | Should -Throw -ExpectedMessage '*invalid IP address*'
+            { Get-PodeIPAddress -IP '~fake.net' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
         }
     }
 
@@ -411,7 +414,7 @@ Describe 'Get-PodeIPAddress' {
         }
 
         It 'Throws error for invalid IP' {
-            { Get-PodeIPAddress -IP '256.0.0.0' } | Should -Throw -ExpectedMessage '*invalid IP address*'
+            { Get-PodeIPAddress -IP '256.0.0.0' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
         }
     }
 
@@ -425,7 +428,7 @@ Describe 'Get-PodeIPAddress' {
         }
 
         It 'Throws error for invalid IP' {
-            { Get-PodeIPAddress -IP '[]' } | Should -Throw -ExpectedMessage '*invalid IP address*'
+            { Get-PodeIPAddress -IP '[]' } | Should -Throw -ErrorId 'FormatException,Get-PodeIPAddress'
         }
     }
 }
@@ -433,15 +436,15 @@ Describe 'Get-PodeIPAddress' {
 Describe 'Test-PodeIPAddressInRange' {
     Context 'No parameters supplied' {
         It 'Throws error for no ip' {
-            { Test-PodeIPAddressInRange -IP $null -LowerIP @{} -UpperIP @{} } | Should -Throw -ExpectedMessage '*because it is null*'
+            { Test-PodeIPAddressInRange -IP $null -LowerIP @{} -UpperIP @{} } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Test-PodeIPAddressInRange'
         }
 
         It 'Throws error for no lower ip' {
-            { Test-PodeIPAddressInRange -IP @{} -LowerIP $null -UpperIP @{} } | Should -Throw -ExpectedMessage '*because it is null*'
+            { Test-PodeIPAddressInRange -IP @{} -LowerIP $null -UpperIP @{} } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Test-PodeIPAddressInRange'
         }
 
         It 'Throws error for no upper ip' {
-            { Test-PodeIPAddressInRange -IP @{} -LowerIP @{} -UpperIP $null } | Should -Throw -ExpectedMessage '*because it is null*'
+            { Test-PodeIPAddressInRange -IP @{} -LowerIP @{} -UpperIP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Test-PodeIPAddressInRange'
         }
     }
 
@@ -500,11 +503,11 @@ Describe 'Test-PodeIPAddressInRange' {
 Describe 'Test-PodeIPAddressIsSubnetMask' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodeIPAddressIsSubnetMask -IP ([string]::Empty) } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Test-PodeIPAddressIsSubnetMask -IP ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeIPAddressIsSubnetMask'
         }
 
         It 'Throws error for null' {
-            { Test-PodeIPAddressIsSubnetMask -IP $null } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Test-PodeIPAddressIsSubnetMask -IP $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodeIPAddressIsSubnetMask'
         }
     }
 
@@ -720,11 +723,11 @@ Describe 'Test-PodePathIsWildcard' {
 Describe 'Test-PodePathIsDirectory' {
     Context 'Null values' {
         It 'Throws error for empty' {
-            { Test-PodePathIsDirectory -Path ([string]::Empty) } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Test-PodePathIsDirectory -Path ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodePathIsDirectory'
         }
 
         It 'Throws error for null' {
-            { Test-PodePathIsDirectory -Path $null } | Should -Throw -ExpectedMessage '*argument is null or empty*'
+            { Test-PodePathIsDirectory -Path $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Test-PodePathIsDirectory'
         }
     }
 
@@ -767,15 +770,15 @@ Describe 'Get-PodeEndpointInfo' {
     }
 
     It 'Throws an error for an invalid IP endpoint' {
-        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage '*Failed to parse*'
+        { Get-PodeEndpointInfo -Address '700.0.0.a' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f '700.0.0.a' ) #'*Failed to parse*'
     }
 
     It 'Throws an error for an out-of-range IP endpoint' {
-        { Get-PodeEndpointInfo -Address '700.0.0.0' } | Should -Throw -ExpectedMessage '*The IP address supplied is invalid*'
+        { Get-PodeEndpointInfo -Address '700.0.0.0' } | Should -Throw -ExpectedMessage ($PodeLocale.invalidIpAddressExceptionMessage -f '700.0.0.0' ) # '*The IP address supplied is invalid*'
     }
 
     It 'Throws an error for an invalid Hostname endpoint' {
-        { Get-PodeEndpointInfo -Address '@test.host.com' } | Should -Throw -ExpectedMessage '*Failed to parse*'
+        { Get-PodeEndpointInfo -Address '@test.host.com' } | Should -Throw -ExpectedMessage ($PodeLocale.failedToParseAddressExceptionMessage -f '@test.host.com') # '*Failed to parse*'
     }
 }
 
@@ -1074,11 +1077,11 @@ Describe 'Get-PodeRelativePath' {
 
     It 'Throws error for path ot existing' {
         Mock Test-PodePath { return $false }
-        { Get-PodeRelativePath -Path './path' -TestPath } | Should -Throw -ExpectedMessage '*The path does not exist*'
+        { Get-PodeRelativePath -Path './path' -TestPath } | Should -Throw -ExpectedMessage ($PodeLocale.pathNotExistExceptionMessage -f './path') # '*The path does not exist*'
     }
 }
 
-Describe 'Get-PodeWildcardFiles' {
+Describe 'Get-PodeWildcardFile' {
     BeforeAll {
         Mock Get-PodeRelativePath { return $Path }
         Mock Get-ChildItem {
@@ -1088,19 +1091,19 @@ Describe 'Get-PodeWildcardFiles' {
     }
 
     It 'Get files after adding a wildcard to a directory' {
-        $result = @(Get-PodeWildcardFiles -Path './path' -Wildcard '*.ps1')
+        $result = @(Get-PodeWildcardFile -Path './path' -Wildcard '*.ps1')
         $result.Length | Should -Be 1
         $result[0] | Should -Be './file1.ps1'
     }
 
     It 'Get files for wildcard path' {
-        $result = @(Get-PodeWildcardFiles -Path './path/*.png')
+        $result = @(Get-PodeWildcardFile -Path './path/*.png')
         $result.Length | Should -Be 1
         $result[0] | Should -Be './file1.png'
     }
 
     It 'Returns null for non-wildcard path' {
-        Get-PodeWildcardFiles -Path './some/path/file.txt' | Should -Be $null
+        Get-PodeWildcardFile -Path './some/path/file.txt' | Should -Be $null
     }
 }
 
@@ -1117,28 +1120,28 @@ Describe 'Test-PodeIsServerless' {
 
     It 'Throws error if serverless' {
         $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
-        { Test-PodeIsServerless -ThrowError } | Should -Throw -ExpectedMessage '*not supported in a serverless*'
+        { Test-PodeIsServerless -FunctionName 'FakeFunction' -ThrowError } | Should -Throw -ExpectedMessage ($PodeLocale.unsupportedFunctionInServerlessContextExceptionMessage -f 'FakeFunction') #'*not supported in a serverless*'
     }
 
     It 'Throws no error if not serverless' {
         $PodeContext = @{ 'Server' = @{ 'IsServerless' = $false } }
-        { Test-PodeIsServerless -ThrowError } | Should -Not -Throw -ExpectedMessage '*not supported in a serverless*'
+        { Test-PodeIsServerless -FunctionName 'FakeFunction' -ThrowError } | Should -Not -Throw -ExpectedMessage ($PodeLocale.unsupportedFunctionInServerlessContextExceptionMessage -f 'FakeFunction') #'*not supported in a serverless*'
     }
 }
 
-Describe 'Close-PodeRunspaces' {
+Describe 'Close-PodeRunspace' {
     It 'Returns and does nothing if serverless' {
         $PodeContext = @{ 'Server' = @{ 'IsServerless' = $true } }
-        Close-PodeRunspaces -ClosePool
+        Close-PodeRunspace -ClosePool
     }
 }
 
 Describe 'Close-PodeServerInternal' {
     BeforeAll {
-        Mock Close-PodeRunspaces { }
+        Mock Close-PodeRunspace { }
         Mock Stop-PodeFileMonitor { }
         Mock Close-PodeDisposable { }
-        Mock Remove-PodePSDrives { }
+        Mock Remove-PodePSDrive { }
         Mock Write-Host { } }
 
     It 'Closes out pode, but with no done flag' {
@@ -1287,60 +1290,6 @@ Describe 'Get-PodeCount' {
     }
 }
 
-Describe 'Convert-PodePathSeparators' {
-    Context 'Null' {
-        It 'Null' {
-            Convert-PodePathSeparators -Path $null | Should -Be $null
-        }
-    }
-
-    Context 'String' {
-        It 'Empty' {
-            Convert-PodePathSeparators -Path '' | Should -Be $null
-            Convert-PodePathSeparators -Path ' ' | Should -Be $null
-        }
-
-        It 'Value' {
-            Convert-PodePathSeparators -Path 'anyValue' | Should -Be 'anyValue'
-            Convert-PodePathSeparators -Path 1 | Should -Be 1
-        }
-
-        It 'Path' {
-            Convert-PodePathSeparators -Path 'one/Seperators' | Should -Be "one$([System.IO.Path]::DirectorySeparatorChar)Seperators"
-            Convert-PodePathSeparators -Path 'one\Seperators' | Should -Be "one$([System.IO.Path]::DirectorySeparatorChar)Seperators"
-
-            Convert-PodePathSeparators -Path 'one/two/Seperators' | Should -Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
-            Convert-PodePathSeparators -Path 'one\two\Seperators' | Should -Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
-            Convert-PodePathSeparators -Path 'one/two\Seperators' | Should -Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
-            Convert-PodePathSeparators -Path 'one\two/Seperators' | Should -Be "one$([System.IO.Path]::DirectorySeparatorChar)two$([System.IO.Path]::DirectorySeparatorChar)Seperators"
-        }
-    }
-
-    Context 'Array' {
-        It  'Null' {
-            Convert-PodePathSeparators -Path @($null) | Should -Be $null
-            Convert-PodePathSeparators -Path @($null, $null) | Should -Be $null
-        }
-
-        It 'Single' {
-            Convert-PodePathSeparators -Path @('noSeperators') | Should -Be @('noSeperators')
-            Convert-PodePathSeparators -Path @('some/Seperators') | Should -Be @("some$([System.IO.Path]::DirectorySeparatorChar)Seperators")
-            Convert-PodePathSeparators -Path @('some\Seperators') | Should -Be @("some$([System.IO.Path]::DirectorySeparatorChar)Seperators")
-
-            Convert-PodePathSeparators -Path @('') | Should -Be $null
-            Convert-PodePathSeparators -Path @(' ') | Should -Be $null
-        }
-
-        It 'Double' {
-            Convert-PodePathSeparators -Path @('noSeperators1', 'noSeperators2') | Should -Be @('noSeperators1', 'noSeperators2')
-            Convert-PodePathSeparators -Path @('some/Seperators', 'some\Seperators') | Should -Be @("some$([System.IO.Path]::DirectorySeparatorChar)Seperators", "some$([System.IO.Path]::DirectorySeparatorChar)Seperators")
-
-            Convert-PodePathSeparators -Path @('', ' ') | Should -Be $null
-            Convert-PodePathSeparators -Path @(' ', '') | Should -Be $null
-        }
-    }
-}
-
 Describe 'Out-PodeHost' {
     BeforeAll {
         Mock Out-Default {}
@@ -1359,24 +1308,10 @@ Describe 'Out-PodeHost' {
         @{ Name = 'Rick' } | Out-PodeHost
         Assert-MockCalled Out-Default -Scope It -Times 1
     }
-}
 
-Describe 'Remove-PodeNullKeysFromHashtable' {
-    It 'Removes all null values keys' {
-        $ht = @{
-            Value1 = $null
-            Value2 = @{
-                Value3 = @()
-                Value4 = $null
-            }
-        }
-
-        $ht | Remove-PodeNullKeysFromHashtable
-
-        $ht.ContainsKey('Value1') | Should -Be $false
-        $ht.ContainsKey('Value2') | Should -Be $true
-        $ht.Value2.ContainsKey('Value3') | Should -Be $true
-        $ht.Value2.ContainsKey('Value4') | Should -Be $false
+    It 'Writes an Array to the Host by pipeline' {
+        @('France','Rick',21 ,'male') | Out-PodeHost
+        Assert-MockCalled Out-Default -Scope It -Times 1
     }
 }
 
@@ -1564,12 +1499,12 @@ Describe 'Get-PodeAcceptEncoding' {
 
     It 'Errors when no encoding matches, and identity disabled' {
         $PodeContext.Server.Web.Compression.Enabled = $true
-        { Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' -ThrowError } | Should -Throw -ExpectedMessage '*HttpRequestException*'
+        { Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
     }
 
     It 'Errors when no encoding matches, and wildcard disabled' {
         $PodeContext.Server.Web.Compression.Enabled = $true
-        { Get-PodeAcceptEncoding -AcceptEncoding 'br,*;q=0' -ThrowError } | Should -Throw -ExpectedMessage '*HttpRequestException*'
+        { Get-PodeAcceptEncoding -AcceptEncoding 'br,*;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
     }
 
     It 'Returns empty if identity is allowed, but wildcard disabled' {
@@ -1607,7 +1542,7 @@ Describe 'Get-PodeTransferEncoding' {
     }
 
     It 'Errors when no encoding matches' {
-        { Get-PodeTransferEncoding -TransferEncoding 'compress,chunked' -ThrowError } | Should -Throw -ExpectedMessage '*HttpRequestException*'
+        { Get-PodeTransferEncoding -TransferEncoding 'compress,chunked' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
     }
 }
 
@@ -1695,43 +1630,57 @@ Describe 'New-PodeCron' {
     }
 
     It 'Throws an error for multiple Hours when using Interval' {
-        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should -Throw -ExpectedMessage '*only supply a single*'
+        { New-PodeCron -Every Hour -Hour 2, 4 -Interval 3 } | Should -Throw -ExpectedMessage ($PodeLocale.singleValueForIntervalExceptionMessage -f 'Hour') #'*only supply a single*'
     }
 
     It 'Throws an error for multiple Minutes when using Interval' {
-        { New-PodeCron -Every Minute -Minute 2, 4 -Interval 15 } | Should -Throw -ExpectedMessage '*only supply a single*'
+        { New-PodeCron -Every Minute -Minute 2, 4 -Interval 15 } | Should -Throw -ExpectedMessage ($PodeLocale.singleValueForIntervalExceptionMessage -f 'Minute') #'*only supply a single*'
     }
 
     It 'Throws an error when using Interval without Every' {
-        { New-PodeCron -Interval 3 } | Should -Throw -ExpectedMessage '*Cannot supply an interval*'
+        { New-PodeCron -Interval 3 } | Should -Throw -ExpectedMessage $PodeLocale.cannotSupplyIntervalWhenEveryIsNoneExceptionMessage #'*Cannot supply an interval*'
     }
 
     It 'Throws an error when using Interval for Every Quarter' {
-        { New-PodeCron -Every Quarter -Interval 3 } | Should -Throw -ExpectedMessage 'Cannot supply interval value for every quarter'
+        { New-PodeCron -Every Quarter -Interval 3 } | Should -Throw -ExpectedMessage $PodeLocale.cannotSupplyIntervalForQuarterExceptionMessage #Cannot supply interval value for every quarter.
     }
 
     It 'Throws an error when using Interval for Every Year' {
-        { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage 'Cannot supply interval value for every year'
+        { New-PodeCron -Every Year -Interval 3 } | Should -Throw -ExpectedMessage $PodeLocale.cannotSupplyIntervalForYearExceptionMessage #'Cannot supply interval value for every year'
     }
 }
 
 
 
-Describe 'ConvertTo-PodeYamlInternal Tests' {
+
+Describe 'ConvertTo-PodeYaml Tests' {
+    BeforeAll {
+        $PodeContext = @{
+            Server = @{
+                InternalCache = @{}
+                Web           = @{
+                    OpenApi = @{
+                        UsePodeYamlInternal = $true
+                    }
+                }
+            }
+        }
+    }
+
     Context 'When converting basic types' {
         It 'Converts strings correctly' {
-            $result = 'hello world' | ConvertTo-PodeYamlInternal
+            $result = 'hello world' | ConvertTo-PodeYaml
             $result | Should -Be 'hello world'
         }
 
         It 'Converts arrays correctly' {
-            $result =  ConvertTo-PodeYamlInternal -InputObject  @('one', 'two', 'three') -NoNewLine
+            $result = @('one', 'two', 'three') | ConvertTo-PodeYaml
             $expected = (@'
 - one
 - two
 - three
 '@)
-            $result | Should -Be ($expected.Trim() -Replace "`r`n","`n")
+            $result | Should -Be ($expected.Trim() -Replace "`r`n", "`n")
         }
 
         It 'Converts hashtables correctly' {
@@ -1739,7 +1688,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
                 key1 = 'value1'
                 key2 = 'value2'
             }
-            $result = $hashTable | ConvertTo-PodeYamlInternal -NoNewLine
+            $result = $hashTable | ConvertTo-PodeYaml
             $result | Should -Be "key1: value1`nkey2: value2"
         }
     }
@@ -1751,7 +1700,7 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
                     child = 'value'
                 }
             }
-            $result = $nestedHash | ConvertTo-PodeYamlInternal -NoNewLine
+            $result = $nestedHash | ConvertTo-PodeYaml
 
             $result | Should -Be "parent: `n  child: value"
         }
@@ -1759,7 +1708,57 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
 
     Context 'Error handling' {
         It 'Returns empty string for null input' {
-            $result = $null | ConvertTo-PodeYamlInternal
+            $result = $null | ConvertTo-PodeYaml
+            $result | Should -Be ''
+        }
+    }
+}
+
+
+Describe 'ConvertTo-PodeYamlInternal Tests' {
+    Context 'When converting basic types' {
+        It 'Converts strings correctly' {
+
+            $result = ConvertTo-PodeYamlInternal -InputObject 'hello world'
+            $result | Should -Be 'hello world'
+        }
+
+        It 'Converts arrays correctly' {
+            $result = ConvertTo-PodeYamlInternal -InputObject  @('one', 'two', 'three') -NoNewLine
+            $expected = (@'
+- one
+- two
+- three
+'@)
+            $result | Should -Be ($expected.Trim() -Replace "`r`n", "`n")
+        }
+
+        It 'Converts hashtables correctly' {
+            $hashTable = [ordered]@{
+                key1 = 'value1'
+                key2 = 'value2'
+            }
+            $result = ConvertTo-PodeYamlInternal -InputObject $hashTable -NoNewLine
+            $result | Should -Be "key1: value1`nkey2: value2"
+        }
+    }
+
+    Context 'When converting complex objects' {
+        It 'Handles nested hashtables' {
+            $nestedHash = @{
+                parent = @{
+                    child = 'value'
+                }
+            }
+            $result = ConvertTo-PodeYamlInternal -InputObject  $nestedHash -NoNewLine
+
+            $result | Should -Be "parent: `n  child: value"
+        }
+    }
+
+    Context 'Error handling' {
+        It 'Returns empty string for null input' {
+            $result = ConvertTo-PodeYamlInternal -InputObject $null
             $result | Should -Be ''
         }
     }

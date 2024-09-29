@@ -133,7 +133,7 @@ This is an internal function and may change in future releases of Pode.
 function Write-PodeFileResponseInternal {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [string]
         $Path,
@@ -365,7 +365,7 @@ function Write-PodeDirectoryResponseInternal {
         RootPath    = $RootPath
         Path        = $leaf.Replace('\', '/')
         WindowsMode = $windowsMode.ToString().ToLower()
-        FileContent = $htmlContent.ToString()   # Convert the StringBuilder content to a string
+        FileContent = $htmlContent.ToString() # Convert the StringBuilder content to a string
     }
 
     $podeRoot = Get-PodeModuleMiscPath

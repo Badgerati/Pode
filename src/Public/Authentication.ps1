@@ -159,7 +159,8 @@ function New-PodeAuthScheme {
         [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
-                    throw 'A non-empty ScriptBlock is required for the Custom authentication scheme'
+                    # A non-empty ScriptBlock is required for the Custom authentication scheme
+                    throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomAuthExceptionMessage)
                 }
 
                 return $true
@@ -286,237 +287,253 @@ function New-PodeAuthScheme {
         [string]
         $Secret
     )
+    begin {
+        $pipelineItemCount = 0
+    }
 
-    # default realm
-    $_realm = 'User'
+    process {
+        $pipelineItemCount++
+    }
 
-    # convert any middleware into valid hashtables
-    $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
-
-    # configure the auth scheme
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'basic' {
-            return @{
-                Name          = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
-                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock   = @{
-                    Script         = (Get-PodeAuthBasicType)
-                    UsingVariables = $null
-                }
-                PostValidator = $null
-                Middleware    = $Middleware
-                InnerScheme   = $InnerScheme
-                Scheme        = 'http'
-                Arguments     = @{
-                    Description  = $Description
-                    HeaderTag    = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
-                    Encoding     = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
-                    AsCredential = $AsCredential
-                }
-            }
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
+        # default realm
+        $_realm = 'User'
 
-        'clientcertificate' {
-            return @{
-                Name          = 'Mutual'
-                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock   = @{
-                    Script         = (Get-PodeAuthClientCertificateType)
-                    UsingVariables = $null
-                }
-                PostValidator = $null
-                Middleware    = $Middleware
-                InnerScheme   = $InnerScheme
-                Scheme        = 'http'
-                Arguments     = @{}
-            }
-        }
+        # convert any middleware into valid hashtables
+        $Middleware = @(ConvertTo-PodeMiddleware -Middleware $Middleware -PSSession $PSCmdlet.SessionState)
 
-        'digest' {
-            return @{
-                Name          = 'Digest'
-                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock   = @{
-                    Script         = (Get-PodeAuthDigestType)
-                    UsingVariables = $null
-                }
-                PostValidator = @{
-                    Script         = (Get-PodeAuthDigestPostValidator)
-                    UsingVariables = $null
-                }
-                Middleware    = $Middleware
-                InnerScheme   = $InnerScheme
-                Scheme        = 'http'
-                Arguments     = @{
-                    HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
-                }
-            }
-        }
-
-        'bearer' {
-            $secretBytes = $null
-            if (![string]::IsNullOrWhiteSpace($Secret)) {
-                $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
-            }
-
-            return @{
-                Name          = 'Bearer'
-                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock   = @{
-                    Script         = (Get-PodeAuthBearerType)
-                    UsingVariables = $null
-                }
-                PostValidator = @{
-                    Script         = (Get-PodeAuthBearerPostValidator)
-                    UsingVariables = $null
-                }
-                Middleware    = $Middleware
-                Scheme        = 'http'
-                InnerScheme   = $InnerScheme
-                Arguments     = @{
-                    Description = $Description
-                    HeaderTag   = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
-                    Scopes      = $Scope
-                    AsJWT       = $AsJWT
-                    Secret      = $secretBytes
-                }
-            }
-        }
-
-        'form' {
-            return @{
-                Name          = 'Form'
-                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock   = @{
-                    Script         = (Get-PodeAuthFormType)
-                    UsingVariables = $null
-                }
-                PostValidator = $null
-                Middleware    = $Middleware
-                InnerScheme   = $InnerScheme
-                Scheme        = 'http'
-                Arguments     = @{
-                    Description  = $Description
-                    Fields       = @{
-                        Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
-                        Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
+        # configure the auth scheme
+        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+            'basic' {
+                return @{
+                    Name          = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
+                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthBasicType)
+                        UsingVariables = $null
                     }
-                    AsCredential = $AsCredential
+                    PostValidator = $null
+                    Middleware    = $Middleware
+                    InnerScheme   = $InnerScheme
+                    Scheme        = 'http'
+                    Arguments     = @{
+                        Description  = $Description
+                        HeaderTag    = (Protect-PodeValue -Value $HeaderTag -Default 'Basic')
+                        Encoding     = (Protect-PodeValue -Value $Encoding -Default 'ISO-8859-1')
+                        AsCredential = $AsCredential
+                    }
                 }
             }
-        }
 
-        'oauth2' {
-            if (($null -ne $InnerScheme) -and ($InnerScheme.Name -inotin @('basic', 'form'))) {
-                throw "OAuth2 InnerScheme can only be one of either Basic or Form authentication, but got: $($InnerScheme.Name)"
-            }
-
-            if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
-                throw 'OAuth2 requires an Authorise URL to be supplied'
-            }
-
-            if ($UsePKCE -and !(Test-PodeSessionsEnabled)) {
-                throw 'Sessions are required to use OAuth2 with PKCE'
-            }
-
-            if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
-                throw 'OAuth2 requires a Client Secret when not using PKCE'
-            }
-            return @{
-                Name          = 'OAuth2'
-                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock   = @{
-                    Script         = (Get-PodeAuthOAuth2Type)
-                    UsingVariables = $null
+            'clientcertificate' {
+                return @{
+                    Name          = 'Mutual'
+                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthClientCertificateType)
+                        UsingVariables = $null
+                    }
+                    PostValidator = $null
+                    Middleware    = $Middleware
+                    InnerScheme   = $InnerScheme
+                    Scheme        = 'http'
+                    Arguments     = @{}
                 }
-                PostValidator = $null
-                Middleware    = $Middleware
-                Scheme        = 'oauth2'
-                InnerScheme   = $InnerScheme
-                Arguments     = @{
-                    Description = $Description
-                    Scopes      = $Scope
-                    PKCE        = @{
-                        Enabled       = $UsePKCE
-                        CodeChallenge = @{
-                            Method = $CodeChallengeMethod
+            }
+
+            'digest' {
+                return @{
+                    Name          = 'Digest'
+                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthDigestType)
+                        UsingVariables = $null
+                    }
+                    PostValidator = @{
+                        Script         = (Get-PodeAuthDigestPostValidator)
+                        UsingVariables = $null
+                    }
+                    Middleware    = $Middleware
+                    InnerScheme   = $InnerScheme
+                    Scheme        = 'http'
+                    Arguments     = @{
+                        HeaderTag = (Protect-PodeValue -Value $HeaderTag -Default 'Digest')
+                    }
+                }
+            }
+
+            'bearer' {
+                $secretBytes = $null
+                if (![string]::IsNullOrWhiteSpace($Secret)) {
+                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+                }
+
+                return @{
+                    Name          = 'Bearer'
+                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthBearerType)
+                        UsingVariables = $null
+                    }
+                    PostValidator = @{
+                        Script         = (Get-PodeAuthBearerPostValidator)
+                        UsingVariables = $null
+                    }
+                    Middleware    = $Middleware
+                    Scheme        = 'http'
+                    InnerScheme   = $InnerScheme
+                    Arguments     = @{
+                        Description = $Description
+                        HeaderTag   = (Protect-PodeValue -Value $HeaderTag -Default 'Bearer')
+                        Scopes      = $Scope
+                        AsJWT       = $AsJWT
+                        Secret      = $secretBytes
+                    }
+                }
+            }
+
+            'form' {
+                return @{
+                    Name          = 'Form'
+                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthFormType)
+                        UsingVariables = $null
+                    }
+                    PostValidator = $null
+                    Middleware    = $Middleware
+                    InnerScheme   = $InnerScheme
+                    Scheme        = 'http'
+                    Arguments     = @{
+                        Description  = $Description
+                        Fields       = @{
+                            Username = (Protect-PodeValue -Value $UsernameField -Default 'username')
+                            Password = (Protect-PodeValue -Value $PasswordField -Default 'password')
+                        }
+                        AsCredential = $AsCredential
+                    }
+                }
+            }
+
+            'oauth2' {
+                if (($null -ne $InnerScheme) -and ($InnerScheme.Name -inotin @('basic', 'form'))) {
+                    # OAuth2 InnerScheme can only be one of either Basic or Form authentication, but got: {0}
+                    throw ($PodeLocale.oauth2InnerSchemeInvalidExceptionMessage -f $InnerScheme.Name)
+                }
+
+                if (($null -eq $InnerScheme) -and [string]::IsNullOrWhiteSpace($AuthoriseUrl)) {
+                    # OAuth2 requires an Authorise URL to be supplied
+                    throw ($PodeLocale.oauth2RequiresAuthorizeUrlExceptionMessage)
+                }
+
+                if ($UsePKCE -and !(Test-PodeSessionsEnabled)) {
+                    # Sessions are required to use OAuth2 with PKCE
+                    throw ($PodeLocale.sessionsRequiredForOAuth2WithPKCEExceptionMessage)
+                }
+
+                if (!$UsePKCE -and [string]::IsNullOrEmpty($ClientSecret)) {
+                    # OAuth2 requires a Client Secret when not using PKCE
+                    throw ($PodeLocale.oauth2ClientSecretRequiredExceptionMessage)
+                }
+                return @{
+                    Name          = 'OAuth2'
+                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthOAuth2Type)
+                        UsingVariables = $null
+                    }
+                    PostValidator = $null
+                    Middleware    = $Middleware
+                    Scheme        = 'oauth2'
+                    InnerScheme   = $InnerScheme
+                    Arguments     = @{
+                        Description = $Description
+                        Scopes      = $Scope
+                        PKCE        = @{
+                            Enabled       = $UsePKCE
+                            CodeChallenge = @{
+                                Method = $CodeChallengeMethod
+                            }
+                        }
+                        Client      = @{
+                            ID     = $ClientId
+                            Secret = $ClientSecret
+                        }
+                        Urls        = @{
+                            Redirect  = $RedirectUrl
+                            Authorise = $AuthoriseUrl
+                            Token     = $TokenUrl
+                            User      = @{
+                                Url    = $UserUrl
+                                Method = (Protect-PodeValue -Value $UserUrlMethod -Default 'Post')
+                            }
                         }
                     }
-                    Client      = @{
-                        ID     = $ClientId
-                        Secret = $ClientSecret
+                }
+            }
+
+            'apikey' {
+                # set default location name
+                if ([string]::IsNullOrWhiteSpace($LocationName)) {
+                    $LocationName = (@{
+                            Header = 'X-API-KEY'
+                            Query  = 'api_key'
+                            Cookie = 'X-API-KEY'
+                        })[$Location]
+                }
+
+                $secretBytes = $null
+                if (![string]::IsNullOrWhiteSpace($Secret)) {
+                    $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
+                }
+
+                return @{
+                    Name          = 'ApiKey'
+                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthApiKeyType)
+                        UsingVariables = $null
                     }
-                    Urls        = @{
-                        Redirect  = $RedirectUrl
-                        Authorise = $AuthoriseUrl
-                        Token     = $TokenUrl
-                        User      = @{
-                            Url    = $UserUrl
-                            Method = (Protect-PodeValue -Value $UserUrlMethod -Default 'Post')
-                        }
+                    PostValidator = $null
+                    Middleware    = $Middleware
+                    InnerScheme   = $InnerScheme
+                    Scheme        = 'apiKey'
+                    Arguments     = @{
+                        Description  = $Description
+                        Location     = $Location
+                        LocationName = $LocationName
+                        AsJWT        = $AsJWT
+                        Secret       = $secretBytes
                     }
                 }
             }
-        }
 
-        'apikey' {
-            # set default location name
-            if ([string]::IsNullOrWhiteSpace($LocationName)) {
-                $LocationName = (@{
-                        Header = 'X-API-KEY'
-                        Query  = 'api_key'
-                        Cookie = 'X-API-KEY'
-                    })[$Location]
-            }
+            'custom' {
+                $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
-            $secretBytes = $null
-            if (![string]::IsNullOrWhiteSpace($Secret)) {
-                $secretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
-            }
-
-            return @{
-                Name          = 'ApiKey'
-                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                ScriptBlock   = @{
-                    Script         = (Get-PodeAuthApiKeyType)
-                    UsingVariables = $null
+                if ($null -ne $PostValidator) {
+                    $PostValidator, $usingPostVars = Convert-PodeScopedVariables -ScriptBlock $PostValidator -PSSession $PSCmdlet.SessionState
                 }
-                PostValidator = $null
-                Middleware    = $Middleware
-                InnerScheme   = $InnerScheme
-                Scheme        = 'apiKey'
-                Arguments     = @{
-                    Description  = $Description
-                    Location     = $Location
-                    LocationName = $LocationName
-                    AsJWT        = $AsJWT
-                    Secret       = $secretBytes
-                }
-            }
-        }
 
-        'custom' {
-            $ScriptBlock, $usingScriptVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-            if ($null -ne $PostValidator) {
-                $PostValidator, $usingPostVars = Convert-PodeScopedVariables -ScriptBlock $PostValidator -PSSession $PSCmdlet.SessionState
-            }
-
-            return @{
-                Name          = $Name
-                Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
-                InnerScheme   = $InnerScheme
-                Scheme        = $Type.ToLowerInvariant()
-                ScriptBlock   = @{
-                    Script         = $ScriptBlock
-                    UsingVariables = $usingScriptVars
+                return @{
+                    Name          = $Name
+                    Realm         = (Protect-PodeValue -Value $Realm -Default $_realm)
+                    InnerScheme   = $InnerScheme
+                    Scheme        = $Type.ToLowerInvariant()
+                    ScriptBlock   = @{
+                        Script         = $ScriptBlock
+                        UsingVariables = $usingScriptVars
+                    }
+                    PostValidator = @{
+                        Script         = $PostValidator
+                        UsingVariables = $usingPostVars
+                    }
+                    Middleware    = $Middleware
+                    Arguments     = $ArgumentList
                 }
-                PostValidator = @{
-                    Script         = $PostValidator
-                    UsingVariables = $usingPostVars
-                }
-                Middleware    = $Middleware
-                Arguments     = $ArgumentList
             }
         }
     }
@@ -558,6 +575,7 @@ New-PodeAuthAzureADScheme -Tenant 123-456-678 -ClientId some_id -UsePKCE
 #>
 function New-PodeAuthAzureADScheme {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -587,18 +605,31 @@ function New-PodeAuthAzureADScheme {
         [switch]
         $UsePKCE
     )
+    begin {
+        $pipelineItemCount = 0
+    }
 
-    return New-PodeAuthScheme `
-        -OAuth2 `
-        -ClientId $ClientId `
-        -ClientSecret $ClientSecret `
-        -AuthoriseUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/authorize" `
-        -TokenUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/token" `
-        -UserUrl 'https://graph.microsoft.com/oidc/userinfo' `
-        -RedirectUrl $RedirectUrl `
-        -InnerScheme $InnerScheme `
-        -Middleware $Middleware `
-        -UsePKCE:$UsePKCE
+    process {
+
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        return New-PodeAuthScheme `
+            -OAuth2 `
+            -ClientId $ClientId `
+            -ClientSecret $ClientSecret `
+            -AuthoriseUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/authorize" `
+            -TokenUrl "https://login.microsoftonline.com/$($Tenant)/oauth2/v2.0/token" `
+            -UserUrl 'https://graph.microsoft.com/oidc/userinfo' `
+            -RedirectUrl $RedirectUrl `
+            -InnerScheme $InnerScheme `
+            -Middleware $Middleware `
+            -UsePKCE:$UsePKCE
+    }
 }
 
 <#
@@ -631,6 +662,7 @@ New-PodeAuthTwitterScheme -ClientId some_id -UsePKCE
 #>
 function New-PodeAuthTwitterScheme {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -717,7 +749,8 @@ function Add-PodeAuth {
         [Parameter(Mandatory = $true)]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
-                    throw 'A non-empty ScriptBlock is required for the authentication method'
+                    # A non-empty ScriptBlock is required for the authentication method
+                    throw ($PodeLocale.nonEmptyScriptBlockRequiredForAuthMethodExceptionMessage)
                 }
 
                 return $true
@@ -747,51 +780,67 @@ function Add-PodeAuth {
         [switch]
         $SuccessUseOrigin
     )
-
-    # ensure the name doesn't already exist
-    if (Test-PodeAuthExists -Name $Name) {
-        throw "Authentication method already defined: $($Name)"
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # ensure the Scheme contains a scriptblock
-    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        throw "The supplied '$($Scheme.Name)' Scheme for the '$($Name)' authentication validator requires a valid ScriptBlock"
+    process {
+
+        $pipelineItemCount++
     }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use session persistent authentication'
-    }
-
-    # check for scoped vars
-    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-    # add auth method to server
-    $PodeContext.Server.Authentications.Methods[$Name] = @{
-        Name           = $Name
-        Scheme         = $Scheme
-        ScriptBlock    = $ScriptBlock
-        UsingVariables = $usingVars
-        Arguments      = $ArgumentList
-        Sessionless    = $Sessionless.IsPresent
-        Failure        = @{
-            Url     = $FailureUrl
-            Message = $FailureMessage
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
-        Success        = @{
-            Url       = $SuccessUrl
-            UseOrigin = $SuccessUseOrigin.IsPresent
+        # ensure the name doesn't already exist
+        if (Test-PodeAuthExists -Name $Name) {
+            # Authentication method already defined: {0}
+            throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
         }
-        Cache          = @{}
-        Merged         = $false
-        Parent         = $null
-    }
 
-    # if the scheme is oauth2, and there's no redirect, set up a default one
-    if (($Scheme.Name -ieq 'oauth2') -and ($null -eq $Scheme.InnerScheme) -and [string]::IsNullOrWhiteSpace($Scheme.Arguments.Urls.Redirect)) {
-        $path = '/oauth2/callback'
-        $Scheme.Arguments.Urls.Redirect = $path
-        Add-PodeRoute -Method Get -Path $path -Authentication $Name
+        # ensure the Scheme contains a scriptblock
+        if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+            # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock
+            throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        }
+
+        # if we're using sessions, ensure sessions have been setup
+        if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
+            # Sessions are required to use session persistent authentication
+            throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
+        }
+
+        # check for scoped vars
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # add auth method to server
+        $PodeContext.Server.Authentications.Methods[$Name] = @{
+            Name           = $Name
+            Scheme         = $Scheme
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+            Arguments      = $ArgumentList
+            Sessionless    = $Sessionless.IsPresent
+            Failure        = @{
+                Url     = $FailureUrl
+                Message = $FailureMessage
+            }
+            Success        = @{
+                Url       = $SuccessUrl
+                UseOrigin = $SuccessUseOrigin.IsPresent
+            }
+            Cache          = @{}
+            Merged         = $false
+            Parent         = $null
+        }
+
+        # if the scheme is oauth2, and there's no redirect, set up a default one
+        if (($Scheme.Name -ieq 'oauth2') -and ($null -eq $Scheme.InnerScheme) -and [string]::IsNullOrWhiteSpace($Scheme.Arguments.Urls.Redirect)) {
+            $path = '/oauth2/callback'
+            $Scheme.Arguments.Urls.Redirect = $path
+            Add-PodeRoute -Method Get -Path $path -Authentication $Name
+        }
     }
 }
 
@@ -902,24 +951,25 @@ function Merge-PodeAuth {
 
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
-        throw "Authentication method already defined: $($Name)"
+        # Authentication method already defined: { 0 }
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # ensure all the auth methods exist
     foreach ($authName in $Authentication) {
         if (!(Test-PodeAuthExists -Name $authName)) {
-            throw "Authentication method does not exist for merging: $($authName)"
+            throw ($PodeLocale.authMethodNotExistForMergingExceptionMessage -f $authName) #"Authentication method does not exist for merging: $($authName)"
         }
     }
 
     # ensure the merge default is in the auth list
     if (![string]::IsNullOrEmpty($MergeDefault) -and ($MergeDefault -inotin @($Authentication))) {
-        throw "the MergeDefault Authentication '$($MergeDefault)' is not in the Authentication list supplied"
+        throw ($PodeLocale.mergeDefaultAuthNotInListExceptionMessage -f $MergeDefault) # "the MergeDefault Authentication '$($MergeDefault)' is not in the Authentication list supplied"
     }
 
     # ensure the default is in the auth list
     if (![string]::IsNullOrEmpty($Default) -and ($Default -inotin @($Authentication))) {
-        throw "the Default Authentication '$($Default)' is not in the Authentication list supplied"
+        throw ($PodeLocale.defaultAuthNotInListExceptionMessage -f $Default) # "the Default Authentication '$($Default)' is not in the Authentication list supplied"
     }
 
     # set default
@@ -937,7 +987,8 @@ function Merge-PodeAuth {
 
     # if we're using sessions, ensure sessions have been setup
     if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use session persistent authentication'
+        # Sessions are required to use session persistent authentication
+        throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
     }
 
     # check failure url from default
@@ -963,7 +1014,8 @@ function Merge-PodeAuth {
     # deal with using vars in scriptblock
     if (($Valid -ieq 'all') -and [string]::IsNullOrEmpty($MergeDefault)) {
         if ($null -eq $ScriptBlock) {
-            throw 'A Scriptblock for merging multiple authenticated users into 1 object is required When Valid is All'
+            # A Scriptblock for merging multiple authenticated users into 1 object is required When Valid is All
+            throw ($PodeLocale.scriptBlockRequiredForMergingUsersExceptionMessage)
         }
 
         $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
@@ -1020,6 +1072,7 @@ Get-PodeAuth -Name 'Main'
 #>
 function Get-PodeAuth {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -1028,7 +1081,7 @@ function Get-PodeAuth {
 
     # ensure the name exists
     if (!(Test-PodeAuthExists -Name $Name)) {
-        throw "Authentication method not defined: $($Name)"
+        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Name) # "Authentication method not defined: $($Name)"
     }
 
     # get auth method
@@ -1049,7 +1102,9 @@ The Name of the Authentication method.
 if (Test-PodeAuthExists -Name BasicAuth) { ... }
 #>
 function Test-PodeAuthExists {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -1081,6 +1136,7 @@ if (Test-PodeAuth -Name 'FormAuth' -IgnoreSession) { ... }
 #>
 function Test-PodeAuth {
     [CmdletBinding()]
+    [OutputType([boolean])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -1261,78 +1317,95 @@ function Add-PodeAuthWindowsAd {
         [switch]
         $KeepCredential
     )
-
-    # ensure the name doesn't already exist
-    if (Test-PodeAuthExists -Name $Name) {
-        throw "Windows AD Authentication method already defined: $($Name)"
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # ensure the Scheme contains a scriptblock
-    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        throw "The supplied Scheme for the '$($Name)' Windows AD authentication validator requires a valid ScriptBlock"
+    process {
+
+        $pipelineItemCount++
     }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use session persistent authentication'
-    }
-
-    # if AD module set, ensure we're on windows and the module is available, then import/export it
-    if ($ADModule) {
-        Import-PodeAuthADModule
-    }
-
-    # set server name if not passed
-    if ([string]::IsNullOrWhiteSpace($Fqdn)) {
-        $Fqdn = Get-PodeAuthDomainName
-
-        if ([string]::IsNullOrWhiteSpace($Fqdn)) {
-            throw 'No domain server name has been supplied for Windows AD authentication'
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
-    }
+        # ensure the name doesn't already exist
+        if (Test-PodeAuthExists -Name $Name) {
+            # Authentication method already defined: {0}
+            throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        }
 
-    # set the domain if not passed
-    if ([string]::IsNullOrWhiteSpace($Domain)) {
-        $Domain = ($Fqdn -split '\.')[0]
-    }
+        # ensure the Scheme contains a scriptblock
+        if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+            # The supplied Scheme for the '$($Name)' Windows AD authentication validator requires a valid ScriptBlock
+            throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        }
 
-    # if we have a scriptblock, deal with using vars
-    if ($null -ne $ScriptBlock) {
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-    }
+        # if we're using sessions, ensure sessions have been setup
+        if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
+            # Sessions are required to use session persistent authentication
+            throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
+        }
 
-    # add Windows AD auth method to server
-    $PodeContext.Server.Authentications.Methods[$Name] = @{
-        Name        = $Name
-        Scheme      = $Scheme
-        ScriptBlock = (Get-PodeAuthWindowsADMethod)
-        Arguments   = @{
-            Server         = $Fqdn
-            Domain         = $Domain
-            SearchBase     = $SearchBase
-            Users          = $Users
-            Groups         = $Groups
-            NoGroups       = $NoGroups
-            DirectGroups   = $DirectGroups
-            KeepCredential = $KeepCredential
-            Provider       = (Get-PodeAuthADProvider -OpenLDAP:$OpenLDAP -ADModule:$ADModule)
-            ScriptBlock    = @{
-                Script         = $ScriptBlock
-                UsingVariables = $usingVars
+        # if AD module set, ensure we're on windows and the module is available, then import/export it
+        if ($ADModule) {
+            Import-PodeAuthADModule
+        }
+
+        # set server name if not passed
+        if ([string]::IsNullOrWhiteSpace($Fqdn)) {
+            $Fqdn = Get-PodeAuthDomainName
+
+            if ([string]::IsNullOrWhiteSpace($Fqdn)) {
+                # No domain server name has been supplied for Windows AD authentication
+                throw ($PodeLocale.noDomainServerNameForWindowsAdAuthExceptionMessage)
             }
         }
-        Sessionless = $Sessionless
-        Failure     = @{
-            Url     = $FailureUrl
-            Message = $FailureMessage
+
+        # set the domain if not passed
+        if ([string]::IsNullOrWhiteSpace($Domain)) {
+            $Domain = ($Fqdn -split '\.')[0]
         }
-        Success     = @{
-            Url       = $SuccessUrl
-            UseOrigin = $SuccessUseOrigin
+
+        # if we have a scriptblock, deal with using vars
+        if ($null -ne $ScriptBlock) {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
         }
-        Cache       = @{}
-        Merged      = $false
-        Parent      = $null
+
+        # add Windows AD auth method to server
+        $PodeContext.Server.Authentications.Methods[$Name] = @{
+            Name        = $Name
+            Scheme      = $Scheme
+            ScriptBlock = (Get-PodeAuthWindowsADMethod)
+            Arguments   = @{
+                Server         = $Fqdn
+                Domain         = $Domain
+                SearchBase     = $SearchBase
+                Users          = $Users
+                Groups         = $Groups
+                NoGroups       = $NoGroups
+                DirectGroups   = $DirectGroups
+                KeepCredential = $KeepCredential
+                Provider       = (Get-PodeAuthADProvider -OpenLDAP:$OpenLDAP -ADModule:$ADModule)
+                ScriptBlock    = @{
+                    Script         = $ScriptBlock
+                    UsingVariables = $usingVars
+                }
+            }
+            Sessionless = $Sessionless
+            Failure     = @{
+                Url     = $FailureUrl
+                Message = $FailureMessage
+            }
+            Success     = @{
+                Url       = $SuccessUrl
+                UseOrigin = $SuccessUseOrigin
+            }
+            Cache       = @{}
+            Merged      = $false
+            Parent      = $null
+        }
     }
 }
 
@@ -1400,12 +1473,14 @@ function Add-PodeAuthSession {
 
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
-        throw 'Sessions have not been configured'
+        # Sessions have not been configured
+        throw ($PodeLocale.sessionsNotConfiguredExceptionMessage)
     }
 
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
-        throw "Authentication method already defined: $($Name)"
+        # Authentication method already defined: { 0 }
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # if we have a scriptblock, deal with using vars
@@ -1488,8 +1563,9 @@ function Remove-PodeAuth {
         [string]
         $Name
     )
-
-    $null = $PodeContext.Server.Authentications.Methods.Remove($Name)
+    process {
+        $null = $PodeContext.Server.Authentications.Methods.Remove($Name)
+    }
 }
 
 <#
@@ -1559,7 +1635,7 @@ function Add-PodeAuthMiddleware {
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
     if (!(Test-PodeAuthExists -Name $Authentication)) {
-        throw "Authentication method does not exist: $($Authentication)"
+        throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Authentication) # "Authentication method does not exist: $($Authentication)"
     }
 
     Get-PodeAuthMiddlewareScript |
@@ -1685,12 +1761,14 @@ function Add-PodeAuthIIS {
 
     # ensure we're on Windows!
     if (!(Test-PodeIsWindows)) {
-        throw 'IIS Authentication support is for Windows only'
+        # IIS Authentication support is for Windows only
+        throw ($PodeLocale.iisAuthSupportIsForWindowsOnlyExceptionMessage)
     }
 
     # ensure the name doesn't already exist
     if (Test-PodeAuthExists -Name $Name) {
-        throw "IIS Authentication method already defined: $($Name)"
+        # Authentication method already defined: {0}
+        throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # if AD module set, ensure we're on windows and the module is available, then import/export it
@@ -1845,67 +1923,84 @@ function Add-PodeAuthUserFile {
         [switch]
         $SuccessUseOrigin
     )
-
-    # ensure the name doesn't already exist
-    if (Test-PodeAuthExists -Name $Name) {
-        throw "User File Authentication method already defined: $($Name)"
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # ensure the Scheme contains a scriptblock
-    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        throw "The supplied Scheme for the '$($Name)' User File authentication validator requires a valid ScriptBlock"
+    process {
+
+        $pipelineItemCount++
     }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use session persistent authentication'
-    }
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        # ensure the name doesn't already exist
+        if (Test-PodeAuthExists -Name $Name) {
+            # Authentication method already defined: {0}
+            throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        }
 
-    # set the file path if not passed
-    if ([string]::IsNullOrWhiteSpace($FilePath)) {
-        $FilePath = Join-PodeServerRoot -Folder '.' -FilePath 'users.json'
-    }
-    else {
-        $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot -Resolve
-    }
+        # ensure the Scheme contains a scriptblock
+        if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+            # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock.
+            throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        }
 
-    # ensure the user file exists
-    if (!(Test-PodePath -Path $FilePath -NoStatus -FailOnDirectory)) {
-        throw "The user file does not exist: $($FilePath)"
-    }
+        # if we're using sessions, ensure sessions have been setup
+        if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
+            # Sessions are required to use session persistent authentication
+            throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
+        }
 
-    # if we have a scriptblock, deal with using vars
-    if ($null -ne $ScriptBlock) {
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-    }
+        # set the file path if not passed
+        if ([string]::IsNullOrWhiteSpace($FilePath)) {
+            $FilePath = Join-PodeServerRoot -Folder '.' -FilePath 'users.json'
+        }
+        else {
+            $FilePath = Get-PodeRelativePath -Path $FilePath -JoinRoot -Resolve
+        }
 
-    # add Windows AD auth method to server
-    $PodeContext.Server.Authentications.Methods[$Name] = @{
-        Name        = $Name
-        Scheme      = $Scheme
-        ScriptBlock = (Get-PodeAuthUserFileMethod)
-        Arguments   = @{
-            FilePath    = $FilePath
-            Users       = $Users
-            Groups      = $Groups
-            HmacSecret  = $HmacSecret
-            ScriptBlock = @{
-                Script         = $ScriptBlock
-                UsingVariables = $usingVars
+        # ensure the user file exists
+        if (!(Test-PodePath -Path $FilePath -NoStatus -FailOnDirectory)) {
+            # The user file does not exist: {0}
+            throw ($PodeLocale.userFileDoesNotExistExceptionMessage -f $FilePath)
+        }
+
+        # if we have a scriptblock, deal with using vars
+        if ($null -ne $ScriptBlock) {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        }
+
+        # add Windows AD auth method to server
+        $PodeContext.Server.Authentications.Methods[$Name] = @{
+            Name        = $Name
+            Scheme      = $Scheme
+            ScriptBlock = (Get-PodeAuthUserFileMethod)
+            Arguments   = @{
+                FilePath    = $FilePath
+                Users       = $Users
+                Groups      = $Groups
+                HmacSecret  = $HmacSecret
+                ScriptBlock = @{
+                    Script         = $ScriptBlock
+                    UsingVariables = $usingVars
+                }
             }
+            Sessionless = $Sessionless
+            Failure     = @{
+                Url     = $FailureUrl
+                Message = $FailureMessage
+            }
+            Success     = @{
+                Url       = $SuccessUrl
+                UseOrigin = $SuccessUseOrigin
+            }
+            Cache       = @{}
+            Merged      = $false
+            Parent      = $null
         }
-        Sessionless = $Sessionless
-        Failure     = @{
-            Url     = $FailureUrl
-            Message = $FailureMessage
-        }
-        Success     = @{
-            Url       = $SuccessUrl
-            UseOrigin = $SuccessUseOrigin
-        }
-        Cache       = @{}
-        Merged      = $false
-        Parent      = $null
     }
 }
 
@@ -2003,58 +2098,75 @@ function Add-PodeAuthWindowsLocal {
         [switch]
         $SuccessUseOrigin
     )
-
-    # ensure we're on Windows!
-    if (!(Test-PodeIsWindows)) {
-        throw 'Windows Local Authentication support is for Windows only'
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # ensure the name doesn't already exist
-    if (Test-PodeAuthExists -Name $Name) {
-        throw "Windows Local Authentication method already defined: $($Name)"
+    process {
+
+        $pipelineItemCount++
     }
 
-    # ensure the Scheme contains a scriptblock
-    if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
-        throw "The supplied Scheme for the '$($Name)' Windows Local authentication validator requires a valid ScriptBlock"
-    }
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        # ensure we're on Windows!
+        if (!(Test-PodeIsWindows)) {
+            # Windows Local Authentication support is for Windows only
+            throw ($PodeLocale.windowsLocalAuthSupportIsForWindowsOnlyExceptionMessage)
+        }
 
-    # if we're using sessions, ensure sessions have been setup
-    if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use session persistent authentication'
-    }
+        # ensure the name doesn't already exist
+        if (Test-PodeAuthExists -Name $Name) {
+            # Authentication method already defined: {0}
+            throw ($PodeLocale.authMethodAlreadyDefinedExceptionMessage -f $Name)
+        }
 
-    # if we have a scriptblock, deal with using vars
-    if ($null -ne $ScriptBlock) {
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-    }
+        # ensure the Scheme contains a scriptblock
+        if (Test-PodeIsEmpty $Scheme.ScriptBlock) {
+            # The supplied scheme for the '{0}' authentication validator requires a valid ScriptBlock.
+            throw ($PodeLocale.schemeRequiresValidScriptBlockExceptionMessage -f $Name)
+        }
 
-    # add Windows Local auth method to server
-    $PodeContext.Server.Authentications.Methods[$Name] = @{
-        Name        = $Name
-        Scheme      = $Scheme
-        ScriptBlock = (Get-PodeAuthWindowsLocalMethod)
-        Arguments   = @{
-            Users       = $Users
-            Groups      = $Groups
-            NoGroups    = $NoGroups
-            ScriptBlock = @{
-                Script         = $ScriptBlock
-                UsingVariables = $usingVars
+        # if we're using sessions, ensure sessions have been setup
+        if (!$Sessionless -and !(Test-PodeSessionsEnabled)) {
+            # Sessions are required to use session persistent authentication
+            throw ($PodeLocale.sessionsRequiredForSessionPersistentAuthExceptionMessage)
+        }
+
+        # if we have a scriptblock, deal with using vars
+        if ($null -ne $ScriptBlock) {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+        }
+
+        # add Windows Local auth method to server
+        $PodeContext.Server.Authentications.Methods[$Name] = @{
+            Name        = $Name
+            Scheme      = $Scheme
+            ScriptBlock = (Get-PodeAuthWindowsLocalMethod)
+            Arguments   = @{
+                Users       = $Users
+                Groups      = $Groups
+                NoGroups    = $NoGroups
+                ScriptBlock = @{
+                    Script         = $ScriptBlock
+                    UsingVariables = $usingVars
+                }
             }
+            Sessionless = $Sessionless
+            Failure     = @{
+                Url     = $FailureUrl
+                Message = $FailureMessage
+            }
+            Success     = @{
+                Url       = $SuccessUrl
+                UseOrigin = $SuccessUseOrigin
+            }
+            Cache       = @{}
+            Merged      = $false
+            Parent      = $null
         }
-        Sessionless = $Sessionless
-        Failure     = @{
-            Url     = $FailureUrl
-            Message = $FailureMessage
-        }
-        Success     = @{
-            Url       = $SuccessUrl
-            UseOrigin = $SuccessUseOrigin
-        }
-        Cache       = @{}
-        Merged      = $false
-        Parent      = $null
     }
 }
 
@@ -2082,6 +2194,7 @@ ConvertTo-PodeJwt -Header @{ alg = 'hs256' } -Payload @{ sub = '123'; name = 'Jo
 #>
 function ConvertTo-PodeJwt {
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]
@@ -2097,7 +2210,8 @@ function ConvertTo-PodeJwt {
 
     # validate header
     if ([string]::IsNullOrWhiteSpace($Header.alg)) {
-        throw 'No algorithm supplied in JWT Header'
+        # No algorithm supplied in JWT Header
+        throw ($PodeLocale.noAlgorithmInJwtHeaderExceptionMessage)
     }
 
     # convert the header
@@ -2143,6 +2257,7 @@ ConvertFrom-PodeJwt -Token "eyJ0eXAiOiJKV1QiLCJhbGciOiJoczI1NiJ9.eyJleHAiOjE2MjI
 #>
 function ConvertFrom-PodeJwt {
     [CmdletBinding(DefaultParameterSetName = 'Secret')]
+    [OutputType([pscustomobject])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -2161,13 +2276,15 @@ function ConvertFrom-PodeJwt {
 
     # check number of parts (should be 3)
     if ($parts.Length -ne 3) {
-        throw 'Invalid JWT supplied'
+        # Invalid JWT supplied
+        throw ($PodeLocale.invalidJwtSuppliedExceptionMessage)
     }
 
     # convert to header
     $header = ConvertFrom-PodeJwtBase64Value -Value $parts[0]
     if ([string]::IsNullOrWhiteSpace($header.alg)) {
-        throw 'Invalid JWT header algorithm supplied'
+        # Invalid JWT header algorithm supplied
+        throw ($PodeLocale.invalidJwtHeaderAlgorithmSuppliedExceptionMessage)
     }
 
     # convert to payload
@@ -2184,15 +2301,18 @@ function ConvertFrom-PodeJwt {
     $isNoneAlg = ($header.alg -ieq 'none')
 
     if ([string]::IsNullOrWhiteSpace($signature) -and !$isNoneAlg) {
-        throw "No JWT signature supplied for $($header.alg)"
+        # No JWT signature supplied for {0}
+        throw  ($PodeLocale.noJwtSignatureForAlgorithmExceptionMessage -f $header.alg)
     }
 
     if (![string]::IsNullOrWhiteSpace($signature) -and $isNoneAlg) {
-        throw 'Expected no JWT signature to be supplied'
+        # Expected no JWT signature to be supplied
+        throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
     }
 
     if ($isNoneAlg -and ($null -ne $Secret) -and ($Secret.Length -gt 0)) {
-        throw "Expected a signed JWT, 'none' algorithm is not allowed"
+        # Expected no JWT signature to be supplied
+        throw ($PodeLocale.expectedNoJwtSignatureSuppliedExceptionMessage)
     }
 
     if ($isNoneAlg) {
@@ -2208,7 +2328,8 @@ function ConvertFrom-PodeJwt {
     $sig = New-PodeJwtSignature -Algorithm $header.alg -Token $sig -SecretBytes $Secret
 
     if ($sig -ne $parts[2]) {
-        throw 'Invalid JWT signature supplied'
+        # Invalid JWT signature supplied
+        throw ($PodeLocale.invalidJwtSignatureSuppliedExceptionMessage)
     }
 
     # it's valid return the payload!
@@ -2247,14 +2368,16 @@ function Test-PodeJwt {
     # validate expiry
     if (![string]::IsNullOrWhiteSpace($Payload.exp)) {
         if ($now -gt $unixStart.AddSeconds($Payload.exp)) {
-            throw 'The JWT has expired'
+            # The JWT has expired
+            throw ($PodeLocale.jwtExpiredExceptionMessage)
         }
     }
 
     # validate not-before
     if (![string]::IsNullOrWhiteSpace($Payload.nbf)) {
         if ($now -lt $unixStart.AddSeconds($Payload.nbf)) {
-            throw 'The JWT is not yet valid for use'
+            # The JWT is not yet valid for use
+            throw ($PodeLocale.jwtNotYetValidExceptionMessage)
         }
     }
 }
@@ -2357,54 +2480,69 @@ function ConvertFrom-PodeOIDCDiscovery {
         [switch]
         $UsePKCE
     )
-
-    # get the discovery doc
-    if (!$Url.EndsWith('/.well-known/openid-configuration')) {
-        $Url += '/.well-known/openid-configuration'
+    begin {
+        $pipelineItemCount = 0
     }
 
-    $config = Invoke-RestMethod -Method Get -Uri $Url
+    process {
 
-    # check it supports the code response_type
-    if ($config.response_types_supported -inotcontains 'code') {
-        throw "The OAuth2 provider does not support the 'code' response_type"
+        $pipelineItemCount++
     }
 
-    # can we have an InnerScheme?
-    if (($null -ne $InnerScheme) -and ($config.grant_types_supported -inotcontains 'password')) {
-        throw "The OAuth2 provider does not support the 'password' grant_type required by using an InnerScheme"
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        # get the discovery doc
+        if (!$Url.EndsWith('/.well-known/openid-configuration')) {
+            $Url += '/.well-known/openid-configuration'
+        }
+
+        $config = Invoke-RestMethod -Method Get -Uri $Url
+
+        # check it supports the code response_type
+        if ($config.response_types_supported -inotcontains 'code') {
+            # The OAuth2 provider does not support the 'code' response_type
+            throw ($PodeLocale.oauth2ProviderDoesNotSupportCodeResponseTypeExceptionMessage)
+        }
+
+        # can we have an InnerScheme?
+        if (($null -ne $InnerScheme) -and ($config.grant_types_supported -inotcontains 'password')) {
+            # The OAuth2 provider does not support the 'password' grant_type required by using an InnerScheme
+            throw ($PodeLocale.oauth2ProviderDoesNotSupportPasswordGrantTypeExceptionMessage)
+        }
+
+        # scopes
+        $scopes = $config.scopes_supported
+
+        if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
+            $scopes = @(foreach ($s in $Scope) {
+                    if ($s -iin $config.scopes_supported) {
+                        $s
+                    }
+                })
+        }
+
+        # pkce code challenge method
+        $codeMethod = 'S256'
+        if ($config.code_challenge_methods_supported -inotcontains $codeMethod) {
+            $codeMethod = 'plain'
+        }
+
+        return New-PodeAuthScheme `
+            -OAuth2 `
+            -ClientId $ClientId `
+            -ClientSecret $ClientSecret `
+            -AuthoriseUrl $config.authorization_endpoint `
+            -TokenUrl $config.token_endpoint `
+            -UserUrl $config.userinfo_endpoint `
+            -RedirectUrl $RedirectUrl `
+            -Scope $scopes `
+            -InnerScheme $InnerScheme `
+            -Middleware $Middleware `
+            -CodeChallengeMethod $codeMethod `
+            -UsePKCE:$UsePKCE
     }
-
-    # scopes
-    $scopes = $config.scopes_supported
-
-    if (($null -ne $Scope) -and ($Scope.Length -gt 0)) {
-        $scopes = @(foreach ($s in $Scope) {
-                if ($s -iin $config.scopes_supported) {
-                    $s
-                }
-            })
-    }
-
-    # pkce code challenge method
-    $codeMethod = 'S256'
-    if ($config.code_challenge_methods_supported -inotcontains $codeMethod) {
-        $codeMethod = 'plain'
-    }
-
-    return New-PodeAuthScheme `
-        -OAuth2 `
-        -ClientId $ClientId `
-        -ClientSecret $ClientSecret `
-        -AuthoriseUrl $config.authorization_endpoint `
-        -TokenUrl $config.token_endpoint `
-        -UserUrl $config.userinfo_endpoint `
-        -RedirectUrl $RedirectUrl `
-        -Scope $scopes `
-        -InnerScheme $InnerScheme `
-        -Middleware $Middleware `
-        -CodeChallengeMethod $codeMethod `
-        -UsePKCE:$UsePKCE
 }
 
 <#
@@ -2422,6 +2560,7 @@ if (Test-PodeAuthUser) { ... }
 #>
 function Test-PodeAuthUser {
     [CmdletBinding()]
+    [OutputType([boolean])]
     param(
         [switch]
         $IgnoreSession

@@ -59,18 +59,18 @@ function Start-PodeInternalServer {
         New-PodeAutoRestartServer
 
         # start the runspace pools for web, schedules, etc
-        New-PodeRunspacePools
-        Open-PodeRunspacePools
+        New-PodeRunspacePool
+        Open-PodeRunspacePool
 
         if (!$PodeContext.Server.IsServerless) {
             # start runspace for loggers
             Start-PodeLoggingRunspace
 
-            # start runspace for timers
-            Start-PodeTimerRunspace
-
             # start runspace for schedules
             Start-PodeScheduleRunspace
+
+            # start runspace for timers
+            Start-PodeTimerRunspace
 
             # start runspace for gui
             Start-PodeGuiRunspace
@@ -136,7 +136,7 @@ function Start-PodeInternalServer {
 
                 # errored?
                 if ($PodeContext.RunspacePools[$pool].State -ieq 'error') {
-                    throw "$($pool) RunspacePool failed to load"
+                    throw ($PodeLocale.runspacePoolFailedToLoadExceptionMessage -f $pool) #"$($pool) RunspacePool failed to load"
                 }
             }
         }
@@ -149,7 +149,9 @@ function Start-PodeInternalServer {
 
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
-            Write-PodeHost "Listening on the following $($endpoints.Length) endpoint(s) [$($PodeContext.Threads.General) thread(s)]:" -ForegroundColor Yellow
+
+            # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
+            Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $endpoints.Length, $PodeContext.Threads.General) -ForegroundColor Yellow
             $endpoints | ForEach-Object {
                 $flags = @()
                 if ($_.DualMode) {
@@ -171,28 +173,32 @@ function Start-PodeInternalServer {
                 if ( $bookmarks) {
                     Write-PodeHost
                     if (!$OpenAPIHeader) {
-                        Write-PodeHost 'OpenAPI Info:' -ForegroundColor Yellow
+                        # OpenAPI Info
+                        Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor Yellow
                         $OpenAPIHeader = $true
                     }
                     Write-PodeHost " '$key':" -ForegroundColor Yellow
 
                     if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
-                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        # Specification
+                        Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
                         foreach ($endpoint in   $bookmarks.route.Endpoint) {
                             Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor Yellow
                         }
-                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        # Documentation
+                        Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
                         foreach ($endpoint in   $bookmarks.route.Endpoint) {
                             Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor Yellow
                         }
                     }
                     else {
-                        Write-PodeHost '   - Specification:' -ForegroundColor Yellow
+                        # Specification
+                        Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
                         $endpoints | ForEach-Object {
                             $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
                             Write-PodeHost "     . $url" -ForegroundColor Yellow
                         }
-                        Write-PodeHost '   - Documentation:' -ForegroundColor Yellow
+                        Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
                         $endpoints | ForEach-Object {
                             $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
                             Write-PodeHost "     . $url" -ForegroundColor Yellow
@@ -211,7 +217,8 @@ function Start-PodeInternalServer {
 function Restart-PodeInternalServer {
     try {
         # inform restart
-        Write-PodeHost 'Restarting server...' -NoNewline -ForegroundColor Cyan
+        # Restarting server...
+        Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Cyan
 
         # run restart event hooks
         Invoke-PodeEvent -Type Restart
@@ -220,18 +227,18 @@ function Restart-PodeInternalServer {
         $PodeContext.Tokens.Cancellation.Cancel()
 
         # close all current runspaces
-        Close-PodeRunspaces -ClosePool
+        Close-PodeRunspace -ClosePool
 
         # remove all of the pode temp drives
-        Remove-PodePSDrives
+        Remove-PodePSDrive
 
         # clear-up modules
         $PodeContext.Server.Modules.Clear()
 
         # clear up timers, schedules and loggers
-        $PodeContext.Server.Routes | Clear-PodeHashtableInnerKeys
-        $PodeContext.Server.Handlers | Clear-PodeHashtableInnerKeys
-        $PodeContext.Server.Events | Clear-PodeHashtableInnerKeys
+        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Routes
+        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Handlers
+        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Events
 
         if ($null -ne $PodeContext.Server.Verbs) {
             $PodeContext.Server.Verbs.Clear()
@@ -247,7 +254,7 @@ function Restart-PodeInternalServer {
 
         # clear tasks
         $PodeContext.Tasks.Items.Clear()
-        $PodeContext.Tasks.Results.Clear()
+        $PodeContext.Tasks.Processes.Clear()
 
         # clear file watchers
         $PodeContext.Fim.Items.Clear()
@@ -264,7 +271,7 @@ function Restart-PodeInternalServer {
 
         # clear security headers
         $PodeContext.Server.Security.Headers.Clear()
-        $PodeContext.Server.Security.Cache | Clear-PodeHashtableInnerKeys
+        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Security.Cache
 
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
@@ -307,7 +314,7 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Cache.Storage.Clear()
 
         # clear up secret vaults/cache
-        Unregister-PodeSecretVaults -ThrowError
+        Unregister-PodeSecretVaultsInternal -ThrowError
         $PodeContext.Server.Secrets.Vaults.Clear()
         $PodeContext.Server.Secrets.Keys.Clear()
 
@@ -324,16 +331,16 @@ function Restart-PodeInternalServer {
 
         # recreate the session tokens
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        $PodeContext.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource
+        $PodeContext.Tokens.Cancellation = [System.Threading.CancellationTokenSource]::new()
 
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-        $PodeContext.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
+        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
         # done message
-        Write-PodeHost ' Done' -ForegroundColor Green
+        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++

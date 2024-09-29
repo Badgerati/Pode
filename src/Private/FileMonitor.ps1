@@ -9,15 +9,13 @@ function Start-PodeFileMonitor {
     $filter = '*.*'
 
     # setup the file monitor
-    $watcher = New-Object System.IO.FileSystemWatcher $folder, $filter -Property @{
-        IncludeSubdirectories = $true
-        NotifyFilter          = [System.IO.NotifyFilters]'FileName,LastWrite,CreationTime'
-    }
-
+    $watcher = [System.IO.FileSystemWatcher]::new($folder, $filter)
+    $watcher.IncludeSubdirectories = $true
+    $watcher.NotifyFilter = [System.IO.NotifyFilters]'FileName,LastWrite,CreationTime'
     $watcher.EnableRaisingEvents = $true
 
     # setup the monitor timer - only restart server after changes + 2s of no changes
-    $timer = New-Object System.Timers.Timer
+    $timer = [System.Timers.Timer]::new()
     $timer.AutoReset = $false
     $timer.Interval = 2000
 
@@ -68,10 +66,11 @@ function Start-PodeFileMonitor {
         # if enabled, show the files that triggered the restart
         if ($Event.MessageData.FileSettings.ShowFiles) {
             if (!$Event.MessageData.Quiet) {
-                Write-Host 'The following files have changed:' -ForegroundColor Magenta
+                # The following files have changed
+                Write-PodeHost $PodeLocale.filesHaveChangedMessage  -ForegroundColor Magenta
 
                 foreach ($file in $Event.MessageData.FileSettings.Files) {
-                    Write-Host "> $($file)" -ForegroundColor Magenta
+                    Write-PodeHost "> $($file)" -ForegroundColor Magenta
                 }
             }
 

@@ -70,10 +70,10 @@ function Add-PodeVerb {
     )
 
     # find placeholder parameters in verb (ie: COMMAND :parameter)
-    $Verb = Resolve-PodePlaceholders -Path $Verb
+    $Verb = Resolve-PodePlaceholder -Path $Verb
 
     # get endpoints from name
-    $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
+    $endpoints = Find-PodeEndpoint -EndpointName $EndpointName
 
     # ensure the verb doesn't already exist for each endpoint
     foreach ($_endpoint in $endpoints) {
@@ -82,7 +82,8 @@ function Add-PodeVerb {
 
     # if scriptblock and file path are all null/empty, error
     if ((Test-PodeIsEmpty $ScriptBlock) -and (Test-PodeIsEmpty $FilePath) -and !$Close -and !$UpgradeToSsl) {
-        throw "[Verb] $($Verb): No logic passed"
+        # [Verb] Verb: No logic passed
+        throw ($PodeLocale.verbNoLogicPassedExceptionMessage -f $Verb)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -146,7 +147,7 @@ function Remove-PodeVerb {
     )
 
     # ensure the verb placeholders are replaced
-    $Verb = Resolve-PodePlaceholders -Path $Verb
+    $Verb = Resolve-PodePlaceholder -Path $Verb
 
     # ensure verb does exist
     if (!$PodeContext.Server.Verbs.Contains($Verb)) {
@@ -175,6 +176,7 @@ Removes all added Verbs.
 Clear-PodeVerbs
 #>
 function Clear-PodeVerbs {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -217,7 +219,7 @@ function Get-PodeVerb {
 
     # if we have a verb, filter
     if (![string]::IsNullOrWhiteSpace($Verb)) {
-        $Verb = Resolve-PodePlaceholders -Path $Verb
+        $Verb = Resolve-PodePlaceholder -Path $Verb
         $verbs = $PodeContext.Server.Verbs[$Verb]
     }
     else {
@@ -260,6 +262,7 @@ Use-PodeVerbs
 Use-PodeVerbs -Path './my-verbs'
 #>
 function Use-PodeVerbs {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

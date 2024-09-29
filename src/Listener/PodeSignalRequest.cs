@@ -1,5 +1,7 @@
 using System;
 using System.Net.WebSockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -27,12 +29,12 @@ namespace Pode
 
         public override bool CloseImmediately
         {
-            get => (OpCode == PodeWsOpCode.Close);
+            get => OpCode == PodeWsOpCode.Close;
         }
 
         public override bool IsProcessable
         {
-            get => (!CloseImmediately && OpCode != PodeWsOpCode.Pong && OpCode != PodeWsOpCode.Ping && !string.IsNullOrEmpty(Body));
+            get => !CloseImmediately && OpCode != PodeWsOpCode.Pong && OpCode != PodeWsOpCode.Ping && !string.IsNullOrEmpty(Body);
         }
 
         public PodeSignalRequest(PodeHttpRequest request, PodeSignal signal)
@@ -42,7 +44,7 @@ namespace Pode
             IsKeepAlive = true;
             Type = PodeProtocolType.Ws;
 
-            var _proto = (IsSsl ? "wss" : "ws");
+            var _proto = IsSsl ? "wss" : "ws";
             Host = request.Host;
             Url = new Uri($"{_proto}://{request.Url.Authority}{request.Url.PathAndQuery}");
         }
@@ -52,7 +54,7 @@ namespace Pode
             return new PodeClientSignal(Signal, Body, Context.Listener);
         }
 
-        protected override bool Parse(byte[] bytes)
+        protected override async Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
         {
             // get the length and op-code
             var dataLength = bytes[1] - 128;
@@ -118,7 +120,7 @@ namespace Pode
 
                 // send back a pong
                 case PodeWsOpCode.Ping:
-                    Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Pong);
+                    await Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Pong).ConfigureAwait(false);
                     break;
             }
 
@@ -131,7 +133,7 @@ namespace Pode
             if (!IsDisposed)
             {
                 PodeHelpers.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
-                Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close);
+                Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close).Wait();
             }
 
             // remove client, and dispose

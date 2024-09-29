@@ -1,19 +1,21 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 Describe 'Find-PodeSchedule' {
     Context 'Invalid parameters supplied' {
         It 'Throw null name parameter error' {
-            { Find-PodeSchedule -Name $null } | Should -Throw -ExpectedMessage '*The argument is null or empty*'
+            { Find-PodeSchedule -Name $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Find-PodeSchedule'
         }
 
         It 'Throw empty name parameter error' {
-            { Find-PodeSchedule -Name ([string]::Empty) } | Should -Throw -ExpectedMessage '*The argument is null or empty*'
+            { Find-PodeSchedule -Name ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Find-PodeSchedule'
         }
     }
 
@@ -35,25 +37,27 @@ Describe 'Find-PodeSchedule' {
 
 Describe 'Add-PodeSchedule' {
     BeforeAll {
-        Mock 'ConvertFrom-PodeCronExpression' { @{} }
         Mock 'Get-PodeCronNextEarliestTrigger' { [datetime]::new(2020, 1, 1) }
     }
     It 'Throws error because schedule already exists' {
         $PodeContext = @{ 'Schedules' = @{ Items = @{ 'test' = $null }; } }
-        { Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock {} } | Should -Throw -ExpectedMessage '*already defined*'
+        $expectedMessage = ($PodeLocale.scheduleAlreadyDefinedExceptionMessage -f 'test' ).Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock {} } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
     }
 
     It 'Throws error because end time in the past' {
         $PodeContext = @{ 'Schedules' = @{ Items = @{} }; }
         $end = ([DateTime]::Now.AddHours(-1))
-        { Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock {} -EndTime $end } | Should -Throw -ExpectedMessage '*the EndTime value must be in the future*'
+        $expectedMessage = ($PodeLocale.timerParameterMustBeGreaterscheduleEndTimeMustBeInFutureExceptionMessageThanZeroExceptionMessage -f 'test' ).Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock {} -EndTime $end } | Should -Throw -ExpectedMessage $expectedMessage #'*the EndTime value must be in the future*'
     }
 
     It 'Throws error because start time is after end time' {
         $PodeContext = @{ 'Schedules' = @{ Items = @{} }; }
         $start = ([DateTime]::Now.AddHours(3))
         $end = ([DateTime]::Now.AddHours(1))
-        { Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock {} -StartTime $start -EndTime $end } | Should -Throw -ExpectedMessage '*starttime after the endtime*'
+        $expectedMessage = ($PodeLocale.scheduleStartTimeAfterEndTimeExceptionMessage -f 'test').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeSchedule -Name 'test' -Cron '@hourly' -ScriptBlock {} -StartTime $start -EndTime $end } | Should -Throw -ExpectedMessage $expectedMessage # [Schedule] {0}: Cannot have a 'StartTime' after the 'EndTime'
     }
 
     It 'Adds new schedule supplying everything' {
@@ -125,7 +129,7 @@ Describe 'Add-PodeSchedule' {
         $start = ([DateTime]::Now.AddHours(3))
         $end = ([DateTime]::Now.AddHours(5))
 
-        Add-PodeSchedule -Name 'test' -Cron @('@minutely', '@hourly') -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
+        Add-PodeSchedule -Name 'test' -Cron @('@minutely', '@hourly') -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end 
 
         $schedule = $PodeContext.Schedules.Items['test']
         $schedule | Should -Not -Be $null

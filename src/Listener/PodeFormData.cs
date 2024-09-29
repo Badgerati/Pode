@@ -11,15 +11,17 @@ namespace Pode
         public string[] Values => _values.ToArray();
 
         public int Count => _values.Count;
-        public bool IsSingular => (_values.Count == 1);
-        public bool IsEmpty => (_values.Count == 0);
+        public bool IsSingular => _values.Count == 1;
+        public bool IsEmpty => _values.Count == 0;
 
         public PodeFormData(string key, string value)
         {
             Key = key;
 
-            _values = new List<string>();
-            _values.Add(value);
+            _values = new List<string>
+            {
+                value
+            };
         }
 
         public void AddValue(string value)

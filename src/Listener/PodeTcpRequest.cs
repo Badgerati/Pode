@@ -1,4 +1,6 @@
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -22,11 +24,11 @@ namespace Pode
 
         public override bool CloseImmediately
         {
-            get => (IsDisposed || RawBody == default(byte[]) || RawBody.Length == 0);
+            get => IsDisposed || RawBody == default(byte[]) || RawBody.Length == 0;
         }
 
-        public PodeTcpRequest(Socket socket, PodeSocket podeSocket)
-            : base(socket, podeSocket)
+        public PodeTcpRequest(Socket socket, PodeSocket podeSocket, PodeContext context)
+            : base(socket, podeSocket, context)
         {
             IsKeepAlive = true;
             Type = PodeProtocolType.Tcp;
@@ -43,31 +45,30 @@ namespace Pode
             // expect to end with <CR><LF>?
             if (Context.PodeSocket.CRLFMessageEnd)
             {
-                return (bytes[bytes.Length - 2] == (byte)13
-                    && bytes[bytes.Length - 1] == (byte)10);
+                return bytes[bytes.Length - 2] == PodeHelpers.CARRIAGE_RETURN_BYTE
+                    && bytes[bytes.Length - 1] == PodeHelpers.NEW_LINE_BYTE;
             }
 
             return true;
         }
 
-        protected override bool Parse(byte[] bytes)
+        protected override Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
         {
+            // check if the request is cancelled
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // set the raw body
             RawBody = bytes;
 
-            // if there are no bytes, return (0 bytes read means we can close the socket)
-            if (bytes.Length == 0)
-            {
-                return true;
-            }
-
-            return true;
+            // return that we're done
+            return Task.FromResult(true);
         }
 
         public void Reset()
         {
             PodeHelpers.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
             _body = string.Empty;
-            RawBody = default(byte[]);
+            RawBody = default;
         }
 
         public void Close()
@@ -77,7 +78,7 @@ namespace Pode
 
         public override void Dispose()
         {
-            RawBody = default(byte[]);
+            RawBody = default;
             _body = string.Empty;
             base.Dispose();
         }

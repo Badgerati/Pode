@@ -67,30 +67,31 @@ function New-PodeContext {
     }
 
     # basic context object
-    $ctx = New-Object -TypeName psobject |
-        Add-Member -MemberType NoteProperty -Name Threads -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Timers -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Schedules -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Tasks -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name RunspacePools -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Runspaces -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name RunspaceState -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Tokens -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $null -PassThru |
-        Add-Member -MemberType NoteProperty -Name Threading -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Server -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Metrics -Value @{} -PassThru |
-        Add-Member -MemberType NoteProperty -Name Listeners -Value @() -PassThru |
-        Add-Member -MemberType NoteProperty -Name Receivers -Value @() -PassThru |
-        Add-Member -MemberType NoteProperty -Name Watchers -Value @() -PassThru |
-        Add-Member -MemberType NoteProperty -Name Fim -Value @{} -PassThru
+    $ctx = [PSCustomObject]@{
+        Threads       = @{}
+        Timers        = @{}
+        Schedules     = @{}
+        Tasks         = @{}
+        RunspacePools = $null
+        Runspaces     = $null
+        RunspaceState = $null
+        Tokens        = @{}
+        LogsToProcess = $null
+        Threading     = @{}
+        Server        = @{}
+        Metrics       = @{}
+        Listeners     = @()
+        Receivers     = @()
+        Watchers      = @()
+        Fim           = @{}
+    }
 
     # set the server name, logic and root, and other basic properties
     $ctx.Server.Name = $Name
     $ctx.Server.Logic = $ScriptBlock
     $ctx.Server.LogicPath = $FilePath
     $ctx.Server.Interval = $Interval
-    $ctx.Server.PodeModule = (Get-PodeModuleDetails)
+    $ctx.Server.PodeModule = (Get-PodeModuleInfo)
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
@@ -116,9 +117,9 @@ function New-PodeContext {
     }
 
     $ctx.Tasks = @{
-        Enabled = ($EnablePool -icontains 'tasks')
-        Items   = @{}
-        Results = @{}
+        Enabled   = ($EnablePool -icontains 'tasks')
+        Items     = @{}
+        Processes = @{}
     }
 
     $ctx.Fim = @{
@@ -142,12 +143,13 @@ function New-PodeContext {
         Files      = 1
         Tasks      = 2
         WebSockets = 2
+        Timers     = 1
     }
 
     # set socket details for pode server
     $ctx.Server.Sockets = @{
         Ssl            = @{
-            Protocols = Get-PodeDefaultSslProtocols
+            Protocols = Get-PodeDefaultSslProtocol
         }
         ReceiveTimeout = 100
     }
@@ -275,7 +277,7 @@ function New-PodeContext {
     $ctx.Server.EndpointsMap = @{}
 
     # general encoding for the server
-    $ctx.Server.Encoding = New-Object System.Text.UTF8Encoding
+    $ctx.Server.Encoding = [System.Text.UTF8Encoding]::new()
 
     # setup gui details
     $ctx.Server.Gui = @{}
@@ -373,7 +375,7 @@ function New-PodeContext {
     $ctx.Server.Sessions = @{}
 
     #OpenApi Definition Tag
-    $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Configuration.Web.OpenApi.DefaultDefinitionTag
+    $ctx.Server.OpenAPI = Initialize-PodeOpenApiTable -DefaultDefinitionTag $ctx.Server.Web.OpenApi.DefaultDefinitionTag
 
     # server metrics
     $ctx.Metrics = @{
@@ -402,12 +404,12 @@ function New-PodeContext {
 
     # create new cancellation tokens
     $ctx.Tokens = @{
-        Cancellation = New-Object System.Threading.CancellationTokenSource
-        Restart      = New-Object System.Threading.CancellationTokenSource
+        Cancellation = [System.Threading.CancellationTokenSource]::new()
+        Restart      = [System.Threading.CancellationTokenSource]::new()
     }
 
     # requests that should be logged
-    $ctx.LogsToProcess = New-Object System.Collections.ArrayList
+    $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
 
     # middleware that needs to run
     $ctx.Server.Middleware = @()
@@ -432,6 +434,7 @@ function New-PodeContext {
         Gui       = $null
         Tasks     = $null
         Files     = $null
+        Timers    = $null
     }
 
     # threading locks, etc.
@@ -493,9 +496,10 @@ function New-PodeRunspaceState {
     $session = New-PodeStateContext -Context $PodeContext
 
     $variables = @(
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PodeContext', $session, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'Console', $Host, $null),
-        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'PODE_SCOPE_RUNSPACE', $true, $null)
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeLocale', $PodeLocale, $null),
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PodeContext', $session, $null),
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('Console', $Host, $null),
+        [System.Management.Automation.Runspaces.SessionStateVariableEntry]::new('PODE_SCOPE_RUNSPACE', $true, $null)
     )
 
     foreach ($var in $variables) {
@@ -505,7 +509,17 @@ function New-PodeRunspaceState {
     $PodeContext.RunspaceState = $state
 }
 
-function New-PodeRunspacePools {
+<#
+.SYNOPSIS
+    Creates and initializes runspace pools for various Pode components.
+
+.DESCRIPTION
+    This function sets up runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It dynamically adjusts the thread counts based on the presence of specific components and their configuration.
+
+.OUTPUTS
+    Initializes and configures runspace pools for various Pode components.
+#>
+function New-PodeRunspacePool {
     if ($PodeContext.Server.IsServerless) {
         return
     }
@@ -513,14 +527,9 @@ function New-PodeRunspacePools {
     # setup main runspace pool
     $threadsCounts = @{
         Default  = 3
-        Timer    = 1
         Log      = 1
         Schedule = 1
         Misc     = 1
-    }
-
-    if (!(Test-PodeTimersExist)) {
-        $threadsCounts.Timer = 0
     }
 
     if (!(Test-PodeSchedulesExist)) {
@@ -539,7 +548,7 @@ function New-PodeRunspacePools {
     }
 
     # web runspace - if we have any http/s endpoints
-    if (Test-PodeEndpoints -Type Http) {
+    if (Test-PodeEndpointByProtocolType -Type Http) {
         $PodeContext.RunspacePools.Web = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -547,7 +556,7 @@ function New-PodeRunspacePools {
     }
 
     # smtp runspace - if we have any smtp endpoints
-    if (Test-PodeEndpoints -Type Smtp) {
+    if (Test-PodeEndpointByProtocolType -Type Smtp) {
         $PodeContext.RunspacePools.Smtp = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -555,7 +564,7 @@ function New-PodeRunspacePools {
     }
 
     # tcp runspace - if we have any tcp endpoints
-    if (Test-PodeEndpoints -Type Tcp) {
+    if (Test-PodeEndpointByProtocolType -Type Tcp) {
         $PodeContext.RunspacePools.Tcp = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 1), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -563,7 +572,7 @@ function New-PodeRunspacePools {
     }
 
     # signals runspace - if we have any ws/s endpoints
-    if (Test-PodeEndpoints -Type Ws) {
+    if (Test-PodeEndpointByProtocolType -Type Ws) {
         $PodeContext.RunspacePools.Signals = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, ($PodeContext.Threads.General + 2), $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
@@ -578,6 +587,14 @@ function New-PodeRunspacePools {
         }
 
         New-PodeWebSocketReceiver
+    }
+
+    # setup timer runspace pool -if we have any timers
+    if (Test-PodeTimersExist) {
+        $PodeContext.RunspacePools.Timers = @{
+            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads.Timers, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
     }
 
     # setup schedule runspace pool -if we have any schedules
@@ -615,7 +632,17 @@ function New-PodeRunspacePools {
     }
 }
 
-function Open-PodeRunspacePools {
+<#
+.SYNOPSIS
+    Opens and initializes runspace pools for various Pode components.
+
+.DESCRIPTION
+    This function opens and initializes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It asynchronously opens the pools and waits for them to be in the 'Opened' state. If any pool fails to open, it reports an error.
+
+.OUTPUTS
+    Opens and initializes runspace pools for various Pode components.
+#>
+function Open-PodeRunspacePool {
     if ($PodeContext.Server.IsServerless) {
         return
     }
@@ -666,14 +693,24 @@ function Open-PodeRunspacePools {
 
         if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
             $item.Pool.EndOpen($item.Result) | Out-Default
-            throw "Failed to open RunspacePool: $($key)"
+            throw ($PodeLocale.failedToOpenRunspacePoolExceptionMessage -f $key) #"Failed to open RunspacePool: $($key)"
         }
     }
 
     Write-Verbose "RunspacePools opened [duration: $(([datetime]::Now - $start).TotalSeconds)s]"
 }
 
-function Close-PodeRunspacePools {
+<#
+.SYNOPSIS
+    Closes and disposes runspace pools for various Pode components.
+
+.DESCRIPTION
+    This function closes and disposes runspace pools for different Pode components, such as timers, schedules, web endpoints, web sockets, SMTP, TCP, and more. It asynchronously closes the pools and waits for them to be in the 'Closed' state. If any pool fails to close, it reports an error.
+
+.OUTPUTS
+    Closes and disposes runspace pools for various Pode components.
+#>
+function Close-PodeRunspacePool {
     if ($PodeContext.Server.IsServerless -or ($null -eq $PodeContext.RunspacePools)) {
         return
     }
@@ -722,7 +759,8 @@ function Close-PodeRunspacePools {
 
         if ($item.Pool.RunspacePoolStateInfo.State -ieq 'broken') {
             $item.Pool.EndClose($item.Result) | Out-Default
-            throw "Failed to close RunspacePool: $($key)"
+            # Failed to close RunspacePool
+            throw ($PodeLocale.failedToCloseRunspacePoolExceptionMessage -f $key)
         }
     }
 
@@ -746,18 +784,19 @@ function New-PodeStateContext {
         $Context
     )
 
-    return (New-Object -TypeName psobject |
-            Add-Member -MemberType NoteProperty -Name Threads -Value $Context.Threads -PassThru |
-            Add-Member -MemberType NoteProperty -Name Timers -Value $Context.Timers -PassThru |
-            Add-Member -MemberType NoteProperty -Name Schedules -Value $Context.Schedules -PassThru |
-            Add-Member -MemberType NoteProperty -Name Tasks -Value $Context.Tasks -PassThru |
-            Add-Member -MemberType NoteProperty -Name Fim -Value $Context.Fim -PassThru |
-            Add-Member -MemberType NoteProperty -Name RunspacePools -Value $Context.RunspacePools -PassThru |
-            Add-Member -MemberType NoteProperty -Name Tokens -Value $Context.Tokens -PassThru |
-            Add-Member -MemberType NoteProperty -Name Metrics -Value $Context.Metrics -PassThru |
-            Add-Member -MemberType NoteProperty -Name LogsToProcess -Value $Context.LogsToProcess -PassThru |
-            Add-Member -MemberType NoteProperty -Name Threading -Value $Context.Threading -PassThru |
-            Add-Member -MemberType NoteProperty -Name Server -Value $Context.Server -PassThru)
+    return [PSCustomObject]@{
+        Threads       = $Context.Threads
+        Timers        = $Context.Timers
+        Schedules     = $Context.Schedules
+        Tasks         = $Context.Tasks
+        Fim           = $Context.Fim
+        RunspacePools = $Context.RunspacePools
+        Tokens        = $Context.Tokens
+        Metrics       = $Context.Metrics
+        LogsToProcess = $Context.LogsToProcess
+        Threading     = $Context.Threading
+        Server        = $Context.Server
+    }
 }
 
 function Open-PodeConfiguration {
@@ -824,7 +863,7 @@ function Set-PodeServerConfiguration {
 
     # sockets
     if (!(Test-PodeIsEmpty $Configuration.Ssl.Protocols)) {
-        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $Configuration.Ssl.Protocols)
+        $Context.Server.Sockets.Ssl.Protocols = (ConvertTo-PodeSslProtocol -Protocol $Configuration.Ssl.Protocols)
     }
 
     if ([int]$Configuration.ReceiveTimeout -gt 0) {
@@ -904,6 +943,13 @@ function Set-PodeWebConfiguration {
         Compression      = @{
             Enabled = [bool]$Configuration.Compression.Enable
         }
+        OpenApi          = @{
+            DefaultDefinitionTag = [string](Protect-PodeValue -Value $Configuration.OpenApi.DefaultDefinitionTag -Default 'default')
+        }
+    }
+
+    if ($Configuration.OpenApi -and $Configuration.OpenApi.ContainsKey('UsePodeYamlInternal')) {
+        $Context.Server.Web.OpenApi.UsePodeYamlInternal = $Configuration.OpenApi.UsePodeYamlInternal
     }
 
     # setup content type route patterns for forced content types
@@ -929,6 +975,9 @@ function Set-PodeWebConfiguration {
 }
 
 function New-PodeAutoRestartServer {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
+    [CmdletBinding()]
+    param()
     # don't configure if not supplied, or running as serverless
     $config = (Get-PodeConfig)
     if (($null -eq $config) -or ($null -eq $config.Server.Restart) -or $PodeContext.Server.IsServerless) {
@@ -969,7 +1018,18 @@ function New-PodeAutoRestartServer {
     }
 }
 
-function Set-PodeOutputVariables {
+<#
+.SYNOPSIS
+    Sets global output variables based on the Pode server context.
+
+.DESCRIPTION
+    This function sets global output variables based on the Pode server context. It retrieves output variables from the server context and assigns them as global variables. These output variables can be accessed and used in other parts of your code.
+
+.OUTPUTS
+    Sets global output variables based on the Pode server context.
+
+#>
+function Set-PodeOutputVariable {
     if (Test-PodeIsEmpty $PodeContext.Server.Output.Variables) {
         return
     }

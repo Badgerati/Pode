@@ -130,109 +130,130 @@ function Start-PodeServer {
         [switch]
         $EnableBreakpoints
     )
-
-    # ensure the session is clean
-    $PodeContext = $null
-    $ShowDoneMessage = $true
-
-    try {
-        # if we have a filepath, resolve it - and extract a root path from it
-        if ($PSCmdlet.ParameterSetName -ieq 'file') {
-            $FilePath = Get-PodeRelativePath -Path $FilePath -Resolve -TestPath -JoinRoot -RootPath $MyInvocation.PSScriptRoot
-
-            # if not already supplied, set root path
-            if ([string]::IsNullOrWhiteSpace($RootPath)) {
-                if ($CurrentPath) {
-                    $RootPath = $PWD.Path
-                }
-                else {
-                    $RootPath = Split-Path -Parent -Path $FilePath
-                }
-            }
-        }
-
-        # configure the server's root path
-        if (!(Test-PodeIsEmpty $RootPath)) {
-            $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
-        }
-
-        # create main context object
-        $PodeContext = New-PodeContext `
-            -ScriptBlock $ScriptBlock `
-            -FilePath $FilePath `
-            -Threads $Threads `
-            -Interval $Interval `
-            -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-            -ServerlessType $ServerlessType `
-            -ListenerType $ListenerType `
-            -EnablePool $EnablePool `
-            -StatusPageExceptions $StatusPageExceptions `
-            -DisableTermination:$DisableTermination `
-            -Quiet:$Quiet `
-            -EnableBreakpoints:$EnableBreakpoints
-
-        # set it so ctrl-c can terminate, unless serverless/iis, or disabled
-        if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {
-            [Console]::TreatControlCAsInput = $true
-        }
-
-        # start the file monitor for interally restarting
-        Start-PodeFileMonitor
-
-        # start the server
-        Start-PodeInternalServer -Request $Request -Browse:$Browse
-
-        # at this point, if it's just a one-one off script, return
-        if (!(Test-PodeServerKeepOpen)) {
-            return
-        }
-
-        # sit here waiting for termination/cancellation, or to restart the server
-        while (!(Test-PodeTerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
-            Start-Sleep -Seconds 1
-
-            # get the next key presses
-            $key = Get-PodeConsoleKey
-
-            # check for internal restart
-            if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
-                Restart-PodeInternalServer
-            }
-
-            # check for open browser
-            if (Test-PodeOpenBrowserPressed -Key $key) {
-                Invoke-PodeEvent -Type Browser
-                Start-Process (Get-PodeEndpointUrl)
-            }
-        }
-
-        if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Shutdown) {
-            Write-PodeHost '(IIS Shutdown) ' -NoNewline -ForegroundColor Yellow
-        }
-
-        Write-PodeHost 'Terminating...' -NoNewline -ForegroundColor Yellow
-        Invoke-PodeEvent -Type Terminate
-        $PodeContext.Tokens.Cancellation.Cancel()
+    begin {
+        $pipelineItemCount = 0
     }
-    catch {
-        Invoke-PodeEvent -Type Crash
-        $ShowDoneMessage = $false
-        throw
+
+    process {
+        $pipelineItemCount++
     }
-    finally {
-        Invoke-PodeEvent -Type Stop
 
-        # set output values
-        Set-PodeOutputVariables
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }    # Store the name of the current runspace
+        $previousRunspaceName = Get-PodeCurrentRunspaceName
+        # Sets the name of the current runspace
+        Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
-        # unregister secret vaults
-        Unregister-PodeSecretVaults
-
-        # clean the runspaces and tokens
-        Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
-
-        # clean the session
+        # ensure the session is clean
         $PodeContext = $null
+        $ShowDoneMessage = $true
+
+        try {
+            # if we have a filepath, resolve it - and extract a root path from it
+            if ($PSCmdlet.ParameterSetName -ieq 'file') {
+                $FilePath = Get-PodeRelativePath -Path $FilePath -Resolve -TestPath -JoinRoot -RootPath $MyInvocation.PSScriptRoot
+
+                # if not already supplied, set root path
+                if ([string]::IsNullOrWhiteSpace($RootPath)) {
+                    if ($CurrentPath) {
+                        $RootPath = $PWD.Path
+                    }
+                    else {
+                        $RootPath = Split-Path -Parent -Path $FilePath
+                    }
+                }
+            }
+
+            # configure the server's root path
+            if (!(Test-PodeIsEmpty $RootPath)) {
+                $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
+            }
+
+            # create main context object
+            $PodeContext = New-PodeContext `
+                -ScriptBlock $ScriptBlock `
+                -FilePath $FilePath `
+                -Threads $Threads `
+                -Interval $Interval `
+                -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
+                -ServerlessType $ServerlessType `
+                -ListenerType $ListenerType `
+                -EnablePool $EnablePool `
+                -StatusPageExceptions $StatusPageExceptions `
+                -DisableTermination:$DisableTermination `
+                -Quiet:$Quiet `
+                -EnableBreakpoints:$EnableBreakpoints
+
+            # set it so ctrl-c can terminate, unless serverless/iis, or disabled
+            if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {
+                [Console]::TreatControlCAsInput = $true
+            }
+
+            # start the file monitor for interally restarting
+            Start-PodeFileMonitor
+
+            # start the server
+            Start-PodeInternalServer -Request $Request -Browse:$Browse
+
+            # at this point, if it's just a one-one off script, return
+            if (!(Test-PodeServerKeepOpen)) {
+                return
+            }
+
+            # sit here waiting for termination/cancellation, or to restart the server
+            while (!(Test-PodeTerminationPressed -Key $key) -and !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
+                Start-Sleep -Seconds 1
+
+                # get the next key presses
+                $key = Get-PodeConsoleKey
+
+                # check for internal restart
+                if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
+                    Restart-PodeInternalServer
+                }
+
+                # check for open browser
+                if (Test-PodeOpenBrowserPressed -Key $key) {
+                    Invoke-PodeEvent -Type Browser
+                    Start-Process (Get-PodeEndpointUrl)
+                }
+            }
+
+            if ($PodeContext.Server.IsIIS -and $PodeContext.Server.IIS.Shutdown) {
+                # (IIS Shutdown)
+                Write-PodeHost $PodeLocale.iisShutdownMessage -NoNewLine -ForegroundColor Yellow
+                Write-PodeHost ' ' -NoNewLine
+            }
+            # Terminating...
+            Write-PodeHost $PodeLocale.terminatingMessage -NoNewLine -ForegroundColor Yellow
+            Invoke-PodeEvent -Type Terminate
+            $PodeContext.Tokens.Cancellation.Cancel()
+        }
+        catch {
+            Invoke-PodeEvent -Type Crash
+            $ShowDoneMessage = $false
+            throw
+        }
+        finally {
+            Invoke-PodeEvent -Type Stop
+
+            # set output values
+            Set-PodeOutputVariable
+
+            # unregister secret vaults
+            Unregister-PodeSecretVaultsInternal
+
+            # clean the runspaces and tokens
+            Close-PodeServerInternal -ShowDoneMessage:$ShowDoneMessage
+
+            # clean the session
+            $PodeContext = $null
+
+            # Restore the name of the current runspace
+            Set-PodeCurrentRunspaceName -Name $previousRunspaceName
+        }
     }
 }
 
@@ -448,6 +469,7 @@ pode build
 pode start
 #>
 function Pode {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -490,7 +512,7 @@ function Pode {
     # quick check to see if the data is required
     if ($Action -ine 'init') {
         if ($null -eq $data) {
-            Write-Host 'package.json file not found' -ForegroundColor Red
+            Write-PodeHost 'package.json file not found' -ForegroundColor Red
             return
         }
         else {
@@ -501,14 +523,14 @@ function Pode {
             }
 
             if ([string]::IsNullOrWhiteSpace($actionScript) -and $Action -ine 'install') {
-                Write-Host "package.json does not contain a script for the $($Action) action" -ForegroundColor Yellow
+                Write-PodeHost "package.json does not contain a script for the $($Action) action" -ForegroundColor Yellow
                 return
             }
         }
     }
     else {
         if ($null -ne $data) {
-            Write-Host 'package.json already exists' -ForegroundColor Yellow
+            Write-PodeHost 'package.json already exists' -ForegroundColor Yellow
             return
         }
     }
@@ -532,7 +554,7 @@ function Pode {
             if (![string]::IsNullOrWhiteSpace($v)) { $map.license = $v }
 
             $map | ConvertTo-Json -Depth 10 | Out-File -FilePath $file -Encoding utf8 -Force
-            Write-Host 'Success, saved package.json' -ForegroundColor Green
+            Write-PodeHost 'Success, saved package.json' -ForegroundColor Green
         }
 
         'test' {
@@ -545,10 +567,10 @@ function Pode {
 
         'install' {
             if ($Dev) {
-                Install-PodeLocalModules -Modules $data.devModules
+                Install-PodeLocalModule -Module $data.devModules
             }
 
-            Install-PodeLocalModules -Modules $data.modules
+            Install-PodeLocalModule -Module $data.modules
             Invoke-PodePackageScript -ActionScript $actionScript
         }
 
@@ -636,52 +658,68 @@ function Show-PodeGui {
         [switch]
         $HideFromTaskbar
     )
-
-    # error if serverless
-    Test-PodeIsServerless -FunctionName 'Show-PodeGui' -ThrowError
-
-    # only valid for Windows PowerShell
-    if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
-        throw 'Show-PodeGui is currently only available for Windows PowerShell, and PowerShell 7+ on Windows'
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # enable the gui and set general settings
-    $PodeContext.Server.Gui.Enabled = $true
-    $PodeContext.Server.Gui.Title = $Title
-    $PodeContext.Server.Gui.ShowInTaskbar = !$HideFromTaskbar
-    $PodeContext.Server.Gui.WindowState = $WindowState
-    $PodeContext.Server.Gui.WindowStyle = $WindowStyle
-    $PodeContext.Server.Gui.ResizeMode = $ResizeMode
+    process {
 
-    # set the window's icon path
-    if (![string]::IsNullOrWhiteSpace($Icon)) {
-        $PodeContext.Server.Gui.Icon = Get-PodeRelativePath -Path $Icon -JoinRoot -Resolve
-        if (!(Test-Path $PodeContext.Server.Gui.Icon)) {
-            throw "Path to icon for GUI does not exist: $($PodeContext.Server.Gui.Icon)"
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
-    }
+        # error if serverless
+        Test-PodeIsServerless -FunctionName 'Show-PodeGui' -ThrowError
 
-    # set the height of the window
-    $PodeContext.Server.Gui.Height = $Height
-    if ($PodeContext.Server.Gui.Height -le 0) {
-        $PodeContext.Server.Gui.Height = 'auto'
-    }
-
-    # set the width of the window
-    $PodeContext.Server.Gui.Width = $Width
-    if ($PodeContext.Server.Gui.Width -le 0) {
-        $PodeContext.Server.Gui.Width = 'auto'
-    }
-
-    # set the gui to use a specific listener
-    $PodeContext.Server.Gui.EndpointName = $EndpointName
-
-    if (![string]::IsNullOrWhiteSpace($EndpointName)) {
-        if (!$PodeContext.Server.Endpoints.ContainsKey($EndpointName)) {
-            throw "Endpoint with name '$($EndpointName)' does not exist"
+        # only valid for Windows PowerShell
+        if ((Test-PodeIsPSCore) -and ($PSVersionTable.PSVersion.Major -eq 6)) {
+            # Show-PodeGui is currently only available for Windows PowerShell and PowerShell 7+ on Windows
+            throw ($PodeLocale.showPodeGuiOnlyAvailableOnWindowsExceptionMessage)
         }
 
-        $PodeContext.Server.Gui.Endpoint = $PodeContext.Server.Endpoints[$EndpointName]
+        # enable the gui and set general settings
+        $PodeContext.Server.Gui.Enabled = $true
+        $PodeContext.Server.Gui.Title = $Title
+        $PodeContext.Server.Gui.ShowInTaskbar = !$HideFromTaskbar
+        $PodeContext.Server.Gui.WindowState = $WindowState
+        $PodeContext.Server.Gui.WindowStyle = $WindowStyle
+        $PodeContext.Server.Gui.ResizeMode = $ResizeMode
+
+        # set the window's icon path
+        if (![string]::IsNullOrWhiteSpace($Icon)) {
+            $PodeContext.Server.Gui.Icon = Get-PodeRelativePath -Path $Icon -JoinRoot -Resolve
+            if (!(Test-Path $PodeContext.Server.Gui.Icon)) {
+                # Path to icon for GUI does not exist
+                throw ($PodeLocale.pathToIconForGuiDoesNotExistExceptionMessage -f $PodeContext.Server.Gui.Icon)
+            }
+        }
+
+        # set the height of the window
+        $PodeContext.Server.Gui.Height = $Height
+        if ($PodeContext.Server.Gui.Height -le 0) {
+            $PodeContext.Server.Gui.Height = 'auto'
+        }
+
+        # set the width of the window
+        $PodeContext.Server.Gui.Width = $Width
+        if ($PodeContext.Server.Gui.Width -le 0) {
+            $PodeContext.Server.Gui.Width = 'auto'
+        }
+
+        # set the gui to use a specific listener
+        $PodeContext.Server.Gui.EndpointName = $EndpointName
+
+        if (![string]::IsNullOrWhiteSpace($EndpointName)) {
+            if (!$PodeContext.Server.Endpoints.ContainsKey($EndpointName)) {
+                # Endpoint with name '$EndpointName' does not exist.
+                throw ($PodeLocale.endpointNameNotExistExceptionMessage -f $EndpointName)
+            }
+
+            $PodeContext.Server.Gui.Endpoint = $PodeContext.Server.Endpoints[$EndpointName]
+        }
     }
 }
 
@@ -902,7 +940,8 @@ function Add-PodeEndpoint {
 
     # if RedirectTo is supplied, then a Name is mandatory
     if (![string]::IsNullOrWhiteSpace($RedirectTo) -and [string]::IsNullOrWhiteSpace($Name)) {
-        throw 'A Name is required for the endpoint if the RedirectTo parameter is supplied'
+        # A Name is required for the endpoint if the RedirectTo parameter is supplied
+        throw ($PodeLocale.nameRequiredForEndpointIfRedirectToSuppliedExceptionMessage)
     }
 
     # get the type of endpoint
@@ -928,7 +967,8 @@ function Add-PodeEndpoint {
 
     # parse the endpoint for host/port info
     if (![string]::IsNullOrWhiteSpace($Hostname) -and !(Test-PodeHostname -Hostname $Hostname)) {
-        throw "Invalid hostname supplied: $($Hostname)"
+        # Invalid hostname supplied
+        throw ($PodeLocale.invalidHostnameSuppliedExceptionMessage -f $Hostname)
     }
 
     if ((Test-PodeHostname -Hostname $Address) -and ($Address -inotin @('localhost', 'all'))) {
@@ -948,27 +988,32 @@ function Add-PodeEndpoint {
     }
 
     if ($PodeContext.Server.Endpoints.ContainsKey($Name)) {
-        throw "An endpoint with the name '$($Name)' has already been defined"
+        # An endpoint named has already been defined
+        throw ($PodeLocale.endpointAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # protocol must be https for client certs, or hosted behind a proxy like iis
     if (($Protocol -ine 'https') -and !(Test-PodeIsHosted) -and $AllowClientCertificate) {
-        throw 'Client certificates are only supported on HTTPS endpoints'
+        # Client certificates are only supported on HTTPS endpoints
+        throw ($PodeLocale.clientCertificatesOnlySupportedOnHttpsEndpointsExceptionMessage)
     }
 
     # explicit tls is only supported for smtp/tcp
     if (($type -inotin @('smtp', 'tcp')) -and ($TlsMode -ieq 'explicit')) {
-        throw 'The Explicit TLS mode is only supported on SMTPS and TCPS endpoints'
+        # The Explicit TLS mode is only supported on SMTPS and TCPS endpoints
+        throw ($PodeLocale.explicitTlsModeOnlySupportedOnSmtpsTcpsEndpointsExceptionMessage)
     }
 
     # ack message is only for smtp/tcp
     if (($type -inotin @('smtp', 'tcp')) -and ![string]::IsNullOrEmpty($Acknowledge)) {
-        throw 'The Acknowledge message is only supported on SMTP and TCP endpoints'
+        # The Acknowledge message is only supported on SMTP and TCP endpoints
+        throw ($PodeLocale.acknowledgeMessageOnlySupportedOnSmtpTcpEndpointsExceptionMessage)
     }
 
     # crlf message end is only for tcp
     if (($type -ine 'tcp') -and $CRLFMessageEnd) {
-        throw 'The CRLF message end check is only supported on TCP endpoints'
+        # The CRLF message end check is only supported on TCP endpoints
+        throw ($PodeLocale.crlfMessageEndCheckOnlySupportedOnTcpEndpointsExceptionMessage)
     }
 
     # new endpoint object
@@ -1007,7 +1052,7 @@ function Add-PodeEndpoint {
 
     # set ssl protocols
     if (!(Test-PodeIsEmpty $SslProtocol)) {
-        $obj.Ssl.Protocols = (ConvertTo-PodeSslProtocols -Protocols $SslProtocol)
+        $obj.Ssl.Protocols = (ConvertTo-PodeSslProtocol -Protocol $SslProtocol)
     }
 
     # set the ip for the context (force to localhost for IIS)
@@ -1041,7 +1086,8 @@ function Add-PodeEndpoint {
 
     # if the address is non-local, then check admin privileges
     if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeIsAdminUser)) {
-        throw 'Must be running with administrator priviledges to listen on non-localhost addresses'
+        # Must be running with administrator privileges to listen on non-localhost addresses
+        throw ($PodeLocale.mustBeRunningWithAdminPrivilegesExceptionMessage)
     }
 
     # has this endpoint been added before? (for http/https we can just not add it again)
@@ -1053,7 +1099,8 @@ function Add-PodeEndpoint {
     if (!(Test-PodeIsHosted) -and ($PSCmdlet.ParameterSetName -ilike 'cert*')) {
         # fail if protocol is not https
         if (@('https', 'wss', 'smtps', 'tcps') -inotcontains $Protocol) {
-            throw 'Certificate supplied for non-HTTPS/WSS endpoint'
+            # Certificate supplied for non-HTTPS/WSS endpoint
+            throw ($PodeLocale.certificateSuppliedForNonHttpsWssEndpointExceptionMessage)
         }
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -1076,7 +1123,8 @@ function Add-PodeEndpoint {
 
         # fail if the cert is expired
         if ($obj.Certificate.Raw.NotAfter -lt [datetime]::Now) {
-            throw "The certificate '$($obj.Certificate.Raw.Subject)' has expired: $($obj.Certificate.Raw.NotAfter)"
+            # The certificate has expired
+            throw ($PodeLocale.certificateExpiredExceptionMessage -f $obj.Certificate.Raw.Subject, $obj.Certificate.Raw.NotAfter)
         }
     }
 
@@ -1102,7 +1150,8 @@ function Add-PodeEndpoint {
 
         # ensure the name exists
         if (Test-PodeIsEmpty $redir_endpoint) {
-            throw "An endpoint with the name '$($RedirectTo)' has not been defined for redirecting"
+            # An endpoint named has not been defined for redirecting
+            throw ($PodeLocale.endpointNotDefinedForRedirectingExceptionMessage -f $RedirectTo)
         }
 
         # build the redirect route
@@ -1310,7 +1359,8 @@ function Set-PodeDefaultFolder {
         $PodeContext.Server.DefaultFolders[$Type] = $Path
     }
     else {
-        throw "Folder $Path doesn't exist"
+        # Path does not exist
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
     }
 }
 

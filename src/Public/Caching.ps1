@@ -57,7 +57,8 @@ function Get-PodeCache {
     }
 
     # storage not found!
-    throw "Cache storage with name '$($Storage)' not found when attempting to retrieve cached item '$($Key)'"
+    # Cache storage with name not found when attempting to retrieve cached item
+    throw ($PodeLocale.cacheStorageNotFoundForRetrieveExceptionMessage -f $Storage, $Key)
 }
 
 <#
@@ -104,7 +105,7 @@ function Set-PodeCache {
         [string]
         $Key,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [object]
         $InputObject,
 
@@ -117,29 +118,47 @@ function Set-PodeCache {
         $Storage = $null
     )
 
-    # use the global settable default here
-    if ($Ttl -le 0) {
-        $Ttl = $PodeContext.Server.Cache.DefaultTtl
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    # inmem or custom storage?
-    if ([string]::IsNullOrEmpty($Storage)) {
-        $Storage = $PodeContext.Server.Cache.DefaultStorage
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
     }
 
-    # use inmem cache
-    if ([string]::IsNullOrEmpty($Storage)) {
-        Set-PodeCacheInternal -Key $Key -InputObject $InputObject -Ttl $Ttl
-    }
+    end {
+        # If there are multiple piped-in values, set InputObject to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $InputObject = $pipelineValue
+        }
 
-    # used custom storage
-    elseif (Test-PodeCacheStorage -Key $Storage) {
-        $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Key, $InputObject, $Ttl) -Splat
-    }
+        # use the global settable default here
+        if ($Ttl -le 0) {
+            $Ttl = $PodeContext.Server.Cache.DefaultTtl
+        }
 
-    # storage not found!
-    else {
-        throw "Cache storage with name '$($Storage)' not found when attempting to set cached item '$($Key)'"
+        # inmem or custom storage?
+        if ([string]::IsNullOrEmpty($Storage)) {
+            $Storage = $PodeContext.Server.Cache.DefaultStorage
+        }
+
+        # use inmem cache
+        if ([string]::IsNullOrEmpty($Storage)) {
+            Set-PodeCacheInternal -Key $Key -InputObject $InputObject -Ttl $Ttl
+        }
+
+        # used custom storage
+        elseif (Test-PodeCacheStorage -Key $Storage) {
+            $null = Invoke-PodeScriptBlock -ScriptBlock $PodeContext.Server.Cache.Storage[$Storage].Set -Arguments @($Key, $InputObject, $Ttl) -Splat
+        }
+
+        # storage not found!
+        else {
+            # Cache storage with name not found when attempting to set cached item
+            throw ($PodeLocale.cacheStorageNotFoundForSetExceptionMessage -f $Storage, $Key)
+        }
     }
 }
 
@@ -190,7 +209,8 @@ function Test-PodeCache {
     }
 
     # storage not found!
-    throw "Cache storage with name '$($Storage)' not found when attempting to check if cached item '$($Key)' exists"
+    # Cache storage with name not found when attempting to check if cached item exists
+    throw ($PodeLocale.cacheStorageNotFoundForExistsExceptionMessage -f $Storage, $Key)
 }
 
 <#
@@ -241,7 +261,8 @@ function Remove-PodeCache {
 
     # storage not found!
     else {
-        throw "Cache storage with name '$($Storage)' not found when attempting to remove cached item '$($Key)'"
+        # Cache storage with name not found when attempting to remove cached item
+        throw ($PodeLocale.cacheStorageNotFoundForRemoveExceptionMessage -f $Storage, $Key)
     }
 }
 
@@ -286,7 +307,8 @@ function Clear-PodeCache {
 
     # storage not found!
     else {
-        throw "Cache storage with name '$($Storage)' not found when attempting to clear cached"
+        # Cache storage with name not found when attempting to clear the cache
+        throw ($PodeLocale.cacheStorageNotFoundForClearExceptionMessage -f $Storage)
     }
 }
 
@@ -355,7 +377,8 @@ function Add-PodeCacheStorage {
 
     # test if storage already exists
     if (Test-PodeCacheStorage -Name $Name) {
-        throw "Cache Storage with name '$($Name) already exists"
+        # Cache Storage with name already exists
+        throw ($PodeLocale.cacheStorageAlreadyExistsExceptionMessage -f $Name)
     }
 
     # add cache storage

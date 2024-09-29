@@ -28,7 +28,7 @@ function Set-PodeState {
         [string]
         $Name,
 
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0)]
         [object]
         $Value,
 
@@ -37,20 +37,38 @@ function Set-PodeState {
         $Scope
     )
 
-    if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+    begin {
+        if ($null -eq $PodeContext.Server.State) {
+            # Pode has not been initialized
+            throw ($PodeLocale.podeNotInitializedExceptionMessage)
+        }
+
+        if ($null -eq $Scope) {
+            $Scope = @()
+        }
+
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    if ($null -eq $Scope) {
-        $Scope = @()
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
     }
 
-    $PodeContext.Server.State[$Name] = @{
-        Value = $Value
-        Scope = $Scope
-    }
+    end {
+        # Set Value to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Value = $pipelineValue
+        }
 
-    return $Value
+        $PodeContext.Server.State[$Name] = @{
+            Value = $Value
+            Scope = $Scope
+        }
+
+        return $Value
+    }
 }
 
 <#
@@ -81,7 +99,8 @@ function Get-PodeState {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     if ($WithScope) {
@@ -112,6 +131,7 @@ $names = Get-PodeStateNames -Scope '<scope>'
 $names = Get-PodeStateNames -Pattern '^\w+[0-9]{0,2}$'
 #>
 function Get-PodeStateNames {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -124,7 +144,8 @@ function Get-PodeStateNames {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     if ($null -eq $Scope) {
@@ -176,7 +197,8 @@ function Remove-PodeState {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     $value = $PodeContext.Server.State[$Name].Value
@@ -247,7 +269,8 @@ function Save-PodeState {
 
     # error if attempting to use outside of the pode server
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     # get the full path to save the state
@@ -341,7 +364,8 @@ function Restore-PodeState {
 
     # error if attempting to use outside of the pode server
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     # get the full path to the state
@@ -415,7 +439,8 @@ function Test-PodeState {
     )
 
     if ($null -eq $PodeContext.Server.State) {
-        throw 'Pode has not been initialised'
+        # Pode has not been initialized
+        throw ($PodeLocale.podeNotInitializedExceptionMessage)
     }
 
     return $PodeContext.Server.State.ContainsKey($Name)

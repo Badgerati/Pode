@@ -174,7 +174,7 @@ New-PodeOAMultiTypeProperty -Name 'password' -type string,object -Format Passwor
 function New-PodeOAMultiTypeProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -349,7 +349,8 @@ function New-PodeOAMultiTypeProperty {
         if ($type -contains 'object') {
             if ($NoProperties) {
                 if ($Properties -or $MinProperties -or $MaxProperties) {
-                    throw '-NoProperties is not compatible with -Properties, -MinProperties and -MaxProperties'
+                    # The parameter 'NoProperties' is mutually exclusive with 'Properties', 'MinProperties' and 'MaxProperties'
+                    throw ($PodeLocale.noPropertiesMutuallyExclusiveExceptionMessage)
                 }
                 $param.properties = @($null)
             }
@@ -360,7 +361,7 @@ function New-PodeOAMultiTypeProperty {
                 $param.properties = @()
             }
             if ($DiscriminatorProperty) {
-                $param.discriminator = @{
+                $param.discriminator = [ordered]@{
                     'propertyName' = $DiscriminatorProperty
                 }
                 if ($DiscriminatorMapping) {
@@ -368,7 +369,8 @@ function New-PodeOAMultiTypeProperty {
                 }
             }
             elseif ($DiscriminatorMapping) {
-                throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
+                # The parameter 'DiscriminatorMapping' can only be used when 'DiscriminatorProperty' is present
+                throw ($PodeLocale.discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage)
             }
         }
         if ($type -contains 'boolean') {
@@ -377,7 +379,8 @@ function New-PodeOAMultiTypeProperty {
                     $param.default = $Default
                 }
                 else {
-                    throw "The default value is not a boolean and it's not part of the enum"
+                    # The default value is not a boolean and is not part of the enum
+                    throw ($PodeLocale.defaultValueNotBooleanOrEnumExceptionMessage)
                 }
             }
         }
@@ -398,6 +401,7 @@ function New-PodeOAMultiTypeProperty {
         }
     }
 }
+
 <#
 .SYNOPSIS
 Creates a new OpenAPI integer property.
@@ -538,7 +542,7 @@ function New-PodeOAIntProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true)]
         [hashtable[]]
         $ParamsList,
 
@@ -797,7 +801,7 @@ New-PodeOANumberProperty -Name 'gravity' -Default 9.8
 function New-PodeOANumberProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1052,7 +1056,7 @@ New-PodeOAStringProperty -Name 'password' -Format Password
 function New-PodeOAStringProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1298,7 +1302,7 @@ function New-PodeOABoolProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true)]
         [hashtable[]]
         $ParamsList,
 
@@ -1396,7 +1400,8 @@ function New-PodeOABoolProperty {
                 $param.default = $Default
             }
             else {
-                throw "The default value is not a boolean and it's not part of the enum"
+                # The default value is not a boolean and is not part of the enum
+                throw ($PodeLocale.defaultValueNotBooleanOrEnumExceptionMessage)
             }
         }
 
@@ -1535,15 +1540,15 @@ New-PodeOAObjectProperty -Name 'user' -Properties @('<ARRAY_OF_PROPERTIES>')
 .EXAMPLE
 New-PodeOABoolProperty -Name 'enabled' -Required|
     New-PodeOAObjectProperty  -Name 'extraProperties'  -AdditionalProperties [ordered]@{
-        "property1" = @{ "type" = "string"; "description" = "Description for property1" };
-        "property2" = @{ "type" = "integer"; "format" = "int32" }
+        "property1" = [ordered]@{ "type" = "string"; "description" = "Description for property1" };
+        "property2" = [ordered]@{ "type" = "integer"; "format" = "int32" }
 }
 #>
 function New-PodeOAObjectProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow = $true , Position = 0 )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1645,9 +1650,9 @@ function New-PodeOAObjectProperty {
         $param = New-PodeOAPropertyInternal -type 'object' -Params $PSBoundParameters
         if ($NoProperties) {
             if ($Properties -or $MinProperties -or $MaxProperties) {
-                throw '-NoProperties is not compatible with -Properties, -MinProperties and -MaxProperties'
+                # The parameter `NoProperties` is mutually exclusive with `Properties`, `MinProperties` and `MaxProperties`
+                throw ($PodeLocale.noPropertiesMutuallyExclusiveExceptionMessage)
             }
-            $param.properties = @($null)
             $PropertiesFromPipeline = $false
         }
         elseif ($Properties) {
@@ -1659,7 +1664,7 @@ function New-PodeOAObjectProperty {
             $PropertiesFromPipeline = $true
         }
         if ($DiscriminatorProperty) {
-            $param.discriminator = @{
+            $param.discriminator = [ordered]@{
                 'propertyName' = $DiscriminatorProperty
             }
             if ($DiscriminatorMapping) {
@@ -1667,7 +1672,8 @@ function New-PodeOAObjectProperty {
             }
         }
         elseif ($DiscriminatorMapping) {
-            throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
+            # The parameter 'DiscriminatorMapping' can only be used when 'DiscriminatorProperty' is present
+            throw ($PodeLocale.discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage)
         }
         $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
@@ -1728,27 +1734,41 @@ This string value represents the property in the payload that indicates which sp
 It's essential in scenarios where an API endpoint handles data that conforms to one of several derived schemas from a common base schema.
 
 .PARAMETER DiscriminatorMapping
-If supplied, define a mapping between the values of the discriminator property and the corresponding subtype schemas.
+If supplied, defines a mapping between the values of the discriminator property and the corresponding subtype schemas.
 This parameter accepts a HashTable where each key-value pair maps a discriminator value to a specific subtype schema name.
 It's used in conjunction with the -DiscriminatorProperty to provide complete discrimination logic in polymorphic scenarios.
 
-.EXAMPLE
-Add-PodeOAComponentSchema -Name 'Pets' -Component (  Merge-PodeOAProperty  -Type OneOf -ObjectDefinitions @( 'Cat','Dog') -Discriminator "petType")
+.PARAMETER NoObjectDefinitionsFromPipeline
+Prevents object definitions from being used in the computation but still passes them through the pipeline.
 
+.PARAMETER Name
+Specifies the name of the OpenAPI object.
+
+.PARAMETER Required
+Indicates if the object is required.
+
+.PARAMETER Description
+Provides a description for the OpenAPI object.
+
+.EXAMPLE
+Add-PodeOAComponentSchema -Name 'Pets' -Component (Merge-PodeOAProperty -Type OneOf -ObjectDefinitions @('Cat', 'Dog') -Discriminator "petType")
 
 .EXAMPLE
 Add-PodeOAComponentSchema -Name 'Cat' -Component (
-        Merge-PodeOAProperty  -Type AllOf -ObjectDefinitions @( 'Pet', ( New-PodeOAObjectProperty -Properties @(
-                (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @(  'clueless', 'lazy', 'adventurous', 'aggressive'))
-                ))
+    Merge-PodeOAProperty -Type AllOf -ObjectDefinitions @(
+        'Pet',
+        (New-PodeOAObjectProperty -Properties @(
+            (New-PodeOAStringProperty -Name 'huntingSkill' -Description 'The measured skill for hunting' -Enum @('clueless', 'lazy', 'adventurous', 'aggressive'))
         ))
+    )
+)
 #>
 function Merge-PodeOAProperty {
     [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param(
 
-        [Parameter(ValueFromPipeline = $true, DontShow = $true )]
+        [Parameter(ValueFromPipeline = $true, Position = 0, DontShow = $true )]
         [hashtable[]]
         $ParamsList,
 
@@ -1765,11 +1785,28 @@ function Merge-PodeOAProperty {
         $DiscriminatorProperty,
 
         [hashtable]
-        $DiscriminatorMapping
+        $DiscriminatorMapping,
+
+        [switch]
+        $NoObjectDefinitionsFromPipeline,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Name')]
+        [string]
+        $Name,
+
+        [Parameter( ParameterSetName = 'Name')]
+        [switch]
+        $Required,
+
+        [Parameter( ParameterSetName = 'Name')]
+        [string]
+        $Description
     )
     begin {
-
+        # Initialize an ordered dictionary
         $param = [ordered]@{}
+
+        # Set the type of validation
         switch ($type.ToLower()) {
             'oneof' {
                 $param.type = 'oneOf'
@@ -1782,21 +1819,43 @@ function Merge-PodeOAProperty {
             }
         }
 
+        # Add name to the parameter dictionary if provided
+        if ($Name) {
+            $param.name = $Name
+        }
+
+        # Add description to the parameter dictionary if provided
+        if ($Description) {
+            $param.description = $Description
+        }
+
+        # Set the required field if the switch is present
+        if ($Required.IsPresent) {
+            $param.required = $Required.IsPresent
+        }
+
+        # Initialize schemas array
         $param.schemas = @()
+
+        # Add object definitions to the schemas array
         if ($ObjectDefinitions) {
             foreach ($schema in $ObjectDefinitions) {
                 if ($schema -is [System.Object[]] -or ($schema -is [hashtable] -and
                 (($schema.type -ine 'object') -and !$schema.object))) {
-                    throw "Only properties of type Object can be associated with $($param.type)"
+                    # Only properties of type Object can be associated with $param.type
+                    throw ($PodeLocale.propertiesTypeObjectAssociationExceptionMessage -f $param.type)
                 }
                 $param.schemas += $schema
             }
         }
+
+        # Add discriminator property and mapping if provided
         if ($DiscriminatorProperty) {
             if ($type.ToLower() -eq 'allof' ) {
-                throw 'Discriminator parameter is not compatible with allOf'
+                # The parameter 'Discriminator' is incompatible with `allOf`
+                throw ($PodeLocale.discriminatorIncompatibleWithAllOfExceptionMessage)
             }
-            $param.discriminator = @{
+            $param.discriminator = [ordered]@{
                 'propertyName' = $DiscriminatorProperty
             }
             if ($DiscriminatorMapping) {
@@ -1804,21 +1863,35 @@ function Merge-PodeOAProperty {
             }
         }
         elseif ($DiscriminatorMapping) {
-            throw 'Parameter -DiscriminatorMapping requires the -DiscriminatorProperty parameters'
+            # The parameter 'DiscriminatorMapping' can only be used when 'DiscriminatorProperty' is present
+            throw ($PodeLocale.discriminatorMappingRequiresDiscriminatorPropertyExceptionMessage)
         }
 
+        # Initialize a list to collect input from the pipeline
+        $collectedInput = [System.Collections.Generic.List[hashtable]]::new()
     }
     process {
         if ($ParamsList) {
-            if ($ParamsList.type -ine 'object' -and !$ParamsList.object) {
-                throw "Only properties of type Object can be associated with $type"
+            if ($NoObjectDefinitionsFromPipeline) {
+                # Add to collected input if the switch is present
+                $collectedInput.AddRange($ParamsList)
             }
-            $param.schemas += $ParamsList
+            else {
+                # Add to schemas if the switch is not present
+                $param.schemas += $ParamsList
+            }
         }
     }
 
     end {
-        return $param
+        if ($NoObjectDefinitionsFromPipeline) {
+            # Return collected input and param dictionary if switch is present
+            return $collectedInput + $param
+        }
+        else {
+            # Return the param dictionary
+            return $param
+        }
     }
 }
 

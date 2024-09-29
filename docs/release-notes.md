@@ -1,8 +1,70 @@
 # Release Notes
 
+## v2.11.0
+
+Date: 29th September 2024
+
+```plain
+### Features
+* #1320: Enhanced Internationalization Support (i18n) (thanks @mdaneri!)
+
+### Enhancements
+* #1338: Automate Endpoint Assignment for OAViewer in Pode (thanks @mdaneri!)
+* #1339: Add 'Rename-PodeOADefinitionTag' Function (thanks @mdaneri!)
+* #1340: Add configuration parameter 'Web.OpenApi.UsePodeYamlInternal' (thanks @mdaneri!)
+* #1352: Update MIME types to comply with RFC9512 and RFC5323 (thanks @mdaneri!)
+* #1356: Dutch language support (thanks @mdaneri!)
+* #1373: Dynamically load the Pode DLL relevant to the version of PowerShell (thanks @mdaneri!)
+* #1384: Customizing and Managing Runspace Names (thanks @mdaneri!)
+* #1388: Support passing Arrays to Functions Using Piping (thanks @mdaneri!)
+* #1393: Adds functions for retrieving Schedule and Task Processes
+* #1393: Improves Error Handling in Schedules, Timers, Tasks, and Logging
+* #1393: Removes Global scope from TimerEvent
+* #1399: Replaces occurrences of New-Object with new()
+
+### Bugs
+* #1319: Fixes the Write-Pode(*)Response functions so the Value parameter appropriately handles when an array is passed using piping (thanks @mdaneri!)
+* #1321: Fixes a misspelled variable in Add-PodeOAExternalRoute (thanks @mdaneri!)
+* #1347: '-AdditionalProperties' doesn't appear on the OpenAPI document despite using the '-NoAdditionalProperties' parameter. (thanks @mdaneri!)
+* #1358: Fixes [ordered] comparisons in PowerShell 5.1 (thanks @mdaneri!)
+* #1358: Fixes for various OpenAPI issues (thanks @mdaneri!)
+* #1358: Fixes OpenAPI version validation check in PowerShell 5.1 (thanks @mdaneri!)
+* #1359: Fixes the login redirect URL logic for OAuth2 flows when using -SuccessUseOrigin
+* #1360: Fixes a bug when exporting more than 1 module
+* #1369: Accurate Output with -NoDefaultResponses (thanks @mdaneri!)
+* #1369: Correct Schema with -NoProperties (thanks @mdaneri!)
+* #1369: Fixes for OpenAPI Generation: Exception with oneOf/anyOf/allOf (thanks @mdaneri!)
+* #1369: Include Min/Max Properties (thanks @mdaneri!)
+* #1369: Prevent Request Body on GET Operations (thanks @mdaneri!)
+* #1379: Fixes SSL timeouts when running Pode in PS7.4+
+* #1390: Changes "-ContentMediaType" and "-MediaType" parameters to "-ContentType" on most OpenAPI functions (thanks @mdaneri!)
+* #1390: Ensures the generated OpenAPI document now maintains element ordering (thanks @mdaneri!)
+* #1390: Fixes OpenAPI DefinitionTag being null in some functions (thanks @mdaneri!)
+* #1390: Fixes OpenAPI PowerShell 5.1 compatibility issue while testing schemas (thanks @mdaneri!)
+* #1397: Fixes retrieving DNS domain name on macOS
+* #1400: Fixes session scoped variable when remapping while setting values
+* #1400: Fixes User being needlessly splatted when passed to scriptblock for some Authentication methods
+
+### Documentation
+* #1332: Adds documentation for CORS (thanks @mdaneri!)
+* #1332: Adds missing features to the Feature List (thanks @mdaneri!)
+* #1332: Splits OpenAPI documentation into multiple pages (thanks @mdaneri!)
+* #1332: Updates Known Issues for PowerShell classes with PS7.4's SafeThread support (thanks @mdaneri!)
+* #1333: Cleans up the Examples in the repository, and adds them to the Documentation (thanks @mdaneri!)
+
+### Packaging
+* #1322: Applies a fix for a PS7.5 bug with Remove-Item throwing divide by zero error
+* #1323: Fix build error when dotnet tries to restore from offline NuGet cache
+* #1328: Make preview builds optional for PR merges
+* #1342: Add GitHub Codespace Configuration and Getting Started Guide for Pode (thanks @mdaneri!)
+
+### Dependencies
+* #1341: Bump actions/add-to-project from 1.0.1 to 1.0.2
+```
+
 ## v2.10.1
 
-Data: 27th May 2024
+Date: 27th May 2024
 
 ```plain
 ### Bugs

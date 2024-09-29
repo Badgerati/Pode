@@ -284,16 +284,17 @@ function Add-PodeRoute {
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw 'No Path supplied for Route'
+        # No Path supplied for the Route
+        throw ($PodeLocale.noPathSuppliedForRouteExceptionMessage)
     }
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
     $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoints from name
-    $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
+    $endpoints = Find-PodeEndpoint -EndpointName $EndpointName
 
     # get default route IfExists state
     if ($IfExists -ieq 'Default') {
@@ -302,7 +303,8 @@ function Add-PodeRoute {
 
     # if middleware, scriptblock and file path are all null/empty, error
     if ((Test-PodeIsEmpty $Middleware) -and (Test-PodeIsEmpty $ScriptBlock) -and (Test-PodeIsEmpty $FilePath) -and (Test-PodeIsEmpty $Authentication)) {
-        throw "No logic passed for Route: $($Path)"
+        # [Method] Path: No logic passed
+        throw ($PodeLocale.noLogicPassedForMethodRouteExceptionMessage -f ($Method -join ','), $Path)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -319,11 +321,13 @@ function Add-PodeRoute {
     # if an access name was supplied, setup access as middleware first to it's after auth middleware
     if (![string]::IsNullOrWhiteSpace($Access)) {
         if ([string]::IsNullOrWhiteSpace($Authentication)) {
-            throw 'Access requires Authentication to be supplied on Routes'
+            # Access requires Authentication to be supplied on Routes
+            throw ($PodeLocale.accessRequiresAuthenticationOnRoutesExceptionMessage)
         }
 
         if (!(Test-PodeAccessExists -Name $Access)) {
-            throw "Access method does not exist: $($Access)"
+            # Access method does not exist
+            throw ($PodeLocale.accessMethodDoesNotExistExceptionMessage -f $Access)
         }
 
         $options = @{
@@ -336,7 +340,8 @@ function Add-PodeRoute {
     # if an auth name was supplied, setup the auth as the first middleware
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
         if (!(Test-PodeAuthExists -Name $Authentication)) {
-            throw "Authentication method does not exist: $($Authentication)"
+            # Authentication method does not exist
+            throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage -f $Authentication)
         }
 
         $options = @{
@@ -392,9 +397,9 @@ function Add-PodeRoute {
 
         #add the default OpenApi responses
         if ( $PodeContext.Server.OpenAPI.Definitions[$DefinitionTag].hiddenComponents.defaultResponses) {
-            $DefaultResponse = @{}
+            $DefaultResponse = [ordered]@{}
             foreach ($tag in $DefinitionTag) {
-                $DefaultResponse[$tag] = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses.Clone()
+                $DefaultResponse[$tag] = Copy-PodeObjectDeepClone -InputObject $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.defaultResponses
             }
         }
 
@@ -426,14 +431,15 @@ function Add-PodeRoute {
                     Method           = $_method
                     Path             = $Path
                     OpenApi          = @{
-                        Path           = $OpenApiPath
-                        Responses      = $DefaultResponse
-                        Parameters     = $null
-                        RequestBody    = $null
-                        CallBacks      = @{}
-                        Authentication = @()
-                        Servers        = @()
-                        DefinitionTag  = $DefinitionTag
+                        Path               = $OpenApiPath
+                        Responses          = $DefaultResponse
+                        Parameters         = $null
+                        RequestBody        = $null
+                        CallBacks          = @{}
+                        Authentication     = @()
+                        Servers            = @()
+                        DefinitionTag      = $DefinitionTag
+                        IsDefTagConfigured = ($null -ne $OADefinitionTag) #Definition Tag has been configured (Not default)
                     }
                     IsStatic         = $false
                     Metrics          = @{
@@ -730,16 +736,17 @@ function Add-PodeStaticRoute {
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw "[$($Method)]: No Path supplied for Static Route"
+        # No Path supplied for the Route.
+        throw ($PodeLocale.noPathSuppliedForRouteExceptionMessage)
     }
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path -Static
+    $Path = Update-PodeRouteSlash -Path $Path -Static
     $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoints from name
-    $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
+    $endpoints = Find-PodeEndpoint -EndpointName $EndpointName
 
     # get default route IfExists state
     if ($IfExists -ieq 'Default') {
@@ -770,7 +777,8 @@ function Add-PodeStaticRoute {
     # if static, ensure the path exists at server root
     $Source = Get-PodeRelativePath -Path $Source -JoinRoot
     if (!(Test-PodePath -Path $Source -NoStatus)) {
-        throw "[$($Method))] $($Path): The Source path supplied for Static Route does not exist: $($Source)"
+        # [Method)] Path: The Source path supplied for Static Route does not exist
+        throw ($PodeLocale.sourcePathDoesNotExistForStaticRouteExceptionMessage -f $Path, $Source)
     }
 
     # setup a temp drive for the path
@@ -791,11 +799,13 @@ function Add-PodeStaticRoute {
     # if an access name was supplied, setup access as middleware first to it's after auth middleware
     if (![string]::IsNullOrWhiteSpace($Access)) {
         if ([string]::IsNullOrWhiteSpace($Authentication)) {
-            throw 'Access requires Authentication to be supplied on Static Routes'
+            # Access requires Authentication to be supplied on Routes
+            throw ($PodeLocale.accessRequiresAuthenticationOnRoutesExceptionMessage)
         }
 
         if (!(Test-PodeAccessExists -Name $Access)) {
-            throw "Access method does not exist: $($Access)"
+            # Access method does not exist
+            throw ($PodeLocale.accessMethodDoesNotExistExceptionMessage -f $Access)
         }
 
         $options = @{
@@ -808,7 +818,8 @@ function Add-PodeStaticRoute {
     # if an auth name was supplied, setup the auth as the first middleware
     if (![string]::IsNullOrWhiteSpace($Authentication)) {
         if (!(Test-PodeAuthExists -Name $Authentication)) {
-            throw "Authentication method does not exist: $($Authentication)"
+            # Authentication method does not exist
+            throw ($PodeLocale.authenticationMethodDoesNotExistExceptionMessage)
         }
 
         $options = @{
@@ -968,10 +979,10 @@ function Add-PodeSignalRoute {
     $origPath = $Path
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
 
     # get endpoints from name
-    $endpoints = Find-PodeEndpoints -EndpointName $EndpointName
+    $endpoints = Find-PodeEndpoint -EndpointName $EndpointName
 
     # get default route IfExists state
     if ($IfExists -ieq 'Default') {
@@ -1001,7 +1012,8 @@ function Add-PodeSignalRoute {
 
     # if scriptblock and file path are all null/empty, error
     if ((Test-PodeIsEmpty $ScriptBlock) -and (Test-PodeIsEmpty $FilePath)) {
-        throw "[$($Method)] $($Path): No logic passed"
+        # [Method] Path: No logic passed
+        throw ($PodeLocale.noLogicPassedForMethodRouteExceptionMessage -f $Method, $Path)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -1168,7 +1180,8 @@ function Add-PodeRouteGroup {
     )
 
     if (Test-PodeIsEmpty $Routes) {
-        throw 'No scriptblock for -Routes passed'
+        # The Route parameter needs a valid, not empty, scriptblock
+        throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
     }
 
     if ($Path -eq '/') {
@@ -1425,7 +1438,8 @@ function Add-PodeStaticRouteGroup {
     )
 
     if (Test-PodeIsEmpty $Routes) {
-        throw 'No scriptblock for -Routes passed'
+        # The Route parameter needs a valid, not empty, scriptblock
+        throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
     }
 
     if ($Path -eq '/') {
@@ -1592,7 +1606,8 @@ function Add-PodeSignalRouteGroup {
     )
 
     if (Test-PodeIsEmpty $Routes) {
-        throw 'No scriptblock for -Routes passed'
+        # The Route parameter needs a valid, not empty, scriptblock
+        throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
     }
 
     if ($Path -eq '/') {
@@ -1668,24 +1683,28 @@ function Remove-PodeRoute {
 
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
-    if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw "[$($Method)]: No Route path supplied for removing a Route"
-    }
 
     # ensure the route has appropriate slashes and replace parameters
-    $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # ensure route does exist
     if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
         return
     }
 
-    # remove the operationId from the openapi operationId list
-    if ($PodeContext.Server.Routes[$Method][$Path].OpenAPI) {
-        foreach ( $tag  in  $PodeContext.Server.Routes[$Method][$Path].OpenAPI.DefinitionTag) {
-            if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId)) {
-                $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $PodeContext.Server.Routes[$Method][$Path].OpenAPI.OperationId }
+    # select the candidate route for deletion
+    $route = @($PodeContext.Server.Routes[$Method][$Path] | Where-Object {
+            $_.Endpoint.Name -ieq $EndpointName
+        })
+
+    foreach ($r in $route) {
+        # remove the operationId from the openapi operationId list
+        if ($r.OpenAPI) {
+            foreach ( $tag in $r.OpenAPI.DefinitionTag) {
+                if ($tag -and ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $route.OpenAPI.OperationId)) {
+                    $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId = $PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId | Where-Object { $_ -ne $route.OpenAPI.OperationId }
+                }
             }
         }
     }
@@ -1732,7 +1751,7 @@ function Remove-PodeStaticRoute {
     $Method = 'Static'
 
     # ensure the route has appropriate slashes and replace parameters
-    $Path = Update-PodeRouteSlashes -Path $Path -Static
+    $Path = Update-PodeRouteSlash -Path $Path -Static
 
     # ensure route does exist
     if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
@@ -1781,7 +1800,7 @@ function Remove-PodeSignalRoute {
     $Method = 'Signal'
 
     # ensure the route has appropriate slashes and replace parameters
-    $Path = Update-PodeRouteSlashes -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
 
     # ensure route does exist
     if (!$PodeContext.Server.Routes[$Method].Contains($Path)) {
@@ -1816,6 +1835,7 @@ Clear-PodeRoutes
 Clear-PodeRoutes -Method Get
 #>
 function Clear-PodeRoutes {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -1845,6 +1865,7 @@ Removes all added static Routes.
 Clear-PodeStaticRoutes
 #>
 function Clear-PodeStaticRoutes {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -1862,6 +1883,7 @@ Removes all added Signal Routes.
 Clear-PodeSignalRoutes
 #>
 function Clear-PodeSignalRoutes {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -1932,7 +1954,7 @@ ConvertTo-PodeRoute -Commands @('Invoke-Pester') -Module Pester
 function ConvertTo-PodeRoute {
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0 )]
         [string[]]
         $Commands,
 
@@ -1987,129 +2009,147 @@ function ConvertTo-PodeRoute {
         [switch]
         $NoOpenApi
     )
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
+    }
 
-    # if a module was supplied, import it - then validate the commands
-    if (![string]::IsNullOrWhiteSpace($Module)) {
-        Import-PodeModule -Name $Module
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
 
-        Write-Verbose 'Getting exported commands from module'
-        $ModuleCommands = (Get-Module -Name $Module | Sort-Object -Descending | Select-Object -First 1).ExportedCommands.Keys
-
-        # if commands were supplied validate them - otherwise use all exported ones
-        if (Test-PodeIsEmpty $Commands) {
-            Write-Verbose "Using all commands in $($Module) for converting to routes"
-            $Commands = $ModuleCommands
+    end {
+        # Set InputObject to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Commands = $pipelineValue
         }
-        else {
-            Write-Verbose "Validating supplied commands against module's exported commands"
-            foreach ($cmd in $Commands) {
-                if ($ModuleCommands -inotcontains $cmd) {
-                    throw "Module $($Module) does not contain function $($cmd) to convert to a Route"
+
+        # if a module was supplied, import it - then validate the commands
+        if (![string]::IsNullOrWhiteSpace($Module)) {
+            Import-PodeModule -Name $Module
+
+            Write-Verbose 'Getting exported commands from module'
+            $ModuleCommands = (Get-Module -Name $Module | Sort-Object -Descending | Select-Object -First 1).ExportedCommands.Keys
+
+            # if commands were supplied validate them - otherwise use all exported ones
+            if (Test-PodeIsEmpty $Commands) {
+                Write-Verbose "Using all commands in $($Module) for converting to routes"
+                $Commands = $ModuleCommands
+            }
+            else {
+                Write-Verbose "Validating supplied commands against module's exported commands"
+                foreach ($cmd in $Commands) {
+                    if ($ModuleCommands -inotcontains $cmd) {
+                        # Module Module does not contain function cmd to convert to a Route
+                        throw ($PodeLocale.moduleDoesNotContainFunctionExceptionMessage -f $Module, $cmd)
+                    }
                 }
             }
         }
-    }
 
-    # if there are no commands, fail
-    if (Test-PodeIsEmpty $Commands) {
-        throw 'No commands supplied to convert to Routes'
-    }
-
-    # trim end trailing slashes from the path
-    $Path = Protect-PodeValue -Value $Path -Default '/'
-    $Path = $Path.TrimEnd('/')
-
-    # create the routes for each of the commands
-    foreach ($cmd in $Commands) {
-        # get module verb/noun and comvert verb to HTTP method
-        $split = ($cmd -split '\-')
-
-        if ($split.Length -ge 2) {
-            $verb = $split[0]
-            $noun = $split[1..($split.Length - 1)] -join ([string]::Empty)
-        }
-        else {
-            $verb = [string]::Empty
-            $noun = $split[0]
+        # if there are no commands, fail
+        if (Test-PodeIsEmpty $Commands) {
+            # No commands supplied to convert to Routes
+            throw ($PodeLocale.noCommandsSuppliedToConvertToRoutesExceptionMessage)
         }
 
-        # determine the http method, or use the one passed
-        $_method = $Method
-        if ([string]::IsNullOrWhiteSpace($_method)) {
-            $_method = Convert-PodeFunctionVerbToHttpMethod -Verb $verb
-        }
+        # trim end trailing slashes from the path
+        $Path = Protect-PodeValue -Value $Path -Default '/'
+        $Path = $Path.TrimEnd('/')
 
-        # use the full function name, or remove the verb
-        $name = $cmd
-        if ($NoVerb) {
-            $name = $noun
-        }
+        # create the routes for each of the commands
+        foreach ($cmd in $Commands) {
+            # get module verb/noun and comvert verb to HTTP method
+            $split = ($cmd -split '\-')
 
-        # build the route's path
-        $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
-
-        # create the route
-        $params = @{
-            Method         = $_method
-            Path           = $_path
-            Middleware     = $Middleware
-            Authentication = $Authentication
-            Access         = $Access
-            Role           = $Role
-            Group          = $Group
-            Scope          = $Scope
-            User           = $User
-            AllowAnon      = $AllowAnon
-            ArgumentList   = $cmd
-            PassThru       = $true
-        }
-
-        $route = Add-PodeRoute @params -ScriptBlock {
-            param($cmd)
-
-            # either get params from the QueryString or Payload
-            if ($WebEvent.Method -ieq 'get') {
-                $parameters = $WebEvent.Query
+            if ($split.Length -ge 2) {
+                $verb = $split[0]
+                $noun = $split[1..($split.Length - 1)] -join ([string]::Empty)
             }
             else {
-                $parameters = $WebEvent.Data
+                $verb = [string]::Empty
+                $noun = $split[0]
             }
 
-            # invoke the function
-            $result = (. $cmd @parameters)
-
-            # if we have a result, convert it to json
-            if (!(Test-PodeIsEmpty $result)) {
-                Write-PodeJsonResponse -Value $result -Depth 1
+            # determine the http method, or use the one passed
+            $_method = $Method
+            if ([string]::IsNullOrWhiteSpace($_method)) {
+                $_method = Convert-PodeFunctionVerbToHttpMethod -Verb $verb
             }
-        }
 
-        # set the openapi metadata of the function, unless told to skip
-        if ($NoOpenApi) {
-            continue
-        }
+            # use the full function name, or remove the verb
+            $name = $cmd
+            if ($NoVerb) {
+                $name = $noun
+            }
 
-        $help = Get-Help -Name $cmd
-        $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
+            # build the route's path
+            $_path = ("$($Path)/$($Module)/$($name)" -replace '[/]+', '/')
 
-        # set the routes parameters (get = query, everything else = payload)
-        $params = (Get-Command -Name $cmd).Parameters
-        if (($null -eq $params) -or ($params.Count -eq 0)) {
-            continue
-        }
+            # create the route
+            $params = @{
+                Method         = $_method
+                Path           = $_path
+                Middleware     = $Middleware
+                Authentication = $Authentication
+                Access         = $Access
+                Role           = $Role
+                Group          = $Group
+                Scope          = $Scope
+                User           = $User
+                AllowAnon      = $AllowAnon
+                ArgumentList   = $cmd
+                PassThru       = $true
+            }
 
-        $props = @(foreach ($key in $params.Keys) {
-                $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
-            })
+            $route = Add-PodeRoute @params -ScriptBlock {
+                param($cmd)
 
-        if ($_method -ieq 'get') {
-            $route | Set-PodeOARequest -Parameters @(foreach ($prop in $props) { $prop | ConvertTo-PodeOAParameter -In Query })
-        }
+                # either get params from the QueryString or Payload
+                if ($WebEvent.Method -ieq 'get') {
+                    $parameters = $WebEvent.Query
+                }
+                else {
+                    $parameters = $WebEvent.Data
+                }
 
-        else {
-            $route | Set-PodeOARequest -RequestBody (
-                New-PodeOARequestBody -ContentSchemas @{ 'application/json' = (New-PodeOAObjectProperty -Array -Properties $props) }
-            )
+                # invoke the function
+                $result = (. $cmd @parameters)
+
+                # if we have a result, convert it to json
+                if (!(Test-PodeIsEmpty $result)) {
+                    Write-PodeJsonResponse -Value $result -Depth 1
+                }
+            }
+
+            # set the openapi metadata of the function, unless told to skip
+            if ($NoOpenApi) {
+                continue
+            }
+
+            $help = Get-Help -Name $cmd
+            $route = ($route | Set-PodeOARouteInfo -Summary $help.Synopsis -Tags $Module -PassThru)
+
+            # set the routes parameters (get = query, everything else = payload)
+            $params = (Get-Command -Name $cmd).Parameters
+            if (($null -eq $params) -or ($params.Count -eq 0)) {
+                continue
+            }
+
+            $props = @(foreach ($key in $params.Keys) {
+                    $params[$key] | ConvertTo-PodeOAPropertyFromCmdletParameter
+                })
+
+            if ($_method -ieq 'get') {
+                $route | Set-PodeOARequest -Parameters @(foreach ($prop in $props) { $prop | ConvertTo-PodeOAParameter -In Query })
+            }
+
+            else {
+                $route | Set-PodeOARequest -RequestBody (
+                    New-PodeOARequestBody -ContentSchemas @{ 'application/json' = (New-PodeOAObjectProperty -Array -Properties $props) }
+                )
+            }
         }
     }
 }
@@ -2246,7 +2286,8 @@ function Add-PodePage {
 
     # ensure the name is a valid alphanumeric
     if ($Name -inotmatch '^[a-z0-9\-_]+$') {
-        throw "The Page name should be a valid AlphaNumeric value: $($Name)"
+        # The Page name should be a valid AlphaNumeric value
+        throw ($PodeLocale.pageNameShouldBeAlphaNumericExceptionMessage -f $Name)
     }
 
     # trim end trailing slashes from the path
@@ -2257,7 +2298,8 @@ function Add-PodePage {
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'scriptblock' {
             if (Test-PodeIsEmpty $ScriptBlock) {
-                throw 'A non-empty ScriptBlock is required to created a Page Route'
+                # A non-empty ScriptBlock is required to create a Page Route
+                throw ($PodeLocale.nonEmptyScriptBlockRequiredForPageRouteExceptionMessage)
             }
 
             $arg = @($ScriptBlock, $Data)
@@ -2343,6 +2385,7 @@ Get-PodeRoute -Method Post -Path '/users/:userId' -EndpointName User
 #>
 function Get-PodeRoute {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter()]
         [ValidateSet('', 'Connect', 'Delete', 'Get', 'Head', 'Merge', 'Options', 'Patch', 'Post', 'Put', 'Trace', '*')]
@@ -2378,8 +2421,8 @@ function Get-PodeRoute {
     # if we have a path, filter
     if (![string]::IsNullOrWhiteSpace($Path)) {
         $Path = Split-PodeRouteQuery -Path $Path
-        $Path = Update-PodeRouteSlashes -Path $Path
-        $Path = Resolve-PodePlaceholders -Path $Path
+        $Path = Update-PodeRouteSlash -Path $Path
+        $Path = Resolve-PodePlaceholder -Path $Path
 
         $routes = @(foreach ($route in $routes) {
                 if ($route.Path -ine $Path) {
@@ -2428,6 +2471,7 @@ Get-PodeStaticRoute -Path '/assets' -EndpointName User
 #>
 function Get-PodeStaticRoute {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter()]
         [string]
@@ -2446,7 +2490,7 @@ function Get-PodeStaticRoute {
 
     # if we have a path, filter
     if (![string]::IsNullOrWhiteSpace($Path)) {
-        $Path = Update-PodeRouteSlashes -Path $Path -Static
+        $Path = Update-PodeRouteSlash -Path $Path -Static
         $routes = @(foreach ($route in $routes) {
                 if ($route.Path -ine $Path) {
                     continue
@@ -2491,6 +2535,7 @@ Get-PodeSignalRoute -Path '/message'
 #>
 function Get-PodeSignalRoute {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter()]
         [string]
@@ -2509,7 +2554,7 @@ function Get-PodeSignalRoute {
 
     # if we have a path, filter
     if (![string]::IsNullOrWhiteSpace($Path)) {
-        $Path = Update-PodeRouteSlashes -Path $Path
+        $Path = Update-PodeRouteSlash -Path $Path
         $routes = @(foreach ($route in $routes) {
                 if ($route.Path -ine $Path) {
                     continue
@@ -2556,6 +2601,7 @@ Use-PodeRoutes
 Use-PodeRoutes -Path './my-routes' -IfExists Skip
 #>
 function Use-PodeRoutes {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -2651,15 +2697,16 @@ function Test-PodeRoute {
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw 'No Path supplied for testing Route'
+        # No Path supplied for the Route
+        throw ($PodeLocale.noPathSuppliedForRouteExceptionMessage)
     }
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoint from name
-    $endpoint = @(Find-PodeEndpoints -EndpointName $EndpointName)[0]
+    $endpoint = @(Find-PodeEndpoint -EndpointName $EndpointName)[0]
 
     # check for routes
     $found = (Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address)
@@ -2704,15 +2751,16 @@ function Test-PodeStaticRoute {
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        throw 'No Path supplied for testing Static Route'
+        # No Path supplied for the Route
+        throw ($PodeLocale.noPathSuppliedForRouteExceptionMessage)
     }
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path -Static
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path -Static
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoint from name
-    $endpoint = @(Find-PodeEndpoints -EndpointName $EndpointName)[0]
+    $endpoint = @(Find-PodeEndpoint -EndpointName $EndpointName)[0]
 
     # check for routes
     return (Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address)
@@ -2749,10 +2797,10 @@ function Test-PodeSignalRoute {
     $Method = 'Signal'
 
     # ensure the route has appropriate slashes
-    $Path = Update-PodeRouteSlashes -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
 
     # get endpoint from name
-    $endpoint = @(Find-PodeEndpoints -EndpointName $EndpointName)[0]
+    $endpoint = @(Find-PodeEndpoint -EndpointName $EndpointName)[0]
 
     # check for routes
     return (Test-PodeRouteInternal -Method $Method -Path $Path -Protocol $endpoint.Protocol -Address $endpoint.Address)

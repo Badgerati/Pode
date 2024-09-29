@@ -5,6 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 Describe 'Start-PodeAzFuncServer' {
     BeforeAll {
@@ -16,17 +17,17 @@ Describe 'Start-PodeAzFuncServer' {
         Mock Get-PodeRouteValidateMiddleware { }
         Mock Get-PodeBodyMiddleware { }
         Mock Get-PodeCookieMiddleware { }
-        Mock New-Object { return @{} }
+        Mock New-PodeAzFuncResponse { return @{} }
         Mock Get-PodeHeader { return 'some-value' }
         Mock Invoke-PodeScriptBlock { }
         Mock Write-Host { }
         Mock Invoke-PodeEndware { }
         Mock Set-PodeServerHeader { }
         Mock Set-PodeResponseStatus { }
-        Mock Update-PodeServerRequestMetrics { }
+        Mock Update-PodeServerRequestMetric { }
     }
     It 'Throws error for null data' {
-        { Start-PodeAzFuncServer -Data $null } | Should -Throw -ExpectedMessage '*because it is null*'
+        { Start-PodeAzFuncServer -Data $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Start-PodeAzFuncServer'
     }
 
     It 'Runs the server, fails middleware with no route' {
@@ -154,10 +155,10 @@ Describe 'Start-PodeAwsLambdaServer' {
         Mock Invoke-PodeEndware { }
         Mock Set-PodeServerHeader { }
         Mock Set-PodeResponseStatus { }
-        Mock Update-PodeServerRequestMetrics { } }
+        Mock Update-PodeServerRequestMetric { } }
 
     It 'Throws error for null data' {
-        { Start-PodeAwsLambdaServer -Data $null } | Should -Throw -ExpectedMessage '*because it is null*'
+        { Start-PodeAwsLambdaServer -Data $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Start-PodeAwsLambdaServer'
     }
 
     It 'Runs the server, fails middleware with no route' {

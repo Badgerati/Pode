@@ -1,5 +1,37 @@
+<#
+.SYNOPSIS
+    Computes an HMAC-SHA256 hash for a given value using a secret key.
+
+.DESCRIPTION
+    This function calculates an HMAC-SHA256 hash for the specified value using either a secret provided as a string or as a byte array. It supports two parameter sets:
+    1. String: The secret is provided as a string.
+    2. Bytes: The secret is provided as a byte array.
+
+.PARAMETER Value
+    The value for which the HMAC-SHA256 hash needs to be computed.
+
+.PARAMETER Secret
+    The secret key as a string. If this parameter is provided, it will be converted to a byte array.
+
+.PARAMETER SecretBytes
+    The secret key as a byte array. If this parameter is provided, it will be used directly.
+
+.OUTPUTS
+    Returns the computed HMAC-SHA256 hash as a base64-encoded string.
+
+.EXAMPLE
+    $value = "MySecretValue"
+    $secret = "MySecretKey"
+    $hash = Invoke-PodeHMACSHA256Hash -Value $value -Secret $secret
+    Write-PodeHost "HMAC-SHA256 hash: $hash"
+
+    This example computes the HMAC-SHA256 hash for the value "MySecretValue" using the secret key "MySecretKey".
+.NOTES
+    - This function is intended for internal use.
+#>
 function Invoke-PodeHMACSHA256Hash {
     [CmdletBinding(DefaultParameterSetName = 'String')]
+    [OutputType([String])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -14,20 +46,57 @@ function Invoke-PodeHMACSHA256Hash {
         $SecretBytes
     )
 
+    # Convert secret to byte array if provided as a string
     if (![string]::IsNullOrWhiteSpace($Secret)) {
         $SecretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
     }
 
+    # Validate secret length
     if ($SecretBytes.Length -eq 0) {
-        throw 'No secret supplied for HMAC256 hash'
+        # No secret supplied for HMAC256 hash
+        throw ($PodeLocale.noSecretForHmac256ExceptionMessage)
     }
 
+    # Compute HMAC-SHA384 hash
     $crypto = [System.Security.Cryptography.HMACSHA256]::new($SecretBytes)
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
+<#
+.SYNOPSIS
+    Computes a private HMAC-SHA384 hash for a given value using a secret key.
+
+.DESCRIPTION
+    This function calculates a private HMAC-SHA384 hash for the specified value using either a secret provided as a string or as a byte array. It supports two parameter sets:
+    1. String: The secret is provided as a string.
+    2. Bytes: The secret is provided as a byte array.
+
+.PARAMETER Value
+    The value for which the private HMAC-SHA384 hash needs to be computed.
+
+.PARAMETER Secret
+    The secret key as a string. If this parameter is provided, it will be converted to a byte array.
+
+.PARAMETER SecretBytes
+    The secret key as a byte array. If this parameter is provided, it will be used directly.
+
+.OUTPUTS
+    Returns the computed private HMAC-SHA384 hash as a base64-encoded string.
+
+.EXAMPLE
+    $value = "MySecretValue"
+    $secret = "MySecretKey"
+    $hash = Invoke-PodeHMACSHA384Hash -Value $value -Secret $secret
+    Write-PodeHost "Private HMAC-SHA384 hash: $hash"
+
+    This example computes the private HMAC-SHA384 hash for the value "MySecretValue" using the secret key "MySecretKey".
+
+.NOTES
+    - This function is intended for internal use.
+#>
 function Invoke-PodeHMACSHA384Hash {
     [CmdletBinding(DefaultParameterSetName = 'String')]
+    [OutputType([String])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -42,20 +111,57 @@ function Invoke-PodeHMACSHA384Hash {
         $SecretBytes
     )
 
+    # Convert secret to byte array if provided as a string
     if (![string]::IsNullOrWhiteSpace($Secret)) {
         $SecretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
     }
 
+    # Validate secret length
     if ($SecretBytes.Length -eq 0) {
-        throw 'No secret supplied for HMAC384 hash'
+        # No secret supplied for HMAC384 hash
+        throw ($PodeLocale.noSecretForHmac384ExceptionMessage)
     }
 
+    # Compute private HMAC-SHA384 hash
     $crypto = [System.Security.Cryptography.HMACSHA384]::new($SecretBytes)
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
+<#
+.SYNOPSIS
+    Computes a private HMAC-SHA512 hash for a given value using a secret key.
+
+.DESCRIPTION
+    This function calculates a private HMAC-SHA512 hash for the specified value using either a secret provided as a string or as a byte array. It supports two parameter sets:
+    1. String: The secret is provided as a string.
+    2. Bytes: The secret is provided as a byte array.
+
+.PARAMETER Value
+    The value for which the private HMAC-SHA512 hash needs to be computed.
+
+.PARAMETER Secret
+    The secret key as a string. If this parameter is provided, it will be converted to a byte array.
+
+.PARAMETER SecretBytes
+    The secret key as a byte array. If this parameter is provided, it will be used directly.
+
+.OUTPUTS
+    Returns the computed private HMAC-SHA512 hash as a base64-encoded string.
+
+.EXAMPLE
+    $value = "MySecretValue"
+    $secret = "MySecretKey"
+    $hash = Invoke-PodeHMACSHA512Hash -Value $value -Secret $secret
+    Write-PodeHost "Private HMAC-SHA512 hash: $hash"
+
+    This example computes the private HMAC-SHA512 hash for the value "MySecretValue" using the secret key "MySecretKey".
+
+.NOTES
+    - This function is intended for internal use.
+#>
 function Invoke-PodeHMACSHA512Hash {
     [CmdletBinding(DefaultParameterSetName = 'String')]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -70,19 +176,25 @@ function Invoke-PodeHMACSHA512Hash {
         $SecretBytes
     )
 
+    # Convert secret to byte array if provided as a string
     if (![string]::IsNullOrWhiteSpace($Secret)) {
         $SecretBytes = [System.Text.Encoding]::UTF8.GetBytes($Secret)
     }
 
+    # Validate secret length
     if ($SecretBytes.Length -eq 0) {
-        throw 'No secret supplied for HMAC512 hash'
+        # No secret supplied for HMAC512 hash
+        throw ($PodeLocale.noSecretForHmac512ExceptionMessage)
     }
 
+    # Compute private HMAC-SHA512 hash
     $crypto = [System.Security.Cryptography.HMACSHA512]::new($SecretBytes)
     return [System.Convert]::ToBase64String($crypto.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Value)))
 }
 
 function Invoke-PodeSHA256Hash {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -95,6 +207,8 @@ function Invoke-PodeSHA256Hash {
 }
 
 function Invoke-PodeSHA1Hash {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -107,6 +221,8 @@ function Invoke-PodeSHA1Hash {
 }
 
 function ConvertTo-PodeBase64Auth {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -121,6 +237,8 @@ function ConvertTo-PodeBase64Auth {
 }
 
 function Invoke-PodeMD5Hash {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -132,7 +250,25 @@ function Invoke-PodeMD5Hash {
     return [System.BitConverter]::ToString($crypto.ComputeHash([System.Text.Encoding]::ASCII.GetBytes($Value))).Replace('-', '').ToLowerInvariant()
 }
 
-function Get-PodeRandomBytes {
+<#
+.SYNOPSIS
+Generates a random byte array of specified length.
+
+.DESCRIPTION
+This function generates a random byte array using the .NET `System.Security.Cryptography.RandomNumberGenerator` class. You can specify the desired length of the byte array.
+
+.PARAMETER Length
+The length of the byte array to generate (default is 16).
+
+.OUTPUTS
+An array of bytes representing the random byte array.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeRandomByte {
+    [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter()]
         [int]
@@ -148,17 +284,21 @@ function Get-PodeRandomBytes {
 }
 
 function New-PodeSalt {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter()]
         [int]
         $Length = 8
     )
 
-    $bytes = [byte[]](Get-PodeRandomBytes -Length $Length)
+    $bytes = [byte[]](Get-PodeRandomByte -Length $Length)
     return [System.Convert]::ToBase64String($bytes)
 }
 
 function New-PodeGuid {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter()]
         [int]
@@ -173,7 +313,7 @@ function New-PodeGuid {
 
     # generate a cryptographically secure guid
     if ($Secure) {
-        $bytes = [byte[]](Get-PodeRandomBytes -Length $Length)
+        $bytes = [byte[]](Get-PodeRandomByte -Length $Length)
         $guid = ([guid]::new($bytes)).ToString()
     }
 
@@ -190,6 +330,8 @@ function New-PodeGuid {
 }
 
 function Invoke-PodeValueSign {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
@@ -204,15 +346,18 @@ function Invoke-PodeValueSign {
         [switch]
         $Strict
     )
+    process {
+        if ($Strict) {
+            $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
+        }
 
-    if ($Strict) {
-        $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
+        return "s:$($Value).$(Invoke-PodeHMACSHA256Hash -Value $Value -Secret $Secret)"
     }
-
-    return "s:$($Value).$(Invoke-PodeHMACSHA256Hash -Value $Value -Secret $Secret)"
 }
 
 function Invoke-PodeValueUnsign {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
@@ -227,35 +372,38 @@ function Invoke-PodeValueUnsign {
         [switch]
         $Strict
     )
+    process {
+        # the signed value must start with "s:"
+        if (!$Value.StartsWith('s:')) {
+            return $null
+        }
 
-    # the signed value must start with "s:"
-    if (!$Value.StartsWith('s:')) {
-        return $null
+        # the signed value must contain a dot - splitting value and signature
+        $Value = $Value.Substring(2)
+        $periodIndex = $Value.LastIndexOf('.')
+        if ($periodIndex -eq -1) {
+            return $null
+        }
+
+        if ($Strict) {
+            $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
+        }
+
+        # get the raw value and signature
+        $raw = $Value.Substring(0, $periodIndex)
+        $sig = $Value.Substring($periodIndex + 1)
+
+        if ((Invoke-PodeHMACSHA256Hash -Value $raw -Secret $Secret) -ne $sig) {
+            return $null
+        }
+
+        return $raw
     }
-
-    # the signed value must contain a dot - splitting value and signature
-    $Value = $Value.Substring(2)
-    $periodIndex = $Value.LastIndexOf('.')
-    if ($periodIndex -eq -1) {
-        return $null
-    }
-
-    if ($Strict) {
-        $Secret = ConvertTo-PodeStrictSecret -Secret $Secret
-    }
-
-    # get the raw value and signature
-    $raw = $Value.Substring(0, $periodIndex)
-    $sig = $Value.Substring($periodIndex + 1)
-
-    if ((Invoke-PodeHMACSHA256Hash -Value $raw -Secret $Secret) -ne $sig) {
-        return $null
-    }
-
-    return $raw
 }
 
 function Test-PodeValueSigned {
+    [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(ValueFromPipeline = $true)]
         [string]
@@ -269,13 +417,14 @@ function Test-PodeValueSigned {
         [switch]
         $Strict
     )
+    process {
+        if ([string]::IsNullOrEmpty($Value)) {
+            return $false
+        }
 
-    if ([string]::IsNullOrEmpty($Value)) {
-        return $false
+        $result = Invoke-PodeValueUnsign -Value $Value -Secret $Secret -Strict:$Strict
+        return ![string]::IsNullOrEmpty($result)
     }
-
-    $result = Invoke-PodeValueUnsign -Value $Value -Secret $Secret -Strict:$Strict
-    return ![string]::IsNullOrEmpty($result)
 }
 
 function ConvertTo-PodeStrictSecret {
@@ -289,6 +438,8 @@ function ConvertTo-PodeStrictSecret {
 }
 
 function New-PodeJwtSignature {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -304,11 +455,13 @@ function New-PodeJwtSignature {
     )
 
     if (($Algorithm -ine 'none') -and (($null -eq $SecretBytes) -or ($SecretBytes.Length -eq 0))) {
-        throw 'No Secret supplied for JWT signature'
+        # No secret supplied for JWT signature
+        throw ($PodeLocale.noSecretForJwtSignatureExceptionMessage)
     }
 
     if (($Algorithm -ieq 'none') -and (($null -ne $secretBytes) -and ($SecretBytes.Length -gt 0))) {
-        throw 'Expected no secret to be supplied for no signature'
+        # Expected no secret to be supplied for no signature
+        throw ($PodeLocale.noSecretExpectedForNoSignatureExceptionMessage)
     }
 
     $sig = $null
@@ -334,7 +487,7 @@ function New-PodeJwtSignature {
         }
 
         default {
-            throw "The JWT algorithm is not currently supported: $($Algorithm)"
+            throw ($PodeLocale.unsupportedJwtAlgorithmExceptionMessage -f $Algorithm) #"The JWT algorithm is not currently supported: $($Algorithm)"
         }
     }
 
@@ -342,6 +495,8 @@ function New-PodeJwtSignature {
 }
 
 function ConvertTo-PodeBase64UrlValue {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -363,6 +518,8 @@ function ConvertTo-PodeBase64UrlValue {
 }
 
 function ConvertFrom-PodeJwtBase64Value {
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -393,7 +550,8 @@ function ConvertFrom-PodeJwtBase64Value {
         $Value = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Value))
     }
     catch {
-        throw 'Invalid Base64 encoded value found in JWT'
+        # Invalid Base64 encoded value found in JWT
+        throw ($PodeLocale.invalidBase64JwtExceptionMessage)
     }
 
     # return json
@@ -401,6 +559,7 @@ function ConvertFrom-PodeJwtBase64Value {
         return ($Value | ConvertFrom-Json)
     }
     catch {
-        throw 'Invalid JSON value found in JWT'
+        # Invalid JSON value found in JWT
+        throw ($PodeLocale.invalidJsonJwtExceptionMessage)
     }
 }

@@ -20,7 +20,7 @@ function Export-PodeModule {
     )
 
     $PodeContext.Server.AutoImport.Modules.ExportList += @($Name)
-    $PodeContext.Server.AutoImport.Modules.ExportList = $PodeContext.Server.AutoImport.Modules.ExportList | Sort-Object -Unique
+    $PodeContext.Server.AutoImport.Modules.ExportList = @($PodeContext.Server.AutoImport.Modules.ExportList | Sort-Object -Unique)
 }
 
 <#
@@ -46,11 +46,12 @@ function Export-PodeSnapin {
 
     # if non-windows or core, fail
     if ((Test-PodeIsPSCore) -or (Test-PodeIsUnix)) {
-        throw 'Snapins are only supported on Windows PowerShell'
+        # Snapins are only supported on Windows PowerShell
+        throw ($PodeLocale.snapinsSupportedOnWindowsPowershellOnlyExceptionMessage)
     }
 
     $PodeContext.Server.AutoImport.Snapins.ExportList += @($Name)
-    $PodeContext.Server.AutoImport.Snapins.ExportList = $PodeContext.Server.AutoImport.Snapins.ExportList | Sort-Object -Unique
+    $PodeContext.Server.AutoImport.Snapins.ExportList = @($PodeContext.Server.AutoImport.Snapins.ExportList | Sort-Object -Unique)
 }
 
 <#
@@ -75,7 +76,7 @@ function Export-PodeFunction {
     )
 
     $PodeContext.Server.AutoImport.Functions.ExportList += @($Name)
-    $PodeContext.Server.AutoImport.Functions.ExportList = $PodeContext.Server.AutoImport.Functions.ExportList | Sort-Object -Unique
+    $PodeContext.Server.AutoImport.Functions.ExportList = @($PodeContext.Server.AutoImport.Functions.ExportList | Sort-Object -Unique)
 }
 
 <#
@@ -108,5 +109,5 @@ function Export-PodeSecretVault {
     )
 
     $PodeContext.Server.AutoImport.SecretVaults[$Type].ExportList += @($Name)
-    $PodeContext.Server.AutoImport.SecretVaults[$Type].ExportList = $PodeContext.Server.AutoImport.SecretVaults[$Type].ExportList | Sort-Object -Unique
+    $PodeContext.Server.AutoImport.SecretVaults[$Type].ExportList = @($PodeContext.Server.AutoImport.SecretVaults[$Type].ExportList | Sort-Object -Unique)
 }
