@@ -78,7 +78,12 @@ function Add-PodeOAComponentResponse {
         [string[]]
         $DefinitionTag
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
     foreach ($tag in $DefinitionTag) {
         $PodeContext.Server.OpenAPI.Definitions[$tag].components.responses[$Name] = New-PodeOResponseInternal -DefinitionTag $tag -Params $PSBoundParameters
     }
@@ -141,6 +146,9 @@ function Add-PodeOAComponentSchema {
         $DefinitionTag
     )
     begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         $pipelineItemCount = 0
     }
 
@@ -238,6 +246,9 @@ function Add-PodeOAComponentHeader {
         $DefinitionTag
     )
     begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         $pipelineItemCount = 0
     }
 
@@ -331,6 +342,9 @@ function Add-PodeOAComponentRequestBody {
         $DefinitionTag
     )
     begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         $pipelineItemCount = 0
     }
 
@@ -407,6 +421,9 @@ function Add-PodeOAComponentParameter {
         $DefinitionTag
     )
     begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         $pipelineItemCount = 0
     }
 
@@ -498,7 +515,12 @@ function Add-PodeOAComponentExample {
         [string[]]
         $DefinitionTag
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
     foreach ($tag in $DefinitionTag) {
         $Example = [ordered]@{ }
         if ($Summary) {
@@ -933,7 +955,12 @@ function Remove-PodeOAComponent {
         [string[]]
         $DefinitionTag
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
     foreach ($tag in $DefinitionTag) {
         if (!($PodeContext.Server.OpenAPI.Definitions[$tag].components[$field ].keys -ccontains $Name)) {
             $PodeContext.Server.OpenAPI.Definitions[$tag].components[$field ].remove($Name)

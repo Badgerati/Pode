@@ -106,6 +106,9 @@ function Add-PodeFileWatcher {
         $PassThru
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # set random name
     if ([string]::IsNullOrEmpty($Name)) {
         $Name = New-PodeGuid -Secure
@@ -278,6 +281,9 @@ function Remove-PodeFileWatcher {
         $Name
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $null = $PodeContext.Fim.Items.Remove($Name)
 }
 
@@ -295,6 +301,9 @@ function Clear-PodeFileWatchers {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Fim.Items.Clear()
 }

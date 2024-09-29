@@ -781,6 +781,9 @@ function Add-PodeAuth {
         $SuccessUseOrigin
     )
     begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         $pipelineItemCount = 0
     }
 
@@ -1318,6 +1321,9 @@ function Add-PodeAuthWindowsAd {
         $KeepCredential
     )
     begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         $pipelineItemCount = 0
     }
 
@@ -1471,6 +1477,9 @@ function Add-PodeAuthSession {
         $SuccessUseOrigin
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # if sessions haven't been setup, error
     if (!(Test-PodeSessionsEnabled)) {
         # Sessions have not been configured
@@ -1564,6 +1573,9 @@ function Remove-PodeAuth {
         $Name
     )
     process {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         $null = $PodeContext.Server.Authentications.Methods.Remove($Name)
     }
 }
@@ -1581,6 +1593,9 @@ Clear-PodeAuth
 function Clear-PodeAuth {
     [CmdletBinding()]
     param()
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Authentications.Methods.Clear()
 }
@@ -1631,6 +1646,9 @@ function Add-PodeAuthMiddleware {
         [string[]]
         $OADefinitionTag
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $OADefinitionTag
 
@@ -1758,6 +1776,9 @@ function Add-PodeAuthIIS {
         [switch]
         $SuccessUseOrigin
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # ensure we're on Windows!
     if (!(Test-PodeIsWindows)) {
@@ -1924,6 +1945,9 @@ function Add-PodeAuthUserFile {
         $SuccessUseOrigin
     )
     begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         $pipelineItemCount = 0
     }
 
@@ -2099,6 +2123,9 @@ function Add-PodeAuthWindowsLocal {
         $SuccessUseOrigin
     )
     begin {
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+        
         $pipelineItemCount = 0
     }
 
