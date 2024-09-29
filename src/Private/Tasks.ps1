@@ -7,12 +7,12 @@ function Start-PodeTaskHousekeeper {
         return
     }
 
-    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval 30 -ScriptBlock {
+    Add-PodeTimer -Name '__pode_task_housekeeper__' -Interval $PodeContext.Tasks.HouseKeeping.TimerInterval -ScriptBlock {
         try {
             if ($PodeContext.Tasks.Processes.Count -eq 0) {
                 return
             }
-
+        $RetentionMinutes = $PodeContext.Tasks.HouseKeeping.RetentionMinutes
             $now = [datetime]::UtcNow
 
             foreach ($key in $PodeContext.Tasks.Processes.Keys.Clone()) {
@@ -20,7 +20,7 @@ function Start-PodeTaskHousekeeper {
                     $process = $PodeContext.Tasks.Processes[$key]
 
                     # has it completed or expire? then dispose and remove
-                    if ((($null -ne $process.CompletedTime) -and ($process.CompletedTime.AddMinutes(1) -lt $now)) -or ($process.ExpireTime -lt $now)) {
+                    if ((($null -ne $process.CompletedTime) -and ($process.CompletedTime.AddMinutes($RetentionMinutes) -lt $now)) -or ($process.ExpireTime -lt $now)) {
                         Close-PodeTaskInternal -Process $process
                         continue
                     }
