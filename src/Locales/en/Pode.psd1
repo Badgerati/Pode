@@ -289,4 +289,6 @@
     scheduleProcessDoesNotExistExceptionMessage                       = 'Schedule process does not exist: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
     getRequestBodyNotAllowedExceptionMessage                          = '{0} operations cannot have a Request Body.'
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'Unsupported stream compression encoding: {0}'
 }

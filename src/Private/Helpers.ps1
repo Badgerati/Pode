@@ -152,7 +152,7 @@ function Test-PodeIsAdminUser {
     }
 
     try {
-        $principal = New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
+        $principal = [System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent())
         if ($null -eq $principal) {
             return $false
         }
@@ -550,7 +550,7 @@ function Get-PodeSubnetRange {
         'IP'      = ($ip_parts -join '.')
     }
 }
- 
+
 
 function Get-PodeConsoleKey {
     if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
@@ -915,7 +915,7 @@ function Join-PodeServerRoot {
 .EXAMPLE
     $myArray = "apple", "", "banana", "", "cherry"
     $filteredArray = Remove-PodeEmptyItemsFromArray -Array $myArray
-    Write-Host "Filtered array: $filteredArray"
+    Write-PodeHost "Filtered array: $filteredArray"
 
     This example removes empty items from the array and displays the filtered array.
 #>
@@ -924,55 +924,15 @@ function Remove-PodeEmptyItemsFromArray {
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         $Array
     )
-
     if ($null -eq $Array) {
         return @()
     }
 
     return @( @($Array -ne ([string]::Empty)) -ne $null )
-}
 
-function Remove-PodeNullKeysFromHashtable {
-    param(
-        [Parameter(ValueFromPipeline = $true)]
-        [hashtable]
-        $Hashtable
-    )
-
-    foreach ($key in ($Hashtable.Clone()).Keys) {
-        if ($null -eq $Hashtable[$key]) {
-            $null = $Hashtable.Remove($key)
-            continue
-        }
-
-        if (($Hashtable[$key] -is [string]) -and [string]::IsNullOrEmpty($Hashtable[$key])) {
-            $null = $Hashtable.Remove($key)
-            continue
-        }
-
-        if ($Hashtable[$key] -is [array]) {
-            if (($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
-                $null = $Hashtable.Remove($key)
-                continue
-            }
-
-            foreach ($item in $Hashtable[$key]) {
-                if (($item -is [hashtable]) -or ($item -is [System.Collections.Specialized.OrderedDictionary])) {
-                    $item | Remove-PodeNullKeysFromHashtable
-                }
-            }
-
-            continue
-        }
-
-        if (($Hashtable[$key] -is [hashtable]) -or ($Hashtable[$key] -is [System.Collections.Specialized.OrderedDictionary])) {
-            $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
-            continue
-        }
-    }
 }
 
 <#
@@ -1088,7 +1048,7 @@ function Get-PodeFileName {
 .EXAMPLE
     $exception = [System.Exception]::new("The network name is no longer available.")
     $isNetworkFailure = Test-PodeValidNetworkFailure -Exception $exception
-    Write-Host "Is network failure: $isNetworkFailure"
+    Write-PodeHost "Is network failure: $isNetworkFailure"
 
     This example tests whether the exception message "The network name is no longer available." indicates a network failure.
 #>
@@ -1118,35 +1078,37 @@ function Test-PodeValidNetworkFailure {
 
 function ConvertFrom-PodeHeaderQValue {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         [string]
         $Value
     )
 
-    $qs = [ordered]@{}
+    process {
+        $qs = [ordered]@{}
 
-    # return if no value
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        return $qs
-    }
-
-    # split the values up
-    $parts = @($Value -isplit ',').Trim()
-
-    # go through each part and check its q-value
-    foreach ($part in $parts) {
-        # default of 1 if no q-value
-        if ($part.IndexOf(';q=') -eq -1) {
-            $qs[$part] = 1.0
-            continue
+        # return if no value
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            return $qs
         }
 
-        # parse for q-value
-        $atoms = @($part -isplit ';q=')
-        $qs[$atoms[0]] = [double]$atoms[1]
-    }
+        # split the values up
+        $parts = @($Value -isplit ',').Trim()
 
-    return $qs
+        # go through each part and check its q-value
+        foreach ($part in $parts) {
+            # default of 1 if no q-value
+            if ($part.IndexOf(';q=') -eq -1) {
+                $qs[$part] = 1.0
+                continue
+            }
+
+            # parse for q-value
+            $atoms = @($part -isplit ';q=')
+            $qs[$atoms[0]] = [double]$atoms[1]
+        }
+
+        return $qs
+    }
 }
 
 function Get-PodeAcceptEncoding {
@@ -1415,7 +1377,7 @@ function New-PodeRequestException {
 
 function ConvertTo-PodeResponseContent {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         $InputObject,
 
         [Parameter()]
@@ -1433,7 +1395,6 @@ function ConvertTo-PodeResponseContent {
         [switch]
         $AsHtml
     )
-
     # split for the main content type
     $ContentType = Split-PodeContentType -ContentType $ContentType
 
@@ -1477,7 +1438,7 @@ function ConvertTo-PodeResponseContent {
         { $_ -match '^(.*\/)?(.*\+)?xml$' } {
             if ($InputObject -isnot [string]) {
                 $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
+                        [pscustomobject]$item
                     })
 
                 return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
@@ -1491,7 +1452,7 @@ function ConvertTo-PodeResponseContent {
         { $_ -ilike '*/csv' } {
             if ($InputObject -isnot [string]) {
                 $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
+                        [pscustomobject]$item
                     })
 
                 if (Test-PodeIsPSCore) {
@@ -1575,10 +1536,10 @@ function ConvertFrom-PodeRequestContent {
             # if the request is compressed, attempt to uncompress it
             if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
                 # create a compressed stream to decompress the req bytes
-                $ms = New-Object -TypeName System.IO.MemoryStream
+                $ms = [System.IO.MemoryStream]::new()
                 $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
                 $null = $ms.Seek(0, 0)
-                $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
+                $stream = Get-PodeCompressionStream -InputStream $ms -Encoding $TransferEncoding -Mode Decompress
 
                 # read the decompressed bytes
                 $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Request.ContentEncoding
@@ -3057,7 +3018,7 @@ function Find-PodeModuleFile {
 #>
 function Clear-PodeHashtableInnerKey {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         [hashtable]
         $InputObject
     )
@@ -3493,7 +3454,7 @@ function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $false)]
+        [parameter(Mandatory = $true)]
         [AllowNull()]
         $InputObject,
 
@@ -3724,7 +3685,7 @@ function Resolve-PodeObjectArray {
     if ($Property -is [hashtable]) {
         # If the hashtable has only one item, convert it to a PowerShell object
         if ($Property.Count -eq 1) {
-            return New-Object psobject -Property $Property
+            return [pscustomobject]$Property
         }
         else {
             # If the hashtable has more than one item, recursively resolve each item
@@ -3746,6 +3707,72 @@ function Resolve-PodeObjectArray {
     }
     else {
         # For any other type, convert it to a PowerShell object
-        return New-Object psobject -Property $Property
+        return [pscustomobject]$Property
+    }
+}
+
+<#
+.SYNOPSIS
+    Creates a deep clone of a PSObject by serializing and deserializing the object.
+
+.DESCRIPTION
+    The Copy-PodeObjectDeepClone function takes a PSObject as input and creates a deep clone of it.
+    This is achieved by serializing the object using the PSSerializer class, and then
+    deserializing it back into a new instance. This method ensures that nested objects, arrays,
+    and other complex structures are copied fully, without sharing references between the original
+    and the cloned object.
+
+.PARAMETER InputObject
+    The PSObject that you want to deep clone. This object will be serialized and then deserialized
+    to create a deep copy.
+
+.PARAMETER Depth
+    Specifies the depth for the serialization. The depth controls how deeply nested objects
+    and properties are serialized. The default value is 10.
+
+.INPUTS
+    [PSObject] - The function accepts a PSObject to deep clone.
+
+.OUTPUTS
+    [PSObject] - The function returns a new PSObject that is a deep clone of the original.
+
+.EXAMPLE
+    $originalObject = [PSCustomObject]@{
+        Name = 'John Doe'
+        Age = 30
+        Address = [PSCustomObject]@{
+            Street = '123 Main St'
+            City = 'Anytown'
+            Zip = '12345'
+        }
+    }
+
+    $clonedObject = $originalObject | Copy-PodeObjectDeepClone -Deep 15
+
+    # The $clonedObject is now a deep clone of $originalObject.
+    # Changes to $clonedObject will not affect $originalObject and vice versa.
+
+.NOTES
+    This function uses the System.Management.Automation.PSSerializer class, which is available in
+    PowerShell 5.1 and later versions. The default depth parameter is set to 10 to handle nested
+    objects appropriately, but it can be customized via the -Deep parameter.
+    This is an internal function and may change in future releases of Pode.
+#>
+function Copy-PodeObjectDeepClone {
+    param (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [PSObject]$InputObject,
+
+        [Parameter()]
+        [int]$Depth = 10
+    )
+
+    process {
+        # Serialize the object to XML format using PSSerializer
+        # The depth parameter controls how deeply nested objects are serialized
+        $xmlSerializer = [System.Management.Automation.PSSerializer]::Serialize($InputObject, $Depth)
+
+        # Deserialize the XML back into a new PSObject, creating a deep clone of the original
+        return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }

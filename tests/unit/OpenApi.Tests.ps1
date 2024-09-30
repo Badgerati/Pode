@@ -1680,10 +1680,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -1709,10 +1709,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -1745,10 +1745,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -1775,10 +1775,10 @@ Describe 'OpenApi' {
                 $result.Count | Should -Be 3
                 $result.type | Should -Be 'object'
                 $result.xml | Should -Not -BeNullOrEmpty
-                $result.xml | Should -BeOfType [hashtable]
+                $result.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.xml.Count | Should -Be 1
                 $result.properties | Should -Not -BeNullOrEmpty
-                $result.properties | Should -BeOfType [hashtable]
+                $result.properties | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
                 $result.properties.Count | Should -Be 2
                 $result.properties.name | Should -Not -BeNullOrEmpty
                 $result.properties.name | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -2086,7 +2086,7 @@ Describe 'OpenApi' {
                 {
                     Merge-PodeOAProperty   -Type AllOf  -DiscriminatorProperty 'name'  -ObjectDefinitions @('Pet',
                 (New-PodeOAObjectProperty  -Properties  @((New-PodeOAIntProperty -Name 'id'), (New-PodeOAStringProperty -Name 'name')))
-                # Discriminator parameter is not compatible with allOf
+                        # Discriminator parameter is not compatible with allOf
                     ) } | Should -Throw -ExpectedMessage $PodeLocale.discriminatorIncompatibleWithAllOfExceptionMessage
             }
 
@@ -2184,20 +2184,20 @@ Describe 'OpenApi' {
 
 
 
-    Context 'Set-PodeOARouteInfo' {
+    Context 'Set-PodeOARouteInfo single route' {
         BeforeEach {
             $Route = @{
                 OpenApi = @{
-                    Path           = '/test'
-                    Responses      = @{
+                    Path               = '/test'
+                    Responses          = @{
                         '200'     = @{ description = 'OK' }
                         'default' = @{ description = 'Internal server error' }
                     }
-                    Parameters          = $null
-                    RequestBody         = $null
-                    Authentication      = @()
-                    DefinitionTag       = @('Default')
-                    IsDefTagConfigured  = $false
+                    Parameters         = $null
+                    RequestBody        = $null
+                    Authentication     = @()
+                    DefinitionTag      = @('Default')
+                    IsDefTagConfigured = $false
                 }
             }
 
@@ -2240,6 +2240,74 @@ Describe 'OpenApi' {
             $result.OpenApi.tags | Should -Be  'pet'
             $result.OpenApi.swagger | Should -BeTrue
             $result.OpenApi.deprecated | Should -BeNullOrEmpty
+        }
+    }
+
+    Context 'Set-PodeOARouteInfo multi routes' {
+        BeforeEach {
+            $Route = @(@{
+                    OpenApi = @{
+                        Path           = '/test'
+                        Responses      = @{
+                            '200'     = @{ description = 'OK' }
+                            'default' = @{ description = 'Internal server error' }
+                        }
+                        Parameters     = $null
+                        RequestBody    = $null
+                        Authentication = @()
+                        DefinitionTag  = @('Default')
+                    }
+                },
+                @{
+                    OpenApi = @{
+                        Path           = '/test2'
+                        Responses      = @{
+                            '200'     = @{ description = 'OK' }
+                            'default' = @{ description = 'Internal server error' }
+                        }
+                        Parameters     = $null
+                        RequestBody    = $null
+                        Authentication = @()
+                        DefinitionTag  = @('Default')
+                    }
+                })
+
+            Add-PodeOATag -Name 'pet' -Description 'Everything about your Pets' -ExternalDoc  (New-PodeOAExternalDoc   -Description 'Find out more about Swagger' -Url 'http://swagger.io')
+        }
+
+        It 'No switches' {
+            $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet'
+            $Route.OpenApi | Should -Not -BeNullOrEmpty
+            $Route.OpenApi.Summary | Should -Be @('Update an existing pet', 'Update an existing pet')
+            $Route.OpenApi.description | Should -Be @('Update an existing pet by Id', 'Update an existing pet by Id')
+            $Route.OpenApi.tags | Should -Be  @('pet', 'pet')
+            $Route.OpenApi.swagger | Should -BeTrue
+            $Route.OpenApi.deprecated | Should -BeNullOrEmpty
+        }
+        It 'Deprecated' {
+            $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet'   -Deprecated
+            $Route.OpenApi | Should -Not -BeNullOrEmpty
+            $Route.OpenApi.Summary | Should -Be @('Update an existing pet', 'Update an existing pet')
+            $Route.OpenApi.description | Should -Be @('Update an existing pet by Id', 'Update an existing pet by Id')
+            $Route.OpenApi.tags | Should -Be  @('pet', 'pet')
+            $Route.OpenApi.swagger | Should -BeTrue
+            $Route.OpenApi.deprecated | Should -BeTrue
+        }
+
+        It 'PassThru' {
+            $result = $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -PassThru
+            $result | Should -Not -BeNullOrEmpty
+            $result.OpenApi | Should -Not -BeNullOrEmpty
+            $Route.OpenApi.Summary | Should -Be @('Update an existing pet', 'Update an existing pet')
+            $Route.OpenApi.description | Should -Be @('Update an existing pet by Id', 'Update an existing pet by Id')
+            $Route.OpenApi.tags | Should -Be  @('pet', 'pet')
+            $result.OpenApi.swagger | Should -BeTrue
+            $result.OpenApi.deprecated | Should -BeNullOrEmpty
+        }
+
+        It 'PassThru with OperationID' {
+            { $Route | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru } |
+                Should -Throw -ExpectedMessage ($PodeLocale.operationIdMustBeUniqueForArrayExceptionMessage -f 'updatePet') #'OperationID: {0} has to be unique and cannot be applied to an array.'
         }
     }
 
@@ -2869,27 +2937,27 @@ Describe 'OpenApi' {
         }
 
         it 'default' {
-            Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAContentMediaType -MediaType 'application/json' , 'application/xml', 'application/x-www-form-urlencoded' -Content 'Cat'  )
+            Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -Content ( New-PodeOAContentMediaType -ContentType 'application/json' , 'application/xml', 'application/x-www-form-urlencoded' -Content 'Cat'  )
             $result = $PodeContext.Server.OpenAPI.Definitions['default'].components.requestBodies['PetBodySchema']
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'Pet in the store'
-            $result.content | Should -BeOfType [hashtable]
+            $result.content | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $result.content.Count | Should -Be 3
-            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.Count | Should -Be 1
-            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.schema.Count | Should -Be 1
             $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/xml' | Should -BeOfType [hashtable]
+            $result.content.'application/xml' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.Count | Should -Be 1
-            $result.content.'application/xml'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/xml'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.schema.Count | Should -Be 1
             $result.content.'application/xml'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.Count | Should -Be 1
-            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.schema.Count | Should -Be 1
             $result.content.'application/x-www-form-urlencoded'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             $result.required | Should -BeTrue
@@ -2902,21 +2970,21 @@ Describe 'OpenApi' {
             $result | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.Count | Should -Be 3
             $result.description | Should -Be 'Pet in the store'
-            $result.content | Should -BeOfType [hashtable]
+            $result.content | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.Count | Should -Be 3
-            $result.content.'application/json' | Should -BeOfType [hashtable]
+            $result.content.'application/json' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.Count | Should -Be 1
-            $result.content.'application/json'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/json'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/json'.schema.Count | Should -Be 1
             $result.content.'application/json'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/xml' | Should -BeOfType [hashtable]
+            $result.content.'application/xml' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.Count | Should -Be 1
-            $result.content.'application/xml'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/xml'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/xml'.schema.Count | Should -Be 1
             $result.content.'application/xml'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
-            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded' | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.Count | Should -Be 1
-            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [hashtable]
+            $result.content.'application/x-www-form-urlencoded'.schema | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
             $result.content.'application/x-www-form-urlencoded'.schema.Count | Should -Be 1
             $result.content.'application/x-www-form-urlencoded'.schema['$ref'] | Should -Be '#/components/schemas/Cat'
             $result.required | Should -BeTrue
@@ -2965,13 +3033,13 @@ Describe 'OpenApi' {
 
         # Test return type
         It 'Returns an OrderedHashtable' {
-            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
+            $example = New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
             $example | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
         }
 
         # Test output for a single MediaType
         It 'Correctly creates example for a single MediaType' {
-            $example = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
+            $example = New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary  'JSON Example'  -ExternalValue 'http://external.com'
             $example['application/json'].Keys -Contains 'user' | Should -Be $true
             $example['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true
             $example['application/json']['user'].externalValue -eq 'http://external.com' | Should -Be $true
@@ -2979,8 +3047,8 @@ Describe 'OpenApi' {
 
         # Test merging behavior
         It 'Correctly merges examples for multiple MediaTypes' {
-            $result = New-PodeOAExample -MediaType 'application/json' -Name 'user' -Summary   'JSON Example' -Value '[]' |
-                New-PodeOAExample -MediaType 'application/xml' -Name 'user' -Summary 'XML Example' -Value '<>'
+            $result = New-PodeOAExample -ContentType 'application/json' -Name 'user' -Summary   'JSON Example' -Value '[]' |
+                New-PodeOAExample -ContentType 'application/xml' -Name 'user' -Summary 'XML Example' -Value '<>'
 
             $result.Count -eq 2 | Should -Be $true
             $result['application/json']['user'].summary -eq 'JSON Example' | Should -Be $true
@@ -3043,16 +3111,16 @@ Describe 'OpenApi' {
             $PodeContext = @{
                 Server = @{
                     OpenAPI = @{
-                        Definitions = @{
+                        Definitions                 = @{
                             'oldTag' = @{
                                 # Mock definition details
                                 Description = 'Old tag description'
                             }
                         }
-                        SelectedDefinitionTag = 'oldTag'
+                        SelectedDefinitionTag       = 'oldTag'
                         DefinitionTagSelectionStack = [System.Collections.Stack]@()
                     }
-                    Web = @{
+                    Web     = @{
                         OpenApi = @{
                             DefaultDefinitionTag = 'oldTag'
                         }
@@ -3111,7 +3179,7 @@ Describe 'OpenApi' {
 
         It 'Sets Parameters on the route if provided' {
             $route = @{
-                Method = 'GET'
+                Method  = 'GET'
                 OpenApi = @{}
             }
             $parameters = @(
@@ -3125,7 +3193,7 @@ Describe 'OpenApi' {
 
         It 'Sets RequestBody on the route if method is POST' {
             $route = @{
-                Method = 'POST'
+                Method  = 'POST'
                 OpenApi = @{}
             }
             $requestBody = @{ Content = 'application/json' }
@@ -3137,7 +3205,7 @@ Describe 'OpenApi' {
 
         It 'Throws an exception if RequestBody is set on a method that does not allow it' {
             $route = @{
-                Method = 'GET'
+                Method  = 'GET'
                 OpenApi = @{}
             }
             $requestBody = @{ Content = 'application/json' }
@@ -3149,7 +3217,7 @@ Describe 'OpenApi' {
 
         It 'Returns the route when PassThru is used' {
             $route = @{
-                Method = 'POST'
+                Method  = 'POST'
                 OpenApi = @{}
             }
 
@@ -3160,7 +3228,7 @@ Describe 'OpenApi' {
 
         It 'Does not set RequestBody if not provided' {
             $route = @{
-                Method = 'PUT'
+                Method  = 'PUT'
                 OpenApi = @{}
             }
 
@@ -3198,7 +3266,7 @@ Describe 'OpenApi' {
                 (New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold'))
             )
             $Pet.type | Should -be 'object'
-            $Pet.xml | Should -BeOfType [hashtable]
+            $Pet.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $Pet.xml.Count | Should -Be 1
             $Pet.xml.name | Should -Be 'pet'
             $Pet.name | Should -Be 'Pet'
@@ -3253,7 +3321,7 @@ Describe 'OpenApi' {
                 New-PodeOAStringProperty -Name 'status' -Description 'pet status in the store' -Enum @('available', 'pending', 'sold') |
                 New-PodeOAObjectProperty -Name 'Pet' -XmlName 'pet'
             $Pet.type | Should -be 'object'
-            $Pet.xml | Should -BeOfType [hashtable]
+            $Pet.xml | Should -BeOfType  [System.Collections.Specialized.OrderedDictionary]
             $Pet.xml.Count | Should -Be 1
             $Pet.xml.name | Should -Be 'pet'
             $Pet.name | Should -Be 'Pet'

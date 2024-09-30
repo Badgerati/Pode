@@ -17,7 +17,7 @@ Describe 'Start-PodeAzFuncServer' {
         Mock Get-PodeRouteValidateMiddleware { }
         Mock Get-PodeBodyMiddleware { }
         Mock Get-PodeCookieMiddleware { }
-        Mock New-Object { return @{} }
+        Mock New-PodeAzFuncResponse { return @{} }
         Mock Get-PodeHeader { return 'some-value' }
         Mock Invoke-PodeScriptBlock { }
         Mock Write-Host { }

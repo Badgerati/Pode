@@ -856,13 +856,10 @@ function Invoke-PodeAuthInbuiltScriptBlock {
         $ScriptBlock,
 
         [Parameter()]
-        $UsingVariables,
-
-        [switch]
-        $NoSplat
+        $UsingVariables
     )
 
-    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $User -UsingVariables $UsingVariables -Return -Splat:(!$NoSplat))
+    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $User -UsingVariables $UsingVariables -Return)
 }
 
 function Get-PodeAuthWindowsLocalMethod {
@@ -947,7 +944,7 @@ function Get-PodeAuthWindowsADIISMethod {
         try {
             # parse the auth token and get the user
             $winAuthToken = [System.IntPtr][Int]"0x$($token)"
-            $winIdentity = New-Object System.Security.Principal.WindowsIdentity($winAuthToken, 'Windows')
+            $winIdentity = [System.Security.Principal.WindowsIdentity]::new($winAuthToken, 'Windows')
 
             # get user and domain
             $username = ($winIdentity.Name -split '\\')[-1]
@@ -1175,7 +1172,7 @@ function Invoke-PodeAuthValidation {
         if ($result.Success -and !$auth.PassOne) {
             # invoke scriptblock, or use result of merge default
             if ($null -ne $auth.ScriptBlock.Script) {
-                $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables -NoSplat
+                $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables
             }
             else {
                 $result = $results[$auth.MergeDefault]
@@ -1902,10 +1899,10 @@ function Open-PodeAuthADConnection {
 
         'directoryservices' {
             if ([string]::IsNullOrWhiteSpace($Password)) {
-                $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)")
+                $ad = [System.DirectoryServices.DirectoryEntry]::new("$($Protocol)://$($Server)")
             }
             else {
-                $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)", "$($Username)", "$($Password)")
+                $ad = [System.DirectoryServices.DirectoryEntry]::new("$($Protocol)://$($Server)", "$($Username)", "$($Password)")
             }
 
             if (Test-PodeIsEmpty $ad.distinguishedName) {
@@ -1978,7 +1975,7 @@ function Get-PodeAuthADUser {
         }
 
         'directoryservices' {
-            $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
+            $Connection.Searcher = [System.DirectoryServices.DirectorySearcher]::new($Connection.Entry)
             $Connection.Searcher.filter = $query
 
             $result = $Connection.Searcher.FindOne().Properties
@@ -2118,7 +2115,7 @@ function Get-PodeAuthADGroupDirect {
 
         'directoryservices' {
             if ($null -eq $Connection.Searcher) {
-                $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
+                $Connection.Searcher = [System.DirectoryServices.DirectorySearcher]::new($Connection.Entry)
             }
 
             $Connection.Searcher.filter = $query
@@ -2167,7 +2164,7 @@ function Get-PodeAuthADGroupAll {
 
         'directoryservices' {
             if ($null -eq $Connection.Searcher) {
-                $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
+                $Connection.Searcher = [System.DirectoryServices.DirectorySearcher]::new($Connection.Entry)
             }
 
             $null = $Connection.Searcher.PropertiesToLoad.Add('samaccountname')
@@ -2180,22 +2177,29 @@ function Get-PodeAuthADGroupAll {
 }
 
 function Get-PodeAuthDomainName {
-    if (Test-PodeIsUnix) {
-        $dn = (dnsdomainname)
-        if ([string]::IsNullOrWhiteSpace($dn)) {
-            $dn = (/usr/sbin/realm list --name-only)
-        }
+    $domain = $null
 
-        return $dn
+    if (Test-PodeIsMacOS) {
+        $domain = (scutil --dns | grep -m 1 'search domain\[0\]' | cut -d ':' -f 2)
+    }
+    elseif (Test-PodeIsUnix) {
+        $domain = (dnsdomainname)
+        if ([string]::IsNullOrWhiteSpace($domain)) {
+            $domain = (/usr/sbin/realm list --name-only)
+        }
     }
     else {
         $domain = $env:USERDNSDOMAIN
         if ([string]::IsNullOrWhiteSpace($domain)) {
             $domain = (Get-CimInstance -Class Win32_ComputerSystem -Verbose:$false).Domain
         }
-
-        return $domain
     }
+
+    if (![string]::IsNullOrEmpty($domain)) {
+        $domain = $domain.Trim()
+    }
+
+    return $domain
 }
 
 function Find-PodeAuth {

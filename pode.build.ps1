@@ -890,6 +890,10 @@ task ReleaseNotes {
     $dependabot = @{}
 
     foreach ($pr in $prs) {
+        if ($pr.labels.name -icontains 'superseded') {
+            continue
+        }
+
         $label = ($pr.labels[0].name -split ' ')[0]
         if ($label -iin @('new-release', 'internal-code')) {
             continue
@@ -936,7 +940,7 @@ task ReleaseNotes {
             }
         }
 
-        $titles = @($pr.title)
+        $titles = @($pr.title).Trim()
         if ($pr.title.Contains(';')) {
             $titles = ($pr.title -split ';').Trim()
         }
@@ -947,7 +951,7 @@ task ReleaseNotes {
         }
 
         foreach ($title in $titles) {
-            $str = "* #$($pr.number): $($title)"
+            $str = "* #$($pr.number): $($title -replace '`', "'")"
             if (![string]::IsNullOrWhiteSpace($author)) {
                 $str += " (thanks @$($author)!)"
             }

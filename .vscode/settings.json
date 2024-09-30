@@ -21,6 +21,7 @@
     "powershell.codeFormatting.whitespaceBetweenParameters": false,
     "powershell.codeFormatting.whitespaceInsideBrace": true,
     "powershell.scriptAnalysis.settingsPath": "PSScriptAnalyzerSettings.psd1",
+    "powershell.scriptAnalysis.enable": true,
     "files.trimTrailingWhitespace": true,
     "files.associations": {
         "*.pode": "html"
