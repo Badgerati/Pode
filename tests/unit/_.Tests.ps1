@@ -1,4 +1,5 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 
 BeforeDiscovery {
@@ -175,5 +176,50 @@ Describe 'Examples Script Headers' {
             $hasDescription | Should -Be $true
         }
     }
+
+}
+
+
+Describe 'Check for Duplicate Function Definitions' {
+    BeforeAll { $path = $PSCommandPath
+        $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+        # Retrieve all function definitions from the module files
+        $functionNames = @()
+        $moduleFiles = Get-ChildItem -Path $src -Recurse -Include '*.ps1', '*.psm1'
+
+        foreach ($file in $moduleFiles) {
+            $content = Get-Content -Path $file.FullName
+
+            foreach ($line in $content) {
+                # Match function definitions (e.g., "function MyFunction {")
+                if ($line -match 'function\s+([^\s{]+)\s*{') {
+                    $functionName = $Matches[1]
+                    $functionNames += [PSCustomObject]@{
+                        FunctionName = $functionName
+                        FilePath     = $file.FullName
+                        LineNumber   = [array]::IndexOf($content, $line) + 1
+                    }
+                }
+            }
+        }
+
+        # Group by function name and check for duplicates
+        $duplicates = $functionNames | Group-Object -Property FunctionName | Where-Object { $_.Count -gt 1 }
+
+        # Additional information in case of failure
+        if ($duplicates) {
+            Write-host 'The following functions have multiple definitions:'
+            foreach ($group in $duplicates) {
+                Write-host "Function: $($group.Name)"
+                foreach ($func in $group.Group) {
+                    Write-host " - File: $($func.FilePath), Line: $($func.LineNumber)"
+                }
+            }
+        }
+    }
+    It 'should not have duplicate function definitions' {
+        $duplicates.Count | Should -Be 0
+    }
+
 
 }
