@@ -184,42 +184,53 @@ Describe 'Check for Duplicate Function Definitions' {
     BeforeAll { $path = $PSCommandPath
         $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
         # Retrieve all function definitions from the module files
-        $functionNames = @()
+        $functionNames = @{}
+        $duplicatedFunctionNames = @{}
         $moduleFiles = Get-ChildItem -Path $src -Recurse -Include '*.ps1', '*.psm1'
 
         foreach ($file in $moduleFiles) {
             $content = Get-Content -Path $file.FullName
-
+            $lineNumber = 0
             foreach ($line in $content) {
+                # Increment line number for accurate tracking
+                $lineNumber++
                 # Match function definitions (e.g., "function MyFunction {")
                 if ($line -match 'function\s+([^\s{]+)\s*{') {
                     $functionName = $Matches[1]
-                    $functionNames += [PSCustomObject]@{
-                        FunctionName = $functionName
-                        FilePath     = $file.FullName
-                        LineNumber   = [array]::IndexOf($content, $line) + 1
+
+                    # Check if function name already exists
+                    if (! $functionNames.ContainsKey($functionName)) {
+                        $functionNames[$functionName] = @{
+                            FunctionName = $functionName
+                            FilePath     = @( )
+                            LineNumber   = @( )
+                        }
                     }
+                    else {
+                        # Add to duplicated function names if not already tracked
+                        $duplicatedFunctionNames[$functionName] = $functionNames[$functionName]
+                    }
+                    # Update the function details
+                    $functionNames[$functionName].LineNumber += $lineNumber
+                    $functionNames[$functionName].FilePath += $file.FullName
                 }
             }
         }
-
-        # Group by function name and check for duplicates
-        $duplicates = $functionNames | Group-Object -Property FunctionName | Where-Object { $_.Count -gt 1 }
 
         # Additional information in case of failure
-        if ($duplicates) {
+        if ($duplicatedFunctionNames.Count -gt 0) {
             Write-host 'The following functions have multiple definitions:'
-            foreach ($group in $duplicates) {
-                Write-host "Function: $($group.Name)"
-                foreach ($func in $group.Group) {
-                    Write-host " - File: $($func.FilePath), Line: $($func.LineNumber)"
+            foreach ($key in $duplicatedFunctionNames.Keys) {
+                Write-host "Function: $($key)"
+                for ($i = 0; $i -lt $duplicatedFunctionNames[$key].LineNumber.Count ; $i++) {
+                    Write-host " - File: $($duplicatedFunctionNames[$key].FilePath[$i]), Line: $($duplicatedFunctionNames[$key].LineNumber[$i])"
                 }
             }
         }
     }
+
     It 'should not have duplicate function definitions' {
-        $duplicates.Count | Should -Be 0
+        # Assert no duplicate function definitions
+        $duplicatedFunctionNames.Count | Should -Be 0
     }
-
-
 }
