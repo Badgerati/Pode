@@ -34,6 +34,11 @@ function Start-PodeInternalServer {
         }
 
         $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
+
+        if ($PodeWatchdog -and $PodeWatchdog.EnableMonitoring) {
+            $_script=[scriptblock]::Create("$($_script.ToString())`nSet-PodeWatchdogEndpoint -Address $($PodeWatchdog.MonitoringAddress) -Port $($PodeWatchdog.MonitoringPort)")
+        }
+
         $null = Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
 
         #Validate OpenAPI definitions

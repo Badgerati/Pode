@@ -1,0 +1,37 @@
+try {
+    # Determine the script path and Pode module path
+    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
+    $podePath = Split-Path -Parent -Path $ScriptPath
+
+    # Import the Pode module from the source path if it exists, otherwise from installed modules
+    if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
+        Import-Module "$($podePath)/src/Pode.psm1" -Force -ErrorAction Stop
+    }
+    else {
+        Import-Module -Name 'Pode' -MaximumVersion 2.99 -ErrorAction Stop
+    }
+}
+catch { throw }
+
+
+$filePath = '.\Write-Response.ps1'
+
+$process = Enable-PodeWatchdog -FilePath $filePath -PassThru
+
+# Monitor the process if needed
+if ($process) {
+    Write-Output "Process started with ID: $($process.Id)"
+
+    # Ask user if they want to close the process
+    $userInput = Read-Host -Prompt 'Do you want to close the process before waiting for it to complete? (y/n)'
+
+    if ($userInput -eq 'y') {
+        # Stop the Pode watchdog process if the user chooses 'y'
+        Stop-PodeWatchdog
+    }
+    Wait-Process -Id $process.Id -ErrorAction SilentlyContinue
+    Write-Output "Process has exited with code: $($process.ExitCode)"
+}
+else {
+    Write-Error 'Failed to start the PowerShell process with the scriptblock.'
+}

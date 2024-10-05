@@ -141,7 +141,9 @@ function Start-PodeServer {
     end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
-        }    # Store the name of the current runspace
+        }
+
+        # Store the name of the current runspace
         $previousRunspaceName = Get-PodeCurrentRunspaceName
         # Sets the name of the current runspace
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
@@ -149,6 +151,12 @@ function Start-PodeServer {
         # ensure the session is clean
         $PodeContext = $null
         $ShowDoneMessage = $true
+
+        # check if podeWatchdog is configured
+        if ($PodeWatchdog) {
+            $DisableTermination = [switch]$PodeWatchdog.DisableTermination
+            $Quiet = [switch]$PodeWatchdog.Quiet
+        }
 
         try {
             # if we have a filepath, resolve it - and extract a root path from it
@@ -250,6 +258,7 @@ function Start-PodeServer {
 
             # clean the session
             $PodeContext = $null
+            $PodeWatchdog= $null
 
             # Restore the name of the current runspace
             Set-PodeCurrentRunspaceName -Name $previousRunspaceName
