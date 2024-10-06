@@ -36,7 +36,7 @@ function Start-PodeInternalServer {
         $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
 
         if ($PodeWatchdog -and $PodeWatchdog.EnableMonitoring) {
-            $_script=[scriptblock]::Create("$($_script.ToString())`nSet-PodeWatchdogEndpoint -Address $($PodeWatchdog.MonitoringAddress) -Port $($PodeWatchdog.MonitoringPort)")
+            $_script = [scriptblock]::Create("$($_script.ToString())`nSet-PodeWatchdogEndpoint -Address $($PodeWatchdog.MonitoringAddress) -Port $($PodeWatchdog.MonitoringPort)")
         }
 
         $null = Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
@@ -232,7 +232,12 @@ function Restart-PodeInternalServer {
         $PodeContext.Tokens.Cancellation.Cancel()
 
         # close all current runspaces
+        Write-Verbose 'Closing runspaces'
         Close-PodeRunspace -ClosePool
+
+        # stop the watchdog if it's running
+        Write-Verbose 'Stopping watchdog'
+        Stop-PodeWatchdog
 
         # remove all of the pode temp drives
         Remove-PodePSDrive

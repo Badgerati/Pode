@@ -146,6 +146,9 @@ function New-PodeContext {
         Timers     = 1
     }
 
+    # watchdog settings
+    $ctx.Server.Watchdog = @{}
+
     # set socket details for pode server
     $ctx.Server.Sockets = @{
         Ssl            = @{

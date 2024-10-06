@@ -19,7 +19,10 @@ function Enable-PodeWatchdog {
         $MonitoringPort = 5051,
 
         [string]
-        $MonitoringAddress = 'localhost'
+        $MonitoringAddress = 'localhost',
+
+        [switch]
+        $FileMonitoring
     )
 
 
@@ -75,9 +78,30 @@ function Enable-PodeWatchdog {
 
     }
 
-    # Start the process with the arguments
-    $process = Start-Process -FilePath $shell -ArgumentList $arguments -NoNewWindow -PassThru
+    $PodeContext.Server.Watchdog = @{
+        Shell             = $shell
+        Arguments         = $arguments
+        Process           = $process
+        MonitoringPort    = $MonitoringPort
+        MonitoringAddress = $MonitoringAddress
+        Status            = 'Starting'
+    }
 
+    # Start the process
+    Start-PodeWatchdogProcess
+
+    if ($FileMonitoring.IsPresent) {
+        if ($PSCmdlet.ParameterSetName -ieq 'File') {
+            Add-PodeFileWatcher -Path (get-item $FilePath).DirectoryName -ScriptBlock {
+                "[$($FileEvent.Type)]: $($FileEvent.FullPath)" | Out-Default
+                $PodeContext.Server.Watchdog.Status = 'Restarting'
+            }
+        }
+    }
+
+
+
+    Start-PodeWatchdogHousekeeper
 
     # return the process?
     if ($PassThru) {
@@ -85,6 +109,40 @@ function Enable-PodeWatchdog {
     }
 
 }
+
+
+function Stop-PodeWatchdog {
+    param ()
+    write-podehost 'Stopping watchdog'
+    if ($null -ne $PodeContext.Server.Watchdog.Process ) {
+        $PodeContext.Server.Watchdog.Status = 'Stopping'
+        if (Stop-PodeWatchdogProcess) {
+            $PodeContext.Server.Watchdog.Status = 'Exited'
+        }
+        else {
+            $PodeContext.Server.Watchdog.Status = 'Undefined'
+        }
+    }
+}
+
+
+function Start-PodeWatchdogProcess {
+    param ()
+    write-podehost 'starting watchdog'
+    if ($null -eq $PodeContext.Server.Watchdog.Process ) {
+        $PodeContext.Server.Watchdog.Status = 'Starting'
+        $PodeContext.Server.Watchdog.Process = Start-Process -FilePath  $PodeContext.Server.Watchdog.Shell -ArgumentList $PodeContext.Server.Watchdog.Arguments -NoNewWindow -PassThru
+
+        if (!$PodeContext.Server.Watchdog.Process.HasExited) {
+            $PodeContext.Server.Watchdog.Status = 'Running'
+        }
+        else {
+            $PodeContext.Server.Watchdog.Status = 'Offline'
+        }
+    }
+    return $PodeContext.Server.Watchdog.Status
+}
+
 
 
 function Set-PodeWatchdogEndpoint {
@@ -115,20 +173,58 @@ function Set-PodeWatchdogEndpoint {
 
     Add-PodeRoute -PassThru -Method Get -Path '/status' -EndpointName '_watchdog_monitor_endpoint' -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value [ordered]@{
-            Status        = 'online'
-            Pid           = $PID
-            CurrentUptime = Get-PodeServerUptime
-            TotalUptime   = Get-PodeServerUptime -Total
-            RestartCount  = Get-PodeServerRestartCount
-        }
+        Write-PodeJsonResponse -StatusCode 200 -Value ([ordered]@{
+                Pid           = $PID
+                CurrentUptime = (Get-PodeServerUptime)
+                TotalUptime   = (Get-PodeServerUptime -Total)
+                RestartCount  = (Get-PodeServerRestartCount)
+            }
+        )
     }
 
 
 }
 
 
-function Stop-PodeWatchdog {
+
+
+function Start-PodeWatchdogHousekeeper {
+    Add-PodeTimer -Name '__pode_watchdog_housekeeper__' -Interval 10 -ScriptBlock {
+        try {
+
+            $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
+            if ($process) {
+                if ($PodeContext.Server.Watchdog.Status -eq 'Restarting') {
+                    write-podehost 'start Restarting '
+                    for ($i = 0; $i -lt 10 ; $i++) {
+                        Start-Sleep -Seconds 5
+                        $request = Get-PodeWatchdogInfo -Type 'Requests'
+                        if ($request) {
+                            break
+                        }
+                    }
+                    Stop-PodeWatchdogProcess
+                    Start-PodeWatchdogProcess
+
+                }
+            }
+            else {
+                write-podehost 'Process is not running'
+                write-podehost 'Restarting....'
+                Start-PodeWatchdogProcess
+
+
+            }
+
+
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+        }
+    }
+}
+
+function Stop-PodeWatchdogProcess {
     [CmdletBinding()]
     [OutputType([bool])]
     param (
@@ -140,9 +236,10 @@ function Stop-PodeWatchdog {
     )
 
     # Construct the URI for the REST call using $PodeWatchdog global settings
-    $uri = "http://$($PodeWatchdog.MonitoringAddress):$($PodeWatchdog.MonitoringPort)/close"
+    $uri = "http://$($PodeContext.Server.Watchdog.MonitoringAddress):$($PodeContext.Server.Watchdog.MonitoringPort)/close"
 
     Write-Verbose "Attempting to stop Pode server at $uri"
+    Write-podehost "Attempting to stop Pode server at $uri"
 
     # Retry logic with a loop
     for ($attempt = 1; $attempt -le $RetryCount; $attempt++) {
@@ -177,4 +274,45 @@ function Stop-PodeWatchdog {
     # If retries are exhausted, return failure
     Write-Error "Failed to stop the Pode server after $RetryCount attempts."
     return $false
+}
+
+
+function Get-PodeWatchdogInfo {
+    [CmdletBinding(DefaultParameterSetName = 'HashTable')]
+    [OutputType([string])]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Status', 'Requests', 'Listeners')]
+        [string] $Type = 'Status',
+
+        [Parameter(  ParameterSetName = 'Raw')]
+        [switch]
+        $Raw,
+
+        [Parameter( ParameterSetName = 'HashTable')]
+        [switch]
+        $AsHashTable
+    )
+    try {
+        $uri = "http://$($PodeContext.Server.Watchdog.MonitoringAddress):$($PodeContext.Server.Watchdog.MonitoringPort)/$($Type.ToLower())"
+        $result = Invoke-WebRequest -Uri $uri -Method Get
+        if ($result.StatusCode -eq 200) {
+            if ($Raw.IsPresent) {
+                return $result.Content
+            }
+            return $result.Content | ConvertFrom-Json -AsHashtable:$AsHashTable
+        }
+    }
+    catch {
+        if ($type -eq 'Status') {
+            if ($Raw.IsPresent) {
+                return '{"Status" : "Offline"}'
+            }
+            if ($AsHashTable.IsPresent) {
+                return @{ 'Status' = 'Offline' }
+            }
+            return [PSCustomObject]@{ Status = 'Offline' }
+        }
+    }
 }

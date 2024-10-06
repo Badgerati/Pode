@@ -629,6 +629,11 @@ function Close-PodeServerInternal {
     Write-Verbose 'Stopping file monitor'
     Stop-PodeFileMonitor
 
+    # stop the watchdog if it's running
+    Write-Verbose 'Stopping watchdog'
+    Stop-PodeWatchdog
+
+
     try {
         # remove all the cancellation tokens
         Write-Verbose 'Disposing cancellation tokens'
