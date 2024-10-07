@@ -2,7 +2,7 @@
 
 The security headers middleware runs at the beginning of every request, and if any security headers are defined they will be added onto the response.
 
-The following headers are currently supported, but you can add custom header values:
+The following headers are currently supported, but you can add custom header values via [`Add-PodeSecurityHeader`](../../../../Functions/Security/Add-PodeSecurityHeader) for any missing:
 
 * Access-Control-Max-Age
 * Access-Control-Allow-Methods
@@ -13,6 +13,7 @@ The following headers are currently supported, but you can add custom header val
 * Cross-Origin-Opener-Policy
 * Strict-Transport-Security
 * Content-Security-Policy
+* Content-Security-Policy-Report-Only
 * X-XSS-Protection
 * Permissions-Policy
 * X-Frame-Options
@@ -37,21 +38,21 @@ To remove all configured values, use [`Remove-PodeSecurity`](../../../../Functio
 
 The following values are used for each header when the `Simple` type is supplied:
 
-| Name | Value |
-| ---- | ----- |
-| Access-Control-Max-Age | 7200 |
-| Access-Control-Allow-Origin | * |
-| Access-Control-Allow-Methods | * |
-| Access-Control-Allow-Headers | * |
-| Cross-Origin-Embedder-Policy | require-corp |
-| Cross-Origin-Resource-Policy | same-origin |
-| Cross-Origin-Opener-Policy | same-origin |
-| Content-Security-Policy | default-src 'self' |
-| X-XSS-Protection | 0 |
-| Permissions-Policy | accelerometer=(), autoplay=(self), camera=(), display-capture=(self), fullscreen=(self), geolocation=(self), gyroscope=(self), magnetometer=(self), microphone=(), payment=(), picture-in-picture=(self), sync-xhr=(), usb=() |
-| X-Frame-Options | SAMEORIGIN |
-| X-Content-Type-Options | nosniff |
-| Referred-Policy | strict-origin |
+| Name                         | Value                                                                                                                                                                                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Access-Control-Max-Age       | 7200                                                                                                                                                                                                                          |
+| Access-Control-Allow-Origin  | *                                                                                                                                                                                                                             |
+| Access-Control-Allow-Methods | *                                                                                                                                                                                                                             |
+| Access-Control-Allow-Headers | *                                                                                                                                                                                                                             |
+| Cross-Origin-Embedder-Policy | require-corp                                                                                                                                                                                                                  |
+| Cross-Origin-Resource-Policy | same-origin                                                                                                                                                                                                                   |
+| Cross-Origin-Opener-Policy   | same-origin                                                                                                                                                                                                                   |
+| Content-Security-Policy      | default-src 'self'                                                                                                                                                                                                            |
+| X-XSS-Protection             | 0                                                                                                                                                                                                                             |
+| Permissions-Policy           | accelerometer=(), autoplay=(self), camera=(), display-capture=(self), fullscreen=(self), geolocation=(self), gyroscope=(self), magnetometer=(self), microphone=(), payment=(), picture-in-picture=(self), sync-xhr=(), usb=() |
+| X-Frame-Options              | SAMEORIGIN                                                                                                                                                                                                                    |
+| X-Content-Type-Options       | nosniff                                                                                                                                                                                                                       |
+| Referred-Policy              | strict-origin                                                                                                                                                                                                                 |
 
 The Server header is also hidden.
 
@@ -59,22 +60,22 @@ The Server header is also hidden.
 
 The following values are used for each header when the `Strict` type is supplied:
 
-| Name | Value |
-| ---- | ----- |
-| Access-Control-Max-Age | 7200 |
-| Access-Control-Allow-Methods | * |
-| Access-Control-Allow-Origin | * |
-| Access-Control-Allow-Headers | * |
-| Cross-Origin-Embedder-Policy | require-corp |
-| Cross-Origin-Resource-Policy | same-origin |
-| Cross-Origin-Opener-Policy | same-origin |
-| Strict-Transport-Security | max-age=31536000; includeSubDomains |
-| Content-Security-Policy | default-src 'self' |
-| X-XSS-Protection | 0 |
-| Permissions-Policy | accelerometer=(), autoplay=(self), camera=(), display-capture=(self), fullscreen=(self), geolocation=(self), gyroscope=(self), magnetometer=(self), microphone=(), payment=(), picture-in-picture=(self), sync-xhr=(), usb=() |
-| X-Frame-Options | DENY |
-| X-Content-Type-Options | nosniff |
-| Referred-Policy | no-referrer |
+| Name                         | Value                                                                                                                                                                                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Access-Control-Max-Age       | 7200                                                                                                                                                                                                                          |
+| Access-Control-Allow-Methods | *                                                                                                                                                                                                                             |
+| Access-Control-Allow-Origin  | *                                                                                                                                                                                                                             |
+| Access-Control-Allow-Headers | *                                                                                                                                                                                                                             |
+| Cross-Origin-Embedder-Policy | require-corp                                                                                                                                                                                                                  |
+| Cross-Origin-Resource-Policy | same-origin                                                                                                                                                                                                                   |
+| Cross-Origin-Opener-Policy   | same-origin                                                                                                                                                                                                                   |
+| Strict-Transport-Security    | max-age=31536000; includeSubDomains                                                                                                                                                                                           |
+| Content-Security-Policy      | default-src 'self'                                                                                                                                                                                                            |
+| X-XSS-Protection             | 0                                                                                                                                                                                                                             |
+| Permissions-Policy           | accelerometer=(), autoplay=(self), camera=(), display-capture=(self), fullscreen=(self), geolocation=(self), gyroscope=(self), magnetometer=(self), microphone=(), payment=(), picture-in-picture=(self), sync-xhr=(), usb=() |
+| X-Frame-Options              | DENY                                                                                                                                                                                                                          |
+| X-Content-Type-Options       | nosniff                                                                                                                                                                                                                       |
+| Referred-Policy              | no-referrer                                                                                                                                                                                                                   |
 
 The Server header is also hidden.
 
@@ -153,11 +154,13 @@ The following functions exist:
 * [`Set-PodeSecurityContentSecurityPolicy`](../../../../Functions/Security/Set-PodeSecurityContentSecurityPolicy)
 * [`Remove-PodeSecurityContentSecurityPolicy`](../../../../Functions/Security/Remove-PodeSecurityContentSecurityPolicy)
 
-The `Content-Security-Policy` header controls a whitelist of approved sourced from which the browser can load resoures. For example:
+The `Content-Security-Policy` header controls a whitelist of approved sources from which the browser can load resources. For example:
 
 ```powershell
 Set-PodeSecurityContentSecurityPolicy -Default 'self' -Image 'self', 'data'
 ```
+
+By supplying the `-ReportOnly` switch, the `Content-Security-Policy-Report-Only` header will be used instead.
 
 ### Permissions Policy
 
