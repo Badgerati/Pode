@@ -7,7 +7,7 @@ BeforeDiscovery {
 
     # List of directories to exclude
     $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
-        'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues')
+        'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues','auth')
 
     # Convert exlusion list into single regex pattern for directory matching
     $dirSeparator = [IO.Path]::DirectorySeparatorChar
