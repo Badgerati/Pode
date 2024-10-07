@@ -50,7 +50,10 @@ function New-PodeContext {
         $Quiet,
 
         [switch]
-        $EnableBreakpoints
+        $EnableBreakpoints,
+
+        [hashtable]
+        $Watchdog
     )
 
     # set a random server name if one not supplied
@@ -95,6 +98,11 @@ function New-PodeContext {
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+
+
+    if ($Watchdog) {
+        $ctx.Server.Watchdog = $Watchdog
+    }
 
     # list of created listeners/receivers
     $ctx.Listeners = @()
@@ -147,7 +155,7 @@ function New-PodeContext {
     }
 
     # watchdog settings
-    $ctx.Server.Watchdog = @{}
+    $ctx.Server.Watchdog = $Watchdog
 
     # set socket details for pode server
     $ctx.Server.Sockets = @{
@@ -438,6 +446,7 @@ function New-PodeContext {
         Tasks     = $null
         Files     = $null
         Timers    = $null
+        Watchdog  = $null
     }
 
     # threading locks, etc.
@@ -633,6 +642,7 @@ function New-PodeRunspacePool {
 
         $PodeContext.RunspacePools.Gui.Pool.ApartmentState = 'STA'
     }
+
 }
 
 <#

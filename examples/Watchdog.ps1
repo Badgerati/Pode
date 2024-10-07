@@ -15,22 +15,22 @@ catch { throw }
 
 Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http
-    $filePath = '.\Write-Response.ps1'
+    $filePath = '.\Logging.ps1'
 
-    $process = Enable-PodeWatchdog -FilePath $filePath -PassThru -FileMonitoring
+    $process = Enable-PodeWatchdog -FilePath $filePath   -FileMonitoring
 
     Get-PodeWatchdogInfo -type Status -Raw
 
     Add-PodeRoute -PassThru -Method Get -Path '/listeners'   -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Listeners -Raw)
+     #   Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Listeners -Raw)
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/requests'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Requests -Raw)
+  #      Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Requests -Raw)
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/status'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Status -Raw)
+   #     Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Status -Raw)
     }
 
 

@@ -154,9 +154,17 @@ function Start-PodeServer {
 
         # check if podeWatchdog is configured
         if ($PodeWatchdog) {
-            $DisableTermination = [switch]$PodeWatchdog.DisableTermination
-            $Quiet = [switch]$PodeWatchdog.Quiet
+            $watchdogClient = @{}
+            $PodeWatchdog | Get-Member -MemberType Properties | ForEach-Object {
+                $watchdogClient[$_.Name] = $PodeWatchdog.$($_.Name) }
+
+            $DisableTermination = [switch]$watchdogClient.DisableTermination
+            $Quiet = [switch]$watchdogClient.Quiet
+            
+            write-podehost $watchdogClient -explode
+
         }
+        else { write-podehost 'No PodeWatchdog' }
 
         try {
             # if we have a filepath, resolve it - and extract a root path from it
@@ -192,7 +200,8 @@ function Start-PodeServer {
                 -StatusPageExceptions $StatusPageExceptions `
                 -DisableTermination:$DisableTermination `
                 -Quiet:$Quiet `
-                -EnableBreakpoints:$EnableBreakpoints
+                -EnableBreakpoints:$EnableBreakpoints `
+                -Watchdog $watchdogClient
 
             # set it so ctrl-c can terminate, unless serverless/iis, or disabled
             if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {
@@ -258,7 +267,7 @@ function Start-PodeServer {
 
             # clean the session
             $PodeContext = $null
-            $PodeWatchdog= $null
+            $PodeWatchdog = $null
 
             # Restore the name of the current runspace
             Set-PodeCurrentRunspaceName -Name $previousRunspaceName
