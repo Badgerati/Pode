@@ -154,17 +154,18 @@ function Start-PodeServer {
 
         # check if podeWatchdog is configured
         if ($PodeWatchdog) {
-            $watchdogClient = @{}
-            $PodeWatchdog | Get-Member -MemberType Properties | ForEach-Object {
-                $watchdogClient[$_.Name] = $PodeWatchdog.$($_.Name) }
-
+            if ($PodeWatchdog -is [hashtable]) {
+                $watchdogClient = $PodeWatchdog
+            }
+            else {
+                $watchdogClient = @{}
+                $PodeWatchdog | Get-Member -MemberType Properties | ForEach-Object {
+                    $watchdogClient[$_.Name] = $PodeWatchdog.$($_.Name) }
+            }
             $DisableTermination = [switch]$watchdogClient.DisableTermination
             $Quiet = [switch]$watchdogClient.Quiet
-            
-            write-podehost $watchdogClient -explode
 
         }
-        else { write-podehost 'No PodeWatchdog' }
 
         try {
             # if we have a filepath, resolve it - and extract a root path from it

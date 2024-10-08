@@ -39,21 +39,15 @@ catch { throw }
 
 # or just:
 # Import-Module Pode
-if (! $global:PodeWatchdog) {
-    write-host 'No global:PodeWatchdog'
-}
-else {
-    write-host $global:PodeWatchdog
-}
 
 $script:LOGGING_TYPE = 'file' # Terminal, File, Custom
 
 # create a server, and start listening on port 8081
 Start-PodeServer {
-
+    New-PodeLoggingMethod -File -Name 'error_logging' -MaxDays 4 | Enable-PodeErrorLogging
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     Set-PodeViewEngine -Type Pode
-write-podehost $script:LOGGING_TYPE
+
     switch ($LOGGING_TYPE.ToLowerInvariant()) {
         'terminal' {
             New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging

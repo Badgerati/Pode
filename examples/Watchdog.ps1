@@ -16,8 +16,9 @@ catch { throw }
 Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http
     $filePath = '.\Logging.ps1'
-
-    $process = Enable-PodeWatchdog -FilePath $filePath   -FileMonitoring
+    New-PodeLoggingMethod -File -Name 'watchdog' -MaxDays 4 | Enable-PodeErrorLogging
+    
+    Enable-PodeWatchdog -FilePath $filePath   -FileMonitoring
 
     Get-PodeWatchdogInfo -type Status -Raw
 
