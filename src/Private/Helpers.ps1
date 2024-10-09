@@ -3781,3 +3781,74 @@ function Copy-PodeObjectDeepClone {
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }
+
+<#
+.SYNOPSIS
+    Converts a hashtable to a ConcurrentDictionary.
+
+.DESCRIPTION
+    The `ConvertTo-PodeConcurrentStructure` function takes a hashtable and converts it into a
+    ConcurrentDictionary, which provides thread-safe operations for adding and retrieving items.
+    This function supports the recursive conversion of nested hashtables, ordered dictionaries, and arrays.
+
+.PARAMETER InputObject
+    The hashtable to be converted into a ConcurrentDictionary.
+
+.OUTPUTS
+    [System.Collections.Concurrent.ConcurrentDictionary[string, object]]
+    Returns a ConcurrentDictionary with the same keys and values as the input hashtable.
+
+.EXAMPLE
+    $hashTable = @{
+        Key1 = 'Value1'
+        Key2 = @{
+            SubKey1 = 'SubValue1'
+        }
+    }
+    $concurrentDictionary = ConvertTo-PodeConcurrentStructure -InputObject $hashTable
+    # The variable $concurrentDictionary now contains a ConcurrentDictionary with the same structure as $hashTable
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertTo-PodeConcurrentStructure {
+    param (
+        [object]
+        $InputObject
+    )
+
+    if ($InputObject -is [hashtable]) {
+        $concurrentDictionary = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
+    }
+    elseif ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
+        $concurrentDictionary = [Pode.PodeOrderedConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
+    }
+    elseif ($InputObject -is [System.Object[]]) {
+        $array = [System.Collections.ArrayList]::Synchronized([System.Collections.ArrayList]::new())
+        foreach ($item in $InputObject) {
+            # Convert each item and add to the synchronized array
+            $convertedItem = ConvertTo-PodeConcurrentStructure -InputObject $item
+            [void]$array.Add($convertedItem)
+        }
+
+        # Return synchronized ArrayList without unrolling
+        return , $array
+    }
+    else {
+        # If the object is neither a hashtable, ordered dictionary, nor array, return it as-is
+        return $InputObject
+    }
+
+    foreach ($key in $InputObject.Keys) {
+        $value = $InputObject[$key]
+
+        # Recursively convert nested hashtables, ordered dictionaries, or arrays
+        if ($value -is [hashtable] -or $value -is [System.Collections.Specialized.OrderedDictionary] -or $value -is [System.Object[]]) {
+            $value = ConvertTo-PodeConcurrentStructure -InputObject $value
+        }
+
+        $concurrentDictionary[$key] = $value
+    }
+
+    return $concurrentDictionary
+}

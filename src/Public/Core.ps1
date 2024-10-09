@@ -155,10 +155,10 @@ function Start-PodeServer {
         # check if podeWatchdog is configured
         if ($PodeWatchdog) {
             if ($PodeWatchdog -is [hashtable]) {
-                $watchdogClient = $PodeWatchdog
+                $watchdogClient =ConvertTo-PodeConcurrentStructure -InputObject $PodeWatchdog
             }
             else {
-                $watchdogClient = @{}
+                $watchdogClient = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
                 $PodeWatchdog | Get-Member -MemberType Properties | ForEach-Object {
                     $watchdogClient[$_.Name] = $PodeWatchdog.$($_.Name) }
             }

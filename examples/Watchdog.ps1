@@ -17,25 +17,45 @@ Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http
     $filePath = '.\Logging.ps1'
     New-PodeLoggingMethod -File -Name 'watchdog' -MaxDays 4 | Enable-PodeErrorLogging
-    
+
     Enable-PodeWatchdog -FilePath $filePath   -FileMonitoring
 
-    Get-PodeWatchdogInfo -type Status -Raw
+    # Get-PodeWatchdogInfo -type Status
 
     Add-PodeRoute -PassThru -Method Get -Path '/listeners'   -ScriptBlock {
-     #   Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Listeners -Raw)
+
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Listeners  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/requests'  -ScriptBlock {
-  #      Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Requests -Raw)
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Requests  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/status'  -ScriptBlock {
-   #     Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Status -Raw)
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Status  )
+    }
+
+    Add-PodeRoute -PassThru -Method Get -Path '/signals'  -ScriptBlock {
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -type Signals  )
     }
 
 
- <#   # Monitor the process if needed
+    Add-PodeRoute -PassThru -Method Post -Path '/restart'  -ScriptBlock {
+
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -state Restart)}
+    }
+
+    Add-PodeRoute -PassThru -Method Post -Path '/stop'  -ScriptBlock {
+
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -State Stop)}
+    }
+
+    Add-PodeRoute -PassThru -Method Post -Path '/start'   -ScriptBlock {
+
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -State Start)}
+    }
+
+    <#   # Monitor the process if needed
     if ($process) {
         Write-Output "Process started with ID: $($process.Id)"
 

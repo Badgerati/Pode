@@ -1,3 +1,14 @@
+#State
+# RestartRequest
+# Restarting
+# Restarted
+# Starting
+# Running
+# StoppingRequest
+# Stopping
+# Stopped
+# Undefined
+
 function Enable-PodeWatchdog {
     [CmdletBinding()]
     param (
@@ -11,12 +22,6 @@ function Enable-PodeWatchdog {
 
         [switch]
         $DisableMonitoring,
-
-        [int]
-        $MonitoringPort = 5051,
-
-        [string]
-        $MonitoringAddress = 'localhost',
 
         [switch]
         $FileMonitoring,
@@ -62,76 +67,77 @@ function Enable-PodeWatchdog {
     $scriptBlock = {
         write-podehost 'starting Pipeserver ...'
         $pipeServer = $PodeContext.Server.Watchdog.PipeServer
+        try {
+            # Create a StreamReader to read the incoming message
+            $reader = [System.IO.StreamReader]::new($pipeServer)
+            while ($true) {
+                #  Write-PodeHost 'Waiting for client connection...'
 
-        # Create a StreamReader to read the incoming message
-        $reader = [System.IO.StreamReader]::new($pipeServer)
-        while ($true) {
-            Write-PodeHost 'Waiting for client connection...'
+                # Wait for the client connection
+                $pipeServer.WaitForConnection()
+                #     Write-PodeHost 'Client connected.'
+                try {
+                    # Create a StreamReader to read the incoming message from the connected client
+                    $reader = [System.IO.StreamReader]::new($pipeServer)
 
-            # Wait for the client connection
-            $pipeServer.WaitForConnection()
-            Write-PodeHost 'Client connected.'
-            try {
-                # Create a StreamReader to read the incoming message from the connected client
-                $reader = [System.IO.StreamReader]::new($pipeServer)
+                    while ($pipeServer.IsConnected) {
+                        # Read the next message, which contains the serialized hashtable
+                        $receivedData = $reader.ReadLine()
 
-                while ($pipeServer.IsConnected) {
-                    # Read the next message, which contains the serialized hashtable
-                    $receivedData = $reader.ReadLine()
+                        # Check if data was received
+                        if ($receivedData) {
+                            Write-PodeHost "Server Received data: $receivedData"
 
-                    # Check if data was received
-                    if ($receivedData) {
-                        Write-PodeHost "Received data: $receivedData"
+                            # Deserialize the received JSON string back into a hashtable
+                            $PodeContext.Server.Watchdog.ProcessInfo = $receivedData | ConvertFrom-Json
 
-                        # Deserialize the received JSON string back into a hashtable
-                        $hashtable = $receivedData | ConvertFrom-Json
-                        Write-PodeHost 'Received hashtable:'
-                        Write-PodeHost $hashtable -Explode
+                        }
+                        else {
+                            Write-PodeHost 'No data received from client. Waiting for more data...'
+                        }
                     }
-                    else {
-                        Write-PodeHost 'No data received from client. Waiting for more data...'
-                    }
+                    Write-PodeHost 'Client disconnected. Waiting for a new connection...'
                 }
-                Write-PodeHost 'Client disconnected. Waiting for a new connection...'
+                catch {
+                    $_ | Write-PodeErrorLog
+                    write-podehost "Error reading from pipe: $_"
+                }
             }
-            catch {
-                $_ | Write-PodeErrorLog
-                write-podehost "Error reading from pipe: $_"
-            }
-            finally {
-                # Clean up after client disconnection
-                Write-PodeHost 'Cleaning up resources...'
-                $reader.Dispose()
-                # Disconnect the pipe server to reset it for the next client
-                $pipeServer.Disconnect()
-            }
+        }
+        finally {
+            # Clean up after client disconnection
+            Write-PodeHost 'Cleaning up resources...'
+            $reader.Dispose()
+            # Disconnect the pipe server to reset it for the next client
+            $pipeServer.Disconnect()
         }
 
     }
 
     $pipename = "$($PID)_Watchdog"
-    $PodeContext.Server.Watchdog = @{
-        Shell             = $(if ($PSVersionTable.PSVersion -gt [version]'6.0') { 'pwsh' } else { 'powershell' })
-        Arguments         = $null
-        Process           = $null
-        MonitoringPort    = $MonitoringPort
-        MonitoringAddress = $MonitoringAddress
-        Status            = 'Starting'
-        PipeName          = $pipename
-        PreSharedKey      = (New-PodeGuid)
-        PipeServer        = [System.IO.Pipes.NamedPipeServerStream]::new($pipeName, [System.IO.Pipes.PipeDirection]::InOut, 2, [System.IO.Pipes.PipeTransmissionMode]::Message, [System.IO.Pipes.PipeOptions]::Asynchronous)
-        ScriptBlock       = $scriptBlock
-        Type              = 'Server'
-        Runspace          = $null
-        Interval          = $Interval
-    }
+    $PodeContext.Server.Watchdog = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+    $PodeContext.Server.Watchdog['Shell'] = $(if ($PSVersionTable.PSVersion -gt [version]'6.0') { 'pwsh' } else { 'powershell' })
+    $PodeContext.Server.Watchdog['Arguments'] = $null
+    $PodeContext.Server.Watchdog['Process'] = $null
+    $PodeContext.Server.Watchdog['Status'] = 'Starting'
+    $PodeContext.Server.Watchdog['PipeName'] = $pipename
+    $PodeContext.Server.Watchdog['PreSharedKey'] = (New-PodeGuid)
+    $PodeContext.Server.Watchdog['PipeServer'] = [System.IO.Pipes.NamedPipeServerStream]::new($pipeName, [System.IO.Pipes.PipeDirection]::InOut, 2, [System.IO.Pipes.PipeTransmissionMode]::Message, [System.IO.Pipes.PipeOptions]::Asynchronous)
+    $PodeContext.Server.Watchdog['ScriptBlock'] = $scriptBlock
+    $PodeContext.Server.Watchdog['Type'] = 'Server'
+    $PodeContext.Server.Watchdog['Runspace'] = $null
+    $PodeContext.Server.Watchdog['Interval'] = $Interval
+    # Create a persistent StreamWriter for writing messages and store it in the context
+    $PodeContext.Server.Watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($PodeContext.Server.Watchdog.PipeServer)
+    # $PodeContext.Server.Watchdog['PipeWriter'].AutoFlush = $true  # Enable auto-flush to send data immediately
+    $PodeContext.Server.Watchdog['ProcessInfo'] = $null
+
+
 
     $PodeWatchdog = @{
         DisableTermination = $true
-        Quiet              = $true
+        Quiet              = $false
         EnableMonitoring   = !$DisableMonitoring.IsPresent
-        MonitoringPort     = $MonitoringPort
-        MonitoringAddress  = $MonitoringAddress
         PreSharedKey       = $PodeContext.Server.Watchdog.PreSharedKey
         Type               = 'Client'
         PipeName           = $pipename
@@ -146,9 +152,6 @@ function Enable-PodeWatchdog {
 
     $PodeContext.Server.Watchdog.Arguments = "$arguments  '$escapedJsonConfig'"
 
-
-
-
     if ($FileMonitoring.IsPresent) {
         if ($PSCmdlet.ParameterSetName -ieq 'File') {
             Add-PodeFileWatcher -Path (get-item $FilePath).DirectoryName -Exclude '*.log' -ScriptBlock {
@@ -157,35 +160,56 @@ function Enable-PodeWatchdog {
             }
         }
     }
-
-
 }
 
 
 function Stop-PodeWatchdog {
     param ()
-    write-podehost 'Stopping watchdog'
     if ($PodeContext.Server.containsKey('Watchdog')) {
+        write-podehost 'Stopping watchdog'
         switch ($PodeContext.Server.Watchdog.Type) {
             'Client' {
-                if ($null -ne $PodeContext.Server.Watchdog.PipeClient) {
-                    $PodeContext.Server.Watchdog.PipeClient.Dispose()
-                }
                 if ($null -ne $PodeContext.Server.Watchdog.PipeWriter) {
-                    $PodeContext.Server.Watchdog.PipeWriter.Dispose()
+                    try {
+                        $PodeContext.Server.Watchdog.PipeWriter.Dispose()
+                    }
+                    catch {
+                        $_ | Write-PodeErrorLog -Level Verbose
+                    }
+                }
+                if ($null -ne $PodeContext.Server.Watchdog.PipeClient) {
+                    try {
+                        $PodeContext.Server.Watchdog.PipeClient.Dispose()
+                    }
+                    catch {
+                        $_ | Write-PodeErrorLog -Level Verbose
+                    }
                 }
             }
             'Server' {
+                $PodeContext.Server.Watchdog.Status = 'StoppingRequest'
+                if (Stop-PodeWatchdogProcess) {
+                    $PodeContext.Server.Watchdog.Status = 'Stopped'
+                }
+                else {
+                    $PodeContext.Server.Watchdog.Status = 'Undefined'
+                }
+                if ($null -ne $PodeContext.Server.Watchdog.PipeWriter) {
+                    try {
+                        $PodeContext.Server.Watchdog.PipeWriter.Dispose()
+                    }
+                    catch {
+                        $_ | Write-PodeErrorLog -Level Verbose
+                    }
+                }
                 if ($null -ne $PodeContext.Server.Watchdog.PipeServer) {
-                    $PodeContext.Server.Watchdog.PipeServer.Dispose()
+                    try {
+                        $PodeContext.Server.Watchdog.PipeServer.Dispose()
+                    }
+                    catch {
+                        $_ | Write-PodeErrorLog -Level Verbose
+                    }
 
-                    $PodeContext.Server.Watchdog.Status = 'Stopping'
-                    if (Stop-PodeWatchdogProcess) {
-                        $PodeContext.Server.Watchdog.Status = 'Exited'
-                    }
-                    else {
-                        $PodeContext.Server.Watchdog.Status = 'Undefined'
-                    }
                 }
             }
         }
@@ -194,32 +218,34 @@ function Stop-PodeWatchdog {
 
 function Start-PodeWatchdog {
     param ()
-    write-podehost 'starting watchdog'
     if ($PodeContext.Server.containsKey('Watchdog')) {
         switch ($PodeContext.Server.Watchdog.Type) {
             'Client' {
+                write-podehost 'Starting Client watchdog'
                 Start-PodeWatchdogHearthbeat
-                Set-PodeWatchdogEndpoint -Address $PodeContext.Server.Watchdog.MonitoringAddress -Port $PodeContext.Server.Watchdog.MonitoringPort
             }
             'Server' {
-                $watchdog = $PodeContext.Server.Watchdog
-                if ($null -eq $PodeContext.Server.Watchdog.Process ) {
-                    $watchdog.Status = 'Starting'
+                write-podehost 'Starting Server watchdog'
+                Open-PodeWatchdogRunPool
+                $null = Start-PodeWatchdogProcess
+            }
+        }
+    }
+}
 
+function Stop-PodeWatchdog {
+    param ()
+    if ($PodeContext.Server.containsKey('Watchdog')) {
+        switch ($PodeContext.Server.Watchdog.Type) {
+            'Client' {
+                write-podehost 'Stopping Client watchdog'
+                Start-PodeWatchdogHearthbeat
 
-                    Open-PodeWatchdogRunPool
-
-                    $watchdog.Process = Start-Process -FilePath  $watchdog.Shell -ArgumentList $watchdog.Arguments -NoNewWindow -PassThru
-
-                    $watchdog.Runspace = Add-PodeRunspace -Type 'Watchdog' -ScriptBlock ( $watchdog.ScriptBlock)   -PassThru
-
-                    if (!$watchdog.Process.HasExited) {
-                        $watchdog.Status = 'Running'
-                    }
-                    else {
-                        $watchdog.Status = 'Offline'
-                    }
-                }
+            }
+            'Server' {
+                write-podehost 'Stopping Server watchdog'
+                Open-PodeWatchdogRunPool
+                $null = Start-PodeWatchdogProcess
             }
         }
     }
@@ -227,50 +253,10 @@ function Start-PodeWatchdog {
 
 
 
-function Set-PodeWatchdogEndpoint {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Address,
-
-        [Parameter(Mandatory = $true)]
-        [int]
-        $Port
-    )
-    if (Get-PodeEndpoint -Name '_watchdog_monitor_endpoint') {
-        return
-    }
-
-    Add-PodeEndpoint -Address $Address -Port $Port -Protocol Http -Name '_watchdog_monitor_endpoint'
-    <#  Add-PodeRoute -PassThru -Method Get -Path '/listeners' -EndpointName '_watchdog_monitor_endpoint' -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value $PodeContext.Server.Signals.Listener.Contexts
-    }
-
-    Add-PodeRoute -PassThru -Method Get -Path '/requests' -EndpointName '_watchdog_monitor_endpoint' -ScriptBlock {
-        $r = Get-PodeServerRequestMetric
-        Write-PodeJsonResponse -StatusCode 200 -Value $r
-    }
-#>
-    Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
-        Close-PodeServer
-        Write-PodeJsonResponse -StatusCode 200 -Value @{'status' = 'offline' }
-    }
-
-    <#    Add-PodeRoute -PassThru -Method Get -Path '/status' -EndpointName '_watchdog_monitor_endpoint' -ScriptBlock {
-
-        Write-PodeJsonResponse -StatusCode 200 -Value ([ordered]@{
-                Pid           = $PID
-                CurrentUptime = (Get-PodeServerUptime)
-                TotalUptime   = (Get-PodeServerUptime -Total)
-                RestartCount  = (Get-PodeServerRestartCount)
-            }
-        )
-    }#>
-}
 
 
 function Start-PodeWatchdogHearthbeat {
-
+    write-podehost  $PodeContext.Server.Watchdog -explode
     if ($PodeContext.Server.containsKey('Watchdog') -and $PodeContext.Server.Watchdog.Type -eq 'Client') {
         # Create a named pipe client and connect to the server
         try {
@@ -282,16 +268,18 @@ function Start-PodeWatchdogHearthbeat {
             # Create a persistent StreamWriter for writing messages and store it in the context
             $PodeContext.Server.Watchdog.PipeWriter = [System.IO.StreamWriter]::new($PodeContext.Server.Watchdog.PipeClient)
             $PodeContext.Server.Watchdog.PipeWriter.AutoFlush = $true  # Enable auto-flush to send data immediately
+            $PodeContext.Server.Watchdog.PipeReader = [System.IO.StreamReader]::new($PodeContext.Server.Watchdog.PipeClient)
 
-
-            Add-PodeTimer -Name '__pode_watchdog_client__' -Interval $PodeContext.Server.Watchdog.Interval -ScriptBlock {
+            Add-PodeTimer -Name '__pode_watchdog_client__' -Interval $PodeContext.Server.Watchdog.Interval -OnStart -ScriptBlock {
 
                 $jsonData = [ordered]@{
                     Pid           = $PID
                     CurrentUptime = (Get-PodeServerUptime)
                     TotalUptime   = (Get-PodeServerUptime -Total)
                     RestartCount  = (Get-PodeServerRestartCount)
-                } | ConvertTo-Json
+                    Metrics       = $PodeContext.Metrics
+                    Listeners     = $PodeContext.Server.Signals.Listener.Contexts
+                } | ConvertTo-Json -Compress -Depth 4
                 $name = Get-PodeErrorLoggingName
 
                 Write-PodeLog -Name $name -InputObject $jsonData
@@ -318,6 +306,38 @@ function Start-PodeWatchdogHearthbeat {
                     # Handle any exceptions during the write operation
                     $_ | Write-PodeErrorLog
                     Close-PodeServer
+                }
+
+                # Non-blocking server message listener inside the timer block
+                try {
+                    # Attempt to read a line from the server with a small timeout (adjust as needed)
+                    if ($PodeContext.Server.Watchdog.PipeReader.Peek() -ne -1) {
+                        $serverMessage = $PodeContext.Server.Watchdog.PipeReader.ReadLine()
+
+                        if ($serverMessage) {
+                            Write-PodeHost "Received command from server: $serverMessage"
+
+                            # Handle server commands
+                            switch ($serverMessage) {
+                                'shutdown' {
+                                    Write-PodeHost 'Server requested shutdown. Closing client...'
+                                    Close-PodeServer
+                                    break  # Exit the loop and stop the client
+                                }
+                                'restart' {
+                                    Write-PodeHost 'Server requested restart. Restarting client...'
+                                    Restart-PodeServer # Restart the watchdog
+                                    break
+                                }
+                                default {
+                                    Write-PodeHost "Unknown command received: $serverMessage"
+                                }
+                            }
+                        }
+                    }
+                }
+                catch {
+                    Write-PodeHost "Error reading command from server: $_"
                 }
             }
         }
@@ -350,29 +370,20 @@ function Start-PodeWatchdogHousekeeper {
 
             $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
             if ($process) {
-                if ($PodeContext.Server.Watchdog.Status -eq 'Restarting') {
+                if ($PodeContext.Server.Watchdog.Status -eq 'RestartRequest') {
+                    $PodeContext.Server.Watchdog.Status = 'Restarting'
                     write-podehost 'start Restarting '
-                    for ($i = 0; $i -lt 10 ; $i++) {
-                        Start-Sleep -Seconds 5
-                        $request = Get-PodeWatchdogInfo -Type 'Requests'
-                        if ($request) {
-                            break
-                        }
-                    }
-                    Stop-PodeWatchdogProcess
-                    Start-PodeWatchdogProcess
+
+                    Restart-PodeWatchdogProcess
 
                 }
             }
             else {
+                $PodeContext.Server.Watchdog.Status = 'Stopped'
                 write-podehost 'Process is not running'
                 write-podehost 'Restarting....'
                 Start-PodeWatchdogProcess
-
-
             }
-
-
         }
         catch {
             $_ | Write-PodeErrorLog
@@ -380,95 +391,156 @@ function Start-PodeWatchdogHousekeeper {
     }
 }
 
-function Stop-PodeWatchdogProcess {
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param (
-        [int]
-        $Timeout = 10, # Timeout in seconds for the HTTP request
 
+
+
+function Wait-PodeWatchdogProcessStateChange {
+    param ([Parameter(Mandatory = $false)]
+        [ValidateSet('Offline', 'Online')]
+        $NewState = 'Offline',
         [int]
-        $RetryCount = 3        # Number of times to retry the request in case of failure
+        $Timeout = 10
     )
-    return
-    # Construct the URI for the REST call using $PodeWatchdog global settings
-    $uri = "http://$($PodeContext.Server.Watchdog.MonitoringAddress):$($PodeContext.Server.Watchdog.MonitoringPort)/close"
 
-    Write-Verbose "Attempting to stop Pode server at $uri"
-    Write-podehost "Attempting to stop Pode server at $uri"
 
-    # Retry logic with a loop
-    for ($attempt = 1; $attempt -le $RetryCount; $attempt++) {
-        try {
-            Write-Verbose "Attempt $attempt of $RetryCount..."
+    $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
 
-            # Invoke the REST method to shut down the Pode server
-            $response = Invoke-RestMethod -Uri $uri -Method 'Post' -TimeoutSec $Timeout -ErrorAction Stop
-
-            # Check if the response indicates success
-            if ($response.status -eq 'offline') {
-                Write-Output 'Process has been successfully stopped via REST call.'
-                return $true  # Return success
-            }
-            else {
-                Write-Warning "Unexpected response from server: $response"
-            }
-        }
-        catch [System.Net.WebException] {
-            # Handle HTTP-specific errors like timeout, connection issues, etc.
-            Write-Warning "Attempt $attempt failed: $($_.Exception.Message)"
-        }
-        catch {
-            # Catch any other exceptions
-            Write-Error "An error occurred while trying to stop the Pode server: $_"
-        }
-
-        # If not successful, wait before retrying
+    $i = 0
+    while ((($NewState -eq 'Online') -and ($null -eq $process)) -or
+        (($NewState -eq 'Offline') -and ($null -ne $process))
+    ) {
         Start-Sleep -Seconds 2
+        $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
+        $i++
+        if ($i -gt $Timeout) {
+            return $false
+        }
     }
 
-    # If retries are exhausted, return failure
-    Write-Error "Failed to stop the Pode server after $RetryCount attempts."
-    return $false
 }
 
 
+function Stop-PodeWatchdogProcess {
+    try {
+        # Check if the pipe client is still connected before writing
+        if ($PodeContext.Server.Watchdog.PipeServer.IsConnected) {
+            # Write the serialized JSON data to the pipe using the persistent StreamWriter
+            $PodeContext.Server.Watchdog.PipeWriter.WriteLine('shutdown')
+
+            # Manually flush the StreamWriter to ensure the data is sent immediately
+            $PodeContext.Server.Watchdog.PipeWriter.Flush()
+
+            $PodeContext.Server.Watchdog.Status = 'Stopping'
+        }
+        else {
+            throw 'Pipe connection lost. Waiting for client to reconnect ...'
+        }
+        return (Wait-PodeWatchdogProcessStateChange -NewState 'Offline')
+
+    }
+    catch {
+        # Handle any exceptions during the write operation
+        $_ | Write-PodeErrorLog
+        return $false
+    }
+}
+
+function Restart-PodeWatchdogProcess {
+    try {
+        # Check if the pipe client is still connected before writing
+        if ($PodeContext.Server.Watchdog.PipeServer.IsConnected) {
+
+            # Write the serialized JSON data to the pipe using the persistent StreamWriter
+            $PodeContext.Server.Watchdog.PipeWriter.WriteLine('restart')
+
+            # Manually flush the StreamWriter to ensure the data is sent immediately
+            $PodeContext.Server.Watchdog.PipeWriter.Flush()
+
+            $PodeContext.Server.Watchdog.Status = 'Restarting'
+        }
+        else {
+            throw 'Pipe connection lost. Waiting for client to reconnect ...'
+
+        }
+
+        if (Wait-PodeWatchdogProcessStateChange -NewState 'Offline') {
+            return (Wait-PodeWatchdogProcessStateChange -NewState 'Online')
+        }
+        return $false
+    }
+    catch {
+        # Handle any exceptions during the write operation
+        $_ | Write-PodeErrorLog
+
+    }
+}
+
+
+function Start-PodeWatchdogProcess {
+    $watchdog = $PodeContext.Server.Watchdog
+    if ($null -eq $PodeContext.Server.Watchdog.Process ) {
+        $watchdog.Status = 'Starting'
+        $watchdog.Process = Start-Process -FilePath  $watchdog.Shell -ArgumentList $watchdog.Arguments -NoNewWindow -PassThru
+
+        $watchdog.Runspace = Add-PodeRunspace -Type 'Watchdog' -ScriptBlock ( $watchdog.ScriptBlock) -PassThru
+
+        if (!$watchdog.Process.HasExited) {
+            $watchdog.Status = 'Running'
+            return $true
+        }
+        else {
+            $watchdog.Status = 'Stopped'
+        }
+    }
+    return $false
+}
+
 function Get-PodeWatchdogInfo {
     [CmdletBinding(DefaultParameterSetName = 'HashTable')]
-    [OutputType([string])]
     [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Status', 'Requests', 'Listeners')]
-        [string] $Type = 'Status',
-
-        [Parameter(  ParameterSetName = 'Raw')]
-        [switch]
-        $Raw,
-
-        [Parameter( ParameterSetName = 'HashTable')]
-        [switch]
-        $AsHashTable
+        [ValidateSet('Status', 'Requests', 'Listeners', 'Signals')]
+        [string] $Type = 'Status'
     )
-    try {
-        $uri = "http://$($PodeContext.Server.Watchdog.MonitoringAddress):$($PodeContext.Server.Watchdog.MonitoringPort)/$($Type.ToLower())"
-        $result = Invoke-WebRequest -Uri $uri -Method Get
-        if ($result.StatusCode -eq 200) {
-            if ($Raw.IsPresent) {
-                return $result.Content
+    if ( $null -ne $PodeContext.Server.Watchdog -and $null -ne $PodeContext.Server.Watchdog['ProcessInfo']) {
+        $processInfo = $PodeContext.Server.Watchdog['ProcessInfo']
+        switch ($Type) {
+            'Status' {
+                return  @{
+                    Pid           = $processInfo.Pid
+                    CurrentUptime = $processInfo.CurrentUptime
+                    TotalUptime   = $processInfo.TotalUptime
+                    RestartCount  = $processInfo.RestartCount
+                }
             }
-            return $result.Content | ConvertFrom-Json -AsHashtable:$AsHashTable
+            'Requests' {
+                return   $processInfo.Metrics.Requests
+
+            }
+            'Listeners' {
+                return   $processInfo.Listeners
+            }
+
+            'Signals' {
+                return   $processInfo.Metrics.Signals
+            }
+
         }
     }
-    catch {
-        if ($type -eq 'Status') {
-            if ($Raw.IsPresent) {
-                return '{"Status" : "Offline"}'
-            }
-            if ($AsHashTable.IsPresent) {
-                return @{ 'Status' = 'Offline' }
-            }
-            return [PSCustomObject]@{ Status = 'Offline' }
-        }
+}
+
+
+function Set-PodeWatchState {
+    param (
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Stop', 'Restart', 'Start')]
+        [string]
+        $State = 'Stop'
+    )
+    switch ($State) {
+        'Stop' { return Stop-PodeWatchdogProcess }
+        'Restart' { return Restart-PodeWatchdogProcess }
+        'Start' { return Start-PodeWatchdogProcess }
     }
 }

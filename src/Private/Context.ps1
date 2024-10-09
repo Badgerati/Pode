@@ -152,10 +152,8 @@ function New-PodeContext {
         Tasks      = 2
         WebSockets = 2
         Timers     = 1
+        Watchers   = 0
     }
-
-    # watchdog settings
-    $ctx.Server.Watchdog = $Watchdog
 
     # set socket details for pode server
     $ctx.Server.Sockets = @{
