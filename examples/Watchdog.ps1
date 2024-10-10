@@ -55,6 +55,11 @@ Start-PodeServer {
         Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -State Start)}
     }
 
+
+    Add-PodeRoute -PassThru -Method Post -Path '/kill'  -ScriptBlock {
+
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -State Kill)}
+    }
     <#   # Monitor the process if needed
     if ($process) {
         Write-Output "Process started with ID: $($process.Id)"

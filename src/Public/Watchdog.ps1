@@ -65,62 +65,91 @@ function Enable-PodeWatchdog {
     }
 
     $scriptBlock = {
-        write-podehost 'starting Pipeserver ...'
-        $pipeServer = $PodeContext.Server.Watchdog.PipeServer
+        Write-PodeHost 'Starting PipeServer...'
+
+        # Start the main loop for the server
         while ($PodeContext.Server.Watchdog.Enabled) {
             try {
-                # Create a StreamReader to read the incoming message
+                # Check if PipeServer is null and create a new instance if needed
+                if ($null -eq $PodeContext.Server.Watchdog['PipeServer']) {
+                    $pipeName = $PodeContext.Server.Watchdog.PipeName
+                    $PodeContext.Server.Watchdog['PipeServer'] = [System.IO.Pipes.NamedPipeServerStream]::new(
+                        $pipeName,
+                        [System.IO.Pipes.PipeDirection]::InOut,
+                        2,
+                        [System.IO.Pipes.PipeTransmissionMode]::Message,
+                        [System.IO.Pipes.PipeOptions]::None
+                    )
+                    Write-PodeHost 'New PipeServer instance created and stored in Watchdog context.'
+
+                    # Create a new StreamWriter and store it back in the Watchdog context
+                    $PodeContext.Server.Watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($PodeContext.Server.Watchdog['PipeServer'])
+                  #  $PodeContext.Server.Watchdog['PipeWriter'].AutoFlush = $true  # Enable auto-flush for immediate writes
+                    Write-PodeHost 'New PipeWriter instance created and stored in Watchdog context.'
+                }
+
+                $pipeServer = $PodeContext.Server.Watchdog['PipeServer']
+                Write-PodeHost 'PipeServer created and waiting for connection...'
+                $pipeServer.WaitForConnection()
+                Write-PodeHost 'Client connected.'
+
+                # Create a StreamReader to read messages from the client
                 $reader = [System.IO.StreamReader]::new($pipeServer)
-                while ($PodeContext.Server.Watchdog.Enabled) {
-                    #  Write-PodeHost 'Waiting for client connection...'
 
-                    # Wait for the client connection
-                    $pipeServer.WaitForConnection()
-                    #     Write-PodeHost 'Client connected.'
+                while ($pipeServer.IsConnected) {
                     try {
-                        # Create a StreamReader to read the incoming message from the connected client
-                        $reader = [System.IO.StreamReader]::new($pipeServer)
+                        # Read the next message, which contains the serialized hashtable
+                        $receivedData = $reader.ReadLine()
 
-                        while ($pipeServer.IsConnected) {
-                            # Read the next message, which contains the serialized hashtable
-                            $receivedData = $reader.ReadLine()
-
-                            # Check if data was received
-                            if ($receivedData) {
-                                Write-PodeHost "Server Received data: $receivedData"
-
-                                # Deserialize the received JSON string back into a hashtable
-                                $PodeContext.Server.Watchdog.ProcessInfo = $receivedData | ConvertFrom-Json
-
-                            }
-                            else {
-                                Write-PodeHost 'No data received from client. Waiting for more data...'
-                            }
+                        # Check if data was received
+                        if ($null -ne $receivedData) {
+                            Write-PodeHost "Server Received data: $receivedData"
+                            # Deserialize the received JSON string back into a hashtable
+                            $PodeContext.Server.Watchdog.ProcessInfo = $receivedData | ConvertFrom-Json
                         }
-                        Write-PodeHost 'Client disconnected. Waiting for a new connection...'
+                        else {
+                            Write-PodeHost 'No data received from client. Waiting for more data...'
+                        }
                     }
                     catch {
-                        $_ | Write-PodeErrorLog
-                        write-podehost "Error reading from pipe: $_"
-                        $pipeServer.Disconnect()
+                        Write-PodeHost "Error reading from client: $_"
+                        $pipeServer.Disconnect()  # Disconnect the server to allow reconnection
                         Start-Sleep -Seconds 1
                     }
                 }
-                $pipeServer.Disconnect()
+
+                # Client disconnected, clean up
+                Write-PodeHost 'Client disconnected. Waiting for a new connection...'
+                $pipeServer.Disconnect()  # Disconnect to reset the state and wait for new connection
             }
             catch {
-                $_ | Write-PodeErrorLog
-                write-podehost "Error  pipe: $_"
+                Write-PodeHost "Error with the pipe server: $_"
+
+                # Set PipeServer to null to trigger reinitialization in the next loop
+                Write-PodeHost 'Releasing resources and setting PipeServer to null.'
+                if ($null -ne $PodeContext.Server.Watchdog['PipeWriter']) {
+                    $PodeContext.Server.Watchdog['PipeWriter'].Dispose()  # Dispose of the existing PipeWriter
+                    $PodeContext.Server.Watchdog['PipeWriter'] = $null
+                }
+
+                if ($null -ne $pipeServer) {
+                    $pipeServer.Dispose()  # Dispose of the existing PipeServer
+                    $PodeContext.Server.Watchdog['PipeServer'] = $null  # Set to null for reinitialization in the main loop
+                }
             }
             finally {
-                # Clean up after client disconnection
+                # Clean up resources
                 Write-PodeHost 'Cleaning up resources...'
-                $reader.Dispose()
-                # Disconnect the pipe server to reset it for the next client
-                $pipeServer.Disconnect()
+                if ($null -ne $reader) { $reader.Dispose() }
+                if ($null -ne $pipeServer -and $pipeServer.IsConnected) {
+                    $pipeServer.Disconnect()  # Ensure the server is disconnected before next iteration
+                }
             }
         }
+
+        Write-PodeHost 'Stopping PipeServer...'
     }
+
 
     $pipename = "$($PID)_Watchdog"
     $PodeContext.Server.Watchdog = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
@@ -130,13 +159,15 @@ function Enable-PodeWatchdog {
     $PodeContext.Server.Watchdog['Status'] = 'Starting'
     $PodeContext.Server.Watchdog['PipeName'] = $pipename
     $PodeContext.Server.Watchdog['PreSharedKey'] = (New-PodeGuid)
-    $PodeContext.Server.Watchdog['PipeServer'] = [System.IO.Pipes.NamedPipeServerStream]::new($pipeName, [System.IO.Pipes.PipeDirection]::InOut, 2, [System.IO.Pipes.PipeTransmissionMode]::Message, [System.IO.Pipes.PipeOptions]::Asynchronous)
+    #  $PodeContext.Server.Watchdog['PipeServer'] = [System.IO.Pipes.NamedPipeServerStream]::new($pipeName, [System.IO.Pipes.PipeDirection]::InOut, 2, [System.IO.Pipes.PipeTransmissionMode]::Message, [System.IO.Pipes.PipeOptions]::Asynchronous)
     $PodeContext.Server.Watchdog['ScriptBlock'] = $scriptBlock
     $PodeContext.Server.Watchdog['Type'] = 'Server'
     $PodeContext.Server.Watchdog['Runspace'] = $null
     $PodeContext.Server.Watchdog['Interval'] = $Interval
+    $PodeContext.Server.Watchdog['PipeServer'] = $null
+    $PodeContext.Server.Watchdog['PipeWriter'] = $null
     # Create a persistent StreamWriter for writing messages and store it in the context
-    $PodeContext.Server.Watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($PodeContext.Server.Watchdog.PipeServer)
+    #   $PodeContext.Server.Watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($PodeContext.Server.Watchdog.PipeServer)
     # $PodeContext.Server.Watchdog['PipeWriter'].AutoFlush = $true  # Enable auto-flush to send data immediately
     $PodeContext.Server.Watchdog['ProcessInfo'] = $null
     $PodeContext.Server.Watchdog['Enabled'] = $true
@@ -214,7 +245,7 @@ function Get-PodeWatchdogInfo {
 function Set-PodeWatchState {
     param (
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Stop', 'Restart', 'Start')]
+        [ValidateSet('Stop', 'Restart', 'Start','Kill')]
         [string]
         $State = 'Stop'
     )
@@ -222,5 +253,6 @@ function Set-PodeWatchState {
         'Stop' { return Stop-PodeWatchdogProcess }
         'Restart' { return Restart-PodeWatchdogProcess }
         'Start' { return Start-PodeWatchdogProcess }
+        'Kill'  { return Stop-PodeWatchdogProcess -Force}
     }
 }

@@ -6,61 +6,27 @@ function Test-PodeWatchDogEnabled {
     return $PodeContext.Server.containsKey('Watchdog')
 }
 
-function Start-PodeWatchdogHousekeeper {
-    Add-PodeTimer -Name '__pode_watchdog_housekeeper__' -Interval 10 -ScriptBlock {
-        try {
+function Stop-PodeWatchdogProcess {
+    param (
+        [Parameter()]
+        [int] $Timeout = 10,
 
-            $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
-            if ($process) {
-                if ($PodeContext.Server.Watchdog.Status -eq 'RestartRequest') {
-                    $PodeContext.Server.Watchdog.Status = 'Restarting'
-                    write-podehost 'start Restarting '
-
-                    Restart-PodeWatchdogProcess
-
-                }
-            }
-            else {
-                $PodeContext.Server.Watchdog.Status = 'Stopped'
-                write-podehost 'Process is not running'
-                write-podehost 'Restarting....'
-                Start-PodeWatchdogProcess
-            }
-        }
-        catch {
-            $_ | Write-PodeErrorLog
-        }
-    }
-}
-
-
-function Wait-PodeWatchdogProcessStateChange {
-    param ([Parameter(Mandatory = $false)]
-        [ValidateSet('Offline', 'Online')]
-        $NewState = 'Offline',
-        [int]
-        $Timeout = 10
+        [switch]
+        $Force
     )
-
-
-    $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
-
-    $i = 0
-    while ((($NewState -eq 'Online') -and ($null -eq $process)) -or
-        (($NewState -eq 'Offline') -and ($null -ne $process))
-    ) {
-        Start-Sleep -Seconds 2
-        $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
-        $i++
-        if ($i -gt $Timeout) {
+    if ($force.IsPresent) {
+        if ($null -ne $PodeContext.Server.Watchdog.Process) {
+            $stoppedProcess = Stop-Process -Id $PodeContext.Server.Watchdog.Process.Id -PassThru
+            if ($null -ne $stoppedProcess) {
+                $PodeContext.Server.Watchdog.Process = $null
+                $PodeContext.Server.Watchdog.Status = 'Stopped'
+                return $true
+            }
             return $false
         }
+    
+        return $true
     }
-
-}
-
-
-function Stop-PodeWatchdogProcess {
     try {
         # Check if the pipe client is still connected before writing
         if ($PodeContext.Server.Watchdog.PipeServer.IsConnected) {
@@ -75,7 +41,20 @@ function Stop-PodeWatchdogProcess {
         else {
             throw 'Pipe connection lost. Waiting for client to reconnect ...'
         }
-        return (Wait-PodeWatchdogProcessStateChange -NewState 'Offline')
+
+        $i = 0
+        $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
+        while ($null -ne $process) {
+            Start-Sleep -Seconds 2
+            $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
+            $i++
+            if ($i -gt $Timeout) {
+                return $false
+            }
+        }
+        $PodeContext.Server.Watchdog.Process = $null
+        $PodeContext.Server.Watchdog.Status = 'Stopped'
+        return $true
 
     }
     catch {
@@ -89,7 +68,8 @@ function Restart-PodeWatchdogProcess {
     try {
         # Check if the pipe client is still connected before writing
         if ($PodeContext.Server.Watchdog.PipeServer.IsConnected) {
-
+            $restartCount = $PodeContext.Server.Watchdog['ProcessInfo'].RestartCount
+            $PodeContext.Server.Watchdog['ProcessInfo'] = $null
             # Write the serialized JSON data to the pipe using the persistent StreamWriter
             $PodeContext.Server.Watchdog.PipeWriter.WriteLine('restart')
 
@@ -102,16 +82,16 @@ function Restart-PodeWatchdogProcess {
             throw 'Pipe connection lost. Waiting for client to reconnect ...'
 
         }
-
-        if (Wait-PodeWatchdogProcessStateChange -NewState 'Offline') {
-            return (Wait-PodeWatchdogProcessStateChange -NewState 'Online')
+        Start-Sleep 5
+        while ($null -eq $PodeContext.Server.Watchdog['ProcessInfo'] ) {
+            Start-Sleep 1
         }
-        return $false
+        return ($PodeContext.Server.Watchdog['ProcessInfo'].RestartCount -eq $restartCount + 1)
     }
     catch {
         # Handle any exceptions during the write operation
         $_ | Write-PodeErrorLog
-
+        return $false
     }
 }
 
@@ -122,8 +102,12 @@ function Start-PodeWatchdogProcess {
         $watchdog.Status = 'Starting'
         $watchdog.Process = Start-Process -FilePath  $watchdog.Shell -ArgumentList $watchdog.Arguments -NoNewWindow -PassThru
 
-        $watchdog.Runspace = Add-PodeRunspace -Type 'Watchdog' -ScriptBlock ( $watchdog.ScriptBlock) -PassThru
+        if ($null -eq $watchdog.Runspace ) {
+            $watchdog.Runspace = Add-PodeRunspace -Type 'Watchdog' -ScriptBlock ( $watchdog.ScriptBlock) -PassThru
+        }
 
+
+        write-podehost $watchdog.Process -explode
         if (!$watchdog.Process.HasExited) {
             $watchdog.Status = 'Running'
             return $true
