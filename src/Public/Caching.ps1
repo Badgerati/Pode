@@ -462,6 +462,7 @@ if (Test-PodeCacheStorage -Name 'ExampleStorage') { }
 function Test-PodeCacheStorage {
     [CmdletBinding()]
     param(
+        [Alias('Key')]
         [Parameter(Mandatory = $true)]
         [string]
         $Name
