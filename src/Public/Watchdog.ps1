@@ -1,37 +1,59 @@
 #State
-# RestartRequest
+
 # Restarting
 # Restarted
 # Starting
 # Running
-# StoppingRequest
 # Stopping
 # Stopped
 # Undefined
 
 function Enable-PodeWatchdog {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Script')]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0, ParameterSetName = 'Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Script')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptMonitoring')]
         [scriptblock]
         $ScriptBlock,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'File')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileMonitoring')]
         [string]
         $FilePath,
 
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptMonitoring')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'FileMonitoring')]
         [switch]
         $FileMonitoring,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'ScriptMonitoring')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'FileMonitoring')]
+        [string[]]
+        $FileExclude,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'ScriptMonitoring')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'FileMonitoring')]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $FileInclude = '*.*',
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'FileMonitoring')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ScriptMonitoring')]
+        [string]
+        $MonitoredPath,
 
         [int]
         $Interval = 10,
 
         [switch]
-        $NoAutostart
+        $NoAutostart,
+
+        [int]
+        $MinRestartInterval = 3
     )
 
     # Check which parameter set is being used and take appropriate action
-    if ($PSCmdlet.ParameterSetName -ieq 'File') {
+    if ($PSCmdlet.ParameterSetName -ieq 'File' -or $PSCmdlet.ParameterSetName -ieq 'FileMonitoring' ) {
         $FilePath = Get-PodeRelativePath -Path $FilePath -Resolve -TestPath -JoinRoot -RootPath $MyInvocation.PSScriptRoot
 
         # if not already supplied, set root path
@@ -60,8 +82,6 @@ function Enable-PodeWatchdog {
             `$PodeWatchdog = `$args[0] | ConvertFrom-Json;
              & { $scriptBlockString }
         }`""
-
-
     }
 
     $scriptBlock = {
@@ -172,7 +192,6 @@ function Enable-PodeWatchdog {
     $PodeContext.Server.Watchdog['Process'] = $null
     $PodeContext.Server.Watchdog['Status'] = 'Starting'
     $PodeContext.Server.Watchdog['PipeName'] = $pipename
-    #  $PodeContext.Server.Watchdog['PipeServer'] = [System.IO.Pipes.NamedPipeServerStream]::new($pipeName, [System.IO.Pipes.PipeDirection]::InOut, 2, [System.IO.Pipes.PipeTransmissionMode]::Message, [System.IO.Pipes.PipeOptions]::Asynchronous)
     $PodeContext.Server.Watchdog['ScriptBlock'] = $scriptBlock
 
     $PodeContext.Server.Watchdog['Runspace'] = $null
@@ -182,8 +201,9 @@ function Enable-PodeWatchdog {
     $PodeContext.Server.Watchdog['ProcessInfo'] = $null
     $PodeContext.Server.Watchdog['Enabled'] = $true
     $PodeContext.Server.Watchdog['Autostart'] = ! $NoAutostart.IsPresent
-
-
+    $PodeContext.Server.Watchdog['FilePath'] = $FilePath
+    $PodeContext.Server.Watchdog['RestartCount'] = -1
+    $PodeContext.Server.Watchdog['MinRestartInterval'] = $MinRestartInterval
 
     $PodeWatchdog = @{
         DisableTermination = $true
@@ -202,19 +222,35 @@ function Enable-PodeWatchdog {
     $PodeContext.Server.Watchdog.Arguments = "$arguments  '$escapedJsonConfig'"
 
     if ($FileMonitoring.IsPresent) {
-        if ($PSCmdlet.ParameterSetName -ieq 'File') {
-            Add-PodeFileWatcher -Path (get-item $FilePath).DirectoryName -Exclude '*.log' -ScriptBlock {
-                "[$($FileEvent.Type)]: $($FileEvent.FullPath)" | Out-Default
-                $PodeContext.Server.Watchdog.Status = 'Restarting'
+        if ($MonitoredPath) {
+            if (Test-Path -Path $MonitoredPath -PathType Container) {
+                $path = $MonitoredPath
+            }
+            else {
+                throw ($PodeLocale.pathNotExistExceptionMessage -f $path)
+            }
+        }
+        else {
+            $path = (Get-Item $FilePath).DirectoryName
+        }
+        Add-PodeFileWatcher -Path $path -Exclude $FileExclude -Include $FileInclude -ScriptBlock {
+            Write-PodeHost  "File [$($FileEvent.Type)]: $($FileEvent.FullPath) changed"
+            if (((Get-Date) - ($PodeContext.Server.Watchdog['Process'].StartTime) ).TotalMinutes -gt $PodeContext.Server.Watchdog['MinRestartInterval'] ) {
+                if ( $PodeContext.Server.Watchdog.FilePath -eq $FileEvent.FullPath) {
+                    Write-PodeHost 'Force a cold restart'
+                    Set-PodeWatchState -State ColdRestart
+                }
+                else {
+                    Write-PodeHost 'Force a restart'
+                    Set-PodeWatchState -State Restart
+                }
+            }
+            else {
+                Write-PodeHost "Less than $($PodeContext.Server.Watchdog['MinRestartInterval']) minutes are passed since last restart."
             }
         }
     }
 }
-
-
-
-
-
 function Get-PodeWatchdogInfo {
     [CmdletBinding(DefaultParameterSetName = 'HashTable')]
     [OutputType([hashtable])]
@@ -254,7 +290,7 @@ function Get-PodeWatchdogInfo {
 function Set-PodeWatchState {
     param (
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Stop', 'Restart', 'Start', 'Kill')]
+        [ValidateSet('Stop', 'Restart', 'Start', 'HardStop', 'ColdRestart')]
         [string]
         $State = 'Stop'
     )
@@ -262,7 +298,19 @@ function Set-PodeWatchState {
         'Stop' { $PodeContext.Server.Watchdog.Autostart = $false; return Stop-PodeWatchdogProcess }
         'Restart' { return Restart-PodeWatchdogProcess }
         'Start' { return Start-PodeWatchdogProcess }
-        'Kill' { $PodeContext.Server.Watchdog.Autostart = $false; return Stop-PodeWatchdogProcess -Force }
+        'HardStop' { $PodeContext.Server.Watchdog.Autostart = $false; return Stop-PodeWatchdogProcess -Force }
+        'ColdRestart' {
+            $autostart = $PodeContext.Server.Watchdog.Autostart
+            $PodeContext.Server.Watchdog.Autostart = $false
+            if ((Stop-PodeWatchdogProcess -Force)) {
+                $result = Start-PodeWatchdogProcess
+                if ($result) {
+                    $PodeContext.Server.Watchdog.Autostart = $autostart
+                }
+                return $result
+            }
+
+        }
     }
 }
 

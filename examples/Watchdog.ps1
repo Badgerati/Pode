@@ -18,7 +18,7 @@ Start-PodeServer {
     $filePath = '.\Logging.ps1'
     New-PodeLoggingMethod -File -Name 'watchdog' -MaxDays 4 | Enable-PodeErrorLogging
 
-    Enable-PodeWatchdog -FilePath $filePath   -FileMonitoring
+    Enable-PodeWatchdog -FilePath $filePath   -FileMonitoring -FileExclude "*.log"
 
     # Get-PodeWatchdogInfo -type Status
 
@@ -42,22 +42,24 @@ Start-PodeServer {
 
     Add-PodeRoute -PassThru -Method Post -Path '/restart'  -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -state Restart)}
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchState -state Restart) }
     }
 
     Add-PodeRoute -PassThru -Method Post -Path '/stop'  -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -State Stop)}
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchState -State Stop) }
     }
 
     Add-PodeRoute -PassThru -Method Post -Path '/start'   -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -State Start)}
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchState -State Start) }
     }
 
 
     Add-PodeRoute -PassThru -Method Post -Path '/kill'  -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -State Kill)}
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchState -State Kill) }
     }
+
+    # End of Routes
 }

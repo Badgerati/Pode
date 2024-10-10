@@ -18,6 +18,7 @@ function Stop-PodeWatchdogProcess {
         if ($null -ne $PodeContext.Server.Watchdog.Process) {
             $stoppedProcess = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id  -ErrorAction SilentlyContinue
             if ($null -ne $stoppedProcess) {
+                $PodeContext.Server.Watchdog.Status = 'Stopping'
                 $stoppedProcess = Stop-Process -Id $PodeContext.Server.Watchdog.Process.Id -PassThru  -ErrorAction SilentlyContinue
                 if ($null -eq $stoppedProcess) {
                     return $false
@@ -113,6 +114,7 @@ function Start-PodeWatchdogProcess {
             $watchdog.Runspace = Add-PodeRunspace -Type 'Watchdog' -ScriptBlock ( $watchdog.ScriptBlock) -PassThru
         }
 
+        $PodeContext.Server.Watchdog.RestartCount += 1
 
         write-podehost $watchdog.Process -explode
         if (!$watchdog.Process.HasExited) {
@@ -170,7 +172,6 @@ function Stop-PodeWatchdog {
                 Stop-PodeWatchdogHearthbeat
             }
             'Server' {
-                $PodeContext.Server.Watchdog.Status = 'StoppingRequest'
                 if ((Stop-PodeWatchdogProcess -Timeout 10)) {
                     $PodeContext.Server.Watchdog.Status = 'Stopped'
                 }
