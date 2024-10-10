@@ -641,6 +641,12 @@ function New-PodeRunspacePool {
         $PodeContext.RunspacePools.Gui.Pool.ApartmentState = 'STA'
     }
 
+    if (Test-PodeWatchdogEnabled ) {
+        $PodeContext.RunspacePools.Watchdog = @{
+            Pool  = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
+            State = 'Waiting'
+        }
+    }
 }
 
 <#
