@@ -60,21 +60,4 @@ Start-PodeServer {
 
         Write-PodeJsonResponse -StatusCode 200 -Value @{success=(Set-PodeWatchState -State Kill)}
     }
-    <#   # Monitor the process if needed
-    if ($process) {
-        Write-Output "Process started with ID: $($process.Id)"
-
-        # Ask user if they want to close the process
-        $userInput = Read-Host -Prompt 'Do you want to close the process before waiting for it to complete? (y/n)'
-
-        if ($userInput -eq 'y') {
-            # Stop the Pode watchdog process if the user chooses 'y'
-            Stop-PodeWatchdog
-        }
-        Wait-Process -Id $process.Id -ErrorAction SilentlyContinue
-        Write-Output "Process has exited with code: $($process.ExitCode)"
-    }
-    else {
-        Write-Error 'Failed to start the PowerShell process with the scriptblock.'
-    }#>
 }

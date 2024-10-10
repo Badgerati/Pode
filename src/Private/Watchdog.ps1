@@ -16,15 +16,21 @@ function Stop-PodeWatchdogProcess {
     )
     if ($force.IsPresent) {
         if ($null -ne $PodeContext.Server.Watchdog.Process) {
-            $stoppedProcess = Stop-Process -Id $PodeContext.Server.Watchdog.Process.Id -PassThru
+            $stoppedProcess = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id  -ErrorAction SilentlyContinue
             if ($null -ne $stoppedProcess) {
-                $PodeContext.Server.Watchdog.Process = $null
-                $PodeContext.Server.Watchdog.Status = 'Stopped'
-                return $true
+                $stoppedProcess = Stop-Process -Id $PodeContext.Server.Watchdog.Process.Id -PassThru  -ErrorAction SilentlyContinue
+                if ($null -eq $stoppedProcess) {
+                    return $false
+                }
             }
-            return $false
+            $PodeContext.Server.Watchdog.Process = $null
+            $PodeContext.Server.Watchdog.Status = 'Stopped'
+            return $true
         }
-    
+        else {
+            Write-PodeHost  'No watchdog process found'
+        }
+
         return $true
     }
     try {
@@ -49,6 +55,7 @@ function Stop-PodeWatchdogProcess {
             $process = Get-Process -Id $PodeContext.Server.Watchdog.Process.Id -ErrorAction SilentlyContinue
             $i++
             if ($i -gt $Timeout) {
+                Write-PodeHost  'Stop-PodeWatchdogProcess timeout reached'
                 return $false
             }
         }
@@ -121,6 +128,37 @@ function Start-PodeWatchdogProcess {
 
 
 
+function Stop-PodeWatchdogHearthbeat {
+    param ( )
+    Remove-PodeTimer -Name '__pode_watchdog_client__'
+    if ($null -ne $PodeContext.Server.Watchdog.PipeClient) {
+        if ($null -ne $PodeContext.Server.Watchdog.PipeReader) {
+            try {
+                $PodeContext.Server.Watchdog.PipeReader.Dispose()
+            }
+            catch {
+                $_ | Write-PodeErrorLog -Level Verbose
+            }
+        }
+        if ($null -ne $PodeContext.Server.Watchdog.PipeWriter) {
+            try {
+                $PodeContext.Server.Watchdog.PipeWriter.Dispose()
+            }
+            catch {
+                $_ | Write-PodeErrorLog -Level Verbose
+            }
+        }
+        if ($PodeContext.Server.Watchdog.PipeClient.IsConnected) {
+            $PodeContext.Server.Watchdog.PipeClient.Disconnect()
+        }
+        try {
+            $PodeContext.Server.Watchdog.PipeClient.Dispose()
+        }
+        catch {
+            $_ | Write-PodeErrorLog -Level Verbose
+        }
+    }
+}
 
 function Stop-PodeWatchdog {
     param ()
@@ -129,26 +167,11 @@ function Stop-PodeWatchdog {
         $PodeContext.Server.Watchdog.Enabled = $false
         switch ($PodeContext.Server.Watchdog.Type) {
             'Client' {
-                if ($null -ne $PodeContext.Server.Watchdog.PipeWriter) {
-                    try {
-                        $PodeContext.Server.Watchdog.PipeWriter.Dispose()
-                    }
-                    catch {
-                        $_ | Write-PodeErrorLog -Level Verbose
-                    }
-                }
-                if ($null -ne $PodeContext.Server.Watchdog.PipeClient) {
-                    try {
-                        $PodeContext.Server.Watchdog.PipeClient.Dispose()
-                    }
-                    catch {
-                        $_ | Write-PodeErrorLog -Level Verbose
-                    }
-                }
+                Stop-PodeWatchdogHearthbeat
             }
             'Server' {
                 $PodeContext.Server.Watchdog.Status = 'StoppingRequest'
-                if (Stop-PodeWatchdogProcess) {
+                if ((Stop-PodeWatchdogProcess -Timeout 10)) {
                     $PodeContext.Server.Watchdog.Status = 'Stopped'
                 }
                 else {
@@ -199,42 +222,10 @@ function Start-PodeWatchdog {
         }
     }
 }
-<#
-function Stop-PodeWatchdog {
-    param ()
-    if ($PodeContext.Server.containsKey('Watchdog')) {
-        switch ($PodeContext.Server.Watchdog.Type) {
-            'Client' {
-                write-podehost 'Stopping Client watchdog'
-                Stop-PodeWatchdogHearthbeat
-
-            }
-            'Server' {
-                write-podehost 'Stopping Server watchdog'
-
-                $null = Stop-PodeWatchdogProcess
-            }
-        }
-    }
-}#>
-
-
-
 
 #Client
 
-function Stop-PodeWatchdogHearthbeat {
-    param ( )
-    Remove-PodeTimer -Name '__pode_watchdog_client__'
-    if ($PodeContext.Server.Watchdog.PipeClient.IsConnected) {
-        $PodeContext.Server.Watchdog.PipeClient.Disconnect()
-    }
 
-    $PodeContext.Server.Watchdog.PipeReader.Dispose()
-    $PodeContext.Server.Watchdog.PipeWriter.Dispose()
-
-
-}
 function Start-PodeWatchdogHearthbeat {
 
     if ($PodeContext.Server.containsKey('Watchdog') -and $PodeContext.Server.Watchdog.Type -eq 'Client') {

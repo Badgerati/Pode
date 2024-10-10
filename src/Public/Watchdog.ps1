@@ -21,13 +21,13 @@ function Enable-PodeWatchdog {
         $FilePath,
 
         [switch]
-        $DisableMonitoring,
-
-        [switch]
         $FileMonitoring,
 
         [int]
-        $Interval = 10
+        $Interval = 10,
+
+        [switch]
+        $NoAutostart
     )
 
     # Check which parameter set is being used and take appropriate action
@@ -84,7 +84,7 @@ function Enable-PodeWatchdog {
 
                     # Create a new StreamWriter and store it back in the Watchdog context
                     $PodeContext.Server.Watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($PodeContext.Server.Watchdog['PipeServer'])
-                  #  $PodeContext.Server.Watchdog['PipeWriter'].AutoFlush = $true  # Enable auto-flush for immediate writes
+                    #  $PodeContext.Server.Watchdog['PipeWriter'].AutoFlush = $true  # Enable auto-flush for immediate writes
                     Write-PodeHost 'New PipeWriter instance created and stored in Watchdog context.'
                 }
 
@@ -115,6 +115,7 @@ function Enable-PodeWatchdog {
                         Write-PodeHost "Error reading from client: $_"
                         $pipeServer.Disconnect()  # Disconnect the server to allow reconnection
                         Start-Sleep -Seconds 1
+
                     }
                 }
 
@@ -136,6 +137,18 @@ function Enable-PodeWatchdog {
                     $pipeServer.Dispose()  # Dispose of the existing PipeServer
                     $PodeContext.Server.Watchdog['PipeServer'] = $null  # Set to null for reinitialization in the main loop
                 }
+                if ($PodeContext.Server.Watchdog.Autostart) {
+                    Write-PodeHost 'Restarting the watchdog process...'
+                    if (Stop-PodeWatchdogProcess -Force) {
+                        Start-PodeWatchdogProcess
+                    }
+                    else {
+                        Write-PodeHost 'Failed to restart the watchdog process.'
+                    }
+                }
+                else {
+                    Write-PodeHost 'Autostart disabled...'
+                }
             }
             finally {
                 # Clean up resources
@@ -153,32 +166,28 @@ function Enable-PodeWatchdog {
 
     $pipename = "$($PID)_Watchdog"
     $PodeContext.Server.Watchdog = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-    $PodeContext.Server.Watchdog['Shell'] = $(if ($PSVersionTable.PSVersion -gt [version]'6.0') { 'pwsh' } else { 'powershell' })
+    $PodeContext.Server.Watchdog['Type'] = 'Server'
+    $PodeContext.Server.Watchdog['Shell'] = (Get-Process -Id $PID).Path
     $PodeContext.Server.Watchdog['Arguments'] = $null
     $PodeContext.Server.Watchdog['Process'] = $null
     $PodeContext.Server.Watchdog['Status'] = 'Starting'
     $PodeContext.Server.Watchdog['PipeName'] = $pipename
-    $PodeContext.Server.Watchdog['PreSharedKey'] = (New-PodeGuid)
     #  $PodeContext.Server.Watchdog['PipeServer'] = [System.IO.Pipes.NamedPipeServerStream]::new($pipeName, [System.IO.Pipes.PipeDirection]::InOut, 2, [System.IO.Pipes.PipeTransmissionMode]::Message, [System.IO.Pipes.PipeOptions]::Asynchronous)
     $PodeContext.Server.Watchdog['ScriptBlock'] = $scriptBlock
-    $PodeContext.Server.Watchdog['Type'] = 'Server'
+
     $PodeContext.Server.Watchdog['Runspace'] = $null
     $PodeContext.Server.Watchdog['Interval'] = $Interval
     $PodeContext.Server.Watchdog['PipeServer'] = $null
     $PodeContext.Server.Watchdog['PipeWriter'] = $null
-    # Create a persistent StreamWriter for writing messages and store it in the context
-    #   $PodeContext.Server.Watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($PodeContext.Server.Watchdog.PipeServer)
-    # $PodeContext.Server.Watchdog['PipeWriter'].AutoFlush = $true  # Enable auto-flush to send data immediately
     $PodeContext.Server.Watchdog['ProcessInfo'] = $null
     $PodeContext.Server.Watchdog['Enabled'] = $true
+    $PodeContext.Server.Watchdog['Autostart'] = ! $NoAutostart.IsPresent
 
 
 
     $PodeWatchdog = @{
         DisableTermination = $true
-        Quiet              = $false
-        EnableMonitoring   = !$DisableMonitoring.IsPresent
-        PreSharedKey       = $PodeContext.Server.Watchdog.PreSharedKey
+        Quiet              = $true
         Type               = 'Client'
         PipeName           = $pipename
         Interval           = $Interval
@@ -245,14 +254,26 @@ function Get-PodeWatchdogInfo {
 function Set-PodeWatchState {
     param (
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Stop', 'Restart', 'Start','Kill')]
+        [ValidateSet('Stop', 'Restart', 'Start', 'Kill')]
         [string]
         $State = 'Stop'
     )
     switch ($State) {
-        'Stop' { return Stop-PodeWatchdogProcess }
+        'Stop' { $PodeContext.Server.Watchdog.Autostart = $false; return Stop-PodeWatchdogProcess }
         'Restart' { return Restart-PodeWatchdogProcess }
         'Start' { return Start-PodeWatchdogProcess }
-        'Kill'  { return Stop-PodeWatchdogProcess -Force}
+        'Kill' { $PodeContext.Server.Watchdog.Autostart = $false; return Stop-PodeWatchdogProcess -Force }
     }
+}
+
+
+function Set-PodeWatchAutostart {
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('On', 'Off')]
+        [string]
+        $State
+    )
+
+    $PodeContext.Server.Watchdog.Autostart = $State -ieq 'On'
 }
