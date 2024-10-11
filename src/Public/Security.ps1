@@ -14,6 +14,9 @@ If supplied, the Strict-Transport-Security header will be set.
 .PARAMETER XssBlock
 If supplied, the X-XSS-Protection header will be set to blocking mode. (Default: Off)
 
+.PARAMETER CspReportOnly
+If supplied, the Content-Security-Policy header will be set as the Content-Security-Policy-Report-Only header.
+
 .EXAMPLE
 Set-PodeSecurity -Type Simple
 
@@ -32,7 +35,10 @@ function Set-PodeSecurity {
         $UseHsts,
 
         [switch]
-        $XssBlock
+        $XssBlock,
+
+        [switch]
+        $CspReportOnly
     )
 
     # general headers
@@ -55,7 +61,7 @@ function Set-PodeSecurity {
 
     Set-PodeSecurityCrossOrigin -Embed Require-Corp -Open Same-Origin -Resource Same-Origin
     Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
-    Set-PodeSecurityContentSecurityPolicy -Default 'self' -XssBlock:$XssBlock
+    Set-PodeSecurityContentSecurityPolicy -Default 'self' -XssBlock:$XssBlock -ReportOnly:$CspReportOnly
 
     # only add hsts if specifiec
     if ($UseHsts) {
