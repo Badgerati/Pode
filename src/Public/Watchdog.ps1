@@ -1,12 +1,65 @@
-#State
 
-# Restarting
-# Restarted
-# Starting
-# Running
-# Stopping
-# Stopped
-# Undefined
+<#
+.SYNOPSIS
+    Enables a Pode Watchdog service to monitor a script or file for changes.
+
+.DESCRIPTION
+    Configures and starts a Pode Watchdog service to monitor either a script block or a file path.
+    It can also monitor a directory or a set of files for changes, triggering automatic restarts as needed.
+
+.PARAMETER Name
+    The name of the Watchdog service.
+
+.PARAMETER ScriptBlock
+    The script block to be executed and monitored by the Watchdog service.
+    This parameter is mandatory when using the 'Script' or 'ScriptMonitoring' parameter sets.
+
+.PARAMETER FilePath
+    The path to the file to be executed and monitored by the Watchdog service.
+    This parameter is mandatory when using the 'File' or 'FileMonitoring' parameter sets.
+
+.PARAMETER FileMonitoring
+    Enables monitoring of a file or directory for changes. This can be used with either scripts or files.
+
+.PARAMETER FileExclude
+    An array of file patterns to exclude from the monitoring process.
+    For example: '*.log' to exclude all log files.
+    This is only applicable when 'FileMonitoring' is enabled.
+
+.PARAMETER FileInclude
+    An array of file patterns to include in the monitoring process.
+    Default is '*.*', which includes all files.
+    This is only applicable when 'FileMonitoring' is enabled.
+
+.PARAMETER MonitoredPath
+    The directory path to monitor for changes.
+    This parameter is mandatory when 'FileMonitoring' is enabled and can be used to define the root directory to watch.
+
+.PARAMETER Interval
+    The time interval, in seconds, for checking the Watchdog's state.
+    Default is 10 seconds.
+
+.PARAMETER NoAutostart
+    Disables automatic restart of the monitored process when stopped or when an error occurs.
+
+.PARAMETER MinRestartInterval
+    The minimum time interval, in minutes, between restarts of the monitored process.
+    Default is 3 minutes.
+
+.EXAMPLE
+    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'MyWatch01'
+
+    This example sets up a Watchdog named 'MyWatch01' to monitor changes in the specified file while excluding any log files from the monitoring.
+
+.NOTES
+Possible Monitored Process State:
+- Restarting
+- Starting
+- Running
+- Stopping
+- Stopped
+- Undefined
+#>
 
 function Enable-PodeWatchdog {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -56,11 +109,12 @@ function Enable-PodeWatchdog {
         $MinRestartInterval = 3
     )
 
-    # Check which parameter set is being used and take appropriate action
-    if ($PSCmdlet.ParameterSetName -ieq 'File' -or $PSCmdlet.ParameterSetName -ieq 'FileMonitoring' ) {
+    # Check which parameter set is being used and adjust accordingly
+    if ($PSCmdlet.ParameterSetName -ieq 'File' -or $PSCmdlet.ParameterSetName -ieq 'FileMonitoring') {
+        # Resolve file path and determine root path
         $FilePath = Get-PodeRelativePath -Path $FilePath -Resolve -TestPath -JoinRoot -RootPath $MyInvocation.PSScriptRoot
 
-        # if not already supplied, set root path
+        # Determine root path if not supplied
         if ([string]::IsNullOrWhiteSpace($RootPath)) {
             if ($CurrentPath) {
                 $RootPath = $PWD.Path
@@ -70,24 +124,22 @@ function Enable-PodeWatchdog {
             }
         }
 
-        # Construct the argument string for the file execution
+        # Construct arguments for file execution
         $arguments = "-NoProfile -Command `"& {
             `$global:PodeWatchdog = `$args[0] | ConvertFrom-Json;
             . `"$FilePath`"
         }`""
-
     }
     else {
-        # ParameterSet: 'Script'
-        # Serialize the scriptblock to a string for passing to the new process
+        # For 'Script' parameter set: serialize the scriptblock for execution
         $scriptBlockString = $ScriptBlock.ToString()
-
         $arguments = "-NoProfile -Command `"& {
             `$PodeWatchdog = `$args[0] | ConvertFrom-Json;
              & { $scriptBlockString }
         }`""
     }
 
+    # Main script block to initialize and run the Watchdog PipeServer
     $scriptBlock = {
         param (
             [string]
@@ -96,7 +148,8 @@ function Enable-PodeWatchdog {
 
         Write-PodeHost "Starting PipeServer $WatchdogName..."
         $watchdog = $PodeContext.Server.Watchdog.Server[$WatchdogName]
-        # Start the main loop for the server
+
+        # Main loop to maintain the server state
         while ($watchdog.Enabled) {
             try {
                 # Check if PipeServer is null and create a new instance if needed
@@ -113,7 +166,6 @@ function Enable-PodeWatchdog {
 
                     # Create a new StreamWriter and store it back in the Watchdog context
                     $watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($watchdog['PipeServer'])
-                    #  $watchdog['PipeWriter'].AutoFlush = $true  # Enable auto-flush for immediate writes
                     Write-PodeHost 'New PipeWriter instance created and stored in Watchdog context.'
                 }
 
@@ -127,13 +179,12 @@ function Enable-PodeWatchdog {
 
                 while ($pipeServer.IsConnected) {
                     try {
-                        # Read the next message, which contains the serialized hashtable
+                        # Read the next message from the client
                         $receivedData = $reader.ReadLine()
 
-                        # Check if data was received
                         if ($null -ne $receivedData) {
                             Write-PodeHost "Server Received data: $receivedData"
-                            # Deserialize the received JSON string back into a hashtable
+                            # Deserialize received JSON string into a hashtable
                             $watchdog.ProcessInfo = $receivedData | ConvertFrom-Json
                         }
                         else {
@@ -142,30 +193,30 @@ function Enable-PodeWatchdog {
                     }
                     catch {
                         Write-PodeHost "Error reading from client: $_"
-                        $pipeServer.Disconnect()  # Disconnect the server to allow reconnection
+                        $pipeServer.Disconnect()  # Disconnect to allow reconnection
                         Start-Sleep -Seconds 1
-
                     }
                 }
 
                 # Client disconnected, clean up
                 Write-PodeHost 'Client disconnected. Waiting for a new connection...'
-                $pipeServer.Disconnect()  # Disconnect to reset the state and wait for new connection
+                $pipeServer.Disconnect()  # Disconnect to reset the state
             }
             catch {
                 Write-PodeHost "Error with the pipe server: $_"
 
-                # Set PipeServer to null to trigger reinitialization in the next loop
+                # Release resources and reinitialize PipeServer
                 Write-PodeHost 'Releasing resources and setting PipeServer to null.'
                 if ($null -ne $watchdog['PipeWriter']) {
-                    $watchdog['PipeWriter'].Dispose()  # Dispose of the existing PipeWriter
+                    $watchdog['PipeWriter'].Dispose()  # Dispose existing PipeWriter
                     $watchdog['PipeWriter'] = $null
                 }
 
                 if ($null -ne $pipeServer) {
-                    $pipeServer.Dispose()  # Dispose of the existing PipeServer
-                    $watchdog['PipeServer'] = $null  # Set to null for reinitialization in the main loop
+                    $pipeServer.Dispose()  # Dispose existing PipeServer
+                    $watchdog['PipeServer'] = $null  # Set to null for reinitialization
                 }
+
                 if ($watchdog.Autostart) {
                     Write-PodeHost 'Restarting the watchdog process...'
                     if (Stop-PodeWatchdogMonitoredProcess -Name $watchdog.Name -Force) {
@@ -180,11 +231,11 @@ function Enable-PodeWatchdog {
                 }
             }
             finally {
-                # Clean up resources
+                # Ensure cleanup of resources
                 Write-PodeHost 'Cleaning up resources...'
                 if ($null -ne $reader) { $reader.Dispose() }
                 if ($null -ne $pipeServer -and $pipeServer.IsConnected) {
-                    $pipeServer.Disconnect()  # Ensure the server is disconnected before next iteration
+                    $pipeServer.Disconnect()  # Ensure server is disconnected
                 }
             }
         }
@@ -192,7 +243,7 @@ function Enable-PodeWatchdog {
         Write-PodeHost 'Stopping PipeServer...'
     }
 
-
+    # Generate a unique PipeName for the Watchdog
     $pipename = "$Name_$(New-PodeGuid)"
     if ($null -eq $PodeContext.Server.Watchdog) {
         $PodeContext.Server.Watchdog = @{
@@ -200,6 +251,7 @@ function Enable-PodeWatchdog {
         }
     }
 
+    # Create a hashtable for Watchdog configurations
     $PodeWatchdog = @{
         DisableTermination = $true
         Quiet              = $true
@@ -207,13 +259,10 @@ function Enable-PodeWatchdog {
         Interval           = $Interval
     }
 
-    # Serialize the hashtable to a JSON string
-    $jsonConfig = $PodeWatchdog | ConvertTo-Json -Compress
+    # Serialize and escape the JSON configuration
+    $escapedJsonConfig = ($PodeWatchdog | ConvertTo-Json -Compress).Replace('"', '\"')
 
-    # Escape double quotes for passing the JSON string as a command-line argument
-    $escapedJsonConfig = $jsonConfig.Replace('"', '\"')
-
-
+    # Initialize Watchdog context with parameters
     $watchdog = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
     $watchdog['Name'] = $Name
     $watchdog['Shell'] = (Get-Process -Id $PID).Path
@@ -233,8 +282,10 @@ function Enable-PodeWatchdog {
     $watchdog['ProcessInfo'] = $null
     $watchdog['Process'] = $null
 
+    # Add Watchdog to the server context
     $PodeContext.Server.Watchdog.Server[$Name] = $watchdog
 
+    # Set up file monitoring if specified
     if ($FileMonitoring.IsPresent) {
         if ($MonitoredPath) {
             if (Test-Path -Path $MonitoredPath -PathType Container) {
@@ -247,6 +298,7 @@ function Enable-PodeWatchdog {
         else {
             $path = (Get-Item $FilePath).DirectoryName
         }
+
         Add-PodeFileWatcher -Path $path -Exclude $FileExclude -Include $FileInclude -ArgumentList $Name -ScriptBlock {
             param($Name)
             $watchdog = $PodeContext.Server.Watchdog.Server[$Name]
@@ -254,11 +306,11 @@ function Enable-PodeWatchdog {
             if (((Get-Date) - ($watchdog.Process.StartTime)).TotalMinutes -gt $watchdog.MinRestartInterval ) {
                 if ( $watchdog.FilePath -eq $FileEvent.FullPath) {
                     Write-PodeHost 'Force a cold restart'
-                    Set-PodeWatchState -State ColdRestart
+                    Set-PodeWatchdogProcessState -State ColdRestart
                 }
                 else {
                     Write-PodeHost 'Force a restart'
-                    Set-PodeWatchState -State Restart
+                    Set-PodeWatchdogProcessState -State Restart
                 }
             }
             else {
@@ -269,6 +321,27 @@ function Enable-PodeWatchdog {
 }
 
 
+
+<#
+.SYNOPSIS
+    Checks if a Pode Watchdog service is enabled and running.
+
+.DESCRIPTION
+    Tests if a specified Watchdog service, identified by its name, is currently active and monitored by Pode.
+    If no name is specified, the function will check if any Watchdog client is active in the context.
+
+.PARAMETER Name
+    The name of the Watchdog service to check.
+    If not provided, the function will test for any active Watchdog clients.
+
+.RETURNVALUE
+    Returns a boolean value indicating whether the specified Watchdog service (or any client) is active.
+
+.EXAMPLE
+    Test-PodeWatchdog -Name 'MyWatch01'
+
+    This example checks if a Watchdog named 'MyWatch01' is active and running.
+#>
 function Test-PodeWatchdog {
     [CmdletBinding()]
     param(
@@ -277,22 +350,52 @@ function Test-PodeWatchdog {
         $Name
     )
 
+    # Return a boolean value based on the state of the Watchdog context
     return (
+        # Check if the Watchdog context is initialized
         ($null -ne $PodeContext.Server.Watchdog) -and
         (
             (
+                # Check if a specific Watchdog service is being monitored
                 $PodeContext.Server.Watchdog.Server -and
                 (![string]::IsNullOrEmpty($Name)) -and
                 $PodeContext.Server.Watchdog.Server.ContainsKey($Name)
             ) -or (
-                 ([string]::IsNullOrEmpty($Name)) -and
+                # If no name is provided, check if any Watchdog client is active
+                ([string]::IsNullOrEmpty($Name)) -and
                 $PodeContext.Server.Watchdog.Client
             )
         )
     )
 }
+<#
+.SYNOPSIS
+    Retrieves information about a monitored process managed by a Pode Watchdog.
 
-function Get-PodeWatchdogInfo {
+.DESCRIPTION
+    This function returns metrics and details regarding a monitored process that is being managed by a specified Pode Watchdog service.
+    The information can be filtered based on the provided type, such as the process status, request metrics, active listeners, or signal metrics.
+
+.PARAMETER Name
+    The name of the Watchdog service monitoring the process.
+
+.PARAMETER Type
+    Specifies the type of information to retrieve:
+        - 'Status': Returns the current status of the monitored process, such as Pid, Current Uptime, Total Uptime, and Restart Count.
+        - 'Requests': Returns metrics related to requests processed by the monitored process.
+        - 'Listeners': Returns the list of listeners active for the monitored process.
+        - 'Signals': Returns metrics related to signals processed by the monitored process.
+    If not specified, all available information regarding the monitored process will be returned.
+
+.RETURNVALUE
+    Returns a hashtable containing the requested information about the monitored process.
+
+.EXAMPLE
+    Get-PodeWatchdogProcessMetrics -Name 'MyWatch01' -Type 'Status'
+
+    This example retrieves the current status of the monitored process managed by the Watchdog named 'MyWatch01', including its PID, uptime, and restart count.
+#>
+function Get-PodeWatchdogProcessMetrics {
     [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
@@ -304,14 +407,19 @@ function Get-PodeWatchdogInfo {
         [string] $Type
     )
 
+    # Check if the specified Watchdog service is active and managing a process
     if ((Test-PodeWatchdog -Name $Name)) {
         $watchdog = $PodeContext.Server.Watchdog.Server[$Name]
-        if ( $null -ne $watchdog.ProcessInfo) {
 
+        # Ensure that process information is available for the monitored process
+        if ($null -ne $watchdog.ProcessInfo) {
             $processInfo = $watchdog.ProcessInfo
+
+            # Retrieve specific information based on the Type parameter
             switch ($Type) {
                 'Status' {
-                    return  @{
+                    # Return a hashtable with status metrics about the monitored process
+                    return @{
                         Pid           = $processInfo.Pid
                         CurrentUptime = $processInfo.CurrentUptime
                         TotalUptime   = $processInfo.TotalUptime
@@ -319,33 +427,67 @@ function Get-PodeWatchdogInfo {
                     }
                 }
                 'Requests' {
-                    return   $processInfo.Metrics.Requests
-
+                    # Return metrics related to requests handled by the monitored process
+                    return $processInfo.Metrics.Requests
                 }
                 'Listeners' {
-                    return   $processInfo.Listeners
+                    # Return a list of active listeners for the monitored process
+                    return $processInfo.Listeners
                 }
-
                 'Signals' {
-                    return   $processInfo.Metrics.Signals
+                    # Return metrics related to signals processed by the monitored process
+                    return $processInfo.Metrics.Signals
                 }
                 default {
+                    # If no specific Type is provided, return the complete process information
                     return $processInfo
                 }
-
             }
         }
         else {
-            write-podehost 'ProcessInfo is empty'
+            Write-PodeHost 'ProcessInfo is empty'  # Log that no process information is available for the monitored process
         }
     }
-    write-podehost " $Name is not a watchdog"
+
+    # Log if the specified Watchdog is not monitoring any process
+    Write-PodeHost "$Name is not a monitored process by any Watchdog"
 
     return $null
 }
 
 
-function Set-PodeWatchState {
+
+<#
+.SYNOPSIS
+    Sets the state of a monitored process managed by a Pode Watchdog service.
+
+.DESCRIPTION
+    Changes the state of the specified monitored process managed by a Pode Watchdog service.
+    The state can be set to 'Stop', 'Restart', 'Start', 'Halt', or 'Reset' to control the process's execution.
+    This function allows for stopping, restarting, starting, halting (forcing stop), and resetting the monitored process while considering the Watchdog's autostart settings.
+
+.PARAMETER Name
+    The name of the Watchdog service managing the monitored process.
+    This parameter is mandatory.
+
+.PARAMETER State
+    Specifies the desired state for the monitored process:
+        - 'Stop': Stops the monitored process and disables autostart.
+        - 'Restart': Restarts the monitored process.
+        - 'Start': Starts the monitored process.
+        - 'Halt': Forces the monitored process to stop and disables autostart.
+        - 'Reset': Stops the monitored process, restarts it, and restores the original autostart setting.
+    Default value is 'Stop'.
+
+.RETURNVALUE
+    Returns a boolean value indicating whether the state change was successful.
+
+.EXAMPLE
+    Set-PodeWatchdogProcessState -Name 'MyWatch01' -State 'Restart'
+
+    This example restarts the monitored process managed by the Watchdog named 'MyWatch01'.
+#>
+function Set-PodeWatchdogProcessState {
     param (
         [Parameter(Mandatory = $true)]
         [string]
@@ -357,16 +499,35 @@ function Set-PodeWatchState {
         $State = 'Stop'
     )
 
+    # Check if the specified Watchdog is active and managing a process
     if ((Test-PodeWatchdog -Name $Name)) {
         $watchdog = $PodeContext.Server.Watchdog.Server[$Name]
+
+        # Change the state of the monitored process based on the specified $State value
         switch ($State) {
-            'Stop' { $watchdog.Autostart = $false; return Stop-PodeWatchdogMonitoredProcess -Name $Name }
-            'Restart' { return Restart-PodeWatchdogMonitoredProcess -Name $Name }
-            'Start' { return Start-PodeWatchdogMonitoredProcess -Name $Name }
-            'Halt' { $watchdog.Autostart = $false; return Stop-PodeWatchdogMonitoredProcess -Name $Name -Force }
+            'Stop' {
+                # Stop the monitored process and disable autostart
+                $watchdog.Autostart = $false
+                return Stop-PodeWatchdogMonitoredProcess -Name $Name
+            }
+            'Restart' {
+                # Restart the monitored process
+                return Restart-PodeWatchdogMonitoredProcess -Name $Name
+            }
+            'Start' {
+                # Start the monitored process
+                return Start-PodeWatchdogMonitoredProcess -Name $Name
+            }
+            'Halt' {
+                # Force stop the monitored process and disable autostart
+                $watchdog.Autostart = $false
+                return Stop-PodeWatchdogMonitoredProcess -Name $Name -Force
+            }
             'Reset' {
+                # Reset the monitored process: stop, restart, and restore autostart setting
                 $autostart = $watchdog.Autostart
                 $watchdog.Autostart = $false
+
                 if ((Stop-PodeWatchdogMonitoredProcess -Name $Name -Force)) {
                     $result = Start-PodeWatchdogMonitoredProcess -Name $Name
                     if ($result) {
@@ -377,5 +538,7 @@ function Set-PodeWatchState {
             }
         }
     }
+
+    # Return $false if the specified Watchdog or monitored process is not found
     return $false
 }

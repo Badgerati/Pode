@@ -20,53 +20,53 @@ Start-PodeServer {
 
     Enable-PodeWatchdog -FilePath $filePath   -FileMonitoring -FileExclude '*.log'  -Name 'watch01'
 
-    # Get-PodeWatchdogInfo -type Status
+    # Get-PodeWatchdogProcessMetrics -type Status
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/listeners'   -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -Name 'watch01' -type Listeners  )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01' -type Listeners  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/requests'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -Name 'watch01' -type Requests  )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01' -type Requests  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/status'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -Name 'watch01' -type Status  )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01' -type Status  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/signals'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -Name 'watch01' -type Signals  )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01' -type Signals  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogInfo -Name 'watch01'   )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01'   )
     }
 
 
     Add-PodeRoute -PassThru -Method Post -Path '/cmd/restart'  -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchState -Name 'watch01' -state Restart) }
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchdogProcessState -Name 'watch01' -state Restart) }
     }
 
     Add-PodeRoute -PassThru -Method Post -Path '/cmd/reset'  -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchState -Name 'watch01' -state Reset) }
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchdogProcessState -Name 'watch01' -state Reset) }
     }
     Add-PodeRoute -PassThru -Method Post -Path '/cmd/stop'  -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchState -Name 'watch01' -State Stop) }
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchdogProcessState -Name 'watch01' -State Stop) }
     }
 
     Add-PodeRoute -PassThru -Method Post -Path '/cmd/start'   -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchState -Name 'watch01' -State Start) }
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchdogProcessState -Name 'watch01' -State Start) }
     }
 
 
     Add-PodeRoute -PassThru -Method Post -Path '/cmd/halt'  -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchState -Name 'watch01' -State Halt) }
+        Write-PodeJsonResponse -StatusCode 200 -Value @{success = (Set-PodeWatchdogProcessState -Name 'watch01' -State Halt) }
     }
 
     Test-PodeWatchdog -Name  'watch01'
