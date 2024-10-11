@@ -11,6 +11,10 @@
 function Enable-PodeWatchdog {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
     param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Script')]
         [Parameter(Mandatory = $true, ParameterSetName = 'ScriptMonitoring')]
         [scriptblock]
@@ -85,15 +89,20 @@ function Enable-PodeWatchdog {
     }
 
     $scriptBlock = {
-        Write-PodeHost 'Starting PipeServer...'
+        param (
+            [string]
+            $WatchdogName
+        )
 
+        Write-PodeHost "Starting PipeServer $WatchdogName..."
+        $watchdog = $PodeContext.Server.Watchdog.Server[$WatchdogName]
         # Start the main loop for the server
-        while ($PodeContext.Server.Watchdog.Enabled) {
+        while ($watchdog.Enabled) {
             try {
                 # Check if PipeServer is null and create a new instance if needed
-                if ($null -eq $PodeContext.Server.Watchdog['PipeServer']) {
-                    $pipeName = $PodeContext.Server.Watchdog.PipeName
-                    $PodeContext.Server.Watchdog['PipeServer'] = [System.IO.Pipes.NamedPipeServerStream]::new(
+                if ($null -eq $watchdog['PipeServer']) {
+                    $pipeName = $watchdog.PipeName
+                    $watchdog['PipeServer'] = [System.IO.Pipes.NamedPipeServerStream]::new(
                         $pipeName,
                         [System.IO.Pipes.PipeDirection]::InOut,
                         2,
@@ -103,12 +112,12 @@ function Enable-PodeWatchdog {
                     Write-PodeHost 'New PipeServer instance created and stored in Watchdog context.'
 
                     # Create a new StreamWriter and store it back in the Watchdog context
-                    $PodeContext.Server.Watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($PodeContext.Server.Watchdog['PipeServer'])
-                    #  $PodeContext.Server.Watchdog['PipeWriter'].AutoFlush = $true  # Enable auto-flush for immediate writes
+                    $watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($watchdog['PipeServer'])
+                    #  $watchdog['PipeWriter'].AutoFlush = $true  # Enable auto-flush for immediate writes
                     Write-PodeHost 'New PipeWriter instance created and stored in Watchdog context.'
                 }
 
-                $pipeServer = $PodeContext.Server.Watchdog['PipeServer']
+                $pipeServer = $watchdog['PipeServer']
                 Write-PodeHost 'PipeServer created and waiting for connection...'
                 $pipeServer.WaitForConnection()
                 Write-PodeHost 'Client connected.'
@@ -125,7 +134,7 @@ function Enable-PodeWatchdog {
                         if ($null -ne $receivedData) {
                             Write-PodeHost "Server Received data: $receivedData"
                             # Deserialize the received JSON string back into a hashtable
-                            $PodeContext.Server.Watchdog.ProcessInfo = $receivedData | ConvertFrom-Json
+                            $watchdog.ProcessInfo = $receivedData | ConvertFrom-Json
                         }
                         else {
                             Write-PodeHost 'No data received from client. Waiting for more data...'
@@ -148,19 +157,19 @@ function Enable-PodeWatchdog {
 
                 # Set PipeServer to null to trigger reinitialization in the next loop
                 Write-PodeHost 'Releasing resources and setting PipeServer to null.'
-                if ($null -ne $PodeContext.Server.Watchdog['PipeWriter']) {
-                    $PodeContext.Server.Watchdog['PipeWriter'].Dispose()  # Dispose of the existing PipeWriter
-                    $PodeContext.Server.Watchdog['PipeWriter'] = $null
+                if ($null -ne $watchdog['PipeWriter']) {
+                    $watchdog['PipeWriter'].Dispose()  # Dispose of the existing PipeWriter
+                    $watchdog['PipeWriter'] = $null
                 }
 
                 if ($null -ne $pipeServer) {
                     $pipeServer.Dispose()  # Dispose of the existing PipeServer
-                    $PodeContext.Server.Watchdog['PipeServer'] = $null  # Set to null for reinitialization in the main loop
+                    $watchdog['PipeServer'] = $null  # Set to null for reinitialization in the main loop
                 }
-                if ($PodeContext.Server.Watchdog.Autostart) {
+                if ($watchdog.Autostart) {
                     Write-PodeHost 'Restarting the watchdog process...'
-                    if (Stop-PodeWatchdogProcess -Force) {
-                        Start-PodeWatchdogProcess
+                    if (Stop-PodeWatchdogMonitoredProcess -Name $watchdog.Name -Force) {
+                        Start-PodeWatchdogMonitoredProcess -Name $watchdog.Name
                     }
                     else {
                         Write-PodeHost 'Failed to restart the watchdog process.'
@@ -184,31 +193,16 @@ function Enable-PodeWatchdog {
     }
 
 
-    $pipename = "$($PID)_Watchdog"
-    $PodeContext.Server.Watchdog = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-    $PodeContext.Server.Watchdog['Type'] = 'Server'
-    $PodeContext.Server.Watchdog['Shell'] = (Get-Process -Id $PID).Path
-    $PodeContext.Server.Watchdog['Arguments'] = $null
-    $PodeContext.Server.Watchdog['Process'] = $null
-    $PodeContext.Server.Watchdog['Status'] = 'Starting'
-    $PodeContext.Server.Watchdog['PipeName'] = $pipename
-    $PodeContext.Server.Watchdog['ScriptBlock'] = $scriptBlock
-
-    $PodeContext.Server.Watchdog['Runspace'] = $null
-    $PodeContext.Server.Watchdog['Interval'] = $Interval
-    $PodeContext.Server.Watchdog['PipeServer'] = $null
-    $PodeContext.Server.Watchdog['PipeWriter'] = $null
-    $PodeContext.Server.Watchdog['ProcessInfo'] = $null
-    $PodeContext.Server.Watchdog['Enabled'] = $true
-    $PodeContext.Server.Watchdog['Autostart'] = ! $NoAutostart.IsPresent
-    $PodeContext.Server.Watchdog['FilePath'] = $FilePath
-    $PodeContext.Server.Watchdog['RestartCount'] = -1
-    $PodeContext.Server.Watchdog['MinRestartInterval'] = $MinRestartInterval
+    $pipename = "$Name_$(New-PodeGuid)"
+    if ($null -eq $PodeContext.Server.Watchdog) {
+        $PodeContext.Server.Watchdog = @{
+            Server = @{}
+        }
+    }
 
     $PodeWatchdog = @{
         DisableTermination = $true
         Quiet              = $true
-        Type               = 'Client'
         PipeName           = $pipename
         Interval           = $Interval
     }
@@ -219,7 +213,27 @@ function Enable-PodeWatchdog {
     # Escape double quotes for passing the JSON string as a command-line argument
     $escapedJsonConfig = $jsonConfig.Replace('"', '\"')
 
-    $PodeContext.Server.Watchdog.Arguments = "$arguments  '$escapedJsonConfig'"
+
+    $watchdog = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+    $watchdog['Name'] = $Name
+    $watchdog['Shell'] = (Get-Process -Id $PID).Path
+    $watchdog['Arguments'] = "$arguments  '$escapedJsonConfig'"
+    $watchdog['Status'] = 'Starting'
+    $watchdog['PipeName'] = $pipename
+    $watchdog['ScriptBlock'] = $scriptBlock
+    $watchdog['Interval'] = $Interval
+    $watchdog['Enabled'] = $true
+    $watchdog['Autostart'] = ! $NoAutostart.IsPresent
+    $watchdog['FilePath'] = $FilePath
+    $watchdog['RestartCount'] = -1
+    $watchdog['MinRestartInterval'] = $MinRestartInterval
+    $watchdog['Runspace'] = $null
+    $watchdog['PipeServer'] = $null
+    $watchdog['PipeWriter'] = $null
+    $watchdog['ProcessInfo'] = $null
+    $watchdog['Process'] = $null
+
+    $PodeContext.Server.Watchdog.Server[$Name] = $watchdog
 
     if ($FileMonitoring.IsPresent) {
         if ($MonitoredPath) {
@@ -233,10 +247,12 @@ function Enable-PodeWatchdog {
         else {
             $path = (Get-Item $FilePath).DirectoryName
         }
-        Add-PodeFileWatcher -Path $path -Exclude $FileExclude -Include $FileInclude -ScriptBlock {
+        Add-PodeFileWatcher -Path $path -Exclude $FileExclude -Include $FileInclude -ArgumentList $Name -ScriptBlock {
+            param($Name)
+            $watchdog = $PodeContext.Server.Watchdog.Server[$Name]
             Write-PodeHost  "File [$($FileEvent.Type)]: $($FileEvent.FullPath) changed"
-            if (((Get-Date) - ($PodeContext.Server.Watchdog['Process'].StartTime) ).TotalMinutes -gt $PodeContext.Server.Watchdog['MinRestartInterval'] ) {
-                if ( $PodeContext.Server.Watchdog.FilePath -eq $FileEvent.FullPath) {
+            if (((Get-Date) - ($watchdog.Process.StartTime)).TotalMinutes -gt $watchdog.MinRestartInterval ) {
+                if ( $watchdog.FilePath -eq $FileEvent.FullPath) {
                     Write-PodeHost 'Force a cold restart'
                     Set-PodeWatchState -State ColdRestart
                 }
@@ -246,82 +262,120 @@ function Enable-PodeWatchdog {
                 }
             }
             else {
-                Write-PodeHost "Less than $($PodeContext.Server.Watchdog['MinRestartInterval']) minutes are passed since last restart."
+                Write-PodeHost "Less than $($watchdog.MinRestartInterval) minutes are passed since last restart."
             }
         }
     }
 }
-function Get-PodeWatchdogInfo {
-    [CmdletBinding(DefaultParameterSetName = 'HashTable')]
-    [OutputType([hashtable])]
+
+
+function Test-PodeWatchdog {
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Status', 'Requests', 'Listeners', 'Signals')]
-        [string] $Type = 'Status'
+        [string]
+        $Name
     )
-    if ( $null -ne $PodeContext.Server.Watchdog -and $null -ne $PodeContext.Server.Watchdog['ProcessInfo']) {
-        $processInfo = $PodeContext.Server.Watchdog['ProcessInfo']
-        switch ($Type) {
-            'Status' {
-                return  @{
-                    Pid           = $processInfo.Pid
-                    CurrentUptime = $processInfo.CurrentUptime
-                    TotalUptime   = $processInfo.TotalUptime
-                    RestartCount  = $processInfo.RestartCount
+
+    return (
+        ($null -ne $PodeContext.Server.Watchdog) -and
+        (
+            (
+                $PodeContext.Server.Watchdog.Server -and
+                (![string]::IsNullOrEmpty($Name)) -and
+                $PodeContext.Server.Watchdog.Server.ContainsKey($Name)
+            ) -or (
+                 ([string]::IsNullOrEmpty($Name)) -and
+                $PodeContext.Server.Watchdog.Client
+            )
+        )
+    )
+}
+
+function Get-PodeWatchdogInfo {
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Status', 'Requests', 'Listeners', 'Signals')]
+        [string] $Type
+    )
+
+    if ((Test-PodeWatchdog -Name $Name)) {
+        $watchdog = $PodeContext.Server.Watchdog.Server[$Name]
+        if ( $null -ne $watchdog.ProcessInfo) {
+
+            $processInfo = $watchdog.ProcessInfo
+            switch ($Type) {
+                'Status' {
+                    return  @{
+                        Pid           = $processInfo.Pid
+                        CurrentUptime = $processInfo.CurrentUptime
+                        TotalUptime   = $processInfo.TotalUptime
+                        RestartCount  = $processInfo.RestartCount
+                    }
                 }
-            }
-            'Requests' {
-                return   $processInfo.Metrics.Requests
+                'Requests' {
+                    return   $processInfo.Metrics.Requests
+
+                }
+                'Listeners' {
+                    return   $processInfo.Listeners
+                }
+
+                'Signals' {
+                    return   $processInfo.Metrics.Signals
+                }
+                default {
+                    return $processInfo
+                }
 
             }
-            'Listeners' {
-                return   $processInfo.Listeners
-            }
-
-            'Signals' {
-                return   $processInfo.Metrics.Signals
-            }
-
+        }
+        else {
+            write-podehost 'ProcessInfo is empty'
         }
     }
+    write-podehost " $Name is not a watchdog"
+
+    return $null
 }
 
 
 function Set-PodeWatchState {
     param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Stop', 'Restart', 'Start', 'HardStop', 'ColdRestart')]
+        [ValidateSet('Stop', 'Restart', 'Start', 'Halt', 'Reset')]
         [string]
         $State = 'Stop'
     )
-    switch ($State) {
-        'Stop' { $PodeContext.Server.Watchdog.Autostart = $false; return Stop-PodeWatchdogProcess }
-        'Restart' { return Restart-PodeWatchdogProcess }
-        'Start' { return Start-PodeWatchdogProcess }
-        'HardStop' { $PodeContext.Server.Watchdog.Autostart = $false; return Stop-PodeWatchdogProcess -Force }
-        'ColdRestart' {
-            $autostart = $PodeContext.Server.Watchdog.Autostart
-            $PodeContext.Server.Watchdog.Autostart = $false
-            if ((Stop-PodeWatchdogProcess -Force)) {
-                $result = Start-PodeWatchdogProcess
-                if ($result) {
-                    $PodeContext.Server.Watchdog.Autostart = $autostart
-                }
-                return $result
-            }
 
+    if ((Test-PodeWatchdog -Name $Name)) {
+        $watchdog = $PodeContext.Server.Watchdog.Server[$Name]
+        switch ($State) {
+            'Stop' { $watchdog.Autostart = $false; return Stop-PodeWatchdogMonitoredProcess -Name $Name }
+            'Restart' { return Restart-PodeWatchdogMonitoredProcess -Name $Name }
+            'Start' { return Start-PodeWatchdogMonitoredProcess -Name $Name }
+            'Halt' { $watchdog.Autostart = $false; return Stop-PodeWatchdogMonitoredProcess -Name $Name -Force }
+            'Reset' {
+                $autostart = $watchdog.Autostart
+                $watchdog.Autostart = $false
+                if ((Stop-PodeWatchdogMonitoredProcess -Name $Name -Force)) {
+                    $result = Start-PodeWatchdogMonitoredProcess -Name $Name
+                    if ($result) {
+                        $watchdog.Autostart = $autostart
+                    }
+                    return $result
+                }
+            }
         }
     }
-}
-
-
-function Set-PodeWatchAutostart {
-    param (
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('On', 'Off')]
-        [string]
-        $State
-    )
-
-    $PodeContext.Server.Watchdog.Autostart = $State -ieq 'On'
+    return $false
 }

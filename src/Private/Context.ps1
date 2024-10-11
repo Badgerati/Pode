@@ -52,7 +52,7 @@ function New-PodeContext {
         [switch]
         $EnableBreakpoints,
 
-        [hashtable]
+        [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]
         $Watchdog
     )
 
@@ -101,7 +101,9 @@ function New-PodeContext {
 
 
     if ($Watchdog) {
-        $ctx.Server.Watchdog = $Watchdog
+        $ctx.Server.Watchdog = @{
+            Client = $Watchdog
+        }
     }
 
     # list of created listeners/receivers
@@ -642,8 +644,9 @@ function New-PodeRunspacePool {
     }
 
     if (Test-PodeWatchdogEnabled ) {
+        $PodeContext.Threads['Watchdog'] = Get-WatchdogRunspaceCount
         $PodeContext.RunspacePools.Watchdog = @{
-            Pool  = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
+            Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads['Watchdog'], $PodeContext.RunspaceState, $Host)
             State = 'Waiting'
         }
     }

@@ -154,17 +154,22 @@ function Start-PodeServer {
 
         # check if podeWatchdog is configured
         if ($PodeWatchdog) {
-            if ($PodeWatchdog -is [hashtable]) {
-                $watchdogClient =ConvertTo-PodeConcurrentStructure -InputObject $PodeWatchdog
+            if (!($null -eq $PodeWatchdog.DisableTermination -or
+                    $null -eq $PodeWatchdog.Quiet -or
+                    $null -eq $PodeWatchdog.PipeName -or
+                    $null -eq $PodeWatchdog.Interval )
+            ) {
+                if ($PodeWatchdog -is [hashtable]) {
+                    $watchdogClient = ConvertTo-PodeConcurrentStructure -InputObject $PodeWatchdog
+                }
+                else {
+                    $watchdogClient = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                    $PodeWatchdog | Get-Member -MemberType Properties | ForEach-Object {
+                        $watchdogClient[$_.Name] = $PodeWatchdog.$($_.Name) }
+                }
+                $DisableTermination = [switch]$watchdogClient.DisableTermination
+                $Quiet = [switch]$watchdogClient.Quiet
             }
-            else {
-                $watchdogClient = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
-                $PodeWatchdog | Get-Member -MemberType Properties | ForEach-Object {
-                    $watchdogClient[$_.Name] = $PodeWatchdog.$($_.Name) }
-            }
-            $DisableTermination = [switch]$watchdogClient.DisableTermination
-            $Quiet = [switch]$watchdogClient.Quiet
-
         }
 
         try {
