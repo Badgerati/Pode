@@ -800,12 +800,12 @@ Task SetupPowerShell {
         })[$os]
 
     # build the blob name
-    $blobName = "v$($PowerShellVersion -replace '\.', '-')"
+    $blobName = "v$($PowerShellVersion)"
 
     # download the package to a temp location
     $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
     $downloadParams = @{
-        Uri         = "https://pscoretestdata.blob.core.windows.net/$($blobName)/$($packageName)"
+        Uri         = "https://powershellinfraartifacts-gkhedzdeaghdezhr.z01.azurefd.net/install/$($blobName)/$($packageName)"
         OutFile     = $outputFile
         ErrorAction = 'Stop'
     }
