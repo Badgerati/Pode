@@ -644,7 +644,7 @@ function New-PodeRunspacePool {
     }
 
     if (Test-PodeWatchdogEnabled ) {
-        $PodeContext.Threads['Watchdog'] = Get-WatchdogRunspaceCount
+        $PodeContext.Threads['Watchdog'] = Get-PodeWatchdogRunspaceCount
         $PodeContext.RunspacePools.Watchdog = @{
             Pool  = [runspacefactory]::CreateRunspacePool(1, $PodeContext.Threads['Watchdog'], $PodeContext.RunspaceState, $Host)
             State = 'Waiting'

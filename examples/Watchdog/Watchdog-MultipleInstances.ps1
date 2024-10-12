@@ -11,7 +11,7 @@
     To run the sample: ./Watchdog-MultipleInstances.ps1
 
 .LINK
-    https://github.com/Badgerati/Pode
+    https://github.com/Badgerati/Pode/blob/develop/examples/Waatchdog/Watchdog-MultipleInstances.ps1
 
 .NOTES
     Author: Pode Team

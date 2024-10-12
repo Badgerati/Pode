@@ -97,11 +97,11 @@ function Stop-PodeWatchdogMonitoredProcess {
             # Send 'shutdown' signal to the process via the PipeWriter
             $watchdog.PipeWriter.WriteLine('shutdown')
             $watchdog.PipeWriter.Flush()  # Ensure the message is sent immediately
-
             $watchdog.Status = 'Stopping'
         }
         else {
-            throw 'Pipe connection lost. Waiting for client to reconnect ...'
+            Write-PodeHost 'Pipe connection lost. Waiting for client to reconnect ...'
+            return $false
         }
 
         # Wait for the process to exit within the specified timeout
@@ -178,7 +178,8 @@ function Restart-PodeWatchdogMonitoredProcess {
             $watchdog.Status = 'Restarting'
         }
         else {
-            throw 'Pipe connection lost. Waiting for client to reconnect ...'
+            write-PodeHost 'Pipe connection lost. Waiting for client to reconnect ...'
+            return $false
         }
 
         # Wait for the monitored process to update its process info after restarting
@@ -448,12 +449,14 @@ function Start-PodeWatchdogHearthbeat {
 
                         # Handle server commands like shutdown and restart
                         switch ($serverMessage) {
-                            'shutdown' { # Exit the loop and stop Pode Server
+                            'shutdown' {
+                                # Exit the loop and stop Pode Server
                                 Write-PodeHost 'Server requested shutdown. Closing client...'
                                 Close-PodeServer
                                 break
                             }
-                            'restart' { # Exit the loop and restart Pode Server
+                            'restart' {
+                                # Exit the loop and restart Pode Server
                                 Write-PodeHost 'Server requested restart. Restarting client...'
                                 Restart-PodeServer
                                 break
@@ -612,7 +615,7 @@ function Stop-PodeWatchdogHearthbeat {
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function Get-WatchdogRunspaceCount {
+function Get-PodeWatchdogRunspaceCount {
     # Initialize the total runspace count
     $totalWatchdogRunspaces = 0
 

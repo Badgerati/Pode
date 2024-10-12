@@ -66,7 +66,6 @@ try {
 }
 catch { throw }
 
-write-host "Podewatch=$PodeWatchdog"
 Start-PodeServer  -Threads 1 -Quiet:$Quiet -DisableTermination:$DisableTermination -ScriptBlock {
     Add-PodeEndpoint -Address localhost -Port $PortV3 -Protocol Http -Default -Name 'endpoint_v3'
     Add-PodeEndpoint -Address localhost -Port $PortV3_1 -Protocol Http -Default -Name 'endpoint_v3.1'
@@ -557,18 +556,14 @@ Some useful links:
         }
     }
     Add-PodeAuthMiddleware -Name test -Authentication 'test' -Route '/api/*'
-
-
-    Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
-        Close-PodeServer
-    }
-
-
-
     Select-PodeOADefinition -Tag 'v3.1', 'v3' -Scriptblock {
-        Add-PodeRouteGroup -Path '/api/v3' -Routes {
+
+        Add-PodeRoute  -Method 'Post' -Path '/close' -ScriptBlock {
+            Close-PodeServer
+        } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
 
 
+        Add-PodeRouteGroup -Path '/api/v3'    -Routes {
             #PUT
             Add-PodeRoute -PassThru -Method Put -Path '/pet' -ScriptBlock {
                 $JsonPet = ConvertTo-Json $WebEvent.data

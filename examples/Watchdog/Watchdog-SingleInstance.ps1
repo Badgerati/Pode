@@ -11,7 +11,7 @@
     To run the sample: ./Watchdog-Sample.ps1
 
 .LINK
-    https://github.com/Badgerati/Pode
+    https://github.com/Badgerati/Pode/blob/develop/examples/Waatchdog/Watchdog-SingleInstance.ps1
 
 .NOTES
     Author: Pode Team
@@ -38,13 +38,8 @@ Start-PodeServer {
     # Define a simple HTTP endpoint on localhost:8082
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http
 
-
-
     # Path to the monitored script
     $filePath = "$($watchdogPath)/monitored.ps1"
-
-    # Set up logging for the Watchdog service
-    New-PodeLoggingMethod -File -Name 'watchdog' -MaxDays 4 | Enable-PodeErrorLogging
 
     # Enable the Pode Watchdog to monitor the script file, excluding .log files
     Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'watch01'

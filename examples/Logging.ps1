@@ -40,13 +40,14 @@ catch { throw }
 # or just:
 # Import-Module Pode
 
+$LOGGING_TYPE = 'terminal' # Terminal, File, Custom
 
 # create a server, and start listening on port 8081
 Start-PodeServer {
-    New-PodeLoggingMethod -File -Name 'error_logging' -MaxDays 4 | Enable-PodeErrorLogging
+
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
     Set-PodeViewEngine -Type Pode
-    $script:LOGGING_TYPE = 'file' # Terminal, File, Custom
+
     switch ($LOGGING_TYPE.ToLowerInvariant()) {
         'terminal' {
             New-PodeLoggingMethod -Terminal | Enable-PodeRequestLogging

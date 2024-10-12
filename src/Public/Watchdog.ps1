@@ -334,7 +334,7 @@ function Enable-PodeWatchdog {
     The name of the Watchdog service to check.
     If not provided, the function will test for any active Watchdog clients.
 
-.RETURNVALUE
+.OUTPUTS
     Returns a boolean value indicating whether the specified Watchdog service (or any client) is active.
 
 .EXAMPLE
@@ -387,7 +387,7 @@ function Test-PodeWatchdog {
         - 'Signals': Returns metrics related to signals processed by the monitored process.
     If not specified, all available information regarding the monitored process will be returned.
 
-.RETURNVALUE
+.OUTPUTS
     Returns a hashtable containing the requested information about the monitored process.
 
 .EXAMPLE
@@ -479,7 +479,7 @@ function Get-PodeWatchdogProcessMetric {
         - 'Reset': Stops the monitored process, restarts it, and restores the original autostart setting.
     Default value is 'Stop'.
 
-.RETURNVALUE
+.OUTPUTS
     Returns a boolean value indicating whether the state change was successful.
 
 .EXAMPLE

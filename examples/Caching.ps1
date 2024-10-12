@@ -1,18 +1,17 @@
 <#
 .SYNOPSIS
-    A sample PowerShell script to set up a Pode server with OpenAPI integration and a Pode Watchdog for process monitoring.
+    A sample PowerShell script to set up a Pode server and integrate with Redis for caching.
 
 .DESCRIPTION
-    This script sets up a Pode server that listens on port 8082 with OpenAPI documentation and multiple routes.
-    It monitors a script using the Pode Watchdog service, allowing users to check process metrics like listeners, requests, and signals,
-    as well as control the monitored process with commands such as restart, stop, and reset.
-    The script dynamically loads the Pode module and configures various OpenAPI viewers and an editor for documentation.
+    This script sets up a Pode server listening on port 8081 with Redis integration for caching.
+    It checks for the existence of the `redis-cli` command and sets up a Pode server with routes
+    that demonstrate caching with Redis.
 
 .EXAMPLE
-    To run the sample: ./Watchdog.ps1
+    To run the sample: ./Caching.ps1
 
 .LINK
-    https://github.com/Badgerati/Pode
+    https://github.com/Badgerati/Pode/blob/develop/examples/Caching.ps1
 
 .NOTES
     Author: Pode Team

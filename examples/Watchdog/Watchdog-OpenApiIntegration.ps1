@@ -6,14 +6,19 @@
     This script initializes a Pode server with OpenAPI documentation and multiple routes to monitor the status, listeners, requests, and signals of a monitored process via the Pode Watchdog service.
     It also provides commands to control the state of the monitored process, such as restart, stop, reset, and halt.
     The script dynamically loads the Pode module and configures OpenAPI viewers and an editor for documentation.
-
-.NOTES
     This is a sample Pode Watchdog setup demonstrating OpenAPI integration with routes for monitoring and controlling the process.
 
 .EXAMPLE
     Run the script to start a Pode server on localhost at port 8082 with OpenAPI documentation:
 
         ./Watchdog-OpenApiIntegration.ps1.ps1
+
+.LINK
+    https://github.com/Badgerati/Pode/blob/develop/examples/Waatchdog/Watchdog-OpenApiIntegration.ps1
+
+.NOTES
+    Author: Pode Team
+    License: MIT License
 #>
 
 try {
