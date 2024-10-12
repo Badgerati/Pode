@@ -20,27 +20,27 @@ Start-PodeServer {
 
     Enable-PodeWatchdog -FilePath $filePath   -FileMonitoring -FileExclude '*.log'  -Name 'watch01'
 
-    # Get-PodeWatchdogProcessMetrics -type Status
+    # Get-PodeWatchdogProcessMetric -type Status
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/listeners'   -ScriptBlock {
 
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01' -type Listeners  )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01' -type Listeners  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/requests'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01' -type Requests  )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01' -type Requests  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/status'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01' -type Status  )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01' -type Status  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/signals'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01' -type Signals  )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01' -type Signals  )
     }
 
     Add-PodeRoute -PassThru -Method Get -Path '/monitor'  -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetrics -Name 'watch01'   )
+        Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01'   )
     }
 
 

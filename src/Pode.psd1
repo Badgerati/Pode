@@ -498,10 +498,13 @@
         'Test-PodeScopedVariable',
         'Clear-PodeScopedVariables',
         'Get-PodeScopedVariable',
-        'Use-PodeScopedVariables'
+        'Use-PodeScopedVariables',
 
         # watchdog
-        'Enable-PodeWatchdog'
+        'Enable-PodeWatchdog',
+        'Test-PodeWatchdog',
+        'Get-PodeWatchdogProcessMetric',
+        'Set-PodeWatchdogProcessState'
     )
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.

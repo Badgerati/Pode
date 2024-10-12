@@ -391,11 +391,11 @@ function Test-PodeWatchdog {
     Returns a hashtable containing the requested information about the monitored process.
 
 .EXAMPLE
-    Get-PodeWatchdogProcessMetrics -Name 'MyWatch01' -Type 'Status'
+    Get-PodeWatchdogProcessMetric -Name 'MyWatch01' -Type 'Status'
 
     This example retrieves the current status of the monitored process managed by the Watchdog named 'MyWatch01', including its PID, uptime, and restart count.
 #>
-function Get-PodeWatchdogProcessMetrics {
+function Get-PodeWatchdogProcessMetric {
     [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
