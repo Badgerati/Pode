@@ -36,7 +36,7 @@ try {
 }
 catch { throw }
 
-Start-PodeServer {
+Start-PodeServer  {
     # Define a simple HTTP endpoint on localhost:8082
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http
 

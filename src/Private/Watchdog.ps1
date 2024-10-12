@@ -187,9 +187,9 @@ function Restart-PodeWatchdogMonitoredProcess {
         while ($null -eq $watchdog['ProcessInfo']) {
             Start-Sleep 1
         }
-
+        
         # Verify that the restart count has incremented, indicating a successful restart
-        return ($watchdog['ProcessInfo'].RestartCount -eq $restartCount + 1)
+        return ($watchdog['ProcessInfo'].RestartCount -eq ($restartCount + 1))
     }
     catch {
         # Log any errors that occur during the restart process
@@ -412,6 +412,68 @@ function Start-PodeWatchdog {
 }
 
 # Client
+<#
+.SYNOPSIS
+    Waits for active web sessions to close before proceeding with shutdown or restart.
+
+.DESCRIPTION
+    This function blocks all incoming requests by adding a middleware that responds with a 503 Service Unavailable status, along with a 'Retry-After' header to inform clients when to retry their requests.
+    It continuously checks for any active sessions and waits for them to finish. If the sessions do not close within the defined timeout period, the function exits and proceeds with the shutdown or restart process.
+
+.PARAMETER Timeout
+    The timeout is handled by `$PodeContext.Server.Watchdog.Client.ServiceUnavailableTimeout`, which defines the maximum time (in seconds) the function will wait for all sessions to close before exiting.
+
+.PARAMETER RetryAfter
+    The retry interval is managed by `$PodeContext.Server.Watchdog.Client.ServiceUnavailableRetryAfter`, which defines the value of the 'Retry-After' header (in seconds) that is sent in the 503 response.
+
+.EXAMPLE
+    Wait-PodeWatchdogSessionEnd
+
+    Blocks new incoming requests, waits for active sessions to close, and exits when all sessions are closed or when the timeout is reached.
+
+.NOTES
+    This function is typically used during shutdown or restart operations in Pode to ensure that all active sessions are completed before the server is stopped or restarted.
+#>
+function Wait-PodeWatchdogSessionEnd {
+    try {
+        # Add middleware to block new requests and respond with 503 Service Unavailable
+        Add-PodeMiddleware -Name '_SessionEndReturn503' -ScriptBlock {
+            # Set HTTP response header for retrying after a certain time (RFC7231)
+            Set-PodeHeader -Name 'Retry-After' -Value $PodeContext.Server.Watchdog.Client.ServiceRecoveryTime
+
+            # Set HTTP status to 503 Service Unavailable
+            Set-PodeResponseStatus -Code 503
+
+            # Stop further processing
+            return $false
+        }
+
+        $previousOpenSessions = 0
+        $startTime = [datetime]::Now
+
+        write-PodeHost "Context count= $($PodeContext.Server.Signals.Listener.Contexts.Count)"
+        while ($PodeContext.Server.Signals.Listener.Contexts.Count -gt 0) {
+            if ($previousOpenSessions -ne $PodeContext.Server.Signals.Listener.Contexts.Count) {
+                Write-PodeHost "Waiting for the end of $($PodeContext.Server.Signals.Listener.Contexts.Count) sessions"
+                $previousOpenSessions = $PodeContext.Server.Signals.Listener.Contexts.Count
+            }
+            # Check if timeout is reached
+            if (([datetime]::Now - $startTime).TotalSeconds -ge $PodeContext.Server.Watchdog.Client.GracefulShutdownTimeout) {
+                Write-PodeHost "Timeout reached after $($PodeContext.Server.Watchdog.Client.GracefulShutdownTimeout) seconds, exiting..."
+                break
+            }
+
+            Start-Sleep -Milliseconds 200
+        }
+    }
+    catch {
+        Write-PodeHost  $_
+    }
+    finally{
+        Remove-PodeMiddleware -Name '_SessionEndReturn503'
+    }
+}
+
 
 <#
 .SYNOPSIS
@@ -452,12 +514,14 @@ function Start-PodeWatchdogHearthbeat {
                             'shutdown' {
                                 # Exit the loop and stop Pode Server
                                 Write-PodeHost 'Server requested shutdown. Closing client...'
+                                Wait-PodeWatchdogSessionEnd
                                 Close-PodeServer
                                 break
                             }
                             'restart' {
                                 # Exit the loop and restart Pode Server
                                 Write-PodeHost 'Server requested restart. Restarting client...'
+                                Wait-PodeWatchdogSessionEnd
                                 Restart-PodeServer
                                 break
                             }
@@ -507,7 +571,7 @@ function Start-PodeWatchdogHearthbeat {
             } | ConvertTo-Json -Compress -Depth 4
 
             # Log and send the data to the server
-            Write-PodeHost $jsonData
+            Write-PodeHost "Sending watchdog data: $jsonData"
 
             try {
                 # Check if the pipe client is still connected before writing

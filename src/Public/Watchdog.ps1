@@ -1,11 +1,12 @@
 
 <#
 .SYNOPSIS
-    Enables a Pode Watchdog service to monitor a script or file for changes.
+    Enables a Pode Watchdog service to monitor a script or file for changes and control its lifecycle.
 
 .DESCRIPTION
     Configures and starts a Pode Watchdog service to monitor either a script block or a file path.
-    It can also monitor a directory or a set of files for changes, triggering automatic restarts as needed.
+    The Watchdog service can monitor files or directories for changes, and it provides automatic process restarts when needed.
+    Additionally, the service supports graceful shutdowns and recovery after restarts.
 
 .PARAMETER Name
     The name of the Watchdog service.
@@ -40,27 +41,36 @@
     Default is 10 seconds.
 
 .PARAMETER NoAutostart
-    Disables automatic restart of the monitored process when stopped or when an error occurs.
+    Disables automatic restart of the monitored process when it stops or encounters an error.
 
 .PARAMETER MinRestartInterval
     The minimum time interval, in minutes, between restarts of the monitored process.
     Default is 3 minutes.
 
+.PARAMETER GracefulShutdownTimeout
+    Defines the maximum time, in seconds, the service waits for active sessions to close during a graceful shutdown.
+    If sessions remain open after this time, the service forces shutdown.
+    Default is 30 seconds.
+
+.PARAMETER ServiceRecoveryTime
+    Defines the time, in seconds, that the service indicates to clients when it will be available again after a restart.
+    This value is used in the 'Retry-After' header when responding with a 503 status.
+    Default is 60 seconds.
+
 .EXAMPLE
     Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'MyWatch01'
 
-    This example sets up a Watchdog named 'MyWatch01' to monitor changes in the specified file while excluding any log files from the monitoring.
+    This example sets up a Watchdog named 'MyWatch01' to monitor changes in the specified file while excluding any log files from monitoring.
 
 .NOTES
-Possible Monitored Process State:
-- Restarting
-- Starting
-- Running
-- Stopping
-- Stopped
-- Undefined
+    Possible Monitored Process States:
+    - Restarting
+    - Starting
+    - Running
+    - Stopping
+    - Stopped
+    - Undefined
 #>
-
 function Enable-PodeWatchdog {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
     param (
@@ -106,7 +116,13 @@ function Enable-PodeWatchdog {
         $NoAutostart,
 
         [int]
-        $MinRestartInterval = 3
+        $MinRestartInterval = 3,
+
+        [int]
+        $GracefulShutdownTimeout = 30,
+
+        [int]
+        $ServiceRecoveryTime = 60
     )
 
     # Check which parameter set is being used and adjust accordingly
@@ -253,10 +269,12 @@ function Enable-PodeWatchdog {
 
     # Create a hashtable for Watchdog configurations
     $PodeWatchdog = @{
-        DisableTermination = $true
-        Quiet              = $true
-        PipeName           = $pipename
-        Interval           = $Interval
+        DisableTermination      = $true
+        Quiet                   = $true
+        PipeName                = $pipename
+        Interval                = $Interval
+        GracefulShutdownTimeout = $GracefulShutdownTimeout
+        ServiceRecoveryTime     = $ServiceRecoveryTime
     }
 
     # Serialize and escape the JSON configuration
@@ -512,7 +530,9 @@ function Set-PodeWatchdogProcessState {
             }
             'Restart' {
                 # Restart the monitored process
-                return Restart-PodeWatchdogMonitoredProcess -Name $Name
+                $watchdog.Autostart = $false
+                $result = Restart-PodeWatchdogMonitoredProcess -Name $Name
+                return $result
             }
             'Start' {
                 # Start the monitored process
