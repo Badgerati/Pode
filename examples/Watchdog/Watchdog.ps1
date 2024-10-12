@@ -1,7 +1,7 @@
 try {
-    # Determine the script path and Pode module path
-    $ScriptPath = (Split-Path -Parent -Path $MyInvocation.MyCommand.Path)
-    $podePath = Split-Path -Parent -Path $ScriptPath
+    # Determine paths for the Pode module
+    $watchdogPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
+    $podePath = Split-Path -Parent -Path (Split-Path -Parent -Path $watchdogPath)
 
     # Import the Pode module from the source path if it exists, otherwise from installed modules
     if (Test-Path -Path "$($podePath)/src/Pode.psm1" -PathType Leaf) {
@@ -15,10 +15,11 @@ catch { throw }
 
 Start-PodeServer {
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http
-    $filePath = '.\Logging.ps1'
+    $filePath = "$($watchdogPath)/monitored.ps1"
+
     New-PodeLoggingMethod -File -Name 'watchdog' -MaxDays 4 | Enable-PodeErrorLogging
 
-    Enable-PodeWatchdog -FilePath $filePath   -FileMonitoring -FileExclude '*.log'  -Name 'watch01'
+    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log'  -Name 'watch01'
 
     # Get-PodeWatchdogProcessMetric -type Status
 
