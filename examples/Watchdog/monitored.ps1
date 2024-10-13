@@ -6,6 +6,9 @@
     This script sets up a Pode server that listens on port 8080. It includes a single route for GET requests
     to the root path ('/') that returns a simple text response.
 
+.PARAMETER Port
+    The port to listen on for requests. Defaults to 8080.
+
 .EXAMPLE
     To run the sample: ./HelloWorld/HelloWorld.ps1
 
@@ -19,6 +22,11 @@
     Author: Pode Team
     License: MIT License
 #>
+
+param(
+    [int]
+    $Port = 8080
+)
 try {
     # Get the path of the script being executed
     $ScriptPath = (Split-Path -Parent -Path (Split-Path -Parent -Path $MyInvocation.MyCommand.Path))
@@ -46,7 +54,7 @@ catch {
 # Start the Pode server
 Start-PodeServer -Threads 10 {
     # Add an HTTP endpoint listening on localhost at port 8080
-    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
 
     # Add a route for GET requests to the root path '/'
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {

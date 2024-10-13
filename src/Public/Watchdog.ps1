@@ -1,12 +1,12 @@
-
 <#
 .SYNOPSIS
     Enables a Pode Watchdog service to monitor a script or file for changes and control its lifecycle.
 
 .DESCRIPTION
     Configures and starts a Pode Watchdog service to monitor either a script block or a file path.
-    The Watchdog service can monitor files or directories for changes, and it provides automatic process restarts when needed.
-    Additionally, the service supports graceful shutdowns and recovery after restarts.
+    The Watchdog service can monitor files or directories for changes and automatically restart the monitored process when needed.
+    Additionally, it supports automatic process restarts based on a set of conditions, graceful shutdowns, and recovery times after restarts.
+    A hashtable of parameters can also be passed to the script block or file being monitored.
 
 .PARAMETER Name
     The name of the Watchdog service.
@@ -18,6 +18,11 @@
 .PARAMETER FilePath
     The path to the file to be executed and monitored by the Watchdog service.
     This parameter is mandatory when using the 'File' or 'FileMonitoring' parameter sets.
+
+.PARAMETER Parameters
+    A hashtable of parameters to pass to the script block or file.
+    The keys of the hashtable represent the parameter names, and the values represent the parameter values.
+    These parameters are dynamically passed to the script block or file when the Watchdog invokes them.
 
 .PARAMETER FileMonitoring
     Enables monitoring of a file or directory for changes. This can be used with either scripts or files.
@@ -41,11 +46,19 @@
     Default is 10 seconds.
 
 .PARAMETER NoAutostart
-    Disables automatic restart of the monitored process when it stops or encounters an error.
+    Disables the automatic restart of the monitored process when it stops or encounters an error.
 
-.PARAMETER MinRestartInterval
-    The minimum time interval, in minutes, between restarts of the monitored process.
-    Default is 3 minutes.
+.PARAMETER RestartServiceAfter
+    Defines the time, in seconds, before the service attempts to restart the monitored process after a failure.
+    Default is 60 seconds.
+
+.PARAMETER MaxNumberOfRestarts
+    Specifies the maximum number of times the Watchdog is allowed to restart the monitored process in case of repeated failures.
+    Default is 5 restarts.
+
+.PARAMETER ResetFailCountAfter
+    The time, in minutes, after which the failure restart count will be reset if the process has been running continuously without issues.
+    Default is 5 minutes.
 
 .PARAMETER GracefulShutdownTimeout
     Defines the maximum time, in seconds, the service waits for active sessions to close during a graceful shutdown.
@@ -61,6 +74,11 @@
     Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'MyWatch01'
 
     This example sets up a Watchdog named 'MyWatch01' to monitor changes in the specified file while excluding any log files from monitoring.
+
+.EXAMPLE
+    Enable-PodeWatchdog -ScriptBlock { Start-Sleep -Seconds 30 } -Name 'MyScriptWatchdog' -Parameter @{WaitTime=30}
+
+    This example sets up a Watchdog to monitor a script block that sleeps for 30 seconds, passing the parameter 'WaitTime' with a value of 30 to the script block.
 
 .NOTES
     Possible Monitored Process States:
@@ -87,6 +105,11 @@ function Enable-PodeWatchdog {
         [Parameter(Mandatory = $true, ParameterSetName = 'FileMonitoring')]
         [string]
         $FilePath,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'File')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'FileMonitoring')]
+        [hashtable]
+        $Parameters,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ScriptMonitoring')]
         [Parameter(Mandatory = $true, ParameterSetName = 'FileMonitoring')]
@@ -131,25 +154,31 @@ function Enable-PodeWatchdog {
         $ServiceRecoveryTime = 60
     )
 
+    if ($Parameters) {
+        # Convert the hashtable into a string with parameters
+        $parameterString = ($Parameters.GetEnumerator() | ForEach-Object { if ($_.Value -is [string]) {
+                    # Escape single quotes by replacing ' with ''
+                    $escapedValue = $_.Value -replace "'", "''"
+                    "-$($_.Key) '$escapedValue'"
+                }
+                else {
+                    "-$($_.Key) $($_.Value)"
+                }
+            }) -join ' '
+    }
+    else {
+        $parameterString = ''
+    }
+
     # Check which parameter set is being used and adjust accordingly
     if ($PSCmdlet.ParameterSetName -ieq 'File' -or $PSCmdlet.ParameterSetName -ieq 'FileMonitoring') {
         # Resolve file path and determine root path
         $FilePath = Get-PodeRelativePath -Path $FilePath -Resolve -TestPath -JoinRoot -RootPath $MyInvocation.PSScriptRoot
 
-        # Determine root path if not supplied
-        if ([string]::IsNullOrWhiteSpace($RootPath)) {
-            if ($CurrentPath) {
-                $RootPath = $PWD.Path
-            }
-            else {
-                $RootPath = Split-Path -Parent -Path $FilePath
-            }
-        }
-
         # Construct arguments for file execution
         $arguments = "-NoProfile -Command `"& {
             `$global:PodeWatchdog = `$args[0] | ConvertFrom-Json;
-            . `"$FilePath`"
+            . `"$FilePath`" $parameterString
         }`""
     }
     else {
@@ -157,11 +186,9 @@ function Enable-PodeWatchdog {
         $scriptBlockString = $ScriptBlock.ToString()
         $arguments = "-NoProfile -Command `"& {
             `$PodeWatchdog = `$args[0] | ConvertFrom-Json;
-             & { $scriptBlockString }
+             & { $scriptBlockString } $parameterString
         }`""
     }
-
-
 
     # Generate a unique PipeName for the Watchdog
     $pipename = "$Name_$(New-PodeGuid)"

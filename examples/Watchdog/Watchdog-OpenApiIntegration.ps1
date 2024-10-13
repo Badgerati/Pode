@@ -63,7 +63,7 @@ Start-PodeServer -Threads 2 {
     New-PodeLoggingMethod -File -Name 'watchdog' -MaxDays 4 | Enable-PodeErrorLogging
 
     # Enable the Pode Watchdog to monitor the script file, excluding .log files
-    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'watch01' -RestartServiceAfter 10 -MaxNumberOfRestarts 2 -ResetFailCountAfter 3
+    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'watch01' -RestartServiceAfter 10 -MaxNumberOfRestarts 2 -ResetFailCountAfter 3 -Parameters @{Port = 8081 }
 
     # REST API to retrieve the list of listeners
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/listeners' -ScriptBlock {

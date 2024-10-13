@@ -239,13 +239,13 @@ function Restart-PodeInternalServer {
         # cancel the session token
         $PodeContext.Tokens.Cancellation.Cancel()
 
-        # close all current runspaces
-        Write-Verbose 'Closing runspaces'
-        Close-PodeRunspace -ClosePool
-
         # stop the watchdog if it's running
         Write-Verbose 'Stopping watchdog'
         Stop-PodeWatchdog
+
+        # close all current runspaces
+        Write-Verbose 'Closing runspaces'
+        Close-PodeRunspace -ClosePool
 
         # remove all of the pode temp drives
         Remove-PodePSDrive
@@ -398,8 +398,9 @@ function Close-PodeServerInternal {
         $PodeContext.Tokens.Cancellation.Cancel()
     }
 
-    # Setting the Watchdog status to 'Stopping' to indicate the shutdown process has begun
-    Set-PodeWatchdogHearthbeatStatus -Status 'Stopping'
+    # stop the watchdog if it's running
+    Write-Verbose 'Stopping watchdog'
+    Stop-PodeWatchdog
 
     # stop all current runspaces
     Write-Verbose 'Closing runspaces'
@@ -408,11 +409,6 @@ function Close-PodeServerInternal {
     # stop the file monitor if it's running
     Write-Verbose 'Stopping file monitor'
     Stop-PodeFileMonitor
-
-    # stop the watchdog if it's running
-    Write-Verbose 'Stopping watchdog'
-    Stop-PodeWatchdog
-
 
     try {
         # remove all the cancellation tokens
