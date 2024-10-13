@@ -523,6 +523,149 @@ function Get-PodeWatchdogRunspaceCount {
 }
 
 
+function Get-PodeWatchdogPipeServerScriptBlock {
+    # Main script block to initialize and run the Watchdog PipeServer
+    return [scriptblock] {
+        param (
+            [string]
+            $WatchdogName
+        )
+
+        Write-PodeHost "Starting PipeServer $WatchdogName..."
+        $watchdog = $PodeContext.Server.Watchdog.Server[$WatchdogName]
+
+        # Main loop to maintain the server state
+        while ($watchdog.Enabled) {
+            try {
+                # Check if PipeServer is null and create a new instance if needed
+                if ($null -eq $watchdog['PipeServer']) {
+                    $pipeName = $watchdog.PipeName
+                    $watchdog['PipeServer'] = [System.IO.Pipes.NamedPipeServerStream]::new(
+                        $pipeName,
+                        [System.IO.Pipes.PipeDirection]::InOut,
+                        2,
+                        [System.IO.Pipes.PipeTransmissionMode]::Message,
+                        [System.IO.Pipes.PipeOptions]::None
+                    )
+                    Write-PodeHost 'New PipeServer instance created and stored in Watchdog context.'
+
+                    # Create a new StreamWriter and store it back in the Watchdog context
+                    $watchdog['PipeWriter'] = [System.IO.StreamWriter]::new($watchdog['PipeServer'])
+                    Write-PodeHost 'New PipeWriter instance created and stored in Watchdog context.'
+                }
+
+                $pipeServer = $watchdog['PipeServer']
+                Write-PodeHost 'PipeServer created and waiting for connection...'
+                $pipeServer.WaitForConnection()
+                Write-PodeHost 'Client connected.'
+
+                # Create a StreamReader to read messages from the client
+                $reader = [System.IO.StreamReader]::new($pipeServer)
+
+                while ($pipeServer.IsConnected) {
+                    try {
+                        # Read the next message from the client
+                        $receivedData = $reader.ReadLine()
+
+                        if ($null -ne $receivedData) {
+                            Write-PodeHost "Server Received data: $receivedData"
+                            # Deserialize received JSON string into a hashtable
+                            $watchdog.ProcessInfo = $receivedData | ConvertFrom-Json
+                            write-podeHost "RestartCount =$($watchdog.AutoRestart.RestartCount)"
+                            if ($watchdog.AutoRestart.RestartCount -gt 0 -and $watchdog.ProcessInfo.CurrentUptime -ge $watchdog.AutoRestart.ResetFailCountAfter) {
+                                Write-PodeHost 'Process uptime exceeds threshold. Resetting fail counter.'
+                                $watchdog.AutoRestart.RestartCount = 0
+                            }
+                        }
+                        else {
+                            Write-PodeHost 'No data received from client. Waiting for more data...'
+                        }
+                    }
+                    catch {
+                        Write-PodeHost "Error reading from client: $_"
+                        $pipeServer.Disconnect()  # Disconnect to allow reconnection
+                        Start-Sleep -Seconds 1
+                    }
+                }
+
+                # Client disconnected, clean up
+                Write-PodeHost 'Client disconnected. Waiting for a new connection...'
+                # $pipeServer.Disconnect()  # Disconnect to reset the state
+            }
+            catch {
+                Write-PodeHost "Error with the pipe server: $_"
+            }
+            finally {
+                $reportedStatus = $watchdog.ProcessInfo.Status
+                if ($reportedStatus -eq 'Running') {
+                    if ($null -eq (Get-Process -Id $watchdog.Process.Id -ErrorAction SilentlyContinue)) {
+                        $watchdog.ProcessInfo.Status = 'Stopped'
+                        $watchdog.ProcessInfo.Accessible = $false
+                        $watchdog.ProcessInfo.Pid = ''
+                        $watchdog.Process = $null
+                    }
+                    else {
+                        $processInfo.Status = 'Undefined'
+                        $watchdog.Process = $null
+                    }
+                }
+
+                Write-PodeHost "Monitored process was reported to be $reportedStatus."
+                if ($watchdog.AutoRestart.Enabled) {
+                    if ($reportedStatus -eq 'Running') {
+                        if ($watchdog.AutoRestart.RestartCount -le $watchdog.AutoRestart.MaxNumberOfRestarts ) {
+                            Write-PodeHost "Waiting $($watchdog.AutoRestart.RestartServiceAfter) seconds before restarting the monitored process"
+                            Start-Sleep -Seconds $watchdog.AutoRestart.RestartServiceAfter
+
+                            Write-PodeHost 'Restarting the monitored process...'
+                            if (Stop-PodeWatchdogMonitoredProcess -Name $watchdog.Name -Force) {
+                                Start-PodeWatchdogMonitoredProcess -Name $watchdog.Name
+                                $watchdog.AutoRestart.RestartCount += 1
+                                Write-PodeHost "Monitored process (ID:$($watchdog.Process.Id)) restarted ($($watchdog.AutoRestart.RestartCount) time(s)) successfully."
+                            }
+                            else {
+                                Write-PodeHost 'Failed to restart the monitored process.'
+                            }
+                        }
+                        else {
+                            Write-PodeHost 'The monitored process restart count reached the max number of restart allowed.'
+                        }
+                    }
+                    else {
+                        Write-PodeHost "Restart not required the monitored process was not in 'running' state ($($watchdog.ProcessInfo.Status))."
+                    }
+                }
+                else {
+                    Write-PodeHost 'AutoRestart is disabled. Nothing to do.'
+                }
+
+                # Ensure cleanup of resources
+                Write-PodeHost 'Cleaning up resources...'
+                if ($null -ne $reader) { $reader.Dispose() }
+                if ($null -ne $pipeServer -and $pipeServer.IsConnected) {
+                    $pipeServer.Disconnect()  # Ensure server is disconnected
+                }
+                # Release resources and reinitialize PipeServer
+                Write-PodeHost 'Releasing resources and setting PipeServer to null.'
+                if ($null -ne $watchdog['PipeWriter']) {
+                    $watchdog['PipeWriter'].Dispose()  # Dispose existing PipeWriter
+                    $watchdog['PipeWriter'] = $null
+                }
+
+                if ($null -ne $pipeServer) {
+                    $pipeServer.Dispose()  # Dispose existing PipeServer
+                    $watchdog['PipeServer'] = $null  # Set to null for reinitialization
+                }
+
+            }
+        }
+
+        Write-PodeHost 'Stopping PipeServer...'
+    }
+
+}
+
+
 # Client
 <#
 .SYNOPSIS
