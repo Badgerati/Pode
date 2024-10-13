@@ -36,7 +36,7 @@ try {
 }
 catch { throw }
 
-Start-PodeServer  {
+Start-PodeServer -Threads 2 {
     # Define a simple HTTP endpoint on localhost:8082
     Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http
 
@@ -63,7 +63,7 @@ Start-PodeServer  {
     New-PodeLoggingMethod -File -Name 'watchdog' -MaxDays 4 | Enable-PodeErrorLogging
 
     # Enable the Pode Watchdog to monitor the script file, excluding .log files
-    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'watch01'
+    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'watch01' -RestartServiceAfter 10 -MaxNumberOfRestarts 2 -ResetFailCountAfter 3
 
     # REST API to retrieve the list of listeners
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/listeners' -ScriptBlock {
@@ -110,8 +110,30 @@ Start-PodeServer  {
         Write-PodeJsonResponse -StatusCode 200 -Value @{ success = (Set-PodeWatchdogProcessState -Name 'watch01' -State Start) }
     } | Set-PodeOARouteInfo -Summary 'Starts the monitored Pode server process' -Tags 'Command' -OperationId 'start'
 
-    # REST API to halt (force stop) the monitored process
-    Add-PodeRoute -PassThru -Method Post -Path '/cmd/halt' -ScriptBlock {
-        Write-PodeJsonResponse -StatusCode 200 -Value @{ success = (Set-PodeWatchdogProcessState -Name 'watch01' -State Halt) }
-    } | Set-PodeOARouteInfo -Summary 'Halts (force stops) the monitored Pode server process' -Tags 'Command' -OperationId 'halt'
+    # REST API to terminate (force stop) the monitored process
+    Add-PodeRoute -PassThru -Method Post -Path '/cmd/terminate' -ScriptBlock {
+        Write-PodeJsonResponse -StatusCode 200 -Value @{ success = (Set-PodeWatchdogProcessState -Name 'watch01' -State Terminate) }
+    } | Set-PodeOARouteInfo -Summary 'Terminate (force stops) the monitored Pode server process' -Tags 'Command' -OperationId 'terminate'
+
+    # REST API to disable the monitored process
+    Add-PodeRoute -PassThru -Method Post -Path '/cmd/disable' -ScriptBlock {
+        Write-PodeJsonResponse -StatusCode 200 -Value @{ success = (Set-PodeWatchdogProcessState -Name 'watch01' -State Disable) }
+    } | Set-PodeOARouteInfo -Summary 'Disable the monitored Pode server process' -Tags 'Command' -OperationId 'disable'
+
+    # REST API to enable the monitored process
+    Add-PodeRoute -PassThru -Method Post -Path '/cmd/enable' -ScriptBlock {
+        Write-PodeJsonResponse -StatusCode 200 -Value @{ success = (Set-PodeWatchdogProcessState -Name 'watch01' -State enable) }
+    } | Set-PodeOARouteInfo -Summary 'Enable the monitored Pode server process' -Tags 'Command' -OperationId 'enable'
+
+    # REST API to disable Auto Restart
+    Add-PodeRoute -PassThru -Method Post -Path '/settings/noAutoRestart' -ScriptBlock {
+        Disable-PodeWatchdogAutoRestart -Name 'watch01'
+        Set-PodeResponseStatus -Code 200
+    } | Set-PodeOARouteInfo -Summary 'Disable the auto-restart feature for monitored Pode server process' -Tags 'Settings' -OperationId 'noAutoRestart'
+
+    # REST API to enable Auto Restart
+    Add-PodeRoute -PassThru -Method Post -Path '/settings/autoRestart' -ScriptBlock {
+        Enable-PodeWatchdogAutoRestart -Name 'watch01'
+        Set-PodeResponseStatus -Code 200
+    } | Set-PodeOARouteInfo -Summary 'Enable the auto-restart feature for monitored Pode server process' -Tags 'Settings' -OperationId 'autoRestart'
 }

@@ -217,6 +217,7 @@
         'Add-PodeMiddleware',
         'Remove-PodeMiddleware',
         'Clear-PodeMiddleware',
+        'Test-PodeMiddleware',
         'Add-PodeAccessRule',
         'Add-PodeLimitRule',
         'New-PodeCsrfToken',

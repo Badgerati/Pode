@@ -608,55 +608,7 @@ function Test-PodeKeyPressed {
     return (($null -ne $Key) -and ($Key.Key -ieq $Character) -and
         (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-PodeIsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
-
-function Close-PodeServerInternal {
-    param(
-        [switch]
-        $ShowDoneMessage
-    )
-
-    # ensure the token is cancelled
-    if ($null -ne $PodeContext.Tokens.Cancellation) {
-        Write-Verbose 'Cancelling main cancellation token'
-        $PodeContext.Tokens.Cancellation.Cancel()
-    }
-
-    # stop all current runspaces
-    Write-Verbose 'Closing runspaces'
-    Close-PodeRunspace -ClosePool
-
-    # stop the file monitor if it's running
-    Write-Verbose 'Stopping file monitor'
-    Stop-PodeFileMonitor
-
-    # stop the watchdog if it's running
-    Write-Verbose 'Stopping watchdog'
-    Stop-PodeWatchdog
-
-
-    try {
-        # remove all the cancellation tokens
-        Write-Verbose 'Disposing cancellation tokens'
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-
-        # dispose mutex/semaphores
-        Write-Verbose 'Diposing mutex and semaphores'
-        Clear-PodeMutexes
-        Clear-PodeSemaphores
-    }
-    catch {
-        $_ | Out-Default
-    }
-
-    # remove all of the pode temp drives
-    Write-Verbose 'Removing internal PSDrives'
-    Remove-PodePSDrive
-
-    if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
-        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
-    }
-}
+ 
 
 function New-PodePSDrive {
     param(

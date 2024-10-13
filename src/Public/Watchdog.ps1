@@ -115,8 +115,14 @@ function Enable-PodeWatchdog {
         [switch]
         $NoAutostart,
 
+        [int ]
+        $RestartServiceAfter = 60,
+
         [int]
-        $MinRestartInterval = 3,
+        $MaxNumberOfRestarts = 5,
+
+        [int]
+        $ResetFailCountAfter = 5,
 
         [int]
         $GracefulShutdownTimeout = 30,
@@ -202,6 +208,11 @@ function Enable-PodeWatchdog {
                             Write-PodeHost "Server Received data: $receivedData"
                             # Deserialize received JSON string into a hashtable
                             $watchdog.ProcessInfo = $receivedData | ConvertFrom-Json
+                            write-podeHost "RestartCount =$($watchdog.AutoRestart.RestartCount)"
+                            if ($watchdog.AutoRestart.RestartCount -gt 0 -and $watchdog.ProcessInfo.CurrentUptime -ge $watchdog.AutoRestart.ResetFailCountAfter) {
+                                Write-PodeHost 'Process uptime exceeds threshold. Resetting fail counter.'
+                                $watchdog.AutoRestart.RestartCount = 0
+                            }
                         }
                         else {
                             Write-PodeHost 'No data received from client. Waiting for more data...'
@@ -216,11 +227,61 @@ function Enable-PodeWatchdog {
 
                 # Client disconnected, clean up
                 Write-PodeHost 'Client disconnected. Waiting for a new connection...'
-                $pipeServer.Disconnect()  # Disconnect to reset the state
+                # $pipeServer.Disconnect()  # Disconnect to reset the state
             }
             catch {
                 Write-PodeHost "Error with the pipe server: $_"
+            }
+            finally {
+                $reportedStatus = $watchdog.ProcessInfo.Status
+                if ($reportedStatus -eq 'Running') {
+                    if ($null -eq (Get-Process -Id $watchdog.Process.Id -ErrorAction SilentlyContinue)) {
+                        $watchdog.ProcessInfo.Status = 'Stopped'
+                        $watchdog.ProcessInfo.Accessible = $false
+                        $watchdog.ProcessInfo.Pid = ''
+                        $watchdog.Process = $null
+                    }
+                    else {
+                        $processInfo.Status = 'Undefined'
+                        $watchdog.Process = $null
+                    }
+                }
 
+                Write-PodeHost "Monitored process was reported to be $reportedStatus."
+                if ($watchdog.AutoRestart.Enabled) {
+                    if ($reportedStatus -eq 'Running') {
+                        if ($watchdog.AutoRestart.RestartCount -le $watchdog.AutoRestart.MaxNumberOfRestarts ) {
+                            Write-PodeHost "Waiting $($watchdog.AutoRestart.RestartServiceAfter) seconds before restarting the monitored process"
+                            Start-Sleep -Seconds $watchdog.AutoRestart.RestartServiceAfter
+
+                            Write-PodeHost 'Restarting the monitored process...'
+                            if (Stop-PodeWatchdogMonitoredProcess -Name $watchdog.Name -Force) {
+                                Start-PodeWatchdogMonitoredProcess -Name $watchdog.Name
+                                $watchdog.AutoRestart.RestartCount += 1
+                                Write-PodeHost "Monitored process (ID:$($watchdog.Process.Id)) restarted ($($watchdog.AutoRestart.RestartCount) time(s)) successfully."
+                            }
+                            else {
+                                Write-PodeHost 'Failed to restart the monitored process.'
+                            }
+                        }
+                        else {
+                            Write-PodeHost 'The monitored process restart count reached the max number of restart allowed.'
+                        }
+                    }
+                    else {
+                        Write-PodeHost "Restart not required the monitored process was not in 'running' state ($($watchdog.ProcessInfo.Status))."
+                    }
+                }
+                else {
+                    Write-PodeHost 'AutoRestart is disabled. Nothing to do.'
+                }
+
+                # Ensure cleanup of resources
+                Write-PodeHost 'Cleaning up resources...'
+                if ($null -ne $reader) { $reader.Dispose() }
+                if ($null -ne $pipeServer -and $pipeServer.IsConnected) {
+                    $pipeServer.Disconnect()  # Ensure server is disconnected
+                }
                 # Release resources and reinitialize PipeServer
                 Write-PodeHost 'Releasing resources and setting PipeServer to null.'
                 if ($null -ne $watchdog['PipeWriter']) {
@@ -233,26 +294,6 @@ function Enable-PodeWatchdog {
                     $watchdog['PipeServer'] = $null  # Set to null for reinitialization
                 }
 
-                if ($watchdog.Autostart) {
-                    Write-PodeHost 'Restarting the watchdog process...'
-                    if (Stop-PodeWatchdogMonitoredProcess -Name $watchdog.Name -Force) {
-                        Start-PodeWatchdogMonitoredProcess -Name $watchdog.Name
-                    }
-                    else {
-                        Write-PodeHost 'Failed to restart the watchdog process.'
-                    }
-                }
-                else {
-                    Write-PodeHost 'Autostart disabled...'
-                }
-            }
-            finally {
-                # Ensure cleanup of resources
-                Write-PodeHost 'Cleaning up resources...'
-                if ($null -ne $reader) { $reader.Dispose() }
-                if ($null -ne $pipeServer -and $pipeServer.IsConnected) {
-                    $pipeServer.Disconnect()  # Ensure server is disconnected
-                }
             }
         }
 
@@ -285,19 +326,23 @@ function Enable-PodeWatchdog {
     $watchdog['Name'] = $Name
     $watchdog['Shell'] = (Get-Process -Id $PID).Path
     $watchdog['Arguments'] = "$arguments  '$escapedJsonConfig'"
-    $watchdog['Status'] = 'Starting'
     $watchdog['PipeName'] = $pipename
     $watchdog['ScriptBlock'] = $scriptBlock
     $watchdog['Interval'] = $Interval
     $watchdog['Enabled'] = $true
-    $watchdog['Autostart'] = ! $NoAutostart.IsPresent
     $watchdog['FilePath'] = $FilePath
     $watchdog['RestartCount'] = -1
-    $watchdog['MinRestartInterval'] = $MinRestartInterval
+    $watchdog['AutoRestart'] = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+    $watchdog.AutoRestart['Enabled'] = ! $NoAutostart.IsPresent
+    $watchdog.AutoRestart['RestartServiceAfter'] = $RestartServiceAfter
+    $watchdog.AutoRestart['MaxNumberOfRestarts'] = $MaxNumberOfRestarts
+    $watchdog.AutoRestart['ResetFailCountAfter'] = $ResetFailCountAfter * 60000 #in milliseconds
+    $watchdog.AutoRestart['RestartCount'] = 0
+
     $watchdog['Runspace'] = $null
     $watchdog['PipeServer'] = $null
     $watchdog['PipeWriter'] = $null
-    $watchdog['ProcessInfo'] = $null
+    $watchdog['ProcessInfo'] = [ordered]@{Status = 'Stopped'; Accessible = $false; Pid = '' }
     $watchdog['Process'] = $null
 
     # Add Watchdog to the server context
@@ -438,6 +483,8 @@ function Get-PodeWatchdogProcessMetric {
                 'Status' {
                     # Return a hashtable with status metrics about the monitored process
                     return @{
+                        Status        = $processInfo.Status
+                        Accessible    = $processInfo.Accessible
                         Pid           = $processInfo.Pid
                         CurrentUptime = $processInfo.CurrentUptime
                         TotalUptime   = $processInfo.TotalUptime
@@ -457,7 +504,6 @@ function Get-PodeWatchdogProcessMetric {
                     return $processInfo.Metrics.Signals
                 }
                 default {
-                    # If no specific Type is provided, return the complete process information
                     return $processInfo
                 }
             }
@@ -466,9 +512,10 @@ function Get-PodeWatchdogProcessMetric {
             Write-PodeHost 'ProcessInfo is empty'  # Log that no process information is available for the monitored process
         }
     }
-
-    # Log if the specified Watchdog is not monitoring any process
-    Write-PodeHost "$Name is not a monitored process by any Watchdog"
+    else {
+        # Log if the specified Watchdog is not monitoring any process
+        Write-PodeHost "$Name is not a monitored process by any Watchdog"
+    }
 
     return $null
 }
@@ -482,7 +529,7 @@ function Get-PodeWatchdogProcessMetric {
 .DESCRIPTION
     Changes the state of the specified monitored process managed by a Pode Watchdog service.
     The state can be set to 'Stop', 'Restart', 'Start', 'Halt', or 'Reset' to control the process's execution.
-    This function allows for stopping, restarting, starting, halting (forcing stop), and resetting the monitored process while considering the Watchdog's autostart settings.
+    This function allows for stopping, restarting, starting, halting (forcing stop), and resetting the monitored process while considering the Watchdog's AutoRestart settings.
 
 .PARAMETER Name
     The name of the Watchdog service managing the monitored process.
@@ -490,11 +537,11 @@ function Get-PodeWatchdogProcessMetric {
 
 .PARAMETER State
     Specifies the desired state for the monitored process:
-        - 'Stop': Stops the monitored process and disables autostart.
+        - 'Stop': Stops the monitored process  .
         - 'Restart': Restarts the monitored process.
         - 'Start': Starts the monitored process.
-        - 'Halt': Forces the monitored process to stop and disables autostart.
-        - 'Reset': Stops the monitored process, restarts it, and restores the original autostart setting.
+        - 'Halt': Forces the monitored process to stop .
+        - 'Reset': Stops the monitored process, restarts it
     Default value is 'Stop'.
 
 .OUTPUTS
@@ -512,49 +559,45 @@ function Set-PodeWatchdogProcessState {
         $Name,
 
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Stop', 'Restart', 'Start', 'Halt', 'Reset')]
+        [ValidateSet('Stop', 'Restart', 'Start', 'Terminate', 'Reset', 'Disable', 'Enable')]
         [string]
         $State = 'Stop'
     )
 
     # Check if the specified Watchdog is active and managing a process
     if ((Test-PodeWatchdog -Name $Name)) {
-        $watchdog = $PodeContext.Server.Watchdog.Server[$Name]
 
         # Change the state of the monitored process based on the specified $State value
         switch ($State) {
             'Stop' {
-                # Stop the monitored process and disable autostart
-                $watchdog.Autostart = $false
+                # Stop the monitored process
                 return Stop-PodeWatchdogMonitoredProcess -Name $Name
             }
             'Restart' {
                 # Restart the monitored process
-                $watchdog.Autostart = $false
-                $result = Restart-PodeWatchdogMonitoredProcess -Name $Name
-                return $result
+                return Restart-PodeWatchdogMonitoredProcess -Name $Name
             }
             'Start' {
                 # Start the monitored process
                 return Start-PodeWatchdogMonitoredProcess -Name $Name
             }
-            'Halt' {
-                # Force stop the monitored process and disable autostart
-                $watchdog.Autostart = $false
+            'Terminate' {
+                # Force stop the monitored process
                 return Stop-PodeWatchdogMonitoredProcess -Name $Name -Force
             }
             'Reset' {
-                # Reset the monitored process: stop, restart, and restore autostart setting
-                $autostart = $watchdog.Autostart
-                $watchdog.Autostart = $false
-
+                # Reset the monitored process: stop, restart
                 if ((Stop-PodeWatchdogMonitoredProcess -Name $Name -Force)) {
-                    $result = Start-PodeWatchdogMonitoredProcess -Name $Name
-                    if ($result) {
-                        $watchdog.Autostart = $autostart
-                    }
-                    return $result
+                    return Start-PodeWatchdogMonitoredProcess -Name $Name
                 }
+            }
+            'Disable' {
+                # Attempt to disable the service via pipe communication
+                return (Send-PodeWatchdogMessage -Name $Name -Command 'disable')
+            }
+            'Enable' {
+                # Attempt to enable the service via pipe communication
+                return (Send-PodeWatchdogMessage -Name $Name -Command 'enable')
             }
         }
     }
@@ -562,3 +605,56 @@ function Set-PodeWatchdogProcessState {
     # Return $false if the specified Watchdog or monitored process is not found
     return $false
 }
+
+
+<#
+.SYNOPSIS
+    Enables the AutoRestart feature for a specified Pode Watchdog service.
+
+.DESCRIPTION
+    This function enables the AutoRestart feature for the specified Watchdog service, ensuring that the service automatically restarts the monitored process if it stops.
+
+.PARAMETER Name
+    The name of the Watchdog service for which to enable AutoRestart.
+#>
+function Enable-PodeWatchdogAutoRestart {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    # Check if the specified Watchdog service is active and managing a process
+    if ((Test-PodeWatchdog -Name $Name)) {
+        Write-PodeHost 'AutoRestart feature is Enabled'
+        $PodeContext.Server.Watchdog.Server[$Name].AutoRestart.Enabled = $true
+    }
+}
+
+
+
+<#
+.SYNOPSIS
+    Disables the AutoRestart feature for a specified Pode Watchdog service.
+
+.DESCRIPTION
+    This function disables the AutoRestart feature for the specified Watchdog service, preventing the service from automatically restarting the monitored process if it stops.
+
+.PARAMETER Name
+    The name of the Watchdog service for which to disable AutoRestart.
+#>
+function Disable-PodeWatchdogAutoRestart {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    # Check if the specified Watchdog service is active and managing a process
+    if ((Test-PodeWatchdog -Name $Name)) {
+        Write-PodeHost 'AutoRestart feature is Disabled'
+        $PodeContext.Server.Watchdog.Server[$Name].AutoRestart.Enabled = $false
+    }
+}
+
+
