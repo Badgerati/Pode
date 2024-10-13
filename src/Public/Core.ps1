@@ -154,10 +154,10 @@ function Start-PodeServer {
 
         # check if podeWatchdog is configured
         if ($PodeWatchdog) {
-            if (!($null -eq $PodeWatchdog.DisableTermination -or
-                    $null -eq $PodeWatchdog.Quiet -or
-                    $null -eq $PodeWatchdog.PipeName -or
-                    $null -eq $PodeWatchdog.Interval )
+            if ($null -ne $PodeWatchdog.DisableTermination -or
+                    $null -ne $PodeWatchdog.Quiet -or
+                    $null -ne $PodeWatchdog.PipeName -or
+                    $null -ne $PodeWatchdog.Interval 
             ) {
                 if ($PodeWatchdog -is [hashtable]) {
                     $watchdogClient = ConvertTo-PodeConcurrentStructure -InputObject $PodeWatchdog
