@@ -608,7 +608,7 @@ function Test-PodeKeyPressed {
     return (($null -ne $Key) -and ($Key.Key -ieq $Character) -and
         (($Key.Modifiers -band [ConsoleModifiers]::Control) -or ((Test-PodeIsUnix) -and ($Key.Modifiers -band [ConsoleModifiers]::Shift))))
 }
- 
+
 
 function New-PodePSDrive {
     param(
@@ -3530,7 +3530,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'hashtable' {
-                if ($InputObject.Count -gt 0 ) {
+                if (($InputObject.GetEnumerator() | Measure-Object).Count -gt 0) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
@@ -3545,8 +3545,8 @@ function ConvertTo-PodeYamlInternal {
                             }
                         }
                         else {
-                            if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
-                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                                if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                                $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
                         }
                     }
                     $string.ToString()
@@ -3556,7 +3556,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'pscustomobject' {
-                if ($InputObject.Count -gt 0 ) {
+                if ($InputObject.PSObject.Properties.Count -gt 0) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in ($InputObject | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name)) {
@@ -3641,7 +3641,7 @@ function Resolve-PodeObjectArray {
     # Check if the property is a hashtable
     if ($Property -is [hashtable]) {
         # If the hashtable has only one item, convert it to a PowerShell object
-        if ($Property.Count -eq 1) {
+        if (($Property.GetEnumerator() | Measure-Object).Count -eq 1) {
             return [pscustomobject]$Property
         }
         else {

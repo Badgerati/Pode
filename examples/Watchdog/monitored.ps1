@@ -69,8 +69,8 @@ Start-PodeServer -Threads 10 {
 
     Add-PodeRoute -Method Get -Path '/delayed' -ScriptBlock {
         # Send a json response with 'Hello, world!'
-        $sleep = (Get-Random -Maximum 30)
-        start-sleep (Get-Random -Maximum 30)
+        $sleep = (Get-Random -Minimum 10 -Maximum 30)
+        start-sleep $sleep
         Write-PodeJsonResponse -Value @{response = "Hello, world! ($sleep seconds delay)" }
     }
 

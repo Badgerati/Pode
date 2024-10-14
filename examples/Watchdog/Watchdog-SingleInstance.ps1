@@ -42,6 +42,6 @@ Start-PodeServer {
     $filePath = "$($watchdogPath)/monitored.ps1"
 
     # Enable the Pode Watchdog to monitor the script file, excluding .log files
-    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'watch01'
+    Enable-PodeWatchdog -FilePath $filePath -Parameters @{Port = 8081 } -FileMonitoring -FileExclude '*.log' -Name 'watch01'
 
 }

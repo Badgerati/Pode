@@ -255,19 +255,19 @@ function Enable-PodeWatchdog {
         Add-PodeFileWatcher -Path $path -Exclude $FileExclude -Include $FileInclude -ArgumentList $Name -ScriptBlock {
             param($Name)
             $watchdog = $PodeContext.Server.Watchdog.Server[$Name]
-            Write-PodeHost  "File [$($FileEvent.Type)]: $($FileEvent.FullPath) changed"
+            Write-PodeWatchdogLog -Watchdog $watchdog -Message "File [$($FileEvent.Type)]: $($FileEvent.FullPath) changed"
             if (((Get-Date) - ($watchdog.Process.StartTime)).TotalMinutes -gt $watchdog.MinRestartInterval ) {
                 if ( $watchdog.FilePath -eq $FileEvent.FullPath) {
-                    Write-PodeHost 'Force a cold restart'
+                    Write-PodeWatchdogLog -Watchdog $watchdog -Message 'Force a cold restart'
                     Set-PodeWatchdogProcessState -State ColdRestart
                 }
                 else {
-                    Write-PodeHost 'Force a restart'
+                    Write-PodeWatchdogLog -Watchdog $watchdog -Message 'Force a restart'
                     Set-PodeWatchdogProcessState -State Restart
                 }
             }
             else {
-                Write-PodeHost "Less than $($watchdog.MinRestartInterval) minutes are passed since last restart."
+                Write-PodeWatchdogLog -Watchdog $watchdog -Message "Less than $($watchdog.MinRestartInterval) minutes are passed since last restart."
             }
         }
     }
@@ -399,12 +399,12 @@ function Get-PodeWatchdogProcessMetric {
             }
         }
         else {
-            Write-PodeHost 'ProcessInfo is empty'  # Log that no process information is available for the monitored process
+            Write-PodeWatchdogLog -Watchdog $watchdog -Message 'ProcessInfo is empty'  # Log that no process information is available for the monitored process
         }
     }
     else {
         # Log if the specified Watchdog is not monitoring any process
-        Write-PodeHost "$Name is not a monitored process by any Watchdog"
+        Write-PodeWatchdogLog -Watchdog $watchdog -Message "$Name is not a monitored process by any Watchdog"
     }
 
     return $null
@@ -525,7 +525,7 @@ function Enable-PodeWatchdogAutoRestart {
 
     # Check if the specified Watchdog service is active and managing a process
     if ((Test-PodeWatchdog -Name $Name)) {
-        Write-PodeHost 'AutoRestart feature is Enabled'
+        Write-PodeWatchdogLog -Watchdog $watchdog -Message 'AutoRestart feature is Enabled'
         $PodeContext.Server.Watchdog.Server[$Name].AutoRestart.Enabled = $true
     }
 }
@@ -551,7 +551,7 @@ function Disable-PodeWatchdogAutoRestart {
 
     # Check if the specified Watchdog service is active and managing a process
     if ((Test-PodeWatchdog -Name $Name)) {
-        Write-PodeHost 'AutoRestart feature is Disabled'
+        Write-PodeWatchdogLog -Watchdog $watchdog -Message 'AutoRestart feature is Disabled'
         $PodeContext.Server.Watchdog.Server[$Name].AutoRestart.Enabled = $false
     }
 }

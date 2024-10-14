@@ -44,8 +44,8 @@ Start-PodeServer {
     New-PodeLoggingMethod -File -Name 'watchdog' -MaxDays 4 | Enable-PodeErrorLogging
 
     # Enable the first Pode Watchdog instance to monitor the script file, excluding .log files
-    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'watch01'
+    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -Parameters @{Port = 8080 }  -FileExclude '*.log' -Name 'watch01'
 
     # Enable the second Pode Watchdog instance to monitor the script file, excluding .log files
-    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -FileExclude '*.log' -Name 'watch02'
+    Enable-PodeWatchdog -FilePath $filePath -FileMonitoring -Parameters @{Port = 8081 } -FileExclude '*.log' -Name 'watch02'
 }
