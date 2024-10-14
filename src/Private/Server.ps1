@@ -214,6 +214,9 @@ function Start-PodeInternalServer {
                 }
             }
 
+            # Displays startup information for the Pode Watchdog service.
+            Write-PodeWatchdogStartupMessage
+
             # Marking the Watchdog client as 'Running' now that the process is stable
             Set-PodeWatchdogHearthbeatStatus -Status 'Running'
         }

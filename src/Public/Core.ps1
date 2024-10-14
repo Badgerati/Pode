@@ -155,9 +155,9 @@ function Start-PodeServer {
         # check if podeWatchdog is configured
         if ($PodeWatchdog) {
             if ($null -ne $PodeWatchdog.DisableTermination -or
-                    $null -ne $PodeWatchdog.Quiet -or
-                    $null -ne $PodeWatchdog.PipeName -or
-                    $null -ne $PodeWatchdog.Interval 
+                $null -ne $PodeWatchdog.Quiet -or
+                $null -ne $PodeWatchdog.PipeName -or
+                $null -ne $PodeWatchdog.Interval
             ) {
                 if ($PodeWatchdog -is [hashtable]) {
                     $watchdogClient = ConvertTo-PodeConcurrentStructure -InputObject $PodeWatchdog
@@ -193,21 +193,23 @@ function Start-PodeServer {
                 $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
             }
 
+            $params = @{
+                ScriptBlock          = $ScriptBlock
+                FilePath             = $FilePath
+                Threads              = $Threads
+                Interval             = $Interval
+                ServerRoot           = $(Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot)
+                ServerlessType       = $ServerlessType
+                ListenerType         = $ListenerType
+                EnablePool           = $EnablePool
+                StatusPageExceptions = $StatusPageExceptions
+                DisableTermination   = $DisableTermination
+                Quiet                = $Quiet
+                EnableBreakpoints    = $EnableBreakpoints
+                Watchdog             = $watchdogClient
+            }
             # create main context object
-            $PodeContext = New-PodeContext `
-                -ScriptBlock $ScriptBlock `
-                -FilePath $FilePath `
-                -Threads $Threads `
-                -Interval $Interval `
-                -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-                -ServerlessType $ServerlessType `
-                -ListenerType $ListenerType `
-                -EnablePool $EnablePool `
-                -StatusPageExceptions $StatusPageExceptions `
-                -DisableTermination:$DisableTermination `
-                -Quiet:$Quiet `
-                -EnableBreakpoints:$EnableBreakpoints `
-                -Watchdog $watchdogClient
+            $PodeContext = New-PodeContext @params
 
             # set it so ctrl-c can terminate, unless serverless/iis, or disabled
             if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {

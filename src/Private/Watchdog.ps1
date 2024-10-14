@@ -275,12 +275,12 @@ function Start-PodeWatchdogMonitoredProcess {
 
         # Output the process information for debugging purposes
         Write-PodeWatchdogLog -Watchdog $watchdog -Message ((
-            $watchdog.Process | Select-Object @{Name = 'NPM(K)'; Expression = { $_.NPM } },
-            @{Name = 'PM(M)'; Expression = { [math]::round($_.PM / 1MB, 2) } },
-            @{Name = 'WS(M)'; Expression = { [math]::round($_.WS / 1MB, 2) } },
-            @{Name = 'CPU(s)'; Expression = { [math]::round($_.CPU, 2) } },
-            Id, SI, ProcessName
-        ) -join ',')
+                $watchdog.Process | Select-Object @{Name = 'NPM(K)'; Expression = { $_.NPM } },
+                @{Name = 'PM(M)'; Expression = { [math]::round($_.PM / 1MB, 2) } },
+                @{Name = 'WS(M)'; Expression = { [math]::round($_.WS / 1MB, 2) } },
+                @{Name = 'CPU(s)'; Expression = { [math]::round($_.CPU, 2) } },
+                Id, SI, ProcessName
+            ) -join ',')
 
         # Check if the process was successfully started and is running
         if (!$watchdog.Process.HasExited) {
@@ -353,7 +353,7 @@ function Stop-PodeWatchdogRunspace {
 
 
         # Attempt to stop the monitored process and update the status accordingly
-        Stop-PodeWatchdogMonitoredProcess -Name $name -Timeout 60
+        $null = Stop-PodeWatchdogMonitoredProcess -Name $name -Timeout 60
 
         # Clean up the PipeWriter if it exists
         if ($null -ne $watchdog.PipeWriter) {
@@ -699,6 +699,58 @@ function Get-PodeWatchdogPipeServerScriptBlock {
 }
 
 
+<#
+.SYNOPSIS
+    Displays startup information for the Pode Watchdog service.
+
+.DESCRIPTION
+    This function outputs the status and details of the active Pode Watchdog service, including information about monitored processes.
+    It checks if the Watchdog service is enabled for the server, and if it is, prints a formatted table showing key process metrics such as memory usage, CPU usage, and process IDs.
+    This function helps in visually confirming that the Watchdog service is active and monitoring processes as expected.
+
+.PARAMETER None
+    This function does not take any parameters.
+
+.NOTES
+    This function is intended for internal use within the Pode Watchdog system to display startup messages.
+#>
+
+function Write-PodeWatchdogStartupMessage {
+    # Check if the Watchdog service is enabled for the server
+    if ((Test-PodeWatchDogEnabled -Server)) {
+
+        # Print a blank line and indicate that the Watchdog is active
+        Write-PodeHost
+        Write-PodeHost 'Watchdog [Active]' -ForegroundColor Cyan
+
+        # If more than one process is monitored, adjust the message for plural
+        if ($PodeContext.Server.Watchdog.Server.Count -gt 1) {
+            Write-PodeHost 'Monitored processes:' -ForegroundColor Yellow
+        }
+        else {
+            Write-PodeHost 'Monitored process:' -ForegroundColor Yellow
+        }
+
+        # Print the header for the process information table
+        Write-PodeHost "`tName`tNPM(K)`tPM(M)`tWS(M)`tCPU(s)`tId`tSI`tSBlock`tFile" -ForegroundColor Yellow
+
+        # Loop through each monitored process in the Watchdog's server context
+        foreach ($name in $PodeContext.Server.Watchdog.Server.Keys) {
+            $watchdog = $PodeContext.Server.Watchdog.Server[$name]
+            $process = $watchdog.Process
+            $scriptblock = [string]::IsNullOrEmpty($watchdog.FilePath)
+            if ($scriptblock) {
+                $fileName = ''
+            }
+            else {
+                $fileName = Split-Path -Path $watchdog.FilePath -Leaf
+            }
+
+            # Print process metrics: Name, NPM, PM, WS, CPU, Process Id, Session Id, ScriptBlock, FileName
+            Write-PodeHost "`t$name`t$($process.NPM)`t$([math]::round($process.PM / 1MB, 2))`t$([math]::round($process.WS / 1MB, 2))`t$([math]::round($process.CPU, 2))`t$($process.Id)`t$($process.SI)`t$scriptblock`t$filename" -ForegroundColor Yellow
+        }
+    }
+}
 
 
 <#
