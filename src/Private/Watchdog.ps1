@@ -59,7 +59,7 @@ function Test-PodeWatchDogEnabled {
 
 .PARAMETER Timeout
     The timeout period (in seconds) to wait for the process to shut down gracefully before returning a failure.
-    Default is 10 seconds.
+    Default is 30 seconds.
 
 .PARAMETER Force
     If specified, the process will be forcibly terminated without a graceful shutdown.
@@ -80,7 +80,8 @@ function Stop-PodeWatchdogMonitoredProcess {
         $Name,
 
         [Parameter()]
-        [int] $Timeout = 10,
+        [int]
+        $Timeout = 30,
 
         [switch]
         $Force
@@ -101,6 +102,7 @@ function Stop-PodeWatchdogMonitoredProcess {
             return $false
         }
         if ($null -ne $watchdog.Process) {
+            Write-PodeWatchdogLog -Watchdog $watchdog -Message "Try to stop the process forcefully using the process ID($($watchdog.Process.Id))"
             # Try to stop the process forcefully using its ID
             $stoppedProcess = Get-Process -Id $watchdog.Process.Id -ErrorAction SilentlyContinue
             if ($null -ne $stoppedProcess) {
@@ -132,13 +134,13 @@ function Stop-PodeWatchdogMonitoredProcess {
             return $false
         }
         # Wait for the process to exit within the specified timeout
-        $i = 0
+        $counter = 0
         $process = Get-Process -Id $watchdog.Process.Id -ErrorAction SilentlyContinue
         while ($null -ne $process) {
-            Start-Sleep -Seconds 2
+            Start-Sleep -Seconds 1
             $process = Get-Process -Id $watchdog.Process.Id -ErrorAction SilentlyContinue
-            $i++
-            if ($i -gt $Timeout) {
+            $counter++
+            if ($counter -ge $Timeout) {
                 Write-PodeWatchdogLog -Watchdog $watchdog -Message 'Stop-PodeWatchdogMonitoredProcess timeout reached'  # Log timeout
                 return $false
             }
@@ -167,6 +169,10 @@ function Stop-PodeWatchdogMonitoredProcess {
 .PARAMETER Name
     The name of the Watchdog service managing the monitored process.
 
+.PARAMETER Timeout
+    The timeout period (in seconds) to wait for the process to restart gracefully before returning a failure.
+    Default is 30 seconds.
+
 .OUTPUTS
     [bool]
         Returns $true if the process was restarted successfully, otherwise $false.
@@ -180,7 +186,11 @@ function Restart-PodeWatchdogMonitoredProcess {
     param (
         [Parameter(Mandatory = $true)]
         [string]
-        $Name
+        $Name,
+
+        [Parameter()]
+        [int]
+        $Timeout = 30
     )
 
     # If the Watchdog with the specified name is not found, exit the function
@@ -196,21 +206,41 @@ function Restart-PodeWatchdogMonitoredProcess {
             Write-PodeWatchdogLog -Watchdog $watchdog -Message 'Cannot restart a process that is not in running state.'
             return $false
         }
-
-        $restartCount = $watchdog['ProcessInfo'].RestartCount
+        
+        $restartCount = $watchdog.ProcessInfo.RestartCount
         # Attempt to restart the monitored process via pipe communication
         if (! (Send-PodeWatchdogMessage -Name $Name -Command 'Restart')) {
             return $false
         }
 
+        # Initialize counter for the first check (Running)
+        $counter = 0
         # Wait for the monitored process to update its process info after restarting
-        Start-Sleep 5
-        while ($null -eq $watchdog['ProcessInfo']) {
+        while ($watchdog.ProcessInfo.Status -eq 'Running' -and $counter -lt $Timeout) {
             Start-Sleep 1
+            $counter++
+
+            # Exit the loop if timeout is reached
+            if ($counter -ge $Timeout) {
+                Write-PodeWatchdogLog -Watchdog $watchdog -Message  "Timeout ($Timeout secs) reached while waiting for the process to stop running."
+                return $false
+            }
+        }
+
+        # Wait for the process to stop restarting
+        while ($watchdog.ProcessInfo.Status -eq 'Restarting' -and $counter -lt $Timeout) {
+            Start-Sleep 1
+            $counter++
+
+            # Exit the loop if timeout is reached
+            if ($counter -ge $Timeout) {
+                Write-PodeWatchdogLog -Watchdog $watchdog -Message  "Timeout ($Timeout secs) reached while waiting for the process to stop running."
+                return $false
+            }
         }
 
         # Verify that the restart count has incremented, indicating a successful restart
-        return ($watchdog['ProcessInfo'].RestartCount -eq ($restartCount + 1))
+        return ($watchdog.ProcessInfo.RestartCount -eq ($restartCount + 1))
     }
     catch {
         # Log any errors that occur during the restart process
