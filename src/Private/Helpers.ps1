@@ -3573,7 +3573,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'hashtable' {
-                if ($hashtable.GetEnumerator().MoveNext()) {
+                if ($InputObject.GetEnumerator().MoveNext()) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
