@@ -395,28 +395,45 @@ function Add-PodeOAServerEndpoint {
         $DefinitionTag
     )
 
+
+    # If the DefinitionTag is empty, use the selected tag from Pode's OpenAPI context
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
         $DefinitionTag = @($PodeContext.Server.OpenAPI.SelectedDefinitionTag)
     }
+
+    # Loop through each tag to add the server object to the corresponding OpenAPI definition
     foreach ($tag in $DefinitionTag) {
+        # If the 'servers' array for the tag doesn't exist, initialize it as an empty array
         if (! $PodeContext.Server.OpenAPI.Definitions[$tag].servers) {
             $PodeContext.Server.OpenAPI.Definitions[$tag].servers = @()
         }
+
+        # Create an ordered hashtable representing the server object with the URL
         $lUrl = [ordered]@{url = $Url }
+
+        # If a description is provided, add it to the server object
         if ($Description) {
             $lUrl.description = $Description
         }
 
+        # If variables are provided, add them to the server object
         if ($Variables) {
             $lUrl.variables = $Variables
         }
-        if ($lUrl -notmatch '^(?i)https?://') {
+
+        # Check if the URL is a local endpoint (not starting with 'http(s)://')
+        if ($lUrl.url -notmatch '^(?i)https?://') {
+            # Loop through existing server URLs in the definition
             foreach ($srv in $PodeContext.Server.OpenAPI.Definitions[$tag].servers) {
+                # If there's already a local endpoint, throw an exception, as only one local endpoint is allowed per definition
+                # Both are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition.
                 if ($srv.url -notmatch '^(?i)https?://') {
-                    throw ("Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition." -f $Url, $srv.url)
+                    throw ($PodeLocale.LocalEndpointConflictExceptionMessage -f $Url, $srv.url)
                 }
             }
         }
+
+        # Add the new server object to the OpenAPI definition for the current tag
         $PodeContext.Server.OpenAPI.Definitions[$tag].servers += $lUrl
     }
 }

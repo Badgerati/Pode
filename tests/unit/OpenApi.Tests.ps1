@@ -3218,6 +3218,63 @@ Describe 'OpenApi' {
         }
     }
 
+    Describe 'Add-PodeOAServerEndpoint' {
+        # Mocking Pode related context and functions
+        BeforeAll {
+
+
+            function Test-PodeIsEmpty {
+                param ($Value)
+                return -not $Value
+            }
+        }
+
+        Context 'When adding a server with URL and description' {
+            It 'Should add the server to the OpenAPI definition' {
+                Add-PodeOAServerEndpoint -Url 'https://myserver.io/api' -Description 'My test server'
+
+                $servers = $PodeContext.Server.OpenAPI.Definitions['default'].servers
+                $servers | Should -HaveCount 1
+                $servers[0].url | Should -Be 'https://myserver.io/api'
+                $servers[0].description | Should -Be 'My test server'
+            }
+        }
+
+        Context 'When adding a server with variables' {
+            It 'Should add the server with variables to the OpenAPI definition' {
+                $variables = [ordered]@{
+                    username = [ordered]@{
+                        default = 'demo'
+                        description = 'assigned by provider'
+                    }
+                    port = [ordered]@{
+                        default = 8443
+                    }
+                    basePath = [ordered]@{
+                        default = 'v2'
+                    }
+                }
+
+                Add-PodeOAServerEndpoint -Url 'https://{username}.server.com:{port}/{basePath}' -Variables $variables
+
+                $servers = $PodeContext.Server.OpenAPI.Definitions['default'].servers
+                $servers | Should -HaveCount 1
+                $servers[0].url | Should -Be 'https://{username}.server.com:{port}/{basePath}'
+                $servers[0].variables | Should -Be $variables
+            }
+        }
+
+        Context 'When adding multiple local endpoints' {
+            It 'Should throw an error when multiple local URLs are defined' {
+                Add-PodeOAServerEndpoint -Url '/api' -Description 'Local endpoint 1'
+
+                { Add-PodeOAServerEndpoint -Url '/api/v2' -Description 'Local endpoint 2' } |
+                    Should -Throw "Both '/api/v2' and '/api' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition."
+            }
+        }
+
+
+    }
 
 
     Context 'Pet Object example' {
