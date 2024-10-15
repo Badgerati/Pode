@@ -59,78 +59,46 @@ Start-PodeServer -Threads 2 {
 
     # Path to the monitored script
     $filePath = "$($watchdogPath)/monitored.ps1"
-
-    # Define OpenAPI schemas for request, listener, signal, and status metrics
-    New-PodeOAIntProperty -Name 'Total' -Description 'Total number of requests' -Format Int32 |
-        New-PodeOAObjectProperty -Name 'StatusCodes' -Description 'Status codes for requests' -Properties (
-            New-PodeOAIntProperty -Name '200' -Description 'Number of 200 (OK) responses' -Format Int32 |
-                New-PodeOAIntProperty -Name '404' -Description 'Number of 404 (Not Found) responses' -Format Int32
-            ) | New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'Requests' -Description 'Request metrics'
-
-    New-PodeOAIntProperty -Name 'Count' -Description 'Number of listeners' -Format Int32 |
-        New-PodeOAIntProperty -Name 'QueuedCount' -Description 'Number of queued requests' -Format Int32 |
-        New-PodeOAIntProperty -Name 'ProcessingCount' -Description 'Number of requests being processed' -Format Int32 |
-        New-PodeOAObjectProperty |
-        Add-PodeOAComponentSchema -Name 'Listeners' -Description  'Listener information for the monitored process'
-
-    New-PodeOAIntProperty -Name 'Total' -Description 'Total number of signals' -Format Int32 |
-        New-PodeOAObjectProperty |
-        Add-PodeOAComponentSchema -Name 'Signals' -Description  'Signal metrics'
-
-    $oaStatus = New-PodeOAStringProperty -Name 'Status' -Description 'Monitored process status' -Enum 'Restarting', 'Starting', 'Running', 'Stopping', 'Stopped' |
-        New-PodeOABoolProperty -Name 'Accessible' -Description 'Is the content on the monitored process accessible?' |
-        New-PodeOAIntProperty -Name 'Pid' -Description 'Process ID of the monitored process' -Format Int32 |
-        New-PodeOAIntProperty -Name 'CurrentUptime' -Description 'Current uptime of the monitored process in seconds' -Format Int32 |
-        New-PodeOAIntProperty -Name 'TotalUptime' -Description 'Total uptime of the monitored process in seconds' -Format Int32 |
-        New-PodeOAIntProperty -Name 'RestartCount' -Description 'Number of times the process has been restarted' -Format Int32
-
-    $oaStatus | New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'Status' -Description  'Status of the monitored process'
-
-    $oaStatus | New-PodeOAObjectProperty -Name 'Metrics' -Description 'Metrics for the monitored process' -Properties(
-        New-PodeOAObjectProperty -Name 'Server' -Description 'Server metrics' -Properties  (
-            New-PodeOAIntProperty -Name 'RestartCount' -Description 'Number of restarts' -Format Int32 |
-                New-PodeOAStringProperty -Name 'InitialLoadTime' -Description 'Time the server was initially loaded' -Format 'date-time' |
-                New-PodeOAStringProperty -Name 'StartTime' -Description 'Time the server started' -Format 'date-time'
-            ) | New-PodeOAComponentSchemaProperty -Name 'Signals' -Reference 'Signals' |
-                New-PodeOAComponentSchemaProperty -Name 'Requests' -Reference 'Requests' ) |
-                New-PodeOAComponentSchemaProperty -Name 'Listeners' -Reference 'Listeners' |
-                New-PodeOAObjectProperty | Add-PodeOAComponentSchema    -Name 'ProcessMonitor' -Description 'Process monitoring information'
-
+    
     # Set up logging for the Watchdog service
     New-PodeLoggingMethod -File -Name 'watchdog' -MaxDays 4 | Enable-PodeErrorLogging
 
     # Enable the Pode Watchdog to monitor the script file, excluding .log files
-    Enable-PodeWatchdog -FilePath $filePath -Parameters @{Port = 8081} -FileMonitoring -FileExclude '*.log' -Name 'watch01' -RestartServiceAfter 10 -MaxNumberOfRestarts 2 -ResetFailCountAfter 3
+    Enable-PodeWatchdog -FilePath $filePath -Parameters @{Port = 8081 } -FileMonitoring -FileExclude '*.log' -Name 'watch01' -RestartServiceAfter 10 -MaxNumberOfRestarts 2 -ResetFailCountAfter 3
+
+     # Define OpenAPI schemas for request, listener, signal, and status metrics
+    $WatchdogSchemaPrefix = 'Watchdog'
+    Add-PodeWatchdogOASchema -WatchdogSchemaPrefix $WatchdogSchemaPrefix
 
     # REST API to retrieve the list of listeners
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/listeners' -ScriptBlock {
         Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01' -type Listeners)
     } | Set-PodeOARouteInfo -Summary 'Retrieves a list of active listeners for the monitored Pode server' -Tags 'Monitor' -OperationId 'getListeners' -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = 'Listeners'}
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = "$($WatchdogSchemaPrefix)Listeners" }
 
     # REST API to retrieve the request count
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/requests' -ScriptBlock {
         Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01' -type Requests)
     } | Set-PodeOARouteInfo -Summary 'Retrieves the total number of requests handled by the monitored Pode server' -Tags 'Monitor' -OperationId 'getRequests' -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = 'Requests'}
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = "$($WatchdogSchemaPrefix)Requests" }
 
     # REST API to retrieve the process status
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/status' -ScriptBlock {
         Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01' -type Status)
     } | Set-PodeOARouteInfo -Summary 'Retrieves the current status and uptime of the monitored Pode server' -Tags 'Monitor' -OperationId 'getStatus' -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = 'Status'}
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = "$($WatchdogSchemaPrefix)Status" }
 
     # REST API to retrieve signal metrics
     Add-PodeRoute -PassThru -Method Get -Path '/monitor/signals' -ScriptBlock {
         Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01' -type Signals)
     } | Set-PodeOARouteInfo -Summary 'Retrieves signal metrics for the monitored Pode server' -Tags 'Monitor' -OperationId 'getSignals' -PassThru |
-        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = 'Signals'}
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = "$($WatchdogSchemaPrefix)Signals" }
 
     # REST API to retrieve all metrics of the monitored process
     Add-PodeRoute -PassThru -Method Get -Path '/monitor' -ScriptBlock {
         Write-PodeJsonResponse -StatusCode 200 -Value (Get-PodeWatchdogProcessMetric -Name 'watch01')
     } | Set-PodeOARouteInfo -Summary 'Retrieves all monitoring stats for the monitored Pode server' -Tags 'Monitor' -OperationId 'getMonitor' -PassThru |
-    Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = 'ProcessMonitor'}
+        Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = "$($WatchdogSchemaPrefix)Monitor" }
 
     # REST API to restart the monitored process
     Add-PodeRoute -PassThru -Method Post -Path '/cmd/restart' -ScriptBlock {

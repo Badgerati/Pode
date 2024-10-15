@@ -507,7 +507,8 @@
         'Get-PodeWatchdogProcessMetric',
         'Set-PodeWatchdogProcessState',
         'Enable-PodeWatchdogAutoRestart',
-        'Disable-PodeWatchdogAutoRestart'
+        'Disable-PodeWatchdogAutoRestart',
+        'Add-PodeWatchdogOASchema'
 
     )
 

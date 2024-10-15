@@ -259,11 +259,11 @@ function Enable-PodeWatchdog {
             if (((Get-Date) - ($watchdog.Process.StartTime)).TotalMinutes -gt $watchdog.MinRestartInterval ) {
                 if ( $watchdog.FilePath -eq $FileEvent.FullPath) {
                     Write-PodeWatchdogLog -Watchdog $watchdog -Message 'Force a cold restart'
-                    Set-PodeWatchdogProcessState -State ColdRestart
+                    Set-PodeWatchdogProcessState -Name $Name -State ColdRestart
                 }
                 else {
                     Write-PodeWatchdogLog -Watchdog $watchdog -Message 'Force a restart'
-                    Set-PodeWatchdogProcessState -State Restart
+                    Set-PodeWatchdogProcessState -Name $Name -State Restart
                 }
             }
             else {
@@ -272,8 +272,6 @@ function Enable-PodeWatchdog {
         }
     }
 }
-
-
 
 <#
 .SYNOPSIS
@@ -373,17 +371,19 @@ function Get-PodeWatchdogProcessMetric {
                 'Status' {
                     # Return a hashtable with status metrics about the monitored process
                     return @{
-                        Status        = $processInfo.Status
-                        Accessible    = $processInfo.Accessible
-                        Pid           = $processInfo.Pid
-                        CurrentUptime = $processInfo.CurrentUptime
-                        TotalUptime   = $processInfo.TotalUptime
-                        RestartCount  = $processInfo.RestartCount
+                        Status          = $processInfo.Status
+                        Accessible      = $processInfo.Accessible
+                        Pid             = $processInfo.Pid
+                        CurrentUptime   = $processInfo.CurrentUptime
+                        TotalUptime     = $processInfo.TotalUptime
+                        RestartCount    = $processInfo.RestartCount
+                        InitialLoadTime = $processInfo.InitialLoadTime
+                        StartTime       = $processInfo.StartTime
                     }
                 }
                 'Requests' {
                     # Return metrics related to requests handled by the monitored process
-                    return $processInfo.Metrics.Requests
+                    return $processInfo.Requests
                 }
                 'Listeners' {
                     # Return a list of active listeners for the monitored process
@@ -391,7 +391,7 @@ function Get-PodeWatchdogProcessMetric {
                 }
                 'Signals' {
                     # Return metrics related to signals processed by the monitored process
-                    return $processInfo.Metrics.Signals
+                    return $processInfo.Signals
                 }
                 default {
                     return $processInfo
@@ -557,3 +557,73 @@ function Disable-PodeWatchdogAutoRestart {
 }
 
 
+<#
+.SYNOPSIS
+    Adds OpenAPI component schemas related to Pode Watchdog metrics and status for OpenAPI documentation.
+
+.DESCRIPTION
+    This function generates various OpenAPI component schemas representing metrics and status for a monitored Pode process.
+    It creates schemas for requests, listeners, signals, and the overall status of the monitored process. These schemas
+    can be used in OpenAPI documentation to provide detailed information about the monitoring status and performance
+    of the Pode Watchdog service.
+
+.PARAMETER WatchdogSchemaPrefix
+    Specifies the base name for the component schemas. Default is 'PodeWatchdog'.
+    The generated schemas will have names prefixed with this base name, such as 'PodeWatchdogRequests' or 'PodeWatchdogStatus'.
+
+.EXAMPLE
+    Add-PodeWatchdogOASchema -WatchdogSchemaPrefix 'CustomWatchdog'
+
+    This example adds OpenAPI schemas related to the Pode Watchdog service, with the base name 'CustomWatchdog'.
+
+.NOTES
+    This function is used internally for OpenAPI schema generation and may be subject to change in future versions.
+#>
+
+function Add-PodeWatchdogOASchema {
+    param(
+        [string]
+        $WatchdogSchemaPrefix = 'PodeWatchdog'
+    )
+
+    # Add a schema for request metrics, including status codes and total requests.
+    New-PodeOAObjectProperty -Name 'StatusCode' -AdditionalProperties (New-PodeOAIntProperty -Description 'Count of responses for a specific status code') |
+        New-PodeOAIntProperty -Name 'Total' -Description 'Total number of requests' -Format Int32 -Required |
+        New-PodeOAObjectProperty -Example (@{'Total' = 6; StatusCode = @{ '200' = 1; '404' = 5 } }) |
+        Add-PodeOAComponentSchema -Name "$($WatchdogSchemaPrefix)Requests" -Description 'Request metrics'
+
+    # Define listener metrics with properties for counts of listeners, queued requests, and processing requests.
+    $oaCount = New-PodeOAIntProperty -Name 'Count' -Description 'Number of listeners' -Format Int32 -Example 85 -Required |
+        New-PodeOAIntProperty -Name 'QueuedCount' -Description 'Number of queued requests' -Format Int32 -Example 60 -Required |
+        New-PodeOAIntProperty -Name 'ProcessingCount' -Description 'Number of requests being processed' -Format Int32 -Example 50 -Required
+
+    # Add listener metrics as an OpenAPI component schema.
+    $oaCount | New-PodeOAObjectProperty |
+        Add-PodeOAComponentSchema -Name "$($WatchdogSchemaPrefix)Listeners" -Description 'Listener information for the monitored process'
+
+    # Add a schema for signal metrics, including total signals and separate client/server listener properties.
+    New-PodeOAIntProperty -Name 'Total' -Description 'Total number of signals' -Format Int32 -Example 390 -Required |
+        New-PodeOAObjectProperty -Name 'Client' -properties $oaCount -Required |
+        New-PodeOAObjectProperty -Name 'Server' -properties $oaCount -Required |
+        New-PodeOAObjectProperty |
+        Add-PodeOAComponentSchema -Name "$($WatchdogSchemaPrefix)Signals" -Description 'Signal metrics'
+
+    # Define status information for the monitored process, including its status, uptime, and restart count.
+    $oaStatus = New-PodeOAStringProperty -Name 'Status' -Description 'Monitored process status' -Enum 'Restarting', 'Starting', 'Running', 'Stopping', 'Stopped' -Example 'Running' -Required |
+        New-PodeOABoolProperty -Name 'Accessible' -Description 'Is the content on the monitored process accessible?' -Example $true -Required |
+        New-PodeOAIntProperty -Name 'Pid' -Description 'Process ID of the monitored process' -Format Int32 -Example 25412 -Required |
+        New-PodeOAIntProperty -Name 'CurrentUptime' -Description 'Current uptime of the monitored process in seconds' -Format Int32 -Example 17 -Required |
+        New-PodeOAIntProperty -Name 'TotalUptime' -Description 'Total uptime of the monitored process in seconds' -Format Int32 -Example 3816 -Required |
+        New-PodeOAIntProperty -Name 'RestartCount' -Description 'Number of times the process has been restarted' -Format Int32 -Example 2 -Required |
+        New-PodeOAStringProperty -Name 'InitialLoadTime' -Description 'Time the server was initially loaded' -Format 'date-time' -Example '2024-10-15T13:48:40.8797682Z' -Required |
+        New-PodeOAStringProperty -Name 'StartTime' -Description 'Time the server started' -Format 'date-time' -Example '2024-10-15T13:48:44.6778411Z' -Required
+
+    # Add the status schema as an OpenAPI component.
+    $oaStatus | New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "$($WatchdogSchemaPrefix)Status" -Description 'Status of the monitored process'
+
+    # Combine the status schema with signals, requests, and listeners into a full monitoring schema.
+    $oaStatus | New-PodeOAComponentSchemaProperty -Name 'Signals' -Reference "$($WatchdogSchemaPrefix)Signals" -Required |
+        New-PodeOAComponentSchemaProperty -Name 'Requests' -Reference "$($WatchdogSchemaPrefix)Requests" -Required |
+        New-PodeOAComponentSchemaProperty -Name 'Listeners' -Reference "$($WatchdogSchemaPrefix)Listeners" -Required |
+        New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name "$($WatchdogSchemaPrefix)Monitor" -Description 'Process monitoring information'
+}

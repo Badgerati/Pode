@@ -2022,28 +2022,22 @@ function New-PodeOAComponentSchemaProperty {
         [Parameter(  ParameterSetName = 'Array')]
         [switch]
         $XmlWrapped,
-
-        [Parameter(ParameterSetName = 'Array')]
+ 
         [object]
         $Example,
 
-        [Parameter(ParameterSetName = 'Array')]
         [switch]
         $Deprecated,
 
-        [Parameter(ParameterSetName = 'Array')]
         [switch]
         $Required,
 
-        [Parameter(ParameterSetName = 'Array')]
         [switch]
         $Nullable,
 
-        [Parameter(ParameterSetName = 'Array')]
         [switch]
         $ReadOnly,
 
-        [Parameter(ParameterSetName = 'Array')]
         [switch]
         $WriteOnly,
 

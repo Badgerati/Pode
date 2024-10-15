@@ -240,14 +240,21 @@ function Send-PodeWatchdogData {
 
     # Collect and serialize Watchdog data to JSON format
     $jsonData = [ordered]@{
-        Status        = $watchdog.Status
-        Accessible    = $watchdog.Accessible
-        Pid           = $PID
-        CurrentUptime = (Get-PodeServerUptime)
-        TotalUptime   = (Get-PodeServerUptime -Total)
-        RestartCount  = (Get-PodeServerRestartCount)
-        Metrics       = $PodeContext.Metrics
-        Listeners     = $PodeContext.Server.Signals.Listener.Contexts
+        Status          = $watchdog.Status
+        Accessible      = $watchdog.Accessible
+        Pid             = $PID
+        StartTime       = $PodeContext.Metrics.Server.StartTime
+        InitialLoadTime = $PodeContext.Metrics.Server.InitialLoadTime
+        CurrentUptime   = (Get-PodeServerUptime)
+        TotalUptime     = (Get-PodeServerUptime -Total)
+        RestartCount    = (Get-PodeServerRestartCount)
+        Listeners       = $PodeContext.Server.Signals.Listener.Contexts
+        Requests        = $PodeContext.Metrics.Requests
+        Signals         = @{
+            Total  = $PodeContext.Metrics.Signals.Total
+            Server = $PodeContext.Server.Signals.Listener.ServerSignals
+            Client = $PodeContext.Server.Signals.Listener.ClientSignals
+        }
     } | ConvertTo-Json -Compress -Depth 4
 
     # Log and send the data to the server

@@ -3530,7 +3530,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'hashtable' {
-                if (! $hashtable.GetEnumerator().MoveNext()) {
+                if ($InputObject.GetEnumerator().MoveNext()) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
@@ -3545,8 +3545,8 @@ function ConvertTo-PodeYamlInternal {
                             }
                         }
                         else {
-                                if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
-                                $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
+                            if ($InputObject[$item] -is [string]) { $increment = 2 } else { $increment = 1 }
+                            $null = $string.Append((ConvertTo-PodeYamlInternal -InputObject $InputObject[$item] -Depth $Depth -NestingLevel ($NestingLevel + $increment)))
                         }
                     }
                     $string.ToString()
