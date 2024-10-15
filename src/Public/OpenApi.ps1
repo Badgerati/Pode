@@ -410,6 +410,13 @@ function Add-PodeOAServerEndpoint {
         if ($Variables) {
             $lUrl.variables = $Variables
         }
+        if ($lUrl -notmatch '^(?i)https?://') {
+            foreach ($srv in $PodeContext.Server.OpenAPI.Definitions[$tag].servers) {
+                if ($srv.url -notmatch '^(?i)https?://') {
+                    throw ("Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition." -f $Url, $srv.url)
+                }
+            }
+        }
         $PodeContext.Server.OpenAPI.Definitions[$tag].servers += $lUrl
     }
 }
@@ -1632,16 +1639,24 @@ function Set-PodeOARouteInfo {
             $Route = $pipelineValue
         }
 
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+        $defaultTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
         foreach ($r in @($Route)) {
-            if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
-                if ($r.OpenApi.IsDefTagConfigured ) {
-                    # Definition Tag for a Route cannot be changed.
-                    throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
+            if ($DefinitionTag) {
+                if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
+                    if ($r.OpenApi.IsDefTagConfigured ) {
+                        # Definition Tag for a Route cannot be changed.
+                        throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
+                    }
+                    else {
+                        $r.OpenApi.DefinitionTag = $defaultTag
+                        $r.OpenApi.IsDefTagConfigured = $true
+                    }
                 }
-                else {
-                    $r.OpenApi.DefinitionTag = $DefinitionTag
+            }
+            else {
+                if (! $r.OpenApi.IsDefTagConfigured ) {
+                    $r.OpenApi.DefinitionTag = $defaultTag
                     $r.OpenApi.IsDefTagConfigured = $true
                 }
             }
@@ -1651,7 +1666,7 @@ function Set-PodeOARouteInfo {
                     # OperationID:$OperationId has to be unique and cannot be applied to an array
                     throw ($PodeLocale.operationIdMustBeUniqueForArrayExceptionMessage -f $OperationId)
                 }
-                foreach ($tag in $DefinitionTag) {
+                foreach ($tag in $defaultTag) {
                     if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
                         # OperationID:$OperationId has to be unique
                         throw ($PodeLocale.operationIdMustBeUniqueExceptionMessage -f $OperationId)
