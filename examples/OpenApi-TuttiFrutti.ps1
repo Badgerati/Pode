@@ -101,7 +101,7 @@ Some useful links:
 
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type ReDoc -Path '/docs/redoc' -DarkMode -DefinitionTag 'v3'
-    Enable-PodeOAViewer -Type RapiDoc -Path '5/docs/rapidoc' -DarkMode -DefinitionTag 'v3'
+    Enable-PodeOAViewer -Type RapiDoc -Path '/docs/rapidoc' -DarkMode -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type StopLight -Path '/docs/stoplight' -DarkMode -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type Explorer -Path '/docs/explorer' -DarkMode -DefinitionTag 'v3'
     Enable-PodeOAViewer -Type RapiPdf -Path '/docs/rapipdf' -DarkMode -DefinitionTag 'v3'
