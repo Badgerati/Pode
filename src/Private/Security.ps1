@@ -1037,18 +1037,32 @@ function Protect-PodeContentSecurityKeyword {
     $Name = $Name.ToLowerInvariant()
 
     $keywords = @(
+        # standard keywords
         'none',
         'self',
+        'strict-dynamic',
+        'report-sample',
+        'inline-speculation-rules',
+
+        # unsafe keywords
         'unsafe-inline',
-        'unsafe-eval'
+        'unsafe-eval',
+        'unsafe-hashes',
+        'wasm-unsafe-eval'
     )
 
     $schemes = @(
         'http',
         'https',
+        'data',
+        'blob',
+        'filesystem',
+        'mediastream',
         'ws',
         'wss',
-        'data',
+        'ftp',
+        'mailto',
+        'tel',
         'file'
     )
 
@@ -1183,7 +1197,19 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
         Protect-PodeContentSecurityKeyword -Name 'base-uri' -Value $Params.BaseUri -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'form-action' -Value $Params.FormAction -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'frame-ancestors' -Value $Params.FrameAncestor -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'fenched-frame-src' -Value $Params.FencedFrame -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'prefetch-src' -Value $Params.Prefetch -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'script-src-attr' -Value $Params.ScriptAttr -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'script-src-elem' -Value $Params.ScriptElem -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'style-src-attr' -Value $Params.StyleAttr -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'style-src-elem' -Value $Params.StyleElem -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'worker-src' -Value $Params.Worker -Append:$Append
     )
+
+    # add "report-uri" if supplied
+    if (![string]::IsNullOrWhiteSpace($Params.ReportUri)) {
+        $values += "report-uri $($Params.ReportUri)".Trim()
+    }
 
     if (![string]::IsNullOrWhiteSpace($Params.Sandbox) -and ($Params.Sandbox -ine 'None')) {
         $values += "sandbox $($Params.Sandbox.ToLowerInvariant())".Trim()
@@ -1202,7 +1228,13 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
 
     # Add the Content Security Policy header to the response or relevant context. This cmdlet
     # sets the HTTP header with the name 'Content-Security-Policy' and the constructed value.
-    Add-PodeSecurityHeader -Name 'Content-Security-Policy' -Value $value
+    # if ReportOnly is set, the header name is set to 'Content-Security-Policy-Report-Only'.
+    $header = 'Content-Security-Policy'
+    if ($Params.ReportOnly) {
+        $header = 'Content-Security-Policy-Report-Only'
+    }
+
+    Add-PodeSecurityHeader -Name $header -Value $value
 
     # this is done to explicitly disable XSS auditors in modern browsers
     # as having it enabled has now been found to cause more vulnerabilities
