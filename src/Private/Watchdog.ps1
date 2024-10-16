@@ -206,7 +206,7 @@ function Restart-PodeWatchdogMonitoredProcess {
             Write-PodeWatchdogLog -Watchdog $watchdog -Message 'Cannot restart a process that is not in running state.'
             return $false
         }
-        
+
         $restartCount = $watchdog.ProcessInfo.RestartCount
         # Attempt to restart the monitored process via pipe communication
         if (! (Send-PodeWatchdogMessage -Name $Name -Command 'Restart')) {
@@ -604,7 +604,7 @@ function Get-PodeWatchdogPipeServerScriptBlock {
                         $pipeName,
                         [System.IO.Pipes.PipeDirection]::InOut,
                         2,
-                        [System.IO.Pipes.PipeTransmissionMode]::Message,
+                        [System.IO.Pipes.PipeTransmissionMode]::Byte,
                         [System.IO.Pipes.PipeOptions]::None
                     )
                     Write-PodeWatchdogLog -Watchdog $watchdog -Message 'New PipeServer instance created and stored in Watchdog context.'
