@@ -799,29 +799,41 @@ Task SetupPowerShell {
             osx   = "powershell-$($PowerShellVersion)-$($os)-$($arch).tar.gz"
         })[$os]
 
-    # build the blob name
-    $blobName = "v$($PowerShellVersion -replace '\.', '-')"
+    # build the URL
+    $urls = @{
+        Old = "https://pscoretestdata.blob.core.windows.net/v$($PowerShellVersion -replace '\.', '-')/$($packageName)"
+        New = "https://powershellinfraartifacts-gkhedzdeaghdezhr.z01.azurefd.net/install/v$($PowerShellVersion)/$($packageName)"
+    }
 
     # download the package to a temp location
     $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
     $downloadParams = @{
-        Uri         = "https://pscoretestdata.blob.core.windows.net/$($blobName)/$($packageName)"
+        Uri         = $urls.New
         OutFile     = $outputFile
         ErrorAction = 'Stop'
     }
 
-    Write-Host "Downloading $($packageName) from $($downloadParams.Uri)"
     Write-Host "Output file: $($outputFile)"
 
-    # retry the download 3 times, with a sleep of 10s between each attempt
+    # retry the download 6 times, with a sleep of 10s between each attempt, and altering between old and new URLs
     $counter = 0
     $success = $false
 
     do {
         try {
             $counter++
-            Write-Host "Attempt $($counter) of 3"
+            Write-Host "Attempt $($counter) of 6"
 
+            # use new URL for odd attempts, and old URL for even attempts
+            if ($counter % 2 -eq 0) {
+                $downloadParams.Uri = $urls.Old
+            }
+            else {
+                $downloadParams.Uri = $urls.New
+            }
+
+            # download the package
+            Write-Host "Attempting download of $($packageName) from $($downloadParams.Uri)"
             Invoke-WebRequest @downloadParams
 
             $success = $true
@@ -829,11 +841,11 @@ Task SetupPowerShell {
         }
         catch {
             $success = $false
-            if ($counter -ge 3) {
-                throw "Failed to download PowerShell package after 3 attempts. Error: $($_.Exception.Message)"
+            if ($counter -ge 6) {
+                throw "Failed to download PowerShell package after 6 attempts. Error: $($_.Exception.Message)"
             }
 
-            Start-Sleep -Seconds 10
+            Start-Sleep -Seconds 5
         }
     } while (!$success)
 
