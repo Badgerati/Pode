@@ -14,6 +14,9 @@ If supplied, the Strict-Transport-Security header will be set.
 .PARAMETER XssBlock
 If supplied, the X-XSS-Protection header will be set to blocking mode. (Default: Off)
 
+.PARAMETER CspReportOnly
+If supplied, the Content-Security-Policy header will be set as the Content-Security-Policy-Report-Only header.
+
 .EXAMPLE
 Set-PodeSecurity -Type Simple
 
@@ -32,7 +35,10 @@ function Set-PodeSecurity {
         $UseHsts,
 
         [switch]
-        $XssBlock
+        $XssBlock,
+
+        [switch]
+        $CspReportOnly
     )
 
     # general headers
@@ -55,7 +61,7 @@ function Set-PodeSecurity {
 
     Set-PodeSecurityCrossOrigin -Embed Require-Corp -Open Same-Origin -Resource Same-Origin
     Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
-    Set-PodeSecurityContentSecurityPolicy -Default 'self' -XssBlock:$XssBlock
+    Set-PodeSecurityContentSecurityPolicy -Default 'self' -XssBlock:$XssBlock -ReportOnly:$CspReportOnly
 
     # only add hsts if specifiec
     if ($UseHsts) {
@@ -308,14 +314,41 @@ The values to use for the FormAction portion of the header.
 .PARAMETER FrameAncestor
 The values to use for the FrameAncestor portion of the header.
 
+.PARAMETER FencedFrame
+The values to use for the FencedFrame portion of the header.
+
+.PARAMETER Prefetch
+The values to use for the Prefetch portion of the header.
+
+.PARAMETER ScriptAttr
+The values to use for the ScriptAttr portion of the header.
+
+.PARAMETER ScriptElem
+The values to use for the ScriptElem portion of the header.
+
+.PARAMETER StyleAttr
+The values to use for the StyleAttr portion of the header.
+
+.PARAMETER StyleElem
+The values to use for the StyleElem portion of the header.
+
+.PARAMETER Worker
+The values to use for the Worker portion of the header.
+
 .PARAMETER Sandbox
 The value to use for the Sandbox portion of the header.
+
+.PARAMETER ReportUri
+The value to use for the ReportUri portion of the header.
 
 .PARAMETER UpgradeInsecureRequests
 If supplied, the header will have the upgrade-insecure-requests value added.
 
 .PARAMETER XssBlock
 If supplied, the X-XSS-Protection header will be set to blocking mode. (Default: Off)
+
+.PARAMETER ReportOnly
+If supplied, the header will be set as a report-only header.
 
 .EXAMPLE
 Set-PodeSecurityContentSecurityPolicy -Default 'self'
@@ -380,17 +413,52 @@ function Set-PodeSecurityContentSecurityPolicy {
         $FrameAncestor,
 
         [Parameter()]
+        [string[]]
+        $FencedFrame,
+
+        [Parameter()]
+        [string[]]
+        $Prefetch,
+
+        [Parameter()]
+        [string[]]
+        $ScriptAttr,
+
+        [Parameter()]
+        [string[]]
+        $ScriptElem,
+
+        [Parameter()]
+        [string[]]
+        $StyleAttr,
+
+        [Parameter()]
+        [string[]]
+        $StyleElem,
+
+        [Parameter()]
+        [string[]]
+        $Worker,
+
+        [Parameter()]
         [ValidateSet('', 'Allow-Downloads', 'Allow-Downloads-Without-User-Activation', 'Allow-Forms', 'Allow-Modals', 'Allow-Orientation-Lock',
             'Allow-Pointer-Lock', 'Allow-Popups', 'Allow-Popups-To-Escape-Sandbox', 'Allow-Presentation', 'Allow-Same-Origin', 'Allow-Scripts',
             'Allow-Storage-Access-By-User-Activation', 'Allow-Top-Navigation', 'Allow-Top-Navigation-By-User-Activation', 'None')]
         [string]
         $Sandbox = 'None',
 
+        [Parameter()]
+        [string]
+        $ReportUri,
+
         [switch]
         $UpgradeInsecureRequests,
 
         [switch]
-        $XssBlock
+        $XssBlock,
+
+        [switch]
+        $ReportOnly
     )
 
     Set-PodeSecurityContentSecurityPolicyInternal -Params $PSBoundParameters
@@ -445,17 +513,43 @@ The values to add for the FormAction portion of the header.
 .PARAMETER FrameAncestor
 The values to add for the FrameAncestor portion of the header.
 
+.PARAMETER FencedFrame
+The values to add for the FencedFrame portion of the header.
+
+.PARAMETER Prefetch
+The values to add for the Prefetch portion of the header.
+
+.PARAMETER ScriptAttr
+The values to add for the ScriptAttr portion of the header.
+
+.PARAMETER ScriptElem
+The values to add for the ScriptElem portion of the header.
+
+.PARAMETER StyleAttr
+The values to add for the StyleAttr portion of the header.
+
+.PARAMETER StyleElem
+The values to add for the StyleElem portion of the header.
+
+.PARAMETER Worker
+The values to add for the Worker portion of the header.
+
 .PARAMETER Sandbox
 The value to use for the Sandbox portion of the header.
 
+.PARAMETER ReportUri
+The value to use for the ReportUri portion of the header.
+
 .PARAMETER UpgradeInsecureRequests
 If supplied, the header will have the upgrade-insecure-requests value added.
+
+.PARAMETER ReportOnly
+If supplied, the header will be set as a report-only header.
 
 .EXAMPLE
 Add-PodeSecurityContentSecurityPolicy -Default '*.twitter.com' -Image 'data'
 #>
 function Add-PodeSecurityContentSecurityPolicy {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -515,14 +609,49 @@ function Add-PodeSecurityContentSecurityPolicy {
         $FrameAncestor,
 
         [Parameter()]
+        [string[]]
+        $FencedFrame,
+
+        [Parameter()]
+        [string[]]
+        $Prefetch,
+
+        [Parameter()]
+        [string[]]
+        $ScriptAttr,
+
+        [Parameter()]
+        [string[]]
+        $ScriptElem,
+
+        [Parameter()]
+        [string[]]
+        $StyleAttr,
+
+        [Parameter()]
+        [string[]]
+        $StyleElem,
+
+        [Parameter()]
+        [string[]]
+        $Worker,
+
+        [Parameter()]
         [ValidateSet('', 'Allow-Downloads', 'Allow-Downloads-Without-User-Activation', 'Allow-Forms', 'Allow-Modals', 'Allow-Orientation-Lock',
             'Allow-Pointer-Lock', 'Allow-Popups', 'Allow-Popups-To-Escape-Sandbox', 'Allow-Presentation', 'Allow-Same-Origin', 'Allow-Scripts',
             'Allow-Storage-Access-By-User-Activation', 'Allow-Top-Navigation', 'Allow-Top-Navigation-By-User-Activation', 'None')]
         [string]
         $Sandbox = 'None',
 
+        [Parameter()]
+        [string]
+        $ReportUri,
+
         [switch]
-        $UpgradeInsecureRequests
+        $UpgradeInsecureRequests,
+
+        [switch]
+        $ReportOnly
     )
 
     # Record the operation on the trace log
