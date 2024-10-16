@@ -16,7 +16,7 @@ Describe 'Set-PodeState' {
         { Set-PodeState -Name 'test' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
-    It 'Sets and returns an object' {
+    It 'Sets and returns an object (hashtable)' {
         $PodeContext.Server = @{ 'State' = @{} }
         $result = Set-PodeState -Name 'test' -Value 7
 
@@ -25,12 +25,12 @@ Describe 'Set-PodeState' {
         $PodeContext.Server.State['test'].Scope | Should -Be @()
     }
 
-    It 'Sets by pipe and returns an object array' {
-        $PodeContext.Server = @{ 'State' = @{} }
-        $result =  @(7,3,4)|Set-PodeState -Name 'test'
+    It 'Sets and returns an object (ConcurrentDictionary)' {
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase) }
+        $result = Set-PodeState -Name 'test' -Value 7
 
-        $result | Should -Be @(7,3,4)
-        $PodeContext.Server.State['test'].Value | Should -Be @(7,3,4)
+        $result | Should -Be 7
+        $PodeContext.Server.State['test'].Value | Should -Be 7
         $PodeContext.Server.State['test'].Scope | Should -Be @()
     }
 }
@@ -41,8 +41,14 @@ Describe 'Get-PodeState' {
         { Get-PodeState -Name 'test' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
-    It 'Gets an object from the state' {
+    It 'Gets an object from the state (hashtable)' {
         $PodeContext.Server = @{ 'State' = @{} }
+        Set-PodeState -Name 'test' -Value 8
+        Get-PodeState -Name 'test' | Should -Be 8
+    }
+
+    It 'Gets an object from the state (ConcurrentDictionary)' {
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Get-PodeState -Name 'test' | Should -Be 8
     }
@@ -54,8 +60,15 @@ Describe 'Remove-PodeState' {
         { Remove-PodeState -Name 'test' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
-    It 'Removes an object from the state' {
+    It 'Removes an object from the state (hashtable)' {
         $PodeContext.Server = @{ 'State' = @{} }
+        Set-PodeState -Name 'test' -Value 8
+        Remove-PodeState -Name 'test' | Should -Be 8
+        $PodeContext.Server.State['test'] | Should -Be $null
+    }
+
+    It 'Removes an object from the state (ConcurrentDictionary)' {
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Remove-PodeState -Name 'test' | Should -Be 8
         $PodeContext.Server.State['test'] | Should -Be $null
@@ -125,14 +138,25 @@ Describe 'Test-PodeState' {
         { Test-PodeState -Name 'test' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
-    It 'Returns true for an object being in the state' {
+    It 'Returns true for an object being in the state (hashtable)' {
         $PodeContext.Server = @{ 'State' = @{} }
         Set-PodeState -Name 'test' -Value 8
         Test-PodeState -Name 'test' | Should -Be $true
     }
 
-    It 'Returns false for an object not being in the state' {
+    It 'Returns false for an object not being in the state (hashtable)' {
         $PodeContext.Server = @{ 'State' = @{} }
+        Set-PodeState -Name 'test' -Value 8
+        Test-PodeState -Name 'tests' | Should -Be $false
+    }
+    It 'Returns true for an object being in the state (ConcurrentDictionary)' {
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase) }
+        Set-PodeState -Name 'test' -Value 8
+        Test-PodeState -Name 'test' | Should -Be $true
+    }
+
+    It 'Returns false for an object not being in the state (ConcurrentDictionary)' {
+        $PodeContext.Server = @{ 'State' = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new([StringComparer]::OrdinalIgnoreCase) }
         Set-PodeState -Name 'test' -Value 8
         Test-PodeState -Name 'tests' | Should -Be $false
     }
