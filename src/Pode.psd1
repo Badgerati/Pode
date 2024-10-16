@@ -217,6 +217,7 @@
         'Add-PodeMiddleware',
         'Remove-PodeMiddleware',
         'Clear-PodeMiddleware',
+        'Test-PodeMiddleware',
         'Add-PodeAccessRule',
         'Add-PodeLimitRule',
         'New-PodeCsrfToken',
@@ -498,7 +499,17 @@
         'Test-PodeScopedVariable',
         'Clear-PodeScopedVariables',
         'Get-PodeScopedVariable',
-        'Use-PodeScopedVariables'
+        'Use-PodeScopedVariables',
+
+        # watchdog
+        'Enable-PodeWatchdog',
+        'Test-PodeWatchdog',
+        'Get-PodeWatchdogProcessMetric',
+        'Set-PodeWatchdogProcessState',
+        'Enable-PodeWatchdogAutoRestart',
+        'Disable-PodeWatchdogAutoRestart',
+        'Add-PodeWatchdogOASchema'
+
     )
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
