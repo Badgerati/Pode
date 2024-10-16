@@ -146,6 +146,9 @@ function Start-PodeServer {
         # Sets the name of the current runspace
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
+        # Record the operation on the trace log
+        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
         # ensure the session is clean
         $PodeContext = $null
         $ShowDoneMessage = $true
@@ -191,8 +194,11 @@ function Start-PodeServer {
                 [Console]::TreatControlCAsInput = $true
             }
 
-            # start the file monitor for interally restarting
-            Start-PodeFileMonitor
+        if ($PodeContext.Server.Logging.Enabled) {
+            Enable-PodeLogging
+        }
+        # start the file monitor for interally restarting
+        Start-PodeFileMonitor
 
             # start the server
             Start-PodeInternalServer -Request $Request -Browse:$Browse
@@ -935,6 +941,9 @@ function Add-PodeEndpoint {
         $Default
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeEndpoint' -ThrowError
 
@@ -1355,6 +1364,10 @@ function Set-PodeDefaultFolder {
         [string]
         $Path
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if (Test-Path -Path $Path -PathType Container) {
         $PodeContext.Server.DefaultFolders[$Type] = $Path
     }

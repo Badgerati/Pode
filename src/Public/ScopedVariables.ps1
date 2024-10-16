@@ -240,6 +240,9 @@ function Add-PodeScopedVariable {
         $ScriptBlock
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     Add-PodeScopedVariableInternal @PSBoundParameters
 }
 
@@ -263,6 +266,9 @@ function Remove-PodeScopedVariable {
         [string]
         $Name
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $null = $PodeContext.Server.ScopedVariables.Remove($Name)
 }
@@ -305,6 +311,10 @@ function Clear-PodeScopedVariables {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
+
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $null = $PodeContext.Server.ScopedVariables.Clear()
 }
