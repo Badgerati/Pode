@@ -1149,7 +1149,12 @@ function Get-PodeOpenApiDefinitionInternal {
 
                 #remove the ServerUrl part
                 if ( $localEndpoint) {
-                    $_route.OpenApi.Path = $_route.OpenApi.Path.replace($localEndpoint, '')
+                    if ($_route.Path.StartsWith($localEndpoint)) {
+                        $_route.OpenApi.Path = $_route.OpenApi.Path.replace($localEndpoint, '')
+                    }
+                    else {
+                        continue
+                    }
                 }
                 # do nothing if it has no responses set
                 if ($_route.OpenApi.Responses.Count -eq 0) {
