@@ -141,6 +141,37 @@ function Invoke-PodeBuildDotnetBuild($target) {
 
 }
 
+
+function Invoke-PodeBuildDotnetMonitorSrvBuild() {
+    # Retrieve the highest installed SDK version
+    $majorVersion = ([version](dotnet --version)).Major
+
+    # Determine if the target framework is compatible
+    $isCompatible = $majorVersion -ge 8
+
+    # Skip build if not compatible
+    if ($isCompatible) {
+        Write-Host "SDK for target framework $target is compatible with the installed SDKs"
+    }
+    else {
+        Write-Host "SDK for target framework $target is not compatible with the installed SDKs. Skipping build."
+        return
+    }
+    if ($Version) {
+        Write-Host "Assembly Version $Version"
+        $AssemblyVersion = "-p:Version=$Version"
+    }
+    else {
+        $AssemblyVersion = ''
+    }
+
+    dotnet publish --configuration Release  $AssemblyVersion --output ../Bin/$target
+    if (!$?) {
+        throw "dotnet publish failed for $($target)"
+    }
+
+}
+
 function Get-PodeBuildPwshEOL {
     $eol = Invoke-RestMethod -Uri 'https://endoflife.date/api/powershell.json' -Headers @{ Accept = 'application/json' }
     return @{
@@ -401,6 +432,21 @@ Task Build BuildDeps, {
     finally {
         Pop-Location
     }
+
+    if (Test-Path ./src/Bin) {
+        Remove-Item -Path ./src/Bin -Recurse -Force | Out-Null
+    }
+
+    try {
+        Push-Location ./src/PodePwshMonitor
+        Invoke-PodeBuildDotnetMonitorSrvBuild
+    }
+    finally {
+        Pop-Location
+    }
+
+
+
 }
 
 
@@ -474,7 +520,7 @@ Task Pack Build, {
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
     # which source folders do we need? create them and copy their contents
-    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales')
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales','Bin')
     $folders | ForEach-Object {
         New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
         Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
@@ -671,6 +717,12 @@ Task CleanPkg {
 # Synopsis: Clean the libs folder
 Task CleanLibs {
     $path = './src/Libs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path  contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    
+    $path = './src/Bin'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing $path  contents"
         Remove-Item -Path $path -Recurse -Force | Out-Null

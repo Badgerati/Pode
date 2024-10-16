@@ -37,7 +37,7 @@ using System.IO.Pipes;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace PodePwshMonitorService
+namespace Pode.Services
 {
     public class PodePwshMonitor
     {
@@ -51,11 +51,13 @@ namespace PodePwshMonitorService
         private readonly int _shutdownWaitTimeMs;
         private string _pipeName;
         private NamedPipeClientStream _pipeClient;  // Changed to client stream
+        private DateTime _lastLogTime;
 
-        private readonly string _logFilePath = "C:\\Users\\m_dan\\Documents\\GitHub\\Pode\\examples\\HelloWorld\\PodePwshMonitorService.log"; // Path to log file
+        private readonly string _logFilePath; // Path to log file
 
-        public PodePwshMonitor(string scriptPath, string pwshPath, string parameterString = "", bool quiet = true, bool disableTermination = true, int shutdownWaitTimeMs = 30000)
+        public PodePwshMonitor(string scriptPath, string pwshPath, string parameterString = "", string logFilePath = ".\\PodePwshMonitorService.log", bool quiet = true, bool disableTermination = true, int shutdownWaitTimeMs = 30000)
         {
+              Console.WriteLine("logFilePath{0}", logFilePath);
             // Initialize fields with constructor arguments
             _scriptPath = scriptPath;                      // Path to the PowerShell script to be executed
             _pwshPath = pwshPath;                          // Path to the PowerShell executable (pwsh)
@@ -63,6 +65,7 @@ namespace PodePwshMonitorService
             _disableTermination = disableTermination;      // Flag to disable termination of the service
             _quiet = quiet;                                // Flag to suppress output for a quieter service
             _shutdownWaitTimeMs = shutdownWaitTimeMs;      // Maximum wait time before forcefully shutting down the process
+            _logFilePath = logFilePath ?? ".\\PodePwshMonitorService.log"; // Default to local file if none provided
 
             // Dynamically generate a unique PipeName for communication
             _pipeName = $"PodePipe_{Guid.NewGuid()}";      // Generate a unique pipe name to avoid conflicts
@@ -101,12 +104,22 @@ namespace PodePwshMonitorService
                     // Start the process
                     _powerShellProcess.Start();
 
+                    // Enable raising events to capture process exit and handle cleanup
+                    /* _powerShellProcess.EnableRaisingEvents = true;
+                    _powerShellProcess.Exited += (sender, args) =>
+                    {
+                        Log("PowerShell process exited.");
+                        _powerShellProcess.Dispose();
+                        _powerShellProcess = null;
+                    };*/
+
                     // Log output and error asynchronously
                     _powerShellProcess.OutputDataReceived += (sender, args) => Log(args.Data);
                     _powerShellProcess.ErrorDataReceived += (sender, args) => Log(args.Data);
                     _powerShellProcess.BeginOutputReadLine();
                     _powerShellProcess.BeginErrorReadLine();
 
+                    _lastLogTime = DateTime.Now;
                     Log("PowerShell process started successfully.");
                 }
                 catch (Exception ex)
@@ -116,10 +129,14 @@ namespace PodePwshMonitorService
             }
             else
             {
-                Log("PowerShell process is already running.");
+                // Log only if more than a minute has passed since the last log
+                if ((DateTime.Now - _lastLogTime).TotalMinutes >= 1)
+                {
+                    Log("PowerShell process is already running.");
+                    _lastLogTime = DateTime.Now;
+                }
             }
         }
-
 
         public void StopPowerShellProcess()
         {
@@ -181,14 +198,21 @@ namespace PodePwshMonitorService
             }
             finally
             {
-                // Clean up the named pipe client and process
-                _powerShellProcess?.Dispose();
-                _powerShellProcess = null;
-                _pipeClient?.Dispose();
+                // Set _powerShellProcess to null only if it's still not null
+                if (_powerShellProcess != null)
+                {
+                    _powerShellProcess?.Dispose();
+                    _powerShellProcess = null;
+                }
+                // Clean up the pipe client
+                if (_pipeClient != null)
+                {
+                    _pipeClient?.Dispose();
+                    _pipeClient = null;
+                }
                 Log("PowerShell process and pipe client disposed.");
             }
         }
-
 
         public void RestartPowerShellProcess()
         {
@@ -199,7 +223,6 @@ namespace PodePwshMonitorService
                 Log("Restart message sent to PowerShell.");
             }
         }
-
 
         private void SendPipeMessage(string message)
         {
@@ -230,7 +253,6 @@ namespace PodePwshMonitorService
                 Log($"Failed to send message to PowerShell: {ex.Message}");
             }
         }
-
 
         private void Log(string data)
         {

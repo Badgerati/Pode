@@ -67,7 +67,7 @@ function Start-PodeServiceHearthbeat {
                     $PodeContext.Server.Service.PipeName,
                     [System.IO.Pipes.PipeDirection]::InOut,
                     2,  # Max number of allowed concurrent connections
-                    [System.IO.Pipes.PipeTransmissionMode]::Message,
+                    [System.IO.Pipes.PipeTransmissionMode]::Byte,
                     [System.IO.Pipes.PipeOptions]::None
                 )
 
@@ -114,11 +114,6 @@ function Start-PodeServiceHearthbeat {
 
         # Start the runspace that runs the client receiver script block
         $PodeContext.Server.Service['Runspace'] = Add-PodeRunspace -Type 'Service' -ScriptBlock ($scriptBlock) -PassThru
-    }
-    else {
-        # Log when the service is not enabled
-        Write-PodeServiceLog -Message 'Service is not working'
-        Write-PodeServiceLog -Message ($PodeService | ConvertTo-Json -Compress)
     }
 }
 

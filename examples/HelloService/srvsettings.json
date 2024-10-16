@@ -1,0 +1,11 @@
+{
+  "PodePwshWorker": {
+    "ParameterString": "",
+    "Quiet": true,
+    "ScriptPath": "C:\\Users\\m_dan\\Documents\\GitHub\\Pode\\examples\\HelloService\\HelloService.ps1",
+    "DisableTermination": true,
+    "PwshPath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    "ShutdownWaitTimeMs": 30000,
+    "LogFilePath": "C:\\Users\\m_dan\\Documents\\GitHub\\Pode\\examples\\HelloService\\logs\\HelloService_svc.log"
+  }
+}
