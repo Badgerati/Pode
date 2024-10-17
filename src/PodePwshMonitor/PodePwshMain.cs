@@ -1,7 +1,8 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
-using System;
+
 
 namespace Pode.Services
 {
@@ -11,26 +12,36 @@ namespace Pode.Services
         {
             var customConfigFile = args.Length > 0 ? args[0] : "srvsettings.json"; // Custom config file from args or default
 
-            try
+            var builder = Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddJsonFile(customConfigFile, optional: false, reloadOnChange: true);
+                })
+                .ConfigureServices((context, services) =>
+                {
+                    // Bind configuration to PodePwshWorkerOptions
+                    services.Configure<PodePwshWorkerOptions>(context.Configuration.GetSection("PodePwshWorker"));
+
+                    // Add your worker service
+                    services.AddHostedService<PodePwshWorker>();
+                });
+
+            // Check if running on Linux and use Systemd
+            if (OperatingSystem.IsLinux())
             {
-                Host.CreateDefaultBuilder(args)
-                    .UseWindowsService()  // For running as a Windows service
-                    .ConfigureAppConfiguration((context, config) =>
-                    {
-                        config.AddJsonFile(customConfigFile, optional: false, reloadOnChange: true);
-                    })
-                    .ConfigureServices((context, services) =>
-                    {
-                        services.Configure<PodePwshWorkerOptions>(context.Configuration.GetSection("PodePwshWorker"));
-                        services.AddHostedService<PodePwshWorker>();
-                    })
-                    .Build()
-                    .Run();
+                builder.UseSystemd();
             }
-            catch (Exception ex)
+            // Check if running on Windows and use Windows Service
+            else if (OperatingSystem.IsWindows())
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                builder.UseWindowsService();
             }
+             else if (OperatingSystem.IsMacOS())
+            {
+                // No specific macOS service manager, it runs under launchd
+            }
+
+            builder.Build().Run();
         }
     }
 }

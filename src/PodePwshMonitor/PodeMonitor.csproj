@@ -3,9 +3,10 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>  <!-- Ensures that an executable is generated -->
     <TargetFramework>net8.0</TargetFramework>
+    <PublishRelease>true</PublishRelease>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers> <!-- Target Windows, Linux, and macOS -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +14,10 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" /> <!-- For logging -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="8.0.1" /> <!-- For Linux systemd support -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" /> <!-- For logging -->
+
   </ItemGroup>
 
 </Project>

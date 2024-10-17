@@ -48,13 +48,33 @@ function Register-PodeService {
         [string]$Name,
 
         [string]$Description = 'This is a Pode service.',
+
         [string]$DisplayName = "Pode Service($Name)",
-        [Microsoft.PowerShell.Commands.ServiceStartupType] $StartupType = 'Automatic',
+
+        [string]
+        [validateset('Manual', 'Automatic')]
+        $StartupType = 'Automatic',
+
+        [string]
+        $SecurityDescriptorSddl,
 
         [string]$ParameterString = '',
         [bool]$Quiet = $true,
         [bool]$DisableTermination = $true,
-        [int]$ShutdownWaitTimeMs = 30000
+        [int]$ShutdownWaitTimeMs = 30000,
+
+        [string]
+        $User = 'podeuser',
+        [string]
+        $Group = 'podeuser',
+
+        [switch]
+        $Start,
+        [switch]
+        $SkipUserCreation,
+
+        [pscredential]
+        $Credential
     )
 
     if ($MyInvocation.ScriptName) {
@@ -62,12 +82,13 @@ function Register-PodeService {
         $MainScriptFileName = Split-Path -Path $MyInvocation.ScriptName -Leaf
     }
     else {
-       return $null
+        return $null
     }
 
     # Define script and log file paths
     $ScriptPath = Join-Path -Path $MainScriptPath -ChildPath $MainScriptFileName # Example script path
-    $LogFilePath = Join-Path -Path $MainScriptPath -ChildPath "/logs/$($Name)_svc.log"
+    $LogPath = Join-Path -Path $MainScriptPath -ChildPath '/logs'
+    $LogFilePath = Join-Path -Path $LogPath -ChildPath "$($Name)_svc.log"
 
     # Obtain the PowerShell path dynamically
     $PwshPath = (Get-Process -Id $PID).Path
@@ -75,12 +96,7 @@ function Register-PodeService {
     # Define the settings file path
     $settingsFile = "$MainScriptPath/srvsettings.json"
 
-    $binPath =   "$(Split-Path -Parent -Path $PSScriptRoot)/Bin"
-
-    # Check if service already exists
-    if (Get-Service -Name $Name -ErrorAction SilentlyContinue) {
-             throw "Windows Service '$Name' already exists."
-    }
+    $binPath = "$(Split-Path -Parent -Path $PSScriptRoot)/Bin"
 
     # JSON content for the service settings
     $jsonContent = @{
@@ -98,19 +114,127 @@ function Register-PodeService {
     # Convert hash table to JSON and save it to the settings file
     $jsonContent | ConvertTo-Json | Set-Content -Path $settingsFile -Encoding UTF8
 
-    # Parameters for New-Service
-    $params = @{
-        Name           = $Name
-        BinaryPathName = "$binPath/PodeMonitor.exe $settingsFile"
-        DisplayName    = $DisplayName
-        StartupType    = $StartupType
-        Description    = $Description
-    }
-    try {
-        return New-Service @params
-    }
-    catch {
-        $_ | Write-PodeErrorLog
+    switch ( [System.Environment]::OSVersion.Platform) {
+
+        [System.PlatformID]::Win32NT {
+
+            # Check if service already exists
+            if (Get-Service -Name $Name -ErrorAction SilentlyContinue) {
+                throw "Windows Service '$Name' already exists."
+            }
+
+            # Parameters for New-Service
+            $params = @{
+                Name           = $Name
+                BinaryPathName = "`"$binPath/PodeMonitor.exe`" `"$settingsFile`""
+                DisplayName    = $DisplayName
+                StartupType    = $StartupType
+                Description    = $Description
+                DependsOn      = 'NetLogon'
+            }
+            if ($Credential) {
+                $params['Credential'] = $Credential
+            }
+            if ($SecurityDescriptorSddl) {
+                $params['SecurityDescriptorSddl'] = $SecurityDescriptorSddl
+            }
+
+            try {
+                $service = New-Service @params
+                if ($Start.IsPresent) {
+                    # Start the service
+                    Start-Service -InputObject $service
+                }
+            }
+            catch {
+                $_ | Write-PodeErrorLog
+            }
+        }
+
+        [System.PlatformID]::Unix {
+            @"
+[Unit]
+Description=$Description
+After=network.target
+
+[Service]
+ExecStart=$binPath/linux-x64/PodeMonitor $settingsFile
+WorkingDirectory=$MainScriptPath
+Restart=always
+User=$User
+Group=$Group
+#  Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
+# Environment=ASPNETCORE_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target
+"@| Set-Content -Path "/etc/systemd/system/$($Name).service" -Encoding UTF8
+
+            if (!$SkipUserCreation.IsPresent) {
+                # Run the id command to check if the user exists
+                $result = id $User 2>&1
+                if ($result -match 'no such user') {
+                    # Create the user
+                    useradd -r -s /bin/false $User
+                }
+            }
+
+            # Enable the service
+            systemctl enable $($Name).service
+
+            if ($Start.IsPresent) {
+                # Start the service
+                systemctl start $($Name).service
+            }
+
+        }
+        [System.PlatformID]::MacOSX {
+            $macOsArch = 'osx-arm64'
+            if ($StartupType -eq 'Automatic') {
+                $runAtLoad = 'true'
+            }
+            else {
+                $runAtLoad = 'false'
+            }
+            @"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>Label</key>
+                <string>pode.$Name</string>
+
+                <key>ProgramArguments</key>
+                <array>
+                    <string>$binPath/$macOsArch/PodeMonitor</string> <!-- Path to your published executable -->
+                    <string>$settingsFile</string> <!-- Pass your configuration file -->
+                </array>
+
+                <key>WorkingDirectory</key>
+                <string>$MainScriptPath</string>
+
+                <key>RunAtLoad</key>
+                <$runAtLoad/>
+
+                <key>StandardOutPath</key>
+                <string>$LogPath/stdout.log</string>
+
+                <key>StandardErrorPath</key>
+                <string>$LogPath/stderr.log</string>
+
+                <key>KeepAlive</key>
+                <true/>
+            </dict>
+            </plist>
+"@| Set-Content -Path "~/Library/LaunchAgents/pode.$($Name).plist" -Encoding UTF8
+
+            launchctl load /Library/LaunchDaemons/pode.$($Name).plist
+            if ($Start.IsPresent) {
+                # Start the service
+                launchctl start pode.$($Name)
+            }
+        }
+
     }
 }
 
@@ -162,8 +286,8 @@ function Unregister-PodeService {
     }
 
     # Optionally, remove the settings file
-   # $settingsFile = "$PWD/srvsettings.json"
-#    if (Test-Path -Path $settingsFile) {
-  #      Remove-Item -Path $settingsFile -Force
+    # $settingsFile = "$PWD/srvsettings.json"
+    #    if (Test-Path -Path $settingsFile) {
+    #      Remove-Item -Path $settingsFile -Force
     #}
 }
