@@ -141,6 +141,63 @@ function Invoke-PodeBuildDotnetBuild($target) {
 
 }
 
+
+function Invoke-PodeBuildDotnetMonitorSrvBuild() {
+    # Retrieve the highest installed SDK version
+    $majorVersion = ([version](dotnet --version)).Major
+
+    # Determine if the target framework is compatible
+    $isCompatible = $majorVersion -ge 8
+
+    # Skip build if not compatible
+    if ($isCompatible) {
+        Write-Host "SDK for target framework $target is compatible with the installed SDKs"
+    }
+    else {
+        Write-Host "SDK for target framework $target is not compatible with the installed SDKs. Skipping build."
+        return
+    }
+    if ($Version) {
+        Write-Host "Assembly Version $Version"
+        $AssemblyVersion = "-p:Version=$Version"
+    }
+    else {
+        $AssemblyVersion = ''
+    }
+    foreach ($target in @('win-x64','win-arm64' ,'linux-x64','linux-arm64', 'osx-x64', 'osx-arm64')) {
+        dotnet publish --configuration Release  $AssemblyVersion --runtime $target --output ../Bin/$target
+        if (!$?) {
+            throw "dotnet publish failed for $($target)"
+        }
+    }
+
+    # Check if 'lipo' exists
+    $lipoExists = Get-Command lipo -ErrorAction SilentlyContinue
+
+    if ($lipoExists) {
+        # Define the paths for the x64 and arm64 binaries and the universal output
+        $osxX64Path = '../Bin/osx-x64/PodeMonitor'
+        $osxArm64Path = '../Bin/osx-arm64/PodeMonitor'
+        $universalPath = '../Bin/osx-universal/PodeMonitor'
+        # Run 'lipo' to combine x64 and arm64 binaries into a universal binary
+        $lipoCommand = "lipo -create $osxX64Path $osxArm64Path -output $universalPath"
+        Write-Host 'Running lipo to create universal binary...'
+
+        # Run the lipo command
+        try {
+            Invoke-Expression $lipoCommand
+            Write-Host "Universal binary created at: $universalPath"
+        }
+        catch {
+            Write-Host "Failed to create universal binary: $_"
+        }
+    }
+    else {
+        Write-Host "'lipo' not found. Please install 'lipo' to create a universal binary."
+    }
+
+}
+
 function Get-PodeBuildPwshEOL {
     $eol = Invoke-RestMethod -Uri 'https://endoflife.date/api/powershell.json' -Headers @{ Accept = 'application/json' }
     return @{
@@ -291,7 +348,7 @@ Task PrintChecksum {
 Task ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
-        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        Invoke-Expression (([System.Net.WebClient]::new()).DownloadString('https://chocolatey.org/install.ps1'))
     }
 }
 
@@ -401,6 +458,21 @@ Task Build BuildDeps, {
     finally {
         Pop-Location
     }
+
+    if (Test-Path ./src/Bin) {
+        Remove-Item -Path ./src/Bin -Recurse -Force | Out-Null
+    }
+
+    try {
+        Push-Location ./src/PodePwshMonitor
+        Invoke-PodeBuildDotnetMonitorSrvBuild
+    }
+    finally {
+        Pop-Location
+    }
+
+
+
 }
 
 
@@ -474,7 +546,7 @@ Task Pack Build, {
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
     # which source folders do we need? create them and copy their contents
-    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales')
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales', 'Bin')
     $folders | ForEach-Object {
         New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
         Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
@@ -671,6 +743,12 @@ Task CleanPkg {
 # Synopsis: Clean the libs folder
 Task CleanLibs {
     $path = './src/Libs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path  contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    $path = './src/Bin'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing $path  contents"
         Remove-Item -Path $path -Recurse -Force | Out-Null

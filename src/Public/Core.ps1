@@ -150,6 +150,23 @@ function Start-PodeServer {
         $PodeContext = $null
         $ShowDoneMessage = $true
 
+        # check if podeWatchdog is configured
+        if ($PodeService) {
+            if ($null -ne $PodeService.DisableTermination -or
+                $null -ne $PodeService.Quiet -or
+                $null -ne $PodeService.PipeName
+            ) {
+                $DisableTermination = [switch]$PodeService.DisableTermination
+                $Quiet = [switch]$PodeService.Quiet
+
+                $monitorService = @{
+                    DisableTermination = $PodeService.DisableTermination
+                    Quiet              = $PodeService.Quiet
+                    PipeName           = $PodeService.PipeName
+                }
+            }
+        }
+
         try {
             # if we have a filepath, resolve it - and extract a root path from it
             if ($PSCmdlet.ParameterSetName -ieq 'file') {
@@ -171,20 +188,23 @@ function Start-PodeServer {
                 $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
             }
 
+            $params = @{
+                ScriptBlock          = $ScriptBlock
+                FilePath             = $FilePath
+                Threads              = $Threads
+                Interval             = $Interval
+                ServerRoot           = $(Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot)
+                ServerlessType       = $ServerlessType
+                ListenerType         = $ListenerType
+                EnablePool           = $EnablePool
+                StatusPageExceptions = $StatusPageExceptions
+                DisableTermination   = $DisableTermination
+                Quiet                = $Quiet
+                EnableBreakpoints    = $EnableBreakpoints
+                Service              = $monitorService
+            }
             # create main context object
-            $PodeContext = New-PodeContext `
-                -ScriptBlock $ScriptBlock `
-                -FilePath $FilePath `
-                -Threads $Threads `
-                -Interval $Interval `
-                -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-                -ServerlessType $ServerlessType `
-                -ListenerType $ListenerType `
-                -EnablePool $EnablePool `
-                -StatusPageExceptions $StatusPageExceptions `
-                -DisableTermination:$DisableTermination `
-                -Quiet:$Quiet `
-                -EnableBreakpoints:$EnableBreakpoints
+            $PodeContext = New-PodeContext @params
 
             # set it so ctrl-c can terminate, unless serverless/iis, or disabled
             if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {
