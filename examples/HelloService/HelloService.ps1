@@ -59,21 +59,21 @@ if ($Register.IsPresent) {
     exit
 }
 if ($Unregister.IsPresent) {
-    Unregister-PodeService
+    Unregister-PodeService -Name 'HelloService'
     exit
 }
 if ($Start.IsPresent) {
-    Start-PodeService
+    Start-PodeService -Name 'HelloService'
     exit
 }
 
 if ($Stop.IsPresent) {
-    Stop-PodeService
+    Stop-PodeService -Name 'HelloService'
     exit
 }
 
 if ($Query.IsPresent) {
-    Get-PodeService
+    Get-PodeService -Name 'HelloService'
     exit
 }
 # Alternatively, you can directly import the Pode module from the system

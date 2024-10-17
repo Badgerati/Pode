@@ -106,98 +106,120 @@ function Register-PodeService {
         $SkipUserCreation,
 
         [pscredential]
-        $Credential
+        $Credential,
+
+        [string]
+        $ConfigDirectory
     )
-
-    if ($MyInvocation.ScriptName) {
-        $ScriptPath = $MyInvocation.ScriptName
-        $MainScriptPath = Split-Path -Path $ScriptPath -Parent
-        #    $MainScriptFileName = Split-Path -Path $ScriptPath -Leaf
-    }
-    else {
-        return $null
-    }
-
-    # Define script and log file paths
-    # $ScriptPath = Join-Path -Path $MainScriptPath -ChildPath $MainScriptFileName # Example script path
-    $LogPath = Join-Path -Path $MainScriptPath -ChildPath '/logs'
-    $LogFilePath = Join-Path -Path $LogPath -ChildPath "$($Name)_svc.log"
-
-    # Ensure log directory exists
-    if (-not (Test-Path $LogPath)) {
-        New-Item -Path $LogPath -ItemType Directory -Force
-    }
-
-    # Obtain the PowerShell path dynamically
-    $PwshPath = (Get-Process -Id $PID).Path
-
-    # Define the settings file path
-    $settingsFile = Join-Path -Path $MainScriptPath -ChildPath 'srvsettings.json'
-
-    $binPath = Join-Path -path (Split-Path -Parent -Path $PSScriptRoot) -ChildPath 'Bin'
-
-    # JSON content for the service settings
-    $jsonContent = @{
-        PodePwshWorker = @{
-            ScriptPath         = $ScriptPath
-            PwshPath           = $PwshPath
-            ParameterString    = $ParameterString
-            LogFilePath        = $LogFilePath
-            Quiet              = $Quiet
-            DisableTermination = $DisableTermination
-            ShutdownWaitTimeMs = $ShutdownWaitTimeMs
-            Name               = $Name
+    try {
+        if ($MyInvocation.ScriptName) {
+            $ScriptPath = $MyInvocation.ScriptName
+            $MainScriptPath = Split-Path -Path $ScriptPath -Parent
+            #    $MainScriptFileName = Split-Path -Path $ScriptPath -Leaf
         }
-    }
-
-    # Convert hash table to JSON and save it to the settings file
-    $jsonContent | ConvertTo-Json | Set-Content -Path $settingsFile -Encoding UTF8
-
-    $osArchitecture = ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture).ToString().ToLower()
-
-    # Call the appropriate platform-specific function
-    if ($IsWindows) {
-        $param = @{
-            Name                   = $Name
-            Description            = $Description
-            DisplayName            = $DisplayName
-            StartupType            = $StartupType
-            BinPath                = $binPath
-            SettingsFile           = $settingsFile
-            Credential             = $Credential
-            SecurityDescriptorSddl = $SecurityDescriptorSddl
-            Start                  = $Start
-            OsArchitecture         = $osArchitecture
-        }
-        Register-PodeWindowsService  @param
-    }
-    elseif ($IsLinux) {
-        $param = @{
-            Name             = $Name
-            Description      = $Description
-            BinPath          = $binPath
-            SettingsFile     = $settingsFile
-            User             = $User
-            Group            = $Group
-            Start            = $Start
-            SkipUserCreation = $SkipUserCreation
-            OsArchitecture   = $osArchitecture
-        }
-        Register-PodeLinuxService @param
-    }
-    elseif ($IsMacOS) {
-        $param = @{
-            Name           = $Name
-            Description    = $Description
-            BinPath        = $binPath
-            SettingsFile   = $settingsFile
-            User           = $User
-            Start          = $Start
-            OsArchitecture = $osArchitecture
+        else {
+            return $null
         }
 
+        # Define script and log file paths
+        # $ScriptPath = Join-Path -Path $MainScriptPath -ChildPath $MainScriptFileName # Example script path
+        $LogPath = Join-Path -Path $MainScriptPath -ChildPath 'logs'
+        $LogFilePath = Join-Path -Path $LogPath -ChildPath "$($Name)_svc.log"
 
-        Register-PodeMacService @param
+        # Ensure log directory exists
+        if (-not (Test-Path $LogPath)) {
+            $null = New-Item -Path $LogPath -ItemType Directory -Force
+        }
+
+        # Obtain the PowerShell path dynamically
+        $PwshPath = (Get-Process -Id $PID).Path
+
+        # Define the settings file path
+        if ($ConfigDirectory) {
+            $settingsPath = Join-Path -Path $MainScriptPath -ChildPath $ConfigDirectory
+            if (! (Test-Path -Path $settingsPath -PathType Container)) {
+                $null = New-Item -Path $settingsPath -ItemType Directory
+            }
+        }
+        else {
+            $settingsPath = $MainScriptPath
+        }
+        $settingsFile = Join-Path -Path $settingsPath -ChildPath "$($Name)_srvsettings.json"
+
+        $binPath = Join-Path -path (Split-Path -Parent -Path $PSScriptRoot) -ChildPath 'Bin'
+
+        # JSON content for the service settings
+        $jsonContent = @{
+            PodePwshWorker = @{
+                ScriptPath         = $ScriptPath
+                PwshPath           = $PwshPath
+                ParameterString    = $ParameterString
+                LogFilePath        = $LogFilePath
+                Quiet              = $Quiet
+                DisableTermination = $DisableTermination
+                ShutdownWaitTimeMs = $ShutdownWaitTimeMs
+                Name               = $Name
+            }
+        }
+
+        # Convert hash table to JSON and save it to the settings file
+        $jsonContent | ConvertTo-Json | Set-Content -Path $settingsFile -Encoding UTF8
+
+        $osArchitecture = ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture).ToString().ToLower()
+
+        # Call the appropriate platform-specific function
+        if ($IsWindows) {
+            $param = @{
+                Name                   = $Name
+                Description            = $Description
+                DisplayName            = $DisplayName
+                StartupType            = $StartupType
+                BinPath                = $binPath
+                SettingsFile           = $settingsFile
+                Credential             = $Credential
+                SecurityDescriptorSddl = $SecurityDescriptorSddl
+                OsArchitecture         = "win-$osArchitecture"
+            }
+            $operation = Register-PodeWindowsService  @param
+        }
+        elseif ($IsLinux) {
+            $param = @{
+                Name             = $Name
+                Description      = $Description
+                BinPath          = $binPath
+                SettingsFile     = $settingsFile
+                User             = $User
+                Group            = $Group
+                Start            = $Start
+                SkipUserCreation = $SkipUserCreation
+                OsArchitecture   = "linux-$osArchitecture"
+            }
+            $operation = Register-PodeLinuxService @param
+        }
+        elseif ($IsMacOS) {
+            $param = @{
+                Name           = $Name
+                Description    = $Description
+                BinPath        = $binPath
+                SettingsFile   = $settingsFile
+                User           = $User
+                OsArchitecture = "osx-$osArchitecture"
+                LogPath        = $LogPath
+            }
+
+            $operation = Register-PodeMacService @param
+        }
+
+        # Optionally start the service
+        if (  $operation -and $Start.IsPresent) {
+            $operation = Start-PodeService -Name $Name
+        }
+
+        return $operation
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+        return $false
     }
 }
 
@@ -211,8 +233,8 @@ function Register-PodeService {
     It works on Windows, Linux (systemd), and macOS (launchctl), handling platform-specific service commands to start the service.
     If the service is not registered, it will throw an error.
 
-.PARAMETER None
-    No parameters are required for this function.
+.PARAMETER Name
+    The name of the service.
 
 .EXAMPLE
     Start-PodeService
@@ -228,66 +250,77 @@ function Register-PodeService {
     - If the service is not registered, the function throws an error.
 #>
 function Start-PodeService {
+    param(
+        [string]
+        $Name
+    )
     try {
-        # Get the service name from the settings file
-        $name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
+        if (! $Name) {
+            # Get the service name from the settings file
+            $Name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
+        }
 
         if ($IsWindows) {
             # Get the Windows service
-            $service = Get-Service -Name $name -ErrorAction SilentlyContinue
+            $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
             if ($service) {
                 # Check if the service is already running
                 if ($service.Status -ne 'Running') {
-                    Start-Service -Name $name -ErrorAction Stop
+                    Start-Service -Name $Name -ErrorAction Stop
                     # Log service started successfully
-                    # Write-PodeServiceLog -Message "Service '$name' started successfully."
+                    # Write-PodeServiceLog -Message "Service '$Name' started successfully."
                 }
                 else {
                     # Log service is already running
-                    # Write-PodeServiceLog -Message "Service '$name' is already running."
+                    # Write-PodeServiceLog -Message "Service '$Name' is already running."
                 }
             }
             else {
-                throw "Service '$name' is not registered."
+                throw "Service '$Name' is not registered."
             }
         }
 
         elseif ($IsLinux) {
             # Check if the service exists
-            if (systemctl status "$name.service" -q) {
+            if (systemctl status "$Name.service" -q) {
                 # Check if the service is already running
-                $status = systemctl is-active "$name.service"
+                $status = systemctl is-active "$Name.service"
                 if ($status -ne 'active') {
-                    systemctl start "$name.service"
+                    systemctl start "$Name.service"
                     # Log service started successfully
-                    # Write-PodeServiceLog -Message "Service '$name' started successfully."
+                    # Write-PodeServiceLog -Message "Service '$Name' started successfully."
                 }
                 else {
                     # Log service is already running
-                    # Write-PodeServiceLog -Message "Service '$name' is already running."
+                    # Write-PodeServiceLog -Message "Service '$Name' is already running."
                 }
             }
             else {
-                throw "Service '$name' is not registered."
+                throw "Service '$Name' is not registered."
             }
         }
 
         elseif ($IsMacOS) {
             # Check if the service exists in launchctl
-            if (launchctl list | Select-String "pode.$name") {
-                # Check if the service is already running
-                if (-not (launchctl list "pode.$name" | Select-String "pode.$name")) {
-                    launchctl start "pode.$name"
+            if (launchctl list | Select-String "pode.$Name") {
+
+                $serviceInfo = launchctl list "pode.$Name" -join "`n"
+
+                # Check if the service has a PID entry
+                if (!($serviceInfo -match '"PID" = (\d+);')) {
+                    launchctl start "pode.$Name"
+
                     # Log service started successfully
-                    # Write-PodeServiceLog -Message "Service '$name' started successfully."
+                    # Write-PodeServiceLog -Message "Service '$Name' started successfully."
+                    return ($LASTEXITCODE -eq 0)
                 }
                 else {
                     # Log service is already running
-                    # Write-PodeServiceLog -Message "Service '$name' is already running."
+                    # Write-PodeServiceLog -Message "Service '$Name' is already running."
                 }
             }
             else {
-                throw "Service '$name' is not registered."
+                throw "Service '$Name' is not registered."
             }
         }
     }
@@ -307,8 +340,8 @@ function Start-PodeService {
     If the service is running, it will attempt to stop the service gracefully.
     The function works on Windows, Linux (systemd), and macOS (launchctl).
 
-.PARAMETER None
-    No parameters are required for this function.
+.PARAMETER Name
+    The name of the service.
 
 .EXAMPLE
     Stop-PodeService
@@ -323,57 +356,67 @@ function Start-PodeService {
     - If the service is not registered, the function throws an error.
 #>
 function Stop-PodeService {
+    param(
+        [string]
+        $Name
+    )
     try {
-        # Get the service name from the settings file
-        $name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
+        if (! $Name) {
+            # Get the service name from the settings file
+            $Name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
+        }
 
         if ($IsWindows) {
-            $service = Get-Service -Name $name -ErrorAction SilentlyContinue
+            $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
             if ($service) {
                 # Check if the service is running
                 if ($service.Status -eq 'Running') {
-                    Stop-Service -Name $name -ErrorAction Stop -WarningAction SilentlyContinue
-                    # Write-PodeServiceLog -Message "Service '$name' stopped successfully."
+                    Stop-Service -Name $Name -ErrorAction Stop -WarningAction SilentlyContinue
+                    # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                 }
                 else {
-                    # Write-PodeServiceLog -Message "Service '$name' is not running."
+                    # Write-PodeServiceLog -Message "Service '$Name' is not running."
                 }
             }
             else {
-                throw "Service '$name' is not registered."
+                throw "Service '$Name' is not registered."
             }
         }
         elseif ($IsLinux) {
             # Check if the service exists
-            if (systemctl status "$name.service" -q) {
-                $status = systemctl is-active "$name.service"
+            if (systemctl status "$Name.service" -q) {
+                $status = systemctl is-active "$Name.service"
                 if ($status -eq 'active') {
-                    systemctl stop "$name.service"
-                    # Write-PodeServiceLog -Message "Service '$name' stopped successfully."
+                    systemctl stop "$Name.service"
+                    # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                 }
                 else {
-                    # Write-PodeServiceLog -Message "Service '$name' is not running."
+                    # Write-PodeServiceLog -Message "Service '$Name' is not running."
                 }
             }
             else {
-                throw "Service '$name' is not registered."
+                throw "Service '$Name' is not registered."
             }
         }
 
         elseif ($IsMacOS) {
             # Check if the service exists in launchctl
-            if (launchctl list | Select-String "pode.$name") {
+            if (launchctl list | Select-String "pode.$Name") {
                 # Stop the service if running
-                if (launchctl list "pode.$name" | Select-String "pode.$name") {
-                    launchctl stop "pode.$name"
-                    # Write-PodeServiceLog -Message "Service '$name' stopped successfully."
+                $serviceInfo = launchctl list "pode.$Name" -join "`n"
+
+                # Check if the service has a PID entry
+                if ($serviceInfo -match '"PID" = (\d+);') {
+                    launchctl stop "pode.$Name"
+                    # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
+                    return ($LASTEXITCODE -eq 0)
                 }
                 else {
-                    # Write-PodeServiceLog -Message "Service '$name' is not running."
+                    # Write-PodeServiceLog -Message "Service '$Name' is not running."
                 }
             }
             else {
-                throw "Service '$name' is not registered."
+                throw "Service '$Name' is not registered."
             }
         }
     }
@@ -397,6 +440,9 @@ function Stop-PodeService {
     A switch parameter that forces the service to stop before unregistering. If the service is running and this parameter is not specified,
     the function will throw an error.
 
+.PARAMETER Name
+    The name of the service.
+
 .EXAMPLE
     Unregister-PodeService -Force
 
@@ -416,34 +462,39 @@ function Stop-PodeService {
 function Unregister-PodeService {
     param(
         [Parameter()]
-        [switch]$Force
+        [switch]$Force,
+
+        [string]
+        $Name
     )
 
-    # Get the service name from the settings file
-    $name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
-
+    if (! $Name) {
+        # Get the service name from the settings file
+        $Name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
+    }
     if ($IsWindows) {
         # Check if the service exists
-        $service = Get-Service -Name $name -ErrorAction SilentlyContinue
+        $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
         if (-not $service) {
-            throw "Service '$name' is not registered."
+            throw "Service '$Name' is not registered."
         }
 
         try {
             # Check if the service is running before attempting to stop it
             if ($service.Status -eq 'Running') {
                 if ($Force.IsPresent) {
-                    Stop-Service -Name $name -Force -ErrorAction Stop
-                    # Write-PodeServiceLog -Message "Service '$name' stopped forcefully."
+                    Stop-Service -Name $Name -Force -ErrorAction Stop
+                    # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                 }
                 else {
-                    throw "Service '$name' is running. Use the -Force parameter to forcefully stop."
+                    throw "Service '$Name' is running. Use the -Force parameter to forcefully stop."
                 }
             }
 
             # Remove the service
-            Remove-Service -Name $name -ErrorAction Stop
-            # Write-PodeServiceLog -Message "Service '$name' unregistered successfully."
+            Remove-Service -Name $Name -ErrorAction Stop
+            # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
+
             return $true
         }
         catch {
@@ -455,24 +506,24 @@ function Unregister-PodeService {
     elseif ($IsLinux) {
         try {
             # Check if the service exists
-            if (systemctl status "$name.service" -q) {
+            if (systemctl status "$Name.service" -q) {
                 # Check if the service is running
-                $status = systemctl is-active "$name.service"
+                $status = systemctl is-active "$Name.service"
                 if ($status -eq 'active') {
                     if ($Force.IsPresent) {
-                        systemctl stop "$name.service"
-                        # Write-PodeServiceLog -Message "Service '$name' stopped forcefully."
+                        systemctl stop "$Name.service"
+                        # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
-                        throw "Service '$name' is running. Use the -Force parameter to forcefully stop."
+                        throw "Service '$Name' is running. Use the -Force parameter to forcefully stop."
                     }
                 }
-                systemctl disable "$name.service"
-                Remove-Item "/etc/systemd/system/$name.service"
-                # Write-PodeServiceLog -Message "Service '$name' unregistered successfully."
+                systemctl disable "$Name.service"
+                Remove-Item "/etc/systemd/system/$Name.service"
+                # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
             }
             else {
-                throw "Service '$name' is not registered."
+                throw "Service '$Name' is not registered."
             }
             return $true
         }
@@ -485,23 +536,41 @@ function Unregister-PodeService {
     elseif ($IsMacOS) {
         try {
             # Check if the service exists
-            if (launchctl list | Select-String "pode.$name") {
+
+            if (launchctl list | Select-String "pode.$Name") {
+                $serviceInfo = launchctl list "pode.$Name" -join "`n"
+                # Check if the service has a PID entry
+                if ($serviceInfo -match '"PID" = (\d+);') {
+                    launchctl stop "pode.$Name"
+                    # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
+                    $serviceIsRunning = ($LASTEXITCODE -ne 0)
+                }
+                else {
+                    $serviceIsRunning = $false
+                    # Write-PodeServiceLog -Message "Service '$Name' is not running."
+                }
+
                 # Check if the service is running
-                if (launchctl list "pode.$name" | Select-String "pode.$name") {
+                if (  $serviceIsRunning) {
                     if ($Force.IsPresent) {
-                        launchctl stop "pode.$name"
-                        # Write-PodeServiceLog -Message "Service '$name' stopped forcefully."
+                        launchctl stop "pode.$Name"
+                        # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
-                        throw "Service '$name' is running. Use the -Force parameter to forcefully stop."
+                        throw "Service '$Name' is running. Use the -Force parameter to forcefully stop."
                     }
                 }
-                launchctl unload "/Library/LaunchDaemons/pode.$name.plist"
-                Remove-Item "~/Library/LaunchAgents/pode.$name.plist"
-                # Write-PodeServiceLog -Message "Service '$name' unregistered successfully."
+                launchctl unload ~/Library/LaunchAgents/pode.$Name.plist
+                if ($LASTEXITCODE -eq 0) {
+                    Remove-Item "~/Library/LaunchAgents/pode.$Name.plist" -ErrorAction Break
+                }
+                else {
+                    return $false
+                }
+                # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
             }
             else {
-                throw "Service '$name' is not registered."
+                throw "Service '$Name' is not registered."
             }
             return $true
         }
@@ -523,9 +592,8 @@ function Unregister-PodeService {
     The function returns a consistent result across all platforms by providing the service name and status in
     a hashtable format. The status is mapped to common states like "Running," "Stopped," "Starting," and "Stopping."
 
-.PARAMETER None
-    This function does not accept any parameters directly, but it relies on the service name from the configuration file
-    (`srvsettings.json`) located in the script's directory.
+.PARAMETER Name
+    The name of the service.
 
 .OUTPUTS
     Hashtable
@@ -556,12 +624,19 @@ function Unregister-PodeService {
     - For macOS, it uses `launchctl` to check if the service is running.
 #>
 function Get-PodeService {
+    param(
+        [string]
+        $Name
+    )
 
-    $name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
+    if (! $Name) {
+        # Get the service name from the settings file
+        $Name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
+    }
 
-    elseif ($IsWindows) {
+    if ($IsWindows) {
         # Check if the service exists on Windows
-        $service = Get-Service -Name $name -ErrorAction SilentlyContinue
+        $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
         if ($service) {
             switch ($service.Status) {
                 'Running' { $status = 'Running' }
@@ -574,12 +649,12 @@ function Get-PodeService {
                 default { $status = 'Unknown' }
             }
             return @{
-                Name   = $name
+                Name   = $Name
                 Status = $status
             }
         }
         else {
-            Write-PodeErrorLog -Message "Service '$name' not found on Windows."
+            Write-PodeErrorLog -Message "Service '$Name' not found on Windows."
             return $null
         }
     }
@@ -587,7 +662,7 @@ function Get-PodeService {
     elseif ($IsLinux) {
         try {
             # Check if the service exists on Linux (systemd)
-            $output = systemctl is-active "$name.service" 2>&1
+            $output = systemctl is-active "$Name.service" 2>&1
             if ($LASTEXITCODE -eq 0) {
                 if ($output -match 'active') {
                     $status = 'Running'
@@ -605,13 +680,13 @@ function Get-PodeService {
                     $status = 'Unknown'
                 }
                 return @{
-                    Name   = $name
+                    Name   = $Name
                     Status = $status
                 }
             }
             else {
                 return @{
-                    Name   = $name
+                    Name   = $Name
                     Status = 'Stopped'
                 }
             }
@@ -625,24 +700,29 @@ function Get-PodeService {
     elseif ($IsMacOS) {
         try {
             # Check if the service exists on macOS (launchctl)
-            $serviceList = launchctl list | Select-String "pode.$name"
+            $serviceList = launchctl list | Select-String "pode.$Name"
             if ($serviceList) {
-                $status = launchctl list "pode.$name" 2>&1
-                if ($status -match 'PID = (\d+)') {
+                $serviceInfo = launchctl list "pode.$Name" -join "`n"
+                $running = $serviceInfo -match '"PID" = (\d+);'
+                # Check if the service has a PID entry
+                if ($running) {
+                    $servicePid = ($running[0].split('= '))[1].trim(';')  # Extract the PID from the match
+
                     return @{
-                        Name   = $name
+                        Name   = $Name
                         Status = 'Running'
+                        Pid    = $servicePid
                     }
                 }
                 else {
                     return @{
-                        Name   = $name
+                        Name   = $Name
                         Status = 'Stopped'
                     }
                 }
             }
             else {
-                Write-PodeErrorLog -Message "Service 'pode.$name' not found on macOS."
+                Write-PodeErrorLog -Message "Service 'pode.$Name' not found on macOS."
                 return $null
             }
         }

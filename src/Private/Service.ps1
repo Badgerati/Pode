@@ -220,15 +220,26 @@ function Get-PodeServiceName {
 function Register-PodeMacService {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Name,
+        [string]
+        $Name,
 
-        [string]$Description,
-        [string]$BinPath,
-        [string]$SettingsFile,
-        [string]$User,
-        [switch]$Start,
-        [switch]$Autostart,
-        [string]$OsArchitecture
+        [string]
+        $Description,
+
+        [string]
+        $BinPath,
+
+        [string]
+        $SettingsFile,
+
+        [string]
+        $User,
+
+        [string]
+        $OsArchitecture,
+
+        [string]
+        $LogPath
     )
 
     # Check if the service is already registered
@@ -261,16 +272,20 @@ function Register-PodeMacService {
     $runAtLoad
 
     <key>StandardOutPath</key>
-    <string>/var/log/pode.$Name.stdout.log</string>
+    <string>$LogPath/pode.$Name.stdout.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/var/log/pode.$Name.stderr.log</string>
+    <string>$LogPath/pode.$Name.stderr.log</string>
 
     <key>KeepAlive</key>
-    <true/>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
 </dict>
 </plist>
 "@ | Set-Content -Path "~/Library/LaunchAgents/pode.$($Name).plist" -Encoding UTF8
+
     try {
         # Load the plist with launchctl
         launchctl load ~/Library/LaunchAgents/pode.$($Name).plist
@@ -283,11 +298,6 @@ function Register-PodeMacService {
     catch {
         $_ | Write-PodeErrorLog
         throw $_  # Rethrow the error after logging
-    }
-
-    # Optionally start the service
-    if ($Start.IsPresent) {
-        Start-PodeService
     }
 
     return $true
@@ -320,9 +330,6 @@ function Register-PodeMacService {
 
 .PARAMETER Group
     The group under which the service will run. Defaults to the same as the `User` parameter.
-
-.PARAMETER Start
-    A switch indicating whether to start the service immediately after it is registered.
 
 .PARAMETER SkipUserCreation
     A switch to skip the creation of the user if it does not exist.
@@ -431,11 +438,6 @@ WantedBy=multi-user.target
         throw $_  # Rethrow the error after logging
     }
 
-    # Optionally start the service
-    if ($Start.IsPresent) {
-        Start-PodeService
-    }
-
     return $true
 }
 
@@ -473,9 +475,6 @@ WantedBy=multi-user.target
 
 .PARAMETER SecurityDescriptorSddl
     An SDDL string (Security Descriptor Definition Language) used to define the security of the service.
-
-.PARAMETER Start
-    A switch to start the service immediately after it is registered.
 
 .PARAMETER OsArchitecture
     The architecture of the operating system (e.g., `x64`, `arm64`). Used to locate the appropriate binary.
@@ -529,9 +528,6 @@ function Register-PodeWindowsService {
         [string]
         $SecurityDescriptorSddl,
 
-        [switch]
-        $Start,
-
         [string]
         $OsArchitecture
     )
@@ -568,10 +564,7 @@ function Register-PodeWindowsService {
         $_ | Write-PodeErrorLog
         throw $_  # Rethrow the error after logging
     }
-    if ($Start.IsPresent) {
-        # Start the service
-        Start-PodeService
-    }
+
     return $true
 }
 
