@@ -6,7 +6,7 @@
     <PublishRelease>true</PublishRelease>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers> <!-- Target Windows, Linux, and macOS -->
+    <RuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers> <!-- Target Windows, Linux, and macOS -->
   </PropertyGroup>
 
   <ItemGroup>

@@ -164,7 +164,7 @@ function Invoke-PodeBuildDotnetMonitorSrvBuild() {
     else {
         $AssemblyVersion = ''
     }
-    foreach ($target in @('win-x64', 'linux-x64', 'osx-x64', 'osx-arm64')) {
+    foreach ($target in @('win-x64','win-arm64' ,'linux-x64','linux-arm64', 'osx-x64', 'osx-arm64')) {
         dotnet publish --configuration Release  $AssemblyVersion --runtime $target --output ../Bin/$target
         if (!$?) {
             throw "dotnet publish failed for $($target)"
@@ -348,7 +348,7 @@ Task PrintChecksum {
 Task ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
-        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        Invoke-Expression (([System.Net.WebClient]::new()).DownloadString('https://chocolatey.org/install.ps1'))
     }
 }
 
