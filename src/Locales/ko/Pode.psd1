@@ -291,4 +291,9 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 작업에는 요청 본문이 있을 수 없습니다.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "함수 '{0}'은(는) 배열을 파이프라인 입력으로 받지 않습니다."
     unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
+    serviceAlreadyRegisteredException                                 = "서비스 '{0}'가 이미 등록되었습니다."
+    serviceNotRegisteredException                                     = "서비스 '{0}'가 등록되지 않았습니다."
+    serviceRegistrationException                                      = "서비스 '{0}'가 등록되지 않았습니다."
+    serviceRegistrationFailedException                                = "서비스 '{0}' 등록에 실패했습니다."
+    serviceIsRunningException                                         = "서비스 '{0}'가 실행 중입니다. 강제로 중지하려면 -Force 매개변수를 사용하세요."
 }

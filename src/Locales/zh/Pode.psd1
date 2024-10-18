@@ -291,4 +291,9 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "函数 '{0}' 不接受数组作为管道输入。"
     unsupportedStreamCompressionEncodingExceptionMessage              = '不支持的流压缩编码: {0}'
+    serviceAlreadyRegisteredException                                 = "服务 '{0}' 已经注册。"
+    serviceNotRegisteredException                                     = "服务 '{0}' 未注册。"
+    serviceRegistrationException                                      = "服务 '{0}' 未注册。"
+    serviceRegistrationFailedException                                = "服务 '{0}' 注册失败。"
+    serviceIsRunningException                                         = "服务 '{0}' 正在运行。使用 -Force 参数强制停止。"
 }

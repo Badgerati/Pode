@@ -291,4 +291,9 @@
     getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
+    serviceAlreadyRegisteredException                                 = "الخدمة '{0}' مسجلة بالفعل."
+    serviceNotRegisteredException                                     = "الخدمة '{0}' غير مسجلة."
+    serviceRegistrationException                                      = "الخدمة '{0}' غير مسجلة."
+    serviceRegistrationFailedException                                = "فشل تسجيل الخدمة '{0}'."
+    serviceIsRunningException                                         = "الخدمة '{0}' تعمل. استخدم المعامل -Force للإيقاف بالقوة."
 }

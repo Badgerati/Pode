@@ -291,4 +291,9 @@
     getRequestBodyNotAllowedExceptionMessage                          = 'Le operazioni {0} non possono avere un corpo della richiesta.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La funzione '{0}' non accetta una matrice come input della pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La compressione dello stream non è supportata per la codifica {0}'
+    serviceAlreadyRegisteredException                                 = "Il servizio '{0}' è già registrato."
+    serviceNotRegisteredException                                     = "Il servizio '{0}' non è registrato."
+    serviceRegistrationException                                      = "Il servizio '{0}' non è registrato."
+    serviceRegistrationFailedException                                = "Registrazione del servizio '{0}' non riuscita."
+    serviceIsRunningException                                         = "Il servizio '{0}' è in esecuzione. Utilizzare il parametro -Force per interromperlo forzatamente."
 }

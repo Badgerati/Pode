@@ -60,53 +60,53 @@ function Start-PodeServiceHearthbeat {
         # Define the script block for the client receiver, listens for commands via the named pipe
         $scriptBlock = {
             Write-PodeServiceLog -Message "Start client receiver for pipe $($PodeContext.Server.Service.PipeName)"
-                try {
-                    # Create a named pipe server stream
-                    $pipeStream = [System.IO.Pipes.NamedPipeServerStream]::new(
-                        $PodeContext.Server.Service.PipeName,
-                        [System.IO.Pipes.PipeDirection]::InOut,
-                        2, # Max number of allowed concurrent connections
-                        [System.IO.Pipes.PipeTransmissionMode]::Byte,
-                        [System.IO.Pipes.PipeOptions]::None
-                    )
+            try {
+                # Create a named pipe server stream
+                $pipeStream = [System.IO.Pipes.NamedPipeServerStream]::new(
+                    $PodeContext.Server.Service.PipeName,
+                    [System.IO.Pipes.PipeDirection]::InOut,
+                    2, # Max number of allowed concurrent connections
+                    [System.IO.Pipes.PipeTransmissionMode]::Byte,
+                    [System.IO.Pipes.PipeOptions]::None
+                )
 
-                    Write-PodeServiceLog -Message "Waiting for connection to the $($PodeContext.Server.Service.PipeName) pipe."
-                    $pipeStream.WaitForConnection()  # Wait until a client connects
-                    Write-PodeServiceLog -Message "Connected to the $($PodeContext.Server.Service.PipeName) pipe."
+                Write-PodeServiceLog -Message "Waiting for connection to the $($PodeContext.Server.Service.PipeName) pipe."
+                $pipeStream.WaitForConnection()  # Wait until a client connects
+                Write-PodeServiceLog -Message "Connected to the $($PodeContext.Server.Service.PipeName) pipe."
 
-                    # Create a StreamReader to read incoming messages from the pipe
-                    $reader = [System.IO.StreamReader]::new($pipeStream)
+                # Create a StreamReader to read incoming messages from the pipe
+                $reader = [System.IO.StreamReader]::new($pipeStream)
 
-                    # Process incoming messages in a loop as long as the pipe is connected
-                    while ($pipeStream.IsConnected) {
-                        $message = $reader.ReadLine()  # Read message from the pipe
+                # Process incoming messages in a loop as long as the pipe is connected
+                while ($pipeStream.IsConnected) {
+                    $message = $reader.ReadLine()  # Read message from the pipe
 
-                        if ($message) {
-                            Write-PodeServiceLog -Message "Received message: $message"
+                    if ($message) {
+                        Write-PodeServiceLog -Message "Received message: $message"
 
-                            # Process 'shutdown' message
-                            if ($message -eq 'shutdown') {
-                                Write-PodeServiceLog -Message 'Server requested shutdown. Closing client...'
-                                Close-PodeServer  # Gracefully stop the Pode server
-                                break  # Exit the loop
+                        # Process 'shutdown' message
+                        if ($message -eq 'shutdown') {
+                            Write-PodeServiceLog -Message 'Server requested shutdown. Closing client...'
+                            Close-PodeServer  # Gracefully stop the Pode server
+                            break  # Exit the loop
 
-                                # Process 'restart' message
-                            }
-                            elseif ($message -eq 'restart') {
-                                Write-PodeServiceLog -Message 'Server requested restart. Restarting client...'
-                                Restart-PodeServer  # Restart the Pode server
-                                break  # Exit the loop
-                            }
+                            # Process 'restart' message
+                        }
+                        elseif ($message -eq 'restart') {
+                            Write-PodeServiceLog -Message 'Server requested restart. Restarting client...'
+                            Restart-PodeServer  # Restart the Pode server
+                            break  # Exit the loop
                         }
                     }
                 }
-                catch {
-                    $_ | Write-PodeServiceLog  # Log any errors that occur during pipe operation
-                }
-                finally {
-                    $reader.Dispose()
-                    $pipeStream.Dispose()  # Always dispose of the pipe stream when done
-                }
+            }
+            catch {
+                $_ | Write-PodeServiceLog  # Log any errors that occur during pipe operation
+            }
+            finally {
+                $reader.Dispose()
+                $pipeStream.Dispose()  # Always dispose of the pipe stream when done
+            }
 
         }
 
@@ -117,60 +117,6 @@ function Start-PodeServiceHearthbeat {
         # Start the runspace that runs the client receiver script block
         $PodeContext.Server.Service['Runspace'] = Add-PodeRunspace -Type 'Service' -ScriptBlock ($scriptBlock) -PassThru
     }
-}
-
-
-
-
-<#
-.SYNOPSIS
-    Retrieves the service name from the `srvsettings.json` file located at the specified path.
-
-.DESCRIPTION
-    The `Get-PodeServiceName` function loads the service configuration from the provided path and retrieves the service name from the `srvsettings.json` file.
-    If the file does not exist or the name cannot be found in the file, an error is thrown.
-
-.PARAMETER Path
-    The directory path where the `srvsettings.json` file is located.
-
-.EXAMPLE
-    $serviceName = Get-PodeServiceName -Path "C:\PodeService"
-
-    Retrieves the service name from the `srvsettings.json` file located at "C:\PodeService".
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-    The function will throw an error if the settings file does not exist, is malformed, or the service name cannot be determined.
-#>
-function Get-PodeServiceName {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Path
-    )
-
-    # Define the settings file path
-    $settingsFile = "$Path/srvsettings.json"
-
-
-    if (!(Test-Path -Path $settingsFile -PathType Leaf)) {
-        throw ($PodeLocale.pathNotExistExceptionMessage -f $settingsFile)
-    }
-    # Load the settings from the JSON file
-    try {
-        $settings = Get-Content -Path $settingsFile -Raw | ConvertFrom-Json
-    }
-    catch {
-        throw "Failed to load or parse the settings file '$settingsFile'. Error: $_"
-    }
-
-    # Attempt to retrieve the name from the settings
-    if ($settings.PodePwshWorker -and $settings.PodePwshWorker.Name) {
-        return $settings.PodePwshWorker.Name
-    }
-
-    throw ('Service name could not be determined from {0}' -f $settingsFile)
-
 }
 
 <#
@@ -244,7 +190,8 @@ function Register-PodeMacService {
 
     # Check if the service is already registered
     if (launchctl list | Select-String "pode.$Name") {
-        throw 'Service is already registered.'
+        # Service is already registered.
+        throw ($PodeLocale.serviceAlreadyRegisteredException -f "pode.$Name")
     }
 
     # Determine whether the service should run at load
@@ -292,7 +239,9 @@ function Register-PodeMacService {
 
         # Verify the service is now registered
         if (-not (launchctl list | Select-String "pode.$Name")) {
-            throw 'Service failed to register.'
+            # Service registration failed.
+            throw ($PodeLocale.serviceRegistrationFailedException -f "pode.$Name")
+
         }
     }
     catch {
@@ -394,7 +343,8 @@ function Register-PodeLinuxService {
 
     # Check if the service is already registered
     if (systemctl status "$Name.service" -ErrorAction SilentlyContinue) {
-        throw 'Service is already registered.'
+        # Service is already registered.
+        throw ($PodeLocale.serviceAlreadyRegisteredException -f "$Name.service" )
     }
 
     # Create the service file
@@ -430,7 +380,8 @@ WantedBy=multi-user.target
     try {
         systemctl enable "$Name.service"
         if ($LASTEXITCODE -ne 0) {
-            throw  'Service failed to register.'
+            # Service registration failed.
+            throw ($PodeLocale.serviceRegistrationFailedException -f "$Name.service")
         }
     }
     catch {
@@ -535,7 +486,9 @@ function Register-PodeWindowsService {
 
     # Check if service already exists
     if (Get-Service -Name $Name -ErrorAction SilentlyContinue) {
-        throw 'Service is already registered.'
+        # Service is already registered.
+        throw ($PodeLocale.serviceAlreadyRegisteredException -f "$Name")
+
     }
 
     # Parameters for New-Service
@@ -557,7 +510,8 @@ function Register-PodeWindowsService {
     try {
         $sv = New-Service @params -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
         if (!$sv) {
-            throw  'Service failed to register.'
+            # Service registration failed.
+            throw ($PodeLocale.serviceRegistrationFailedException -f "$Name")
         }
     }
     catch {
@@ -670,11 +624,12 @@ function Write-PodeServiceLog {
 
 function Test-PodeUserServiceCreationPrivilege {
     # Get the list of user privileges
-    $privileges = whoami /priv | Where-Object { $_ -match "SeCreateServicePrivilege" }
+    $privileges = whoami /priv | Where-Object { $_ -match 'SeCreateServicePrivilege' }
 
     if ($privileges) {
         return $true
-    } else {
+    }
+    else {
         return $false
     }
 }

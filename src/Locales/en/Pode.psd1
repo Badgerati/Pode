@@ -291,4 +291,9 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0} operations cannot have a Request Body.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Unsupported stream compression encoding: {0}'
+    serviceAlreadyRegisteredException                                 = "Service '{0}' is already registered."
+    serviceNotRegisteredException                                     = "Service '{0}' is not registered."
+    serviceRegistrationException                                      = "Service '{0}' is not registered."
+    serviceRegistrationFailedException                                = "Service '{0}' registration failed."
+    serviceIsRunningException                                         = "Service '{0}' is running. Use the -Force parameter to forcefully stop."
 }

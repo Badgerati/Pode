@@ -1,66 +1,70 @@
 <#
 .SYNOPSIS
-    Registers a new service to run a Pode-based PowerShell worker as a service on multiple platforms.
+    Registers a new service to run a Pode-based PowerShell worker as a service on Windows, Linux, or macOS.
 
 .DESCRIPTION
-    The `Register-PodeService` function configures and registers a service for running a Pode-based PowerShell worker on Windows, Linux, or macOS.
-    It dynamically sets up the service with the specified parameters, including paths to the script, log files, PowerShell executable,
-    and service settings. It also generates a `srvsettings.json` file containing the service's configuration and registers the service
-    using platform-specific methods.
+    The `Register-PodeService` function configures and registers a Pode-based service that runs a PowerShell worker across
+    multiple platforms (Windows, Linux, macOS). It dynamically creates a service with the specified parameters, including
+    paths to the worker script, log files, and service-specific settings. The function also generates a `srvsettings.json` file,
+    containing the service configuration. The service can optionally be started immediately after registration, based on the platform.
 
 .PARAMETER Name
-    The name of the service to be registered.
+    Specifies the name of the service to be registered.
 
 .PARAMETER Description
     A brief description of the service. Defaults to "This is a Pode service."
 
 .PARAMETER DisplayName
-    The display name of the service, as it will appear in the Windows Services Manager (Windows only). Defaults to "Pode Service($Name)".
+    Specifies the display name for the service in the Windows Services Manager. Defaults to "Pode Service($Name)".
 
 .PARAMETER StartupType
-    The startup type of the service (e.g., Automatic, Manual). Defaults to 'Automatic'.
+    Specifies the startup type of the service (e.g., 'Automatic', 'Manual'). Defaults to 'Automatic'.
 
 .PARAMETER SecurityDescriptorSddl
-    The security descriptor in SDDL format for the service (Windows only).
+    A security descriptor in SDDL format, specifying the permissions for the service (Windows only).
 
 .PARAMETER ParameterString
-    Any additional parameters to pass to the script when it is run by the service. Defaults to an empty string.
+    Any additional parameters to pass to the worker script when run by the service. Defaults to an empty string.
 
 .PARAMETER Quiet
-    A boolean value indicating whether to run the service quietly, suppressing logs and output. Defaults to `$true`.
+    If set to `$true`, runs the service quietly, suppressing logs and output. Defaults to `$true`.
 
 .PARAMETER DisableTermination
-    A boolean value indicating whether to disable termination of the service from within the worker process. Defaults to `$true`.
+    If set to `$true`, disables termination of the service from within the worker process. Defaults to `$true`.
 
 .PARAMETER ShutdownWaitTimeMs
-    The maximum amount of time, in milliseconds, to wait for the service to gracefully shut down before forcefully terminating it. Defaults to 30,000 milliseconds.
+    The maximum amount of time, in milliseconds, to wait for the service to shut down gracefully before forcefully terminating it.
+    Defaults to 30,000 milliseconds (30 seconds).
 
 .PARAMETER User
-    The user under which the service should run. Defaults to `podeuser`.
+    Specifies the user under which the service will run (applies to Linux and macOS). Defaults to `podeuser`.
 
 .PARAMETER Group
-    The group under which the service should run (Linux only). Defaults to `podeuser`.
+    Specifies the group under which the service will run (Linux only). Defaults to `podeuser`.
 
 .PARAMETER Start
-    A switch to start the service immediately after it is registered.
+    A switch to immediately start the service after registration.
 
 .PARAMETER SkipUserCreation
-    A switch to skip the user creation process (Linux only).
+    A switch to skip the process of creating a new user (Linux only).
 
 .PARAMETER Credential
-    A `PSCredential` object specifying the credentials for the account under which the Windows service will run.
+    A `PSCredential` object specifying the credentials for the Windows service account under which the service will run.
+
+.PARAMETER ConfigDirectory
+    Specifies a custom directory to store the generated configuration (`srvsettings.json`) file.
 
 .EXAMPLE
     Register-PodeService -Name "PodeExampleService" -Description "Example Pode Service" -ParameterString "-Verbose"
 
-    Registers a new Pode-based service called "PodeExampleService" with verbose logging enabled.
+    This example registers a new Pode service called "PodeExampleService" with verbose logging enabled.
 
 .NOTES
-    - This function is cross-platform and handles service registration on Windows, Linux, and macOS.
-    - A `srvsettings.json` file is generated in the same directory as the main script, containing the configuration for the Pode service.
-    - The function checks if a service with the specified name already exists on the respective platform and throws an error if it does.
-    - For Windows, the service binary path points to the Pode monitor executable (`PodeMonitor.exe`), which is located in the `Bin` directory relative to the script.
-    - This function dynamically determines the PowerShell executable path and system architecture.
+    - The function supports cross-platform service registration on Windows, Linux, and macOS.
+    - A configuration file (`srvsettings.json`) is generated in the specified directory, or by default, in the same directory as the main script.
+    - On Windows, the function checks for appropriate permissions (e.g., Administrator or service creation privileges).
+    - The Pode service can be started automatically after registration using the `-Start` switch.
+    - The PowerShell executable path is dynamically obtained to ensure compatibility across environments.
 #>
 function Register-PodeService {
     param(
@@ -112,38 +116,35 @@ function Register-PodeService {
         $ConfigDirectory
     )
     try {
-
+        # Check for administrative privileges on Windows
         if ($IsWindows) {
-            # Check if the current script is running as Administrator
             if (! (Test-PodeIsAdmin) -and ! (Test-PodeUserServiceCreationPrivilege) ) {
                 Write-PodeHost "This script needs to run as Administrator or with the 'SERVICE_CHANGE_CONFIG'(SeCreateServicePrivilege) privilege." -ForegroundColor Yellow
                 exit
             }
         }
 
+        # Obtain the script path and directory
         if ($MyInvocation.ScriptName) {
             $ScriptPath = $MyInvocation.ScriptName
             $MainScriptPath = Split-Path -Path $ScriptPath -Parent
-            #    $MainScriptFileName = Split-Path -Path $ScriptPath -Leaf
         }
         else {
             return $null
         }
 
-        # Define script and log file paths
-        # $ScriptPath = Join-Path -Path $MainScriptPath -ChildPath $MainScriptFileName # Example script path
+        # Define log paths and ensure the log directory exists
         $LogPath = Join-Path -Path $MainScriptPath -ChildPath 'logs'
         $LogFilePath = Join-Path -Path $LogPath -ChildPath "$($Name)_svc.log"
 
-        # Ensure log directory exists
         if (-not (Test-Path $LogPath)) {
             $null = New-Item -Path $LogPath -ItemType Directory -Force
         }
 
-        # Obtain the PowerShell path dynamically
+        # Dynamically get the PowerShell executable path
         $PwshPath = (Get-Process -Id $PID).Path
 
-        # Define the settings file path
+        # Define configuration directory and settings file path
         if ($ConfigDirectory) {
             $settingsPath = Join-Path -Path $MainScriptPath -ChildPath $ConfigDirectory
             if (! (Test-Path -Path $settingsPath -PathType Container)) {
@@ -155,9 +156,7 @@ function Register-PodeService {
         }
         $settingsFile = Join-Path -Path $settingsPath -ChildPath "$($Name)_srvsettings.json"
 
-        $binPath = Join-Path -path (Split-Path -Parent -Path $PSScriptRoot) -ChildPath 'Bin'
-
-        # JSON content for the service settings
+        # Generate the service settings JSON file
         $jsonContent = @{
             PodePwshWorker = @{
                 ScriptPath         = $ScriptPath
@@ -171,12 +170,12 @@ function Register-PodeService {
             }
         }
 
-        # Convert hash table to JSON and save it to the settings file
+        # Save JSON to the settings file
         $jsonContent | ConvertTo-Json | Set-Content -Path $settingsFile -Encoding UTF8
 
+        # Determine OS architecture and call platform-specific registration functions
         $osArchitecture = ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture).ToString().ToLower()
 
-        # Call the appropriate platform-specific function
         if ($IsWindows) {
             $param = @{
                 Name                   = $Name
@@ -219,7 +218,7 @@ function Register-PodeService {
             $operation = Register-PodeMacService @param
         }
 
-        # Optionally start the service
+        # Optionally start the service if requested
         if (  $operation -and $Start.IsPresent) {
             $operation = Start-PodeService -Name $Name
         }
@@ -260,14 +259,11 @@ function Register-PodeService {
 #>
 function Start-PodeService {
     param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
     try {
-        if (! $Name) {
-            # Get the service name from the settings file
-            $Name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
-        }
 
         if ($IsWindows) {
 
@@ -292,7 +288,8 @@ function Start-PodeService {
                 }
             }
             else {
-                throw "Service '$Name' is not registered."
+                # Service is not registered
+                throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
             }
         }
 
@@ -312,7 +309,8 @@ function Start-PodeService {
                 }
             }
             else {
-                throw "Service '$Name' is not registered."
+                # Service is not registered
+                throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
             }
         }
 
@@ -336,7 +334,8 @@ function Start-PodeService {
                 }
             }
             else {
-                throw "Service '$Name' is not registered."
+                # Service is not registered
+                throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
             }
         }
     }
@@ -373,14 +372,11 @@ function Start-PodeService {
 #>
 function Stop-PodeService {
     param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
     try {
-        if (! $Name) {
-            # Get the service name from the settings file
-            $Name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
-        }
 
         if ($IsWindows) {
             if (! (Test-PodeIsAdmin) -and ! (Test-PodeUserServiceCreationPrivilege) ) {
@@ -399,7 +395,8 @@ function Stop-PodeService {
                 }
             }
             else {
-                throw "Service '$Name' is not registered."
+                # Service is not registered
+                throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
             }
         }
         elseif ($IsLinux) {
@@ -415,7 +412,8 @@ function Stop-PodeService {
                 }
             }
             else {
-                throw "Service '$Name' is not registered."
+                # Service is not registered
+                throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
             }
         }
 
@@ -436,7 +434,8 @@ function Stop-PodeService {
                 }
             }
             else {
-                throw "Service '$Name' is not registered."
+                # Service is not registered
+                throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
             }
         }
     }
@@ -484,14 +483,11 @@ function Unregister-PodeService {
         [Parameter()]
         [switch]$Force,
 
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
 
-    if (! $Name) {
-        # Get the service name from the settings file
-        $Name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
-    }
     if ($IsWindows) {
         if (! (Test-PodeIsAdmin) -and ! (Test-PodeUserServiceCreationPrivilege) ) {
             Write-PodeHost "This script needs to run as Administrator or with the 'SERVICE_CHANGE_CONFIG'(SeCreateServicePrivilege) privilege." -ForegroundColor Yellow
@@ -500,7 +496,8 @@ function Unregister-PodeService {
         # Check if the service exists
         $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
         if (-not $service) {
-            throw "Service '$Name' is not registered."
+            # Service is not registered
+            throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
         }
 
         try {
@@ -511,7 +508,8 @@ function Unregister-PodeService {
                     # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                 }
                 else {
-                    throw "Service '$Name' is running. Use the -Force parameter to forcefully stop."
+                    # Service is running. Use the -Force parameter to forcefully stop."
+                    throw ($Podelocale.serviceIsRunningException -f "pode.$Name")
                 }
             }
 
@@ -539,7 +537,8 @@ function Unregister-PodeService {
                         # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
-                        throw "Service '$Name' is running. Use the -Force parameter to forcefully stop."
+                        # Service is running. Use the -Force parameter to forcefully stop."
+                        throw ($Podelocale.serviceIsRunningException -f "$Name.service")
                     }
                 }
                 systemctl disable "$Name.service"
@@ -547,7 +546,8 @@ function Unregister-PodeService {
                 # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
             }
             else {
-                throw "Service '$Name' is not registered."
+                # Service is not registered
+                throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
             }
             return $true
         }
@@ -581,7 +581,8 @@ function Unregister-PodeService {
                         # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
-                        throw "Service '$Name' is running. Use the -Force parameter to forcefully stop."
+                        # Service is running. Use the -Force parameter to forcefully stop."
+                        throw ($Podelocale.serviceIsRunningException -f "$Name")
                     }
                 }
                 launchctl unload ~/Library/LaunchAgents/pode.$Name.plist
@@ -594,7 +595,8 @@ function Unregister-PodeService {
                 # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
             }
             else {
-                throw "Service '$Name' is not registered."
+                # Service is not registered
+                throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
             }
             return $true
         }
@@ -649,14 +651,10 @@ function Unregister-PodeService {
 #>
 function Get-PodeService {
     param(
+        [Parameter(Mandatory = $true)]
         [string]
         $Name
     )
-
-    if (! $Name) {
-        # Get the service name from the settings file
-        $Name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
-    }
 
     if ($IsWindows) {
         if (! (Test-PodeIsAdmin) -and ! (Test-PodeUserServiceCreationPrivilege) ) {
