@@ -197,6 +197,8 @@ function Register-PodeMacService {
     # Determine whether the service should run at load
     $runAtLoad = if ($Autostart.IsPresent) { '<true/>' } else { '<false/>' }
 
+    # Create a temporary file
+    $tempFile = [System.IO.Path]::GetTempFileName()
     # Create the plist content
     @"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -231,11 +233,13 @@ function Register-PodeMacService {
     </dict>
 </dict>
 </plist>
-"@ | Set-Content -Path "~/Library/LaunchAgents/pode.$($Name).plist" -Encoding UTF8
+"@ | Set-Content -Path $tempFile  -Encoding UTF8
+
+    sudo cp $tempFile "~/Library/LaunchAgents/pode.$($Name).plist"
 
     try {
         # Load the plist with launchctl
-        launchctl load ~/Library/LaunchAgents/pode.$($Name).plist
+        sudo launchctl load ~/Library/LaunchAgents/pode.$($Name).plist
 
         # Verify the service is now registered
         if (-not (launchctl list | Select-String "pode.$Name")) {
@@ -346,7 +350,8 @@ function Register-PodeLinuxService {
         # Service is already registered.
         throw ($PodeLocale.serviceAlreadyRegisteredException -f "$Name.service" )
     }
-
+    # Create a temporary file
+    $tempFile = [System.IO.Path]::GetTempFileName()
     # Create the service file
     @"
 [Unit]
@@ -354,7 +359,7 @@ Description=$Description
 After=network.target
 
 [Service]
-ExecStart=$BinPath/linux-$OsArchitecture/PodeMonitor $SettingsFile
+ExecStart=$BinPath/$OsArchitecture/PodeMonitor $SettingsFile
 WorkingDirectory=$BinPath
 Restart=always
 User=$User
@@ -364,7 +369,9 @@ Group=$Group
 
 [Install]
 WantedBy=multi-user.target
-"@ | Set-Content -Path "/etc/systemd/system/$($Name).service" -Encoding UTF8
+"@ | Set-Content -Path $tempFile  -Encoding UTF8
+
+    sudo cp $tempFile "/etc/systemd/system/$($Name).service"
 
     # Create user if needed
     if (!$SkipUserCreation.IsPresent) {
@@ -372,13 +379,13 @@ WantedBy=multi-user.target
         id $User 2>&1
         if ($LASTEXITCODE -ne 0) {
             # Create the user if it doesn't exist
-            useradd -r -s /bin/false $User
+            sudo useradd -r -s /bin/false $User
         }
     }
 
     # Enable the service and check if it fails
     try {
-        systemctl enable "$Name.service"
+        sudo systemctl enable "$Name.service"
         if ($LASTEXITCODE -ne 0) {
             # Service registration failed.
             throw ($PodeLocale.serviceRegistrationFailedException -f "$Name.service")

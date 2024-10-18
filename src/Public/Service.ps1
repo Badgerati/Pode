@@ -302,7 +302,7 @@ function Start-PodeService {
                 # Check if the service is already running
                 $status = systemctl is-active "$Name.service"
                 if ($status -ne 'active') {
-                    systemctl start "$Name.service"
+                    sudo systemctl start "$Name.service"
                     # Log service started successfully
                     # Write-PodeServiceLog -Message "Service '$Name' started successfully."
                 }
@@ -325,7 +325,7 @@ function Start-PodeService {
 
                 # Check if the service has a PID entry
                 if (!($serviceInfo -match '"PID" = (\d+);')) {
-                    launchctl start "pode.$Name"
+                    sudo launchctl start "pode.$Name"
 
                     # Log service started successfully
                     # Write-PodeServiceLog -Message "Service '$Name' started successfully."
@@ -407,7 +407,7 @@ function Stop-PodeService {
             if (systemctl status "$Name.service" -q) {
                 $status = systemctl is-active "$Name.service"
                 if ($status -eq 'active') {
-                    systemctl stop "$Name.service"
+                    sudo systemctl stop "$Name.service"
                     # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                 }
                 else {
@@ -428,7 +428,7 @@ function Stop-PodeService {
 
                 # Check if the service has a PID entry
                 if ($serviceInfo -match '"PID" = (\d+);') {
-                    launchctl stop "pode.$Name"
+                    sudo launchctl stop "pode.$Name"
                     # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                     return ($LASTEXITCODE -eq 0)
                 }
@@ -543,7 +543,7 @@ function Unregister-PodeService {
                 $status = systemctl is-active "$Name.service"
                 if ($status -eq 'active') {
                     if ($Force.IsPresent) {
-                        systemctl stop "$Name.service"
+                        sudo systemctl stop "$Name.service"
                         # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
@@ -551,7 +551,7 @@ function Unregister-PodeService {
                         throw ($Podelocale.serviceIsRunningException -f "$Name.service")
                     }
                 }
-                systemctl disable "$Name.service"
+                sudo systemctl disable "$Name.service"
 
                 # Read the content of the service file
                 $serviceFilePath = "/etc/systemd/system/$Name.service"
@@ -586,7 +586,7 @@ function Unregister-PodeService {
                 $serviceInfo = launchctl list "pode.$Name" -join "`n"
                 # Check if the service has a PID entry
                 if ($serviceInfo -match '"PID" = (\d+);') {
-                    launchctl stop "pode.$Name"
+                    sudo launchctl stop "pode.$Name"
                     # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                     $serviceIsRunning = ($LASTEXITCODE -ne 0)
                 }
@@ -598,7 +598,7 @@ function Unregister-PodeService {
                 # Check if the service is running
                 if (  $serviceIsRunning) {
                     if ($Force.IsPresent) {
-                        launchctl stop "pode.$Name"
+                        sudo launchctl stop "pode.$Name"
                         # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
@@ -606,7 +606,7 @@ function Unregister-PodeService {
                         throw ($Podelocale.serviceIsRunningException -f "$Name")
                     }
                 }
-                launchctl unload ~/Library/LaunchAgents/pode.$Name.plist
+                sudo launchctl unload ~/Library/LaunchAgents/pode.$Name.plist
                 if ($LASTEXITCODE -eq 0) {
 
                     $plistFilePath = "~/Library/LaunchAgents/pode.$Name.plist"
@@ -617,7 +617,7 @@ function Unregister-PodeService {
                     # Extract the SettingsFile from the ProgramArguments array using regex
                     $settingsFile = $plistFileContent | Select-String -Pattern '<string>(.*)</string>' | ForEach-Object {
                         if ($_.Line -match 'PodeMonitor.*<string>(.*)</string>') {
-                             $matches[1]
+                            $matches[1]
                         }
                     }
 
