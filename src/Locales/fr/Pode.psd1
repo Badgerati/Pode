@@ -291,5 +291,10 @@
     getRequestBodyNotAllowedExceptionMessage                          = 'Les opérations {0} ne peuvent pas avoir de corps de requête.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = "La compression de flux {0} n'est pas prise en charge."
+    serviceAlreadyRegisteredException                                 = "Le service '{0}' est déjà enregistré."
+    serviceNotRegisteredException                                     = "Le service '{0}' n'est pas enregistré."
+    serviceRegistrationException                                      = "Le service '{0}' n'est pas enregistré."
+    serviceRegistrationFailedException                                = "Échec de l'enregistrement du service '{0}'."
+    serviceIsRunningException                                         = "Le service '{0}' est en cours d'exécution. Utilisez le paramètre -Force pour forcer l'arrêt."
 }
 

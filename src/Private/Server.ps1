@@ -66,6 +66,8 @@ function Start-PodeInternalServer {
             # start runspace for loggers
             Start-PodeLoggingRunspace
 
+            Start-PodeServiceHearthbeat
+
             # start runspace for schedules
             Start-PodeScheduleRunspace
 
