@@ -141,7 +141,9 @@ function Start-PodeServer {
     end {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
-        }    # Store the name of the current runspace
+        }
+
+        # Store the name of the current runspace
         $previousRunspaceName = Get-PodeCurrentRunspaceName
         # Sets the name of the current runspace
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
@@ -149,6 +151,26 @@ function Start-PodeServer {
         # ensure the session is clean
         $PodeContext = $null
         $ShowDoneMessage = $true
+
+        # check if podeWatchdog is configured
+        if ($PodeWatchdog) {
+            if ($null -ne $PodeWatchdog.DisableTermination -or
+                $null -ne $PodeWatchdog.Quiet -or
+                $null -ne $PodeWatchdog.PipeName -or
+                $null -ne $PodeWatchdog.Interval
+            ) {
+                if ($PodeWatchdog -is [hashtable]) {
+                    $watchdogClient = ConvertTo-PodeConcurrentStructure -InputObject $PodeWatchdog
+                }
+                else {
+                    $watchdogClient = [System.Collections.Concurrent.ConcurrentDictionary[string, PSObject]]::new()
+                    $PodeWatchdog | Get-Member -MemberType Properties | ForEach-Object {
+                        $watchdogClient[$_.Name] = $PodeWatchdog.$($_.Name) }
+                }
+                $DisableTermination = [switch]$watchdogClient.DisableTermination
+                $Quiet = [switch]$watchdogClient.Quiet
+            }
+        }
 
         try {
             # if we have a filepath, resolve it - and extract a root path from it
@@ -171,20 +193,23 @@ function Start-PodeServer {
                 $RootPath = Get-PodeRelativePath -Path $RootPath -RootPath $MyInvocation.PSScriptRoot -JoinRoot -Resolve -TestPath
             }
 
+            $params = @{
+                ScriptBlock          = $ScriptBlock
+                FilePath             = $FilePath
+                Threads              = $Threads
+                Interval             = $Interval
+                ServerRoot           = $(Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot)
+                ServerlessType       = $ServerlessType
+                ListenerType         = $ListenerType
+                EnablePool           = $EnablePool
+                StatusPageExceptions = $StatusPageExceptions
+                DisableTermination   = $DisableTermination
+                Quiet                = $Quiet
+                EnableBreakpoints    = $EnableBreakpoints
+                Watchdog             = $watchdogClient
+            }
             # create main context object
-            $PodeContext = New-PodeContext `
-                -ScriptBlock $ScriptBlock `
-                -FilePath $FilePath `
-                -Threads $Threads `
-                -Interval $Interval `
-                -ServerRoot (Protect-PodeValue -Value $RootPath -Default $MyInvocation.PSScriptRoot) `
-                -ServerlessType $ServerlessType `
-                -ListenerType $ListenerType `
-                -EnablePool $EnablePool `
-                -StatusPageExceptions $StatusPageExceptions `
-                -DisableTermination:$DisableTermination `
-                -Quiet:$Quiet `
-                -EnableBreakpoints:$EnableBreakpoints
+            $PodeContext = New-PodeContext @params
 
             # set it so ctrl-c can terminate, unless serverless/iis, or disabled
             if (!$PodeContext.Server.DisableTermination -and ($null -eq $psISE)) {
@@ -250,6 +275,7 @@ function Start-PodeServer {
 
             # clean the session
             $PodeContext = $null
+            $PodeWatchdog = $null
 
             # Restore the name of the current runspace
             Set-PodeCurrentRunspaceName -Name $previousRunspaceName
