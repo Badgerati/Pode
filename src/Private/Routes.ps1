@@ -368,17 +368,7 @@ function Get-PodeRouteByUrl {
     return $null
 }
 
-
-function ConvertTo-PodeOpenApiRoutePath {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Path
-    )
-
-    return (Resolve-PodePlaceholder -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')
-}
-
+ 
 <#
 .SYNOPSIS
     Updates a Pode route path to ensure proper formatting.
