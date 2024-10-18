@@ -3776,3 +3776,46 @@ function Copy-PodeObjectDeepClone {
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }
+
+
+<#
+.SYNOPSIS
+    Checks if the current user has administrative privileges on Windows.
+
+.DESCRIPTION
+    The `Test-PodeIsAdmin` function verifies if the current user has the necessary
+    privileges to perform administrative tasks by checking if they belong to the
+    Windows Administrator role. It will only run on Windows and returns `$true` if
+    the user has administrative privileges, otherwise `$false`.
+
+    If executed on a non-Windows platform, it returns `$false` and displays a message
+    indicating that the function is only applicable to Windows.
+
+.EXAMPLE
+    PS> Test-PodeIsAdmin
+    True
+
+    This command checks if the current user is an administrator on a Windows system.
+
+.EXAMPLE
+    PS> if (Test-PodeIsAdmin) { "User has admin rights" } else { "User does not have admin rights" }
+
+    This command conditionally outputs whether the current user has administrative rights
+    on Windows. If the script is run on a non-Windows system, it outputs "User does not
+    have admin rights."
+
+.NOTES
+    This function will only check for administrative privileges if executed on a Windows system.
+#>
+function Test-PodeIsAdmin {
+    # Check if the operating system is Windows
+    if ($IsWindows -ne $true) {
+        return $false
+    }
+
+    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [Security.Principal.WindowsPrincipal]::new($currentUser)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+ 

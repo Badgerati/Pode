@@ -112,6 +112,15 @@ function Register-PodeService {
         $ConfigDirectory
     )
     try {
+
+        if ($IsWindows) {
+            # Check if the current script is running as Administrator
+            if (! (Test-PodeIsAdmin) -and ! (Test-PodeUserServiceCreationPrivilege) ) {
+                Write-PodeHost "This script needs to run as Administrator or with the 'SERVICE_CHANGE_CONFIG'(SeCreateServicePrivilege) privilege." -ForegroundColor Yellow
+                exit
+            }
+        }
+
         if ($MyInvocation.ScriptName) {
             $ScriptPath = $MyInvocation.ScriptName
             $MainScriptPath = Split-Path -Path $ScriptPath -Parent
@@ -261,6 +270,13 @@ function Start-PodeService {
         }
 
         if ($IsWindows) {
+
+            # Check if the current script is running as Administrator
+            if (! (Test-PodeIsAdmin) -and ! (Test-PodeUserServiceCreationPrivilege) ) {
+                Write-PodeHost "This script needs to run as Administrator or with the 'SERVICE_CHANGE_CONFIG'(SeCreateServicePrivilege) privilege." -ForegroundColor Yellow
+                exit
+            }
+
             # Get the Windows service
             $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
             if ($service) {
@@ -367,6 +383,10 @@ function Stop-PodeService {
         }
 
         if ($IsWindows) {
+            if (! (Test-PodeIsAdmin) -and ! (Test-PodeUserServiceCreationPrivilege) ) {
+                Write-PodeHost "This script needs to run as Administrator or with the 'SERVICE_CHANGE_CONFIG'(SeCreateServicePrivilege) privilege." -ForegroundColor Yellow
+                exit
+            }
             $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
             if ($service) {
                 # Check if the service is running
@@ -473,6 +493,10 @@ function Unregister-PodeService {
         $Name = Get-PodeServiceName -Path (Split-Path -Path $MyInvocation.ScriptName -Parent)
     }
     if ($IsWindows) {
+        if (! (Test-PodeIsAdmin) -and ! (Test-PodeUserServiceCreationPrivilege) ) {
+            Write-PodeHost "This script needs to run as Administrator or with the 'SERVICE_CHANGE_CONFIG'(SeCreateServicePrivilege) privilege." -ForegroundColor Yellow
+            exit
+        }
         # Check if the service exists
         $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
         if (-not $service) {
@@ -635,10 +659,15 @@ function Get-PodeService {
     }
 
     if ($IsWindows) {
+        if (! (Test-PodeIsAdmin) -and ! (Test-PodeUserServiceCreationPrivilege) ) {
+            Write-PodeHost "This script needs to run as Administrator or with the 'SERVICE_CHANGE_CONFIG'(SeCreateServicePrivilege) privilege." -ForegroundColor Yellow
+            exit
+        }
         # Check if the service exists on Windows
-        $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+        $service = Get-CimInstance -ClassName Win32_Service -Filter "Name='$Name'"
+
         if ($service) {
-            switch ($service.Status) {
+            switch ($service.State) {
                 'Running' { $status = 'Running' }
                 'Stopped' { $status = 'Stopped' }
                 'Paused' { $status = 'Paused' }
@@ -651,10 +680,11 @@ function Get-PodeService {
             return @{
                 Name   = $Name
                 Status = $status
+                Pid    = $service.ProcessId
             }
         }
         else {
-            Write-PodeErrorLog -Message "Service '$Name' not found on Windows."
+            #Write-PodeErrorLog -Message "Service '$Name' not found on Windows."
             return $null
         }
     }
@@ -718,6 +748,7 @@ function Get-PodeService {
                     return @{
                         Name   = $Name
                         Status = 'Stopped'
+                        Pid    = 0
                     }
                 }
             }

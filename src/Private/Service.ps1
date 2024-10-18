@@ -541,7 +541,7 @@ function Register-PodeWindowsService {
     # Parameters for New-Service
     $params = @{
         Name           = $Name
-        BinaryPathName = "`"$BinPath\win-$OsArchitecture\PodeMonitor.exe`" `"$SettingsFile`""
+        BinaryPathName = "`"$BinPath\$OsArchitecture\PodeMonitor.exe`" `"$SettingsFile`""
         DisplayName    = $DisplayName
         StartupType    = $StartupType
         Description    = $Description
@@ -664,5 +664,17 @@ function Write-PodeServiceLog {
         $lpath = Get-PodeRelativePath -Path './logs' -JoinRoot
         $logItem | ConvertTo-Json -Compress -Depth 5 | Add-Content "$lpath/watchdog-$($Service.Name).log"
 
+    }
+}
+
+
+function Test-PodeUserServiceCreationPrivilege {
+    # Get the list of user privileges
+    $privileges = whoami /priv | Where-Object { $_ -match "SeCreateServicePrivilege" }
+
+    if ($privileges) {
+        return $true
+    } else {
+        return $false
     }
 }
