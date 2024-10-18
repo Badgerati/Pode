@@ -176,6 +176,9 @@ function Register-PodeService {
         # Determine OS architecture and call platform-specific registration functions
         $osArchitecture = ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture).ToString().ToLower()
 
+        # Get the directory path where the Pode module is installed and store it in $binPath
+        $binPath = Join-Path -Path ((Get-Module -Name Pode).ModuleBase) -ChildPath 'Bin'
+
         if ($IsWindows) {
             $param = @{
                 Name                   = $Name
@@ -497,7 +500,7 @@ function Unregister-PodeService {
         $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
         if (-not $service) {
             # Service is not registered
-            throw ($PodeLocale.serviceNotRegisteredException -f "pode.$Name")
+            throw ($PodeLocale.serviceNotRegisteredException -f "$Name")
         }
 
         try {
@@ -517,6 +520,13 @@ function Unregister-PodeService {
             Remove-Service -Name $Name -ErrorAction Stop
             # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
 
+            # Remove the service configuration
+            if ($service.BinaryPathName) {
+                $binaryPath = $service.BinaryPathName.trim('"').split('" "')
+                if ((Test-Path -Path ($binaryPath[1]) -PathType Leaf)) {
+                    Remove-Item -Path ($binaryPath[1]) -ErrorAction Break
+                }
+            }
             return $true
         }
         catch {
@@ -542,7 +552,18 @@ function Unregister-PodeService {
                     }
                 }
                 systemctl disable "$Name.service"
-                Remove-Item "/etc/systemd/system/$Name.service"
+
+                # Read the content of the service file
+                $serviceFilePath = "/etc/systemd/system/$Name.service"
+                $serviceFileContent = Get-Content -Path $serviceFilePath
+
+                # Extract the SettingsFile from the ExecStart line using regex
+                $settingsFile = $serviceFileContent | Select-String -Pattern 'ExecStart=.*\s+(.*)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+                if ((Test-Path -Path $settingsFile -PathType Leaf)) {
+                    Remove-Item -Path $settingsFile
+                }
+
+                Remove-Item -Path $serviceFilePath -ErrorAction Break
                 # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
             }
             else {
@@ -587,7 +608,24 @@ function Unregister-PodeService {
                 }
                 launchctl unload ~/Library/LaunchAgents/pode.$Name.plist
                 if ($LASTEXITCODE -eq 0) {
-                    Remove-Item "~/Library/LaunchAgents/pode.$Name.plist" -ErrorAction Break
+
+                    $plistFilePath = "~/Library/LaunchAgents/pode.$Name.plist"
+
+                    # Read the content of the plist file
+                    $plistFileContent = Get-Content -Path $plistFilePath
+
+                    # Extract the SettingsFile from the ProgramArguments array using regex
+                    $settingsFile = $plistFileContent | Select-String -Pattern '<string>(.*)</string>' | ForEach-Object {
+                        if ($_.Line -match 'PodeMonitor.*<string>(.*)</string>') {
+                             $matches[1]
+                        }
+                    }
+
+                    if ((Test-Path -Path $settingsFile -PathType Leaf)) {
+                        Remove-Item -Path $settingsFile
+                    }
+
+                    Remove-Item -Path $plistFilePath -ErrorAction Break
                 }
                 else {
                     return $false
