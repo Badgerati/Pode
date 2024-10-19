@@ -9,6 +9,10 @@
 
     The script checks if the Pode module exists locally and imports it; otherwise, it imports Pode from the system.
 
+    To test the Pode server's HTTP endpoint:
+        Invoke-RestMethod -Uri http://localhost:8080/ -Method Get
+        # Response: 'Hello, Service!'
+
 .PARAMETER Register
     Registers the 'Hello Service' with Pode.
 
@@ -51,11 +55,6 @@
       https://github.com/Badgerati/Pode/blob/develop/examples/HelloService/HelloService.ps1
 
 .NOTES
-    Test the Pode server's HTTP endpoint:
-        Invoke-RestMethod -Uri http://localhost:8080/ -Method Get
-        # Response: 'Hello, Service!'
-
-
     Author: Pode Team
     License: MIT License
 #>

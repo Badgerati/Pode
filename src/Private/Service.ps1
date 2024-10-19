@@ -196,9 +196,7 @@ function Register-PodeMacService {
 
     # Determine whether the service should run at load
     $runAtLoad = if ($Autostart.IsPresent) { '<true/>' } else { '<false/>' }
-
-    # Create a temporary file
-    $tempFile = [System.IO.Path]::GetTempFileName()
+ 
     # Create the plist content
     @"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -233,16 +231,16 @@ function Register-PodeMacService {
     </dict>
 </dict>
 </plist>
-"@ | Set-Content -Path $tempFile  -Encoding UTF8
+"@ | Set-Content -Path "$($HOME)/Library/LaunchAgents/pode.$($Name).plist" -Encoding UTF8
 
-    sudo cp $tempFile "~/Library/LaunchAgents/pode.$($Name).plist"
+    chmod +r "$($HOME)/Library/LaunchAgents/pode.$($Name).plist"
 
     try {
         # Load the plist with launchctl
-        sudo launchctl load ~/Library/LaunchAgents/pode.$($Name).plist
+        launchctl load "$($HOME)/Library/LaunchAgents/pode.$($Name).plist"
 
         # Verify the service is now registered
-        if (-not (launchctl list | Select-String "pode.$Name")) {
+        if (! (launchctl list | Select-String "pode.$Name")) {
             # Service registration failed.
             throw ($PodeLocale.serviceRegistrationException -f "pode.$Name")
 

@@ -326,7 +326,7 @@ function Start-PodeService {
 
                 # Check if the service has a PID entry
                 if (!($serviceInfo -match '"PID" = (\d+);')) {
-                    sudo launchctl start "pode.$Name"
+                    launchctl start "pode.$Name"
 
                     # Log service started successfully
                     # Write-PodeServiceLog -Message "Service '$Name' started successfully."
@@ -435,7 +435,7 @@ function Stop-PodeService {
 
                 # Check if the service has a PID entry
                 if ($serviceInfo -match '"PID" = (\d+);') {
-                    sudo launchctl stop "pode.$Name"
+                    launchctl stop "pode.$Name"
                     # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                     return ($LASTEXITCODE -eq 0)
                 }
@@ -510,7 +510,7 @@ function Unregister-PodeService {
         }
 
         try {
-            $pathName=$service.BinaryPathName
+            $pathName = $service.BinaryPathName
             # Check if the service is running before attempting to stop it
             if ($service.Status -eq 'Running') {
                 if ($Force.IsPresent) {
@@ -602,10 +602,10 @@ function Unregister-PodeService {
             # Check if the service exists
 
             if (launchctl list | Select-String "pode.$Name") {
-                $serviceInfo = launchctl list "pode.$Name" -join "`n"
+                $serviceInfo = (launchctl list "pode.$Name") -join "`n"
                 # Check if the service has a PID entry
                 if ($serviceInfo -match '"PID" = (\d+);') {
-                    sudo launchctl stop "pode.$Name"
+                    launchctl stop "pode.$Name"
                     # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                     $serviceIsRunning = ($LASTEXITCODE -ne 0)
                 }
@@ -617,7 +617,7 @@ function Unregister-PodeService {
                 # Check if the service is running
                 if (  $serviceIsRunning) {
                     if ($Force.IsPresent) {
-                        sudo launchctl stop "pode.$Name"
+                        launchctl stop "pode.$Name"
                         # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
@@ -625,26 +625,24 @@ function Unregister-PodeService {
                         throw ($Podelocale.serviceIsRunningException -f "$Name")
                     }
                 }
-                sudo launchctl unload ~/Library/LaunchAgents/pode.$Name.plist
+                launchctl unload "$HOME/Library/LaunchAgents/pode.$Name.plist"
                 if ($LASTEXITCODE -eq 0) {
 
-                    $plistFilePath = "~/Library/LaunchAgents/pode.$Name.plist"
+                    $plistFilePath = "$HOME/Library/LaunchAgents/pode.$Name.plist"
+                    #Check if the plist file exists
+                    if (Test-Path -Path $plistFilePath) {
+                        # Read the content of the plist file
+                        $plistXml = [xml](Get-Content -Path $plistFilePath -Raw)
 
-                    # Read the content of the plist file
-                    $plistFileContent = Get-Content -Path $plistFilePath
+                        # Extract the second string in the ProgramArguments array (the settings file path)
+                        $settingsFile = $plistXml.plist.dict.array.string[1]
 
-                    # Extract the SettingsFile from the ProgramArguments array using regex
-                    $settingsFile = $plistFileContent | Select-String -Pattern '<string>(.*)</string>' | ForEach-Object {
-                        if ($_.Line -match 'PodeMonitor.*<string>(.*)</string>') {
-                            $matches[1]
+                        if ((Test-Path -Path $settingsFile -PathType Leaf)) {
+                            Remove-Item -Path $settingsFile
                         }
-                    }
 
-                    if ((Test-Path -Path $settingsFile -PathType Leaf)) {
-                        Remove-Item -Path $settingsFile
+                        Remove-Item -Path $plistFilePath -ErrorAction Break
                     }
-
-                    Remove-Item -Path $plistFilePath -ErrorAction Break
                 }
                 else {
                     return $false
