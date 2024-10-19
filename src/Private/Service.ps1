@@ -244,7 +244,7 @@ function Register-PodeMacService {
         # Verify the service is now registered
         if (-not (launchctl list | Select-String "pode.$Name")) {
             # Service registration failed.
-            throw ($PodeLocale.serviceRegistrationFailedException -f "pode.$Name")
+            throw ($PodeLocale.serviceRegistrationException -f "pode.$Name")
 
         }
     }
@@ -388,7 +388,7 @@ WantedBy=multi-user.target
         sudo systemctl enable "$Name.service"
         if ($LASTEXITCODE -ne 0) {
             # Service registration failed.
-            throw ($PodeLocale.serviceRegistrationFailedException -f "$Name.service")
+            throw ($PodeLocale.serviceRegistrationException -f "$Name.service")
         }
     }
     catch {
@@ -515,10 +515,12 @@ function Register-PodeWindowsService {
     }
 
     try {
-        $sv = New-Service @params -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+        $paramsString = $params.GetEnumerator() | ForEach-Object { "-$($_.Key) '$($_.Value)'" }
+        $sv = Invoke-PodeWinElevatedCommand -Command 'New-Service' -Arguments ($paramsString -join ' ')
+
         if (!$sv) {
             # Service registration failed.
-            throw ($PodeLocale.serviceRegistrationFailedException -f "$Name")
+            throw ($PodeLocale.serviceRegistrationException -f "$Name")
         }
     }
     catch {
@@ -638,5 +640,42 @@ function Test-PodeUserServiceCreationPrivilege {
     }
     else {
         return $false
+    }
+}
+
+<#
+.SYNOPSIS
+    Confirms if the current user has the necessary privileges to run the script.
+
+.DESCRIPTION
+    This function checks if the user has administrative privileges on Windows or root/sudo privileges on Linux/macOS.
+    If the user does not have the required privileges, the script will output an appropriate message and exit.
+
+.PARAMETER None
+    This function does not accept any parameters.
+
+.EXAMPLE
+    Confirm-PodeAdminPrivilege
+
+    This will check if the user has the necessary privileges to run the script. If not, it will output an error message and exit.
+
+.OUTPUTS
+    Exits the script if the necessary privileges are not available.
+
+.NOTES
+    This function works across Windows, Linux, and macOS, and checks for either administrative/root/sudo privileges or specific service-related permissions.
+#>
+
+function Confirm-PodeAdminPrivilege {
+    # Check for administrative privileges
+    if (! (Test-PodeAdminPrivilege -Elevate)) {
+        if ($IsWindows -and (Test-PodeUserServiceCreationPrivilege)) {
+            Write-PodeHost "Insufficient privileges. This script requires Administrator access or the 'SERVICE_CHANGE_CONFIG' (SeCreateServicePrivilege) permission to continue." -ForegroundColor Red
+            exit
+        }
+
+        # Message for non-Windows (Linux/macOS)
+        Write-PodeHost 'Insufficient privileges. This script must be run as root or with sudo permissions to continue.' -ForegroundColor Red
+        exit
     }
 }

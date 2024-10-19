@@ -292,8 +292,9 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Die Stream-Komprimierungskodierung wird nicht unterstützt: {0}'
     serviceAlreadyRegisteredException                                 = "Der Dienst '{0}' ist bereits registriert."
-    serviceNotRegisteredException                                     = "Der Dienst '{0}' ist nicht registriert."
-    serviceRegistrationException                                      = "Der Dienst '{0}' ist nicht registriert."
-    serviceRegistrationFailedException                                = "Die Registrierung des Dienstes '{0}' ist fehlgeschlagen."
+    serviceIsNotRegisteredException                                   = "Der Dienst '{0}' ist nicht registriert."
+    serviceCommandFailedException                                     = "Der Dienstbefehl '{0}' ist bei dem Dienst '{1}' fehlgeschlagen."
+    serviceRegistrationException                                      = "Die Registrierung des Dienstes '{0}' ist fehlgeschlagen."
     serviceIsRunningException                                         = "Der Dienst '{0}' läuft. Verwenden Sie den Parameter -Force, um den Dienst zwangsweise zu stoppen."
+    serviceUnRegistrationException                                    = "Die Abmeldung des Dienstes '{0}' ist fehlgeschlagen."
 }

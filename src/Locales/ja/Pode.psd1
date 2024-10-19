@@ -292,8 +292,9 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
     serviceAlreadyRegisteredException                                 = "サービス '{0}' はすでに登録されています。"
-    serviceNotRegisteredException                                     = "サービス '{0}' は登録されていません。"
-    serviceRegistrationException                                      = "サービス '{0}' は登録されていません。"
-    serviceRegistrationFailedException                                = "サービス '{0}' の登録に失敗しました。"
+    serviceIsNotRegisteredException                                      = "サービス '{0}' は登録されていません。"
+    serviceCommandFailedException                                     = "サービスコマンド '{0}' はサービス '{1}' で失敗しました。"
+    serviceRegistrationException                                = "サービス '{0}' の登録に失敗しました。"
     serviceIsRunningException                                         = "サービス '{0}' が実行中です。強制的に停止するには、-Force パラメーターを使用してください。"
+    serviceUnRegistrationException                                    = "サービス '{0}' の登録解除に失敗しました。"
 }

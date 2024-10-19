@@ -1,34 +1,83 @@
 <#
 .SYNOPSIS
-    PowerShell script to set up a Pode server with a simple GET endpoint.
+    PowerShell script to register, start, stop, query, and unregister a Pode service, with a basic server setup.
 
 .DESCRIPTION
-    This script sets up a Pode server that listens on port 8080. It includes a single route for GET requests
-    to the root path ('/') that returns a simple text response.
+    This script manages a Pode service named 'Hello Service' with commands to register, start, stop, query,
+    and unregister the service. Additionally, it sets up a Pode server that listens on port 8080 and includes
+    a simple GET route that responds with 'Hello, Service!'.
+
+    The script checks if the Pode module exists locally and imports it; otherwise, it imports Pode from the system.
+
+.PARAMETER Register
+    Registers the 'Hello Service' with Pode.
+
+.PARAMETER Unregister
+    Unregisters the 'Hello Service' from Pode. Use with the -Force switch to forcefully unregister the service.
+
+.PARAMETER Force
+    Used with the -Unregister parameter to forcefully unregister the service.
+
+.PARAMETER Start
+    Starts the 'Hello Service'.
+
+.PARAMETER Stop
+    Stops the 'Hello Service'.
+
+.PARAMETER Query
+    Queries the status of the 'Hello Service'.
 
 .EXAMPLE
-    To run the sample: ./HelloWorld/HelloWorld.ps1
+    Register the service:
+        ./HelloWorld.ps1 -Register
 
-    # HTML responses 'Hello, world!
-    Invoke-RestMethod -Uri http://localhost:8081/ -Method Get
+.EXAMPLE
+    Start the service:
+        ./HelloWorld.ps1 -Start
+
+.EXAMPLE
+    Query the service:
+        ./HelloWorld.ps1 -Query
+
+.EXAMPLE
+    Stop the service:
+        ./HelloWorld.ps1 -Stop
+
+.EXAMPLE
+    Unregister the service:
+        ./HelloWorld.ps1 -Unregister -Force
 
 .LINK
-    https://github.com/Badgerati/Pode/blob/develop/examples/HelloWorld/HelloWorld.ps1
+      https://github.com/Badgerati/Pode/blob/develop/examples/HelloService/HelloService.ps1
 
 .NOTES
+    Test the Pode server's HTTP endpoint:
+        Invoke-RestMethod -Uri http://localhost:8080/ -Method Get
+        # Response: 'Hello, Service!'
+
+
     Author: Pode Team
     License: MIT License
 #>
 
+[CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
 param(
+    [Parameter(Mandatory = $true, ParameterSetName = 'Register')]
     [switch]
     $Register,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Unregister')]
     [switch]
     $Unregister,
+    [Parameter(  ParameterSetName = 'Unregister')]
+    [switch]
+    $Force,
+    [Parameter(  ParameterSetName = 'Start')]
     [switch]
     $Start,
+    [Parameter(  ParameterSetName = 'Stop')]
     [switch]
     $Stop,
+    [Parameter(  ParameterSetName = 'Query')]
     [switch]
     $Query
 )
@@ -54,26 +103,26 @@ catch {
 }
 
 
-if ($Register.IsPresent) {
-    Register-PodeService -Name 'HelloService2' -Start
+if ( $Register.IsPresent) {
+    Register-PodeService -Name 'Hello Service'
     exit
 }
-if ($Unregister.IsPresent) {
-    Unregister-PodeService -Name 'HelloService2'
+if ( $Unregister.IsPresent) {
+    Unregister-PodeService -Name 'Hello Service' -Force:$Force
     exit
 }
 if ($Start.IsPresent) {
-    Start-PodeService -Name 'HelloService2'
+    Start-PodeService -Name 'Hello Service'
     exit
 }
 
 if ($Stop.IsPresent) {
-    Stop-PodeService -Name 'HelloService2'
+    Stop-PodeService -Name 'Hello Service'
     exit
 }
 
 if ($Query.IsPresent) {
-    Get-PodeService -Name 'HelloService2'
+    Get-PodeService -Name 'Hello Service'
     exit
 }
 # Alternatively, you can directly import the Pode module from the system

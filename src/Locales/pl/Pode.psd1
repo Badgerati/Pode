@@ -292,8 +292,9 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
     serviceAlreadyRegisteredException                                 = "Usługa '{0}' jest już zarejestrowana."
-    serviceNotRegisteredException                                     = "Usługa '{0}' nie jest zarejestrowana."
-    serviceRegistrationException                                      = "Usługa '{0}' nie jest zarejestrowana."
-    serviceRegistrationFailedException                                = "Rejestracja usługi '{0}' nie powiodła się."
+    serviceIsNotRegisteredException                                      = "Usługa '{0}' nie jest zarejestrowana."
+    serviceCommandFailedException                                     = "Polecenie serwisu '{0}' nie powiodło się w serwisie '{1}'."
+    serviceRegistrationException                                = "Rejestracja usługi '{0}' nie powiodła się."
     serviceIsRunningException                                         = "Usługa '{0}' jest uruchomiona. Użyj parametru -Force, aby wymusić zatrzymanie."
+    serviceUnRegistrationException                                    = "Nie udało się wyrejestrować usługi '{0}'."
 }

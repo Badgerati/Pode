@@ -292,8 +292,9 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "De functie '{0}' accepteert geen array als pipeline-invoer."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Niet-ondersteunde streamcompressie-encodering: {0}'
     serviceAlreadyRegisteredException                                 = "De service '{0}' is al geregistreerd."
-    serviceNotRegisteredException                                     = "De service '{0}' is niet geregistreerd."
-    serviceRegistrationException                                      = "De service '{0}' is niet geregistreerd."
-    serviceRegistrationFailedException                                = "Registratie van de service '{0}' is mislukt."
+    serviceIsNotRegisteredException                                      = "De service '{0}' is niet geregistreerd."
+    serviceCommandFailedException                                     = "De serviceopdracht '{0}' is mislukt op de service '{1}'."
+    serviceRegistrationException                                = "Registratie van de service '{0}' is mislukt."
     serviceIsRunningException                                         = "De service '{0}' draait. Gebruik de parameter -Force om de service geforceerd te stoppen."
+    serviceUnRegistrationException                                    = "Het afmelden van de service '{0}' is mislukt."
 }

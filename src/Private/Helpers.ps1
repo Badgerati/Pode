@@ -145,27 +145,6 @@ function Get-PodePSVersionTable {
     return $PSVersionTable
 }
 
-function Test-PodeIsAdminUser {
-    # check the current platform, if it's unix then return true
-    if (Test-PodeIsUnix) {
-        return $true
-    }
-
-    try {
-        $principal = [System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent())
-        if ($null -eq $principal) {
-            return $false
-        }
-
-        return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-    }
-    catch [exception] {
-        Write-PodeHost 'Error checking user administrator priviledges' -ForegroundColor Red
-        Write-PodeHost $_.Exception.Message -ForegroundColor Red
-        return $false
-    }
-}
-
 function Get-PodeHostIPRegex {
     param(
         [Parameter(Mandatory = $true)]
@@ -3776,46 +3755,169 @@ function Copy-PodeObjectDeepClone {
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }
-
-
 <#
 .SYNOPSIS
-    Checks if the current user has administrative privileges on Windows.
+    Tests if the current user has administrative privileges on Windows or root/sudo privileges on Linux/macOS.
 
 .DESCRIPTION
-    The `Test-PodeIsAdmin` function verifies if the current user has the necessary
-    privileges to perform administrative tasks by checking if they belong to the
-    Windows Administrator role. It will only run on Windows and returns `$true` if
-    the user has administrative privileges, otherwise `$false`.
+    This function checks the current user's privileges. On Windows, it checks if the user is an Administrator.
+    If the session is not elevated, you can optionally check if the user has the potential to elevate using the -Elevate switch.
+    On Linux and macOS, it checks if the user is either root or has sudo (Linux) or admin (macOS) privileges.
+    You can also check if the user has the potential to elevate by belonging to the sudo or admin group using the -Elevate switch.
 
-    If executed on a non-Windows platform, it returns `$false` and displays a message
-    indicating that the function is only applicable to Windows.
+.PARAMETER Elevate
+    The -Elevate switch allows you to check if the current user has the potential to elevate to administrator/root privileges,
+    even if the session is not currently elevated.
+
+.PARAMETER Console
+    The -Console switch will output errors to the console if an exception occurs.
+    Otherwise, the errors will be written to the Pode error log.
 
 .EXAMPLE
-    PS> Test-PodeIsAdmin
-    True
+    Test-PodeAdminPrivilege
 
-    This command checks if the current user is an administrator on a Windows system.
+    If the user has administrative privileges, it returns $true. If not, it returns $false.
 
 .EXAMPLE
-    PS> if (Test-PodeIsAdmin) { "User has admin rights" } else { "User does not have admin rights" }
+    Test-PodeAdminPrivilege -Elevate
 
-    This command conditionally outputs whether the current user has administrative rights
-    on Windows. If the script is run on a non-Windows system, it outputs "User does not
-    have admin rights."
+    This will check if the user has administrative/root/sudo privileges or the potential to elevate,
+    even if the session is not currently elevated.
+
+.EXAMPLE
+    Test-PodeAdminPrivilege -Elevate -Console
+
+    This will check for admin privileges or potential to elevate and will output errors to the console if any occur.
+
+.OUTPUTS
+    [bool]
+    Returns $true if the user has administrative/root/sudo/admin privileges or the potential to elevate,
+    otherwise returns $false.
 
 .NOTES
-    This function will only check for administrative privileges if executed on a Windows system.
+    This function works across multiple platforms: Windows, Linux, and macOS.
+    On Linux/macOS, it checks for root, sudo, or admin group memberships, and optionally checks for elevation potential
+    if the -Elevate switch is used.
 #>
-function Test-PodeIsAdmin {
-    # Check if the operating system is Windows
-    if ($IsWindows -ne $true) {
+
+function Test-PodeAdminPrivilege {
+    param(
+        [switch]
+        $Elevate,
+        [switch]
+        $Console
+    )
+    try {
+        # Check if the operating system is Windows
+        if ($IsWindows) {
+            $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+            if ($null -eq $principal) {
+                return $false
+            }
+
+            $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+            if ($isAdmin) {
+                return $true
+            }
+
+            if ($Elevate.IsPresent) {
+                # Use 'whoami /groups' to check if the user has the potential to elevate
+                $groups = whoami /groups
+                if ($groups -match 'S-1-5-32-544') {
+                    return $true
+                }
+            }
+            return $false
+        }
+        else {
+            # Check if the operating system is Linux or macOS (both are Unix-like)
+
+            # Check if the user is root (UID 0)
+            $isRoot = [int](id -u)
+            if ($isRoot -eq 0) {
+                return $true
+            }
+
+            if ($Elevate.IsPresent) {
+                # Check if the user has sudo privileges by checking sudo group membership
+                $user = whoami
+                $groups = (groups $user)
+
+                # macOS typically uses 'admin' group for sudo privileges
+                return ($groups -match '\bsudo\b' -or $groups -match '\badmin\b')
+            }
+            return $false
+        }
+    }
+    catch [exception] {
+        if ($Console.IsPresent) {
+            Write-PodeHost 'Error checking user privileges' -ForegroundColor Red
+            Write-PodeHost $_.Exception.Message -ForegroundColor Red
+        }
+        else {
+            $_ | Write-PodeErrorLog
+        }
         return $false
     }
+}
+<#
+.SYNOPSIS
+    Starts a command with elevated privileges if the current session is not already elevated.
 
-    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $principal = [Security.Principal.WindowsPrincipal]::new($currentUser)
-    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+.DESCRIPTION
+    This function checks if the current PowerShell session is running with administrator privileges.
+    If not, it re-launches the command as an elevated process. If the session is already elevated,
+    it will execute the command directly and return the result of the command.
+
+.PARAMETER Command
+    The PowerShell command to be executed. This can be any valid PowerShell command, script, or executable.
+
+.PARAMETER Arguments
+    The arguments to be passed to the command. This can be any valid argument list for the command or script.
+
+.EXAMPLE
+    Invoke-PodeWinElevatedCommand -Command "Get-Service" -Arguments "-Name 'W32Time'"
+
+    This will run the `Get-Service` command with elevated privileges, pass the `-Name 'W32Time'` argument, and return the result.
+
+.EXAMPLE
+    Invoke-PodeWinElevatedCommand -Command "C:\Scripts\MyScript.ps1" -Arguments "-Param1 'Value1' -Param2 'Value2'"
+
+    This will run the script `MyScript.ps1` with elevated privileges, pass the parameters `-Param1` and `-Param2`, and return the result.
+
+.NOTES
+    This function is particularly useful when running commands or scripts that require administrator rights.
+#>
+function Invoke-PodeWinElevatedCommand {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
+    param (
+        [string]
+        $Command,
+        [string]
+        $Arguments
+    )
+
+    # Check if the current session is elevated
+    $isElevated = ([Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+    if (-not $isElevated) {
+            # Escape the arguments by replacing " with `" (escaping quotes)
+            $escapedArguments = $Arguments -replace '"', '"""'
+
+            # Combine command and arguments into a string for elevated execution
+            $escapedCommand = "`"$Command`" $escapedArguments"
+        # Combine command and arguments into a string to pass for elevated execution
+     #   $escapedCommand = "`"$Command`" $Arguments"
+
+        # Start elevated process with properly escaped command and arguments
+        $result=  Start-Process -FilePath ((Get-Process -Id $PID).Path) `
+            -ArgumentList '-NoProfile', '-ExecutionPolicy Bypass', "-Command & {$escapedCommand}" `
+            -Verb RunAs -Wait -PassThru
+
+        return $result
+    }
+
+    # Run the command directly with arguments if elevated and capture the output
+    return Invoke-Expression "$Command $Arguments"
 }
 
- 

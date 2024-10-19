@@ -874,7 +874,7 @@ Describe 'Get-PodeRouteByUrl' {
 Describe 'Get-PodeRoute' {
     BeforeAll {
         Mock Test-PodeIPAddress { return $true }
-        Mock Test-PodeIsAdminUser { return $true } }
+        Mock Test-PodeAdminPrivilege { return $true } }
     BeforeEach {
         $PodeContext.Server = @{ 'Routes' = @{ 'GET' = @{}; 'POST' = @{}; }; 'FindEndpoints' = @{}; 'Endpoints' = @{}; 'EndpointsMap' = @{}; 'Type' = $null
             'OpenAPI' = @{

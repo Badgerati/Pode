@@ -1105,7 +1105,7 @@ function Add-PodeEndpoint {
     $obj.Url = "$($obj.Protocol)://$($obj.FriendlyName):$($obj.Port)/"
 
     # if the address is non-local, then check admin privileges
-    if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeIsAdminUser)) {
+    if (!$Force -and !(Test-PodeIPAddressLocal -IP $obj.Address) -and !(Test-PodeAdminPrivilege -Console)) {
         # Must be running with administrator privileges to listen on non-localhost addresses
         throw ($PodeLocale.mustBeRunningWithAdminPrivilegesExceptionMessage)
     }

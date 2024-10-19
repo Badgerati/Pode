@@ -292,8 +292,9 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La función '{0}' no acepta una matriz como entrada de canalización."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La codificación de compresión de transmisión no es compatible: {0}'
     serviceAlreadyRegisteredException                                 = "El servicio '{0}' ya está registrado."
-    serviceNotRegisteredException                                     = "El servicio '{0}' no está registrado."
-    serviceRegistrationException                                      = "El servicio '{0}' no está registrado."
-    serviceRegistrationFailedException                                = "Falló el registro del servicio '{0}'."
+    serviceIsNotRegisteredException                                   = "El servicio '{0}' no está registrado."
+    serviceCommandFailedException                                     = "El comando del servicio '{0}' falló en el servicio '{1}'."
+    serviceRegistrationException                                      = "Falló el registro del servicio '{0}'."
     serviceIsRunningException                                         = "El servicio '{0}' está en ejecución. Utilice el parámetro -Force para detenerlo a la fuerza."
+    serviceUnRegistrationException                                    = "La anulación del registro del servicio '{0}' falló."
 }

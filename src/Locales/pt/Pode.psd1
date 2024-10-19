@@ -292,8 +292,9 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'
     serviceAlreadyRegisteredException                                 = "O serviço '{0}' já está registrado."
-    serviceNotRegisteredException                                     = "O serviço '{0}' não está registrado."
-    serviceRegistrationException                                      = "O serviço '{0}' não está registrado."
-    serviceRegistrationFailedException                                = "Falha no registro do serviço '{0}'."
+    serviceIsNotRegisteredException                                      = "O serviço '{0}' não está registrado."
+    serviceCommandFailedException                                     = "O comando do serviço '{0}' falhou no serviço '{1}'."
+    serviceRegistrationException                                = "Falha no registro do serviço '{0}'."
     serviceIsRunningException                                         = "O serviço '{0}' está em execução. Use o parâmetro -Force para forçar a parada."
+    serviceUnRegistrationException                                    = "A anulação do registro do serviço '{0}' falhou."
 }
