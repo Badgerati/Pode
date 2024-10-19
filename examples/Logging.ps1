@@ -60,7 +60,7 @@ Start-PodeServer -browse {
     }
 
     if ( $LoggingType -icontains 'file') {
-        $logging += New-PodeLoggingMethod -File -Name 'general' -MaxDays 4 -Format Simple -ISO8601
+        $logging += New-PodeLoggingMethod -File -Name 'common' -MaxDays 4 -Format Simple -ISO8601
         $requestLogging = New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
     }
 
@@ -96,7 +96,7 @@ Start-PodeServer -browse {
 
     $logging | Enable-PodeTraceLogging -Raw:$Raw
     $logging | Enable-PodeErrorLogging -Raw:$Raw -Levels *
-    $logging | Enable-PodeGeneralLogging -Name 'mylog' -Raw:$Raw
+    $logging | Enable-PodeCommonLogging -Name 'mylog' -Raw:$Raw
 
     Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8081/"

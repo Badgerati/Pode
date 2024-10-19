@@ -3,11 +3,11 @@
 
 Pode supports general logging, allowing you to define custom logging methods and log levels. This feature enables you to write logs based on specified methods, ensuring flexibility and control over logging outputs.
 
-To enable general logging, use the `Enable-PodeGeneralLogging` function. This function takes a hashtable defining the logging method, including a ScriptBlock for log output. You can specify various log levels to be enabled, such as Error, Emergency, Alert, Critical, Warning, Notice, Informational, Info, Verbose, and Debug.
+To enable general logging, use the `Enable-PodeCommonLogging` function. This function takes a hashtable defining the logging method, including a ScriptBlock for log output. You can specify various log levels to be enabled, such as Error, Emergency, Alert, Critical, Warning, Notice, Informational, Info, Verbose, and Debug.
 
 ## Enabling General Logging
 
-To enable general logging, use the `Enable-PodeGeneralLogging` function, supplying the necessary parameters:
+To enable general logging, use the `Enable-PodeCommonLogging` function, supplying the necessary parameters:
 
 - `Method`: The hashtable defining the logging method, including the ScriptBlock for log output.
 - `Levels`: An array of log levels to be enabled for the logging method (default includes Error, Emergency, Alert, Critical, Warning, Notice, Informational, Info, Verbose, Debug).
@@ -18,17 +18,17 @@ To enable general logging, use the `Enable-PodeGeneralLogging` function, supplyi
 
 ```powershell
 $method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
-$method | Enable-PodeGeneralLogging -Name "mysyslog"
+$method | Enable-PodeCommonLogging -Name "mysyslog"
 ```
 
 ## Disabling General Logging
 
-To disable a general logging method, use the `Disable-PodeGeneralLogging` function with the `Name` parameter:
+To disable a general logging method, use the `Disable-PodeCommonLogging` function with the `Name` parameter:
 
 ### Example
 
 ```powershell
-Disable-PodeGeneralLogging -Name 'mysyslog'
+Disable-PodeCommonLogging -Name 'mysyslog'
 ```
 
 With these functions, Pode ensures robust and customizable logging capabilities, allowing you to manage logs effectively based on your specific requirements.

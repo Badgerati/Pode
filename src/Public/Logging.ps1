@@ -664,22 +664,6 @@ function Enable-PodeRequestLogging {
     }
 }
 
-<#
-.SYNOPSIS
-    Disables Request Logging.
-
-.DESCRIPTION
-    Disables Request Logging.
-
-.EXAMPLE
-    Disable-PodeRequestLogging
-#>
-function Disable-PodeRequestLogging {
-    [CmdletBinding()]
-    param()
-
-    Remove-PodeLogger -Name (Get-PodeRequestLoggingName)
-}
 
 <#
 .SYNOPSIS
@@ -784,9 +768,9 @@ function Enable-PodeErrorLogging {
 
 .EXAMPLE
     $method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
-    $method | Enable-PodeGeneralLogging -Name "mysyslog"
+    $method | Enable-PodeCommonLogging -Name "mysyslog"
 #>
-function Enable-PodeGeneralLogging {
+function Enable-PodeCommonLogging {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -842,29 +826,6 @@ function Enable-PodeGeneralLogging {
     }
 }
 
-
-<#
-.SYNOPSIS
-    Disables a generic logging method in Pode.
-
-.DESCRIPTION
-    This function disables a generic logging method in Pode.
-
-.PARAMETER Name
-    The name of the logging method to be disable.
-
-.EXAMPLE
-    Disable-PodeGeneralLogging -Name 'TestLog'
-#>
-function Disable-PodeGeneralLogging {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name)
-
-    Remove-PodeLogger -Name $Name
-}
 
 
 <#
@@ -931,6 +892,47 @@ function Enable-PodeTraceLogging {
         $Method.ForEach({ $_.Logger += $name })
     }
 }
+
+<#
+.SYNOPSIS
+    Disables Request Logging.
+
+.DESCRIPTION
+    Disables Request Logging.
+
+.EXAMPLE
+    Disable-PodeRequestLogging
+#>
+function Disable-PodeRequestLogging {
+    [CmdletBinding()]
+    param()
+
+    Remove-PodeLogger -Name (Get-PodeRequestLoggingName)
+}
+
+<#
+.SYNOPSIS
+    Disables a generic logging method in Pode.
+
+.DESCRIPTION
+    This function disables a generic logging method in Pode.
+
+.PARAMETER Name
+    The name of the logging method to be disable.
+
+.EXAMPLE
+    Disable-PodeCommonLogging -Name 'TestLog'
+#>
+function Disable-PodeCommonLogging {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name)
+
+    Remove-PodeLogger -Name $Name
+}
+
 
 <#
 .SYNOPSIS
@@ -1279,7 +1281,7 @@ function Write-PodeErrorLog {
 
         # for exceptions, check the inner exception
         if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
-            $Exception.InnerException | Write-PodeErrorLog
+            $Exception.InnerException | Write-PodeErrorLog -Level $Level -ThreadId $ThreadId
         }
     }
 }
@@ -1313,6 +1315,12 @@ function Write-PodeErrorLog {
 .PARAMETER ThreadId
     The ID of the thread where the log entry is generated.
 
+.PARAMETER Exception
+    An Exception to log.
+
+.PARAMETER CheckInnerException
+    If specified, any inner exceptions of the provided exception are also logged.
+
 .EXAMPLE
     $object | Write-PodeLog -Name 'LogName'
 
@@ -1330,6 +1338,15 @@ function Write-PodeLog {
         [object]
         $InputObject,
 
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Exception')]
+        [System.Exception]
+        $Exception,
+
+        [Parameter(ParameterSetName = 'Exception')]
+        [switch]
+        $CheckInnerException,
+
+        [Parameter( ParameterSetName = 'inbuilt')]
         [Parameter( ParameterSetName = 'custom')]
         [string]
         $Level = 'Informational',
@@ -1355,6 +1372,9 @@ function Write-PodeLog {
 
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'inbuilt' {
+                if (!$Level) {
+                    $Level = 'Informational'
+                }
                 $logItem = @{
                     Name = $Name
                     Item = $InputObject
@@ -1362,6 +1382,9 @@ function Write-PodeLog {
                 break
             }
             'custom' {
+                if (!$Level) {
+                    $Level = 'Informational'
+                }
                 $logItem = @{
                     Name = $Name
                     Item = @{
@@ -1371,6 +1394,20 @@ function Write-PodeLog {
                     }
                 }
                 break
+            }
+            'exception' {
+                if (!$Level) {
+                    $Level = 'Error'
+                }
+                $logItem = @{
+                    Name = $Name
+                    Item = @{
+                        Level   = $Level
+                        Message = $Exception.Message
+                        Tag     = $Tag
+                    }
+                }
+
             }
         }
         $log = $PodeContext.Server.Logging.Type[$Name]
@@ -1389,6 +1426,9 @@ function Write-PodeLog {
             }
             else {
                 $logItem.Item.ThreadId = [System.Threading.Thread]::CurrentThread.ManagedThreadId
+            }
+            if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'exception') {
+                Write-PodeErrorLog -Exception $Exception -Level $Level -CheckInnerException:$CheckInnerException -ThreadId $ThreadId
             }
         }
         # add the item to be processed
