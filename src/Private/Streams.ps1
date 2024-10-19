@@ -98,7 +98,7 @@ function Get-PodeByteLinesFromByteArray {
     Converts a stream to a byte array.
 
 .DESCRIPTION
-    The `ConvertFrom-PodeValueToByteArray` function reads data from a stream and converts it to a byte array.
+    The `ConvertFrom-PodeStreamToByteArray` function reads data from a stream and converts it to a byte array.
     It's useful for scenarios where you need to work with binary data from a stream.
 
 .PARAMETER Stream
@@ -111,13 +111,13 @@ function Get-PodeByteLinesFromByteArray {
     # Example usage:
     # Read data from a file stream and convert it to a byte array
     $stream = [System.IO.File]::OpenRead("C:\path\to\file.bin")
-    $byteArray = ConvertFrom-PodeValueToByteArray -Stream $stream
+    $byteArray = ConvertFrom-PodeStreamToByteArray -Stream $stream
     $stream.Close()
 
 .NOTES
     This is an internal function and may change in future releases of Pode.
 #>
-function ConvertFrom-PodeValueToByteArray {
+function ConvertFrom-PodeStreamToByteArray {
     param(
         [Parameter(Mandatory = $true)]
         $Stream
@@ -136,45 +136,6 @@ function ConvertFrom-PodeValueToByteArray {
     # Close the memory stream and return the byte array
     $ms.Close()
     return $ms.ToArray()
-}
-<#
-.SYNOPSIS
-    Converts a string value to a byte array using the specified encoding.
-
-.DESCRIPTION
-    The `ConvertFrom-PodeValueToByteArray` function takes a string value and converts it to a byte array.
-    You can specify the desired encoding (default is UTF-8).
-
-.PARAMETER Value
-    Specifies the input string value to convert.
-
-.PARAMETER Encoding
-    Specifies the encoding to use when converting the string to bytes.
-    Default value is UTF-8.
-
-.OUTPUTS
-    Returns a byte array containing the encoded representation of the input string.
-
-.EXAMPLE
-    # Example usage:
-    $inputString = "Hello, world!"
-    $byteArray = ConvertFrom-PodeValueToByteArray -Value $inputString
-    # Now you can work with the byte array as needed.
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-#>
-function ConvertFrom-PodeValueToByteArray {
-    param(
-        [Parameter()]
-        [string]
-        $Value,
-
-        [Parameter()]
-        $Encoding = [System.Text.Encoding]::UTF8
-    )
-
-    return $Encoding.GetBytes($Value)
 }
 
 function ConvertFrom-PodeBytesToString {
