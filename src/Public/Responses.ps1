@@ -216,7 +216,7 @@ function Write-PodeTextResponse {
         else {
             # convert string to bytes
             if ($isStringValue) {
-                $Bytes = ConvertFrom-PodeValueToByteArray -Value $Value
+                $Bytes = [System.Text.Encoding]::UTF8.GetBytes($Value)
             }
 
             # check if we only need a range of the bytes
