@@ -1,4 +1,5 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 
 BeforeDiscovery {
@@ -176,4 +177,60 @@ Describe 'Examples Script Headers' {
         }
     }
 
+}
+
+
+Describe 'Check for Duplicate Function Definitions' {
+    BeforeAll { $path = $PSCommandPath
+        $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+        # Retrieve all function definitions from the module files
+        $functionNames = @{}
+        $duplicatedFunctionNames = @{}
+        $moduleFiles = Get-ChildItem -Path $src -Recurse -Include '*.ps1', '*.psm1'
+
+        foreach ($file in $moduleFiles) {
+            $content = Get-Content -Path $file.FullName
+            $lineNumber = 0
+            foreach ($line in $content) {
+                # Increment line number for accurate tracking
+                $lineNumber++
+                # Match function definitions (e.g., "function MyFunction {")
+                if ($line -match 'function\s+([^\s{]+)\s*{') {
+                    $functionName = $Matches[1]
+
+                    # Check if function name already exists
+                    if (! $functionNames.ContainsKey($functionName)) {
+                        $functionNames[$functionName] = @{
+                            FunctionName = $functionName
+                            FilePath     = @( )
+                            LineNumber   = @( )
+                        }
+                    }
+                    else {
+                        # Add to duplicated function names if not already tracked
+                        $duplicatedFunctionNames[$functionName] = $functionNames[$functionName]
+                    }
+                    # Update the function details
+                    $functionNames[$functionName].LineNumber += $lineNumber
+                    $functionNames[$functionName].FilePath += $file.FullName
+                }
+            }
+        }
+
+        # Additional information in case of failure
+        if ($duplicatedFunctionNames.Count -gt 0) {
+            Write-host 'The following functions have multiple definitions:'
+            foreach ($key in $duplicatedFunctionNames.Keys) {
+                Write-host "Function: $($key)"
+                for ($i = 0; $i -lt $duplicatedFunctionNames[$key].LineNumber.Count ; $i++) {
+                    Write-host " - File: $($duplicatedFunctionNames[$key].FilePath[$i]), Line: $($duplicatedFunctionNames[$key].LineNumber[$i])"
+                }
+            }
+        }
+    }
+
+    It 'should not have duplicate function definitions' {
+        # Assert no duplicate function definitions
+        $duplicatedFunctionNames.Count | Should -Be 0
+    }
 }
