@@ -1374,17 +1374,25 @@ This is an internal function and may change in future releases of Pode.
 function Initialize-PodeOpenApiTable {
     param(
         [string]
-        $DefaultDefinitionTag = 'default'
+        $DefaultDefinitionTag
     )
+    # Check if the provided definition tag is null or empty. If so, set it to 'default'.
+    if ([string]::IsNullOrEmpty($DefaultDefinitionTag)) {
+        $DefaultDefinitionTag = 'default'
+    }
+
     # Initialization of the OpenAPI table with default settings
+    # Create a hashtable named $OpenAPI to hold various OpenAPI-related configurations and data.
     $OpenAPI = @{
+        # Initialize a stack to manage the Definition Tag selection.
         DefinitionTagSelectionStack = [System.Collections.Generic.Stack[System.Object]]::new()
     }
 
-    # Set the currently selected definition tag
+    # Set the currently selected definition tag to the provided or default tag.
     $OpenAPI['SelectedDefinitionTag'] = $DefaultDefinitionTag
 
-    # Initialize the Definitions dictionary with a base OpenAPI object for the selected definition tag
+    # Initialize the Definitions dictionary with a base OpenAPI object for the selected definition tag.
+    # The base OpenAPI object is created using the Get-PodeOABaseObject function.
     $OpenAPI['Definitions'] = @{ $OpenAPI['SelectedDefinitionTag'] = Get-PodeOABaseObject }
 
     # Return the initialized OpenAPI table
@@ -2259,6 +2267,36 @@ function Test-PodeOAComponentInternal {
             return $true
         }
     }
+}
+
+
+
+
+<#
+.SYNOPSIS
+    Converts a Pode route path into an OpenAPI-compliant route path format.
+
+.DESCRIPTION
+    This internal function takes a Pode route path and replaces placeholders with OpenAPI-style placeholders.
+    Specifically, it converts Pode route placeholders (e.g., `:id`) to OpenAPI placeholders (e.g., `{id}`).
+
+.PARAMETER Path
+    The Pode route path that contains placeholders to be converted to the OpenAPI format.
+
+.RETURNS
+    The converted OpenAPI-compliant route path as a string.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertTo-PodeOARoutePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Path
+    )
+
+    return ([regex]::Unescape((Resolve-PodePlaceholder -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')))
 }
 
 function Test-PodeRouteOADefinitionTag {

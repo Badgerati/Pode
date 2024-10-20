@@ -290,7 +290,7 @@ function Add-PodeRoute {
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlash -Path $Path
-    $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+    $OpenApiPath = ConvertTo-PodeOARoutePath -Path $Path
     $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoints from name
@@ -744,7 +744,7 @@ function Add-PodeStaticRoute {
 
     # ensure the route has appropriate slashes
     $Path = Update-PodeRouteSlash -Path $Path -Static
-    $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+    $OpenApiPath = ConvertTo-PodeOARoutePath -Path $Path
     $Path = Resolve-PodePlaceholder -Path $Path
 
     # get endpoints from name
