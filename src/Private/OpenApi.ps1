@@ -2263,3 +2263,33 @@ function Test-PodeOAComponentInternal {
         }
     }
 }
+
+
+
+
+<#
+.SYNOPSIS
+    Converts a Pode route path into an OpenAPI-compliant route path format.
+
+.DESCRIPTION
+    This internal function takes a Pode route path and replaces placeholders with OpenAPI-style placeholders.
+    Specifically, it converts Pode route placeholders (e.g., `:id`) to OpenAPI placeholders (e.g., `{id}`).
+
+.PARAMETER Path
+    The Pode route path that contains placeholders to be converted to the OpenAPI format.
+
+.RETURNS
+    The converted OpenAPI-compliant route path as a string.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertTo-PodeOARoutePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Path
+    )
+
+    return ([regex]::Unescape((Resolve-PodePlaceholder -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')))
+}
