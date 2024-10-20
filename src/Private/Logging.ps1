@@ -285,14 +285,6 @@ function Get-PodeLoggingSysLogMethod {
     return {
         param($MethodId)
 
-        # Helper function to sanitize and return a default value if the input is null or whitespace
-        function sg($value) {
-            if ([string]::IsNullOrWhiteSpace($value)) {
-                return '-'
-            }
-            return $value
-        }
-
         $log = @{}
         $socketCreated = $false
         try {
