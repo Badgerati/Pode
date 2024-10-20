@@ -419,4 +419,24 @@ Describe 'PrivateOpenApi' {
 
     }
 
+    Describe 'ConvertTo-PodeOARoutePath' {
+
+        It 'should convert the path "/v4.2/:potato" to OpenAPI format' {
+            $result = ConvertTo-PodeOARoutePath -Path '/v4.2/:potato'
+            $result | Should -BeExactly '/v4.2/{potato}'
+        }
+
+        It 'should convert the path "/:potato" to OpenAPI format' {
+            $result = ConvertTo-PodeOARoutePath -Path '/:potato'
+            $result | Should -BeExactly '/{potato}'
+        }
+
+        It 'should convert the path "/stores/order/:orderId/invoice" to OpenAPI format' {
+            $result = ConvertTo-PodeOARoutePath -Path '/stores/order/:orderId/invoice'
+            $result | Should -BeExactly '/stores/order/{orderId}/invoice'
+        }
+
+
+    }
+
 }
