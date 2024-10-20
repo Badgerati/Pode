@@ -3343,7 +3343,7 @@ function Add-PodeOAExternalRoute {
 
                 # ensure the route has appropriate slashes
                 $Path = Update-PodeRouteSlash -Path $Path
-                $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+                $OpenApiPath = ConvertTo-PodeOARoutePath -Path $Path
                 $Path = Resolve-PodePlaceholder -Path $Path
                 $extRoute = @{
                     Method  = $Method.ToLower()
