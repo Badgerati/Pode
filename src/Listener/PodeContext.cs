@@ -228,7 +228,7 @@ namespace Pode
                 try
                 {
                     PodeLogger.WriteErrorMessage($"Receiving request", Listener, PodeLoggingLevel.Verbose, this);
-                    var close = await Request.Receive(ContextTimeoutToken.Token);
+                    var close = await Request.Receive(ContextTimeoutToken.Token).ConfigureAwait(false);
                     SetContextType();
                     await EndReceive(close).ConfigureAwait(false);
                 }

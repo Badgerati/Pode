@@ -679,24 +679,111 @@ function Get-PodeLoggingInbuiltType {
 
                 switch ($options.LogFormat.ToLowerInvariant()) {
                     'extended' {
-                        return "$($item.Date.ToString('yyyy-MM-dd')) $($item.Date.ToString('HH:mm:ss')) $(sg $item.Host) $(sg $item.User) $(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Query) $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Agent)`""
+                        $sb = [System.Text.StringBuilder]::new()
+                        $null = $sb.Append('Date: ')
+                        $null = $sb.Append($item.Date.ToString('yyyy-MM-dd'))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append($item.Date.ToString('HH:mm:ss'))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Host))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.User))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Request.Method))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Request.Resource))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Request.Query))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Response.StatusCode))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Response.Size))
+                        $null = $sb.Append(' "')
+                        $null = $sb.Append((sg $item.Request.Agent))
+                        $null = $sb.Append('"')
+                        return $sb.ToString()
+                        #return "$($item.Date.ToString('yyyy-MM-dd')) $($item.Date.ToString('HH:mm:ss')) $(sg $item.Host) $(sg $item.User) $(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Query) $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Agent)`""
                     }
                     'common' {
+                        $sb = [System.Text.StringBuilder]::new()
+                        $null = $sb.Append((sg $item.Host))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.RfcUserIdentity))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.User))
+                        $null = $sb.Append(' [')
+                        $null = $sb.Append(([regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')))
+                        $null = $sb.Append('] "')
+                        $null = $sb.Append((sg $item.Request.Method))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Request.Resource))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Request.Protocol))
+                        $null = $sb.Append('" ')
+                        $null = $sb.Append((sg $item.Response.StatusCode))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Response.Size))
+                        return $sb.ToString()
                         # Build the URL with HTTP method
-                        $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
-                        $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
-                        return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size)"
+                        #   $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
+                        #   $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
+                        #    return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size)"
                     }
                     'json' {
-                        return "{`"time`": `"$($item.Date.ToString('yyyy-MM-ddTHH:mm:ssK'))`",`"remote_ip`": `"$(sg $item.Host)`",`"user`": `"$(sg $item.User)`",`"method`": `"$(sg $item.Request.Method)`",`"uri`": `"$(sg $item.Request.Resource)`",`"query`": `"$(sg $item.Request.Query)`",`"status`": $(sg $item.Response.StatusCode),`"response_size`": $(sg $item.Response.Size),`"user_agent`": `"$(sg $item.Request.Agent)`"}"
+                        $sb = [System.Text.StringBuilder]::new()
+                        $null = $sb.Append('{"time": "')
+                        $null = $sb.Append($item.Date.ToString('yyyy-MM-ddTHH:mm:ssK'))
+                        $null = $sb.Append('","remote_ip": "')
+                        $null = $sb.Append((sg $item.Host))
+                        $null = $sb.Append('","user": "')
+                        $null = $sb.Append((sg $item.User))
+                        $null = $sb.Append('","method": "')
+                        $null = $sb.Append((sg $item.Request.Method))
+                        $null = $sb.Append('","uri": "')
+                        $null = $sb.Append((sg $item.Request.Resource))
+                        $null = $sb.Append('","query": "')
+                        $null = $sb.Append((sg $item.Request.Query))
+                        $null = $sb.Append('","status": ')
+                        $null = $sb.Append((sg $item.Response.StatusCode))
+                        $null = $sb.Append(',"response_size": ')
+                        $null = $sb.Append((sg $item.Response.Size))
+                        $null = $sb.Append(',"user_agent": "')
+                        $null = $sb.Append((sg $item.Request.Agent))
+                        $null = $sb.Append('"}')
+                        return $sb.ToString()
+                        #   return "{`"time`": `"$($item.Date.ToString('yyyy-MM-ddTHH:mm:ssK'))`",`"remote_ip`": `"$(sg $item.Host)`",`"user`": `"$(sg $item.User)`",`"method`": `"$(sg $item.Request.Method)`",`"uri`": `"$(sg $item.Request.Resource)`",`"query`": `"$(sg $item.Request.Query)`",`"status`": $(sg $item.Response.StatusCode),`"response_size`": $(sg $item.Response.Size),`"user_agent`": `"$(sg $item.Request.Agent)`"}"
                     }
                     # Combined is the default
                     default {
+                        $sb = [System.Text.StringBuilder]::new()
+                        $null = $sb.Append((sg $item.Host))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.RfcUserIdentity))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.User))
+                        $null = $sb.Append(' [')
+                        $null = $sb.Append(([regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')))
+                        $null = $sb.Append('] "')
+                        $null = $sb.Append((sg $item.Request.Method))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Request.Resource))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Request.Protocol))
+                        $null = $sb.Append('" ')
+                        $null = $sb.Append((sg $item.Response.StatusCode))
+                        $null = $sb.Append(' ')
+                        $null = $sb.Append((sg $item.Response.Size))
+                        $null = $sb.Append(' "')
+                        $null = $sb.Append((sg $item.Request.Referrer))
+                        $null = $sb.Append('" "')
+                        $null = $sb.Append((sg $item.Request.Agent))
+                        $null = $sb.Append('"')
+                        return $sb.ToString()
                         # Build the URL with HTTP method
-                        $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
-                        $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
+                        #  $url = "$(sg $item.Request.Method) $(sg $item.Request.Resource) $(sg $item.Request.Protocol)"
+                        #  $date = [regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2')
                         # Build and return the request row
-                        return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
+                        # return "$(sg $item.Host) $(sg $item.RfcUserIdentity) $(sg $item.User) [$date] `"$($url)`" $(sg $item.Response.StatusCode) $(sg $item.Response.Size) `"$(sg $item.Request.Referrer)`" `"$(sg $item.Request.Agent)`""
                     }
                 }
                 return $item
@@ -717,18 +804,28 @@ function Get-PodeLoggingInbuiltType {
                     return $item
                 }
 
-                # Build the exception details
-                $row = @(
-                    "Date: $($item.Date.ToString($options.DataFormat))",
-                    "Level: $($item.Level)",
-                    "ThreadId: $($item.ThreadId)",
-                    "Server: $($item.Server)",
-                    "Category: $($item.Category)",
-                    "Message: $($item.Message)",
-                    "StackTrace: $($item.StackTrace)"
-                )
-                # Join the details and return
-                return "$($row -join "`n")`n"
+
+                $sb = [System.Text.StringBuilder]::new()
+
+                # Append the details to the StringBuilder
+                $null = $sb.Append('Date: ')
+                $null = $sb.AppendLine($item.Date.ToString($options.DataFormat))
+                $null = $sb.Append('Level: ')
+                $null = $sb.AppendLine($item.Level)
+                $null = $sb.Append('ThreadId: ')
+                $null = $sb.AppendLine($item.ThreadId)
+                $null = $sb.Append('Server: ')
+                $null = $sb.AppendLine($item.Server)
+                $null = $sb.Append('Category: ')
+                $null = $sb.AppendLine($item.Category)
+                $null = $sb.Append('Message: ')
+                $null = $sb.AppendLine($item.Message)
+                $null = $sb.Append('StackTrace: ')
+                $null = $sb.AppendLine($item.StackTrace)
+
+                # Return the built string
+                return $sb.ToString()
+
             }
         }
         'general' {
@@ -744,8 +841,20 @@ function Get-PodeLoggingInbuiltType {
                 if ($options.Raw) {
                     return $item
                 }
-
-                return "[$($item.Date.ToString($options.DataFormat))] $($item.Level) $( $item.Tag) $($item.ThreadId) $($item.Message)"
+                # Optimized concatenation using Append
+                $sb = [System.Text.StringBuilder]::new()
+                $null = $sb.Append('[')
+                $null = $sb.Append($item.Date.ToString($options.DataFormat))
+                $null = $sb.Append('] ')
+                $null = $sb.Append($item.Level)
+                $null = $sb.Append(' ')
+                $null = $sb.Append($item.Tag)
+                $null = $sb.Append(' ')
+                $null = $sb.Append($item.ThreadId)
+                $null = $sb.Append(' ')
+                $null = $sb.Append($item.Message)
+                return $sb.ToString()
+                #return "[$($item.Date.ToString($options.DataFormat))] $($item.Level) $( $item.Tag) $($item.ThreadId) $($item.Message)"
             }
         }
 
@@ -757,8 +866,20 @@ function Get-PodeLoggingInbuiltType {
                 if ($options.Raw) {
                     return $item
                 }
-
-                return "[$($item.Date.ToString($options.DataFormat))] $($item.Level) $( $item.Tag) $($item.ThreadId) $($item.Message)"
+                # Optimized concatenation using Append
+                $sb = [System.Text.StringBuilder]::new()
+                $null = $sb.Append('[')
+                $null = $sb.Append($item.Date.ToString($options.DataFormat))
+                $null = $sb.Append('] ')
+                $null = $sb.Append($item.Level)
+                $null = $sb.Append(' ')
+                $null = $sb.Append($item.Tag)
+                $null = $sb.Append(' ')
+                $null = $sb.Append($item.ThreadId)
+                $null = $sb.Append(' ')
+                $null = $sb.Append($item.Message)
+                return $sb.ToString()
+                #  return "[$($item.Date.ToString($options.DataFormat))] $($item.Level) $( $item.Tag) $($item.ThreadId) $($item.Message)"
             }
         }
     }
@@ -805,20 +926,20 @@ function Get-PodeErrorLoggingName {
 
 <#
 .SYNOPSIS
-Gets the name of the main logger.
+    Gets the name of the main logger.
 
 .DESCRIPTION
-This function returns the name of the main logger used in Pode.
+    This function returns the name of the main logger used in Pode.
 
-.RETURNS
-[string] - The name of the main logger.
+.OUTPUTS
+    [string] - The name of the main logger.
 
-.EXAMPLE
-Get-PodeMainLoggingName
+    .EXAMPLE
+    Get-PodeTraceLoggingName
 #>
-function Get-PodeMainLoggingName {
+function Get-PodeTraceLoggingName {
     # Return the name of the main logger
-    return '__pode_log_main__'
+    return '__pode_log_trace__'
 }
 
 
@@ -1153,11 +1274,16 @@ function Start-PodeLoggerDispatcher {
                                 Write-PodeErrorLog -Exception $log.Item -Level = 'Error' -ThreadId $log.Item.ThreadId
                             }
                             else {
-                                Write-PodeLog  -Name (Get-PodeErrorLoggingName) -Message $log.Item.Message -Level 'error' -ThreadId $log.Item.ThreadId -Tag 'Listener'
-
+                                if ($log.Item.Level -eq [Pode.PodeLoggingLevel]::Error) {
+                                    Write-PodeErrorLog -Message $log.Item.Message -ThreadId $log.Item.ThreadId -Tag 'Listener'
+                                }
+                                else {
+                                    Write-PodeLog  -Name (Get-PodeTraceLoggingName) -Message $log.Item.Message -Level $log.Item.Level  -ThreadId $log.Item.ThreadId -Tag 'Listener'
+                                }
                             }
                             continue
                         }
+
                         # Run the log item through the appropriate method
                         $logger = $PodeContext.Server.Logging.Type[$log.Name]
                         $now = [datetime]::Now
@@ -1319,7 +1445,7 @@ function Write-PodeTraceLog {
     )
 
     # Do nothing if logging is disabled, or error logging isn't set up
-    $name = Get-PodeMainLoggingName
+    $name = Get-PodeTraceLoggingName
     if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }

@@ -60,7 +60,7 @@ Start-PodeServer -browse {
     }
 
     if ( $LoggingType -icontains 'file') {
-        $logging += New-PodeLoggingMethod -File -Name 'common' -MaxDays 4 -Format Simple -ISO8601
+        $logging += New-PodeLoggingMethod -File -Name 'file' -MaxDays 4 -Format Simple -ISO8601
         $requestLogging = New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
     }
 

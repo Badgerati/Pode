@@ -857,7 +857,7 @@ function Enable-PodeTraceLogging {
     )
     begin {
         $pipelineMethods = @()
-        $name = Get-PodeMainLoggingName
+        $name = Get-PodeTraceLoggingName
         # error if it's already enabled
         if ($PodeContext.Server.Logging.Type.Contains($name)) {
             throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f $name)
@@ -928,7 +928,8 @@ function Disable-PodeCommonLogging {
     param(
         [Parameter(Mandatory = $true)]
         [string]
-        $Name)
+        $Name
+    )
 
     Remove-PodeLogger -Name $Name
 }
@@ -948,7 +949,7 @@ function Disable-PodeTraceLogging {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogger -Name (Get-PodeMainLoggingName)
+    Remove-PodeLogger -Name (Get-PodeTraceLoggingName)
 }
 
 <#
@@ -1193,11 +1194,11 @@ function Write-PodeErrorLog {
         [System.Management.Automation.ErrorRecord]
         $ErrorRecord,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'ErrorMessage')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Message')]
         [string]
-        $ErrorMessage,
+        $Message,
 
-        [Parameter( ParameterSetName = 'ErrorMessage')]
+        [Parameter( ParameterSetName = 'Message')]
         [System.Management.Automation.ErrorCategory]
         $Category = [System.Management.Automation.ErrorCategory]::NotSpecified,
 
@@ -1246,10 +1247,10 @@ function Write-PodeErrorLog {
                     StackTrace = $ErrorRecord.ScriptStackTrace
                 }
             }
-            'ErrorMessage' {
+            'Message' {
                 $item = @{
                     Category = $Category.ToString()
-                    Message  = $ErrorMessage
+                    Message  = $Message
                 }
             }
         }
@@ -1289,52 +1290,63 @@ function Write-PodeErrorLog {
 
 <#
 .SYNOPSIS
-    Writes an object to a configured custom or built-in logging method.
+    Writes an object, exception, or custom message to a configured custom or built-in logging method.
 
 .DESCRIPTION
-    This function writes an object to a configured logging method in Pode.
-    It supports both custom and built-in logging methods, allowing for structured logging with different log levels and messages.
+    This function writes an object, custom log message, or exception to a logging method in Pode.
+    It supports both custom and built-in logging methods, allowing structured logging with different log levels, messages, tags, and additional details like thread ID.
+    The logging method can be used to write errors, warnings, and informational logs in a structured manner, depending on the log level and source of the log.
+    Optionally, it can suppress reporting of errors to the error log if the same error is logged.
 
 .PARAMETER Name
-    The name of the logging method.
+    The name of the logging method (e.g., 'Console', 'File', 'Syslog').
 
 .PARAMETER InputObject
-    The object to write to the logging method.
+    The object to write to the logging method. This is the default parameter set.
 
 .PARAMETER Level
-    The log level for the custom logging method (Default: 'Informational').
+    The log level for the custom logging method (Default: 'Informational'). Log levels include 'Informational', 'Warning', 'Error', etc.
 
 .PARAMETER Message
-    The log message for the custom logging method.
+    The log message for the custom logging method. Required for custom logging.
 
 .PARAMETER Tag
     A string that identifies the source application, service, or process generating the log message.
-    The tag helps in distinguishing log messages from different sources and makes it easier to filter and analyze logs.
-    It is typically a short identifier such as the application name or process ID.
+    The tag helps distinguish log messages from different sources, making it easier to filter and analyze logs. Default is '-'.
 
 .PARAMETER ThreadId
-    The ID of the thread where the log entry is generated.
+    The ID of the thread where the log entry is generated. If not specified, the current thread ID will be used.
 
 .PARAMETER Exception
-    An Exception to log.
+    An exception object to log. Required for the 'Exception' parameter set.
 
 .PARAMETER CheckInnerException
     If specified, any inner exceptions of the provided exception are also logged.
+
+.PARAMETER SuppressErrorLog
+    A switch to suppress writing the error to the error log if it has already been logged by this function. Useful to prevent duplicate error logging.
 
 .EXAMPLE
     $object | Write-PodeLog -Name 'LogName'
 
 .EXAMPLE
     Write-PodeLog -Name 'CustomLog' -Level 'Error' -Message 'An error occurred.'
+
+.EXAMPLE
+    try {
+        # Some code that throws an exception
+    } catch {
+        Write-PodeLog -Name 'Syslog' -Exception $_ -SuppressErrorLog
+    }
 #>
 function Write-PodeLog {
-    [CmdletBinding(DefaultParameterSetName = 'inbuilt')]
+    [CmdletBinding(DefaultParameterSetName = 'custom')]
     param(
         [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'inbuilt')]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'InputObject')]
         [object]
         $InputObject,
 
@@ -1346,7 +1358,7 @@ function Write-PodeLog {
         [switch]
         $CheckInnerException,
 
-        [Parameter( ParameterSetName = 'inbuilt')]
+        [Parameter( ParameterSetName = 'InputObject')]
         [Parameter( ParameterSetName = 'custom')]
         [string]
         $Level = 'Informational',
@@ -1361,30 +1373,31 @@ function Write-PodeLog {
 
         [Parameter()]
         [int]
-        $ThreadId
+        $ThreadId,
+
+        [Parameter()]
+        $SuppressErrorLog
 
     )
     Process {
-        # do nothing if logging is disabled, or logger isn't setup
+        # Skip logging if the logger is disabled or not set up.
         if (!(Test-PodeLoggerEnabled -Name $Name)) {
             return
         }
 
+        # Define the log item based on the selected parameter set.
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-            'inbuilt' {
-                if (!$Level) {
-                    $Level = 'Informational'
-                }
+            'inputobject' {
+                if (!$Level) { $Level = 'Informational' }
                 $logItem = @{
-                    Name = $Name
-                    Item = $InputObject
+                    Name  = $Name
+                    Item  = $InputObject
+                    Level = $Level
                 }
                 break
             }
             'custom' {
-                if (!$Level) {
-                    $Level = 'Informational'
-                }
+                if (!$Level) { $Level = 'Informational' }
                 $logItem = @{
                     Name = $Name
                     Item = @{
@@ -1396,9 +1409,7 @@ function Write-PodeLog {
                 break
             }
             'exception' {
-                if (!$Level) {
-                    $Level = 'Error'
-                }
+                if (!$Level) { $Level = 'Error' }
                 $logItem = @{
                     Name = $Name
                     Item = @{
@@ -1407,31 +1418,34 @@ function Write-PodeLog {
                         Tag     = $Tag
                     }
                 }
-
             }
         }
+
+        # Get the configured log method.
         $log = $PodeContext.Server.Logging.Type[$Name]
+
         if ($log.Standard) {
+            # Add server details to the log item.
             $logItem.Item.Server = $PodeContext.Server.ComputerName
 
-            if ($log.Method.Arguments.AsUTC) {
-                $logItem.Item.Date = [datetime]::UtcNow
-            }
-            else {
-                $logItem.Item.Date = [datetime]::Now
-            }
+            # Add the current date and time (UTC or local) to the log item.
+            $logItem.Item.Date = if ($log.Method.Arguments.AsUTC) { [datetime]::UtcNow } else { [datetime]::Now }
 
-            if ($ThreadId) {
-                $logItem.Item.ThreadId = $ThreadId
-            }
-            else {
-                $logItem.Item.ThreadId = [System.Threading.Thread]::CurrentThread.ManagedThreadId
-            }
-            if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'exception') {
-                Write-PodeErrorLog -Exception $Exception -Level $Level -CheckInnerException:$CheckInnerException -ThreadId $ThreadId
+            # Set the thread ID if provided, otherwise use the current thread ID.
+            $logItem.Item.ThreadId = if ($ThreadId) { $ThreadId } else { [System.Threading.Thread]::CurrentThread.ManagedThreadId }
+
+            # If error logging is not suppressed, log errors or exceptions.
+            if (! $SuppressErrorLog.IsPresent) {
+                if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'exception') {
+                    Write-PodeErrorLog -Exception $Exception -Level $Level -CheckInnerException:$CheckInnerException -ThreadId $ThreadId
+                }
+                elseif ($Level -eq 'Error') {
+                    Write-PodeErrorLog -Message $Message -Level $Level -ThreadId $ThreadId
+                }
             }
         }
-        # add the item to be processed
+
+        # Enqueue the log item for processing.
         [Pode.PodeLogger]::Enqueue($logItem)
     }
 }
