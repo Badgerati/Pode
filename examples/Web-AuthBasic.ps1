@@ -75,6 +75,7 @@ Start-PodeServer -Threads 2 {
         return @{ Message = 'Invalid details supplied' }
     }
 
+    
     # POST request to get current user (since there's no session, authentication will always happen)
     Add-PodeRoute -Method Post -Path '/users' -Authentication 'Validate' -ScriptBlock {
         Write-PodeJsonResponse -Value @{
