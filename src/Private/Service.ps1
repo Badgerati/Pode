@@ -196,7 +196,7 @@ function Register-PodeMacService {
 
     # Determine whether the service should run at load
     $runAtLoad = if ($Autostart.IsPresent) { '<true/>' } else { '<false/>' }
- 
+
     # Create the plist content
     @"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -342,11 +342,13 @@ function Register-PodeLinuxService {
         [string]
         $OsArchitecture
     )
+    $nameService = "$Name.service".Replace(' ', '\x20')
+    $output = bash -c "systemctl status $nameService 2>&1"
 
     # Check if the service is already registered
-    if (systemctl status "$Name.service" -ErrorAction SilentlyContinue) {
+    if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
         # Service is already registered.
-        throw ($PodeLocale.serviceAlreadyRegisteredException -f "$Name.service" )
+        throw ($PodeLocale.serviceAlreadyRegisteredException -f $nameService )
     }
     # Create a temporary file
     $tempFile = [System.IO.Path]::GetTempFileName()
@@ -369,7 +371,7 @@ Group=$Group
 WantedBy=multi-user.target
 "@ | Set-Content -Path $tempFile  -Encoding UTF8
 
-    sudo cp $tempFile "/etc/systemd/system/$($Name).service"
+    sudo cp $tempFile "/etc/systemd/system/$nameService"
 
     # Create user if needed
     if (!$SkipUserCreation.IsPresent) {
@@ -383,10 +385,10 @@ WantedBy=multi-user.target
 
     # Enable the service and check if it fails
     try {
-        sudo systemctl enable "$Name.service"
+        sudo systemctl enable $nameService
         if ($LASTEXITCODE -ne 0) {
             # Service registration failed.
-            throw ($PodeLocale.serviceRegistrationException -f "$Name.service")
+            throw ($PodeLocale.serviceRegistrationException -f $nameService)
         }
     }
     catch {

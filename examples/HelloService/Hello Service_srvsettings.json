@@ -1,0 +1,12 @@
+{
+  "PodePwshWorker": {
+    "PwshPath": "/opt/microsoft/powershell/7/pwsh",
+    "LogFilePath": "/home/m.daneri/Documents/Pode/examples/HelloService/logs/Hello Service_svc.log",
+    "ParameterString": "",
+    "ScriptPath": "/home/m.daneri/Documents/Pode/examples/HelloService/HelloService.ps1",
+    "DisableTermination": true,
+    "Quiet": true,
+    "Name": "Hello Service",
+    "ShutdownWaitTimeMs": 30000
+  }
+}

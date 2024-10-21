@@ -3844,7 +3844,7 @@ function Test-PodeAdminPrivilege {
                 $groups = (groups $user)
 
                 # macOS typically uses 'admin' group for sudo privileges
-                return ($groups -match '\bsudo\b' -or $groups -match '\badmin\b')
+                return ($groups -match '\bwheel\b' -or $groups -match '\badmin\b')
             }
             return $false
         }
@@ -3901,16 +3901,16 @@ function Invoke-PodeWinElevatedCommand {
     $isElevated = ([Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
     if (-not $isElevated) {
-            # Escape the arguments by replacing " with `" (escaping quotes)
-            $escapedArguments = $Arguments -replace '"', '"""'
+        # Escape the arguments by replacing " with `" (escaping quotes)
+        $escapedArguments = $Arguments -replace '"', '"""'
 
-            # Combine command and arguments into a string for elevated execution
-            $escapedCommand = "`"$Command`" $escapedArguments"
+        # Combine command and arguments into a string for elevated execution
+        $escapedCommand = "`"$Command`" $escapedArguments"
         # Combine command and arguments into a string to pass for elevated execution
-     #   $escapedCommand = "`"$Command`" $Arguments"
+        #   $escapedCommand = "`"$Command`" $Arguments"
 
         # Start elevated process with properly escaped command and arguments
-        $result=  Start-Process -FilePath ((Get-Process -Id $PID).Path) `
+        $result = Start-Process -FilePath ((Get-Process -Id $PID).Path) `
             -ArgumentList '-NoProfile', '-ExecutionPolicy Bypass', "-Command & {$escapedCommand}" `
             -Verb RunAs -Wait -PassThru
 
