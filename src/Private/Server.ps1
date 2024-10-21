@@ -12,6 +12,9 @@ function Start-PodeInternalServer {
         Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID))" -ForegroundColor Cyan
         $null = Test-PodeVersionPwshEOL -ReportUntested
 
+        # Indicating that the Watchdog client is starting
+        Set-PodeWatchdogHearthbeatStatus -Status 'Starting'
+
         # setup temp drives for internal dirs
         Add-PodePSInbuiltDrive
 
@@ -34,6 +37,7 @@ function Start-PodeInternalServer {
         }
 
         $_script = Convert-PodeScopedVariables -ScriptBlock $_script -Exclude Session, Using
+
         $null = Invoke-PodeScriptBlock -ScriptBlock $_script -NoNewClosure -Splat
 
         #Validate OpenAPI definitions
@@ -141,6 +145,9 @@ function Start-PodeInternalServer {
             }
         }
 
+        # Start Watchdog heartbeat if enabled
+        Start-PodeWatchdog
+
         # set the start time of the server (start and after restart)
         $PodeContext.Metrics.Server.StartTime = [datetime]::UtcNow
 
@@ -207,7 +214,13 @@ function Start-PodeInternalServer {
                 }
             }
 
+            # Displays startup information for the Pode Watchdog service.
+            Write-PodeWatchdogStartupMessage
+
+            # Marking the Watchdog client as 'Running' now that the process is stable
+            Set-PodeWatchdogHearthbeatStatus -Status 'Running'
         }
+
     }
     catch {
         throw $_.Exception
@@ -220,13 +233,21 @@ function Restart-PodeInternalServer {
         # Restarting server...
         Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Cyan
 
+        # Setting the Watchdog status to 'Restarting' as part of the process recovery
+        Set-PodeWatchdogHearthbeatStatus -Status 'Restarting'
+
         # run restart event hooks
         Invoke-PodeEvent -Type Restart
 
         # cancel the session token
         $PodeContext.Tokens.Cancellation.Cancel()
 
+        # stop the watchdog if it's running
+        Write-Verbose 'Stopping watchdog'
+        Stop-PodeWatchdog
+
         # close all current runspaces
+        Write-Verbose 'Closing runspaces'
         Close-PodeRunspace -ClosePool
 
         # remove all of the pode temp drives
@@ -365,4 +386,53 @@ function Test-PodeServerKeepOpen {
 
     # keep server open
     return $true
+}
+
+
+function Close-PodeServerInternal {
+    param(
+        [switch]
+        $ShowDoneMessage
+    )
+
+    # ensure the token is cancelled
+    if ($null -ne $PodeContext.Tokens.Cancellation) {
+        Write-Verbose 'Cancelling main cancellation token'
+        $PodeContext.Tokens.Cancellation.Cancel()
+    }
+
+    # stop the watchdog if it's running
+    Write-Verbose 'Stopping watchdog'
+    Stop-PodeWatchdog
+
+    # stop all current runspaces
+    Write-Verbose 'Closing runspaces'
+    Close-PodeRunspace -ClosePool
+
+    # stop the file monitor if it's running
+    Write-Verbose 'Stopping file monitor'
+    Stop-PodeFileMonitor
+
+    try {
+        # remove all the cancellation tokens
+        Write-Verbose 'Disposing cancellation tokens'
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
+
+        # dispose mutex/semaphores
+        Write-Verbose 'Diposing mutex and semaphores'
+        Clear-PodeMutexes
+        Clear-PodeSemaphores
+    }
+    catch {
+        $_ | Out-Default
+    }
+
+    # remove all of the pode temp drives
+    Write-Verbose 'Removing internal PSDrives'
+    Remove-PodePSDrive
+
+    if ($ShowDoneMessage -and ($PodeContext.Server.Types.Length -gt 0) -and !$PodeContext.Server.IsServerless) {
+        Write-PodeHost $PodeLocale.doneMessage -ForegroundColor Green
+    }
 }
