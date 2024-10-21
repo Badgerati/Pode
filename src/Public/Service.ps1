@@ -547,7 +547,7 @@ function Unregister-PodeService {
             }
 
             # Remove the service
-            $null = Invoke-PodeWinElevatedCommand   -Command  'Remove-Service' -Arguments "-Name '$Name'"
+            $null = Invoke-PodeWinElevatedCommand -Command  'Remove-Service' -Arguments "-Name '$Name'"
             $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
             if ($null -ne $service) {
                 # Write-PodeServiceLog -Message "Service '$Name' unregistered failed."
@@ -593,7 +593,7 @@ function Unregister-PodeService {
                 sudo systemctl disable $nameService
                 if ($LASTEXITCODE -eq 0 ) {
                     # Read the content of the service file
-                    $serviceFilePath = "/etc/systemd/system/$nameService"
+                    $serviceFilePath = "/etc/systemd/system/$Name.service"
                     $serviceFileContent = Get-Content -Path $serviceFilePath
 
                     # Extract the SettingsFile from the ExecStart line using regex

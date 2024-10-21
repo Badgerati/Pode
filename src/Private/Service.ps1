@@ -371,7 +371,7 @@ Group=$Group
 WantedBy=multi-user.target
 "@ | Set-Content -Path $tempFile  -Encoding UTF8
 
-    sudo cp $tempFile "/etc/systemd/system/$nameService"
+    sudo cp $tempFile "/etc/systemd/system/$Name.service"
 
     # Create user if needed
     if (!$SkipUserCreation.IsPresent) {
