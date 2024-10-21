@@ -291,10 +291,11 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0} operations cannot have a Request Body.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Unsupported stream compression encoding: {0}'
-    LocalEndpointConflictExceptionMessage                             = "Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition."    serviceAlreadyRegisteredException                                 = "Service '{0}' is already registered."
-    serviceIsNotRegisteredException                                      = "Service '{0}' is not registered."
+    LocalEndpointConflictExceptionMessage                             = "Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition."
+    serviceAlreadyRegisteredException                                 = "Service '{0}' is already registered."
+    serviceIsNotRegisteredException                                   = "Service '{0}' is not registered."
     serviceCommandFailedException                                     = "Service command '{0}' failed on service '{1}'."
-    serviceRegistrationException                                = "Service '{0}' registration failed."
+    serviceRegistrationException                                      = "Service '{0}' registration failed."
     serviceIsRunningException                                         = "Service '{0}' is running. Use the -Force parameter to forcefully stop."
     serviceUnRegistrationException                                    = "Service '{0}' unregistration failed."
 }
