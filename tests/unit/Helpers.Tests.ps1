@@ -1691,6 +1691,51 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
         }
     }
 
+
+     # Test case for a hashtable containing a key named 'Count'
+     Context "When a hashtable contains a 'Count' key" {
+
+        It "Should convert the hashtable to YAML without error" {
+            # Arrange
+            $hashtable = @{
+                Name  = 'Sample'
+                Count = 10
+            }
+
+            # Act
+            $result = { ConvertTo-PodeYamlInternal -InputObject $hashtable -NoNewLine} | Should -Not -Throw
+
+            # Assert
+            $yaml = ConvertTo-PodeYamlInternal -InputObject $hashtable -NoNewLine
+
+            # Check if YAML conversion includes both 'Name' and 'Count' keys in the YAML output
+            $yaml | Should -Match "Name: Sample"
+            $yaml | Should -Match "Count: 10"
+        }
+    }
+
+    # Test case for a PSCustomObject containing a key named 'Count'
+    Context "When a PSCustomObject contains a 'Count' property" {
+
+        It "Should convert the PSCustomObject to YAML without error" {
+            # Arrange
+            $object = [pscustomobject]@{
+                Name  = 'Sample'
+                Count = 20
+            }
+
+            # Act
+            $result = { ConvertTo-PodeYamlInternal -InputObject $object -NoNewLine} | Should -Not -Throw
+
+            # Assert
+            $yaml = ConvertTo-PodeYamlInternal -InputObject $object -NoNewLine
+
+            # Check if YAML conversion includes both 'Name' and 'Count' properties in the YAML output
+            $yaml | Should -Match "Name: Sample"
+            $yaml | Should -Match "Count: 20"
+        }
+    }
+
     Context 'Error handling' {
         It 'Returns empty string for null input' {
             $result = ConvertTo-PodeYamlInternal -InputObject $null
