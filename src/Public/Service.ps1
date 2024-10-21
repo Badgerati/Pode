@@ -576,7 +576,7 @@ function Unregister-PodeService {
             $nameService = "$Name.service".Replace(' ', '\x20')
             systemctl status $nameService 2>&1
             # Check if the service is already registered
-            if ($code -eq 0 -or $code -eq 3) {
+            if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
                 # Check if the service is running
                 $status = systemctl is-active  $nameService 2>&1
                 if ($status -eq 'active') {
