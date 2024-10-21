@@ -298,7 +298,7 @@ function Start-PodeService {
         }
 
         elseif ($IsLinux) {
-            $nameService = "$Name.service".Replace(' ', '\x20')
+            $nameService = "$Name.service".Replace(' ', '_')
             # Check if the service exists
             systemctl status $nameService 2>&1
             if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
@@ -418,7 +418,7 @@ function Stop-PodeService {
             }
         }
         elseif ($IsLinux) {
-            $nameService = "$Name.service".Replace(' ', '\x20')
+            $nameService = "$Name.service".Replace(' ', '_')
             systemctl status $nameService 2>&1
             # Check if the service is already registered
             if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
@@ -573,7 +573,7 @@ function Unregister-PodeService {
 
     elseif ($IsLinux) {
         try {
-            $nameService = "$Name.service".Replace(' ', '\x20')
+            $nameService = "$Name.service".Replace(' ', '_')
             systemctl status $nameService 2>&1
             # Check if the service is already registered
             if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
@@ -593,17 +593,24 @@ function Unregister-PodeService {
                 sudo systemctl disable $nameService
                 if ($LASTEXITCODE -eq 0 ) {
                     # Read the content of the service file
-                    $serviceFilePath = "/etc/systemd/system/$Name.service"
-                    $serviceFileContent = Get-Content -Path $serviceFilePath
+                    $serviceFilePath = "/etc/systemd/system/$nameService"
+                    if ((Test-path -path $serviceFilePath -PathType Leaf)) {
+                        $serviceFileContent = sudo cat $serviceFilePath
 
-                    # Extract the SettingsFile from the ExecStart line using regex
-                    $settingsFile = $serviceFileContent | Select-String -Pattern 'ExecStart=.*\s+(.*)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
-                    if ((Test-Path -Path $settingsFile -PathType Leaf)) {
-                        Remove-Item -Path $settingsFile
+                        # Extract the SettingsFile from the ExecStart line using regex
+                        $execStart = ($serviceFileContent | Select-String -Pattern 'ExecStart=.*\s+(.*)').ToString()
+                        # Find the index of '/PodeMonitor ' in the string
+                        $index = $execStart.IndexOf('/PodeMonitor ') + ('/PodeMonitor '.Length)
+                        # Extract everything after '/PodeMonitor '
+                        $settingsFile = $execStart.Substring($index)
+                        if ((Test-Path -Path $settingsFile -PathType Leaf)) {
+                            Remove-Item -Path $settingsFile
+                        }
+                        sudo rm $serviceFilePath
+
+                        # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
                     }
-
-                    Remove-Item -Path $serviceFilePath -ErrorAction Break
-                    # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
+                    sudo systemctl daemon-reload
                 }
                 else {
                     # Write-PodeServiceLog -Message "Service '$Name' unregistered failed."
@@ -768,35 +775,48 @@ function Get-PodeService {
 
     elseif ($IsLinux) {
         try {
+            $nameService = "$Name.service".Replace(' ', '_')
             # Check if the service exists on Linux (systemd)
-            $output = systemctl is-active "$Name.service" 2>&1
-            if ($LASTEXITCODE -eq 0) {
-                if ($output -match 'active') {
+            $servicePid = 0
+            $status = $(systemctl show -p ActiveState $nameService | awk -F'=' '{print $2}')
+
+            switch ($status) {
+                'active' {
+                    $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
                     $status = 'Running'
                 }
-                elseif ($output -match 'inactive \(dead\)') {
+                'reloading' {
+                    $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                    $status = 'Running'
+                }
+                'maintenance' {
+                    $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                    $status = 'Paused'
+                }
+                'inactive' {
                     $status = 'Stopped'
                 }
-                elseif ($output -match 'activating') {
+                'failed' {
+                    $status = 'Stopped'
+                }
+                'activating' {
+                    $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
                     $status = 'Starting'
                 }
-                elseif ($output -match 'deactivating') {
+                'deactivating' {
                     $status = 'Stopping'
                 }
-                else {
-                    $status = 'Unknown'
-                }
-                return @{
-                    Name   = $Name
-                    Status = $status
+                default {
+                    $status = 'Stopped'
                 }
             }
-            else {
-                return @{
-                    Name   = $Name
-                    Status = 'Stopped'
-                }
+            return @{
+                Name   = $Name
+                Status = $status
+                Pid    = $servicePid
             }
+
+
         }
         catch {
             $_ | Write-PodeErrorLog

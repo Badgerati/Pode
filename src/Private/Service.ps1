@@ -342,7 +342,7 @@ function Register-PodeLinuxService {
         [string]
         $OsArchitecture
     )
-    $nameService = "$Name.service".Replace(' ', '\x20')
+    $nameService = "$Name.service".Replace(' ', '_')
     systemctl status $nameService 2>&1
 
     # Check if the service is already registered
@@ -359,11 +359,11 @@ Description=$Description
 After=network.target
 
 [Service]
-ExecStart=$BinPath/$OsArchitecture/PodeMonitor $SettingsFile
+ExecStart=$BinPath/$OsArchitecture/PodeMonitor "$SettingsFile"
 WorkingDirectory=$BinPath
 Restart=always
 User=$User
-Group=$Group
+#Group=$Group
 # Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
 # Environment=ASPNETCORE_ENVIRONMENT=Production
 
@@ -371,7 +371,7 @@ Group=$Group
 WantedBy=multi-user.target
 "@ | Set-Content -Path $tempFile  -Encoding UTF8
 
-    sudo cp $tempFile "/etc/systemd/system/$Name.service"
+    sudo cp $tempFile "/etc/systemd/system/$nameService"
 
     # Create user if needed
     if (!$SkipUserCreation.IsPresent) {
