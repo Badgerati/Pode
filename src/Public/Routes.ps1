@@ -208,6 +208,9 @@ function Add-PodeRoute {
         $OADefinitionTag
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # check if we have any route group info defined
     if ($null -ne $RouteGroup) {
         if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
@@ -644,6 +647,9 @@ function Add-PodeStaticRoute {
         $RedirectToDefault
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # check if we have any route group info defined
     if ($null -ne $RouteGroup) {
         if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
@@ -958,6 +964,9 @@ function Add-PodeSignalRoute {
         $IfExists = 'Default'
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # check if we have any route group info defined
     if ($null -ne $RouteGroup) {
         if (![string]::IsNullOrWhiteSpace($RouteGroup.Path)) {
@@ -1178,6 +1187,9 @@ function Add-PodeRouteGroup {
         [string[]]
         $OADefinitionTag
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if (Test-PodeIsEmpty $Routes) {
         # The Route parameter needs a valid, not empty, scriptblock
@@ -1437,6 +1449,9 @@ function Add-PodeStaticRouteGroup {
         $RedirectToDefault
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if (Test-PodeIsEmpty $Routes) {
         # The Route parameter needs a valid, not empty, scriptblock
         throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
@@ -1605,6 +1620,9 @@ function Add-PodeSignalRouteGroup {
         $IfExists = 'Default'
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if (Test-PodeIsEmpty $Routes) {
         # The Route parameter needs a valid, not empty, scriptblock
         throw ($PodeLocale.routeParameterNeedsValidScriptblockExceptionMessage)
@@ -1681,6 +1699,9 @@ function Remove-PodeRoute {
         $EndpointName
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     # split route on '?' for query
     $Path = Split-PodeRouteQuery -Path $Path
 
@@ -1748,6 +1769,9 @@ function Remove-PodeStaticRoute {
         $EndpointName
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $Method = 'Static'
 
     # ensure the route has appropriate slashes and replace parameters
@@ -1797,6 +1821,9 @@ function Remove-PodeSignalRoute {
         $EndpointName
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $Method = 'Signal'
 
     # ensure the route has appropriate slashes and replace parameters
@@ -1844,6 +1871,9 @@ function Clear-PodeRoutes {
         $Method
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if (![string]::IsNullOrWhiteSpace($Method)) {
         $PodeContext.Server.Routes[$Method].Clear()
     }
@@ -1869,6 +1899,9 @@ function Clear-PodeStaticRoutes {
     [CmdletBinding()]
     param()
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $PodeContext.Server.Routes['Static'].Clear()
 }
 
@@ -1886,6 +1919,9 @@ function Clear-PodeSignalRoutes {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Routes['Signal'].Clear()
 }
@@ -2281,6 +2317,9 @@ function Add-PodePage {
         $FlashMessages
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     $logic = $null
     $arg = $null
 
@@ -2642,6 +2681,9 @@ function Set-PodeRouteIfExistsPreference {
         [string]
         $Value = 'Default'
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Preferences.Routes.IfExists = $Value
 }

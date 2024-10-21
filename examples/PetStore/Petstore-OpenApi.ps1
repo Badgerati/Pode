@@ -92,15 +92,20 @@ Start-PodeServer -Threads 1 -ScriptBlock {
         Initialize-Pet
         Initialize-Order
         Initialize-Users
-		# attempt to re-initialise the state (will do nothing if the file doesn't exist)
+        # attempt to re-initialise the state (will do nothing if the file doesn't exist)
         Restore-PodeState -Path $script:PetDataJson
     }
 
     # Configure Pode server endpoints
     if ((Get-PodeConfig).Protocol -eq 'Https') {
-        $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
-        $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
-        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default
+        if ( (Get-PodeConfig).SelfSigned) {
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https  -Default -SelfSigned
+        }
+        else {
+            $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
+            $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default
+        }
     }
     else {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default

@@ -149,6 +149,9 @@ function Remove-PodeLockable {
         $Name
     )
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if (Test-PodeLockable -Name $Name) {
         $PodeContext.Threading.Lockables.Custom.Remove($Name)
     }
@@ -380,6 +383,9 @@ function Clear-PodeLockables {
     [CmdletBinding()]
     param()
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if (Test-PodeIsEmpty $PodeContext.Threading.Lockables.Custom) {
         return
     }
@@ -519,6 +525,9 @@ function Remove-PodeMutex {
         [string]
         $Name
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if (Test-PodeMutex -Name $Name) {
         $PodeContext.Threading.Mutexes[$Name].Dispose()
@@ -672,6 +681,9 @@ function Clear-PodeMutexes {
     [CmdletBinding()]
     param()
 
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
+
     if (Test-PodeIsEmpty $PodeContext.Threading.Mutexes) {
         return
     }
@@ -822,6 +834,9 @@ function Remove-PodeSemaphore {
         [string]
         $Name
     )
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if (Test-PodeSemaphore -Name $Name) {
         $PodeContext.Threading.Semaphores[$Name].Dispose()
@@ -985,6 +1000,9 @@ function Clear-PodeSemaphores {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
+
+    # Record the operation on the trace log
+    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if (Test-PodeIsEmpty $PodeContext.Threading.Semaphores) {
         return
