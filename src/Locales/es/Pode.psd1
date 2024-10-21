@@ -292,4 +292,5 @@
     getRequestBodyNotAllowedExceptionMessage                          = 'Las operaciones {0} no pueden tener un cuerpo de solicitud.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La función '{0}' no acepta una matriz como entrada de canalización."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La codificación de compresión de transmisión no es compatible: {0}'
+    deprecatedFunctionWarningMessage                                  = "ADVERTENCIA: La función '{0}' está obsoleta y será eliminada en futuras versiones. Por favor, use la función '{1}' en su lugar."
 }

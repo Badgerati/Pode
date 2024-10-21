@@ -292,4 +292,6 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0} operations cannot have a Request Body.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Unsupported stream compression encoding: {0}'
+    deprecatedFunctionWarningMessage                                  = "WARNING: The function '{0}' is deprecated and will be removed in future releases. Please use the '{1}' function instead."
+
 }

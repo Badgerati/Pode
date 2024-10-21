@@ -283,6 +283,12 @@
 
         # logging
         'New-PodeLoggingMethod',
+        'New-PodeCustomLoggingMethod',
+        'New-PodeEventViewerLoggingMethod',
+        'New-PodeFileLoggingMethod',
+        'New-PodeRestfulLoggingMethod',
+        'New-PodeSyslogLoggingMethod',
+        'New-PodeTerminalLoggingMethod'
         'Enable-PodeRequestLogging',
         'Enable-PodeErrorLogging',
         'Enable-PodeCommonLogging',

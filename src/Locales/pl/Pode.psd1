@@ -292,4 +292,5 @@
     getRequestBodyNotAllowedExceptionMessage                          = 'Operacje {0} nie mogą mieć treści żądania.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
+    deprecatedFunctionWarningMessage                                  = "OSTRZEŻENIE: Funkcja '{0}' jest przestarzała i zostanie usunięta w przyszłych wersjach. Użyj funkcji '{1}' zamiast niej."
 }

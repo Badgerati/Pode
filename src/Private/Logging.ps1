@@ -1320,6 +1320,9 @@ function Test-PodeLoggerBatch {
 
 .EXAMPLE
     Write-PodeTraceLog -Message 'Custom log message.'
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
 #>
 function Write-PodeTraceLog {
     [CmdletBinding(DefaultParameterSetName = 'Parameter')]
@@ -1411,6 +1414,35 @@ function Write-PodeTraceLog {
         })
 }
 
+<#
+.SYNOPSIS
+    Creates a new log batch information object.
+
+.DESCRIPTION
+    The `New-PodeLogBatchInfo` function initializes and returns a hashtable that contains the details of a log batch,
+    including a unique batch identifier, size, timeout, and placeholders for items to be logged.
+
+.OUTPUTS
+    [hashtable]
+    Returns a hashtable with the following keys:
+    - `Id`: A unique identifier for the log batch, generated using `New-PodeGuid`.
+    - `Size`: The number of log items to be batched.
+    - `Timeout`: The timeout (in seconds) for sending log items if a new log isn't received.
+    - `LastUpdate`: Initially set to `$null`, this tracks the last time the batch was updated.
+    - `Items`: An empty array to hold formatted log items.
+    - `RawItems`: An empty array to hold unformatted/raw log items.
+
+.EXAMPLE
+    $logBatch = New-PodeLogBatchInfo -Batch 10 -BatchTimeout 30
+
+    This creates a new log batch with a size of 10 items and a timeout of 30 seconds before the batch is processed.
+
+.NOTES
+    This function is used for batching log items before they are processed. The size and timeout determine
+    how many items or how much time can pass before a batch of logs is processed.
+
+    This is an internal function and may change in future releases of Pode.
+#>
 
 function New-PodeLogBatchInfo {
     # batch details
@@ -1424,7 +1456,38 @@ function New-PodeLogBatchInfo {
     }
 }
 
+<#
+.SYNOPSIS
+    Tests whether a given date format string is valid.
 
+.DESCRIPTION
+    The `Test-PodeDateFormat` function checks if a provided date format string can successfully format and parse a date.
+    It uses the current date and time to validate the format. If the format is valid, it returns `$true`.
+    If the format is invalid, it returns `$false`.
+
+.PARAMETER DateFormat
+    The date format string to be tested. This can be any custom date format supported by .NET.
+
+.EXAMPLE
+    Test-PodeDateFormat -DateFormat 'yyyy-MM-dd'
+
+    This command checks if the 'yyyy-MM-dd' date format is valid and returns `$true` if it is, or `$false` if it isn't.
+
+.EXAMPLE
+    Test-PodeDateFormat -DateFormat 'invalidFormat'
+
+    This command tests the string 'invalidFormat' as a date format and returns `$false` since it's not a valid format.
+
+.OUTPUTS
+    [bool]
+    Returns `$true` if the provided date format string is valid, otherwise returns `$false`.
+
+.NOTES
+    This function attempts to format and then parse the current date using the provided date format string.
+    If an exception is thrown during the process, the format is deemed invalid.
+
+    This is an internal function and may change in future releases of Pode.
+#>
 function Test-PodeDateFormat {
     param (
         [string]$DateFormat
@@ -1446,19 +1509,3 @@ function Test-PodeDateFormat {
         return $false
     }
 }
-
-
-<#
-   switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'iso8601' {
-            $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
-        }
-        default {
-            if ([string]::IsNullOrEmpty($DataFormat)) {
-                $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
-            }
-        }
-    }
-
-
-#>
