@@ -3499,7 +3499,16 @@ function ConvertTo-PodeYamlInternal {
             if ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
                 $Type = 'hashTable'
             }
+            elseif ($type -ieq 'ConcurrentDictionary`2') {
+                $Type = 'hashTable'
+            }
+            elseif ($type -ieq 'PodeOrderedConcurrentDictionary`2') {
+                $Type = 'hashTable'
+            }
             elseif ($Type -ieq 'List`1') {
+                $Type = 'array'
+            }
+            elseif ($InputObject -is [System.Collections.ArrayList]) {
                 $Type = 'array'
             }
             elseif ($InputObject -is [array]) {
@@ -3648,6 +3657,63 @@ function ConvertTo-PodeYamlInternal {
     }
 }
 
+<#
+.SYNOPSIS
+    Opens a runspace for Pode server operations based on the specified type.
+
+.DESCRIPTION
+    This function initializes a runspace for Pode server tasks by importing necessary
+    modules, adding PowerShell drives, and setting the state of the runspace pool to 'Ready'.
+    If an error occurs during the initialization, the state is adjusted to 'Error' if it
+    was previously set to 'waiting', and the error details are outputted.
+
+.PARAMETER Type
+    The type of the runspace pool to open. This parameter only accepts predefined values,
+    ensuring the runspace pool corresponds to a supported server operation type. The valid
+    types are: Main, Signals, Schedules, Gui, Web, Smtp, Tcp, Tasks, WebSockets, Files.
+
+.EXAMPLE
+    Open-PodeRunspace -Type "Web"
+
+    Opens a runspace for the 'Web' type, setting it ready for handling web server tasks.
+
+.NOTES
+    This function is not invoked directly but indirectly by `Add-PodeRunspace` function using
+    $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
+#>
+
+function Open-PodeRunspace {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
+        [string]
+        $Type
+    )
+
+    try {
+        # Importing internal Pode modules necessary for the runspace operations.
+        Import-PodeModulesInternal
+
+        # Adding PowerShell drives required by the runspace.
+        Add-PodePSDrivesInternal
+
+        # Setting the state of the runspace pool to 'Ready', indicating it is ready to process requests.
+        $PodeContext.RunspacePools[$Type].State = 'Ready'
+    }
+    catch {
+        # If an error occurs and the current state is 'waiting', set it to 'Error'.
+        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
+            $PodeContext.RunspacePools[$Type].State = 'Error'
+        }
+
+        # Outputting the error to the default output stream, including the stack trace.
+        $_ | Out-Default
+        $_.ScriptStackTrace | Out-Default
+
+        # Rethrowing the error to be handled further up the call stack.
+        throw
+    }
+}
 
 <#
 .SYNOPSIS
@@ -3775,4 +3841,184 @@ function Copy-PodeObjectDeepClone {
         # Deserialize the XML back into a new PSObject, creating a deep clone of the original
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
+}
+
+<#
+.SYNOPSIS
+    Converts a hashtable to a ConcurrentDictionary.
+
+.DESCRIPTION
+    The `ConvertTo-PodeConcurrentStructure` function takes a hashtable and converts it into a
+    ConcurrentDictionary, which provides thread-safe operations for adding and retrieving items.
+    This function supports the recursive conversion of nested hashtables, ordered dictionaries, and arrays.
+
+.PARAMETER InputObject
+    The hashtable to be converted into a ConcurrentDictionary.
+
+.OUTPUTS
+    [System.Collections.Concurrent.ConcurrentDictionary[string, object]]
+    Returns a ConcurrentDictionary with the same keys and values as the input hashtable.
+
+.EXAMPLE
+    $hashTable = @{
+        Key1 = 'Value1'
+        Key2 = @{
+            SubKey1 = 'SubValue1'
+        }
+    }
+    $concurrentDictionary = ConvertTo-PodeConcurrentStructure -InputObject $hashTable
+    # The variable $concurrentDictionary now contains a ConcurrentDictionary with the same structure as $hashTable
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function ConvertTo-PodeConcurrentStructure {
+    param (
+        [object]
+        $InputObject
+    )
+
+    if ($InputObject -is [hashtable]) {
+        $concurrentDictionary = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
+    }
+    elseif ($InputObject -is [System.Collections.Specialized.OrderedDictionary]) {
+        $concurrentDictionary = [Pode.PodeOrderedConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
+    }
+    elseif ($InputObject -is [System.Object[]]) {
+        $array = [System.Collections.ArrayList]::Synchronized([System.Collections.ArrayList]::new())
+        foreach ($item in $InputObject) {
+            # Convert each item and add to the synchronized array
+            $convertedItem = ConvertTo-PodeConcurrentStructure -InputObject $item
+            [void]$array.Add($convertedItem)
+        }
+
+        # Return synchronized ArrayList without unrolling
+        return , $array
+    }
+    else {
+        # If the object is neither a hashtable, ordered dictionary, nor array, return it as-is
+        return $InputObject
+    }
+
+    foreach ($key in $InputObject.Keys) {
+        $value = $InputObject[$key]
+
+        # Recursively convert nested hashtables, ordered dictionaries, or arrays
+        if ($value -is [hashtable] -or $value -is [System.Collections.Specialized.OrderedDictionary] -or $value -is [System.Object[]]) {
+            $value = ConvertTo-PodeConcurrentStructure -InputObject $value
+        }
+
+        $concurrentDictionary[$key] = $value
+    }
+
+    return $concurrentDictionary
+}
+
+<#
+.SYNOPSIS
+    Converts a ConcurrentDictionary or PodeOrderedConcurrentDictionary to a hashtable.
+
+.DESCRIPTION
+    The `ConvertFrom-PodeConcurrentStructure` function converts a ConcurrentDictionary or
+    PodeOrderedConcurrentDictionary into a hashtable. It supports the recursive conversion of nested
+    dictionaries and synchronized ArrayLists, preserving the structure of the original input.
+
+.PARAMETER InputObject
+    The ConcurrentDictionary, PodeOrderedConcurrentDictionary, or synchronized ArrayList to be converted into a hashtable.
+
+.OUTPUTS
+    [hashtable]
+    Outputs a hashtable with the same keys and values as the input dictionary.
+
+.EXAMPLE
+    $concurrentDictionary = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
+    $concurrentDictionary.TryAdd('Key1', 'Value1') | Out-Null
+    $nestedConcurrentDictionary = [System.Collections.Concurrent.ConcurrentDictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)
+    $nestedConcurrentDictionary.TryAdd('SubKey1', 'SubValue1') | Out-Null
+    $concurrentDictionary.TryAdd('Key2', $nestedConcurrentDictionary) | Out-Null
+
+    $hashtable = ConvertFrom-PodeConcurrentStructure -InputObject $concurrentDictionary
+    # The variable $hashtable now contains a hashtable with the same structure as $concurrentDictionary.
+
+.NOTES
+    This function is primarily for internal use within Pode and may change in future releases.
+#>
+function ConvertFrom-PodeConcurrentStructure {
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNull()]
+        [object] # Accepts both ConcurrentDictionary, PodeOrderedConcurrentDictionary, and synchronized ArrayList
+        $InputObject
+    )
+
+    # Check if the input is a supported dictionary type or synchronized ArrayList
+    if ($InputObject -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]] -or
+        $InputObject -is [Pode.PodeOrderedConcurrentDictionary[string, object]]) {
+
+        # Create an empty hashtable to store converted values
+        if ($InputObject -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]] ) {
+            $hashtable = [ordered]@{}
+        }
+        else {
+            $hashtable = @{}
+        }
+
+        # Iterate through each key in the dictionary
+        foreach ($key in $InputObject.Keys) {
+            $value = $InputObject[$key]
+
+            # Recursively convert nested dictionaries and synchronized arrays
+            if ($value -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]] -or
+                $value -is [Pode.PodeOrderedConcurrentDictionary[string, object]] -or
+                ($value -is [System.Collections.ArrayList] -and $value.IsSynchronized)) {
+                $value = ConvertFrom-PodeConcurrentStructure -InputObject $value
+            }
+
+            # Assign the value to the corresponding key in the hashtable
+            $hashtable[$key] = $value
+        }
+
+        return $hashtable
+    }
+    elseif ($InputObject -is [System.Collections.ArrayList] -and $InputObject.IsSynchronized) {
+        # Handle only synchronized ArrayList by converting each element to object[]
+        $convertedArray = @()
+        foreach ($item in $InputObject) {
+            # Recursively convert items if they are dictionaries or synchronized ArrayLists
+            if ($item -is [System.Collections.Concurrent.ConcurrentDictionary[string, object]] -or
+                $item -is [Pode.PodeOrderedConcurrentDictionary[string, object]] -or
+                ($item -is [System.Collections.ArrayList] -and $item.IsSynchronized)) {
+                $item = ConvertFrom-PodeConcurrentStructure -InputObject $item
+            }
+            $convertedArray += $item
+        }
+        # Return the converted array as object[]
+        return , $convertedArray
+    }
+
+    # If the object is neither a dictionary nor a synchronized ArrayList, return it as-is
+    return $InputObject
+}
+
+<#
+.SYNOPSIS
+    Tests if the shared state in Pode is thread-safe.
+
+.DESCRIPTION
+    This function checks if the shared state object within Pode is a thread-safe concurrent dictionary.
+    It returns a boolean value indicating whether the state is thread-safe.
+
+.EXAMPLE
+    Test-PodeStateIsThreadSafe
+    Checks if the current state in Pode is a thread-safe concurrent dictionary.
+
+.OUTPUTS
+    [bool] True if the shared state is thread-safe, otherwise False.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeStateIsThreadSafe {
+    # Check if the type of the shared state is a ConcurrentDictionary, which is thread-safe
+    return $PodeContext.Server.State.GetType().Name -eq 'ConcurrentDictionary`2'
 }
