@@ -316,7 +316,9 @@ function Add-PodeOAComponentRequestBody {
 
         [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [Alias('ContentSchemas')]
-        [hashtable]
+        [ValidateScript({
+            ($_ -is [hashtable]) -or ($_ -is [System.Collections.Specialized.OrderedDictionary])
+        })]
         $Content,
 
         [Parameter()]
@@ -780,9 +782,9 @@ function Add-PodeOAComponentPathItem {
         Method      = $Method.ToLower()
         NotPrepared = $true
         OpenApi     = @{
-            Responses          = $null
-            Parameters         = $null
-            RequestBody        = $null
+            Responses          = [ordered]@{}
+            Parameters         = [ordered]@{}
+            RequestBody        = [ordered]@{}
             callbacks          = [ordered]@{}
             Authentication     = @()
             Servers            = @()

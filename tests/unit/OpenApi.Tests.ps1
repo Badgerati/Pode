@@ -2168,16 +2168,17 @@ Describe 'OpenApi' {
         BeforeEach {
             $Route = @{
                 OpenApi = @{
-                    Path               = '/test'
-                    Responses          = @{
+                    Path           = '/test'
+                    Responses      = [ordered]@{
                         '200'     = @{ description = 'OK' }
                         'default' = @{ description = 'Internal server error' }
                     }
-                    Parameters         = $null
-                    RequestBody        = $null
-                    Authentication     = @()
-                    DefinitionTag      = @('Default')
-                    IsDefTagConfigured = $false
+                    Parameters         = [ordered]@{}
+                    RequestBody        = [ordered]@{}
+                    callbacks          = [ordered]@{}
+                    Authentication      = @()
+                    DefinitionTag       = @('Default')
+                    IsDefTagConfigured  = $false
                 }
             }
 
@@ -3159,8 +3160,13 @@ Describe 'OpenApi' {
 
         It 'Sets Parameters on the route if provided' {
             $route = @{
-                Method  = 'GET'
-                OpenApi = @{}
+                Method = 'GET'
+                OpenApi = @{
+                    Responses          = [ordered]@{}
+                    Parameters         = [ordered]@{}
+                    RequestBody        = [ordered]@{}
+                    callbacks          = [ordered]@{}
+                }
             }
             $parameters = @(
                 @{ Name = 'param1'; In = 'query' }
@@ -3168,7 +3174,7 @@ Describe 'OpenApi' {
 
             Set-PodeOARequest -Route $route -Parameters $parameters
 
-            $route.OpenApi.Parameters | Should -BeExactly $parameters
+            $route.OpenApi.Parameters['Default'] | Should -BeExactly $parameters
         }
 
         It 'Sets RequestBody on the route if method is POST' {
