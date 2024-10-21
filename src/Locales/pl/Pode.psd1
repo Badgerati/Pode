@@ -291,6 +291,7 @@
     getRequestBodyNotAllowedExceptionMessage                          = 'Operacje {0} nie mogą mieć treści żądania.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
+    LocalEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."
     serviceAlreadyRegisteredException                                 = "Usługa '{0}' jest już zarejestrowana."
     serviceIsNotRegisteredException                                      = "Usługa '{0}' nie jest zarejestrowana."
     serviceCommandFailedException                                     = "Polecenie serwisu '{0}' nie powiodło się w serwisie '{1}'."

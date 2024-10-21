@@ -291,6 +291,7 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "函数 '{0}' 不接受数组作为管道输入。"
     unsupportedStreamCompressionEncodingExceptionMessage              = '不支持的流压缩编码: {0}'
+    LocalEndpointConflictExceptionMessage                             = "'{0}' 和 '{1}' 都被定义为 OpenAPI 的本地端点，但每个 API 定义仅允许一个本地端点。"
     serviceAlreadyRegisteredException                                 = "服务 '{0}' 已经注册。"
     serviceIsNotRegisteredException                                      = "服务 '{0}' 未注册。"
     serviceCommandFailedException                                     = "服务命令 '{0}' 在服务 '{1}' 上失败。"

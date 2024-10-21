@@ -291,6 +291,7 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
+    LocalEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
     serviceAlreadyRegisteredException                                 = "サービス '{0}' はすでに登録されています。"
     serviceIsNotRegisteredException                                      = "サービス '{0}' は登録されていません。"
     serviceCommandFailedException                                     = "サービスコマンド '{0}' はサービス '{1}' で失敗しました。"
