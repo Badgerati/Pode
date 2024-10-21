@@ -3582,7 +3582,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'hashtable' {
-                if ($InputObject.Count -gt 0 ) {
+                if ($InputObject.GetEnumerator().MoveNext()) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
@@ -3608,7 +3608,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'pscustomobject' {
-                if ($InputObject.Count -gt 0 ) {
+                if ($InputObject.PSObject.Properties.Count -gt 0) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in ($InputObject | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name)) {
