@@ -679,9 +679,6 @@ function New-PodeRestfulLoggingMethod {
 .PARAMETER ArgumentList
     An array of arguments to pass to the custom script block.
 
-.PARAMETER UseRunspace
-    If set, the custom logging method will be executed in a separate runspace.
-
 .PARAMETER CustomOptions
     A hashtable of custom options that will be passed to the script block when used inside a runspace.
 
@@ -712,7 +709,7 @@ function New-PodeRestfulLoggingMethod {
 #>
 function New-PodeCustomLoggingMethod {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUSeDeclaredVarsMoreThanAssignments', '')]
-    [CmdletBinding(DefaultParameterSetName = 'RunSpace')]
+    [CmdletBinding(DefaultParameterSetName = 'DataFormat')]
     [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
@@ -731,31 +728,20 @@ function New-PodeCustomLoggingMethod {
         [object[]]
         $ArgumentList,
 
-        [Parameter(ParameterSetName = 'RunSpace_DataFormat')]
-        [Parameter(ParameterSetName = 'RunSpace_ISO8601')]
-        [Parameter(ParameterSetName = 'RunSpace')]
-        [switch]
-        $UseRunspace,
-
         [Parameter()]
         [hashtable]
         $CustomOptions = @{},
 
-
-        [Parameter(ParameterSetName = 'RunSpace_DataFormat')]
-        [Parameter(ParameterSetName = 'RunSpace_ISO8601')]
+        [Parameter()]
         [ValidateSet('Ignore', 'Report', 'Halt')]
         [string]
         $FailureAction = 'Ignore',
 
-
-        [Parameter(ParameterSetName = 'RunSpace_DataFormat')]
         [Parameter(ParameterSetName = 'DataFormat')]
         [ValidateScript({ Test-PodeDateFormat $_ })]
         [string]
         $DataFormat,
 
-        [Parameter(ParameterSetName = 'RunSpace_ISO8601')]
         [Parameter(ParameterSetName = 'ISO8601')]
         [switch]
         $ISO8601,
@@ -777,67 +763,49 @@ function New-PodeCustomLoggingMethod {
         }
     }
 
-    $methodId = New-PodeGuid
+    # Create the script block for the custom logging method running in a separate runspace
+    $enanchedScriptBlock = {
+        param($MethodId)
 
-    if ($UseRunspace.IsPresent) {
-        # Create the script block for the custom logging method running in a separate runspace
-        $enanchedScriptBlock = {
-            param($MethodId)
+        $log = @{}
+        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+            Start-Sleep -Milliseconds 100
 
-            $log = @{}
-            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                Start-Sleep -Milliseconds 100
-
-                if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
-                    if ($null -ne $log) {
-                        $Item = $log.item
-                        $Options = $log.options
-                        $RawItem = $log.rawItem
-                        try {
-                            # Original ScriptBlock Start
-                            <# ScriptBlock #>
-                            # Original ScriptBlock End
-                        }
-                        catch {
-                            Invoke-PodeHandleFailure -Message "Custom Logging $MethodId Error. message: $_" -FailureAction $options.FailureAction
-                        }
+            if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
+                if ($null -ne $log) {
+                    $Item = $log.item
+                    $Options = $log.options
+                    $RawItem = $log.rawItem
+                    try {
+                        # Original ScriptBlock Start
+                        <# ScriptBlock #>
+                        # Original ScriptBlock End
+                    }
+                    catch {
+                        Invoke-PodeHandleFailure -Message "Custom Logging $MethodId Error. message: $_" -FailureAction $options.FailureAction
                     }
                 }
             }
         }
-
-        # Register the enhanced script block in Pode's logging method
-        $PodeContext.Server.Logging.Method[$methodId] = @{
-            ScriptBlock = [ScriptBlock]::Create($enanchedScriptBlock.ToString().Replace('<# ScriptBlock #>', $ScriptBlock.ToString()))
-            Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-        }
-
-        return @{
-            Id        = $methodId
-            Batch     = New-PodeLogBatchInfo
-            Logger    = @()
-            Arguments = @{
-                FailureAction = $FailureAction
-                DataFormat    = $DataFormat
-                AsUTC         = $AsUTC
-            } + $CustomOptions
-        }
     }
-    else {
-        # Convert scoped variables for the script block if not using a runspace
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 
-        return @{
-            Id             = $methodId
-            ScriptBlock    = $ScriptBlock
-            UsingVariables = $usingVars
-            Batch          = New-PodeLogBatchInfo
-            Logger         = @()
-            Arguments      = $ArgumentList
-            DataFormat     = $DataFormat
-            AsUTC          = $AsUTC
-            NoRunspace     = $true
-        }
+    $methodId = New-PodeGuid
+
+    # Register the enhanced script block in Pode's logging method
+    $PodeContext.Server.Logging.Method[$methodId] = @{
+        ScriptBlock = [ScriptBlock]::Create($enanchedScriptBlock.ToString().Replace('<# ScriptBlock #>', $ScriptBlock.ToString()))
+        Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+    }
+
+    return @{
+        Id        = $methodId
+        Batch     = New-PodeLogBatchInfo
+        Logger    = @()
+        Arguments = @{
+            FailureAction = $FailureAction
+            DataFormat    = $DataFormat
+            AsUTC         = $AsUTC
+        } + $CustomOptions
     }
 }
 
@@ -1042,11 +1010,18 @@ function New-PodeLoggingMethod {
             # WARNING: Function `New-PodeLoggingMethod` is deprecated. Please use '{0}' function instead.
             Write-PodeHost ($PodeLocale.deprecatedFunctionWarningMessage -f 'New-PodeLoggingMethod', 'New-PodeCustomLoggingMethod')  -ForegroundColor Yellow
 
-            $customParams = @{
-                ScriptBlock  = $PSBoundParameters['ScriptBlock']
-                ArgumentList = $PSBoundParameters['ArgumentList']
+            # Convert scoped variables for the script block if not using a runspace
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+            return @{
+                Id             = New-PodeGuid
+                ScriptBlock    = $ScriptBlock
+                UsingVariables = $usingVars
+                Batch          = New-PodeLogBatchInfo
+                Logger         = @()
+                Arguments      = $ArgumentList
+                NoRunspace     = $true
             }
-            return New-PodeCustomLoggingMethod @customParams
         }
     }
 }

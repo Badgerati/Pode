@@ -72,7 +72,7 @@ Start-PodeServer -browse {
             $rawItem | Out-File './examples/logs/customLegacy_rawItem.log' -Append
         }
 
-        $logging += New-PodeCustomLoggingMethod -UseRunspace -CustomOptions @{ 'opt1' = 'something'; 'opt2' = 'else' } -ScriptBlock {
+        $logging += New-PodeCustomLoggingMethod  -CustomOptions @{ 'opt1' = 'something'; 'opt2' = 'else' } -ScriptBlock {
             $item | Out-File './examples/logs/customWithRunspace.log' -Append
             $options | Out-File './examples/logs/customWithRunspace_options.log' -Append
             $rawItem | Out-File './examples/logs/customWithRunspace_rawItem.log' -Append
