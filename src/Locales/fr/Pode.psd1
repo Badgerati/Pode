@@ -292,5 +292,6 @@
     getRequestBodyNotAllowedExceptionMessage                          = 'Les opérations {0} ne peuvent pas avoir de corps de requête.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = "La compression de flux {0} n'est pas prise en charge."
+    LocalEndpointConflictExceptionMessage                             = "Les deux '{0}' et '{1}' sont définis comme des points de terminaison locaux pour OpenAPI, mais un seul point de terminaison local est autorisé par définition d'API."
     deprecatedFunctionWarningMessage                                  = "AVERTISSEMENT : La fonction '{0}' est obsolète et sera supprimée dans les versions futures. Veuillez utiliser la fonction '{1}' à la place."
 }

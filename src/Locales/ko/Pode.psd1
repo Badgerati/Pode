@@ -292,5 +292,6 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 작업에는 요청 본문이 있을 수 없습니다.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "함수 '{0}'은(는) 배열을 파이프라인 입력으로 받지 않습니다."
     unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
+    LocalEndpointConflictExceptionMessage                             = "'{0}' 와 '{1}' 는 OpenAPI 로컬 엔드포인트로 정의되었지만, API 정의당 하나의 로컬 엔드포인트만 허용됩니다."
     deprecatedFunctionWarningMessage                                  = "경고: 함수 '{0}'는 더 이상 지원되지 않으며, 향후 릴리스에서 제거될 예정입니다. 대신 '{1}' 함수를 사용하세요."
 }

@@ -292,5 +292,6 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "函数 '{0}' 不接受数组作为管道输入。"
     unsupportedStreamCompressionEncodingExceptionMessage              = '不支持的流压缩编码: {0}'
+    LocalEndpointConflictExceptionMessage                             = "'{0}' 和 '{1}' 都被定义为 OpenAPI 的本地端点，但每个 API 定义仅允许一个本地端点。"
     deprecatedFunctionWarningMessage                                  = "警告：函数 '{0}' 已被弃用，并将在未来版本中移除。请改用 '{1}' 函数。"
 }

@@ -292,5 +292,6 @@
     getRequestBodyNotAllowedExceptionMessage                          = 'Operacje {0} nie mogą mieć treści żądania.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
+    LocalEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."
     deprecatedFunctionWarningMessage                                  = "OSTRZEŻENIE: Funkcja '{0}' jest przestarzała i zostanie usunięta w przyszłych wersjach. Użyj funkcji '{1}' zamiast niej."
 }
