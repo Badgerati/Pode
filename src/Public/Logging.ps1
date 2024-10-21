@@ -1,141 +1,607 @@
+
+
+function New-PodeTerminalLoggingMethod {
+    [CmdletBinding(DefaultParameterSetName = 'DataFormat')]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(ParameterSetName = 'DataFormat')]
+        [ValidateScript({
+                Test-PodeDateFormat $_
+            })]
+        [string]
+        $DataFormat,
+
+        [Parameter(ParameterSetName = 'ISO8601')]
+        [switch]
+        $ISO8601,
+
+        [Parameter()]
+        [switch]
+        $AsUTC
+    )
+
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'iso8601' {
+            $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
+        }
+        default {
+            if ([string]::IsNullOrEmpty($DataFormat)) {
+                $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
+            }
+        }
+    }
+    # Terminal logging logic here
+    $methodId = New-PodeGuid
+    $PodeContext.Server.Logging.Method[$methodId] = @{
+        ScriptBlock = (Get-PodeLoggingTerminalMethod)
+        Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+    }
+    return @{
+        Id        = $methodId
+        Batch     = New-PodeLogBatchInfo
+        Logger    = @()
+        Arguments = @{
+            DataFormat = $DataFormat
+            AsUTC      = $false
+        }
+    }
+}
+
+
+function New-PodeFileLoggingMethod {
+    [CmdletBinding(DefaultParameterSetName = 'DataFormat')]
+    [OutputType([hashtable])]
+    param(
+        [string]
+        $Path = './logs',
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter()]
+        [ValidateSet('RFC3164', 'RFC5424', 'Simple', 'Default')]
+        [string]
+        $Format = 'Default',
+
+        [Parameter()]
+        [string]
+        $Separator = ' ',
+
+        [Parameter()]
+        [int]
+        $MaxLength = -1,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $MaxDays = 0,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]
+        $MaxSize = 0,
+
+        [Parameter()]
+        [string]
+        $Source = 'Pode',
+
+        [Parameter()]
+        [ValidateSet('Ignore', 'Report', 'Halt')]
+        [string]
+        $FailureAction = 'Ignore',
+
+        [Parameter(ParameterSetName = 'DataFormat')]
+        [ValidateScript({
+                Test-PodeDateFormat $_
+            })]
+        [string]
+        $DataFormat,
+
+        [Parameter(ParameterSetName = 'ISO8601')]
+        [switch]
+        $ISO8601,
+
+        [Parameter()]
+        [switch]
+        $AsUTC
+    )
+
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'iso8601' {
+            $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
+        }
+        default {
+            if ([string]::IsNullOrEmpty($DataFormat)) {
+                $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
+            }
+        }
+    }
+
+    $Path = (Protect-PodeValue -Value $Path -Default './logs')
+    $Path = (Get-PodeRelativePath -Path $Path -JoinRoot -Resolve)
+    $null = New-Item -Path $Path -ItemType Directory -Force
+    $methodId = New-PodeGuid
+    $PodeContext.Server.Logging.Method[$methodId] = @{
+        ScriptBlock = (Get-PodeLoggingFileMethod)
+        Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+    }
+
+    return @{
+        Id        = $methodId
+        Batch     = New-PodeLogBatchInfo
+        Logger    = @()
+        Arguments = @{
+            Name          = $Name
+            Path          = $Path
+            MaxDays       = $MaxDays
+            MaxSize       = $MaxSize
+            FileId        = 0
+            Date          = $null
+            NextClearDown = [datetime]::Now.Date
+            FailureAction = $FailureAction
+            DataFormat    = $DataFormat
+            AsUTC         = $AsUTC
+            Encoding      = $Encoding
+            Format        = $Format
+            MaxLength     = $MaxLength
+            Source        = $Source
+            Separator     = $Separator
+        }
+    }
+}
+
+function New-PodeEventViewerLoggingMethod {
+    [CmdletBinding(DefaultParameterSetName = 'DataFormat')]
+    [OutputType([hashtable])]
+    param(
+        [string]
+        $EventLogName = 'Application',
+
+        [string]
+        $Source = 'Pode',
+
+        [int]
+        $EventID = 0,
+
+        [ValidateSet('Ignore', 'Report', 'Halt')]
+        [string]
+        $FailureAction = 'Ignore',
+
+        [Parameter(ParameterSetName = 'DataFormat')]
+        [ValidateScript({ Test-PodeDateFormat $_ })]
+        [string]
+        $DataFormat,
+
+        [Parameter(ParameterSetName = 'ISO8601')]
+        [switch]
+        $ISO8601,
+
+        [Parameter()]
+        [switch]
+        $AsUTC
+
+    )
+
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'iso8601' {
+            $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
+        }
+        default {
+            if ([string]::IsNullOrEmpty($DataFormat)) {
+                $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
+            }
+        }
+    }
+
+    if (!(Test-PodeIsWindows)) {
+        # Event Viewer logging only supported on Windows
+        throw ($PodeLocale.eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage)
+    }
+
+    if (![System.Diagnostics.EventLog]::SourceExists($Source)) {
+        [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName)
+    }
+
+    $methodId = New-PodeGuid
+    $PodeContext.Server.Logging.Method[$methodId] = @{
+        ScriptBlock = (Get-PodeLoggingEventViewerMethod)
+        Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+    }
+    return @{
+        Id        = $methodId
+        Batch     = New-PodeLogBatchInfo
+        Logger    = @()
+        Arguments = @{
+            LogName       = $EventLogName
+            Source        = $Source
+            ID            = $EventID
+            FailureAction = $FailureAction
+            DataFormat    = $DataFormat
+            AsUTC         = $AsUTC
+        }
+    }
+}
+
+function New-PodeSyslogLoggingMethod {
+    [CmdletBinding(DefaultParameterSetName = 'DataFormat')]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Server,
+
+        [Parameter()]
+        [Int16]
+        $Port = 514,
+
+        [Parameter()]
+        [ValidateSet('UDP', 'TCP', 'TLS')]
+        [string]
+        $Transport = 'UDP',
+
+        [Parameter()]
+        [System.Security.Authentication.SslProtocols]
+        $TlsProtocol = [System.Security.Authentication.SslProtocols]::Tls13,
+
+        [Parameter()]
+        [ValidateSet('RFC3164', 'RFC5424')]
+        [string]
+        $SyslogProtocol = 'RFC5424',
+
+        [Parameter()]
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Default', 'Unicode', 'UTF32', 'UTF7', 'UTF8')]
+        [string]
+        $Encoding = 'UTF8',
+
+        [Parameter()]
+        [string]
+        $Source = 'Pode',
+
+        [Parameter()]
+        [switch]
+        $SkipCertificateCheck,
+
+        [Parameter()]
+        [ValidateSet('Ignore', 'Report', 'Halt')]
+        [string]
+        $FailureAction = 'Ignore',
+
+        [Parameter(ParameterSetName = 'DataFormat')]
+        [ValidateScript({ Test-PodeDateFormat $_ })]
+        [string]
+        $DataFormat,
+
+        [Parameter(ParameterSetName = 'ISO8601')]
+        [switch]
+        $ISO8601,
+
+        [Parameter()]
+        [switch]
+        $AsUTC
+
+    )
+
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'iso8601' {
+            $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
+        }
+        default {
+            if ([string]::IsNullOrEmpty($DataFormat)) {
+                $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
+            }
+        }
+    }
+
+    $selectedEncoding = [System.Text.Encoding]::$Encoding
+
+    if ($null -eq $selectedEncoding) {
+        throw ($PodeLocale.invalidEncodingExceptionMessage -f $Encoding)
+    }
+
+    $methodId = New-PodeGuid
+    $PodeContext.Server.Logging.Method[$methodId] = @{
+        ScriptBlock = (Get-PodeLoggingSysLogMethod)
+        Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+    }
+
+    return @{
+        Id        = $methodId
+        Batch     = New-PodeLogBatchInfo
+        Logger    = @()
+        Arguments = @{
+            Server               = $Server
+            Port                 = $Port
+            Transport            = $Transport
+            Hostname             = $Hostname
+            Source               = $Source
+            TslProtocols         = $TlsProtocol
+            SkipCertificateCheck = $SkipCertificateCheck
+            SyslogProtocol       = $SyslogProtocol
+            Encoding             = $selectedEncoding
+            FailureAction        = $FailureAction
+            DataFormat           = $DataFormat
+            AsUTC                = $AsUTC
+        }
+    }
+}
+
+
+function New-PodeRestfulLoggingMethod {
+    [CmdletBinding(DefaultParameterSetName = 'DataFormat')]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^(https?://|/).+')]
+        [string]
+        $BaseUrl,
+
+        [ValidateSet('Splunk', 'LogInsight')]
+        [string]$Platform = 'Splunk',
+
+        [Parameter()]
+        [string]
+        $Token,
+
+        [Parameter()]
+        [string]
+        $Id,
+
+        [Parameter()]
+        [string]
+        $Source = 'Pode',
+
+        [Parameter()]
+        [switch]
+        $SkipCertificateCheck,
+
+        [Parameter()]
+        [ValidateSet('Ignore', 'Report', 'Halt')]
+        [string]
+        $FailureAction = 'Ignore',
+
+        [Parameter(ParameterSetName = 'DataFormat')]
+        [ValidateScript({ Test-PodeDateFormat $_ })]
+        [string]
+        $DataFormat,
+
+        [Parameter(ParameterSetName = 'ISO8601')]
+        [switch]
+        $ISO8601,
+
+        [Parameter()]
+        [switch]
+        $AsUTC
+    )
+
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'iso8601' {
+            $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
+        }
+        default {
+            if ([string]::IsNullOrEmpty($DataFormat)) {
+                $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
+            }
+        }
+    }
+
+    $methodId = New-PodeGuid
+    $PodeContext.Server.Logging.Method[$methodId] = @{
+        ScriptBlock = (Get-PodeLoggingRestfulMethod)
+        Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+    }
+    return @{
+        Id        = $methodId
+        Batch     = New-PodeLogBatchInfo
+        Logger    = @()
+        Arguments = @{
+            Platform             = $Platform
+            Hostname             = $Hostname
+            Source               = $Source
+            SkipCertificateCheck = $SkipCertificateCheck
+            Token                = $Token
+            Id                   = $Id
+            FailureAction        = $FailureAction
+            DataFormat           = $DataFormat
+            AsUTC                = $AsUTC
+        }
+    }
+}
+
+
+
+function New-PodeCustomLoggingMethod {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUSeDeclaredVarsMoreThanAssignments', '')]
+    [CmdletBinding(DefaultParameterSetName = 'RunSpace')]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateScript({
+                if (Test-PodeIsEmpty $_) {
+                    # A non-empty ScriptBlock is required for the Custom logging output method
+                    throw ($PodeLocale.nonEmptyScriptBlockRequiredForCustomLoggingExceptionMessage)
+                }
+
+                return $true
+            })
+        ]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter()]
+        [object[]]
+        $ArgumentList,
+
+        [Parameter(ParameterSetName = 'RunSpace_DataFormat')]
+        [Parameter(ParameterSetName = 'RunSpace_ISO8601')]
+        [Parameter(ParameterSetName = 'RunSpace')]
+        [switch]
+        $UseRunspace,
+
+        [Parameter()]
+        [hashtable]
+        $CustomOptions = @{},
+
+
+        [Parameter(ParameterSetName = 'RunSpace_DataFormat')]
+        [Parameter(ParameterSetName = 'RunSpace_ISO8601')]
+        [ValidateSet('Ignore', 'Report', 'Halt')]
+        [string]
+        $FailureAction = 'Ignore',
+
+
+        [Parameter(ParameterSetName = 'RunSpace_DataFormat')]
+        [Parameter(ParameterSetName = 'DataFormat')]
+        [ValidateScript({ Test-PodeDateFormat $_ })]
+        [string]
+        $DataFormat,
+
+        [Parameter(ParameterSetName = 'RunSpace_ISO8601')]
+        [Parameter(ParameterSetName = 'ISO8601')]
+        [switch]
+        $ISO8601,
+
+        [Parameter()]
+        [switch]
+        $AsUTC
+    )
+
+    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'iso8601' {
+            $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
+        }
+        default {
+            if ([string]::IsNullOrEmpty($DataFormat)) {
+                $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
+            }
+        }
+    }
+
+    $methodId = New-PodeGuid
+
+    if ($UseRunspace.IsPresent) {
+        $enanchedScriptBlock = {
+            param($MethodId)
+
+            $log = @{}
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                Start-Sleep -Milliseconds 100
+
+                if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
+                    if ($null -ne $log) {
+                        $Item = $log.item
+                        $Options = $log.options
+                        $RawItem = $log.rawItem
+                        try {
+                            # Original ScriptBlock Start
+                            <# ScriptBlock #>
+                            # Original ScriptBlock End
+                        }
+                        catch {
+                            Invoke-PodeHandleFailure -Message "Custom Logging $MethodId Error. message: $_" -FailureAction $options.FailureAction
+                        }
+                    }
+                }
+            }
+        }
+        $PodeContext.Server.Logging.Method[$methodId] = @{
+            ScriptBlock = [ScriptBlock]::Create( $enanchedScriptBlock.ToString().Replace('<# ScriptBlock #>', $ScriptBlock.ToString()))
+            Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+        }
+
+        return @{
+            Id        = $methodId
+            Batch     = New-PodeLogBatchInfo
+            Logger    = @()
+            Arguments = @{
+                FailureAction = $FailureAction
+                DataFormat    = $DataFormat
+                AsUTC         = $AsUTC
+            } + $CustomOptions
+        }
+    }
+    else {
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        return @{
+            Id             = $methodId
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+            Batch          = New-PodeLogBatchInfo
+            Logger         = @()
+            Arguments      = $ArgumentList
+            DataFormat     = $DataFormat
+            AsUTC          = $AsUTC
+            NoRunspace     = $true
+        }
+    }
+}
+
+
+
 <#
 .SYNOPSIS
-    Create a new method of outputting logs.
+Create a new method of outputting logs.
 
 .DESCRIPTION
-    Create a new method of outputting logs.
+Create a new method of outputting logs.
 
 .PARAMETER Terminal
-    If supplied, will use the inbuilt Terminal logging output method.
+If supplied, will use the inbuilt Terminal logging output method.
 
 .PARAMETER File
-    If supplied, will use the inbuilt File logging output method.
+If supplied, will use the inbuilt File logging output method.
 
 .PARAMETER Path
-    The File Path of where to store the logs.
+The File Path of where to store the logs.
 
 .PARAMETER Name
-    The File Name to prepend new log files using.
-
-.PARAMETER Format
-    The format of the log entries for the File logging method. Options are: RFC3164, RFC5424, Simple, Default (Default: Default).
-
-.PARAMETER Separator
-    The separator to use in log entries for the File logging method (Default: ' ').
-
-.PARAMETER MaxLength
-    The maximum length of log entries for the File logging method (Default: -1).
-
-.PARAMETER MaxDays
-    The maximum number of days to keep logs, before Pode automatically removes them.
-
-.PARAMETER MaxSize
-    The maximum size of a log file, before Pode starts writing to a new log file.
+The File Name to prepend new log files using.
 
 .PARAMETER EventViewer
-    If supplied, will use the inbuilt Event Viewer logging output method.
+If supplied, will use the inbuilt Event Viewer logging output method.
 
 .PARAMETER EventLogName
-    Optional Log Name for the Event Viewer (Default: Application)
+Optional Log Name for the Event Viewer (Default: Application)
 
 .PARAMETER Source
-    Optional Source for the Event Viewer (Default: Pode)
+Optional Source for the Event Viewer (Default: Pode)
 
 .PARAMETER EventID
-    Optional EventID for the Event Viewer (Default: 0)
+Optional EventID for the Event Viewer (Default: 0)
 
 .PARAMETER Batch
-    An optional batch size to write log items in bulk (Default: 1)
+An optional batch size to write log items in bulk (Default: 1)
 
 .PARAMETER BatchTimeout
-    An optional batch timeout, in seconds, to send items off for writing if a log item isn't received (Default: 0)
+An optional batch timeout, in seconds, to send items off for writing if a log item isn't received (Default: 0)
+
+.PARAMETER MaxDays
+The maximum number of days to keep logs, before Pode automatically removes them.
+
+.PARAMETER MaxSize
+The maximum size of a log file, before Pode starts writing to a new log file.
 
 .PARAMETER Custom
-    If supplied, will allow you to create a Custom Logging output method.
-
-.PARAMETER UseRunspace
-    If supplied, the Custom Logging output method will use its own separated runspace
-
-.PARAMETER CustomOptions
-    An hastable of properties to supply to the Custom Logging output method's ScriptBlock when used inside a runspace.
-    The content is available using the variable `$options`
+If supplied, will allow you to create a Custom Logging output method.
 
 .PARAMETER ScriptBlock
-    The ScriptBlock that defines how to output a log item.
+The ScriptBlock that defines how to output a log item.
 
 .PARAMETER ArgumentList
-    An array of arguments to supply to the Custom Logging output method's ScriptBlock.
-
-.PARAMETER Syslog
-    If supplied, will use the Syslog logging output method.
-
-.PARAMETER Server
-    The Syslog server to send logs to.
-
-.PARAMETER Port
-    The port on the Syslog server (Default: 514).
-
-.PARAMETER Transport
-    The transport protocol to use (Default: UDP).
-
-.PARAMETER TlsProtocol
-    The TLS protocol version to use (Default: TLS 1.3).
-
-.PARAMETER SyslogProtocol
-    The Syslog protocol to use (Default: RFC5424).
-
-.PARAMETER Encoding
-    The encoding to use for the Syslog messages (Default: UTF8).
-
-.PARAMETER SkipCertificateCheck
-    Skip certificate validation for TLS connections.
-
-.PARAMETER Restful
-    If supplied, will use the Restful logging output method.
-
-.PARAMETER BaseUrl
-    The base URL for the Restful logging endpoint.
-
-.PARAMETER Platform
-    The platform for Restful logging (Splunk, LogInsight).
-
-.PARAMETER Token
-    The token for authentication with Restful servers that require it.
-
-.PARAMETER Id
-    The LogInsight collector ID.
-
-.PARAMETER FailureAction
-    Defines the behavior in case of failure. Options are: Ignore, Report, Halt (Default: Ignore).
-
-.PARAMETER DataFormat
-    The date format to use for the log entries (Default: 'dd/MMM/yyyy:HH:mm:ss zzz').
-
-.PARAMETER ISO8601
-    If set, the date format will be ISO 8601 compliant (equivalent to -DataFormat 'yyyy-MM-ddTHH:mm:ssK')
-    This parameter is mutually exclusive with DataFormat.
-
-.PARAMETER AsUTC
-    If set, the time will be logged in UTC instead of local time.
+An array of arguments to supply to the Custom Logging output method's ScriptBlock.
 
 .EXAMPLE
-    $term_logging = New-PodeLoggingMethod -Terminal
+$term_logging = New-PodeLoggingMethod -Terminal
 
 .EXAMPLE
-    $file_logging = New-PodeLoggingMethod -File -Path ./logs -Name 'requests'
+$file_logging = New-PodeLoggingMethod -File -Path ./logs -Name 'requests'
 
 .EXAMPLE
-    $custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
-
-.EXAMPLE
-    $syslog_logging = New-PodeLoggingMethod -Syslog -Server '192.168.1.1' -Port 514 -Transport 'UDP'
-
-.EXAMPLE
-    $restful_logging = New-PodeLoggingMethod -Restful -BaseUrl 'https://logserver.example.com' -Platform 'Splunk' -Token 'your-token'
+$custom_logging = New-PodeLoggingMethod -Custom -ScriptBlock { /* logic */ }
 #>
 function New-PodeLoggingMethod {
     [CmdletBinding(DefaultParameterSetName = 'Terminal')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUSeDeclaredVarsMoreThanAssignments', '')]
     [OutputType([hashtable])]
     param(
         [Parameter(ParameterSetName = 'Terminal')]
@@ -154,19 +620,6 @@ function New-PodeLoggingMethod {
         [string]
         $Name,
 
-        [Parameter( ParameterSetName = 'File')]
-        [ValidateSet('RFC3164' , 'RFC5424', 'Simple', 'Default' )]
-        [string]
-        $Format = 'Default',
-
-        [Parameter( ParameterSetName = 'File')]
-        [string]
-        $Separator = ' ',
-
-        [Parameter(  ParameterSetName = 'File')]
-        [int]
-        $MaxLength = -1,
-
         [Parameter(ParameterSetName = 'EventViewer')]
         [switch]
         $EventViewer,
@@ -176,8 +629,6 @@ function New-PodeLoggingMethod {
         $EventLogName = 'Application',
 
         [Parameter(ParameterSetName = 'EventViewer')]
-        [Parameter(ParameterSetName = 'Syslog')]
-        [Parameter(ParameterSetName = 'File')]
         [string]
         $Source = 'Pode',
 
@@ -217,21 +668,11 @@ function New-PodeLoggingMethod {
         [int]
         $MaxSize = 0,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CustomRunspace')]
+        [Parameter(ParameterSetName = 'Custom')]
         [switch]
         $Custom,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'CustomRunspace')]
-        [switch]
-        $UseRunspace,
-
-        [Parameter(ParameterSetName = 'CustomRunspace')]
-        [hashtable]
-        $CustomOptions = @{},
-
         [Parameter(Mandatory = $true, ParameterSetName = 'Custom')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'CustomRunspace')]
         [ValidateScript({
                 if (Test-PodeIsEmpty $_) {
                     # A non-empty ScriptBlock is required for the Custom logging output method
@@ -245,333 +686,47 @@ function New-PodeLoggingMethod {
 
         [Parameter(ParameterSetName = 'Custom')]
         [object[]]
-        $ArgumentList,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'Syslog')]
-        [switch]
-        $Syslog,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'Syslog')]
-        [string]
-        $Server,
-
-        [Parameter( ParameterSetName = 'Syslog')]
-        [Int16]
-        $Port = 514,
-
-        [Parameter( ParameterSetName = 'Syslog')]
-        [ValidateSet('UDP', 'TCP', 'TLS' )]
-        [string]
-        $Transport = 'UDP',
-
-        [Parameter( ParameterSetName = 'Syslog')]
-        [System.Security.Authentication.SslProtocols]
-        $TlsProtocol = [System.Security.Authentication.SslProtocols]::Tls13,
-
-        [Parameter( ParameterSetName = 'Syslog')]
-        [ValidateSet('RFC3164' , 'RFC5424')]
-        [string]
-        $SyslogProtocol = 'RFC5424',
-
-        [Parameter( ParameterSetName = 'Syslog')]
-        [Parameter( ParameterSetName = 'File')]
-        [ValidateSet('ASCII', 'BigEndianUnicode', 'Default', 'Unicode', 'UTF32', 'UTF7', 'UTF8')]
-        [string]
-        $Encoding = 'UTF8',
-
-        [Parameter( ParameterSetName = 'Syslog')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'Restful')]
-        [switch]
-        $SkipCertificateCheck,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'Restful')]
-        [switch]
-        $Restful,
-
-        [Parameter(Mandatory = $true, ParameterSetName = 'Restful')]
-        [ValidatePattern('^(https?://|/).+')]
-        [string]
-        $BaseUrl,
-
-        [Parameter( ParameterSetName = 'Restful')]
-        [ValidateSet( 'Splunk', 'LogInsight')]
-        $Platform = 'Splunk',
-
-        [Parameter( ParameterSetName = 'Restful')]
-        [string]
-        $Token,
-
-        [Parameter( ParameterSetName = 'Restful')]
-        [string]
-        $Id,
-
-        [Parameter(ParameterSetName = 'EventViewer')]
-        [Parameter(ParameterSetName = 'File')]
-        [Parameter(ParameterSetName = 'CustomRunspace')]
-        [Parameter( ParameterSetName = 'Restful')]
-        [Parameter( ParameterSetName = 'Syslog')]
-        [string]
-        [ValidateSet('Ignore', 'Report', 'Halt' )]
-        $FailureAction = 'Ignore',
-
-        [Parameter()]
-        [ValidateScript({
-                # Define a sample date to test the format
-                $sampleDate = [DateTime]::Now
-                try {
-                    # Try to format the sample date using the provided format
-                    $formattedDate = $sampleDate.ToString($_)
-
-                    # Try to parse the formatted date back to a DateTime object using the same format
-                    [DateTime]::ParseExact($formattedDate, $_, $null)
-
-                    # If no exceptions are thrown, the format is valid
-                    $true
-                }
-                catch {
-                    # If an exception is thrown, the format is invalid
-                    $false
-                }
-            })]
-        [string]
-        $DataFormat,
-
-        [Parameter()]
-        [switch]
-        $ISO8601,
-
-        [Parameter()]
-        [switch]
-        $AsUTC
+        $ArgumentList
     )
 
-    if ((! [string]::IsNullOrEmpty($DataFormat)) -and $ISO8601.IsPresent) {
-        throw ("Parameters '{0}' and '{1}' are mutually exclusive." -f 'DataFormat', 'ISO8601')
-    }
-    if ($ISO8601.IsPresent) {
-        $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
-    }
-    else {
-        $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
-    }
 
-    # batch details
-    $batchInfo = @{
-        Id         = New-PodeGuid
-        Size       = $Batch
-        Timeout    = $BatchTimeout
-        LastUpdate = $null
-        Items      = @()
-        RawItems   = @()
-    }
 
     # return info on appropriate logging type
     switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
         'terminal' {
-            $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.Method[$methodId] = @{
-                ScriptBlock = (Get-PodeLoggingTerminalMethod)
-                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-            }
-            return @{
-                Id        = $methodId
-                Batch     = $batchInfo
-                Logger    = @()
-                Arguments = @{
-                    DataFormat = $DataFormat
-                    AsUTC      = $AsUTC
-                }
-            }
+            return New-PodeTerminalLoggingMethod
         }
 
         'file' {
-            $Path = (Protect-PodeValue -Value $Path -Default './logs')
-            $Path = (Get-PodeRelativePath -Path $Path -JoinRoot -Resolve)
-            $null = New-Item -Path $Path -ItemType Directory -Force
-            $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.Method[$methodId] = @{
-                ScriptBlock = (Get-PodeLoggingFileMethod)
-                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
+
+            $fileParams = @{
+                Path    = $PSBoundParameters['Path']
+                Name    = $PSBoundParameters['Name']
+                MaxDays = $PSBoundParameters['MaxDays']
+                MaxSize = $PSBoundParameters['MaxSize']
             }
-            return @{
-                Id        = $methodId
-                Batch     = $batchInfo
-                Logger    = @()
-                Arguments = @{
-                    Name          = $Name
-                    Path          = $Path
-                    MaxDays       = $MaxDays
-                    MaxSize       = $MaxSize
-                    FileId        = 0
-                    Date          = $null
-                    NextClearDown = [datetime]::Now.Date
-                    FailureAction = $FailureAction
-                    DataFormat    = $DataFormat
-                    AsUTC         = $AsUTC
-                    Encoding      = $Encoding
-                    Format        = $Format
-                    MaxLength     = $MaxLength
-                    Source        = $Source
-                    Separator     = $Separator
-                }
-            }
+            return New-PodeFileLoggingMethod @fileParams
         }
 
         'eventviewer' {
-            # only windows
-            if (!(Test-PodeIsWindows)) {
-                # Event Viewer logging only supported on Windows
-                throw ($PodeLocale.eventViewerLoggingSupportedOnWindowsOnlyExceptionMessage)
+            $eventViewerParams = @{
+                EventLogName = $PSBoundParameters['EventLogName']
+                Source       = $PSBoundParameters['Source']
+                EventID      = $PSBoundParameters['EventID']
             }
-
-            # create source
-            if (![System.Diagnostics.EventLog]::SourceExists($Source)) {
-                $null = [System.Diagnostics.EventLog]::CreateEventSource($Source, $EventLogName)
-            }
-
-            $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.Method[$methodId] = @{
-                ScriptBlock = (Get-PodeLoggingEventViewerMethod)
-                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-            }
-            return @{
-                Id        = $methodId
-                Batch     = $batchInfo
-                Logger    = @()
-                Arguments = @{
-                    LogName       = $EventLogName
-                    Source        = $Source
-                    ID            = $EventID
-                    FailureAction = $FailureAction
-                    DataFormat    = $DataFormat
-                    AsUTC         = $AsUTC
-                }
-            }
+            return New-PodeEventViewerLoggingMethod @eventViewerParams
         }
 
-        'syslog' {
-            # Get the encoding object based on the selected encoding name
-            $selectedEncoding = [System.Text.Encoding]::$Encoding
+        'custom' {
 
-            if ($null -eq $selectedEncoding) {
-                throw ($PodeLocale.invalidEncodingExceptionMessage -f $Encoding)
+            $customParams = @{
+                ScriptBlock  = $PSBoundParameters['ScriptBlock']
+                ArgumentList = $PSBoundParameters['ArgumentList']
             }
-
-            $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.Method[$methodId] = @{
-                ScriptBlock = (Get-PodeLoggingSysLogMethod)
-                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-            }
-            return @{
-                Id        = $methodId
-                Batch     = $batchInfo
-                Logger    = @()
-                Arguments = @{
-                    Server               = $Server
-                    Port                 = $Port
-                    Transport            = $Transport
-                    Hostname             = $Hostname
-                    Source               = $Source
-                    TslProtocols         = $TlsProtocol
-                    SkipCertificateCheck = $SkipCertificateCheck
-                    SyslogProtocol       = $SyslogProtocol
-                    Encoding             = $selectedEncoding
-                    FailureAction        = $FailureAction
-                    DataFormat           = $DataFormat
-                    AsUTC                = $AsUTC
-                }
-            }
-        }
-
-        'restful' {
-            $methodId = New-PodeGuid
-            $PodeContext.Server.Logging.Method[$methodId] = @{
-                ScriptBlock = (Get-PodeLoggingRestfulMethod)
-                Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-            }
-            return @{
-                Id        = $methodId
-                Batch     = $batchInfo
-                Logger    = @()
-                Arguments = @{
-                    BaseUrl              = $BaseUrl
-                    Platform             = $Platform
-                    Hostname             = $Hostname
-                    Source               = $Source
-                    SkipCertificateCheck = $SkipCertificateCheck
-                    Token                = $Token
-                    Id                   = $Id
-                    FailureAction        = $FailureAction
-                    DataFormat           = $DataFormat
-                    AsUTC                = $AsUTC
-                }
-            }
-        }
-
-        { ($_ -eq 'CustomRunspace') -or ($_ -eq 'custom') } {
-            $methodId = New-PodeGuid
-            if ($UseRunspace.IsPresent) {
-                $enanchedScriptBlock = {
-                    param($MethodId)
-
-                    $log = @{}
-                    while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                        Start-Sleep -Milliseconds 100
-
-                        if ($PodeContext.Server.Logging.Method[$MethodId].Queue.TryDequeue([ref]$log)) {
-                            if ($null -ne $log) {
-                                $Item = $log.item
-                                $Options = $log.options
-                                $RawItem = $log.rawItem
-                                try {
-                                    # Original ScriptBlock Start
-                                    <# ScriptBlock #>
-                                    # Original ScriptBlock End
-                                }
-                                catch {
-                                    Invoke-PodeHandleFailure -Message "Custom Logging $MethodId Error. message: $_" -FailureAction $options.FailureAction
-                                }
-                            }
-                        }
-                    }
-                }
-
-                $PodeContext.Server.Logging.Method[$methodId] = @{
-                    ScriptBlock = [ScriptBlock]::Create( $enanchedScriptBlock.ToString().Replace('<# ScriptBlock #>', $ScriptBlock.ToString()))
-                    Queue       = [System.Collections.Concurrent.ConcurrentQueue[hashtable]]::new()
-                }
-                return @{
-                    Id        = $methodId
-                    Batch     = $batchInfo
-                    Logger    = @()
-                    Arguments = @{
-                        FailureAction = $FailureAction
-                        DataFormat    = $DataFormat
-                        AsUTC         = $AsUTC
-                    } + $CustomOptions
-                }
-            }
-            else {
-                $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-
-                return @{
-                    Id             = $methodId
-                    ScriptBlock    = $ScriptBlock
-                    UsingVariables = $usingVars
-                    Batch          = $batchInfo
-                    Logger         = @()
-                    Arguments      = $ArgumentList
-                    FailureAction  = $FailureAction
-                    DataFormat     = $DataFormat
-                    AsUTC          = $AsUTC
-                    NoRunspace     = $true
-                }
-            }
-
+            return New-PodeCustomLoggingMethod @customParams
         }
     }
 }
-
 
 <#
 .SYNOPSIS
@@ -1254,13 +1409,15 @@ function Write-PodeErrorLog {
         $item['Level'] = $Level
         $item['Date'] = if ($PodeContext.Server.Logging.Type[$Name].Method.Arguments.AsUTC) {
             [datetime]::UtcNow
-        } else {
+        }
+        else {
             [datetime]::Now
         }
 
         $item['ThreadId'] = if ($ThreadId) {
             $ThreadId
-        } else {
+        }
+        else {
             [System.Threading.Thread]::CurrentThread.ManagedThreadId
         }
 

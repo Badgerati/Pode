@@ -60,7 +60,7 @@ Start-PodeServer -browse {
     }
 
     if ( $LoggingType -icontains 'file') {
-        $logging += New-PodeLoggingMethod -File -Name 'file' -MaxDays 4 -Format Simple -ISO8601
+        $logging += New-PodeFileLoggingMethod   -Name 'file' -MaxDays 4 -Format Simple -ISO8601
         $requestLogging = New-PodeLoggingMethod -File -Name 'requests' -MaxDays 4
     }
 
@@ -72,7 +72,7 @@ Start-PodeServer -browse {
             $rawItem | Out-File './examples/logs/customLegacy_rawItem.log' -Append
         }
 
-        $logging += New-PodeLoggingMethod -Custom -UseRunspace -CustomOptions @{ 'opt1' = 'something'; 'opt2' = 'else' } -ScriptBlock {
+        $logging += New-PodeCustomLoggingMethod -UseRunspace -CustomOptions @{ 'opt1' = 'something'; 'opt2' = 'else' } -ScriptBlock {
             $item | Out-File './examples/logs/customWithRunspace.log' -Append
             $options | Out-File './examples/logs/customWithRunspace_options.log' -Append
             $rawItem | Out-File './examples/logs/customWithRunspace_rawItem.log' -Append
@@ -84,7 +84,7 @@ Start-PodeServer -browse {
     }
 
     if ( $LoggingType -icontains 'syslog') {
-        $logging += New-PodeLoggingMethod -syslog  -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -FailureAction Report
+        $logging += New-PodeSyslogLoggingMethod    -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -FailureAction Report
     }
 
     if ($logging.Count -eq 0) {

@@ -1410,3 +1410,55 @@ function Write-PodeTraceLog {
             Item = $item
         })
 }
+
+
+function New-PodeLogBatchInfo {
+    # batch details
+    return @{
+        Id         = New-PodeGuid
+        Size       = $Batch
+        Timeout    = $BatchTimeout
+        LastUpdate = $null
+        Items      = @()
+        RawItems   = @()
+    }
+}
+
+
+function Test-PodeDateFormat {
+    param (
+        [string]$DateFormat
+    )
+
+    $sampleDate = [DateTime]::Now
+    try {
+        # Try to format the sample date using the provided format
+        $formattedDate = $sampleDate.ToString($DateFormat)
+
+        # Try to parse the formatted date back to a DateTime object using the same format
+        [DateTime]::ParseExact($formattedDate, $DateFormat, $null)
+
+        # If no exceptions are thrown, the format is valid
+        return $true
+    }
+    catch {
+        # If an exception is thrown, the format is invalid
+        return $false
+    }
+}
+
+
+<#
+   switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        'iso8601' {
+            $DataFormat = 'yyyy-MM-ddTHH:mm:ssK'
+        }
+        default {
+            if ([string]::IsNullOrEmpty($DataFormat)) {
+                $DataFormat = 'dd/MMM/yyyy:HH:mm:ss zzz' # Default format
+            }
+        }
+    }
+
+
+#>
