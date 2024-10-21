@@ -1151,86 +1151,81 @@ if (!(Test-Path Alias:Clear-PodeLoggers)) {
 
 <#
 .SYNOPSIS
-    Writes an Exception or ErrorRecord using the built-in error logging.
+    Logs an Exception, ErrorRecord, or a custom error message using Pode's built-in logging mechanism.
 
 .DESCRIPTION
-    This function logs an Exception or ErrorRecord using Pode's built-in error logging mechanism. It allows specifying the error level and optionally checks for inner exceptions.
+    This function logs exceptions, error records, or custom error messages with optional error categories and levels. It can also log inner exceptions and associate the error with a specific thread ID. Error levels can be set, and inner exceptions can be checked for more detailed logging.
 
 .PARAMETER Exception
-    An Exception to log.
+    The exception object to log. This is used when logging caught exceptions.
 
 .PARAMETER ErrorRecord
-    An ErrorRecord to log.
+    The error record to log. This is used when handling errors through PowerShell's error handling mechanism.
 
-.PARAMETER ErrorMessage
-    A custom error message to log.
+.PARAMETER Message
+    A custom error message to log when exceptions or error records are not available.
 
 .PARAMETER Category
-    The error category for the custom error message (Default: NotSpecified).
+    The category of the custom error message (Default: NotSpecified).
 
 .PARAMETER Level
-    The level of the error being logged. Options are: Error, Warning, Informational, Verbose, Debug (Default: Error).
+    The logging level for the error. Supported levels are: Error, Warning, Informational, Verbose, Debug (Default: Error).
 
 .PARAMETER CheckInnerException
-    If specified, any inner exceptions of the provided exception are also logged.
+    If specified, logs any inner exceptions associated with the provided exception.
 
 .PARAMETER ThreadId
-    The ID of the thread where the error occurred.
+    The ID of the thread where the error occurred. If not specified, the current thread's ID is used.
 
 .EXAMPLE
-    try { /* logic */ } catch { $_ | Write-PodeErrorLog }
+    try {
+        # Some operation
+    } catch {
+        $_ | Write-PodeErrorLog
+    }
 
 .EXAMPLE
-    [System.Exception]::new('error message') | Write-PodeErrorLog
+    [System.Exception]::new('Custom error message') | Write-PodeErrorLog -CheckInnerException
+
+.EXAMPLE
+    Write-PodeErrorLog -Message "Custom message" -Category NotSpecified -Level 'Warning'
 #>
 function Write-PodeErrorLog {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Exception')]
-        [System.Exception]
-        $Exception,
+        [System.Exception] $Exception,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'ErrorRecord')]
-        [System.Management.Automation.ErrorRecord]
-        $ErrorRecord,
+        [System.Management.Automation.ErrorRecord] $ErrorRecord,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Message')]
-        [string]
-        $Message,
+        [string] $Message,
 
-        [Parameter( ParameterSetName = 'Message')]
-        [System.Management.Automation.ErrorCategory]
-        $Category = [System.Management.Automation.ErrorCategory]::NotSpecified,
+        [Parameter(ParameterSetName = 'Message')]
+        [System.Management.Automation.ErrorCategory] $Category = [System.Management.Automation.ErrorCategory]::NotSpecified,
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
         [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug')]
-        [string]
-        $Level = 'Error',
+        [string] $Level = 'Error',
 
         [Parameter(ParameterSetName = 'Exception')]
-        [switch]
-        $CheckInnerException,
+        [switch] $CheckInnerException,
 
         [Parameter()]
-        [int]
-        $ThreadId
+        [int] $ThreadId
     )
 
     Process {
-        # do nothing if logging is disabled, or error logging isn't setup
+        # Check if logging is enabled and the error level is valid
         $name = Get-PodeErrorLoggingName
-        if (!(Test-PodeLoggerEnabled -Name $name)) {
-            return
-        }
+        if (!(Test-PodeLoggerEnabled -Name $name)) { return }
 
-        # do nothing if the error level isn't present
         $levels = @(Get-PodeErrorLoggingLevel)
-        if ($levels -inotcontains $Level) {
-            return
-        }
+        if ($levels -inotcontains $Level) { return }
 
-        # build error object for what we need
+        # Build the error object
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'exception' {
                 $item = @{
@@ -1239,15 +1234,14 @@ function Write-PodeErrorLog {
                     StackTrace = $Exception.StackTrace
                 }
             }
-
-            'ErrorRecord' {
+            'errorrecord' {
                 $item = @{
                     Category   = $ErrorRecord.CategoryInfo.ToString()
                     Message    = $ErrorRecord.Exception.Message
                     StackTrace = $ErrorRecord.ScriptStackTrace
                 }
             }
-            'Message' {
+            'message' {
                 $item = @{
                     Category = $Category.ToString()
                     Message  = $Message
@@ -1255,32 +1249,29 @@ function Write-PodeErrorLog {
             }
         }
 
-        # add general info
+        # General info and thread id
         $item['Server'] = $PodeContext.Server.ComputerName
         $item['Level'] = $Level
-        if ($PodeContext.Server.Logging.Type[$Name].Method.Arguments.AsUTC) {
-            $Item.Date = [datetime]::UtcNow
-        }
-        else {
-            $Item.Date = [datetime]::Now
-        }
-
-        if ($ThreadId) {
-            $Item['ThreadId'] = $ThreadId
-        }
-        else {
-            $item['ThreadId'] = [System.Threading.Thread]::CurrentThread.ManagedThreadId #[int]$ThreadId
+        $item['Date'] = if ($PodeContext.Server.Logging.Type[$Name].Method.Arguments.AsUTC) {
+            [datetime]::UtcNow
+        } else {
+            [datetime]::Now
         }
 
+        $item['ThreadId'] = if ($ThreadId) {
+            $ThreadId
+        } else {
+            [System.Threading.Thread]::CurrentThread.ManagedThreadId
+        }
+
+        # Add the item to the logger queue
         $logItem = @{
             Name = $name
             Item = $item
         }
+        [Pode.PodeLogger]::Enqueue($logItem)
 
-        # add the item to be processed
-        $null = [Pode.PodeLogger]::Enqueue( $logItem)
-
-        # for exceptions, check the inner exception
+        # Log inner exceptions if specified
         if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
             $Exception.InnerException | Write-PodeErrorLog -Level $Level -ThreadId $ThreadId
         }
