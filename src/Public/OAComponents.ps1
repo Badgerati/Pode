@@ -316,7 +316,9 @@ function Add-PodeOAComponentRequestBody {
 
         [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [Alias('ContentSchemas')]
-        [hashtable]
+        [ValidateScript({
+            ($_ -is [hashtable]) -or ($_ -is [System.Collections.Specialized.OrderedDictionary])
+        })]
         $Content,
 
         [Parameter()]

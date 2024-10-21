@@ -319,9 +319,9 @@ Some useful links:
         New-PodeOAStringProperty -Format Date-Time -Description 'date in UTC when token expires' | Add-PodeOAComponentHeader -Name 'X-Expires-After'
 
         #define '#/components/responses/'
-        Add-PodeOAComponentResponse -Name 'UserOpSuccess' -Description 'Successful operation' -ContentSchemas (@{'application/json' = 'User' ; 'application/xml' = 'User' })
+        Add-PodeOAComponentResponse -Name 'UserOpSuccess' -Description 'Successful operation' -ContentSchemas ([ordered]@{'application/json' = 'User' ; 'application/xml' = 'User' })
 
-        Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -ContentSchemas (@{ 'application/json' = 'Pets'; 'application/xml' = 'Pets'; 'application/x-www-form-urlencoded' = 'Pets' })
+        Add-PodeOAComponentRequestBody -Name 'PetBodySchema' -Required -Description 'Pet in the store' -ContentSchemas ([ordered]@{'application/json' = 'Pets'; 'application/xml' = 'Pets'; 'application/x-www-form-urlencoded' = 'Pets' })
 
 
         #define '#/components/parameters/'
@@ -434,11 +434,11 @@ Some useful links:
                 Set-PodeOARequest  -Parameters @(
             (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
                 ) -RequestBody (
-                    New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'User'; 'application/xml' = 'User' }  -Examples  $ex
+                    New-PodeOARequestBody -Description 'user to add to the system' -Content ([ordered]@{'application/json' = 'User'; 'application/xml' = 'User' })  -Examples  $ex
 
                 ) -PassThru |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
-                Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+                Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content ([ordered]@{'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+                Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  ([ordered]@{'application/json' = '' ; 'application/xml' = '' })
 
 
 
@@ -465,8 +465,8 @@ Some useful links:
                                 )
                             })
                     ) -PassThru |
-                    Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
-                    Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+                    Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content ([ordered]@{'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+                    Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content ([ordered]@{'application/json' = '' ; 'application/xml' = '' })
 
 
             #Start 3.1
@@ -483,7 +483,7 @@ Some useful links:
 
                 Add-PodeOAWebhook -Name 'newPet' -Method Post -PassThru | Set-PodeOARouteInfo   -Description 'Information about a new pet in the system'   -PassThru |
                     Set-PodeOARequest -PassThru -RequestBody (
-                        New-PodeOARequestBody -Content @{ 'application/json' = 'Pets' }
+                        New-PodeOARequestBody -Content @{'application/json' = 'Pets' }
                     ) | Add-PodeOAResponse -StatusCode 200 -Description 'Return a 200 status to indicate that the data was received successfully'
 
             }
@@ -500,8 +500,8 @@ Some useful links:
                 Set-PodeOARequest  -Parameters @(
               (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
                 ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'text/plain' = New-PodeOAStringProperty   -array } ) -PassThru |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
-                Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+                Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content ([ordered]@{'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+                Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content ([ordered]@{'application/json' = '' ; 'application/xml' = '' })
 
 
 
@@ -524,14 +524,14 @@ Some useful links:
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet3' -PassThru |
                 Set-PodeOARequest  -Parameters @(
                   (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
-                ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'NewCat' } -Examples (
+                ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{'application/json' = 'NewCat' } -Examples (
                         New-PodeOAExample -ContentType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
                             New-PodeOAExample -ContentType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
                             New-PodeOAExample -ContentType 'application/json' -Reference 'frog-example'
                         )
                     ) -PassThru |
-                    Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
-                    Add-PodeOAResponse -StatusCode 4XX -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+                    Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content ([ordered]@{'application/json' = '' ; 'application/xml' = '' }) -PassThru |
+                    Add-PodeOAResponse -StatusCode 4XX -Description 'Method Not Allowed' -Content ([ordered]@{'application/json' = '' ; 'application/xml' = '' })
 
 
             Add-PodeRoute -PassThru -Method Put -Path '/paet4/:petId' -ScriptBlock {
@@ -545,7 +545,7 @@ Some useful links:
             } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatepaet4' -PassThru |
                 Set-PodeOARequest  -Parameters @(
                           (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required -ContentType 'application/json')
-                ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
+                ) -RequestBody (New-PodeOARequestBody -Description 'user to add to the system' -Content @{'application/json' = 'Pet' } -Examples (
                         New-PodeOAExample -ContentType 'application/json' -Name 'cat' -Summary   'An example of a cat' -Value    @{name = 'Fluffy'; petType = 'Cat'; color = 'White'; gender = 'male'; breed = 'Persian' } |
                             New-PodeOAExample -ContentType 'application/json' -Name 'dog' -Summary   "An example of a dog with a cat's name" -Value    @{name = 'Puma'; petType = 'Dog'; color = 'Black'; gender = 'Female'; breed = 'Mixed' } |
                             New-PodeOAExample -ContentType 'application/json' -Reference 'frog-example'
@@ -553,7 +553,7 @@ Some useful links:
 
                     ) -PassThru |
                     Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content '') -PassThru |
-                    Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+                    Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content ([ordered]@{'application/json' = '' ; 'application/xml' = '' })
 
         }
     }
@@ -701,7 +701,7 @@ Some useful links:
                 Write-PodeJsonResponse -Value 'done' -StatusCode 200
             } | Set-PodeOARouteInfo -Summary 'Find pet by ID' -Description 'Returns a single pet.' -Tags 'pet' -OperationId 'getPetById' -PassThru |
                 Set-PodeOARequest -PassThru -Parameters @( ConvertTo-PodeOAParameter -Reference 'PetIdParam'  ) |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  (@{  'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content  ([ordered]@{'application/json' = 'Pet' ; 'application/xml' = 'Pet' }) -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found'
 
@@ -830,14 +830,14 @@ Some useful links:
             Add-PodeRoute -PassThru -Method Get -Path '/store/inventory' -ScriptBlock {
                 Write-PodeJsonResponse -Value 'done' -StatusCode 200
             } | Set-PodeOARouteInfo -Summary 'Returns pet inventories by status' -Description 'Returns a map of status codes to quantities' -Tags 'store' -OperationId 'getInventory' -PassThru |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{  'application/json' = New-PodeOAObjectProperty -Properties @(New-PodeOAStringProperty -Name 'none'  ) }  #missing additionalProperties
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content @{'application/json' = New-PodeOAObjectProperty -Properties @(New-PodeOAStringProperty -Name 'none'  ) }  #missing additionalProperties
 
 
             Add-PodeRoute -PassThru -Method post -Path '/store/order' -ScriptBlock {
                 Write-PodeJsonResponse -Value 'done' -StatusCode 200
             } | Set-PodeOARouteInfo -Deprecated -Summary 'Place an order for a pet' -Description 'Place a new order in the store' -Tags 'store' -OperationId 'placeOrder' -PassThru |
                 Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Required -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'Order'  )) -PassThru |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (@{  'application/json' = 'Order' ; 'application/xml' = 'Order' }) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content ([ordered]@{'application/json' = 'Order' ; 'application/xml' = 'Order' }) -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Invalid Input'
 
             Add-PodeRoute -PassThru -Method Get -Path '/store/order/:orderId' -ScriptBlock {
