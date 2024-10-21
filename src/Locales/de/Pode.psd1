@@ -292,4 +292,10 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Die Stream-Komprimierungskodierung wird nicht unterstützt: {0}'
     LocalEndpointConflictExceptionMessage                             = "Sowohl '{0}' als auch '{1}' sind als lokale OpenAPI-Endpunkte definiert, aber es ist nur ein lokaler Endpunkt pro API-Definition erlaubt."
+    serviceAlreadyRegisteredException                                 = "Der Dienst '{0}' ist bereits registriert."
+    serviceIsNotRegisteredException                                   = "Der Dienst '{0}' ist nicht registriert."
+    serviceCommandFailedException                                     = "Der Dienstbefehl '{0}' ist bei dem Dienst '{1}' fehlgeschlagen."
+    serviceRegistrationException                                      = "Die Registrierung des Dienstes '{0}' ist fehlgeschlagen."
+    serviceIsRunningException                                         = "Der Dienst '{0}' läuft. Verwenden Sie den Parameter -Force, um den Dienst zwangsweise zu stoppen."
+    serviceUnRegistrationException                                    = "Die Abmeldung des Dienstes '{0}' ist fehlgeschlagen."
 }

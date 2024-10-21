@@ -292,4 +292,10 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
     LocalEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
+    serviceAlreadyRegisteredException                                 = "الخدمة '{0}' مسجلة بالفعل."
+    serviceIsNotRegisteredException                                   = "الخدمة '{0}' غير مسجلة."
+    serviceCommandFailedException                                     = "فشل الأمر '{0}' في الخدمة '{1}'."
+    serviceRegistrationException                                      = "فشل تسجيل الخدمة '{0}'."
+    serviceIsRunningException                                         = "الخدمة '{0}' تعمل. استخدم المعامل -Force للإيقاف بالقوة."
+    serviceUnRegistrationException                                    = "فشل إلغاء تسجيل الخدمة '{0}'."
 }

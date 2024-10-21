@@ -292,4 +292,10 @@
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'
     LocalEndpointConflictExceptionMessage                             = "Tanto '{0}' quanto '{1}' estão definidos como endpoints locais do OpenAPI, mas apenas um endpoint local é permitido por definição de API."
+    serviceAlreadyRegisteredException                                 = "O serviço '{0}' já está registrado."
+    serviceIsNotRegisteredException                                      = "O serviço '{0}' não está registrado."
+    serviceCommandFailedException                                     = "O comando do serviço '{0}' falhou no serviço '{1}'."
+    serviceRegistrationException                                = "Falha no registro do serviço '{0}'."
+    serviceIsRunningException                                         = "O serviço '{0}' está em execução. Use o parâmetro -Force para forçar a parada."
+    serviceUnRegistrationException                                    = "A anulação do registro do serviço '{0}' falhou."
 }
