@@ -290,7 +290,7 @@ function Set-PodeSessionInMemClearDown {
 
         # remove sessions that have expired, or where the parent is gone
         $now = [DateTime]::UtcNow
-        foreach ($key in $store.Memory.Keys) {
+        foreach ($key in $store.Memory.Keys.Clone()) {
             # expired
             if ($store.Memory[$key].Expiry -lt $now) {
                 $null = $store.Memory.Remove($key)

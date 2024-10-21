@@ -1942,12 +1942,6 @@ If supplied, the schema will be included in a response but not in a request
 .PARAMETER WriteOnly
 If supplied, the schema will be included in a request but not in a response
 
-.PARAMETER MinProperties
-If supplied, will restrict the minimun number of properties allowed in an schema.
-
-.PARAMETER MaxProperties
-If supplied, will restrict the maximum number of properties allowed in an schema.
-
 .PARAMETER Array
 If supplied, the schema will be treated as an array of objects.
 
@@ -2015,14 +2009,6 @@ function New-PodeOAComponentSchemaProperty {
         [switch]
         $XmlAttribute,
 
-        [Parameter(  ParameterSetName = 'Array')]
-        [string]
-        $XmlItemName,
-
-        [Parameter(  ParameterSetName = 'Array')]
-        [switch]
-        $XmlWrapped,
- 
         [object]
         $Example,
 
@@ -2041,13 +2027,13 @@ function New-PodeOAComponentSchemaProperty {
         [switch]
         $WriteOnly,
 
-        [Parameter(ParameterSetName = 'Array')]
-        [int]
-        $MinProperties,
+        [Parameter(  ParameterSetName = 'Array')]
+        [string]
+        $XmlItemName,
 
-        [Parameter(ParameterSetName = 'Array')]
-        [int]
-        $MaxProperties,
+        [Parameter(  ParameterSetName = 'Array')]
+        [switch]
+        $XmlWrapped,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'Array')]
         [switch]
