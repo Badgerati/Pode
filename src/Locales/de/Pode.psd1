@@ -301,4 +301,5 @@
     getRequestBodyNotAllowedExceptionMessage                          = '{0}-Operationen können keinen Anforderungstext haben.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Die Stream-Komprimierungskodierung wird nicht unterstützt: {0}'
+    LocalEndpointConflictExceptionMessage                             = "Sowohl '{0}' als auch '{1}' sind als lokale OpenAPI-Endpunkte definiert, aber es ist nur ein lokaler Endpunkt pro API-Definition erlaubt."
 }

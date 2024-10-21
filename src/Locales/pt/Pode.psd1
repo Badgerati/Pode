@@ -301,4 +301,5 @@
     getRequestBodyNotAllowedExceptionMessage                          = 'As operações {0} não podem ter um corpo de solicitação.'
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'
+    LocalEndpointConflictExceptionMessage                             = "Tanto '{0}' quanto '{1}' estão definidos como endpoints locais do OpenAPI, mas apenas um endpoint local é permitido por definição de API."
 }

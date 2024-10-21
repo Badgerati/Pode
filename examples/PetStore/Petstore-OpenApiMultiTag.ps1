@@ -134,7 +134,6 @@ Some useful links:
 
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'V3 Endpoint' -DefinitionTag 'v3.0.3'
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'V3.1 Endpoint' -DefinitionTag 'v3.1'
-    Add-PodeOAServerEndpoint -url '/api' -Description 'Default Endpoint' -DefinitionTag 'v3.0.3','v3.1'
 
     #OpenAPI 3.0
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.0.3'
