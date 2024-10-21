@@ -293,28 +293,36 @@ function Start-PodeService {
             }
             else {
                 # Service is not registered
-                throw ($PodeLocale.serviceIsNotRegisteredException -f "pode.$Name")
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
             }
         }
 
         elseif ($IsLinux) {
+            $nameService = "$Name.service".Replace(' ', '\x20')
             # Check if the service exists
-            if (systemctl status "$Name.service" -q) {
+            systemctl status $nameService 2>&1
+            if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
                 # Check if the service is already running
-                $status = systemctl is-active "$Name.service"
+                $status = systemctl is-active $nameService
                 if ($status -ne 'active') {
-                    sudo systemctl start "$Name.service"
-                    # Log service started successfully
-                    # Write-PodeServiceLog -Message "Service '$Name' started successfully."
+                    sudo systemctl start $nameService
+                    $status = systemctl is-active $nameService
+                    if ($status -ne 'active') {
+                        throw ($PodeLocale.serviceCommandFailedException -f 'Start-Service', $nameService)
+                    }
+                    else {
+
+                        # Write-PodeServiceLog -Message "Service '$nameService' started successfully."}
+                    }
                 }
                 else {
                     # Log service is already running
-                    # Write-PodeServiceLog -Message "Service '$Name' is already running."
+                    # Write-PodeServiceLog -Message "Service '$nameService' is already running."
                 }
             }
             else {
                 # Service is not registered
-                throw ($PodeLocale.serviceIsNotRegisteredException -f "pode.$Name")
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
             }
         }
 
@@ -406,27 +414,35 @@ function Stop-PodeService {
             }
             else {
                 # Service is not registered
-                throw ($PodeLocale.serviceIsNotRegisteredException -f "pode.$Name")
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
             }
         }
         elseif ($IsLinux) {
-            # Check if the service exists
-            if (systemctl status "$Name.service" -q) {
-                $status = systemctl is-active "$Name.service"
-                if ($status -eq 'active') {
-                    sudo systemctl stop "$Name.service"
-                    # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
+            $nameService = "$Name.service".Replace(' ', '\x20')
+            systemctl status $nameService 2>&1
+            # Check if the service is already registered
+            if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
+                # Check if the service exists
+                if (systemctl status $nameService -q) {
+                    $status = systemctl is-active $nameService
+                    if ($status -eq 'active') {
+                        sudo systemctl stop $nameService
+                        $status = systemctl is-active $nameService
+                        if ($status -eq 'active') {
+                            throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
+                        }
+                        else {
+
+                            # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."}
+                        }
+                    }
                 }
                 else {
-                    # Write-PodeServiceLog -Message "Service '$Name' is not running."
+                    # Service is not registered
+                    throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
                 }
             }
-            else {
-                # Service is not registered
-                throw ($PodeLocale.serviceIsNotRegisteredException -f "pode.$Name")
-            }
         }
-
         elseif ($IsMacOS) {
             # Check if the service exists in launchctl
             if (launchctl list | Select-String "pode.$Name") {
@@ -455,6 +471,7 @@ function Stop-PodeService {
     }
     return $true
 }
+
 
 <#
 .SYNOPSIS
@@ -556,34 +573,42 @@ function Unregister-PodeService {
 
     elseif ($IsLinux) {
         try {
-            # Check if the service exists
-            if (systemctl status "$Name.service" -q) {
+            $nameService = "$Name.service".Replace(' ', '\x20')
+            systemctl status $nameService 2>&1
+            # Check if the service is already registered
+            if ($code -eq 0 -or $code -eq 3) {
                 # Check if the service is running
-                $status = systemctl is-active "$Name.service"
+                $status = systemctl is-active  $nameService 2>&1
                 if ($status -eq 'active') {
+                    # $status -eq 'active'
                     if ($Force.IsPresent) {
-                        sudo systemctl stop "$Name.service"
+                        sudo systemctl stop $nameService
                         # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
                         # Service is running. Use the -Force parameter to forcefully stop."
-                        throw ($Podelocale.serviceIsRunningException -f "$Name.service")
+                        throw ($Podelocale.serviceIsRunningException -f $nameService)
                     }
                 }
-                sudo systemctl disable "$Name.service"
+                sudo systemctl disable $nameService
+                if ($LASTEXITCODE -eq 0 ) {
+                    # Read the content of the service file
+                    $serviceFilePath = "/etc/systemd/system/$nameService"
+                    $serviceFileContent = Get-Content -Path $serviceFilePath
 
-                # Read the content of the service file
-                $serviceFilePath = "/etc/systemd/system/$Name.service"
-                $serviceFileContent = Get-Content -Path $serviceFilePath
+                    # Extract the SettingsFile from the ExecStart line using regex
+                    $settingsFile = $serviceFileContent | Select-String -Pattern 'ExecStart=.*\s+(.*)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+                    if ((Test-Path -Path $settingsFile -PathType Leaf)) {
+                        Remove-Item -Path $settingsFile
+                    }
 
-                # Extract the SettingsFile from the ExecStart line using regex
-                $settingsFile = $serviceFileContent | Select-String -Pattern 'ExecStart=.*\s+(.*)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
-                if ((Test-Path -Path $settingsFile -PathType Leaf)) {
-                    Remove-Item -Path $settingsFile
+                    Remove-Item -Path $serviceFilePath -ErrorAction Break
+                    # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
                 }
-
-                Remove-Item -Path $serviceFilePath -ErrorAction Break
-                # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
+                else {
+                    # Write-PodeServiceLog -Message "Service '$Name' unregistered failed."
+                    throw ($PodeLocale.serviceUnRegistrationException -f $Name)
+                }
             }
             else {
                 # Service is not registered

@@ -343,7 +343,7 @@ function Register-PodeLinuxService {
         $OsArchitecture
     )
     $nameService = "$Name.service".Replace(' ', '\x20')
-    $output = bash -c "systemctl status $nameService 2>&1"
+    systemctl status $nameService 2>&1
 
     # Check if the service is already registered
     if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
@@ -385,7 +385,7 @@ WantedBy=multi-user.target
 
     # Enable the service and check if it fails
     try {
-        sudo systemctl enable $nameService
+        sudo systemctl enable $nameService 2>&1
         if ($LASTEXITCODE -ne 0) {
             # Service registration failed.
             throw ($PodeLocale.serviceRegistrationException -f $nameService)
@@ -398,8 +398,6 @@ WantedBy=multi-user.target
 
     return $true
 }
-
-
 
 <#
 .SYNOPSIS
