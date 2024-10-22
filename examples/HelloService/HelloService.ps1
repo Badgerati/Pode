@@ -103,7 +103,7 @@ catch {
 
 
 if ( $Register.IsPresent) {
-    Register-PodeService -Name 'Hello Service2' -User 'm.daneri'
+    Register-PodeService -Name 'Hello Service2'
     exit
 }
 if ( $Unregister.IsPresent) {
@@ -129,6 +129,9 @@ if ($Query.IsPresent) {
 
 # Start the Pode server
 Start-PodeServer {
+    New-PodeLoggingMethod -File -Name 'service' -MaxDays 4 | Enable-PodeServiceLogging
+    New-PodeLoggingMethod -File -Name 'errors' -MaxDays 4 | Enable-PodeErrorLogging
+
     # Add an HTTP endpoint listening on localhost at port 8080
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
 

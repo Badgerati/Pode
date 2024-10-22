@@ -233,6 +233,8 @@ function Register-PodeMacService {
 </plist>
 "@ | Set-Content -Path "$($HOME)/Library/LaunchAgents/pode.$($Name).plist" -Encoding UTF8
 
+    Write-PodeServiceLog  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
+
     chmod +r "$($HOME)/Library/LaunchAgents/pode.$($Name).plist"
 
     try {
@@ -371,7 +373,11 @@ User=$User
 WantedBy=multi-user.target
 "@ | Set-Content -Path $tempFile  -Encoding UTF8
 
+    Write-PodeServiceLog  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
+
     sudo cp $tempFile "/etc/systemd/system/$nameService"
+
+    Remove-Item -path $tempFile -ErrorAction SilentlyContinue
 
     # Create user if needed
     if (!$SkipUserCreation.IsPresent) {
@@ -511,6 +517,7 @@ function Register-PodeWindowsService {
     if ($SecurityDescriptorSddl) {
         $params['SecurityDescriptorSddl'] = $SecurityDescriptorSddl
     }
+    Write-PodeServiceLog  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
 
     try {
         $paramsString = $params.GetEnumerator() | ForEach-Object { "-$($_.Key) '$($_.Value)'" }
@@ -563,70 +570,85 @@ function Write-PodeServiceLog {
 
     )
     Process {
-        $Service = $PodeContext.Server.Service
-        if ($null -eq $Service ) {
-            $Service = @{Name = 'Not a service' }
-        }
-        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+        if ($PodeContext -and $PodeContext.LogsToProcess) {
+            $Service = $PodeContext.Server.Service
+            if ($null -eq $Service ) {
+                $Service = @{Name = 'Not a service' }
+            }
+            switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
 
-            'message' {
-                $logItem = @{
-                    Name = $Service.Name
-                    Date = (Get-Date).ToUniversalTime()
-                    Item = @{
-                        Level   = $Level
-                        Message = $Message
-                        Tag     = $Tag
+                'message' {
+                    $logItem = @{
+                        Name = $Service.Name
+                        Date = (Get-Date).ToUniversalTime()
+                        Item = @{
+                            Level   = $Level
+                            Message = $Message
+                            Tag     = $Tag
+                        }
                     }
+                    break
                 }
-                break
-            }
-            'custom' {
-                $logItem = @{
-                    Name = $Service.Name
-                    Date = (Get-Date).ToUniversalTime()
-                    Item = @{
-                        Level   = $Level
-                        Message = $Message
-                        Tag     = $Tag
-                    }
-                }
-                break
-            }
-            'exception' {
-                $logItem = @{
-                    Name = $Service.Name
-                    Date = (Get-Date).ToUniversalTime()
-                    Item = @{
-                        Category   = $Exception.Source
-                        Message    = $Exception.Message
-                        StackTrace = $Exception.StackTrace
-                        Level      = $Level
-                    }
-                }
-                Write-PodeErrorLog -Level $Level -CheckInnerException:$CheckInnerException -Exception $Exception
-            }
 
-            'error' {
-                $logItem = @{
-                    Name = $Service.Name
-                    Date = (Get-Date).ToUniversalTime()
-                    Item = @{
-                        Category   = $ErrorRecord.CategoryInfo.ToString()
-                        Message    = $ErrorRecord.Exception.Message
-                        StackTrace = $ErrorRecord.ScriptStackTrace
-                        Level      = $Level
+                'exception' {
+                    $logItem = @{
+                        Name = $Service.Name
+                        Date = (Get-Date).ToUniversalTime()
+                        Item = @{
+                            Category   = $Exception.Source
+                            Message    = $Exception.Message
+                            StackTrace = $Exception.StackTrace
+                            Level      = $Level
+                        }
                     }
+                    Write-PodeErrorLog -Level $Level -CheckInnerException:$CheckInnerException -Exception $Exception
+                    break
                 }
-                Write-PodeErrorLog -Level $Level -ErrorRecord $ErrorRecord
+
+                'error' {
+                    $logItem = @{
+                        Name = $Service.Name
+                        Date = (Get-Date).ToUniversalTime()
+                        Item = @{
+                            Category   = $ErrorRecord.CategoryInfo.ToString()
+                            Message    = $ErrorRecord.Exception.Message
+                            StackTrace = $ErrorRecord.ScriptStackTrace
+                            Level      = $Level
+                        }
+                    }
+                    Write-PodeErrorLog -Level $Level -ErrorRecord $ErrorRecord
+                    break
+                }
             }
+            $null = $PodeContext.LogsToProcess.Add($logItem)
         }
 
-        $lpath = Get-PodeRelativePath -Path './logs' -JoinRoot
-        $logItem | ConvertTo-Json -Compress -Depth 5 | Add-Content "$lpath/watchdog-$($Service.Name).log"
+        else {
+            switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
+
+                'message' {
+                    Write-Verbose -Message $Message
+                    break
+                }
+
+                'exception' {
+                    Write-Error -Exception $Exception
+                    break
+                }
+
+                'error' {
+                    Write-Error "$($ErrorRecord.CategoryInfo.ToString()): $($ErrorRecord.Exception.Message)"
+                    break
+                }
+            }
+        }
+        #  $lpath = Get-PodeRelativePath -Path './logs' -JoinRoot
+        #    $logItem | ConvertTo-Json -Compress -Depth 5 | Add-Content "$lpath/watchdog-$($Service.Name).log"
 
     }
 }
+
+
 
 
 function Test-PodeUserServiceCreationPrivilege {
@@ -676,4 +698,10 @@ function Confirm-PodeAdminPrivilege {
         Write-PodeHost 'Insufficient privileges. This script must be run as root or with sudo permissions to continue.' -ForegroundColor Red
         exit
     }
+}
+
+
+
+function Get-PodeServiceLoggingName {
+    return '__pode_log_service__'
 }

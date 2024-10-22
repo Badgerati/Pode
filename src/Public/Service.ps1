@@ -152,7 +152,8 @@ function Register-PodeService {
             $settingsPath = $MainScriptPath
         }
         $settingsFile = Join-Path -Path $settingsPath -ChildPath "$($Name)_srvsettings.json"
-
+        Write-PodeServiceLog  -Message "Service '$Name' setting : $settingsFile."
+        
         # Generate the service settings JSON file
         $jsonContent = @{
             PodePwshWorker = @{
@@ -280,7 +281,7 @@ function Start-PodeService {
 
                     $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
                     if ($service.Status -eq 'Running') {
-                        # Write-PodeServiceLog -Message "Service '$Name' started successfully."
+                        Write-PodeServiceLog -Message "Service '$Name' started successfully."
                     }
                     else {
                         throw ($PodeLocale.serviceCommandFailedException -f 'Start-Service', $Name)
@@ -288,7 +289,7 @@ function Start-PodeService {
                 }
                 else {
                     # Log service is already running
-                    # Write-PodeServiceLog -Message "Service '$Name' is already running."
+                    Write-PodeServiceLog -Message "Service '$Name' is already running."
                 }
             }
             else {
@@ -312,12 +313,12 @@ function Start-PodeService {
                     }
                     else {
 
-                        # Write-PodeServiceLog -Message "Service '$nameService' started successfully."}
+                        Write-PodeServiceLog -Message "Service '$nameService' started successfully."
                     }
                 }
                 else {
                     # Log service is already running
-                    # Write-PodeServiceLog -Message "Service '$nameService' is already running."
+                    Write-PodeServiceLog -Message "Service '$nameService' is already running."
                 }
             }
             else {
@@ -337,12 +338,12 @@ function Start-PodeService {
                     launchctl start "pode.$Name"
 
                     # Log service started successfully
-                    # Write-PodeServiceLog -Message "Service '$Name' started successfully."
+                    Write-PodeServiceLog -Message "Service '$Name' started successfully."
                     return ($LASTEXITCODE -eq 0)
                 }
                 else {
                     # Log service is already running
-                    # Write-PodeServiceLog -Message "Service '$Name' is already running."
+                    Write-PodeServiceLog -Message "Service '$Name' is already running."
                 }
             }
             else {
@@ -402,14 +403,14 @@ function Stop-PodeService {
                     $null = Invoke-PodeWinElevatedCommand  -Command  'Stop-Service' -Arguments "-Name '$Name'"
                     $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
                     if ($service.Status -eq 'Stopped') {
-                        # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
+                        Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                     }
                     else {
                         throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
                     }
                 }
                 else {
-                    # Write-PodeServiceLog -Message "Service '$Name' is not running."
+                    Write-PodeServiceLog -Message "Service '$Name' is not running."
                 }
             }
             else {
@@ -432,8 +433,7 @@ function Stop-PodeService {
                             throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
                         }
                         else {
-
-                            # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."}
+                            Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                         }
                     }
                 }
@@ -452,11 +452,11 @@ function Stop-PodeService {
                 # Check if the service has a PID entry
                 if ($serviceInfo -match '"PID" = (\d+);') {
                     launchctl stop "pode.$Name"
-                    # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
+                    Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                     return ($LASTEXITCODE -eq 0)
                 }
                 else {
-                    # Write-PodeServiceLog -Message "Service '$Name' is not running."
+                    Write-PodeServiceLog -Message "Service '$Name' is not running."
                 }
             }
             else {
@@ -534,7 +534,7 @@ function Unregister-PodeService {
                     $null = Invoke-PodeWinElevatedCommand -Command 'Stop-Service' -Arguments "-Name '$Name'"
                     $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
                     if ($service.Status -eq 'Stopped') {
-                        # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
+                        Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
                         throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
@@ -550,10 +550,10 @@ function Unregister-PodeService {
             $null = Invoke-PodeWinElevatedCommand -Command  'Remove-Service' -Arguments "-Name '$Name'"
             $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
             if ($null -ne $service) {
-                # Write-PodeServiceLog -Message "Service '$Name' unregistered failed."
+                Write-PodeServiceLog -Message "Service '$Name' unregistered failed."
                 throw ($PodeLocale.serviceUnRegistrationException -f $Name)
             }
-            # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
+            Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
 
             # Remove the service configuration
             if ($pathName) {
@@ -583,7 +583,7 @@ function Unregister-PodeService {
                     # $status -eq 'active'
                     if ($Force.IsPresent) {
                         sudo systemctl stop $nameService
-                        # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
+                        Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
                         # Service is running. Use the -Force parameter to forcefully stop."
@@ -608,12 +608,12 @@ function Unregister-PodeService {
                         }
                         sudo rm $serviceFilePath
 
-                        # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
+                        Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
                     }
                     sudo systemctl daemon-reload
                 }
                 else {
-                    # Write-PodeServiceLog -Message "Service '$Name' unregistered failed."
+                    Write-PodeServiceLog -Message "Service '$Name' unregistered failed."
                     throw ($PodeLocale.serviceUnRegistrationException -f $Name)
                 }
             }
@@ -638,19 +638,19 @@ function Unregister-PodeService {
                 # Check if the service has a PID entry
                 if ($serviceInfo -match '"PID" = (\d+);') {
                     launchctl stop "pode.$Name"
-                    # Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
+                    Write-PodeServiceLog -Message "Service '$Name' stopped successfully."
                     $serviceIsRunning = ($LASTEXITCODE -ne 0)
                 }
                 else {
                     $serviceIsRunning = $false
-                    # Write-PodeServiceLog -Message "Service '$Name' is not running."
+                    Write-PodeServiceLog -Message "Service '$Name' is not running."
                 }
 
                 # Check if the service is running
                 if (  $serviceIsRunning) {
                     if ($Force.IsPresent) {
                         launchctl stop "pode.$Name"
-                        # Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
+                        Write-PodeServiceLog -Message "Service '$Name' stopped forcefully."
                     }
                     else {
                         # Service is running. Use the -Force parameter to forcefully stop."
@@ -679,7 +679,7 @@ function Unregister-PodeService {
                 else {
                     return $false
                 }
-                # Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
+                Write-PodeServiceLog -Message "Service '$Name' unregistered successfully."
             }
             else {
                 # Service is not registered
@@ -859,4 +859,60 @@ function Get-PodeService {
             return $null
         }
     }
+}
+
+
+
+function Enable-PodeServiceLogging {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [hashtable]
+        $Method,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet('Error', 'Warning', 'Informational', 'Verbose', 'Debug', '*')]
+        [string[]]
+        $Levels = @('Error'),
+
+        [switch]
+        $Raw
+    )
+
+    $name = Get-PodeServiceLoggingName
+
+    # error if it's already enabled
+    if ($PodeContext.Server.Logging.Types.Contains($name)) {
+        # Error Logging has already been enabled
+        throw ($PodeLocale.errorLoggingAlreadyEnabledExceptionMessage)
+    }
+
+    # ensure the Method contains a scriptblock
+    if (Test-PodeIsEmpty $Method.ScriptBlock) {
+        # The supplied output Method for Error Logging requires a valid ScriptBlock
+        throw ($PodeLocale.loggingMethodRequiresValidScriptBlockExceptionMessage -f 'Error')
+    }
+
+    # all errors?
+    if ($Levels -contains '*') {
+        $Levels = @('Error', 'Warning', 'Informational', 'Verbose', 'Debug')
+    }
+
+    # add the error logger
+    $PodeContext.Server.Logging.Types[$name] = @{
+        Method      = $Method
+        ScriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
+        Arguments   = @{
+            Raw    = $Raw
+            Levels = $Levels
+        }
+    }
+}
+
+function Disable-PodeServiceLogging {
+    [CmdletBinding()]
+    param()
+
+    Remove-PodeLogger -Name (Get-PodeServiceLoggingName)
 }
