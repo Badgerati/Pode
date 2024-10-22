@@ -311,14 +311,11 @@ function Start-PodeService {
         elseif ($IsLinux) {
             $nameService = "$Name.service".Replace(' ', '_')
             # Check if the service exists
-            systemctl status $nameService 2>&1
-            if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
+            if ((Test-PodeLinuxServiceIsRegistered $nameService)) {
                 # Check if the service is already running
-                $status = systemctl is-active $nameService
-                if ($status -ne 'active') {
+                if (!(Test-PodeLinuxServiceIsActive -Name $nameService)) {
                     sudo systemctl start $nameService
-                    $status = systemctl is-active $nameService
-                    if ($status -ne 'active') {
+                    if (!(Test-PodeLinuxServiceIsActive -Name $nameService)) {
                         throw ($PodeLocale.serviceCommandFailedException -f 'Start-Service', $nameService)
                     }
                     else {
@@ -332,6 +329,7 @@ function Start-PodeService {
                 }
             }
             else {
+                Write-Verbose -Message $systemctlStatus
                 # Service is not registered
                 throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
             }
@@ -431,28 +429,24 @@ function Stop-PodeService {
         }
         elseif ($IsLinux) {
             $nameService = "$Name.service".Replace(' ', '_')
-            systemctl status $nameService 2>&1
             # Check if the service is already registered
-            if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
-                # Check if the service exists
-                if (systemctl status $nameService -q) {
-                    $status = systemctl is-active $nameService
-                    if ($status -eq 'active') {
-                        sudo systemctl stop $nameService
-                        $status = systemctl is-active $nameService
-                        if ($status -eq 'active') {
-                            throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
-                        }
-                        else {
-                            Write-Verbose -Message "Service '$Name' stopped successfully."
-                        }
+            if ((Test-PodeLinuxServiceIsRegistered -Name $nameService)) {
+                # Check if the service is active
+                if ((Test-PodeLinuxServiceIsActive -Name  $nameService)) {
+                    sudo systemctl stop $nameService
+                    if ((Test-PodeLinuxServiceIsActive -Name $nameService)) {
+                        throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
+                    }
+                    else {
+                        Write-Verbose -Message "Service '$Name' stopped successfully."
                     }
                 }
-                else {
-                    # Service is not registered
-                    throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
-                }
             }
+            else {
+                # Service is not registered
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
+            }
+
         }
         elseif ($IsMacOS) {
             # Check if the service exists in launchctl
@@ -587,13 +581,10 @@ function Unregister-PodeService {
     elseif ($IsLinux) {
         try {
             $nameService = "$Name.service".Replace(' ', '_')
-            systemctl status $nameService 2>&1
             # Check if the service is already registered
-            if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
-                # Check if the service is running
-                $status = systemctl is-active  $nameService 2>&1
-                if ($status -eq 'active') {
-                    # $status -eq 'active'
+            if ((Test-PodeLinuxServiceIsRegistered $nameService)) {
+                # Check if the service is active
+                if ((Test-PodeLinuxServiceIsActive -Name  $nameService)) {
                     if ($Force.IsPresent) {
                         sudo systemctl stop $nameService
                         Write-Verbose -Message "Service '$Name' stopped forcefully."
@@ -603,8 +594,7 @@ function Unregister-PodeService {
                         throw ($Podelocale.serviceIsRunningException -f $nameService)
                     }
                 }
-                sudo systemctl disable $nameService
-                if ($LASTEXITCODE -eq 0 ) {
+                if ((Disable-PodeLinuxService -Name $nameService)) {
                     # Read the content of the service file
                     $serviceFilePath = "/etc/systemd/system/$nameService"
                     if ((Test-path -path $serviceFilePath -PathType Leaf)) {
@@ -783,7 +773,7 @@ function Get-PodeService {
             }
         }
         else {
-            #Write-PodeErrorLog -Message "Service '$Name' not found on Windows."
+            Write-Verbose -Message "Service '$Name' not found."
             return $null
         }
     }
@@ -792,43 +782,48 @@ function Get-PodeService {
         try {
             $nameService = "$Name.service".Replace(' ', '_')
             # Check if the service exists on Linux (systemd)
-            $servicePid = 0
-            $status = $(systemctl show -p ActiveState $nameService | awk -F'=' '{print $2}')
+            if ((Test-PodeLinuxServiceIsRegistered -Name $nameService)) {
+                $servicePid = 0
+                $status = $(systemctl show -p ActiveState $nameService | awk -F'=' '{print $2}')
 
-            switch ($status) {
-                'active' {
-                    $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
-                    $status = 'Running'
+                switch ($status) {
+                    'active' {
+                        $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                        $status = 'Running'
+                    }
+                    'reloading' {
+                        $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                        $status = 'Running'
+                    }
+                    'maintenance' {
+                        $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                        $status = 'Paused'
+                    }
+                    'inactive' {
+                        $status = 'Stopped'
+                    }
+                    'failed' {
+                        $status = 'Stopped'
+                    }
+                    'activating' {
+                        $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
+                        $status = 'Starting'
+                    }
+                    'deactivating' {
+                        $status = 'Stopping'
+                    }
+                    default {
+                        $status = 'Stopped'
+                    }
                 }
-                'reloading' {
-                    $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
-                    $status = 'Running'
-                }
-                'maintenance' {
-                    $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
-                    $status = 'Paused'
-                }
-                'inactive' {
-                    $status = 'Stopped'
-                }
-                'failed' {
-                    $status = 'Stopped'
-                }
-                'activating' {
-                    $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
-                    $status = 'Starting'
-                }
-                'deactivating' {
-                    $status = 'Stopping'
-                }
-                default {
-                    $status = 'Stopped'
+                return @{
+                    Name   = $Name
+                    Status = $status
+                    Pid    = $servicePid
                 }
             }
-            return @{
-                Name   = $Name
-                Status = $status
-                Pid    = $servicePid
+            else {
+                Write-Verbose -Message "Service '$nameService' not found."
             }
 
 
@@ -866,7 +861,7 @@ function Get-PodeService {
                 }
             }
             else {
-                Write-PodeErrorLog -Message "Service 'pode.$Name' not found on macOS."
+                Write-Verbose -Message "Service '$Name' not found."
                 return $null
             }
         }

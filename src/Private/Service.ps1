@@ -257,6 +257,7 @@ function Register-PodeMacService {
     catch {
         $_ | Write-PodeErrorLog
         throw $_  # Rethrow the error after logging
+        return $false
     }
 
     return $true
@@ -351,7 +352,7 @@ function Register-PodeLinuxService {
         $OsArchitecture
     )
     $nameService = "$Name.service".Replace(' ', '_')
-    systemctl status $nameService 2>&1
+    $null = systemctl status $nameService 2>&1
 
     # Check if the service is already registered
     if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3) {
@@ -360,6 +361,8 @@ function Register-PodeLinuxService {
     }
     # Create a temporary file
     $tempFile = [System.IO.Path]::GetTempFileName()
+
+    $execStart = "$BinPath/$OsArchitecture/PodeMonitor `"$SettingsFile`""
     # Create the service file
     @"
 [Unit]
@@ -367,7 +370,7 @@ Description=$Description
 After=network.target
 
 [Service]
-ExecStart=$BinPath/$OsArchitecture/PodeMonitor "$SettingsFile"
+ExecStart=$execStart
 WorkingDirectory=$BinPath
 Restart=always
 User=$User
@@ -379,7 +382,7 @@ User=$User
 WantedBy=multi-user.target
 "@ | Set-Content -Path $tempFile  -Encoding UTF8
 
-    Write-Verbose  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
+    Write-Verbose  -Message "Service '$nameService' ExecStart : $execStart)."
 
     sudo cp $tempFile "/etc/systemd/system/$nameService"
 
@@ -397,8 +400,7 @@ WantedBy=multi-user.target
 
     # Enable the service and check if it fails
     try {
-        sudo systemctl enable $nameService 2>&1
-        if ($LASTEXITCODE -ne 0) {
+        if (!(Enable-PodeLinuxService -Name $nameService)) {
             # Service registration failed.
             throw ($PodeLocale.serviceRegistrationException -f $nameService)
         }
@@ -406,6 +408,7 @@ WantedBy=multi-user.target
     catch {
         $_ | Write-PodeErrorLog
         throw $_  # Rethrow the error after logging
+        return $false
     }
 
     return $true
@@ -537,6 +540,7 @@ function Register-PodeWindowsService {
     catch {
         $_ | Write-PodeErrorLog
         throw $_  # Rethrow the error after logging
+        return $false
     }
 
     return $true
@@ -596,7 +600,49 @@ function Confirm-PodeAdminPrivilege {
 }
 
 
-
-function Get-PodeServiceLoggingName {
-    return '__pode_log_service__'
+function Test-PodeLinuxServiceIsRegistered {
+    param(
+        $Name
+    )
+    $systemctlStatus = systemctl status $Name 2>&1
+    $isRegistered = ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3)
+    Write-Verbose -Message ($systemctlStatus -join '`n')
+    return $isRegistered
 }
+
+function Test-PodeLinuxServiceIsActive {
+    param(
+        $Name
+    )
+    $systemctlIsActive = systemctl is-active $Name 2>&1
+    $isActive = $systemctlIsActive -eq 'active'
+    Write-Verbose -Message ($systemctlIsActive -join '`n')
+    return $isActive
+}
+
+
+function Disable-PodeLinuxService {
+    param(
+        $Name
+    )
+    $systemctlDisable = sudo systemctl disable $Name 2>&1
+    $success = $LASTEXITCODE -eq 0
+    Write-Verbose -Message ($systemctlDisable -join '`n')
+    return $success
+}
+
+
+function Enable-PodeLinuxService {
+    param(
+        $Name
+    )
+    $systemctlEnable = sudo systemctl enable $Name 2>&1
+    $success = $LASTEXITCODE -eq 0
+    Write-Verbose -Message ($systemctlEnable -join '`n')
+    return $success
+}
+
+
+
+
+
