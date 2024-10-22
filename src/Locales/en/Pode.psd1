@@ -298,4 +298,5 @@
     serviceRegistrationException                                      = "Service '{0}' registration failed."
     serviceIsRunningException                                         = "Service '{0}' is running. Use the -Force parameter to forcefully stop."
     serviceUnRegistrationException                                    = "Service '{0}' unregistration failed."
+    passwordRequiredForServiceUserException                           = "A password is required when specifying a service user on Windows. Please provide a valid password for the user '{0}'."
 }

@@ -290,8 +290,8 @@ function Register-PodeMacService {
 .PARAMETER Group
     The group under which the service will run. Defaults to the same as the `User` parameter.
 
-.PARAMETER SkipUserCreation
-    A switch to skip the creation of the user if it does not exist.
+.PARAMETER CreateUser
+    A switch create the user if it does not exist.
 
 .PARAMETER OsArchitecture
     The architecture of the operating system (e.g., `x64`, `arm64`). Used to locate the appropriate binary.
@@ -345,7 +345,7 @@ function Register-PodeLinuxService {
         $Start,
 
         [switch]
-        $SkipUserCreation,
+        $CreateUser,
 
         [string]
         $OsArchitecture
@@ -386,7 +386,7 @@ WantedBy=multi-user.target
     Remove-Item -path $tempFile -ErrorAction SilentlyContinue
 
     # Create user if needed
-    if (!$SkipUserCreation.IsPresent) {
+    if ($CreateUser.IsPresent) {
         # Run the id command to check if the user exists
         id $User 2>&1
         if ($LASTEXITCODE -ne 0) {

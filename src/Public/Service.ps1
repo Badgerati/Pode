@@ -31,6 +31,9 @@
 .PARAMETER UserName
     Specifies the username under which the service will run by default is the current user.
 
+.PARAMETER CreateUser
+    A switch create the user if it does not exist (Linux Only).
+
 .PARAMETER Start
     A switch to start the service immediately after registration.
 
@@ -89,6 +92,9 @@ function Register-PodeService {
         $UserName,
 
         [switch]
+        $CreateUser,
+
+        [switch]
         $Start,
 
         [securestring]
@@ -137,7 +143,12 @@ function Register-PodeService {
             $null = New-Item -Path $settingsPath -ItemType Directory
         }
 
-        if (!$UserName) {
+        if ([string]::IsNullOrEmpty($UserName)) {
+            if ($IsWindows -and ($null -eq $Password)) {
+                throw ($Podelocale.passwordRequiredForServiceUserException -f $UserName)
+            }
+        }
+        else {
             if ($IsWindows) {
                 $UserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
             }
@@ -146,9 +157,8 @@ function Register-PodeService {
             }
         }
 
-
         $settingsFile = Join-Path -Path $settingsPath -ChildPath "$($Name)_svcsettings.json"
-        Write-Verbose  -Message "Service '$Name' setting : $settingsFile."
+        Write-Verbose -Message "Service '$Name' setting : $settingsFile."
 
         # Generate the service settings JSON file
         $jsonContent = @{
@@ -189,15 +199,15 @@ function Register-PodeService {
         }
         elseif ($IsLinux) {
             $param = @{
-                Name             = $Name
-                Description      = $Description
-                BinPath          = $binPath
-                SettingsFile     = $settingsFile
-                User             = $User
-                Group            = $Group
-                Start            = $Start
-                SkipUserCreation = $SkipUserCreation
-                OsArchitecture   = "linux-$osArchitecture"
+                Name           = $Name
+                Description    = $Description
+                BinPath        = $binPath
+                SettingsFile   = $settingsFile
+                User           = $User
+                Group          = $Group
+                Start          = $Start
+                CreateUser     = $CreateUser
+                OsArchitecture = "linux-$osArchitecture"
             }
             $operation = Register-PodeLinuxService @param
         }

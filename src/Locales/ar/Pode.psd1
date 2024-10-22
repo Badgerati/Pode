@@ -298,4 +298,5 @@
     serviceRegistrationException                                      = "فشل تسجيل الخدمة '{0}'."
     serviceIsRunningException                                         = "الخدمة '{0}' تعمل. استخدم المعامل -Force للإيقاف بالقوة."
     serviceUnRegistrationException                                    = "فشل إلغاء تسجيل الخدمة '{0}'."
+    passwordRequiredForServiceUserException                           = "مطلوب كلمة مرور عند تحديد مستخدم الخدمة في نظام Windows. يرجى تقديم كلمة مرور صالحة للمستخدم '{0}'."
 }
