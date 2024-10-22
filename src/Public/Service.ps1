@@ -144,16 +144,19 @@ function Register-PodeService {
         }
 
         if ([string]::IsNullOrEmpty($UserName)) {
-            if ($IsWindows -and ($null -eq $Password)) {
-                throw ($Podelocale.passwordRequiredForServiceUserException -f $UserName)
-            }
-        }
-        else {
             if ($IsWindows) {
-                $UserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+                if ( ($null -ne $Password)) {
+                    $UserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+                }
             }
             else {
                 $UserName = [System.Environment]::UserName
+            }
+
+        }
+        else {
+            if ($IsWindows -and ($null -eq $Password)) {
+                throw ($Podelocale.passwordRequiredForServiceUserException -f $UserName)
             }
         }
 

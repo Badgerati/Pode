@@ -1,63 +1,59 @@
 <#
 .SYNOPSIS
-    PowerShell script to register, start, stop, query, and unregister a Pode service, with a basic server setup.
+    Script to manage multiple Pode services and set up a basic Pode server.
 
 .DESCRIPTION
-    This script manages a Pode service named 'Hello Service' with commands to register, start, stop, query,
-    and unregister the service. Additionally, it sets up a Pode server that listens on port 8080 and includes
-    a simple GET route that responds with 'Hello, Service!'.
+    This script registers, starts, stops, queries, and unregisters multiple Pode services based on the specified hashtable.
+    Additionally, it sets up a Pode server that listens on a defined port and includes routes to handle incoming HTTP requests.
 
-    The script checks if the Pode module exists locally and imports it; otherwise, it imports Pode from the system.
-
-    To test the Pode server's HTTP endpoint:
-        Invoke-RestMethod -Uri http://localhost:8080/ -Method Get
-        # Response: 'Hello, Service!'
+    The script checks if the Pode module exists in the local path and imports it; otherwise, it uses the system-wide Pode module.
 
 .PARAMETER Register
-    Registers the 'Hello Service' with Pode.
+    Registers all services specified in the hashtable.
 
 .PARAMETER Unregister
-    Unregisters the 'Hello Service' from Pode. Use with the -Force switch to forcefully unregister the service.
+    Unregisters all services specified in the hashtable. Use with -Force to force unregistration.
 
 .PARAMETER Force
-    Used with the -Unregister parameter to forcefully unregister the service.
+    Forces unregistration when used with the -Unregister parameter.
 
 .PARAMETER Start
-    Starts the 'Hello Service'.
+    Starts all services specified in the hashtable.
 
 .PARAMETER Stop
-    Stops the 'Hello Service'.
+    Stops all services specified in the hashtable.
 
 .PARAMETER Query
-    Queries the status of the 'Hello Service'.
+    Queries the status of all services specified in the hashtable.
 
 .EXAMPLE
-    Register the service:
-        ./HelloWorld.ps1 -Register
+    Register all services:
+        ./script.ps1 -Register
 
 .EXAMPLE
-    Start the service:
-        ./HelloWorld.ps1 -Start
+    Start all services:
+        ./script.ps1 -Start
 
 .EXAMPLE
-    Query the service:
-        ./HelloWorld.ps1 -Query
+    Query the status of all services:
+        ./script.ps1 -Query
 
 .EXAMPLE
-    Stop the service:
-        ./HelloWorld.ps1 -Stop
+    Stop all services:
+        ./script.ps1 -Stop
 
 .EXAMPLE
-    Unregister the service:
-        ./HelloWorld.ps1 -Unregister -Force
+    Forcefully unregister all services:
+        ./script.ps1 -Unregister -Force
 
 .LINK
-      https://github.com/Badgerati/Pode/blob/develop/examples/HelloService/HelloService.ps1
+    https://example.com
 
 .NOTES
-    Author: Pode Team
+    Author: Your Name
     License: MIT License
 #>
+
 
 [CmdletBinding(DefaultParameterSetName = 'Inbuilt')]
 param(
@@ -103,34 +99,38 @@ catch {
     # If there is any error during the module import, throw the error
     throw
 }
-
+$services=@{
+    'HelloService1'=8081
+    'HelloService2'=8082
+    'HelloService3'=8083
+}
 
 if ( $Register.IsPresent) {
-    Register-PodeService -Name 'Hello Service2' -ParameterString '-Port 8081'
+    $services.GetEnumerator() | ForEach-Object { Register-PodeService -Name $($_.Key) -ParameterString "-Port $($_.Value)" }
     exit
 }
 if ( $Unregister.IsPresent) {
-    Unregister-PodeService -Name 'Hello Service2' -Force:$Force
+    $services.GetEnumerator() | ForEach-Object { try{Unregister-PodeService -Name $($_.Key) -Force:$Force }catch{Write-Error -Exception $_.Exception}}
     exit
 }
 if ($Start.IsPresent) {
-    Start-PodeService -Name 'Hello Service2'
+    $services.GetEnumerator() | ForEach-Object { Start-PodeService -Name $($_.Key) }
     exit
 }
 
 if ($Stop.IsPresent) {
-    Stop-PodeService -Name 'Hello Service2'
+    $services.GetEnumerator() | ForEach-Object { Stop-PodeService -Name $($_.Key) }
     exit
 }
 
 if ($Query.IsPresent) {
-    Get-PodeService -Name 'Hello Service2'
+    $services.GetEnumerator() | ForEach-Object { Get-PodeService -Name $($_.Key) }
     exit
 }
 
 # Start the Pode server
 Start-PodeServer {
-    New-PodeLoggingMethod -File -Name 'errors' -MaxDays 4 -Path './logs' | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -File -Name "errors-$port" -MaxDays 4 -Path './logs' | Enable-PodeErrorLogging
 
     # Add an HTTP endpoint listening on localhost at port 8080
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http
