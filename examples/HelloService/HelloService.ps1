@@ -124,13 +124,10 @@ if ($Query.IsPresent) {
     Get-PodeService -Name 'Hello Service2'
     exit
 }
-# Alternatively, you can directly import the Pode module from the system
-# Import-Module Pode
 
 # Start the Pode server
 Start-PodeServer {
-    New-PodeLoggingMethod -File -Name 'service' -MaxDays 4 | Enable-PodeServiceLogging
-    New-PodeLoggingMethod -File -Name 'errors' -MaxDays 4 | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -File -Name 'errors' -MaxDays 4 -Path './logs' | Enable-PodeErrorLogging
 
     # Add an HTTP endpoint listening on localhost at port 8080
     Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http

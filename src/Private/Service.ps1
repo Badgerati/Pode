@@ -51,7 +51,6 @@ function Test-PodeServiceEnabled {
 
     Global variable example:  $global:PodeService=@{DisableTermination=$true;Quiet=$false;Pipename='ssss'}
 #>
-
 function Start-PodeServiceHearthbeat {
 
     # Check if the Pode service is enabled
@@ -59,60 +58,67 @@ function Start-PodeServiceHearthbeat {
 
         # Define the script block for the client receiver, listens for commands via the named pipe
         $scriptBlock = {
-            Write-PodeServiceLog -Message "Start client receiver for pipe $($PodeContext.Server.Service.PipeName)"
-            try {
-                # Create a named pipe server stream
-                $pipeStream = [System.IO.Pipes.NamedPipeServerStream]::new(
-                    $PodeContext.Server.Service.PipeName,
-                    [System.IO.Pipes.PipeDirection]::InOut,
-                    2, # Max number of allowed concurrent connections
-                    [System.IO.Pipes.PipeTransmissionMode]::Byte,
-                    [System.IO.Pipes.PipeOptions]::None
-                )
+            Write-PodeHost -Message "[Client] - Start client receiver for pipe $($PodeContext.Server.Service.PipeName)" -Force
 
-                Write-PodeServiceLog -Message "Waiting for connection to the $($PodeContext.Server.Service.PipeName) pipe."
-                $pipeStream.WaitForConnection()  # Wait until a client connects
-                Write-PodeServiceLog -Message "Connected to the $($PodeContext.Server.Service.PipeName) pipe."
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                try {
+                    Start-Sleep -Milliseconds 100
+                    # Create a named pipe server stream
+                    $pipeStream = [System.IO.Pipes.NamedPipeServerStream]::new(
+                        $PodeContext.Server.Service.PipeName,
+                        [System.IO.Pipes.PipeDirection]::InOut,
+                        1, # Max number of allowed concurrent connections
+                        [System.IO.Pipes.PipeTransmissionMode]::Byte,
+                        [System.IO.Pipes.PipeOptions]::None
+                    )
 
-                # Create a StreamReader to read incoming messages from the pipe
-                $reader = [System.IO.StreamReader]::new($pipeStream)
+                    Write-PodeHost -Message "[Client] - Waiting for connection to the $($PodeContext.Server.Service.PipeName) pipe." -Force
+                    $pipeStream.WaitForConnection()  # Wait until a client connects
+                    Write-PodeHost -Message "[Client] - Connected to the $($PodeContext.Server.Service.PipeName) pipe." -Force
 
-                # Process incoming messages in a loop as long as the pipe is connected
-                while ($pipeStream.IsConnected) {
-                    $message = $reader.ReadLine()  # Read message from the pipe
+                    # Create a StreamReader to read incoming messages from the pipe
+                    $reader = [System.IO.StreamReader]::new($pipeStream)
 
-                    if ($message) {
-                        Write-PodeServiceLog -Message "Received message: $message"
-
-                        # Process 'shutdown' message
-                        if ($message -eq 'shutdown') {
-                            Write-PodeServiceLog -Message 'Server requested shutdown. Closing client...'
-                            Close-PodeServer  # Gracefully stop the Pode server
-                            break  # Exit the loop
-
-                            # Process 'restart' message
+                    # Process incoming messages in a loop as long as the pipe is connected
+                    while ($pipeStream.IsConnected) {
+                        $message = $reader.ReadLine()  # Read message from the pipe
+                        if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                            return
                         }
-                        elseif ($message -eq 'restart') {
-                            Write-PodeServiceLog -Message 'Server requested restart. Restarting client...'
-                            Restart-PodeServer  # Restart the Pode server
-                            break  # Exit the loop
+                        if ($message) {
+                            Write-PodeHost -Message "[Client] - Received message: $message" -Force
+
+                            # Process 'shutdown' message
+                            if ($message -eq 'shutdown') {
+
+                                Write-PodeHost -Message '[Client] - Server requested shutdown. Closing client...' -Force
+                                Close-PodeServer  # Gracefully stop the Pode server
+                                return  # Exit the loop
+
+                                # Process 'restart' message
+                            }
+                            elseif ($message -eq 'restart') {
+                                Write-PodeHost -Message '[Client] - Server requested restart. Restarting client...' -Force
+                                Restart-PodeServer  # Restart the Pode server
+                                return  # Exit the loop
+                            }
                         }
                     }
                 }
+                catch {
+                    $_ | Write-PodeErrorLog  # Log any errors that occur during pipe operation
+                    throw $_
+                }
+                finally {
+                    $reader.Dispose()
+                    $pipeStream.Dispose()  # Always dispose of the pipe stream when done
+                }
             }
-            catch {
-                $_ | Write-PodeServiceLog  # Log any errors that occur during pipe operation
-            }
-            finally {
-                $reader.Dispose()
-                $pipeStream.Dispose()  # Always dispose of the pipe stream when done
-            }
-
         }
 
         # Assign a name to the Pode service
         $PodeContext.Server.Service['Name'] = 'Service'
-        Write-PodeServiceLog -Message 'Starting service monitoring'
+        Write-Verbose -Message 'Starting service monitoring'
 
         # Start the runspace that runs the client receiver script block
         $PodeContext.Server.Service['Runspace'] = Add-PodeRunspace -Type 'Service' -ScriptBlock ($scriptBlock) -PassThru
@@ -233,7 +239,7 @@ function Register-PodeMacService {
 </plist>
 "@ | Set-Content -Path "$($HOME)/Library/LaunchAgents/pode.$($Name).plist" -Encoding UTF8
 
-    Write-PodeServiceLog  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
+    Write-Verbose  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
 
     chmod +r "$($HOME)/Library/LaunchAgents/pode.$($Name).plist"
 
@@ -373,7 +379,7 @@ User=$User
 WantedBy=multi-user.target
 "@ | Set-Content -Path $tempFile  -Encoding UTF8
 
-    Write-PodeServiceLog  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
+    Write-Verbose  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
 
     sudo cp $tempFile "/etc/systemd/system/$nameService"
 
@@ -517,7 +523,7 @@ function Register-PodeWindowsService {
     if ($SecurityDescriptorSddl) {
         $params['SecurityDescriptorSddl'] = $SecurityDescriptorSddl
     }
-    Write-PodeServiceLog  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
+    Write-Verbose -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
 
     try {
         $paramsString = $params.GetEnumerator() | ForEach-Object { "-$($_.Key) '$($_.Value)'" }
@@ -536,117 +542,6 @@ function Register-PodeWindowsService {
     return $true
 }
 
-
-function Write-PodeServiceLog {
-    [CmdletBinding(DefaultParameterSetName = 'Message')]
-    param(
-
-
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Exception')]
-        [System.Exception]
-        $Exception,
-
-        [Parameter(ParameterSetName = 'Exception')]
-        [switch]
-        $CheckInnerException,
-
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Error')]
-        [System.Management.Automation.ErrorRecord]
-        $ErrorRecord,
-
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'Message')]
-        [string]
-        $Message,
-
-        [string]
-        $Level = 'Informational',
-
-        [string]
-        $Tag = '-',
-
-        [Parameter()]
-        [int]
-        $ThreadId
-
-    )
-    Process {
-        if ($PodeContext -and $PodeContext.LogsToProcess) {
-            $Service = $PodeContext.Server.Service
-            if ($null -eq $Service ) {
-                $Service = @{Name = 'Not a service' }
-            }
-            switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-
-                'message' {
-                    $logItem = @{
-                        Name = $Service.Name
-                        Date = (Get-Date).ToUniversalTime()
-                        Item = @{
-                            Level   = $Level
-                            Message = $Message
-                            Tag     = $Tag
-                        }
-                    }
-                    break
-                }
-
-                'exception' {
-                    $logItem = @{
-                        Name = $Service.Name
-                        Date = (Get-Date).ToUniversalTime()
-                        Item = @{
-                            Category   = $Exception.Source
-                            Message    = $Exception.Message
-                            StackTrace = $Exception.StackTrace
-                            Level      = $Level
-                        }
-                    }
-                    Write-PodeErrorLog -Level $Level -CheckInnerException:$CheckInnerException -Exception $Exception
-                    break
-                }
-
-                'error' {
-                    $logItem = @{
-                        Name = $Service.Name
-                        Date = (Get-Date).ToUniversalTime()
-                        Item = @{
-                            Category   = $ErrorRecord.CategoryInfo.ToString()
-                            Message    = $ErrorRecord.Exception.Message
-                            StackTrace = $ErrorRecord.ScriptStackTrace
-                            Level      = $Level
-                        }
-                    }
-                    Write-PodeErrorLog -Level $Level -ErrorRecord $ErrorRecord
-                    break
-                }
-            }
-            $null = $PodeContext.LogsToProcess.Add($logItem)
-        }
-
-        else {
-            switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-
-                'message' {
-                    Write-Verbose -Message $Message
-                    break
-                }
-
-                'exception' {
-                    Write-Error -Exception $Exception
-                    break
-                }
-
-                'error' {
-                    Write-Error "$($ErrorRecord.CategoryInfo.ToString()): $($ErrorRecord.Exception.Message)"
-                    break
-                }
-            }
-        }
-        #  $lpath = Get-PodeRelativePath -Path './logs' -JoinRoot
-        #    $logItem | ConvertTo-Json -Compress -Depth 5 | Add-Content "$lpath/watchdog-$($Service.Name).log"
-
-    }
-}
 
 
 

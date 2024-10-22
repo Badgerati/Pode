@@ -96,22 +96,13 @@ namespace Pode.Services
                     // Build the PowerShell command with NoProfile and global variable initialization
                     string command = $"-NoProfile -Command \"& {{ $global:PodeService = '{podeServiceJson}' | ConvertFrom-Json; . '{_scriptPath}' {_parameterString} }}\"";
 
-                    Log($"Starting PowerShell process with command: {command}");
+                    Log($"[Server] - Starting PowerShell process with command: {command}");
 
                     // Set the arguments for the PowerShell process
                     _powerShellProcess.StartInfo.Arguments = command;
 
                     // Start the process
                     _powerShellProcess.Start();
-
-                    // Enable raising events to capture process exit and handle cleanup
-                    /* _powerShellProcess.EnableRaisingEvents = true;
-                    _powerShellProcess.Exited += (sender, args) =>
-                    {
-                        Log("PowerShell process exited.");
-                        _powerShellProcess.Dispose();
-                        _powerShellProcess = null;
-                    };*/
 
                     // Log output and error asynchronously
                     _powerShellProcess.OutputDataReceived += (sender, args) => Log(args.Data);
@@ -120,11 +111,11 @@ namespace Pode.Services
                     _powerShellProcess.BeginErrorReadLine();
 
                     _lastLogTime = DateTime.Now;
-                    Log("PowerShell process started successfully.");
+                    Log("[Server] - PowerShell process started successfully.");
                 }
                 catch (Exception ex)
                 {
-                    Log($"Failed to start PowerShell process: {ex.Message}");
+                    Log($"[Server] - Failed to start PowerShell process: {ex.Message}");
                 }
             }
             else
@@ -132,7 +123,7 @@ namespace Pode.Services
                 // Log only if more than a minute has passed since the last log
                 if ((DateTime.Now - _lastLogTime).TotalMinutes >= 1)
                 {
-                    Log("PowerShell process is already running.");
+                    Log("[Server] - PowerShell process is already running.");
                     _lastLogTime = DateTime.Now;
                 }
             }
@@ -143,7 +134,7 @@ namespace Pode.Services
             try
             {
                 _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
-                Log($"Connecting to the pipe server using pipe: {_pipeName}");
+                Log($"[Server] - Connecting to the pipe server using pipe: {_pipeName}");
 
                 // Connect to the PowerShell pipe server
                 _pipeClient.Connect(10000);  // Wait for up to 10 seconds for the connection
@@ -152,7 +143,7 @@ namespace Pode.Services
                 {
                     // Send shutdown message and wait for the process to exit
                     SendPipeMessage("shutdown");
-                    Log($"Waiting up to {_shutdownWaitTimeMs} milliseconds for the PowerShell process to exit...");
+                    Log($"[Server] - Waiting up to {_shutdownWaitTimeMs} milliseconds for the PowerShell process to exit...");
 
                     // Timeout logic
                     int waited = 0;
@@ -166,16 +157,16 @@ namespace Pode.Services
 
                     if (_powerShellProcess.HasExited)
                     {
-                        Log("PowerShell process has been shutdown gracefully.");
+                        Log("[Server] - PowerShell process has been shutdown gracefully.");
                     }
                     else
                     {
-                        Log($"PowerShell process did not exit in {_shutdownWaitTimeMs} milliseconds.");
+                        Log($"[Server] - PowerShell process did not exit in {_shutdownWaitTimeMs} milliseconds.");
                     }
                 }
                 else
                 {
-                    Log($"Failed to connect to the PowerShell pipe server using pipe: {_pipeName}");
+                    Log($"[Server] - Failed to connect to the PowerShell pipe server using pipe: {_pipeName}");
                 }
 
                 // Forcefully kill the process if it's still running
@@ -184,17 +175,17 @@ namespace Pode.Services
                     try
                     {
                         _powerShellProcess.Kill();
-                        Log("PowerShell process killed successfully.");
+                        Log("[Server] - PowerShell process killed successfully.");
                     }
                     catch (Exception ex)
                     {
-                        Log($"Error killing PowerShell process: {ex.Message}");
+                        Log($"[Server] - Error killing PowerShell process: {ex.Message}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log($"Error stopping PowerShell process: {ex.Message}");
+                Log($"[Server] - Error stopping PowerShell process: {ex.Message}");
             }
             finally
             {
@@ -210,7 +201,7 @@ namespace Pode.Services
                     _pipeClient?.Dispose();
                     _pipeClient = null;
                 }
-                Log("PowerShell process and pipe client disposed.");
+                Log("[Server] - PowerShell process and pipe client disposed.");
             }
         }
 
@@ -220,7 +211,7 @@ namespace Pode.Services
             if (_pipeClient != null && _pipeClient.IsConnected)
             {
                 SendPipeMessage("restart"); // Inform PowerShell about the restart
-                Log("Restart message sent to PowerShell.");
+                Log("[Server] - Restart message sent to PowerShell.");
             }
         }
 
@@ -228,13 +219,13 @@ namespace Pode.Services
         {
             if (_pipeClient == null)
             {
-                Log("Pipe client is not initialized, cannot send message.");
+                Log("[Server] - Pipe client is not initialized, cannot send message.");
                 return;
             }
 
             if (!_pipeClient.IsConnected)
             {
-                Log("Pipe client is not connected, cannot send message.");
+                Log("[Server] - Pipe client is not connected, cannot send message.");
                 return;
             }
 
@@ -245,12 +236,12 @@ namespace Pode.Services
                 {
                     writer.AutoFlush = true;
                     writer.WriteLine(message);
-                    Log($"Message sent to PowerShell: {message}");
+                    Log($"[Server] - Message sent to PowerShell: {message}");
                 }
             }
             catch (Exception ex)
             {
-                Log($"Failed to send message to PowerShell: {ex.Message}");
+                Log($"[Server] - Failed to send message to PowerShell: {ex.Message}");
             }
         }
 
@@ -268,7 +259,7 @@ namespace Pode.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to log to file: {ex.Message}");
+                    Console.WriteLine($"[Server] - Failed to log to file: {ex.Message}");
                 }
             }
         }
