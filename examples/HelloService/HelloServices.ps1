@@ -28,29 +28,29 @@
 
 .EXAMPLE
     Register all services:
-        ./script.ps1 -Register
+        ./HelloServices.ps1 -Register
 
 .EXAMPLE
     Start all services:
-        ./script.ps1 -Start
+        ./HelloServices.ps1 -Start
 
 .EXAMPLE
     Query the status of all services:
-        ./script.ps1 -Query
+        ./HelloServices.ps1 -Query
 
 .EXAMPLE
     Stop all services:
-        ./script.ps1 -Stop
+        ./HelloServices.ps1 -Stop
 
 .EXAMPLE
     Forcefully unregister all services:
-        ./script.ps1 -Unregister -Force
+        ./HelloServices.ps1 -Unregister -Force
 
 .LINK
-    https://example.com
+    https://github.com/Badgerati/Pode/blob/develop/examples/HelloService/HelloServices.ps1
 
 .NOTES
-    Author: Your Name
+    Author: Pode Team
     License: MIT License
 #>
 
@@ -60,21 +60,27 @@ param(
     [Parameter(  ParameterSetName = 'Inbuilt')]
     [int]
     $Port = 8080,
+
     [Parameter(Mandatory = $true, ParameterSetName = 'Register')]
     [switch]
     $Register,
+
     [Parameter(Mandatory = $true, ParameterSetName = 'Unregister')]
     [switch]
     $Unregister,
+
     [Parameter(  ParameterSetName = 'Unregister')]
     [switch]
     $Force,
+
     [Parameter(  ParameterSetName = 'Start')]
     [switch]
     $Start,
+
     [Parameter(  ParameterSetName = 'Stop')]
     [switch]
     $Stop,
+    
     [Parameter(  ParameterSetName = 'Query')]
     [switch]
     $Query

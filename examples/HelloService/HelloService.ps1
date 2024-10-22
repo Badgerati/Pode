@@ -33,23 +33,23 @@
 
 .EXAMPLE
     Register the service:
-        ./HelloWorld.ps1 -Register
+        ./HelloService.ps1 -Register
 
 .EXAMPLE
     Start the service:
-        ./HelloWorld.ps1 -Start
+        ./HelloService.ps1 -Start
 
 .EXAMPLE
     Query the service:
-        ./HelloWorld.ps1 -Query
+        ./HelloService.ps1 -Query
 
 .EXAMPLE
     Stop the service:
-        ./HelloWorld.ps1 -Stop
+        ./HelloService.ps1 -Stop
 
 .EXAMPLE
     Unregister the service:
-        ./HelloWorld.ps1 -Unregister -Force
+        ./HelloService.ps1 -Unregister -Force
 
 .LINK
       https://github.com/Badgerati/Pode/blob/develop/examples/HelloService/HelloService.ps1
@@ -64,21 +64,27 @@ param(
     [Parameter(  ParameterSetName = 'Inbuilt')]
     [int]
     $Port = 8080,
+    
     [Parameter(Mandatory = $true, ParameterSetName = 'Register')]
     [switch]
     $Register,
+
     [Parameter(Mandatory = $true, ParameterSetName = 'Unregister')]
     [switch]
     $Unregister,
+
     [Parameter(  ParameterSetName = 'Unregister')]
     [switch]
     $Force,
+
     [Parameter(  ParameterSetName = 'Start')]
     [switch]
     $Start,
+
     [Parameter(  ParameterSetName = 'Stop')]
     [switch]
     $Stop,
+
     [Parameter(  ParameterSetName = 'Query')]
     [switch]
     $Query
