@@ -153,7 +153,7 @@ function Register-PodeService {
         }
         $settingsFile = Join-Path -Path $settingsPath -ChildPath "$($Name)_srvsettings.json"
         Write-PodeServiceLog  -Message "Service '$Name' setting : $settingsFile."
-        
+
         # Generate the service settings JSON file
         $jsonContent = @{
             PodePwshWorker = @{
@@ -862,7 +862,35 @@ function Get-PodeService {
 }
 
 
+<#
+.SYNOPSIS
+Enables logging for the Pode service using a specified logging method.
 
+.DESCRIPTION
+The `Enable-PodeServiceLogging` function configures and enables service logging for the Pode server using the provided logging method and specified log levels. It ensures that the logging method includes a valid script block and prevents duplicate logging methods from being enabled.
+
+.PARAMETER Method
+A hashtable that defines the logging method. This should contain a `ScriptBlock` key, which specifies the script to be executed for logging.
+
+.PARAMETER Levels
+An array of logging levels to capture. The available levels are 'Error', 'Warning', 'Informational', 'Verbose', 'Debug', or '*'. The default value is 'Error'. If '*' is specified, all levels are captured.
+
+.PARAMETER Raw
+Indicates whether to log raw data without formatting. If set, the output is logged as-is without additional processing.
+
+.EXAMPLE
+PS> Enable-PodeServiceLogging -Method @{ ScriptBlock = { Write-Host "Logging" } } -Levels 'Error', 'Warning'
+
+Enables error and warning level logging using the provided method.
+
+.EXAMPLE
+PS> Enable-PodeServiceLogging -Method @{ ScriptBlock = { Write-Host "Raw Logging" } } -Raw
+
+Enables raw logging for all error levels.
+
+.NOTES
+This function throws an error if the logging method has already been enabled or if the provided method does not include a valid script block.
+#>
 function Enable-PodeServiceLogging {
     [CmdletBinding()]
     param(
@@ -910,6 +938,21 @@ function Enable-PodeServiceLogging {
     }
 }
 
+<#
+.SYNOPSIS
+Disables the logging for the Pode service.
+
+.DESCRIPTION
+The `Disable-PodeServiceLogging` function disables the currently enabled logging method for the Pode service. It removes the logger associated with the service by using the logger's name.
+
+.EXAMPLE
+PS> Disable-PodeServiceLogging
+
+Disables the service logging for Pode.
+
+.NOTES
+This function uses the `Remove-PodeLogger` cmdlet to remove the logger by name.
+#>
 function Disable-PodeServiceLogging {
     [CmdletBinding()]
     param()
