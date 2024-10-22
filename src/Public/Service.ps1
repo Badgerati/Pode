@@ -57,8 +57,6 @@
     - Automatically starts the service using the `-Start` switch after registration.
     - Dynamically obtains the PowerShell executable path for compatibility across platforms.
 #>
-
-
 function Register-PodeService {
     param(
         [Parameter(Mandatory = $true)]
