@@ -1,5 +1,55 @@
 using namespace Pode
 
+<#
+.SYNOPSIS
+    Initializes a new Pode context with various server configurations.
+
+.DESCRIPTION
+    This function creates and initializes a new Pode context object with server configurations, including threading, schedules, tasks, logging, and more.
+    It ensures that essential configurations are set, and it can run in different environments such as serverless or IIS.
+
+.PARAMETER ScriptBlock
+    The script block to be executed within the Pode context.
+
+.PARAMETER FilePath
+    The file path to the script block.
+
+.PARAMETER Threads
+    The number of threads to be used. Default is 1.
+
+.PARAMETER Interval
+    The interval for server operations. Default is 0.
+
+.PARAMETER ServerRoot
+    The root path for the server.
+
+.PARAMETER Name
+    The name of the server. If not provided, a random name will be generated.
+
+.PARAMETER ServerlessType
+    Specifies if the server is running in a serverless context.
+
+.PARAMETER StatusPageExceptions
+    Configuration for displaying exceptions on the status page.
+
+.PARAMETER ListenerType
+    The type of listener to be used by the server.
+
+.PARAMETER EnablePool
+    An array of pools to enable, such as 'timers', 'tasks', 'schedules', and 'websockets'.
+
+.PARAMETER DisableTermination
+    A switch to disable server termination.
+
+.PARAMETER Quiet
+    A switch to enable quiet mode, suppressing certain outputs.
+
+.PARAMETER EnableBreakpoints
+    A switch to enable debugging breakpoints.
+
+.EXAMPLE
+    $context = New-PodeContext -ScriptBlock $script -FilePath 'path/to/file' -Threads 4 -ServerRoot 'path/to/root'
+#>
 function New-PodeContext {
     [CmdletBinding()]
     param(
@@ -76,7 +126,6 @@ function New-PodeContext {
         Runspaces     = $null
         RunspaceState = $null
         Tokens        = @{}
-        LogsToProcess = $null
         Threading     = @{}
         Server        = @{}
         Metrics       = @{}
@@ -95,6 +144,9 @@ function New-PodeContext {
     $ctx.Server.DisableTermination = $DisableTermination.IsPresent
     $ctx.Server.Quiet = $Quiet.IsPresent
     $ctx.Server.ComputerName = [System.Net.DNS]::GetHostName()
+
+    # set to True after the server is started
+    $ctx.Server.Started = $false
 
     # list of created listeners/receivers
     $ctx.Listeners = @()
@@ -132,8 +184,11 @@ function New-PodeContext {
 
     # basic logging setup
     $ctx.Server.Logging = @{
-        Enabled = $true
-        Types   = @{}
+        Enabled    = $true
+        Type       = @{}
+        Masking    = @{}
+        QueueLimit = 500
+        Method     = @{}
     }
 
     # set thread counts
@@ -410,9 +465,6 @@ function New-PodeContext {
         Restart      = [System.Threading.CancellationTokenSource]::new()
     }
 
-    # requests that should be logged
-    $ctx.LogsToProcess = [System.Collections.ArrayList]::new()
-
     # middleware that needs to run
     $ctx.Server.Middleware = @()
     $ctx.Server.BodyParsers = @{}
@@ -436,6 +488,7 @@ function New-PodeContext {
         Gui       = $null
         Tasks     = $null
         Files     = $null
+        Logs      = $null
         Timers    = $null
     }
 
@@ -529,6 +582,7 @@ function New-PodeRunspacePool {
     # setup main runspace pool
     $threadsCounts = @{
         Default  = 3
+        Timer    = 1
         Log      = 1
         Schedule = 1
         Misc     = 1
@@ -546,6 +600,12 @@ function New-PodeRunspacePool {
     $totalThreadCount = ($threadsCounts.Values | Measure-Object -Sum).Sum
     $PodeContext.RunspacePools.Main = @{
         Pool  = [runspacefactory]::CreateRunspacePool(1, $totalThreadCount, $PodeContext.RunspaceState, $Host)
+        State = 'Waiting'
+    }
+
+    # logs runspace - any log is running here
+    $PodeContext.RunspacePools.Logs = @{
+        Pool  = [runspacefactory]::CreateRunspacePool(1, 1, $PodeContext.RunspaceState, $Host)
         State = 'Waiting'
     }
 
@@ -795,7 +855,6 @@ function New-PodeStateContext {
         RunspacePools = $Context.RunspacePools
         Tokens        = $Context.Tokens
         Metrics       = $Context.Metrics
-        LogsToProcess = $Context.LogsToProcess
         Threading     = $Context.Threading
         Server        = $Context.Server
     }
@@ -853,14 +912,18 @@ function Set-PodeServerConfiguration {
         Files     = @()
     }
 
-    # logging
-    $Context.Server.Logging = @{
-        Enabled = (($null -eq $Configuration.Logging.Enable) -or [bool]$Configuration.Logging.Enable)
-        Masking = @{
-            Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
-            Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
+    if ($Configuration.ContainsKey('Logging')) {
+        # logging
+        if ($Configuration.Logging.ContainsKey('Enable')) {
+            $Context.Server.Logging.Enabled = ([bool]$Configuration.Logging.Enable)
         }
-        Types   = @{}
+        if ($Configuration.Logging.ContainsKey('Masking')) {
+            $Context.Server.Logging.Masking = @{
+                Patterns = (Remove-PodeEmptyItemsFromArray -Array @($Configuration.Logging.Masking.Patterns))
+                Mask     = (Protect-PodeValue -Value $Configuration.Logging.Masking.Mask -Default '********')
+            }
+        }
+        $Context.Server.Logging.QueueLimit = (Protect-PodeValue -Value $Configuration.Logging.QueueLimit $Context.Server.Logging.QueueLimit)
     }
 
     # sockets
