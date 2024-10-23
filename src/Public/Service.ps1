@@ -314,14 +314,16 @@ function Start-PodeService {
             if ((Test-PodeLinuxServiceIsRegistered $nameService)) {
                 # Check if the service is already running
                 if (!(Test-PodeLinuxServiceIsActive -Name $nameService)) {
-                    sudo systemctl start $nameService
-                    if (!(Test-PodeLinuxServiceIsActive -Name $nameService)) {
-                        throw ($PodeLocale.serviceCommandFailedException -f 'Start-Service', $nameService)
+                    # Start the service
+                    if ((Start-PodeLinuxService -Name $nameService)) {
+                        # Check if the service is active
+                        if ((Test-PodeLinuxServiceIsActive -Name $nameService)) {
+                            Write-Verbose -Message "Service '$nameService' started successfully."
+                            return $true
+                        }
                     }
-                    else {
-
-                        Write-Verbose -Message "Service '$nameService' started successfully."
-                    }
+                    # Service command '{0}' failed on service '{1}'.
+                    throw ($PodeLocale.serviceCommandFailedException -f 'sudo systemctl start', $nameService)
                 }
                 else {
                     # Log service is already running
@@ -329,34 +331,36 @@ function Start-PodeService {
                 }
             }
             else {
-                Write-Verbose -Message $systemctlStatus
                 # Service is not registered
                 throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
             }
         }
 
         elseif ($IsMacOS) {
-            # Check if the service exists in launchctl
-            if (launchctl list | Select-String "pode.$Name") {
-
-                $serviceInfo = launchctl list "pode.$Name" -join "`n"
-
-                # Check if the service has a PID entry
-                if (!($serviceInfo -match '"PID" = (\d+);')) {
-                    launchctl start "pode.$Name"
-
-                    # Log service started successfully
-                    Write-Verbose -Message "Service '$Name' started successfully."
-                    return ($LASTEXITCODE -eq 0)
+            $nameService = "pode.$Name.service".Replace(' ', '_')
+            # Check if the service exists
+            if ((Test-PodeMacOsServiceIsRegistered $nameService)) {
+                # Check if the service is already running
+                if (!(Test-PodeMacOsServiceIsActive -Name $nameService)) {
+                    # Start the service
+                    if ((Start-PodeMacOsService -Name $nameService)) {
+                        # Check if the service is active
+                        if ((Test-PodeMacOsServiceIsActive -Name $nameService)) {
+                            Write-Verbose -Message "Service '$nameService' started successfully."
+                            return $true
+                        }
+                    }
+                    # Service command '{0}' failed on service '{1}'.
+                    throw ($PodeLocale.serviceCommandFailedException -f 'sudo systemctl start', $nameService)
                 }
                 else {
                     # Log service is already running
-                    Write-Verbose -Message "Service '$Name' is already running."
+                    Write-Verbose -Message "Service '$nameService' is already running."
                 }
             }
             else {
                 # Service is not registered
-                throw ($PodeLocale.serviceIsNotRegisteredException -f "pode.$Name")
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService )
             }
         }
     }
@@ -415,6 +419,7 @@ function Stop-PodeService {
                         Write-Verbose -Message "Service '$Name' stopped successfully."
                     }
                     else {
+                        # Service command '{0}' failed on service '{1}'.
                         throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
                     }
                 }
@@ -433,13 +438,20 @@ function Stop-PodeService {
             if ((Test-PodeLinuxServiceIsRegistered -Name $nameService)) {
                 # Check if the service is active
                 if ((Test-PodeLinuxServiceIsActive -Name  $nameService)) {
-                    sudo systemctl stop $nameService
-                    if ((Test-PodeLinuxServiceIsActive -Name $nameService)) {
-                        throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
+                    #Stop the service
+                    if (( Stop-PodeLinuxService -Name $nameService)) {
+                        # Check if the service is active
+                        if (!(Test-PodeLinuxServiceIsActive -Name  $nameService)) {
+                            Write-Verbose -Message "Service '$Name' stopped successfully."
+                            return $true
+                        }
                     }
-                    else {
-                        Write-Verbose -Message "Service '$Name' stopped successfully."
-                    }
+
+                    # Service command '{0}' failed on service '{1}'.
+                    throw ($PodeLocale.serviceCommandFailedException -f 'sudo launchctl stop', $Name)
+                }
+                else {
+                    Write-Verbose -Message "Service '$Name' is not running."
                 }
             }
             else {
@@ -449,16 +461,21 @@ function Stop-PodeService {
 
         }
         elseif ($IsMacOS) {
-            # Check if the service exists in launchctl
-            if (launchctl list | Select-String "pode.$Name") {
-                # Stop the service if running
-                $serviceInfo = launchctl list "pode.$Name" -join "`n"
+            $nameService = "pode.$Name.service".Replace(' ', '_')
+            # Check if the service is already registered
+            if ((Test-PodeMacOsServiceIsRegistered -Name $nameService)) {
+                # Check if the service is active
+                if ((Test-PodeMacOsServiceIsActive $nameService)) {
+                    if ((Stop-PodeMacOsService $nameService)) {
+                        if (!(Test-PodeMacOsServiceIsActive -Name  $nameService)) {
+                            Write-Verbose -Message "Service '$Name' stopped successfully."
+                            return $true
+                        }
+                    }
 
-                # Check if the service has a PID entry
-                if ($serviceInfo -match '"PID" = (\d+);') {
-                    launchctl stop "pode.$Name"
-                    Write-Verbose -Message "Service '$Name' stopped successfully."
-                    return ($LASTEXITCODE -eq 0)
+                    # Service command '{0}' failed on service '{1}'.
+                    throw ($PodeLocale.serviceCommandFailedException -f 'launchctl stop', $Name)
+
                 }
                 else {
                     Write-Verbose -Message "Service '$Name' is not running."
@@ -466,7 +483,7 @@ function Stop-PodeService {
             }
             else {
                 # Service is not registered
-                throw ($PodeLocale.serviceIsNotRegisteredException -f "pode.$Name")
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService )
             }
         }
     }
@@ -543,12 +560,13 @@ function Unregister-PodeService {
                         Write-Verbose -Message "Service '$Name' stopped forcefully."
                     }
                     else {
+                        # Service command '{0}' failed on service '{1}'.
                         throw ($PodeLocale.serviceCommandFailedException -f 'Stop-Service', $Name)
                     }
                 }
                 else {
                     # Service is running. Use the -Force parameter to forcefully stop."
-                    throw ($Podelocale.serviceIsRunningException -f "pode.$Name")
+                    throw ($Podelocale.serviceIsRunningException -f $nameService )
                 }
             }
 
@@ -586,8 +604,21 @@ function Unregister-PodeService {
                 # Check if the service is active
                 if ((Test-PodeLinuxServiceIsActive -Name  $nameService)) {
                     if ($Force.IsPresent) {
-                        sudo systemctl stop $nameService
-                        Write-Verbose -Message "Service '$Name' stopped forcefully."
+                        #Stop the service
+                        if (( Stop-PodeLinuxService -Name $nameService)) {
+                            # Check if the service is active
+                            if (!(Test-PodeLinuxServiceIsActive -Name  $nameService)) {
+                                Write-Verbose -Message "Service '$Name' stopped successfully."
+                            }
+                            else {
+                                # Service command '{0}' failed on service '{1}'.
+                                throw ($PodeLocale.serviceCommandFailedException -f 'sudo systemctl stop', $Name)
+                            }
+                        }
+                        else {
+                            # Service command '{0}' failed on service '{1}'.
+                            throw ($PodeLocale.serviceCommandFailedException -f 'sudo systemctl stop', $Name)
+                        }
                     }
                     else {
                         # Service is running. Use the -Force parameter to forcefully stop."
@@ -622,7 +653,7 @@ function Unregister-PodeService {
             }
             else {
                 # Service is not registered
-                throw ($PodeLocale.serviceIsNotRegisteredException -f "pode.$Name")
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService )
             }
             return $true
         }
@@ -635,36 +666,36 @@ function Unregister-PodeService {
 
     elseif ($IsMacOS) {
         try {
-            # Check if the service exists
-
-            if (launchctl list | Select-String "pode.$Name") {
-                $serviceInfo = (launchctl list "pode.$Name") -join "`n"
-                # Check if the service has a PID entry
-                if ($serviceInfo -match '"PID" = (\d+);') {
-                    launchctl stop "pode.$Name"
-                    Write-Verbose -Message "Service '$Name' stopped successfully."
-                    $serviceIsRunning = ($LASTEXITCODE -ne 0)
-                }
-                else {
-                    $serviceIsRunning = $false
-                    Write-Verbose -Message "Service '$Name' is not running."
-                }
-
-                # Check if the service is running
-                if (  $serviceIsRunning) {
+            $nameService = "pode.$Name.service".Replace(' ', '_')
+            # Check if the service is already registered
+            if (Test-PodeMacOsServiceIsRegistered $nameService) {
+                # Check if the service is active
+                if ((Test-PodeMacOsServiceIsActive -Name  $nameService)) {
                     if ($Force.IsPresent) {
-                        launchctl stop "pode.$Name"
-                        Write-Verbose -Message "Service '$Name' stopped forcefully."
+                        #Stop the service
+                        if (( Stop-PodeMacOsService -Name $nameService)) {
+                            # Check if the service is active
+                            if (!(Test-PodeMacOsServiceIsActive -Name  $nameService)) {
+                                Write-Verbose -Message "Service '$Name' stopped successfully."
+                            }
+                            else {
+                                # Service command '{0}' failed on service '{1}'.
+                                throw ($PodeLocale.serviceCommandFailedException -f 'launchctl stop', $Name)
+                            }
+                        }
+                        else {
+                            # Service command '{0}' failed on service '{1}'.
+                            throw ($PodeLocale.serviceCommandFailedException -f 'launchctl stop', $Name)
+                        }
                     }
                     else {
                         # Service is running. Use the -Force parameter to forcefully stop."
-                        throw ($Podelocale.serviceIsRunningException -f "$Name")
+                        throw ($Podelocale.serviceIsRunningException -f $nameService)
                     }
                 }
-                launchctl unload "$HOME/Library/LaunchAgents/pode.$Name.plist"
-                if ($LASTEXITCODE -eq 0) {
 
-                    $plistFilePath = "$HOME/Library/LaunchAgents/pode.$Name.plist"
+                if ((Disable-PodeMacOsService -Name $nameService)) {
+                    $plistFilePath = "$HOME/Library/LaunchAgents/$nameService.plist"
                     #Check if the plist file exists
                     if (Test-Path -Path $plistFilePath) {
                         # Read the content of the plist file
@@ -678,16 +709,18 @@ function Unregister-PodeService {
                         }
 
                         Remove-Item -Path $plistFilePath -ErrorAction Break
+
+                        Write-Verbose -Message "Service '$Name' unregistered successfully."
                     }
                 }
                 else {
-                    return $false
+                    Write-Verbose -Message "Service '$Name' unregistered failed."
+                    throw ($PodeLocale.serviceUnRegistrationException -f $Name)
                 }
-                Write-Verbose -Message "Service '$Name' unregistered successfully."
             }
             else {
                 # Service is not registered
-                throw ($PodeLocale.serviceIsNotRegisteredException -f "pode.$Name")
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService )
             }
             return $true
         }
@@ -837,15 +870,12 @@ function Get-PodeService {
 
     elseif ($IsMacOS) {
         try {
+            $nameService = "pode.$Name.service".Replace(' ', '_')
             # Check if the service exists on macOS (launchctl)
-            $serviceList = launchctl list | Select-String "pode.$Name"
-            if ($serviceList) {
-                $serviceInfo = launchctl list "pode.$Name" -join "`n"
-                $running = $serviceInfo -match '"PID" = (\d+);'
+            if ((Test-PodeMacOsServiceIsRegistered $nameService )) {
+                $servicePid = Get-PodeMacOsServicePid -Name $nameService # Extract the PID from the match
                 # Check if the service has a PID entry
-                if ($running) {
-                    $servicePid = ($running[0].split('= '))[1].trim(';')  # Extract the PID from the match
-
+                if ($servicePid -ne 0) {
                     return @{
                         Name   = $Name
                         Status = 'Running'

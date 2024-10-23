@@ -194,10 +194,12 @@ function Register-PodeMacService {
         $LogPath
     )
 
+    $nameService = "pode.$Name.service".Replace(' ', '_')
+
     # Check if the service is already registered
-    if (launchctl list | Select-String "pode.$Name") {
+    if ((Test-PodeMacOsServiceIsRegistered $nameService)) {
         # Service is already registered.
-        throw ($PodeLocale.serviceAlreadyRegisteredException -f "pode.$Name")
+        throw ($PodeLocale.serviceAlreadyRegisteredException -f $nameService)
     }
 
     # Determine whether the service should run at load
@@ -210,7 +212,7 @@ function Register-PodeMacService {
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>pode.$Name</string>
+    <string>$nameService</string>
 
     <key>ProgramArguments</key>
     <array>
@@ -225,10 +227,10 @@ function Register-PodeMacService {
     $runAtLoad
 
     <key>StandardOutPath</key>
-    <string>$LogPath/pode.$Name.stdout.log</string>
+    <string>$LogPath/$nameService.stdout.log</string>
 
     <key>StandardErrorPath</key>
-    <string>$LogPath/pode.$Name.stderr.log</string>
+    <string>$LogPath/$nameService.stderr.log</string>
 
     <key>KeepAlive</key>
     <dict>
@@ -237,21 +239,20 @@ function Register-PodeMacService {
     </dict>
 </dict>
 </plist>
-"@ | Set-Content -Path "$($HOME)/Library/LaunchAgents/pode.$($Name).plist" -Encoding UTF8
+"@ | Set-Content -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -Encoding UTF8
 
-    Write-Verbose  -Message "Service '$Name' BinaryPathName : $($params['BinaryPathName'])."
+    Write-Verbose  -Message "Service '$nameService' WorkingDirectory : $($BinPath)."
 
-    chmod +r "$($HOME)/Library/LaunchAgents/pode.$($Name).plist"
+    chmod +r "$($HOME)/Library/LaunchAgents/$($nameService).plist"
 
     try {
         # Load the plist with launchctl
-        launchctl load "$($HOME)/Library/LaunchAgents/pode.$($Name).plist"
+        launchctl load "$($HOME)/Library/LaunchAgents/$($nameService).plist"
 
         # Verify the service is now registered
-        if (! (launchctl list | Select-String "pode.$Name")) {
+        if (! (Test-PodeMacOsServiceIsRegistered $nameService)) {
             # Service registration failed.
-            throw ($PodeLocale.serviceRegistrationException -f "pode.$Name")
-
+            throw ($PodeLocale.serviceRegistrationException -f $nameService)
         }
     }
     catch {
@@ -599,7 +600,24 @@ function Confirm-PodeAdminPrivilege {
     }
 }
 
+<#
+    .SYNOPSIS
+    Tests if a Linux service is registered.
 
+    .DESCRIPTION
+    Checks if a specified Linux service is registered by using the `systemctl status` command.
+    It returns `$true` if the service is found or its status code matches either `0` or `3`.
+
+    .PARAMETER Name
+    The name of the Linux service to test.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is registered; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Test-PodeLinuxServiceIsRegistered {
     param(
         $Name
@@ -610,6 +628,24 @@ function Test-PodeLinuxServiceIsRegistered {
     return $isRegistered
 }
 
+<#
+    .SYNOPSIS
+    Tests if a Linux service is active.
+
+    .DESCRIPTION
+    Checks if a specified Linux service is currently active by using the `systemctl is-active` command.
+    It returns `$true` if the service is active.
+
+    .PARAMETER Name
+    The name of the Linux service to check.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is active; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Test-PodeLinuxServiceIsActive {
     param(
         $Name
@@ -620,7 +656,24 @@ function Test-PodeLinuxServiceIsActive {
     return $isActive
 }
 
+<#
+    .SYNOPSIS
+    Disables a Linux service.
 
+    .DESCRIPTION
+    Disables a specified Linux service by using the `sudo systemctl disable` command.
+    It returns `$true` if the service is successfully disabled.
+
+    .PARAMETER Name
+    The name of the Linux service to disable.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is successfully disabled; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Disable-PodeLinuxService {
     param(
         $Name
@@ -631,7 +684,24 @@ function Disable-PodeLinuxService {
     return $success
 }
 
+<#
+    .SYNOPSIS
+    Enables a Linux service.
 
+    .DESCRIPTION
+    Enables a specified Linux service by using the `sudo systemctl enable` command.
+    It returns `$true` if the service is successfully enabled.
+
+    .PARAMETER Name
+    The name of the Linux service to enable.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is successfully enabled; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Enable-PodeLinuxService {
     param(
         $Name
@@ -642,7 +712,226 @@ function Enable-PodeLinuxService {
     return $success
 }
 
+<#
+    .SYNOPSIS
+    Stops a Linux service.
 
+    .DESCRIPTION
+    Stops a specified Linux service by using the `systemctl stop` command.
+    It returns `$true` if the service is successfully stopped.
 
+    .PARAMETER Name
+    The name of the Linux service to stop.
 
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is successfully stopped; otherwise, `$false`.
 
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Stop-PodeLinuxService {
+    param(
+        $Name
+    )
+    $serviceStopInfo = sudo systemctl stop $Name 2>&1
+    $success = $LASTEXITCODE -eq 0
+    Write-Verbose -Message ($serviceStopInfo -join "`n")
+    return $success
+}
+
+<#
+    .SYNOPSIS
+    Starts a Linux service.
+
+    .DESCRIPTION
+    Starts a specified Linux service by using the `systemctl start` command.
+    It returns `$true` if the service is successfully started.
+
+    .PARAMETER Name
+    The name of the Linux service to start.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is successfully started; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Start-PodeLinuxService {
+    param(
+        $Name
+    )
+    $serviceStartInfo = sudo systemctl start $Name 2>&1
+    $success = $LASTEXITCODE -eq 0
+    Write-Verbose -Message ($serviceStartInfo -join "`n")
+    return $success
+}
+
+<#
+    .SYNOPSIS
+    Tests if a macOS service is registered.
+
+    .DESCRIPTION
+    Checks if a specified macOS service is registered by using the `launchctl list` command.
+    It returns `$true` if the service is registered.
+
+    .PARAMETER Name
+    The name of the macOS service to test.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is registered; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeMacOsServiceIsRegistered {
+    param(
+        $Name
+    )
+    $systemctlStatus = launchctl list $Name 2>&1
+    $isRegistered = ($LASTEXITCODE -eq 0)
+    Write-Verbose -Message ($systemctlStatus -join '`n')
+    return $isRegistered
+}
+
+<#
+    .SYNOPSIS
+    Tests if a macOS service is active.
+
+    .DESCRIPTION
+    Checks if a specified macOS service is currently active by looking for the "PID" value in the output of `launchctl list`.
+    It returns `$true` if the service is active (i.e., if a PID is found).
+
+    .PARAMETER Name
+    The name of the macOS service to check.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is active; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeMacOsServiceIsActive {
+    param(
+        $Name
+    )
+    $serviceInfo = launchctl list $name
+    $isActive = $serviceInfo -match '"PID" = (\d+);'
+    Write-Verbose -Message ($serviceInfo -join "`n")
+    return $isActive.Count -eq 1
+}
+
+<#
+    .SYNOPSIS
+    Retrieves the PID of a macOS service.
+
+    .DESCRIPTION
+    Retrieves the process ID (PID) of a specified macOS service by using `launchctl list`.
+    If the service is not active or a PID cannot be found, the function returns `0`.
+
+    .PARAMETER Name
+    The name of the macOS service whose PID you want to retrieve.
+
+    .OUTPUTS
+    [int]
+    Returns the PID of the service if it is active; otherwise, returns `0`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeMacOsServicePid {
+    param(
+        $Name
+    )
+    $serviceInfo = launchctl list $name
+    $pidString = $serviceInfo -match '"PID" = (\d+);'
+    Write-Verbose -Message ($serviceInfo -join "`n")
+    return $(if ($pidString.Count -eq 1) { ($pidString[0].split('= '))[1].trim(';') } else { 0 })
+}
+
+<#
+    .SYNOPSIS
+    Disables a macOS service.
+
+    .DESCRIPTION
+    Disables a specified macOS service by using `launchctl unload` to unload the service's plist file.
+    It returns `$true` if the service is successfully disabled.
+
+    .PARAMETER Name
+    The name of the macOS service to disable.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is successfully disabled; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Disable-PodeMacOsService {
+    param(
+        $Name
+    )
+    $systemctlDisable = launchctl unload "$HOME/Library/LaunchAgents/$Name.plist" 2>&1
+    $success = $LASTEXITCODE -eq 0
+    Write-Verbose -Message ($systemctlDisable -join '`n')
+    return $success
+}
+
+<#
+    .SYNOPSIS
+    Stops a macOS service.
+
+    .DESCRIPTION
+    Stops a specified macOS service by using the `launchctl stop` command.
+    It returns `$true` if the service is successfully stopped.
+
+    .PARAMETER Name
+    The name of the macOS service to stop.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is successfully stopped; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Stop-PodeMacOsService {
+    param(
+        $Name
+    )
+    $serviceStopInfo = launchctl stop $Name 2>&1
+    $success = $LASTEXITCODE -eq 0
+    Write-Verbose -Message ($serviceStopInfo -join "`n")
+    return $success
+}
+
+<#
+    .SYNOPSIS
+    Starts a macOS service.
+
+    .DESCRIPTION
+    Starts a specified macOS service by using the `launchctl start` command.
+    It returns `$true` if the service is successfully started.
+
+    .PARAMETER Name
+    The name of the macOS service to start.
+
+    .OUTPUTS
+    [bool]
+    Returns `$true` if the service is successfully started; otherwise, `$false`.
+
+    .NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Start-PodeMacOsService {
+    param(
+        $Name
+    )
+    $serviceStartInfo = launchctl start $Name 2>&1
+    $success = $LASTEXITCODE -eq 0
+    Write-Verbose -Message ($serviceStartInfo -join "`n")
+    return $success
+}
