@@ -1,3 +1,5 @@
+using namespace Pode
+
 <#
 .SYNOPSIS
 Attaches a file onto the Response for downloading.
@@ -272,23 +274,8 @@ function Write-PodeTextResponse {
 
             # check if we need to compress the response
             if ($PodeContext.Server.Web.Compression.Enabled -and ![string]::IsNullOrWhiteSpace($WebEvent.AcceptEncoding)) {
-                try {
-                    $ms = [System.IO.MemoryStream]::new()
-                    $stream = Get-PodeCompressionStream -InputStream $ms -Encoding $WebEvent.AcceptEncoding -Mode Compress
-                    $stream.Write($Bytes, 0, $Bytes.Length)
-                    $stream.Close()
-                    $ms.Position = 0
-                    $Bytes = $ms.ToArray()
-                }
-                finally {
-                    if ($null -ne $stream) {
-                        $stream.Close()
-                    }
-
-                    if ($null -ne $ms) {
-                        $ms.Close()
-                    }
-                }
+                # compress the bytes
+                $Bytes = [PodeHelpers]::CompressBytes($Bytes, $WebEvent.AcceptEncoding)
 
                 # set content encoding header
                 Set-PodeHeader -Name 'Content-Encoding' -Value $WebEvent.AcceptEncoding
