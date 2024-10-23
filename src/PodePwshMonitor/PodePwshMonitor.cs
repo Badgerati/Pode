@@ -57,7 +57,7 @@ namespace Pode.Services
 
         public PodePwshMonitor(string scriptPath, string pwshPath, string parameterString = "", string logFilePath = ".\\PodePwshMonitorService.log", bool quiet = true, bool disableTermination = true, int shutdownWaitTimeMs = 30000)
         {
-              Console.WriteLine("logFilePath{0}", logFilePath);
+            Console.WriteLine("logFilePath{0}", logFilePath);
             // Initialize fields with constructor arguments
             _scriptPath = scriptPath;                      // Path to the PowerShell script to be executed
             _pwshPath = pwshPath;                          // Path to the PowerShell executable (pwsh)
@@ -89,10 +89,14 @@ namespace Pode.Services
                             CreateNoWindow = true           // Do not create a new window
                         }
                     };
-
+                    Log($"[Server] - Starting ...");
                     // Properly escape double quotes within the JSON string
                     string podeServiceJson = $"{{\\\"DisableTermination\\\": {_disableTermination.ToString().ToLower()}, \\\"Quiet\\\": {_quiet.ToString().ToLower()}, \\\"PipeName\\\": \\\"{_pipeName}\\\"}}";
-
+                    Log($"[Server] - Powershell path {_pwshPath}");
+                    Log($"[Server] - PodeService content:");
+                    Log($"[Server] - DisableTermination\t= {_disableTermination.ToString().ToLower()}");
+                    Log($"[Server] - Quiet\t= {_quiet.ToString().ToLower()}");
+                    Log($"[Server] - PipeName\t= {_pipeName}");
                     // Build the PowerShell command with NoProfile and global variable initialization
                     string command = $"-NoProfile -Command \"& {{ $global:PodeService = '{podeServiceJson}' | ConvertFrom-Json; . '{_scriptPath}' {_parameterString} }}\"";
 
@@ -202,6 +206,7 @@ namespace Pode.Services
                     _pipeClient = null;
                 }
                 Log("[Server] - PowerShell process and pipe client disposed.");
+                Log("[Server] - Done.");
             }
         }
 
