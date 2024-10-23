@@ -334,16 +334,18 @@ function New-PodeContext {
     }
 
     # routes for pages and api
-    $ctx.Server.Routes = @{
-        'connect' = [ordered]@{}
-        'delete'  = [ordered]@{}
+    $ctx.Server.Routes = [ordered]@{
+# common methods
         'get'     = [ordered]@{}
+        'post'    = [ordered]@{}
+        'put'     = [ordered]@{}
+        'patch'   = [ordered]@{}
+        'delete'  = [ordered]@{}
+# other methods
+        'connect' = [ordered]@{}
         'head'    = [ordered]@{}
         'merge'   = [ordered]@{}
         'options' = [ordered]@{}
-        'patch'   = [ordered]@{}
-        'post'    = [ordered]@{}
-        'put'     = [ordered]@{}
         'trace'   = [ordered]@{}
         'static'  = [ordered]@{}
         'signal'  = [ordered]@{}

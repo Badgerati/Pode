@@ -318,7 +318,7 @@ function Add-PodeOAComponentRequestBody {
         [Alias('ContentSchemas')]
         [ValidateScript({
             ($_ -is [hashtable]) -or ($_ -is [System.Collections.Specialized.OrderedDictionary])
-        })]
+            })]
         $Content,
 
         [Parameter()]
@@ -345,6 +345,15 @@ function Add-PodeOAComponentRequestBody {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
         $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+
+        if ($Content -is [hashtable]) {
+            $orderedHashtable = [ordered]@{}
+
+            foreach ($key in $Content.Keys | Sort-Object) {
+                $orderedHashtable[$key] = $Content[$key]
+            }
+            $Content = $orderedHashtable
+        }
 
         foreach ($tag in $DefinitionTag) {
             $param = [ordered]@{ content = ($Content | ConvertTo-PodeOAObjectSchema -DefinitionTag $tag) }

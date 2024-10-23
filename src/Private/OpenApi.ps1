@@ -814,14 +814,14 @@ function Set-PodeOpenApiRouteValue {
     if ($Route.OpenApi.OperationId) {
         $pm.operationId = $Route.OpenApi.OperationId
     }
-    if ($Route.OpenApi.Parameters.$DefinitionTag) {
-        $pm.parameters = $Route.OpenApi.Parameters.$DefinitionTag
+    if ($Route.OpenApi.Parameters[$DefinitionTag]) {
+        $pm.parameters = $Route.OpenApi.Parameters[$DefinitionTag]
     }
-    if ($Route.OpenApi.RequestBody.$DefinitionTag) {
-        $pm.requestBody = $Route.OpenApi.RequestBody.$DefinitionTag
+    if ($Route.OpenApi.RequestBody[$DefinitionTag]) {
+        $pm.requestBody = $Route.OpenApi.RequestBody[$DefinitionTag]
     }
-    if ($Route.OpenApi.CallBacks.$DefinitionTag) {
-        $pm.callbacks = $Route.OpenApi.CallBacks.$DefinitionTag
+    if ($Route.OpenApi.CallBacks[$DefinitionTag]) {
+        $pm.callbacks = $Route.OpenApi.CallBacks[$DefinitionTag]
     }
     if ($Route.OpenApi.Servers) {
         $pm.servers = $Route.OpenApi.Servers
@@ -848,8 +848,8 @@ function Set-PodeOpenApiRouteValue {
             }
         }
     }
-    if ($Route.OpenApi.Responses.$DefinitionTag ) {
-        $pm.responses = $Route.OpenApi.Responses.$DefinitionTag
+    if ($Route.OpenApi.Responses[$DefinitionTag] ) {
+        $pm.responses = $Route.OpenApi.Responses[$DefinitionTag]
     }
     else {
         # Set responses or default to '204 No Content' if not specified
@@ -1125,27 +1125,23 @@ function Get-PodeOpenApiDefinitionInternal {
         $filter = ''
     }
 
-    foreach ($method in $PodeContext.Server.Routes.Keys) {
-        foreach ($path in ($PodeContext.Server.Routes[$method].Keys | Sort-Object)) {
-            # does it match the route?
-            if ($path -inotmatch $filter) {
-                continue
-            }
-            # the current route
-            $_routes = @($PodeContext.Server.Routes[$method][$path])
+
+    foreach ($path in $PodeContext.Server.OpenAPI.Routes) {
+        # does it match the route?
+        if ($path -inotmatch $filter) {
+            continue
+        }
+        foreach ($method in $PodeContext.Server.Routes.Keys) {
+            $_routes = $PodeContext.Server.Routes[$method][$path]
+
+            if ($null -eq $_routes) { continue }
+
             if ( $MetaInfo -and $MetaInfo.RestrictRoutes) {
-                $_routes = @(Get-PodeRouteByUrl -Routes $_routes -EndpointName $EndpointName)
+                $_routes = @(Get-PodeRouteByUrl -Routes  $_routes -EndpointName $EndpointName)
             }
-
-            # continue if no routes
-            if (($_routes.Length -eq 0) -or ($null -eq $_routes[0])) {
-                continue
-            }
-
-            # get the first route for base definition
             $_route = $_routes[0]
             # check if the route has to be published
-            if (($_route.OpenApi.Swagger -and $_route.OpenApi.DefinitionTag -contains $DefinitionTag ) -or $Definition.hiddenComponents.enableMinimalDefinitions) {
+            if (($_route.OpenApi.Swagger -and ($_route.OpenApi.DefinitionTag -contains $DefinitionTag) ) -or $Definition.hiddenComponents.enableMinimalDefinitions) {
 
                 #remove the ServerUrl part
                 if ( $localEndpoint) {
@@ -1176,37 +1172,34 @@ function Get-PodeOpenApiDefinitionInternal {
                 $def.paths[$_route.OpenApi.Path][$method] = $pm
 
                 # add any custom server endpoints for route
-                foreach ($_route in $_routes) {
+                if ($_route.OpenApi.Servers.count -gt 0) {
+                    if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers) {
+                        $def.paths[$_route.OpenApi.Path][$method].servers = @()
+                    }
+                    if ($localEndpoint) {
+                        $def.paths[$_route.OpenApi.Path][$method].servers += $Definition.servers[0]
+                    }
+                }
+                if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -and ($_route.Endpoint.Address -ine '*:*')) {
 
-                    if ($_route.OpenApi.Servers.count -gt 0) {
-                        if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers) {
-                            $def.paths[$_route.OpenApi.Path][$method].servers = @()
-                        }
-                        if ($localEndpoint) {
-                            $def.paths[$_route.OpenApi.Path][$method].servers += $Definition.servers[0]
+                    if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers) {
+                        $def.paths[$_route.OpenApi.Path][$method].servers = @()
+                    }
+
+                    $serverDef = $null
+                    if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Name)) {
+                        $serverDef = [ordered]@{
+                            url = (Get-PodeEndpointByName -Name $_route.Endpoint.Name).Url
                         }
                     }
-                    if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Address) -and ($_route.Endpoint.Address -ine '*:*')) {
+                    else {
+                        $serverDef = [ordered]@{
+                            url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
+                        }
+                    }
 
-                        if ($null -eq $def.paths[$_route.OpenApi.Path][$method].servers) {
-                            $def.paths[$_route.OpenApi.Path][$method].servers = @()
-                        }
-
-                        $serverDef = $null
-                        if (![string]::IsNullOrWhiteSpace($_route.Endpoint.Name)) {
-                            $serverDef = [ordered]@{
-                                url = (Get-PodeEndpointByName -Name $_route.Endpoint.Name).Url
-                            }
-                        }
-                        else {
-                            $serverDef = [ordered]@{
-                                url = "$($_route.Endpoint.Protocol)://$($_route.Endpoint.Address)"
-                            }
-                        }
-
-                        if ($null -ne $serverDef) {
-                            $def.paths[$_route.OpenApi.Path][$method].servers += $serverDef
-                        }
+                    if ($null -ne $serverDef) {
+                        $def.paths[$_route.OpenApi.Path][$method].servers += $serverDef
                     }
                 }
             }
@@ -1391,6 +1384,7 @@ function Initialize-PodeOpenApiTable {
     $OpenAPI = @{
         # Initialize a stack to manage the Definition Tag selection.
         DefinitionTagSelectionStack = [System.Collections.Generic.Stack[System.Object]]::new()
+        Routes                      = @()
     }
 
     # Set the currently selected definition tag to the provided or default tag.
@@ -2304,6 +2298,37 @@ function ConvertTo-PodeOARoutePath {
     return ([regex]::Unescape((Resolve-PodePlaceholder -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')))
 }
 
+<#
+.SYNOPSIS
+    Tests and validates the OpenAPI Definition Tag for a specific route in Pode.
+
+.DESCRIPTION
+    This function ensures that the OpenAPI Definition Tag for a route is correctly configured.
+    If the route already has an OpenAPI Definition Tag configured, it verifies if the new tag is allowed.
+    If the OpenAPI Definition Tag has not been configured, it validates and sets the provided tag.
+
+.PARAMETER Route
+    A hashtable representing the route that is being tested for the OpenAPI Definition Tag.
+
+.PARAMETER DefinitionTag
+    An optional array of strings representing the Definition Tag(s) to be tested and assigned.
+
+.RETURNS
+    Returns the validated DefinitionTag for the route.
+
+.EXAMPLE
+    $Route = @{
+        OpenApi = @{
+            IsDefTagConfigured = $false
+            DefinitionTag = @()
+        }
+    }
+    $DefinitionTag = @('tag1', 'tag2')
+    Test-PodeRouteOADefinitionTag -Route $Route -DefinitionTag $DefinitionTag
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Test-PodeRouteOADefinitionTag {
     param(
         [Parameter(Mandatory = $true )]
@@ -2334,7 +2359,6 @@ function Test-PodeRouteOADefinitionTag {
                 return $DefinitionTag
             }
         }
-
 
         return $Route.OpenApi.DefinitionTag
     }

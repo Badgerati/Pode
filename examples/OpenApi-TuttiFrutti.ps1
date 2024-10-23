@@ -565,7 +565,7 @@ Some useful links:
         } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
 
 
-        Add-PodeRouteGroup -Path '/api/v3'    -Routes {
+        Add-PodeRouteGroup -Path '/api/v3' -Routes {
             #PUT
             Add-PodeRoute -PassThru -Method Put -Path '/pet' -ScriptBlock {
                 $JsonPet = ConvertTo-Json $WebEvent.data

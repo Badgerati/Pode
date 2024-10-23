@@ -759,7 +759,7 @@ function Remove-PodeOAResponse {
         }
         # remove the respones from the routes
         foreach ($r in $Route) {
-            if ($r.OpenApi.Responses.ContainsKey($code)) {
+            if ($r.OpenApi.Responses.Keys -Contains $code) {
                 $null = $r.OpenApi.Responses.Remove($code)
             }
         }
@@ -854,11 +854,12 @@ function Set-PodeOARequest {
                 }
 
             }
-
-            if ($PassThru) {
-                return $Route
-            }
         }
+
+        if ($PassThru) { 
+            return $Route
+        }
+
     }
 }
 
@@ -1067,7 +1068,7 @@ function Test-PodeOAJsonSchemaCompliance {
         $DefinitionTag
     )
     if ($DefinitionTag) {
-        if (! ($PodeContext.Server.OpenApi.Definitions.Keys -ccontains $DefinitionTag)) {
+        if (! ($PodeContext.Server.OpenApi.Definitions.Keys -icontains $DefinitionTag)) {
             # DefinitionTag does not exist.
             throw ($PodeLocale.definitionTagNotDefinedExceptionMessage -f $DefinitionTag)
         }
@@ -1676,10 +1677,9 @@ function Set-PodeOARouteInfo {
                         # Definition Tag for a Route cannot be changed.
                         throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
                     }
-                    else {
-                        $r.OpenApi.DefinitionTag = $defaultTag
-                        $r.OpenApi.IsDefTagConfigured = $true
-                    }
+
+                    $r.OpenApi.DefinitionTag = $defaultTag
+                    $r.OpenApi.IsDefTagConfigured = $true
                 }
             }
             else {
@@ -2773,7 +2773,7 @@ function Add-PodeOACallBack {
                     if (!$Name) {
                         $Name = $Reference
                     }
-                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                    if (! ($r.OpenApi.CallBacks.Keys -Contains $tag)) {
                         $r.OpenApi.CallBacks[$tag] = [ordered]@{}
                     }
                     $r.OpenApi.CallBacks[$tag].$Name = [ordered]@{
@@ -2781,7 +2781,7 @@ function Add-PodeOACallBack {
                     }
                 }
                 else {
-                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                    if (! ($r.OpenApi.CallBacks.Keys -Contains $tag)) {
                         $r.OpenApi.CallBacks[$tag] = [ordered]@{}
                     }
                     $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
@@ -2931,7 +2931,7 @@ function New-PodeOAResponse {
     end {
         if ($ResponseList) {
             foreach ($tag in $DefinitionTag) {
-                if (! $ResponseList.ContainsKey( $tag) ) {
+                if (! ($ResponseList.Keys -Contains $tag )) {
                     $ResponseList[$tag] = [ordered] @{}
                 }
                 $response[$tag].GetEnumerator() | ForEach-Object { $ResponseList[$tag][$_.Key] = $_.Value }

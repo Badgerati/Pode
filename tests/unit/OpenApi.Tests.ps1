@@ -2168,17 +2168,17 @@ Describe 'OpenApi' {
         BeforeEach {
             $Route = @{
                 OpenApi = @{
-                    Path           = '/test'
-                    Responses      = [ordered]@{
+                    Path               = '/test'
+                    Responses          = [ordered]@{
                         '200'     = @{ description = 'OK' }
                         'default' = @{ description = 'Internal server error' }
                     }
                     Parameters         = [ordered]@{}
                     RequestBody        = [ordered]@{}
                     callbacks          = [ordered]@{}
-                    Authentication      = @()
-                    DefinitionTag       = @('Default')
-                    IsDefTagConfigured  = $false
+                    Authentication     = @()
+                    DefinitionTag      = @('Default')
+                    IsDefTagConfigured = $false
                 }
             }
 
@@ -3160,12 +3160,12 @@ Describe 'OpenApi' {
 
         It 'Sets Parameters on the route if provided' {
             $route = @{
-                Method = 'GET'
+                Method  = 'GET'
                 OpenApi = @{
-                    Responses          = [ordered]@{}
-                    Parameters         = [ordered]@{}
-                    RequestBody        = [ordered]@{}
-                    callbacks          = [ordered]@{}
+                    Responses   = [ordered]@{}
+                    Parameters  = [ordered]@{}
+                    RequestBody = [ordered]@{}
+                    callbacks   = [ordered]@{}
                 }
             }
             $parameters = @(
@@ -3250,10 +3250,10 @@ Describe 'OpenApi' {
             It 'Should add the server with variables to the OpenAPI definition' {
                 $variables = [ordered]@{
                     username = [ordered]@{
-                        default = 'demo'
+                        default     = 'demo'
                         description = 'assigned by provider'
                     }
-                    port = [ordered]@{
+                    port     = [ordered]@{
                         default = 8443
                     }
                     basePath = [ordered]@{
