@@ -395,21 +395,45 @@ function Add-PodeOAServerEndpoint {
         $DefinitionTag
     )
 
+
+    # If the DefinitionTag is empty, use the selected tag from Pode's OpenAPI context
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
         $DefinitionTag = @($PodeContext.Server.OpenAPI.SelectedDefinitionTag)
     }
+
+    # Loop through each tag to add the server object to the corresponding OpenAPI definition
     foreach ($tag in $DefinitionTag) {
+        # If the 'servers' array for the tag doesn't exist, initialize it as an empty array
         if (! $PodeContext.Server.OpenAPI.Definitions[$tag].servers) {
             $PodeContext.Server.OpenAPI.Definitions[$tag].servers = @()
         }
+
+        # Create an ordered hashtable representing the server object with the URL
         $lUrl = [ordered]@{url = $Url }
+
+        # If a description is provided, add it to the server object
         if ($Description) {
             $lUrl.description = $Description
         }
 
+        # If variables are provided, add them to the server object
         if ($Variables) {
             $lUrl.variables = $Variables
         }
+
+        # Check if the URL is a local endpoint (not starting with 'http(s)://')
+        if ($lUrl.url -notmatch '^(?i)https?://') {
+            # Loop through existing server URLs in the definition
+            foreach ($srv in $PodeContext.Server.OpenAPI.Definitions[$tag].servers) {
+                # If there's already a local endpoint, throw an exception, as only one local endpoint is allowed per definition
+                # Both are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition.
+                if ($srv.url -notmatch '^(?i)https?://') {
+                    throw ($PodeLocale.LocalEndpointConflictExceptionMessage -f $Url, $srv.url)
+                }
+            }
+        }
+
+        # Add the new server object to the OpenAPI definition for the current tag
         $PodeContext.Server.OpenAPI.Definitions[$tag].servers += $lUrl
     }
 }
@@ -1632,16 +1656,24 @@ function Set-PodeOARouteInfo {
             $Route = $pipelineValue
         }
 
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
+        $defaultTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
         foreach ($r in @($Route)) {
-            if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
-                if ($r.OpenApi.IsDefTagConfigured ) {
-                    # Definition Tag for a Route cannot be changed.
-                    throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
+            if ($DefinitionTag) {
+                if ((Compare-Object -ReferenceObject $r.OpenApi.DefinitionTag -DifferenceObject  $DefinitionTag).Count -ne 0) {
+                    if ($r.OpenApi.IsDefTagConfigured ) {
+                        # Definition Tag for a Route cannot be changed.
+                        throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
+                    }
+                    else {
+                        $r.OpenApi.DefinitionTag = $defaultTag
+                        $r.OpenApi.IsDefTagConfigured = $true
+                    }
                 }
-                else {
-                    $r.OpenApi.DefinitionTag = $DefinitionTag
+            }
+            else {
+                if (! $r.OpenApi.IsDefTagConfigured ) {
+                    $r.OpenApi.DefinitionTag = $defaultTag
                     $r.OpenApi.IsDefTagConfigured = $true
                 }
             }
@@ -1651,7 +1683,7 @@ function Set-PodeOARouteInfo {
                     # OperationID:$OperationId has to be unique and cannot be applied to an array
                     throw ($PodeLocale.operationIdMustBeUniqueForArrayExceptionMessage -f $OperationId)
                 }
-                foreach ($tag in $DefinitionTag) {
+                foreach ($tag in $defaultTag) {
                     if ($PodeContext.Server.OpenAPI.Definitions[$tag].hiddenComponents.operationId -ccontains $OperationId) {
                         # OperationID:$OperationId has to be unique
                         throw ($PodeLocale.operationIdMustBeUniqueExceptionMessage -f $OperationId)
@@ -3313,7 +3345,7 @@ function Add-PodeOAExternalRoute {
 
                 # ensure the route has appropriate slashes
                 $Path = Update-PodeRouteSlash -Path $Path
-                $OpenApiPath = ConvertTo-PodeOpenApiRoutePath -Path $Path
+                $OpenApiPath = ConvertTo-PodeOARoutePath -Path $Path
                 $Path = Resolve-PodePlaceholder -Path $Path
                 $extRoute = @{
                     Method  = $Method.ToLower()
