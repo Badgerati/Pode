@@ -88,9 +88,16 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
     if ((Get-PodeConfig).Protocol -eq 'Https') {
-        $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
-        $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
-        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default
+        if ((Get-PodeConfig).SelfSignedCertificate) {
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -SelfSigned -Default -Name 'endpoint_v3'
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port ((Get-PodeConfig).RestFulPort + 1) -Protocol Https -SelfSigned -Default -Name 'endpoint_v3.1'
+        }
+        else {
+            $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
+            $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default -Name 'endpoint_v3'
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port ((Get-PodeConfig).RestFulPort + 1) -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default -Name 'endpoint_v3.1'
+        }
     }
     else {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default -Name 'endpoint_v3'

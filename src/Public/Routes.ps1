@@ -433,9 +433,9 @@ function Add-PodeRoute {
                     OpenApi          = @{
                         Path               = $OpenApiPath
                         Responses          = $DefaultResponse
-                        Parameters         = $null
-                        RequestBody        = $null
-                        CallBacks          = @{}
+                        Parameters         = [ordered]@{}
+                        RequestBody        = [ordered]@{}
+                        CallBacks          = [ordered]@{}
                         Authentication     = @()
                         Servers            = @()
                         DefinitionTag      = $DefinitionTag
@@ -450,6 +450,12 @@ function Add-PodeRoute {
                     }
                 }
             })
+
+
+        if ($PodeContext.Server.OpenAPI.Routes -notcontains $OpenApiPath ) {
+            $PodeContext.Server.OpenAPI.Routes += $OpenApiPath
+        }
+
 
         if (![string]::IsNullOrWhiteSpace($Authentication)) {
             Set-PodeOAAuth -Route $methodRoutes -Name $Authentication -AllowAnon:$AllowAnon
