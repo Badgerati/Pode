@@ -1492,14 +1492,7 @@ function ConvertFrom-PodeRequestContent {
         else {
             # if the request is compressed, attempt to uncompress it
             if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
-                # create a compressed stream to decompress the req bytes
-                $ms = [System.IO.MemoryStream]::new()
-                $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
-                $null = $ms.Seek(0, 0)
-                $stream = Get-PodeCompressionStream -InputStream $ms -Encoding $TransferEncoding -Mode Decompress
-
-                # read the decompressed bytes
-                $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Request.ContentEncoding
+                $Content = [PodeHelpers]::DecompressBytes($Request.RawBody, $TransferEncoding, $Request.ContentEncoding)
             }
             else {
                 $Content = $Request.Body
