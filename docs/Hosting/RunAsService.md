@@ -1,8 +1,121 @@
-# Service
+# Using Pode as a Service
 
-Rather than having to manually invoke your Pode server script each time, it's best if you can have it start automatically when your computer/server starts. Below you'll see how to set your script to run as either a Windows or a Linux service.
+Pode now provides built-in functions to easily manage services across platforms (Windows, Linux, macOS). These functions allow you to register, start, stop, query, and unregister Pode services in a cross-platform way.
 
-## Windows
+## Registering a Service
+
+You can register a Pode-based service using the `Register-PodeService` function, which will create the necessary service files and configurations for your system.
+
+#### Example:
+```powershell
+Register-PodeService -Name "HelloService" -Description "Example Pode Service" -ParameterString "-Verbose" -Start
+```
+
+This command registers a service named "HelloService" and starts it immediately after registration. The service runs your Pode script with the specified parameters.
+
+### `Register-PodeService` Parameters
+
+The `Register-PodeService` function provides several parameters to customize your service registration across Windows, Linux, and macOS:
+
+- **`-Name`** *(string)*:
+  The name of the service to register.
+  **Mandatory**.
+
+- **`-Description`** *(string)*:
+  A brief description of the service. Defaults to "This is a Pode service."
+
+- **`-DisplayName`** *(string)*:
+  The display name for the service (Windows only). Defaults to "Pode Service($Name)".
+
+- **`-StartupType`** *(string)*:
+  Specifies the startup type of the service ('Automatic' or 'Manual'). Defaults to 'Automatic'.
+
+- **`-ParameterString`** *(string)*:
+  Additional parameters to pass to the worker script when the service is run. Defaults to an empty string.
+
+- **`-LogServicePodeHost`** *(switch)*:
+  Enables logging for the Pode service host.
+
+- **`-ShutdownWaitTimeMs`** *(int)*:
+  Maximum time in milliseconds to wait for the service to shut down gracefully before forcing termination. Defaults to 30,000 milliseconds.
+
+- **`-UserName`** *(string)*:
+  Specifies the username under which the service will run by default is the current user.
+
+- **`-Start`** *(switch)*:
+  A switch to start the service immediately after registration.
+
+- **`-Password`** *(securestring)*:
+  A secure password for the service account (Windows only). If omitted, the service account will be 'NT AUTHORITY\SYSTEM'.
+
+- **`-SecurityDescriptorSddl`** *(string)*:
+  A security descriptor in SDDL format, specifying the permissions for the service (Windows only).
+
+- **`-SettingsPath`** *(string)*:
+  Specifies the directory to store the service configuration file (`<name>_svcsettings.json`). If not provided, a default directory is used.
+
+- **`-LogPath`** *(string)*:
+  Specifies the path for the service log files. If not provided, a default log directory is used.
+
+---
+
+## Starting a Service
+
+Once a service is registered, you can start it using the `Start-PodeService` function.
+
+#### Example:
+```powershell
+Start-PodeService -Name "HelloService"
+```
+
+This returns $true if the service is started successfully, $false otherwise.
+
+## Stopping a Service
+
+To stop a running Pode service, you can use the `Stop-PodeService` function.
+
+#### Example:
+```powershell
+Stop-PodeService -Name "HelloService"
+```
+This returns $true if it was stopped, $false otherwise.
+
+## Querying a Service
+
+To check the status of a service (whether it's running or stopped), use the `Get-PodeService` function.
+
+#### Example:
+```powershell
+Get-PodeService -Name "HelloService"
+```
+
+This returns a hashtable with the service name and status.
+```powershell
+Name                           Value
+----                           -----
+Status                         Running
+Pid                            17576
+Name                           HelloService
+```
+
+## Unregistering a Service
+
+When you're done with a service, you can unregister it using the `Unregister-PodeService` function. You can also forcefully stop and remove a service using the `-Force` parameter.
+
+#### Example:
+```powershell
+Unregister-PodeService -Name "HelloService" -Force
+```
+
+This returns $true if it was unregistered successfully, $false otherwise.
+
+
+
+# Alternative Methods for Windows and Linux
+
+If you prefer to manually manage Pode as a service or if you're working in an environment where the Pode functions are unavailable, you can still use the traditional methods for managing services on Windows and Linux.
+
+#### Windows (NSSM):
 
 To run your Pode server as a Windows service, we recommend using the [`NSSM`](https://nssm.cc) tool. To install on Windows you can use Chocolatey:
 
@@ -45,7 +158,7 @@ nssm stop $name
 nssm remove $name confirm
 ```
 
-## Linux
+#### Linux (systemd):
 
 To run your Pode server as a Linux service you just need to create a `<name>.service` file at `/etc/systemd/system`. The following is example content for an example `pode-server.service` file, which run PowerShell Core (`pwsh`), as well as you script:
 
