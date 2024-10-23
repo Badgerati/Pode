@@ -98,8 +98,8 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
     # Configure Pode server endpoints
     if ((Get-PodeConfig).Protocol -eq 'Https') {
-        if ( (Get-PodeConfig).SelfSigned) {
-            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https  -Default -SelfSigned
+        if ((Get-PodeConfig).SelfSignedCertificate) {
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -SelfSigned -Default
         }
         else {
             $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate

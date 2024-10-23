@@ -2172,12 +2172,13 @@ Describe 'OpenApi' {
             $Route = @{
                 OpenApi = @{
                     Path               = '/test'
-                    Responses          = @{
+                    Responses          = [ordered]@{
                         '200'     = @{ description = 'OK' }
                         'default' = @{ description = 'Internal server error' }
                     }
-                    Parameters         = $null
-                    RequestBody        = $null
+                    Parameters         = [ordered]@{}
+                    RequestBody        = [ordered]@{}
+                    callbacks          = [ordered]@{}
                     Authentication     = @()
                     DefinitionTag      = @('Default')
                     IsDefTagConfigured = $false
@@ -3163,7 +3164,12 @@ Describe 'OpenApi' {
         It 'Sets Parameters on the route if provided' {
             $route = @{
                 Method  = 'GET'
-                OpenApi = @{}
+                OpenApi = @{
+                    Responses   = [ordered]@{}
+                    Parameters  = [ordered]@{}
+                    RequestBody = [ordered]@{}
+                    callbacks   = [ordered]@{}
+                }
             }
             $parameters = @(
                 @{ Name = 'param1'; In = 'query' }
@@ -3171,7 +3177,7 @@ Describe 'OpenApi' {
 
             Set-PodeOARequest -Route $route -Parameters $parameters
 
-            $route.OpenApi.Parameters | Should -BeExactly $parameters
+            $route.OpenApi.Parameters['Default'] | Should -BeExactly $parameters
         }
 
         It 'Sets RequestBody on the route if method is POST' {
@@ -3247,10 +3253,10 @@ Describe 'OpenApi' {
             It 'Should add the server with variables to the OpenAPI definition' {
                 $variables = [ordered]@{
                     username = [ordered]@{
-                        default = 'demo'
+                        default     = 'demo'
                         description = 'assigned by provider'
                     }
-                    port = [ordered]@{
+                    port     = [ordered]@{
                         default = 8443
                     }
                     basePath = [ordered]@{

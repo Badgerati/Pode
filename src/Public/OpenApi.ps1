@@ -590,7 +590,6 @@ An Array of strings representing the unique tag for the API specification.
 This tag helps distinguish between different versions or types of API specifications within the application.
 You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
-
 .EXAMPLE
 Add-PodeRoute -PassThru | Add-PodeOAResponse -StatusCode 200 -Content @{ 'application/json' = (New-PodeOAIntProperty -Name 'userId' -Object) }
 
@@ -672,7 +671,6 @@ function Add-PodeOAResponse {
             $Route = $pipelineValue
         }
 
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
         # override status code with default
         if ($Default) {
             $code = 'default'
@@ -683,7 +681,9 @@ function Add-PodeOAResponse {
 
         # add the respones to the routes
         foreach ($r in @($Route)) {
-            foreach ($tag in $DefinitionTag) {
+            $oaDefinitionTag = Test-PodeRouteOADefinitionTag -Route $r -DefinitionTag $DefinitionTag
+
+            foreach ($tag in $oaDefinitionTag) {
                 if (! $r.OpenApi.Responses.$tag) {
                     $r.OpenApi.Responses.$tag = [ordered]@{}
                 }
@@ -768,7 +768,7 @@ function Remove-PodeOAResponse {
         }
         # remove the respones from the routes
         foreach ($r in $Route) {
-            if ($r.OpenApi.Responses.ContainsKey($code)) {
+            if ($r.OpenApi.Responses.Keys -Contains $code) {
                 $null = $r.OpenApi.Responses.Remove($code)
             }
         }
@@ -799,6 +799,11 @@ The Request Body definition the request uses (from New-PodeOARequestBody).
 .PARAMETER PassThru
 If supplied, the route passed in will be returned for further chaining.
 
+.PARAMETER DefinitionTag
+An Array of strings representing the unique tag for the API specification.
+This tag helps distinguish between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+
 .EXAMPLE
 Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Schema 'UserIdBody')
 #>
@@ -818,7 +823,10 @@ function Set-PodeOARequest {
         $RequestBody,
 
         [switch]
-        $PassThru
+        $PassThru,
+
+        [string[]]
+        $DefinitionTag
     )
     begin {
         # Record the operation on the trace log
@@ -841,24 +849,29 @@ function Set-PodeOARequest {
 
         foreach ($r in $Route) {
 
-            if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
-                $r.OpenApi.Parameters = @($Parameters)
-            }
+            $oaDefinitionTag = Test-PodeRouteOADefinitionTag -Route $r -DefinitionTag $DefinitionTag
 
-            if ($null -ne $RequestBody) {
-                # Only 'POST', 'PUT', 'PATCH' can have a request body
-                if (('POST', 'PUT', 'PATCH') -inotcontains $r.Method ) {
-                    # {0} operations cannot have a Request Body.
-                    throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
+            foreach ($tag in $oaDefinitionTag) {
+                if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
+                    $r.OpenApi.Parameters[$tag] = @($Parameters)
                 }
-                $r.OpenApi.RequestBody = $RequestBody
-            }
 
+                if ($null -ne $RequestBody) {
+                    # Only 'POST', 'PUT', 'PATCH' can have a request body
+                    if (('POST', 'PUT', 'PATCH') -inotcontains $r.Method ) {
+                        # {0} operations cannot have a Request Body.
+                        throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
+                    }
+                    $r.OpenApi.RequestBody = $RequestBody
+                }
+
+            }
         }
 
         if ($PassThru) {
             return $Route
         }
+
     }
 }
 
@@ -1053,7 +1066,6 @@ message: any validation issue
 $UserInfo = Test-PodeOAJsonSchemaCompliance -Json $UserInfo -SchemaReference 'UserIdSchema'}
 
 #>
-
 function Test-PodeOAJsonSchemaCompliance {
     param (
         [Parameter(Mandatory = $true)]
@@ -1068,7 +1080,7 @@ function Test-PodeOAJsonSchemaCompliance {
         $DefinitionTag
     )
     if ($DefinitionTag) {
-        if (! ($PodeContext.Server.OpenApi.Definitions.Keys -ccontains $DefinitionTag)) {
+        if (! ($PodeContext.Server.OpenApi.Definitions.Keys -icontains $DefinitionTag)) {
             # DefinitionTag does not exist.
             throw ($PodeLocale.definitionTagNotDefinedExceptionMessage -f $DefinitionTag)
         }
@@ -1680,10 +1692,9 @@ function Set-PodeOARouteInfo {
                         # Definition Tag for a Route cannot be changed.
                         throw ($PodeLocale.definitionTagChangeNotAllowedExceptionMessage)
                     }
-                    else {
-                        $r.OpenApi.DefinitionTag = $defaultTag
-                        $r.OpenApi.IsDefTagConfigured = $true
-                    }
+
+                    $r.OpenApi.DefinitionTag = $defaultTag
+                    $r.OpenApi.IsDefTagConfigured = $true
                 }
             }
             else {
@@ -2770,16 +2781,17 @@ function Add-PodeOACallBack {
             $Route = $pipelineValue
         }
 
-        $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
         foreach ($r in @($Route)) {
-            foreach ($tag in $DefinitionTag) {
+            $oaDefinitionTag = Test-PodeRouteOADefinitionTag -Route $r -DefinitionTag $DefinitionTag
+
+            foreach ($tag in $oaDefinitionTag) {
                 if ($Reference) {
                     Test-PodeOAComponentInternal -Field callbacks -DefinitionTag $tag -Name $Reference -PostValidation
                     if (!$Name) {
                         $Name = $Reference
                     }
-                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                    if (! ($r.OpenApi.CallBacks.Keys -Contains $tag)) {
                         $r.OpenApi.CallBacks[$tag] = [ordered]@{}
                     }
                     $r.OpenApi.CallBacks[$tag].$Name = [ordered]@{
@@ -2787,7 +2799,7 @@ function Add-PodeOACallBack {
                     }
                 }
                 else {
-                    if (! $r.OpenApi.CallBacks.ContainsKey($tag)) {
+                    if (! ($r.OpenApi.CallBacks.Keys -Contains $tag)) {
                         $r.OpenApi.CallBacks[$tag] = [ordered]@{}
                     }
                     $r.OpenApi.CallBacks[$tag].$Name = New-PodeOAComponentCallBackInternal -Params $PSBoundParameters -DefinitionTag $tag
@@ -2937,7 +2949,7 @@ function New-PodeOAResponse {
     end {
         if ($ResponseList) {
             foreach ($tag in $DefinitionTag) {
-                if (! $ResponseList.ContainsKey( $tag) ) {
+                if (! ($ResponseList.Keys -Contains $tag )) {
                     $ResponseList[$tag] = [ordered] @{}
                 }
                 $response[$tag].GetEnumerator() | ForEach-Object { $ResponseList[$tag][$_.Key] = $_.Value }
@@ -3383,9 +3395,9 @@ function Add-PodeOAExternalRoute {
                     Local   = $false
                     OpenApi = @{
                         Path           = $OpenApiPath
-                        Responses      = $null
-                        Parameters     = $null
-                        RequestBody    = $null
+                        Responses      = [ordered]@{}
+                        Parameters     = [ordered]@{}
+                        RequestBody    = [ordered]@{}
                         callbacks      = [ordered]@{}
                         Authentication = @()
                         Servers        = $Servers
@@ -3548,8 +3560,8 @@ function Add-PodeOAWebhook {
         NotPrepared = $true
         OpenApi     = @{
             Responses          = [ordered]@{}
-            Parameters         = $null
-            RequestBody        = $null
+            Parameters         = [ordered]@{}
+            RequestBody        = [ordered]@{}
             callbacks          = [ordered]@{}
             Authentication     = @()
             DefinitionTag      = $_definitionTag
@@ -3728,7 +3740,7 @@ function Test-PodeOADefinitionTag {
 
     if ($Tag -and $Tag.Count -gt 0) {
         foreach ($t in $Tag) {
-            if (! ($PodeContext.Server.OpenApi.Definitions.Keys -ccontains $t)) {
+            if (! ($PodeContext.Server.OpenApi.Definitions.Keys -icontains $t)) {
                 # DefinitionTag does not exist.
                 throw ($PodeLocale.definitionTagNotDefinedExceptionMessage -f $t)
             }

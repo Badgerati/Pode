@@ -18,13 +18,8 @@ Describe 'OpenAPI integration tests' {
         }
         $PortV3 = 8080
         $PortV3_1 = 8081
-        $scriptPath = "$($PSScriptRoot)\..\..\examples\OpenApi-TuttiFrutti.ps1"
-        if ($PSVersionTable.PsVersion -gt [version]'6.0') {
-            Start-Process 'pwsh' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -PortV3 $PortV3 -PortV3_1 $PortV3_1 -DisableTermination"   -NoNewWindow
-        }
-        else {
-            Start-Process 'powershell' -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -PortV3 $PortV3 -PortV3_1 $PortV3_1 -DisableTermination"  -NoNewWindow
-        }
+        $scriptPath = "$($PSScriptRoot)\..\..\examples\OpenApi-TuttiFrutti.ps1" 
+        Start-Process (Get-Process -Id $PID).Path -ArgumentList "-NoProfile -File `"$scriptPath`" -Quiet -PortV3 $PortV3 -PortV3_1 $PortV3_1 -DisableTermination"   -NoNewWindow
 
         function Compare-StringRnLn {
             param (
@@ -120,8 +115,8 @@ Describe 'OpenAPI integration tests' {
                     return $true
                 }
                 else {
-                    if($value1 -is [string] -and $value2 -is [string]){
-                    return  Compare-StringRnLn $value1 $value2
+                    if ($value1 -is [string] -and $value2 -is [string]) {
+                        return  Compare-StringRnLn $value1 $value2
                     }
                     # Check if the values are equal
                     return $value1 -eq $value2
