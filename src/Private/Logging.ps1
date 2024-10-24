@@ -68,7 +68,7 @@ function Get-PodeLoggingFileMethod {
 
             $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
                 Where-Object { $_.CreationTime -lt $date } |
-                Remove-Item $_ -Force
+                Remove-Item -Force
 
             $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
         }
