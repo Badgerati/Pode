@@ -796,9 +796,9 @@ function Remove-PodeOAResponse {
     If specified, returns the original route object for additional chaining after setting the request properties.
 
 .PARAMETER DefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps distinguish between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps distinguish between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
     Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Schema 'UserIdBody') -AllowNonStandardBody
@@ -821,17 +821,13 @@ function Set-PodeOARequest {
         $RequestBody,
 
         [switch]
-<<<<<<< Updated upstream
         $PassThru,
+
+        [switch]
+        $AllowNonStandardBody,
 
         [string[]]
         $DefinitionTag
-=======
-        $AllowNonStandardBody,
-
-        [switch]
-        $PassThru
->>>>>>> Stashed changes
     )
     begin {
         # Initialize an array to hold piped-in values
@@ -853,23 +849,15 @@ function Set-PodeOARequest {
 
             $oaDefinitionTag = Test-PodeRouteOADefinitionTag -Route $r -DefinitionTag $DefinitionTag
 
-<<<<<<< Updated upstream
             foreach ($tag in $oaDefinitionTag) {
                 if (($null -ne $Parameters) -and ($Parameters.Length -gt 0)) {
                     $r.OpenApi.Parameters[$tag] = @($Parameters)
-=======
-            if ($null -ne $RequestBody) {
-                # Check if AllowNonStandardBody is used or if the method is typically allowed to have a body
-                if (-not $AllowNonStandardBody -and ('POST', 'PUT', 'PATCH') -inotcontains $r.Method) {
-                    # {0} operations cannot have a Request Body.
-                    throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
->>>>>>> Stashed changes
                 }
 
                 if ($null -ne $RequestBody) {
-                    # Only 'POST', 'PUT', 'PATCH' can have a request body
-                    if (('POST', 'PUT', 'PATCH') -inotcontains $r.Method ) {
-                        # {0} operations cannot have a Request Body.
+                    # Check if AllowNonStandardBody is used or if the method is typically allowed to have a body
+                    if (-not $AllowNonStandardBody -and ('POST', 'PUT', 'PATCH') -inotcontains $r.Method) {
+                        #'{0}' operations cannot have a Request Body. Use -AllowNonStandardBody to override this restriction.
                         throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
                     }
                     $r.OpenApi.RequestBody = $RequestBody
