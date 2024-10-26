@@ -26,9 +26,6 @@ function Add-PodeEndware {
         $ArgumentList
     )
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
     # check for scoped vars
     $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
 

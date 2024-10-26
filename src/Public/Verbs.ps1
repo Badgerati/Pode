@@ -69,9 +69,6 @@ function Add-PodeVerb {
         $Close
     )
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
     # find placeholder parameters in verb (ie: COMMAND :parameter)
     $Verb = Resolve-PodePlaceholder -Path $Verb
 
@@ -149,9 +146,6 @@ function Remove-PodeVerb {
         $EndpointName
     )
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
     # ensure the verb placeholders are replaced
     $Verb = Resolve-PodePlaceholder -Path $Verb
 
@@ -185,9 +179,6 @@ function Clear-PodeVerbs {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Verbs.Clear()
 }

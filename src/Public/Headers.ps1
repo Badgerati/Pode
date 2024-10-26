@@ -87,9 +87,6 @@ function Add-PodeHeaderBulk {
         $Strict
     )
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
     foreach ($key in $Values.Keys) {
         $value = $Values[$key]
 

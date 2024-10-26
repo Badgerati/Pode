@@ -38,9 +38,6 @@ function Add-PodeAccessRule {
         $Values
     )
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeAccessRule' -ThrowError
 
@@ -108,9 +105,6 @@ function Add-PodeLimitRule {
         [switch]
         $Group
     )
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # call the appropriate limit method
     foreach ($value in $Values) {
@@ -366,9 +360,6 @@ function Add-PodeBodyParser {
         $ScriptBlock
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         $pipelineItemCount = 0
     }
 
@@ -419,8 +410,6 @@ function Remove-PodeBodyParser {
     )
 
     process {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
         # if there's no parser for the type, return
         if (!$PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
             return
@@ -485,9 +474,6 @@ function Add-PodeMiddleware {
         $ArgumentList
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         $pipelineItemCount = 0
     }
 
@@ -499,7 +485,6 @@ function Add-PodeMiddleware {
         if ($pipelineItemCount -gt 1) {
             throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
         }
-
         # ensure name doesn't already exist
         if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
             # [Middleware] Name: Middleware already defined
@@ -614,9 +599,6 @@ function Remove-PodeMiddleware {
         $Name
     )
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
     $PodeContext.Server.Middleware = @($PodeContext.Server.Middleware | Where-Object { $_.Name -ine $Name })
 }
 
@@ -633,9 +615,6 @@ Clear-PodeMiddleware
 function Clear-PodeMiddleware {
     [CmdletBinding()]
     param()
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Middleware = @()
 }

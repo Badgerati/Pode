@@ -100,8 +100,6 @@ function Start-PodeStopwatch {
     )
     begin {
         $pipelineItemCount = 0
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
     }
 
     process {

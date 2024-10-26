@@ -13,8 +13,6 @@ BeforeAll {
         RunspacePools = @{}
     }
 
-    # Mock Write-PodeTraceLog to avoid load Pode C# component
-    Mock Write-PodeTraceLog {}
 }
 
 Describe 'Start-PodeInternalServer' {

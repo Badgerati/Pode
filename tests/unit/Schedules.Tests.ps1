@@ -8,8 +8,6 @@ BeforeAll {
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
-    # Mock Write-PodeTraceLog to avoid load Pode C# component
-    Mock Write-PodeTraceLog {}
 }
 Describe 'Find-PodeSchedule' {
     Context 'Invalid parameters supplied' {
@@ -132,7 +130,7 @@ Describe 'Add-PodeSchedule' {
         $start = ([DateTime]::Now.AddHours(3))
         $end = ([DateTime]::Now.AddHours(5))
 
-        Add-PodeSchedule -Name 'test' -Cron @('@minutely', '@hourly') -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end 
+        Add-PodeSchedule -Name 'test' -Cron @('@minutely', '@hourly') -ScriptBlock { Write-Host 'hello' } -StartTime $start -EndTime $end
 
         $schedule = $PodeContext.Schedules.Items['test']
         $schedule | Should -Not -Be $null

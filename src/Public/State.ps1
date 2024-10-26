@@ -38,8 +38,6 @@ function Set-PodeState {
     )
 
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
         if ($null -eq $PodeContext.Server.State) {
             # Pode has not been initialized
             throw ($PodeLocale.podeNotInitializedExceptionMessage)
@@ -197,9 +195,6 @@ function Remove-PodeState {
         [string]
         $Name
     )
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if ($null -eq $PodeContext.Server.State) {
         # Pode has not been initialized

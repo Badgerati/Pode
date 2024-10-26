@@ -76,9 +76,6 @@ function Add-PodeTimer {
         $OnStart
     )
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
     # error if serverless
     Test-PodeIsServerless -FunctionName 'Add-PodeTimer' -ThrowError
 
@@ -199,9 +196,6 @@ function Remove-PodeTimer {
         $Name
     )
     process {
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         $null = $PodeContext.Timers.Items.Remove($Name)
     }
 }
@@ -220,9 +214,6 @@ function Clear-PodeTimers {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Timers.Items.Clear()
 }

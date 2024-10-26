@@ -395,9 +395,6 @@ function Add-PodeOAServerEndpoint {
         $DefinitionTag
     )
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
 
     # If the DefinitionTag is empty, use the selected tag from Pode's OpenAPI context
     if (Test-PodeIsEmpty -Value $DefinitionTag) {
@@ -653,9 +650,6 @@ function Add-PodeOAResponse {
         $DefinitionTag
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -743,9 +737,6 @@ function Remove-PodeOAResponse {
         $PassThru
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -829,9 +820,6 @@ function Set-PodeOARequest {
         $DefinitionTag
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -1665,9 +1653,6 @@ function Set-PodeOARouteInfo {
         $DefinitionTag
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -2125,9 +2110,6 @@ function Add-PodeOAExternalDoc {
         $DefinitionTag
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         $pipelineItemCount = 0
     }
 
@@ -2198,9 +2180,6 @@ function Add-PodeOATag {
         [string[]]
         $DefinitionTag
     )
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
@@ -2307,9 +2286,6 @@ function Add-PodeOAInfo {
         [string]
         $DefinitionTag
     )
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $DefinitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 
@@ -2763,9 +2739,6 @@ function Add-PodeOACallBack {
         $DefinitionTag
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -3365,9 +3338,6 @@ function Add-PodeOAExternalRoute {
         $DefinitionTag
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         # Initialize an array to hold piped-in values
         $pipelineValue = @()
     }
@@ -3549,9 +3519,6 @@ function Add-PodeOAWebhook {
         [string[]]
         $DefinitionTag
     )
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $_definitionTag = Test-PodeOADefinitionTag -Tag $DefinitionTag
 

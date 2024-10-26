@@ -1611,9 +1611,6 @@ function Set-PodeViewEngine {
         $Extension
     )
 
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
     # truncate markdown
     if ($Type -ieq 'Markdown') {
         $Type = 'md'
@@ -1854,9 +1851,6 @@ function Add-PodeViewFolder {
         [string]
         $Source
     )
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     # ensure the folder doesn't already exist
     if ($PodeContext.Server.Views.ContainsKey($Name)) {

@@ -173,9 +173,6 @@ function Add-PodeAccess {
         $Match = 'One'
     )
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         $pipelineItemCount = 0
     }
 
@@ -320,9 +317,6 @@ function Add-PodeAccessCustom {
     )
 
     begin {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         $routes = @()
     }
 
@@ -624,9 +618,6 @@ function Remove-PodeAccess {
         $Name
     )
     process {
-        # Record the operation on the trace log
-        Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
-
         $null = $PodeContext.Server.Authorisations.Methods.Remove($Name)
     }
 }
@@ -644,9 +635,6 @@ Clear-PodeAccess
 function Clear-PodeAccess {
     [CmdletBinding()]
     param()
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     $PodeContext.Server.Authorisations.Methods.Clear()
 }
@@ -688,9 +676,6 @@ function Add-PodeAccessMiddleware {
         [string]
         $Route
     )
-
-    # Record the operation on the trace log
-    Write-PodeTraceLog -Operation $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
     if (!(Test-PodeAccessExists -Name $Access)) {
         throw ($PodeLocale.accessMethodNotExistExceptionMessage -f $Access) #"Access method does not exist: $($Access)"
