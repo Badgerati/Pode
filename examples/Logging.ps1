@@ -93,8 +93,7 @@ Start-PodeServer -browse {
     if ( $requestLogging) {
         $requestLogging | Enable-PodeRequestLogging
     }
-
-    $logging | Enable-PodeTraceLogging -Raw:$Raw
+    
     $logging | Enable-PodeErrorLogging -Raw:$Raw -Levels *
     $logging | Enable-PodeCommonLogging -Name 'mylog' -Raw:$Raw
 

@@ -819,25 +819,6 @@ function Get-PodeErrorLoggingName {
 
 <#
 .SYNOPSIS
-    Gets the name of the main logger.
-
-.DESCRIPTION
-    This function returns the name of the main logger used in Pode.
-
-.OUTPUTS
-    [string] - The name of the main logger.
-
-    .EXAMPLE
-    Get-PodeTraceLoggingName
-#>
-function Get-PodeTraceLoggingName {
-    # Return the name of the main logger
-    return '__pode_log_trace__'
-}
-
-
-<#
-.SYNOPSIS
     Retrieves a Pode logger by name.
 
 .DESCRIPTION
@@ -1171,7 +1152,7 @@ function Start-PodeLoggerDispatcher {
                                     Write-PodeErrorLog -Message $log.Item.Message -ThreadId $log.Item.ThreadId -Tag 'Listener'
                                 }
                                 else {
-                                    Write-PodeLog  -Name (Get-PodeTraceLoggingName) -Message $log.Item.Message -Level $log.Item.Level  -ThreadId $log.Item.ThreadId -Tag 'Listener'
+                                    Write-PodeErrorLog -Message $log.Item.Message -Level $log.Item.Level  -ThreadId $log.Item.ThreadId -Tag 'Listener'
                                 }
                             }
                             continue
@@ -1297,123 +1278,7 @@ function Test-PodeLoggerBatch {
         }
     }
 }
-
-<#
-.SYNOPSIS
-    Writes an entry to the Pode trace log.
-
-.DESCRIPTION
-    Writes an entry to the Pode trace log. The entry can be based on either an operation and its parameters or a custom message.
-    This function handles the formatting of log entries and enqueues them for processing.
-
-.PARAMETER Operation
-    The operation being logged.
-
-.PARAMETER Parameters
-    A hashtable of parameters associated with the operation.
-
-.PARAMETER Message
-    A custom message to log.
-
-.EXAMPLE
-    Write-PodeTraceLog -Operation 'Remove-PodeLogger' -Parameters @{ Name = 'LogName' }
-
-.EXAMPLE
-    Write-PodeTraceLog -Message 'Custom log message.'
-
-.NOTES
-    This is an internal function and may change in future releases of Pode.
-#>
-function Write-PodeTraceLog {
-    [CmdletBinding(DefaultParameterSetName = 'Parameter')]
-    param(
-        [Parameter(Mandatory, ParameterSetName = 'Parameter')]
-        [string]
-        $Operation,
-
-        [Parameter(Mandatory, ParameterSetName = 'Parameter')]
-        [hashtable]
-        $Parameters,
-
-        [Parameter(Mandatory, ParameterSetName = 'Message')]
-        [string]
-        $Message
-    )
-
-    # Do nothing if logging is disabled, or error logging isn't set up
-    $name = Get-PodeTraceLoggingName
-    if (!(Test-PodeLoggerEnabled -Name $name)) {
-        return
-    }
-
-    # Determine the parameter set and build the log message
-    switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-        'parameter' {
-            $Message = if ($Parameters) {
-                $paramString = ($Parameters.GetEnumerator() | ForEach-Object {
-                        if ($_.Value -is [scriptblock]) {
-                            "$($_.Key)=<ScriptBlock>"
-                        }
-                        elseif ($_.Key -eq 'ArgumentList') {
-                            "$($_.Key)=<ArgumentList>"
-                        }
-                        elseif ($_.Key -eq 'Route') {
-                            "$($_.Key)={ Path : `"$($_.Value.Path -join ',')`" ,Method : `"$($_.Value.Method -join ',')`" }"
-                        }
-                        elseif ($_.Key -eq 'ExternalDoc') {
-                            "$($_.Key)=$($_.Value|ConvertTo-Json -Compress)"
-                        }
-                        elseif ($_.Key -eq 'Scheme') {
-                            "$($_.Key)={ Name : `"$($_.Value.Name)`" , Scheme : `"$($_.Value.Scheme)`" }"
-                        }
-                        elseif ($_.Key -eq 'InputObject') {
-                            "$($_.Key)=<InputObject>"
-                        }
-                        else {
-                            "$($_.Key)=$($_.Value)"
-                        }
-                    }) -join ', '
-                "Operation $Operation invoked with parameters: $paramString"
-            }
-            else {
-                "Operation $Operation invoked with no parameters"
-            }
-            break
-        }
-        'Message' {
-            $Operation = '-'
-            $Parameters = @{}
-            break
-        }
-    }
-
-    # Determine the current date and time, respecting the AsUTC setting
-    if ($PodeContext.Server.Logging.Type[$Name].Method.Arguments.AsUTC) {
-        $date = [datetime]::UtcNow
-    }
-    else {
-        $date = [datetime]::Now
-    }
-
-    # Build the log item
-    $item = @{
-        Parameters = $Parameters
-        Message    = $Message
-        Operation  = $Operation
-        Level      = 'Info'
-        Server     = $PodeContext.Server.ComputerName
-        Tag        = 'Main'
-        Date       = $date
-        ThreadId   = [System.Threading.Thread]::CurrentThread.ManagedThreadId
-    }
-
-    # Add the log item to the processing queue
-    $null = [Pode.PodeLogger]::Enqueue(@{
-            Name = $name
-            Item = $item
-        })
-}
-
+ 
 <#
 .SYNOPSIS
     Creates a new log batch information object.
