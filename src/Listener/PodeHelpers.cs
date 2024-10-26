@@ -7,6 +7,8 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Text;
+using System.IO.Compression;
 
 namespace Pode
 {
@@ -211,6 +213,96 @@ namespace Pode
         public static List<T> Subset<T>(List<T> list, int startIndex, int endIndex)
         {
             return Subset(list.ToArray(), startIndex, endIndex).ToList<T>();
+        }
+
+        public static byte[] ConvertStreamToBytes(Stream stream)
+        {
+            // we need to copy the stream to a memory stream and then return the bytes
+            using (var memory = new MemoryStream())
+            {
+                stream.CopyTo(memory);
+                return memory.ToArray();
+            }
+        }
+
+        public static string ConvertBytesToString(byte[] bytes, bool removeNewLines = false)
+        {
+            // return empty string if no bytes
+            if (bytes == default(byte[]) || bytes.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            // convert the bytes to a string
+            var str = Encoding.UTF8.GetString(bytes);
+
+            // remove new lines if needed
+            if (removeNewLines)
+            {
+                return str.Trim(NEW_LINE_ARRAY);
+            }
+
+            return str;
+        }
+
+        public static string ReadStreamToEnd(Stream stream, Encoding encoding = default)
+        {
+            // return empty string if no stream
+            if (stream == default(Stream))
+            {
+                return string.Empty;
+            }
+
+            // set the encoding if not provided
+            if (encoding == default(Encoding))
+            {
+                encoding = Encoding.UTF8;
+            }
+
+            // read the stream to the end
+            using (var reader = new StreamReader(stream, encoding))
+            {
+                return reader.ReadToEnd();
+            }
+        }
+
+        // decompress bytes into either a gzip or deflate stream, and return the string
+        public static string DecompressBytes(byte[] bytes, PodeCompressionType type, Encoding encoding = default)
+        {
+            var stream = CompressStream(new MemoryStream(bytes), type, CompressionMode.Decompress);
+            return ReadStreamToEnd(stream, encoding);
+        }
+
+        // compress bytes into either a gzip or deflate stream, and return the bytes
+        public static byte[] CompressBytes(byte[] bytes, PodeCompressionType type)
+        {
+            var ms = new MemoryStream();
+
+            using (var stream = CompressStream(ms, type, CompressionMode.Compress))
+            {
+                stream.Write(bytes, 0, bytes.Length);
+            }
+
+            ms.Position = 0;
+            return ms.ToArray();
+        }
+
+        // compress stream into either a gzip or deflate stream
+        public static Stream CompressStream(Stream stream, PodeCompressionType type, CompressionMode mode)
+        {
+            var leaveOpen = mode == CompressionMode.Compress;
+
+            switch (type)
+            {
+                case PodeCompressionType.Gzip:
+                    return new GZipStream(stream, mode, leaveOpen);
+
+                case PodeCompressionType.Deflate:
+                    return new DeflateStream(stream, mode, leaveOpen);
+
+                default:
+                    return stream;
+            }
         }
     }
 }
