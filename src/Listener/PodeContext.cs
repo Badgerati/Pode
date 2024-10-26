@@ -29,7 +29,7 @@ namespace Pode
             get => _state;
             private set
             {
-                if (_state != PodeContextState.Timeout || value == PodeContextState.Closed)
+                if (_state != PodeContextState.Timeout || value == PodeContextState.Closed || value == PodeContextState.Error)
                 {
                     _state = value;
                 }
@@ -80,19 +80,34 @@ namespace Pode
 
         private void TimeoutCallback(object state)
         {
-            if (Response.SseEnabled || Request.IsWebSocket)
+            try
             {
-                return;
+                PodeHelpers.WriteErrorMessage("TimeoutCallback triggered", Listener, PodeLoggingLevel.Debug, this);
+
+                if (Response.SseEnabled || Request.IsWebSocket)
+                {
+                    PodeHelpers.WriteErrorMessage("Timeout ignored due to SSE/WebSocket", Listener, PodeLoggingLevel.Debug, this);
+                    return;
+                }
+
+                PodeHelpers.WriteErrorMessage($"Request timeout reached: {Listener.RequestTimeout} seconds", Listener, PodeLoggingLevel.Warning, this);
+
+                ContextTimeoutToken.Cancel();
+                State = PodeContextState.Timeout;
+
+                Response.StatusCode = 408;
+                Request.Error = new HttpRequestException($"Request timeout [ContextId: {this.ID}]");
+                Request.Error.Data.Add("PodeStatusCode", 408);
+
+                Dispose();
+                PodeHelpers.WriteErrorMessage($"Request timeout reached: Dispose", Listener, PodeLoggingLevel.Debug, this);
+
+            }
+            catch (Exception ex)
+            {
+                PodeHelpers.WriteErrorMessage($"Exception in TimeoutCallback: {ex}", Listener, PodeLoggingLevel.Error);
             }
 
-            ContextTimeoutToken.Cancel();
-            State = PodeContextState.Timeout;
-
-            Response.StatusCode = 408;
-            Request.Error = new HttpRequestException("Request timeout");
-            Request.Error.Data.Add("PodeStatusCode", 408);
-
-            Dispose();
         }
 
         private void NewResponse()
@@ -232,7 +247,14 @@ namespace Pode
                     SetContextType();
                     await EndReceive(close).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException) { }
+                catch (OperationCanceledException ex) when (ContextTimeoutToken.IsCancellationRequested)
+                {
+                    PodeHelpers.WriteErrorMessage("Request timed out during receive operation", Listener, PodeLoggingLevel.Warning, this);
+                    State = PodeContextState.Timeout;  // Explicitly set the state to Timeout
+                    var timeoutException = new HttpRequestException("Request timed out", ex);
+                    timeoutException.Data.Add("PodeStatusCode", 408);
+                    Request.Error = timeoutException;
+                }
             }
             catch (Exception ex)
             {
@@ -312,6 +334,7 @@ namespace Pode
         public void Dispose()
         {
             Dispose(Request.Error != default(HttpRequestException));
+            GC.SuppressFinalize(this);
         }
 
         public void Dispose(bool force)
@@ -324,35 +347,32 @@ namespace Pode
                 if (IsClosed)
                 {
                     PodeSocket.RemovePendingSocket(Socket);
-                    Request.Dispose();
-                    Response.Dispose();
-                    ContextTimeoutToken.Dispose();
-                    TimeoutTimer.Dispose();
+                    Request?.Dispose();
+                    Response?.Dispose();
+                    DisposeTimeoutResources();
                     return;
                 }
 
                 var _awaitingBody = false;
 
-                // send the response and close, only close request if not keep alive
                 try
                 {
-                    // dispose timeout token
-                    ContextTimeoutToken.Dispose();
-                    TimeoutTimer.Dispose();
+                    // dispose timeout resources
+                    DisposeTimeoutResources();
 
-                    // error or timeout?
+                    // Set error status code if errored
                     if (IsErrored)
                     {
                         Response.StatusCode = 500;
                     }
 
-                    // are we awaiting for more info?
+                    // Determine if awaiting body for HTTP request
                     if (IsHttp)
                     {
                         _awaitingBody = HttpRequest.AwaitingBody && !IsErrored && !IsTimeout;
                     }
 
-                    // only send a response if Http
+                    // Send response if HTTP and not awaiting body
                     if (IsHttp && State != PodeContextState.SslError && !_awaitingBody)
                     {
                         if (IsTimeout)
@@ -365,13 +385,13 @@ namespace Pode
                         }
                     }
 
-                    // if it was smtp, and it was processable, RESET!
+                    // Reset SMTP request if it was processable
                     if (IsSmtp && Request.IsProcessable)
                     {
                         SmtpRequest.Reset();
                     }
 
-                    // dispose of request if not KeepAlive, and not waiting for body
+                    // Dispose of request and response if not keep-alive or forced
                     if (!_awaitingBody && (!IsKeepAlive || force))
                     {
                         State = PodeContextState.Closed;
@@ -389,19 +409,33 @@ namespace Pode
                         Response.Dispose();
                     }
                 }
-                catch { }
-
-                // if keep-alive, or awaiting body, setup for re-receive
-                if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout && !Response.SseEnabled)) && !force)
+                catch (Exception ex)
                 {
-                    PodeHelpers.WriteErrorMessage($"Re-receiving Request", Listener, PodeLoggingLevel.Verbose, this);
-                    StartReceive();
+                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Error);
                 }
-                else
+                finally
                 {
-                    PodeSocket.RemovePendingSocket(Socket);
+                    // Handle re-receiving or socket cleanup
+                    if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout && !Response.SseEnabled)) && !force)
+                    {
+                        PodeHelpers.WriteErrorMessage($"Re-receiving Request", Listener, PodeLoggingLevel.Verbose, this);
+                        StartReceive();
+                    }
+                    else
+                    {
+                        PodeSocket.RemovePendingSocket(Socket);
+                    }
                 }
             }
+        }
+
+        private void DisposeTimeoutResources()
+        {
+            // Dispose timeout-related resources safely
+            ContextTimeoutToken?.Dispose();
+            TimeoutTimer?.Dispose();
+            ContextTimeoutToken = null;
+            TimeoutTimer = null;
         }
     }
 }

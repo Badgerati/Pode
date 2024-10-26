@@ -148,6 +148,16 @@ namespace Pode
 
                     while (true)
                     {
+#if NETCOREAPP2_1_OR_GREATER
+                        var read = await InputStream.ReadAsync(Buffer.AsMemory(0, BufferSize), cancellationToken).ConfigureAwait(false);
+                        if (read <= 0)
+                        {
+                            break;
+                        }
+
+                        // write the buffer to the stream
+                        await BufferStream.WriteAsync(Buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+#else
                         // read the input stream
                         var read = await InputStream.ReadAsync(Buffer, 0, BufferSize, cancellationToken).ConfigureAwait(false);
                         if (read <= 0)
@@ -157,6 +167,7 @@ namespace Pode
 
                         // write the buffer to the stream
                         await BufferStream.WriteAsync(Buffer, 0, read, cancellationToken).ConfigureAwait(false);
+#endif
 
                         // if we have more data, or the input is invalid, continue
                         if (Socket.Available > 0 || !ValidateInput(BufferStream.ToArray()))
@@ -178,8 +189,14 @@ namespace Pode
                     return close;
                 }
             }
-            catch (OperationCanceledException) { }
-            catch (IOException) { }
+            catch (OperationCanceledException ex)
+            {
+                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+            }
+            catch (IOException ex)
+            {
+                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+            }
             catch (HttpRequestException httpex)
             {
                 PodeHelpers.WriteException(httpex, Context.Listener, PodeLoggingLevel.Error);
@@ -206,6 +223,17 @@ namespace Pode
             {
                 while (true)
                 {
+#if NETCOREAPP2_1_OR_GREATER
+                    // read the input stream
+                    var read = await InputStream.ReadAsync(buffer.AsMemory(0, BufferSize), cancellationToken).ConfigureAwait(false);
+                    if (read <= 0)
+                    {
+                        break;
+                    }
+
+                    // write the buffer to the stream
+                    await bufferStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+#else
                     // read the input stream
                     var read = await InputStream.ReadAsync(buffer, 0, BufferSize, cancellationToken).ConfigureAwait(false);
                     if (read <= 0)
@@ -215,9 +243,9 @@ namespace Pode
 
                     // write the buffer to the stream
                     await bufferStream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-
+#endif
                     // if we have more data, or the input is invalid, continue
-                    if (Socket.Available > 0 || !ValidateInputInternal(bufferStream.ToArray(), checkBytes))
+                    if (Socket.Available > 0 || !PodeRequest.ValidateInputInternal(bufferStream.ToArray(), checkBytes))
                     {
                         continue;
                     }
@@ -229,7 +257,7 @@ namespace Pode
             }
         }
 
-        private bool ValidateInputInternal(byte[] bytes, byte[] checkBytes)
+        private static bool ValidateInputInternal(byte[] bytes, byte[] checkBytes)
         {
             // we need more bytes!
             if (bytes.Length == 0)

@@ -8,6 +8,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.IO;
+using System.Net.Http;
 
 namespace Pode
 {
@@ -210,7 +211,7 @@ namespace Pode
             }
 
             // add args back to connections
-            ClearSocketAsyncEvent(args);
+            PodeSocket.ClearSocketAsyncEvent(args);
             AcceptConnections.Enqueue(args);
         }
 
@@ -224,7 +225,11 @@ namespace Pode
                 // if we need to exit now, dispose and exit
                 if (context.CloseImmediately)
                 {
-                    PodeHelpers.WriteException(context.Request.Error, Listener);
+                    // Check if the error is not an HttpRequestException with a message starting with "Request timeout"
+                    if (!(context.Request.Error is HttpRequestException httpRequestException) || !httpRequestException.Message.StartsWith("Request timeout"))
+                    {
+                        PodeHelpers.WriteException(context.Request.Error, Listener);
+                    }
                     context.Dispose(true);
                     process = false;
                 }
@@ -339,28 +344,35 @@ namespace Pode
 
         public void Dispose()
         {
-            // close endpoints
-            foreach (var ep in Endpoints)
-            {
-                ep.Dispose();
-            }
-
-            Endpoints.Clear();
-
-            // close receiving contexts/sockets
             try
             {
-                var _sockets = PendingSockets.Values.ToArray();
-                for (var i = 0; i < _sockets.Length; i++)
+                // close endpoints
+                foreach (var ep in Endpoints)
                 {
-                    CloseSocket(_sockets[i]);
+                    ep.Dispose();
                 }
 
-                PendingSockets.Clear();
+                Endpoints.Clear();
+
+                // close receiving contexts/sockets
+                try
+                {
+                    var _sockets = PendingSockets.Values.ToArray();
+                    for (var i = 0; i < _sockets.Length; i++)
+                    {
+                        CloseSocket(_sockets[i]);
+                    }
+
+                    PendingSockets.Clear();
+                }
+                catch (Exception ex)
+                {
+                    PodeHelpers.WriteException(ex, Listener);
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                PodeHelpers.WriteException(ex, Listener);
+                GC.SuppressFinalize(this);
             }
         }
 
@@ -388,7 +400,7 @@ namespace Pode
             socket.Dispose();
         }
 
-        private void ClearSocketAsyncEvent(SocketAsyncEventArgs e)
+        private static void ClearSocketAsyncEvent(SocketAsyncEventArgs e)
         {
             e.AcceptSocket = default;
             e.UserToken = default;
