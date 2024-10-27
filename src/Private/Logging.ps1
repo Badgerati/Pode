@@ -150,9 +150,9 @@ function Get-PodeLoggingFileMethod {
                         if (($Options.MaxDays -gt 0) -and ($Options.NextClearDown -lt [DateTime]::Now.Date)) {
                             $date = [DateTime]::Now.Date.AddDays(-$Options.MaxDays)
 
-                            $null = Get-ChildItem -Path $Options.Path -Filter '*.log' -Force |
-                                Where-Object { $_.CreationTime -lt $date } |
-                                Remove-Item $_ -Force
+            $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
+                Where-Object { $_.CreationTime -lt $date } |
+                Remove-Item -Force
 
                             $Options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
                         }
@@ -1278,7 +1278,7 @@ function Test-PodeLoggerBatch {
         }
     }
 }
- 
+
 <#
 .SYNOPSIS
     Creates a new log batch information object.
