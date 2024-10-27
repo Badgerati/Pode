@@ -289,8 +289,9 @@ namespace Pode
                 // If the context should be closed immediately, dispose it.
                 if (context.CloseImmediately)
                 {
-                    // Check if the error is not an HttpRequestException with a message starting with "Request timeout".
-                    if (!(context.Request.Error is HttpRequestException httpRequestException) || !httpRequestException.Message.StartsWith("Request timeout"))
+                    // Check if the error is not an HttpRequestException with a PodeStatusCode 408 (Request Timeout).
+                    if (!(context.Request.Error is HttpRequestException httpRequestException) ||
+                        ((int)httpRequestException.Data["PodeStatusCode"] != 408))
                     {
                         PodeHelpers.WriteException(context.Request.Error, Listener);
                     }
