@@ -856,7 +856,7 @@ function Set-PodeOARequest {
 
                 if ($null -ne $RequestBody) {
                     # Check if AllowNonStandardBody is used or if the method is typically allowed to have a body
-                    if (-not $AllowNonStandardBody -and ('POST', 'PUT', 'PATCH') -inotcontains $r.Method) {
+                    if (! $AllowNonStandardBody -and ('POST', 'PUT', 'PATCH') -inotcontains $r.Method) {
                         #'{0}' operations cannot have a Request Body. Use -AllowNonStandardBody to override this restriction.
                         throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
                     }
