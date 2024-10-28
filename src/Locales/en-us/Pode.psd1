@@ -289,7 +289,7 @@
     taskProcessDoesNotExistExceptionMessage                           = 'Task process does not exist: {0}'
     scheduleProcessDoesNotExistExceptionMessage                       = 'Schedule process does not exist: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
-    getRequestBodyNotAllowedExceptionMessage                          = '{0} operations cannot have a Request Body.'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' operations cannot have a Request Body. Use -AllowNonStandardBody to override this restriction."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Unsupported stream compression encoding: {0}'
     LocalEndpointConflictExceptionMessage                             = "Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition."

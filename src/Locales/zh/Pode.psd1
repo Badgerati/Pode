@@ -289,7 +289,7 @@
     taskProcessDoesNotExistExceptionMessage                           = "任务进程 '{0}' 不存在。"
     scheduleProcessDoesNotExistExceptionMessage                       = "计划进程 '{0}' 不存在。"
     definitionTagChangeNotAllowedExceptionMessage                     = 'Route的定义标签无法更改。'
-    getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' 操作无法包含请求体。使用 -AllowNonStandardBody 以解除此限制。"
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "函数 '{0}' 不接受数组作为管道输入。"
     unsupportedStreamCompressionEncodingExceptionMessage              = '不支持的流压缩编码: {0}'
     LocalEndpointConflictExceptionMessage                             = "'{0}' 和 '{1}' 都被定义为 OpenAPI 的本地端点，但每个 API 定义仅允许一个本地端点。"
