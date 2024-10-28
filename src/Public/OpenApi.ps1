@@ -773,30 +773,37 @@ function Remove-PodeOAResponse {
 
 <#
 .SYNOPSIS
-Sets the definition of a request for a route.
+    Sets the OpenAPI request definition for a route.
 
 .DESCRIPTION
-Sets the definition of a request for a route.
+    Configures the OpenAPI request properties for a specified route, including parameters and request body definition.
+    This function defines how the route should handle incoming requests in accordance with OpenAPI standards.
 
 .PARAMETER Route
-The route to set a request definition, usually from -PassThru on Add-PodeRoute.
+    The route to set a request definition for. This is typically passed through from -PassThru on Add-PodeRoute.
 
 .PARAMETER Parameters
-The Parameter definitions the request uses (from ConvertTo-PodeOAParameter).
+    Defines the parameters for the request, provided by ConvertTo-PodeOAParameter.
 
 .PARAMETER RequestBody
-The Request Body definition the request uses (from New-PodeOARequestBody).
+    Specifies the body schema for the request, provided by New-PodeOARequestBody.
+
+.PARAMETER AllowNonStandardBody
+    Allows methods like DELETE and GET to include a request body, which is generally discouraged by RFC 7231.
+    This can be used to relax the default restriction and enable a body for HTTP methods that don’t typically support it.
 
 .PARAMETER PassThru
-If supplied, the route passed in will be returned for further chaining.
+    If specified, returns the original route object for additional chaining after setting the request properties.
 
 .PARAMETER DefinitionTag
-An Array of strings representing the unique tag for the API specification.
-This tag helps distinguish between different versions or types of API specifications within the application.
-You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
+    An Array of strings representing the unique tag for the API specification.
+    This tag helps distinguish between different versions or types of API specifications within the application.
+    You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.
 
 .EXAMPLE
-Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Schema 'UserIdBody')
+    Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Schema 'UserIdBody') -AllowNonStandardBody
+
+    Sets the request body for a route and allows non-standard HTTP methods like DELETE to use a request body.
 #>
 function Set-PodeOARequest {
     [CmdletBinding()]
@@ -815,6 +822,9 @@ function Set-PodeOARequest {
 
         [switch]
         $PassThru,
+
+        [switch]
+        $AllowNonStandardBody,
 
         [string[]]
         $DefinitionTag
@@ -845,9 +855,9 @@ function Set-PodeOARequest {
                 }
 
                 if ($null -ne $RequestBody) {
-                    # Only 'POST', 'PUT', 'PATCH' can have a request body
-                    if (('POST', 'PUT', 'PATCH') -inotcontains $r.Method ) {
-                        # {0} operations cannot have a Request Body.
+                    # Check if AllowNonStandardBody is used or if the method is typically allowed to have a body
+                    if (! $AllowNonStandardBody -and ('POST', 'PUT', 'PATCH') -inotcontains $r.Method) {
+                        #'{0}' operations cannot have a Request Body. Use -AllowNonStandardBody to override this restriction.
                         throw ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f $r.Method)
                     }
                     $r.OpenApi.RequestBody = $RequestBody
