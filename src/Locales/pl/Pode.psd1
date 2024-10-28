@@ -288,7 +288,7 @@
     taskProcessDoesNotExistExceptionMessage                           = "Proces zadania '{0}' nie istnieje."
     scheduleProcessDoesNotExistExceptionMessage                       = "Proces harmonogramu '{0}' nie istnieje."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Tag definicji dla Route nie może zostać zmieniony.'
-    getRequestBodyNotAllowedExceptionMessage                          = 'Operacje {0} nie mogą mieć treści żądania.'
+    getRequestBodyNotAllowedExceptionMessage                          = "Operacje '{0}' nie mogą zawierać treści żądania. Użyj -AllowNonStandardBody, aby obejść to ograniczenie."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
     LocalEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."

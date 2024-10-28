@@ -288,7 +288,7 @@
     taskProcessDoesNotExistExceptionMessage                           = "El proceso de la tarea '{0}' no existe."
     scheduleProcessDoesNotExistExceptionMessage                       = "El proceso del programación '{0}' no existe."
     definitionTagChangeNotAllowedExceptionMessage                     = 'La etiqueta de definición para una Route no se puede cambiar.'
-    getRequestBodyNotAllowedExceptionMessage                          = 'Las operaciones {0} no pueden tener un cuerpo de solicitud.'
+    getRequestBodyNotAllowedExceptionMessage                          = "Las operaciones '{0}' no pueden tener un cuerpo de solicitud. Use -AllowNonStandardBody para evitar esta restricción."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La función '{0}' no acepta una matriz como entrada de canalización."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La codificación de compresión de transmisión no es compatible: {0}'
     LocalEndpointConflictExceptionMessage                             = "Tanto '{0}' como '{1}' están definidos como puntos finales locales de OpenAPI, pero solo se permite un punto final local por definición de API."

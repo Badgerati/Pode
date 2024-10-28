@@ -3201,6 +3201,18 @@ Describe 'OpenApi' {
             } | Should -Throw -ExpectedMessage ($PodeLocale.getRequestBodyNotAllowedExceptionMessage -f 'GET')
         }
 
+        It 'Allows a RequestBody on non-standard methods with AllowNonStandardBody' {
+            $route = @{
+                Method  = 'DELETE'
+                OpenApi = @{}
+            }
+            $requestBody = @{ Content = 'application/json' }
+
+            Set-PodeOARequest -Route $route -RequestBody $requestBody -AllowNonStandardBody
+
+            $route.OpenApi.RequestBody | Should -BeExactly $requestBody
+        }
+
         It 'Returns the route when PassThru is used' {
             $route = @{
                 Method  = 'POST'
@@ -3221,6 +3233,44 @@ Describe 'OpenApi' {
             Set-PodeOARequest -Route $route
 
             $route.OpenApi.RequestBody | Should -BeNullOrEmpty
+        }
+
+        It 'Sets Parameters with DefinitionTag if provided' {
+            $route = @{
+                Method  = 'GET'
+                OpenApi = @{
+                    Responses   = [ordered]@{}
+                    Parameters  = [ordered]@{}
+                    RequestBody = [ordered]@{}
+                    callbacks   = [ordered]@{}
+                }
+            }
+            $parameters = @(
+                @{ Name = 'param1'; In = 'query' }
+            )
+
+            $definitionTag = 'v1'
+            $PodeContext.Server.OpenAPI.Definitions[ $definitionTag] = Get-PodeOABaseObject
+
+            Set-PodeOARequest -Route $route -Parameters $parameters -DefinitionTag $definitionTag
+
+            $route.OpenApi.Parameters[$definitionTag] | Should -BeExactly $parameters
+        }
+
+        It 'Defaults Parameters to an empty array if not provided' {
+            $route = @{
+                Method  = 'GET'
+                OpenApi = @{
+                    Responses   = [ordered]@{}
+                    Parameters  = [ordered]@{}
+                    RequestBody = [ordered]@{}
+                    callbacks   = [ordered]@{}
+                }
+            }
+
+            Set-PodeOARequest -Route $route
+
+            $route.OpenApi.Parameters['Default'] | Should -BeNullOrEmpty
         }
     }
 
