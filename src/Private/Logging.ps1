@@ -1,4 +1,6 @@
 using namespace Pode
+
+
 <#
 .SYNOPSIS
 Defines the method for writing log messages to the terminal.
@@ -143,7 +145,7 @@ function Get-PodeLoggingFileMethod {
                             }
 
                         }
-                        # Write the item to the file
+                        # Write the item to the file 
                         $outString | Out-File -FilePath $path -Encoding $Options.Encoding -Append -Force
 
                         # Remove log files beyond the MaxDays retention period, ensuring this runs once a day
@@ -632,10 +634,10 @@ function ConvertTo-PodeEventViewerLevel {
 Gets the script block for a specified inbuilt logging type.
 
 .DESCRIPTION
-This function returns a script block that formats log entries for a specified inbuilt logging type in Pode. The supported types are 'Errors', 'Requests', 'General', and 'Main'. Each type has its own formatting logic.
+This function returns a script block that formats log entries for a specified inbuilt logging type in Pode. The supported types are 'Errors', 'Requests', 'General', and 'Default'. Each type has its own formatting logic.
 
 .PARAMETER Type
-The type of logging to get the script block for. Must be one of 'Errors', 'Requests', 'General', or 'Main'.
+The type of logging to get the script block for. Must be one of 'Errors', 'Requests', 'General', or 'Default'.
 
 .EXAMPLE
 $script = Get-PodeLoggingInbuiltType -Type 'Requests'
@@ -646,7 +648,7 @@ $script = Get-PodeLoggingInbuiltType -Type 'Errors'
 function Get-PodeLoggingInbuiltType {
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Errors', 'Requests', 'General', 'Main', 'Listener')]
+        [ValidateSet('Errors', 'Requests', 'General', 'Default', 'Listener')]
         [string]
         $Type
     )
@@ -759,7 +761,7 @@ function Get-PodeLoggingInbuiltType {
             }
         }
 
-        'main' {
+        'Default' {
             $script = {
                 param($item, $options)
 
@@ -819,21 +821,22 @@ function Get-PodeErrorLoggingName {
 
 <#
 .SYNOPSIS
-Gets the name of the Main logger.
+Gets the name of the Default logger.
 
 .DESCRIPTION
-This function returns the name of the logger used for logging Mains in Pode.
+This function returns the name of the logger used for logging Defaults in Pode.
 
 .RETURNS
-[string] - The name of the Main logger.
+[string] - The name of the Default logger.
 
 .EXAMPLE
-Get-PodeMainLoggingName
+Get-PodeDefaultLoggingName
 #>
-function Get-PodeMainLoggingName {
-    # Return the name of the Main logger
-    return '__pode_log_Mains__'
+function Get-PodeDefaultLoggingName {
+    # Return the name of the Default logger
+    return '__pode_log_Defaults__'
 }
+
 <#
 .SYNOPSIS
     Retrieves a Pode logger by name.
@@ -1164,12 +1167,8 @@ function Start-PodeLoggerDispatcher {
                                 Write-PodeErrorLog -Exception $log.Item -Level 'Error' -ThreadId $log.Item.ThreadId
                             }
                             else {
-                                if ($log.Item.Level -eq [Pode.PodeLoggingLevel]::Error) {
-                                    Write-PodeErrorLog -Message $log.Item.Message -ThreadId $log.Item.ThreadId -Tag 'Listener'
-                                }
-                                else {
-                                    Write-PodeErrorLog -Message $log.Item.Message -Level $log.Item.Level  -ThreadId $log.Item.ThreadId -Tag 'Listener'
-                                }
+                                Write-PodeLog -Message $log.Item.Message -ThreadId $log.Item.ThreadId -Tag 'Listener' -Level $log.Item.Level
+
                             }
                             continue
                         }
@@ -1401,7 +1400,7 @@ function Enable-PodeLoggingInternal {
         $Method,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Errors',   'Main' )]
+        [ValidateSet('Errors', 'Default' )]
         [string]
         $Type,
 
@@ -1420,9 +1419,9 @@ function Enable-PodeLoggingInternal {
             $name = Get-PodeErrorLoggingName
             $scriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
         }
-        'main' {
-            $name = Get-PodeMainLoggingName
-            $scriptBlock = (Get-PodeLoggingInbuiltType -Type Main)
+        'Default' {
+            $name = Get-PodeDefaultLoggingName
+            $scriptBlock = (Get-PodeLoggingInbuiltType -Type Default)
         }
     }
     # error if it's already enabled
@@ -1448,5 +1447,7 @@ function Enable-PodeLoggingInternal {
     }
 
     $Method.ForEach({ $_.Logger += $name })
+
+    return $PodeContext.Server.Logging.Type[$name]
 
 }

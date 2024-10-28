@@ -291,11 +291,11 @@
         'New-PodeTerminalLoggingMethod'
         'Enable-PodeRequestLogging',
         'Enable-PodeErrorLogging',
-        'Enable-PodeMainLogging',
+        'Enable-PodeDefaultLogging',
         'Add-PodeLogging',
         'Disable-PodeRequestLogging',
         'Disable-PodeErrorLogging',
-        'Disable-PodeMainLogging',
+        'Disable-PodeDefaultLogging',
         'Remove-PodeLogging',
         'Add-PodeLogger',
         'Remove-PodeLogger',

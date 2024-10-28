@@ -94,14 +94,15 @@ Start-PodeServer -browse {
         $requestLogging | Enable-PodeRequestLogging
     }
 
-    $logging | Enable-PodeErrorLogging -Raw:$Raw -Levels Error
-    $logging | Enable-PodeMainLogging -Raw:$Raw 
+    New-PodeFileLoggingMethod -Name 'error' -MaxDays 4 -Format RFC5424 -ISO8601 | Enable-PodeErrorLogging -Raw -Levels Error
+    New-PodeFileLoggingMethod -Name 'default' -MaxDays 4 -Format Simple -ISO8601 | Enable-PodeDefaultLogging -Raw
     $logging | Add-PodeLogging -Name 'mylog' -Raw:$Raw
 
     Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeLog -Name  'mylog' -Message 'My custom log' -Level 'Info'
+        Write-PodeLog -Message "This is for the deafult log."
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 

@@ -147,7 +147,7 @@ function Start-PodeInternalServer {
         # run running event hooks
         Invoke-PodeEvent -Type Running
 
-        Write-PodeErrorLog -Message "Pode $(Get-PodeVersion) (PID: $($PID))" -Level Info
+        Write-PodeLog -Message "Pode $(Get-PodeVersion) (PID: $($PID))" -Level Info
 
         # state what endpoints are being listened on
         if ($endpoints.Length -gt 0) {
@@ -173,7 +173,7 @@ function Start-PodeInternalServer {
                 $urlAndFlags += "$($_.Url) $($flags)"
             }
 
-            Write-PodeErrorLog -Message "$msg - $($urlAndFlags -join ' , ')" -Level Info
+            Write-PodeLog -Message "$msg - $($urlAndFlags -join ' , ')" -Level Info
 
             # state the OpenAPI endpoints for each definition
             foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {

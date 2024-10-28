@@ -119,6 +119,9 @@ function New-PodeTerminalLoggingMethod {
 .PARAMETER DataFormat
     The custom date format for log entries. Mutually exclusive with ISO8601.
 
+.PARAMETER Encoding
+    The encoding to use for Syslog messages. Supported values are ASCII, BigEndianUnicode, Default, Unicode, UTF32, UTF7, and UTF8. Defaults to UTF8.
+
 .PARAMETER ISO8601
     If set, uses the ISO 8601 date format for log entries. Mutually exclusive with DataFormat.
 
@@ -189,6 +192,11 @@ function New-PodeFileLoggingMethod {
         [string]
         $DataFormat,
 
+        [Parameter()]
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Default', 'Unicode', 'UTF32', 'UTF7', 'UTF8')]
+        [string]
+        $Encoding = 'UTF8',
+
         [Parameter(ParameterSetName = 'ISO8601')]
         [switch]
         $ISO8601,
@@ -213,8 +221,9 @@ function New-PodeFileLoggingMethod {
     # Resolve the log file path
     $Path = (Protect-PodeValue -Value $Path -Default './logs')
     $Path = (Get-PodeRelativePath -Path $Path -JoinRoot -Resolve)
-    $null = New-Item -Path $Path -ItemType Directory -Force
-
+    if (! (Test-Path -Path $Path -PathType Leaf)) {
+        $null = New-Item -Path $Path -ItemType Directory -Force
+    }
     # Create a unique ID for this logging method
     $methodId = New-PodeGuid
 
@@ -1132,6 +1141,9 @@ function Enable-PodeRequestLogging {
 .PARAMETER Raw
     If supplied, the log item returned will be the raw Error item as a hashtable and not a string (for Custom methods).
 
+.PARAMETER DisableDefaultLog
+    If supplied, the error logs will NOT be duplicated to the default logging method.
+
 .EXAMPLE
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
 #>
@@ -1149,22 +1161,14 @@ function Enable-PodeErrorLogging {
         $Levels = @('Error'),
 
         [switch]
-        $Raw
+        $Raw,
+
+        [switch]
+        $DisableDefaultLog
     )
 
     begin {
         $pipelineMethods = @()
-
-        <#      $name = Get-PodeErrorLoggingName
-        # error if it's already enabled
-        if ($PodeContext.Server.Logging.Type.Contains($Name)) {
-            # Error Logging has already been enabled
-            throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f 'Error')
-        }
-        # all errors?
-        if ($Levels -contains '*') {
-            $Levels = @('Error', 'Emergency', 'Alert', 'Critical', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug')
-        }#>
     }
 
     process {
@@ -1182,43 +1186,34 @@ function Enable-PodeErrorLogging {
             $Method = $pipelineMethods
         }
 
-        <#     # add the error logger
-        $PodeContext.Server.Logging.Type[$name] = @{
-            Method      = $Method
-            ScriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
-            Arguments   = @{
-                Raw        = $Raw
-                Levels     = $Levels
-                DataFormat = $Method.Arguments.DataFormat
-            }
-            Standard    = $true
-        }
-#>
-        Enable-PodeLoggingInternal -Method $Method -Type Errors -Levels $Levels -Raw:$Raw
+        $logging = Enable-PodeLoggingInternal -Method $Method -Type Errors -Levels $Levels -Raw:$Raw
+
+
+        $logging.DuplicateToDefaultLog = ! $DisableDefaultLog.IsPresent
         $Method.ForEach({ $_.Logger += $name })
     }
 }
 
 <#
 .SYNOPSIS
-    Enables Main Logging using a supplied output method.
+    Enables Default Logging using a supplied output method.
 
 .DESCRIPTION
-    Enables Main Logging using a supplied output method.
+    Enables Default Logging using a supplied output method.
 
 .PARAMETER Method
     The Method to use for output the log entry (From New-PodeLoggingMethod).
 
 .PARAMETER Levels
-    The Levels of Mains that should be logged (default is 'Error', 'Emergency', 'Alert', 'Critical', 'Warning', 'Notice', 'Informational').
+    The Levels that should be logged (default is 'Error', 'Emergency', 'Alert', 'Critical', 'Warning', 'Notice', 'Informational').
 
 .PARAMETER Raw
-    If supplied, the log item returned will be the raw Main item as a hashtable and not a string (for Custom methods).
+    If supplied, the log item returned will be the raw Default item as a hashtable and not a string (for Custom methods).
 
 .EXAMPLE
-    New-PodeLoggingMethod -Terminal | Enable-PodeMainLogging
+    New-PodeLoggingMethod -Terminal | Enable-PodeDefaultLogging
 #>
-function Enable-PodeMainLogging {
+function Enable-PodeDefaultLogging {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -1253,7 +1248,7 @@ function Enable-PodeMainLogging {
         if ($pipelineMethods.Count -gt 1) {
             $Method = $pipelineMethods
         }
-        Enable-PodeLoggingInternal -Method $Method -Type Main -Levels $Levels -Raw:$Raw
+        Enable-PodeLoggingInternal -Method $Method -Type Default -Levels $Levels -Raw:$Raw
         $Method.ForEach({ $_.Logger += $name })
     }
 }
@@ -1405,19 +1400,19 @@ function Disable-PodeErrorLogging {
 
 <#
 .SYNOPSIS
-Disables Main Logging.
+Disables Default Logging.
 
 .DESCRIPTION
-Disables Main Logging.
+Disables Default Logging.
 
 .EXAMPLE
-Disable-PodeMainLogging
+Disable-PodeDefaultLogging
 #>
-function Disable-PodeMainLogging {
+function Disable-PodeDefaultLogging {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogger -Name (Get-PodeMainLoggingName)
+    Remove-PodeLogger -Name (Get-PodeDefaultLoggingName)
 
 }
 
@@ -1441,7 +1436,7 @@ function Disable-PodeMainLogging {
     An array of arguments to supply to the Custom Logger's ScriptBlock.
 
 .EXAMPLE
-    New-PodeLoggingMethod -Terminal | Add-PodeLogger -Name 'Main' -ScriptBlock { /* logic */ }
+    New-PodeLoggingMethod -Terminal | Add-PodeLogger -Name 'Default' -ScriptBlock { /* logic */ }
 #>
 function Add-PodeLogger {
     [CmdletBinding()]
@@ -1669,73 +1664,11 @@ function Write-PodeErrorLog {
     )
 
     Process {
-
-        Write-PodeLog @PSBoundParameters -name (Get-PodeErrorLoggingName) -SuppressErrorLog
-
-        <#
-        # Check if logging is enabled and the error level is valid
         $name = Get-PodeErrorLoggingName
-        if (!(Test-PodeLoggerEnabled -Name $name)) { return }
-
-        $levels = @(Get-PodeErrorLoggingLevel)
-        if ($levels -inotcontains $Level) { return }
-
-        # Build the error object
-        switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
-            'exception' {
-                $item = @{
-                    Category   = $Exception.Source
-                    Message    = $Exception.Message
-                    StackTrace = $Exception.StackTrace
-                    Tag        = $Tag
-                }
-            }
-            'errorrecord' {
-                $item = @{
-                    Category   = $ErrorRecord.CategoryInfo.ToString()
-                    Message    = $ErrorRecord.Exception.Message
-                    StackTrace = $ErrorRecord.ScriptStackTrace
-                    Tag        = $Tag
-                }
-            }
-            'message' {
-                $item = @{
-                    Category = $Category.ToString()
-                    Message  = $Message
-                    Tag      = $Tag
-                }
-            }
+        Write-PodeLog @PSBoundParameters -name $name -SuppressErrorLog
+        if ($PodeContext.Server.Logging.Type[$name].DuplicateToDefaultLog) {
+            Write-PodeLog @PSBoundParameters -name (Get-PodeDefaultLoggingName) -SuppressErrorLog
         }
-
-        # General info and thread id
-        $item['Server'] = $PodeContext.Server.ComputerName
-        $item['Level'] = $Level
-        $item['Date'] = if ($PodeContext.Server.Logging.Type[$Name].Method.Arguments.AsUTC) {
-            [datetime]::UtcNow
-        }
-        else {
-            [datetime]::Now
-        }
-
-        $item['ThreadId'] = if ($ThreadId) {
-            $ThreadId
-        }
-        else {
-            [System.Threading.Thread]::CurrentThread.ManagedThreadId
-        }
-
-        # Add the item to the logger queue
-        $logItem = @{
-            Name = $name
-            Item = $item
-        }
-        [Pode.PodeLogger]::Enqueue($logItem)
-
-        # Log inner exceptions if specified
-        if ($CheckInnerException -and ($null -ne $Exception.InnerException) -and ![string]::IsNullOrWhiteSpace($Exception.InnerException.Message)) {
-            $Exception.InnerException | Write-PodeErrorLog -Level $Level -ThreadId $ThreadId
-        }
-#>
     }
 
 
@@ -1802,7 +1735,7 @@ function Write-PodeErrorLog {
 function Write-PodeLog {
     [CmdletBinding(DefaultParameterSetName = 'Message')]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [string]
         $Name,
 
@@ -1848,6 +1781,14 @@ function Write-PodeLog {
         $SuppressErrorLog
 
     )
+    begin {
+        if (!$Name) {
+            $Name = Get-PodeDefaultLoggingName
+        }
+
+        # Get the configured log method.
+        $log = $PodeContext.Server.Logging.Type[$Name]
+    }
     Process {
         # Define the log item based on the selected parameter set.
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
@@ -1886,7 +1827,7 @@ function Write-PodeLog {
                         Tag     = $Tag
                     }
                 }
-
+                break
             }
             'errorrecord' {
                 if (!$Level) { $Level = 'Error' }
@@ -1899,12 +1840,9 @@ function Write-PodeLog {
                         Tag     = $Tag
                     }
                 }
+                break
             }
         }
-
-        # Get the configured log method.
-        $log = $PodeContext.Server.Logging.Type[$Name]
-
         if ($log.Standard) {
             # Add server details to the log item.
             $logItem.Item.Server = $PodeContext.Server.ComputerName
@@ -1918,7 +1856,6 @@ function Write-PodeLog {
             # If error logging is not suppressed, log errors or exceptions.
             if ((! $SuppressErrorLog.IsPresent) -and (Test-PodeErrorLoggingEnabled)) {
                 if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'exception') {
-
                     [Pode.PodeLogger]::Enqueue( @{
                             Name = Get-PodeErrorLoggingName
                             Item = @{
@@ -1933,7 +1870,6 @@ function Write-PodeLog {
                             }
                         })
 
-                    Write-PodeErrorLog -Exception $Exception -Level $Level -CheckInnerException:$CheckInnerException -ThreadId $ThreadId
                 }
                 elseif ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'errorrecord') {
                     [Pode.PodeLogger]::Enqueue( @{
