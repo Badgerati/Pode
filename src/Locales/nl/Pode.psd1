@@ -298,7 +298,7 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} verschilt tussen verschillende OpenAPI-definities.'
     routeNotMarkedAsAsyncExceptionMessage                             = "De route '{0}' is niet gemarkeerd als een asynchrone route."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "De functie '{0}' kan niet meerdere keren worden aangeroepen voor dezelfde route '{1}'."
-    getRequestBodyNotAllowedExceptionMessage                          = '{0}-operaties kunnen geen Request Body hebben.'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' operaties kunnen geen aanvraagbody hebben. Gebruik -AllowNonStandardBody om deze beperking te omzeilen."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "De functie '{0}' accepteert geen array als pipeline-invoer."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Niet-ondersteunde streamcompressie-encodering: {0}'
     LocalEndpointConflictExceptionMessage                             = "Zowel '{0}' als '{1}' zijn gedefinieerd als lokale OpenAPI-eindpunten, maar er is slechts één lokaal eindpunt per API-definitie toegestaan."

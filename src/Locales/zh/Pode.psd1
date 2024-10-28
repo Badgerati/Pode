@@ -298,7 +298,7 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} 在不同的 OpenAPI 定义之间有所不同。'
     routeNotMarkedAsAsyncExceptionMessage                             = "路由 '{0}' 未标记为异步路由。"
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "函数 '{0}' 不能在同一路由 '{1}' 上多次调用。"
-    getRequestBodyNotAllowedExceptionMessage                          = '{0} 操作不能包含请求体。'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' 操作无法包含请求体。使用 -AllowNonStandardBody 以解除此限制。"
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "函数 '{0}' 不接受数组作为管道输入。"
     unsupportedStreamCompressionEncodingExceptionMessage              = '不支持的流压缩编码: {0}'
     LocalEndpointConflictExceptionMessage                             = "'{0}' 和 '{1}' 都被定义为 OpenAPI 的本地端点，但每个 API 定义仅允许一个本地端点。"

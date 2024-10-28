@@ -298,7 +298,7 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} は異なる OpenAPI 定義間で異なります。'
     routeNotMarkedAsAsyncExceptionMessage                             = "ルート '{0}' は非同期ルートとしてマークされていません。"
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "関数 '{0}' を同じルート '{1}' に対して複数回呼び出すことはできません。"
-    getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' 操作にはリクエストボディを含めることはできません。-AllowNonStandardBody を使用してこの制限を回避してください。"
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
     LocalEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"

@@ -298,7 +298,7 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} varia entre diferentes definições OpenAPI.'
     routeNotMarkedAsAsyncExceptionMessage                             = "A rota '{0}' não está marcada como uma Rota Assíncrona."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "A função '{0}' não pode ser invocada várias vezes para a mesma rota '{1}'."
-    getRequestBodyNotAllowedExceptionMessage                          = 'As operações {0} não podem ter um corpo de solicitação.'
+    getRequestBodyNotAllowedExceptionMessage                          = "As operações '{0}' não podem ter um corpo de solicitação. Use -AllowNonStandardBody para contornar essa restrição."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "A função '{0}' não aceita uma matriz como entrada de pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'A codificação de compressão de fluxo não é suportada.'
     LocalEndpointConflictExceptionMessage                             = "Tanto '{0}' quanto '{1}' estão definidos como endpoints locais do OpenAPI, mas apenas um endpoint local é permitido por definição de API."

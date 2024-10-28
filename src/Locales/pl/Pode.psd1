@@ -298,7 +298,7 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} różni się między różnymi definicjami OpenAPI.'
     routeNotMarkedAsAsyncExceptionMessage                             = "Trasa '{0}' nie jest oznaczona jako trasa asynchroniczna."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "Funkcja '{0}' nie może być wywoływana wielokrotnie dla tej samej trasy '{1}'."
-    getRequestBodyNotAllowedExceptionMessage                          = 'Operacje {0} nie mogą mieć treści żądania.'
+    getRequestBodyNotAllowedExceptionMessage                          = "Operacje '{0}' nie mogą zawierać treści żądania. Użyj -AllowNonStandardBody, aby obejść to ograniczenie."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
     LocalEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."

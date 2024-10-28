@@ -298,7 +298,7 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} varies between different OpenAPI definitions.'
     routeNotMarkedAsAsyncExceptionMessage                             = "The route '{0}' is not marked as an Async Route."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "The function '{0}' cannot be invoked multiple times for the same route '{1}'."
-    getRequestBodyNotAllowedExceptionMessage                          = '{0} operations cannot have a Request Body.'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' operations cannot have a Request Body. Use -AllowNonStandardBody to override this restriction."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Unsupported stream compression encoding: {0}'
     LocalEndpointConflictExceptionMessage                             = "Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition."}

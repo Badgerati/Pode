@@ -298,7 +298,7 @@
     openApiDefinitionsMismatchExceptionMessage                        = '{0} يختلف بين تعريفات OpenAPI المختلفة.'
     routeNotMarkedAsAsyncExceptionMessage                             = "المسار '{0}' لم يتم وضع علامة عليه كمسار غير متزامن."
     functionCannotBeInvokedMultipleTimesExceptionMessage              = "لا يمكن استدعاء الدالة '{0}' عدة مرات لنفس المسار '{1}'."
-    getRequestBodyNotAllowedExceptionMessage                          = 'لا يمكن أن تحتوي عمليات {0} على محتوى الطلب.'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' لا يمكن أن يحتوي على جسم الطلب. استخدم -AllowNonStandardBody لتجاوز هذا التقييد."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
     LocalEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
