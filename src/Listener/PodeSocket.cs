@@ -207,8 +207,8 @@ namespace Pode
                 // Run the receive operation asynchronously in a new task.
                 _ = Task.Run(async () => await context.Receive().ConfigureAwait(false), Listener.CancellationToken);
             }
-            catch (OperationCanceledException ex) { PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle cancellation.
-            catch (IOException ex) { PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle I/O exceptions.
+            catch (OperationCanceledException ex) { PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle cancellation.
+            catch (IOException ex) { PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle I/O exceptions.
             catch (AggregateException aex)
             {
                 // Handle aggregated exceptions.
@@ -258,8 +258,8 @@ namespace Pode
                 {
                     _ = Task.Run(async () => await StartReceive(accepted), Listener.CancellationToken).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException ex) { PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose); }
-                catch (IOException ex) { PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose); }
+                catch (OperationCanceledException ex) { PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Verbose); }
+                catch (IOException ex) { PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Verbose); }
                 catch (AggregateException aex)
                 {
                     PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);

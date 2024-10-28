@@ -58,6 +58,7 @@ Describe 'Write-PodeLog' {
 
     It 'Adds a log item' {
         Mock Test-PodeLoggerEnabled { return $true }
+        Mock  Get-PodeLoggingLevel {return @('Informational')}
         Write-PodeLog -Name 'test' -InputObject 'test'
 
         [Pode.PodeLogger]::Count | Should -Be 1

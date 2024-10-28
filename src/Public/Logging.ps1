@@ -2166,7 +2166,7 @@ function Get-PodeLoggingLevel {
         $Name
     )
 
-    if (Test-PodeStandardLogger -Name $Name) {
+    if (Test-PodeLoggerEnabled -Name $Name) {
         return (Get-PodeLogger -Name $Name).Arguments.Levels
     }
     return @()

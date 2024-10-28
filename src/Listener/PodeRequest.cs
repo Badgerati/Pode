@@ -146,9 +146,9 @@ namespace Pode
                     InputStream = ssl;
                     SslUpgraded = true;
                 }
-                catch (OperationCanceledException ex) { PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
-                catch (IOException ex) { PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
-                catch (ObjectDisposedException ex) { PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
+                catch (OperationCanceledException ex) { PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
+                catch (IOException ex) { PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
+                catch (ObjectDisposedException ex) { PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
                 catch (Exception ex)
                 {
                     PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
@@ -238,11 +238,11 @@ namespace Pode
             }
             catch (OperationCanceledException ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
             }
             catch (IOException ex)
             {
-                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
             }
             catch (HttpRequestException httpex)
             {

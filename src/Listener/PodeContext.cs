@@ -130,15 +130,15 @@ namespace Pode
         {
             try
             {
-                PodeHelpers.WriteErrorMessage("TimeoutCallback triggered", Listener, PodeLoggingLevel.Debug, this);
+                PodeLogger.WriteErrorMessage("TimeoutCallback triggered", Listener, PodeLoggingLevel.Debug, this);
 
                 if (Response.SseEnabled || Request.IsWebSocket)
                 {
-                    PodeHelpers.WriteErrorMessage("Timeout ignored due to SSE/WebSocket", Listener, PodeLoggingLevel.Debug, this);
+                    PodeLogger.WriteErrorMessage("Timeout ignored due to SSE/WebSocket", Listener, PodeLoggingLevel.Debug, this);
                     return;
                 }
 
-                PodeHelpers.WriteErrorMessage($"Request timeout reached: {Listener.RequestTimeout} seconds", Listener, PodeLoggingLevel.Warning, this);
+                PodeLogger.WriteErrorMessage($"Request timeout reached: {Listener.RequestTimeout} seconds", Listener, PodeLoggingLevel.Warning, this);
 
                 ContextTimeoutToken.Cancel();
                 State = PodeContextState.Timeout;
@@ -148,11 +148,11 @@ namespace Pode
                 Request.Error.Data.Add("PodeStatusCode", 408);
 
                 Dispose();
-                PodeHelpers.WriteErrorMessage($"Request timeout reached: Dispose", Listener, PodeLoggingLevel.Debug, this);
+                PodeLogger.WriteErrorMessage($"Request timeout reached: Dispose", Listener, PodeLoggingLevel.Debug, this);
             }
             catch (Exception ex)
             {
-                PodeHelpers.WriteErrorMessage($"Exception in TimeoutCallback: {ex}", Listener, PodeLoggingLevel.Error);
+                PodeLogger.WriteErrorMessage($"Exception in TimeoutCallback: {ex}", Listener, PodeLoggingLevel.Error);
             }
         }
 
@@ -303,7 +303,7 @@ namespace Pode
                 }
                 catch (OperationCanceledException ex) when (ContextTimeoutToken.IsCancellationRequested)
                 {
-                    PodeHelpers.WriteErrorMessage("Request timed out during receive operation", Listener, PodeLoggingLevel.Warning, this);
+                    PodeLogger.WriteErrorMessage("Request timed out during receive operation", Listener, PodeLoggingLevel.Warning, this);
                     State = PodeContextState.Timeout;  // Explicitly set the state to Timeout
                     var timeoutException = new HttpRequestException("Request timed out", ex);
                     timeoutException.Data.Add("PodeStatusCode", 408);
@@ -485,7 +485,7 @@ namespace Pode
                 }
                 catch (Exception ex)
                 {
-                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Error);
+                    PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Error);
                 }
                 finally
                 {
