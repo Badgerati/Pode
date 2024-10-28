@@ -40,6 +40,7 @@ Describe 'Start-PodeInternalServer' {
         Mock Add-PodeScopedVariablesInbuilt { }
         Mock Write-PodeHost { }
         Mock Write-PodeErrorLog { }
+        Mock Write-PodeLog { }
     }
 
     It 'Calls one-off script logic' {
