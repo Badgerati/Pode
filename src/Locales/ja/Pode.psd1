@@ -288,7 +288,7 @@
     taskProcessDoesNotExistExceptionMessage                           = 'タスクプロセスが存在しません: {0}'
     scheduleProcessDoesNotExistExceptionMessage                       = 'スケジュールプロセスが存在しません: {0}'
     definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
-    getRequestBodyNotAllowedExceptionMessage                          = '{0}操作にはリクエストボディを含めることはできません。'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' 操作にはリクエストボディを含めることはできません。-AllowNonStandardBody を使用してこの制限を回避してください。"
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
     LocalEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
