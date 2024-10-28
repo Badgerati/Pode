@@ -291,10 +291,12 @@
         'New-PodeTerminalLoggingMethod'
         'Enable-PodeRequestLogging',
         'Enable-PodeErrorLogging',
-        'Enable-PodeCommonLogging',
+        'Enable-PodeMainLogging',
+        'Add-PodeLogging',
         'Disable-PodeRequestLogging',
         'Disable-PodeErrorLogging',
-        'Disable-PodeCommonLogging',
+        'Disable-PodeMainLogging',
+        'Remove-PodeLogging',
         'Add-PodeLogger',
         'Remove-PodeLogger',
         'Clear-PodeLogger',
@@ -305,6 +307,7 @@
         'Enable-PodeLogging',
         'Disable-PodeLogging',
         'Clear-PodeLogging',
+        'Get-PodeLoggingLevel',
 
         # core
         'Start-PodeServer',

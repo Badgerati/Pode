@@ -93,9 +93,10 @@ Start-PodeServer -browse {
     if ( $requestLogging) {
         $requestLogging | Enable-PodeRequestLogging
     }
-    
-    $logging | Enable-PodeErrorLogging -Raw:$Raw -Levels *
-    $logging | Enable-PodeCommonLogging -Name 'mylog' -Raw:$Raw
+
+    $logging | Enable-PodeErrorLogging -Raw:$Raw -Levels Error
+    $logging | Enable-PodeMainLogging -Raw:$Raw 
+    $logging | Add-PodeLogging -Name 'mylog' -Raw:$Raw
 
     Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8081/"

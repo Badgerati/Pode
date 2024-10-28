@@ -150,9 +150,9 @@ function Get-PodeLoggingFileMethod {
                         if (($Options.MaxDays -gt 0) -and ($Options.NextClearDown -lt [DateTime]::Now.Date)) {
                             $date = [DateTime]::Now.Date.AddDays(-$Options.MaxDays)
 
-            $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
-                Where-Object { $_.CreationTime -lt $date } |
-                Remove-Item -Force
+                            $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
+                                Where-Object { $_.CreationTime -lt $date } |
+                                Remove-Item -Force
 
                             $Options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
                         }
@@ -730,8 +730,7 @@ function Get-PodeLoggingInbuiltType {
                 if ($options.Raw) {
                     return $item
                 }
-
-
+                # Optimized concatenation using Append
                 return [System.Text.StringBuilder]::new().
                 Append('Date: ').Append($item.Date.ToString($options.DataFormat)).Append('Level: ').Append($item.Level).
                 Append('ThreadId: ').Append($item.ThreadId).Append('Server: ').Append($item.Server).Append('Category: ').
@@ -817,6 +816,24 @@ function Get-PodeErrorLoggingName {
     return '__pode_log_errors__'
 }
 
+
+<#
+.SYNOPSIS
+Gets the name of the Main logger.
+
+.DESCRIPTION
+This function returns the name of the logger used for logging Mains in Pode.
+
+.RETURNS
+[string] - The name of the Main logger.
+
+.EXAMPLE
+Get-PodeMainLoggingName
+#>
+function Get-PodeMainLoggingName {
+    # Return the name of the Main logger
+    return '__pode_log_Mains__'
+}
 <#
 .SYNOPSIS
     Retrieves a Pode logger by name.
@@ -1144,8 +1161,7 @@ function Start-PodeLoggerDispatcher {
                         if ($log.Name -eq 'Listener') {
 
                             if ($log.Item -is [System.Exception]) {
-
-                                Write-PodeErrorLog -Exception $log.Item -Level = 'Error' -ThreadId $log.Item.ThreadId
+                                Write-PodeErrorLog -Exception $log.Item -Level 'Error' -ThreadId $log.Item.ThreadId
                             }
                             else {
                                 if ($log.Item.Level -eq [Pode.PodeLoggingLevel]::Error) {
@@ -1373,4 +1389,64 @@ function Test-PodeDateFormat {
         # If an exception is thrown, the format is invalid
         return $false
     }
+}
+
+
+
+function Enable-PodeLoggingInternal {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true )]
+        [hashtable[]]
+        $Method,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Errors',   'Main' )]
+        [string]
+        $Type,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet('Error', 'Emergency', 'Alert', 'Critical', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug', '*')]
+        [string[]]
+        $Levels  ,
+
+        [switch]
+        $Raw
+    )
+    switch ($Type.ToLowerInvariant()) {
+
+        'errors' {
+            $name = Get-PodeErrorLoggingName
+            $scriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
+        }
+        'main' {
+            $name = Get-PodeMainLoggingName
+            $scriptBlock = (Get-PodeLoggingInbuiltType -Type Main)
+        }
+    }
+    # error if it's already enabled
+    if ($PodeContext.Server.Logging.Type.Contains($Name)) {
+        # Error Logging has already been enabled
+        throw ($PodeLocale.loggingAlreadyEnabledExceptionMessage -f 'Error')
+    }
+    # all errors?
+    if ($Levels -contains '*') {
+        $Levels = @('Error', 'Emergency', 'Alert', 'Critical', 'Warning', 'Notice', 'Informational', 'Verbose', 'Debug')
+    }
+
+    # add the error logger
+    $PodeContext.Server.Logging.Type[$name] = @{
+        Method      = $Method
+        ScriptBlock = $scriptBlock
+        Arguments   = @{
+            Raw        = $Raw
+            Levels     = $Levels
+            DataFormat = $Method.Arguments.DataFormat
+        }
+        Standard    = $true
+    }
+
+    $Method.ForEach({ $_.Logger += $name })
+
 }
