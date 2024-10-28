@@ -6,7 +6,6 @@ BeforeAll {
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
     Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
-
     Mock Test-PodeLoggerEnabled { return $false }
 }
 Describe 'Start-PodeAzFuncServer' {
@@ -27,6 +26,8 @@ Describe 'Start-PodeAzFuncServer' {
         Mock Set-PodeServerHeader { }
         Mock Set-PodeResponseStatus { }
         Mock Update-PodeServerRequestMetric { }
+        Mock Write-PodeLog {}
+        Mock Write-PodeErrorLog {}
     }
     It 'Throws error for null data' {
         { Start-PodeAzFuncServer -Data $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Start-PodeAzFuncServer'
@@ -157,7 +158,11 @@ Describe 'Start-PodeAwsLambdaServer' {
         Mock Invoke-PodeEndware { }
         Mock Set-PodeServerHeader { }
         Mock Set-PodeResponseStatus { }
-        Mock Update-PodeServerRequestMetric { } }
+        Mock Update-PodeServerRequestMetric { }
+        Mock Write-PodeLog {}
+        Mock Write-PodeErrorLog {}
+
+    }
 
     It 'Throws error for null data' {
         { Start-PodeAwsLambdaServer -Data $null } | Should -Throw -ErrorId 'ParameterArgumentValidationErrorNullNotAllowed,Start-PodeAwsLambdaServer'
