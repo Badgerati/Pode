@@ -95,7 +95,8 @@ function Clear-PodeCacheInternal {
 }
 
 function Start-PodeCacheHousekeeper {
-    if (![string]::IsNullOrEmpty((Get-PodeCacheDefaultStorage))) {
+    # if we have a custom default storage, or we're in serverless mode, then we don't need to run the housekeeper
+    if (![string]::IsNullOrEmpty((Get-PodeCacheDefaultStorage)) -or $PodeContext.Server.IsServerless) {
         return
     }
 
