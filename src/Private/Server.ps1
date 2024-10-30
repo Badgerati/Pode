@@ -218,7 +218,7 @@ function Start-PodeInternalServer {
         }
     }
     catch {
-        throw $_.Exception
+        throw
     }
 }
 
