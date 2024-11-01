@@ -1,6 +1,5 @@
 using namespace Pode
 
-
 <#
 .SYNOPSIS
 Defines the method for writing log messages to the terminal.
@@ -123,12 +122,12 @@ function Get-PodeLoggingFileMethod {
                         else {
                             if ($RawItem -is [array]) {
                                 $tmpStrings = @()
-                                foreach ($item in $RawItem) {
+                                foreach ($ritem in $RawItem) {
                                     if ($Options.Format -eq 'Simple') {
-                                        $tmpStrings += (ConvertTo-PodeSyslogFormat -RawItem $item -MaxLength $Options.MaxLength -Source $Options.Source -DataFormat $Options.DataFormat -Separator $Options.Separator)
+                                        $tmpStrings += (ConvertTo-PodeSyslogFormat -RawItem $ritem -Options $Options)
                                     }
                                     else {
-                                        $outString = ConvertTo-PodeSyslogFormat -RawItem $item -RFC $Options.Format  -Source $Options.Source
+                                        $tmpStrings += ConvertTo-PodeSyslogFormat -RawItem $ritem -RFC $Options.Format -Options $Options
                                     }
 
                                 }
@@ -137,10 +136,10 @@ function Get-PodeLoggingFileMethod {
                             }
                             else {
                                 if ($Options.Format -eq 'Simple') {
-                                    $outString = ConvertTo-PodeSyslogFormat -RawItem $RawItem -MaxLength $Options.MaxLength -Source $Options.Source -DataFormat $Options.DataFormat -Separator $Options.Separator
+                                    $outString = ConvertTo-PodeSyslogFormat -RawItem $RawItem -Options $Options
                                 }
                                 else {
-                                    $outString = ConvertTo-PodeSyslogFormat -RawItem $RawItem -RFC $Options.Format  -Source $Options.Source
+                                    $outString = ConvertTo-PodeSyslogFormat -RawItem $RawItem -RFC $Options.Format  -Options $Options
                                 }
                             }
 
@@ -168,33 +167,54 @@ function Get-PodeLoggingFileMethod {
     }
 }
 
+<#
+.SYNOPSIS
+Converts a log item to a formatted syslog message.
+
+.DESCRIPTION
+The `ConvertTo-PodeSyslogFormat` function takes a log item in hashtable format and converts it into a syslog message, formatted according to the specified RFC standard (RFC3164, RFC5424, or a custom format). The function generates syslog-compliant messages based on severity and other options provided.
+
+.PARAMETER RawItem
+A hashtable representing the log data, including fields like `Message`, `StackTrace`, `Level`, `Date`, and `Tag`.
+
+.PARAMETER RFC
+Specifies the syslog message format. Supported values are `RFC3164`, `RFC5424`, and `None` for a custom format. The default is `None`.
+
+.PARAMETER Options
+Additional options to customize the message format. The hashtable may include:
+- `DefaultTag`: Default tag used if `RawItem` does not contain a `Tag`.
+- `MaxLength`: Maximum allowed message length.
+- `DataFormat`: Custom date format for timestamps.
+- `Separator`: Separator used between fields in custom format.
+
+.EXAMPLE
+PS> ConvertTo-PodeSyslogFormat -RawItem @{ Message = "System Error"; Level = "error"; Date = (Get-Date); Tag = "App" } -RFC 'RFC3164' -Options @{ DefaultTag = "MyApp"; MaxLength = 1024 }
+
+Converts a log item to an RFC3164-formatted syslog message with a maximum length of 1024 characters and a custom tag.
+
+.EXAMPLE
+PS> ConvertTo-PodeSyslogFormat -RawItem @{ Message = "Connection established"; Level = "info"; Date = (Get-Date) } -Options @{ DefaultTag = "Service"; DataFormat = "yyyy-MM-dd HH:mm:ss"; Separator = " | " }
+
+Creates a custom-formatted log message with a user-defined timestamp format and separator.
+
+.NOTES
+This function sets a severity level based on the `Level` field in `RawItem`. If the `RFC` parameter is set to `None`, the message will follow a custom format using the `Options` hashtable.
+#>
 function ConvertTo-PodeSyslogFormat {
-    [CmdletBinding(DefaultParameterSetName = 'Custom')]
     param(
+
+        [Parameter(Mandatory = $true )]
         [hashtable]
         $RawItem,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'RFC')]
-        [ValidateSet('RFC3164', 'RFC5424')]
+        [Parameter(Mandatory = $false )]
+        [ValidateSet('RFC3164', 'RFC5424', 'None')]
         [string]
-        $RFC,
+        $RFC = 'None',
 
-        [string]
-        $Source,
-
-        [Parameter( ParameterSetName = 'Custom')]
-        [int]
-        $MaxLength,
-
-        [Parameter( ParameterSetName = 'Custom')]
-        [string]
-        $DataFormat,
-
-        [Parameter( ParameterSetName = 'Custom')]
-        [string]
-        $Separator = ' '
-
-
+        [Parameter(Mandatory = $true )]
+        [hashtable]
+        $Options
     )
     $MaxLength = -1
     # Mask values
@@ -206,7 +226,6 @@ function ConvertTo-PodeSyslogFormat {
             $message = ($RawItem.Message | Protect-PodeLogItem)
         }
     }
-#write-podehost $RawItem -Explode
     # Map $Level to syslog severity
     switch ($RawItem.Level) {
         'emergency' { $severity = 0; break }
@@ -221,6 +240,14 @@ function ConvertTo-PodeSyslogFormat {
         default { $severity = 6 } # Default to Informational
     }
 
+    # If the tag is not specified, use the default tag for the log method.
+    if ([string]::IsNullOrEmpty($RawItem.Tag)) {
+        $tag = $Options.DefaultTag
+    }
+    else {
+        $tag = $RawItem.Tag
+    }
+
     # Define the facility and severity
     $facility = 1 # User-level messages
     $priority = ($facility * 8) + $severity
@@ -233,14 +260,14 @@ function ConvertTo-PodeSyslogFormat {
             $MaxLength = 1024
             # Assemble the full syslog formatted message
             $timestamp = $RawItem.Date.ToString('MMM dd HH:mm:ss')
-            $fullSyslogMessage = "<$priority>$timestamp $($PodeContext.Server.ComputerName) $($RawItem.Tag): $message"
+            $fullSyslogMessage = "<$priority>$timestamp $($PodeContext.Server.ComputerName) $($tag): $message"
             break
         }
         'RFC5424' {
             $timestamp = $RawItem.Date.ToString('yyyy-MM-ddTHH:mm:ss.ffffffK')
 
             # Assemble the full syslog formatted message
-            $fullSyslogMessage = "<$priority>1 $timestamp $($PodeContext.Server.ComputerName) $($RawItem.Tag) $processId - - $message"
+            $fullSyslogMessage = "<$priority>1 $timestamp $($PodeContext.Server.ComputerName) $tag $processId - - $message"
 
             # Set the max message length per RFC 5424 section 6.1
             $MaxLength = 2048
@@ -249,6 +276,9 @@ function ConvertTo-PodeSyslogFormat {
         }
         # Simple version
         default {
+            $MaxLength = $Options.MaxLength
+            $DataFormat = $Options.DataFormat
+            $Separator = $Options.Separator
             if ($DataFormat) {
                 $timestamp = $RawItem.Date.ToString($DataFormat)
             }
@@ -256,7 +286,7 @@ function ConvertTo-PodeSyslogFormat {
                 $timestamp = $DataFormat
             }
             # Assemble the full syslog formatted message
-            $fullSyslogMessage = "$timestamp$Separator$($RawItem.Level)$Separator$Source$Separator$message"
+            $fullSyslogMessage = "$timestamp$Separator$($RawItem.Level)$Separator$($tag)$Separator$message"
             # Set the max message length
             if ($Options.MaxLength) {
                 $MaxLength = $Options.MaxLength
@@ -268,7 +298,6 @@ function ConvertTo-PodeSyslogFormat {
     if ($MaxLength -gt 0 -and $fullSyslogMessage.Length -gt $MaxLength) {
         return $fullSyslogMessage.Substring(0, $MaxLength)
     }
-    write-podehost $fullSyslogMessage
     # Return the full syslog formatted message
     return $fullSyslogMessage
 }
@@ -346,7 +375,7 @@ function Get-PodeLoggingSysLogMethod {
                     }
 
                     for ($i = 0; $i -lt $RawItem.Length; $i++) {
-                        $fullSyslogMessage = ConvertTo-PodeSyslogFormat -RawItem $RawItem[$i] -RFC $Options.SyslogProtocol -Source $Options.Source
+                        $fullSyslogMessage = ConvertTo-PodeSyslogFormat -RawItem $RawItem[$i] -RFC $Options.SyslogProtocol  -Options $Options
                         # Convert the message to a byte array
                         $byteMessage = $($Options.Encoding).GetBytes($fullSyslogMessage)
 
@@ -450,12 +479,11 @@ function Get-PodeLoggingRestfulMethod {
 
                             $items = $Item | ForEach-Object {
                                 @{
-                                    event      = ($_ | Protect-PodeLogItem)
-                                    host       = $PodeContext.Server.ComputerName
-                                    source     = $Options.source
-                                    sourcetype = $RawItem.Tag
-                                    time       = [math]::Round(($RawItem.Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)
-                                    fields     = @{
+                                    event  = ($_ | Protect-PodeLogItem)
+                                    host   = $PodeContext.Server.ComputerName
+                                    source = $RawItem.Tag
+                                    time   = [math]::Round(($RawItem.Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)
+                                    fields = @{
                                         severity = $RawItem.Level.ToUpperInvariant()
                                     }
                                 }

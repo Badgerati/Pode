@@ -79,6 +79,7 @@ function New-PodeTerminalLoggingMethod {
 
     # Return the logging method configuration
     return @{
+        Type      = 'Terminal'
         Id        = $methodId
         Batch     = New-PodeLogBatchInfo
         Logger    = @()
@@ -117,9 +118,6 @@ function New-PodeTerminalLoggingMethod {
 
 .PARAMETER MaxSize
     The maximum size of a log file in bytes. Once this size is exceeded, a new log file will be created. Defaults to 0 (no size limit).
-
-.PARAMETER Source
-    The source of the log entries. Defaults to 'Pode'.
 
 .PARAMETER FailureAction
     Specifies the action to take if logging fails. Options are: Ignore, Report, Halt (Default: Ignore).
@@ -188,10 +186,6 @@ function New-PodeFileLoggingMethod {
         $MaxSize = 0,
 
         [Parameter()]
-        [string]
-        $Source = 'Pode',
-
-        [Parameter()]
         [ValidateSet('Ignore', 'Report', 'Halt')]
         [string]
         $FailureAction = 'Ignore',
@@ -250,6 +244,7 @@ function New-PodeFileLoggingMethod {
 
     # Return the logging method configuration
     return @{
+        Type      = 'File'
         Id        = $methodId
         Batch     = New-PodeLogBatchInfo
         Logger    = @()
@@ -267,7 +262,6 @@ function New-PodeFileLoggingMethod {
             Encoding      = $Encoding
             Format        = $Format
             MaxLength     = $MaxLength
-            Source        = $Source
             Separator     = $Separator
             DefaultTag    = $DefaultTag
         }
@@ -379,6 +373,7 @@ function New-PodeEventViewerLoggingMethod {
 
     # Return the logging method configuration
     return @{
+        Type      = 'EventViewer'
         Id        = $methodId
         Batch     = New-PodeLogBatchInfo
         Logger    = @()
@@ -418,9 +413,6 @@ function New-PodeEventViewerLoggingMethod {
 
 .PARAMETER Encoding
     The encoding to use for Syslog messages. Supported values are ASCII, BigEndianUnicode, Default, Unicode, UTF32, UTF7, and UTF8. Defaults to UTF8.
-
-.PARAMETER Source
-    The source of the log entries. Defaults to 'Pode'.
 
 .PARAMETER SkipCertificateCheck
     If set, skips certificate validation for TLS connections.
@@ -485,10 +477,6 @@ function New-PodeSyslogLoggingMethod {
         $Encoding = 'UTF8',
 
         [Parameter()]
-        [string]
-        $Source = 'Pode',
-
-        [Parameter()]
         [switch]
         $SkipCertificateCheck,
 
@@ -542,6 +530,7 @@ function New-PodeSyslogLoggingMethod {
 
     # Return the logging method configuration
     return @{
+        Type      = 'Syslog'
         Id        = $methodId
         Batch     = New-PodeLogBatchInfo
         Logger    = @()
@@ -550,7 +539,6 @@ function New-PodeSyslogLoggingMethod {
             Port                 = $Port
             Transport            = $Transport
             Hostname             = $Hostname
-            Source               = $Source
             TlsProtocols         = $TlsProtocol
             SkipCertificateCheck = $SkipCertificateCheck.IsPresent
             SyslogProtocol       = $SyslogProtocol
@@ -581,9 +569,6 @@ function New-PodeSyslogLoggingMethod {
 
 .PARAMETER Id
     The optional LogInsight collector ID.
-
-.PARAMETER Source
-    The source of the log entries. Defaults to 'Pode'.
 
 .PARAMETER SkipCertificateCheck
     If set, skips certificate validation for HTTPS connections.
@@ -637,10 +622,6 @@ function New-PodeRestfulLoggingMethod {
         $Id,
 
         [Parameter()]
-        [string]
-        $Source = 'Pode',
-
-        [Parameter()]
         [switch]
         $SkipCertificateCheck,
 
@@ -688,13 +669,13 @@ function New-PodeRestfulLoggingMethod {
 
     # Return the logging method configuration
     return @{
+        Type      = 'Restful'
         Id        = $methodId
         Batch     = New-PodeLogBatchInfo
         Logger    = @()
         Arguments = @{
             Platform             = $Platform
             Hostname             = $Hostname
-            Source               = $Source
             SkipCertificateCheck = $SkipCertificateCheck.IsPresent
             Token                = $Token
             Id                   = $Id
@@ -838,6 +819,7 @@ function New-PodeCustomLoggingMethod {
     }
 
     return @{
+        Type      = 'Custom'
         Id        = $methodId
         Batch     = New-PodeLogBatchInfo
         Logger    = @()
@@ -1842,7 +1824,6 @@ function Write-PodeLog {
             'message' {
                 if (!$Level) { $Level = 'Informational' } # Default to Informational.
                 if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the log level is not configured, return.
-                if ([string]::IsNullOrEmpty($Tag)) { $Tag = $PodeContext.Server.Logging.Type[$Name].Method.Arguments.DefaultTag } # If the tag is not specified, use the default tag for the log method.
 
                 $logItem = @{
                     Name = $Name
@@ -1858,7 +1839,6 @@ function Write-PodeLog {
             'exception' {
                 if (!$Level) { $Level = 'Error' } # Default to Error.
                 if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the level is not supported, return.
-                if ([string]::IsNullOrEmpty($Tag)) { $Tag = $PodeContext.Server.Logging.Type[$Name].Method.Arguments.DefaultTag } # If the tag is not specified, use the default tag for the log method.
 
                 $logItem = @{
                     Name = $Name
@@ -1873,7 +1853,6 @@ function Write-PodeLog {
             'errorrecord' {
                 if (!$Level) { $Level = 'Error' } # Default to Error.
                 if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the level is not supported, return.
-                if ([string]::IsNullOrEmpty($Tag)) { $Tag = $PodeContext.Server.Logging.Type[$Name].Method.Arguments.DefaultTag } # If the tag is not specified, use the default tag for the log method.
 
                 $logItem = @{
                     Name = $Name

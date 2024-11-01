@@ -96,7 +96,8 @@ Start-PodeServer -browse {
 
     New-PodeFileLoggingMethod -Name 'error' -MaxDays 4 -Format RFC5424 -ISO8601 | Enable-PodeErrorLogging -Raw -Levels Error
     @(
-        (New-PodeFileLoggingMethod -Name 'default' -MaxDays 4 -Format Simple -ISO8601)
+        (New-PodeFileLoggingMethod -Name 'default' -MaxDays 4 -Format Simple -ISO8601 -DefaultTag 'filetest')
+        (New-PodeFileLoggingMethod -Name 'defaultRFC5424' -MaxDays 4 -Format RFC5424 -ISO8601 -DefaultTag 'filetestRFC5424')
         (New-PodeSyslogLoggingMethod -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -SyslogProtocol RFC3164 -FailureAction Report -DefaultTag 'test')
     ) | Enable-PodeDefaultLogging -Raw
     $logging | Add-PodeLogging -Name 'mylog' -Raw:$Raw
@@ -106,6 +107,8 @@ Start-PodeServer -browse {
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeLog -Name  'mylog' -Message 'My custom log' -Level 'Info'
         Write-PodeLog -Message 'This is for the deafult log.'
+        Start-Sleep -Seconds 2
+        Write-PodeLog -Message 'An allert with a new tag.' -Tag 'newTag' -Level Alert
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
