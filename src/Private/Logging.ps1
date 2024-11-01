@@ -206,7 +206,7 @@ function ConvertTo-PodeSyslogFormat {
             $message = ($RawItem.Message | Protect-PodeLogItem)
         }
     }
-
+#write-podehost $RawItem -Explode
     # Map $Level to syslog severity
     switch ($RawItem.Level) {
         'emergency' { $severity = 0; break }
@@ -225,6 +225,7 @@ function ConvertTo-PodeSyslogFormat {
     $facility = 1 # User-level messages
     $priority = ($facility * 8) + $severity
 
+    $processId = $PID
     # Determine the syslog message format
     switch ($RFC) {
         'RFC3164' {
@@ -232,15 +233,14 @@ function ConvertTo-PodeSyslogFormat {
             $MaxLength = 1024
             # Assemble the full syslog formatted message
             $timestamp = $RawItem.Date.ToString('MMM dd HH:mm:ss')
-            $fullSyslogMessage = "<$priority>$timestamp $($PodeContext.Server.ComputerName) $Source[$processId]: $message"
+            $fullSyslogMessage = "<$priority>$timestamp $($PodeContext.Server.ComputerName) $($RawItem.Tag): $message"
             break
         }
         'RFC5424' {
-            $processId = $PID
             $timestamp = $RawItem.Date.ToString('yyyy-MM-ddTHH:mm:ss.ffffffK')
 
             # Assemble the full syslog formatted message
-            $fullSyslogMessage = "<$priority>1 $timestamp $($PodeContext.Server.ComputerName) $Source $processId - - $message"
+            $fullSyslogMessage = "<$priority>1 $timestamp $($PodeContext.Server.ComputerName) $($RawItem.Tag) $processId - - $message"
 
             # Set the max message length per RFC 5424 section 6.1
             $MaxLength = 2048
@@ -268,6 +268,7 @@ function ConvertTo-PodeSyslogFormat {
     if ($MaxLength -gt 0 -and $fullSyslogMessage.Length -gt $MaxLength) {
         return $fullSyslogMessage.Substring(0, $MaxLength)
     }
+    write-podehost $fullSyslogMessage
     # Return the full syslog formatted message
     return $fullSyslogMessage
 }
@@ -424,7 +425,7 @@ function Get-PodeLoggingRestfulMethod {
     return {
         param($MethodId)
 
-        $log = @{}
+        $log = @{ }
         while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
             Start-Sleep -Milliseconds 100
 
@@ -435,92 +436,69 @@ function Get-PodeLoggingRestfulMethod {
                     $RawItem = $log.RawItem
 
                     # Ensure item and rawItem are arrays
-                    if ($Item -isnot [array]) {
-                        $Item = @($Item)
-                    }
+                    $Item = @($Item)
+                    $RawItem = @($RawItem)
 
-                    if ($RawItem -isnot [array]) {
-                        $RawItem = @($RawItem)
-                    }
-
-                    # Determine the transport protocol and send the message
+                    # Determine the platform and send the message
                     switch ($Options.Platform) {
                         'Splunk' {
-                            # Construct the Splunk API URL
                             $url = "$($Options.BaseUrl)/services/collector"
-
-                            # Set the headers for Splunk
                             $headers = @{
                                 'Authorization' = "Splunk $($Options.Token)"
                                 'Content-Type'  = 'application/json'
                             }
 
-                            $items = @()
-                            for ($i = 0; $i -lt $Item.Length; $i++) {
-                                # Mask values
-                                $message = ($Item[$i] | Protect-PodeLogItem)
-                                if ([string]::IsNullOrWhiteSpace($RawItem[$i].Level)) {
-                                    $severity = 'INFO'
-                                }
-                                else {
-                                    $severity = $RawItem[$i].Level.ToUpperInvariant()
-                                }
-                                $items += ConvertTo-Json -Compress -InputObject @{
-                                    event  = $message
-                                    host   = $PodeContext.Server.ComputerName
-                                    source = $Options.source
-                                    time   = [math]::Round(($RawItem[$i].Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)
-                                    fields = @{
-                                        severity = $severity
+                            $items = $Item | ForEach-Object {
+                                @{
+                                    event      = ($_ | Protect-PodeLogItem)
+                                    host       = $PodeContext.Server.ComputerName
+                                    source     = $Options.source
+                                    sourcetype = $RawItem.Tag
+                                    time       = [math]::Round(($RawItem.Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)
+                                    fields     = @{
+                                        severity = $RawItem.Level.ToUpperInvariant()
                                     }
                                 }
                             }
+                            $body = $items | ConvertTo-Json -Compress
 
-                            $body = $items -join ' '
-
-                            # Send the message to Splunk
                             try {
                                 Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $body -SkipCertificateCheck:$Options.SkipCertificateCheck
                             }
                             catch {
                                 Invoke-PodeHandleFailure -Message "Failed to send log to Splunk: $_" -FailureAction $Options.FailureAction
                             }
-
                             break
                         }
 
                         'LogInsight' {
-                            # Construct the Log Insight API URL
                             $url = "$($Options.BaseUrl)/api/v1/messages/ingest/$($Options.Id)"
-
-                            # Set the headers for Log Insight
                             $headers = @{
                                 'Content-Type' = 'application/json'
                             }
-                            $messages = @()
-                            for ($i = 0; $i -lt $Item.Length; $i++) {
-                                $messages += @{
-                                    text      = ($Item[$i] | Protect-PodeLogItem)
-                                    timestamp = [math]::Round(($RawItem[$i].Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)
+
+                            $messages = $Item | ForEach-Object {
+                                @{
+                                    text      = ($_ | Protect-PodeLogItem)
+                                    timestamp = [math]::Round(($RawItem.Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalMilliseconds)
+                                    fields    = @{
+                                        severity = $RawItem.Level.ToUpperInvariant()
+                                        tag      = $RawItem.Tag
+                                    }
                                 }
                             }
 
-                            # Define the message payload
                             $payload = @{
                                 messages = $messages
                             }
-
-                            # Convert payload to JSON
                             $body = $payload | ConvertTo-Json -Compress
 
-                            # Send the message to Log Insight
                             try {
                                 Invoke-RestMethod -Uri $url -Method Post -Body $body -Headers $headers -SkipCertificateCheck:$Options.SkipCertificateCheck
                             }
                             catch {
                                 Invoke-PodeHandleFailure -Message "Failed to send log to LogInsight: $_" -FailureAction $Options.FailureAction
                             }
-
                             break
                         }
                     }
@@ -528,6 +506,7 @@ function Get-PodeLoggingRestfulMethod {
             }
         }
     }
+
 }
 
 <#

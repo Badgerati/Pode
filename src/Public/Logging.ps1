@@ -16,6 +16,9 @@
 .PARAMETER AsUTC
     If set, the time will be logged in UTC instead of local time.
 
+.PARAMETER DefaultTag
+    The tag to use if none is specified on the log entry. Defaults to '-'.
+
 .OUTPUTS
     Hashtable: Returns a hashtable containing the logging method configuration.
 
@@ -46,7 +49,11 @@ function New-PodeTerminalLoggingMethod {
 
         [Parameter()]
         [switch]
-        $AsUTC
+        $AsUTC,
+
+        [Parameter()]
+        [string]
+        $DefaultTag = '-'
     )
 
     # Determine the date format based on parameter set
@@ -78,6 +85,7 @@ function New-PodeTerminalLoggingMethod {
         Arguments = @{
             DataFormat = $DataFormat
             AsUTC      = $AsUTC.IsPresent
+            DefaultTag = $DefaultTag
         }
     }
 }
@@ -127,6 +135,9 @@ function New-PodeTerminalLoggingMethod {
 
 .PARAMETER AsUTC
     If set, logs the time in UTC instead of the local time.
+
+.PARAMETER DefaultTag
+    The tag to use if none is specified on the log entry. Defaults to '-'.
 
 .OUTPUTS
     Hashtable: Returns a hashtable containing the logging method configuration.
@@ -203,7 +214,11 @@ function New-PodeFileLoggingMethod {
 
         [Parameter()]
         [switch]
-        $AsUTC
+        $AsUTC,
+
+        [Parameter()]
+        [string]
+        $DefaultTag = '-'
     )
 
     # Determine the date format based on the parameter set
@@ -254,6 +269,7 @@ function New-PodeFileLoggingMethod {
             MaxLength     = $MaxLength
             Source        = $Source
             Separator     = $Separator
+            DefaultTag    = $DefaultTag
         }
     }
 }
@@ -373,6 +389,7 @@ function New-PodeEventViewerLoggingMethod {
             FailureAction = $FailureAction
             DataFormat    = $DataFormat
             AsUTC         = $AsUTC.IsPresent
+            Tag           = $Source
         }
     }
 }
@@ -419,6 +436,9 @@ function New-PodeEventViewerLoggingMethod {
 
 .PARAMETER AsUTC
     If set, logs the time in UTC instead of local time.
+
+.PARAMETER DefaultTag
+    The tag to use if none is specified on the log entry. Defaults to '-'.
 
 .EXAMPLE
     $logMethod = New-PodeSyslogLoggingMethod -Server '192.168.1.100' -Transport 'TCP' -SyslogProtocol 'RFC3164'
@@ -488,7 +508,11 @@ function New-PodeSyslogLoggingMethod {
 
         [Parameter()]
         [switch]
-        $AsUTC
+        $AsUTC,
+
+        [Parameter()]
+        [string]
+        $DefaultTag = '-'
     )
 
     # Determine the date format based on parameter set
@@ -534,6 +558,7 @@ function New-PodeSyslogLoggingMethod {
             FailureAction        = $FailureAction
             DataFormat           = $DataFormat
             AsUTC                = $AsUTC.IsPresent
+            DefaultTag           = $DefaultTag
         }
     }
 }
@@ -574,6 +599,9 @@ function New-PodeSyslogLoggingMethod {
 
 .PARAMETER AsUTC
     If set, logs the time in UTC instead of local time.
+
+.PARAMETER DefaultTag
+    The tag to use if none is specified on the log entry. Defaults to '-'.
 
 .OUTPUTS
     Hashtable: Returns a hashtable containing the RESTful logging method configuration.
@@ -632,7 +660,11 @@ function New-PodeRestfulLoggingMethod {
 
         [Parameter()]
         [switch]
-        $AsUTC
+        $AsUTC,
+
+        [Parameter()]
+        [string]
+        $DefaultTag = '-'
     )
 
     # Determine the date format based on parameter set
@@ -669,6 +701,7 @@ function New-PodeRestfulLoggingMethod {
             FailureAction        = $FailureAction
             DataFormat           = $DataFormat
             AsUTC                = $AsUTC.IsPresent
+            DefaultTag           = $DefaultTag
         }
     }
 }
@@ -1764,9 +1797,12 @@ function Write-PodeLog {
         [string]
         $Message,
 
+        [Parameter(ParameterSetName = 'ErrorRecord')]
+        [Parameter(ParameterSetName = 'Message')]
+        [Parameter(ParameterSetName = 'Exception')]
         [Parameter()]
         [string]
-        $Tag = '-',
+        $Tag,
 
         [Parameter(ParameterSetName = 'InputObject')]
         [Parameter(ParameterSetName = 'Message')]
@@ -1793,8 +1829,9 @@ function Write-PodeLog {
         # Define the log item based on the selected parameter set.
         switch ($PSCmdlet.ParameterSetName.ToLowerInvariant()) {
             'inputobject' {
-                if (!$Level) { $Level = 'Informational' }
-                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return }
+                if (!$Level) { $Level = 'Informational' } # Default to Informational.
+                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the level is not configured, use the
+
                 $logItem = @{
                     Name  = $Name
                     Item  = $InputObject
@@ -1803,8 +1840,10 @@ function Write-PodeLog {
                 break
             }
             'message' {
-                if (!$Level) { $Level = 'Informational' }
-                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return }
+                if (!$Level) { $Level = 'Informational' } # Default to Informational.
+                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the log level is not configured, return.
+                if ([string]::IsNullOrEmpty($Tag)) { $Tag = $PodeContext.Server.Logging.Type[$Name].Method.Arguments.DefaultTag } # If the tag is not specified, use the default tag for the log method.
+
                 $logItem = @{
                     Name = $Name
                     Item = @{
@@ -1817,8 +1856,10 @@ function Write-PodeLog {
                 break
             }
             'exception' {
-                if (!$Level) { $Level = 'Error' }
-                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return }
+                if (!$Level) { $Level = 'Error' } # Default to Error.
+                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the level is not supported, return.
+                if ([string]::IsNullOrEmpty($Tag)) { $Tag = $PodeContext.Server.Logging.Type[$Name].Method.Arguments.DefaultTag } # If the tag is not specified, use the default tag for the log method.
+
                 $logItem = @{
                     Name = $Name
                     Item = @{
@@ -1830,8 +1871,10 @@ function Write-PodeLog {
                 break
             }
             'errorrecord' {
-                if (!$Level) { $Level = 'Error' }
-                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return }
+                if (!$Level) { $Level = 'Error' } # Default to Error.
+                if ( @(Get-PodeLoggingLevel -Name $Name) -inotcontains $Level) { return } # If the level is not supported, return.
+                if ([string]::IsNullOrEmpty($Tag)) { $Tag = $PodeContext.Server.Logging.Type[$Name].Method.Arguments.DefaultTag } # If the tag is not specified, use the default tag for the log method.
+
                 $logItem = @{
                     Name = $Name
                     Item = @{

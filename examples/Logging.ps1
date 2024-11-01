@@ -84,7 +84,7 @@ Start-PodeServer -browse {
     }
 
     if ( $LoggingType -icontains 'syslog') {
-        $logging += New-PodeSyslogLoggingMethod    -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -FailureAction Report
+        $logging += New-PodeSyslogLoggingMethod -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -FailureAction Report
     }
 
     if ($logging.Count -eq 0) {
@@ -95,14 +95,17 @@ Start-PodeServer -browse {
     }
 
     New-PodeFileLoggingMethod -Name 'error' -MaxDays 4 -Format RFC5424 -ISO8601 | Enable-PodeErrorLogging -Raw -Levels Error
-    New-PodeFileLoggingMethod -Name 'default' -MaxDays 4 -Format Simple -ISO8601 | Enable-PodeDefaultLogging -Raw
+    @(
+        (New-PodeFileLoggingMethod -Name 'default' -MaxDays 4 -Format Simple -ISO8601)
+        (New-PodeSyslogLoggingMethod -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -SyslogProtocol RFC3164 -FailureAction Report -DefaultTag 'test')
+    ) | Enable-PodeDefaultLogging -Raw
     $logging | Add-PodeLogging -Name 'mylog' -Raw:$Raw
 
     Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8081/"
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         Write-PodeLog -Name  'mylog' -Message 'My custom log' -Level 'Info'
-        Write-PodeLog -Message "This is for the deafult log."
+        Write-PodeLog -Message 'This is for the deafult log.'
         Write-PodeViewResponse -Path 'simple' -Data @{ 'numbers' = @(1, 2, 3); }
     }
 
