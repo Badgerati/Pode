@@ -76,7 +76,7 @@ namespace Pode
             get => $"{((PodeHttpRequest)Request).Protocol} {StatusCode} {StatusDescription}{PodeHelpers.NEW_LINE}";
         }
 
-        private static UTF8Encoding Encoding = new UTF8Encoding();
+        private static readonly UTF8Encoding Encoding = new UTF8Encoding();
 
         public PodeResponse(PodeContext context)
         {
@@ -383,7 +383,11 @@ namespace Pode
 
             try
             {
+#if NETCOREAPP2_1_OR_GREATER
+                await Request.InputStream.WriteAsync(buffer.AsMemory(), Context.Listener.CancellationToken).ConfigureAwait(false);
+#else
                 await Request.InputStream.WriteAsync(buffer, 0, buffer.Length, Context.Listener.CancellationToken).ConfigureAwait(false);
+#endif
 
                 if (flush)
                 {
@@ -414,7 +418,7 @@ namespace Pode
             {
                 if (ContentLength64 == 0)
                 {
-                    ContentLength64 = (OutputStream.Length > 0 ? OutputStream.Length : 0);
+                    ContentLength64 = OutputStream.Length > 0 ? OutputStream.Length : 0;
                 }
             }
 

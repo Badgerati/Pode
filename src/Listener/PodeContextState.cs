@@ -9,7 +9,6 @@ namespace Pode
         Closing,
         Closed,
         Error,
-        SslError,
         Timeout
     }
 }

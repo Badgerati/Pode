@@ -56,12 +56,7 @@ namespace Pode
 
         public bool Accept(SocketAsyncEventArgs args)
         {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException("PodeEndpoint disposed");
-            }
-
-            return Socket.AcceptAsync(args);
+            return IsDisposed ? throw new ObjectDisposedException("PodeEndpoint disposed") : Socket.AcceptAsync(args);
         }
 
         public void Dispose()

@@ -32,6 +32,8 @@ namespace Pode
 
         // Input stream for incoming request data
         public Stream InputStream { get; private set; }
+        public PodeStreamState State { get; private set; }
+        public bool IsOpen => State == PodeStreamState.Open;
 
         // Certificate properties
         public X509Certificate Certificate { get; private set; }
@@ -42,8 +44,8 @@ namespace Pode
         public SslProtocols Protocols { get; private set; }
 
         // Error handling for request processing
-        public HttpRequestException Error { get; set; }
-        public bool IsAborted => Error != default(HttpRequestException);
+        public PodeRequestException Error { get; set; }
+        public bool IsAborted => Error != default(PodeRequestException);
         public bool IsDisposed { get; private set; }
 
         // Address and Scheme properties for the request
@@ -80,6 +82,7 @@ namespace Pode
             AllowClientCertificate = podeSocket.AllowClientCertificate;
             Protocols = podeSocket.Protocols;
             Context = context;
+            State = PodeStreamState.New;
         }
 
         /// <summary>
@@ -100,6 +103,7 @@ namespace Pode
             AllowClientCertificate = request.AllowClientCertificate;
             Protocols = request.Protocols;
             TlsMode = request.TlsMode;
+            State = request.State;
         }
 
         /// <summary>
@@ -109,15 +113,36 @@ namespace Pode
         /// <returns>A Task representing the async operation.</returns>
         public async Task Open(CancellationToken cancellationToken)
         {
-            InputStream = new NetworkStream(Socket, true);
-            if (!IsSsl || TlsMode == PodeTlsMode.Explicit)
+            try
             {
-                // If not SSL, use the main network stream
-                return;
-            }
+                // Open the input stream for the socket
+                InputStream = new NetworkStream(Socket, true);
 
-            // Upgrade to SSL if necessary
-            await UpgradeToSSL(cancellationToken).ConfigureAwait(false);
+                // Upgrade to SSL if necessary
+                if (!IsSsl || TlsMode == PodeTlsMode.Explicit)
+                {
+                    // If not SSL, use the main network stream
+                    State = PodeStreamState.Open;
+                    return;
+                }
+
+                // Upgrade to SSL if necessary
+                await UpgradeToSSL(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (ex is AggregateException)
+                {
+                    PodeHelpers.HandleAggregateException(ex as AggregateException, Context.Listener, PodeLoggingLevel.Debug, true);
+                }
+                else
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                }
+
+                State = PodeStreamState.Error;
+                Error = new PodeRequestException(ex, 502);
+            }
         }
 
         /// <summary>
@@ -129,12 +154,14 @@ namespace Pode
         {
             if (SslUpgraded)
             {
+                State = PodeStreamState.Open;
                 return; // Already upgraded
             }
 
             // Create an SSL stream for secure communication
             var ssl = new SslStream(InputStream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
 
+            // Authenticate the SSL stream, handling cancellation and exceptions
             using (cancellationToken.Register(() => ssl.Dispose()))
             {
                 try
@@ -145,15 +172,25 @@ namespace Pode
                     // Set InputStream to the upgraded SSL stream
                     InputStream = ssl;
                     SslUpgraded = true;
+                    State = PodeStreamState.Open;
                 }
-                catch (OperationCanceledException ex) { PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
-                catch (IOException ex) { PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
-                catch (ObjectDisposedException ex) { PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
+                catch (Exception ex) when (ex is OperationCanceledException || ex is IOException || ex is ObjectDisposedException)
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                    State = PodeStreamState.Error;
+                    Error = new PodeRequestException(ex, 500);
+                }
+                catch (AuthenticationException ex)
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                    State = PodeStreamState.Error;
+                    Error = new PodeRequestException(ex, 400);
+                }
                 catch (Exception ex)
                 {
                     PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
-                    Error = new HttpRequestException(ex.Message, ex);
-                    Error.Data.Add("PodeStatusCode", 502);
+                    State = PodeStreamState.Error;
+                    Error = new PodeRequestException(ex, 502);
                 }
             }
         }
@@ -184,6 +221,12 @@ namespace Pode
         /// <returns>A Task representing the async operation, with a boolean indicating whether the connection should be closed.</returns>
         public async Task<bool> Receive(CancellationToken cancellationToken)
         {
+            // Check if the stream is open
+            if (State != PodeStreamState.Open)
+            {
+                return false;
+            }
+
             try
             {
                 Error = default;
@@ -244,16 +287,15 @@ namespace Pode
             {
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
             }
-            catch (HttpRequestException httpex)
+            catch (PodeRequestException ex)
             {
-                PodeHelpers.WriteException(httpex, Context.Listener, PodeLoggingLevel.Error);
-                Error = httpex;
+                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                Error = ex;
             }
             catch (Exception ex)
             {
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
-                Error = new HttpRequestException(ex.Message, ex);
-                Error.Data.Add("PodeStatusCode", 400);
+                Error = new PodeRequestException(ex, 500);
             }
             finally
             {
@@ -271,6 +313,13 @@ namespace Pode
         /// <returns>A Task representing the async operation, with a string containing the data read.</returns>
         public async Task<string> Read(byte[] checkBytes, CancellationToken cancellationToken)
         {
+            // Check if the stream is open
+            if (State != PodeStreamState.Open)
+            {
+                return string.Empty;
+            }
+
+            // Read data from the input stream until the check bytes are found
             var buffer = new byte[BufferSize];
             using (var bufferStream = new MemoryStream())
             {
@@ -298,7 +347,7 @@ namespace Pode
                     await bufferStream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
 #endif
                     // Validate the input data
-                    if (Socket.Available > 0 || !PodeRequest.ValidateInputInternal(bufferStream.ToArray(), checkBytes))
+                    if (Socket.Available > 0 || !ValidateInputInternal(bufferStream.ToArray(), checkBytes))
                     {
                         continue;
                     }
@@ -400,6 +449,7 @@ namespace Pode
 
             if (InputStream != default(Stream))
             {
+                State = PodeStreamState.Closed;
                 InputStream.Dispose();
                 InputStream = default;
             }

@@ -30,10 +30,10 @@ namespace Pode
         public bool DualMode { get; private set; }
 
         // Queue for handling connections asynchronously.
-        private ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
+        private readonly ConcurrentQueue<SocketAsyncEventArgs> AcceptConnections;
 
         // Dictionary to keep track of pending socket connections.
-        private IDictionary<string, Socket> PendingSockets;
+        private readonly Dictionary<string, Socket> PendingSockets;
 
         // Listener associated with the current PodeSocket.
         private PodeListener Listener;
@@ -57,7 +57,7 @@ namespace Pode
         }
 
         // Property to determine if hostnames are set.
-        public bool HasHostnames => Hostnames.Any();
+        public bool HasHostnames => Hostnames.Count != 0;
         public string Hostname => HasHostnames ? Hostnames[0] : Endpoints[0].IPAddress.ToString();
 
         /// <summary>
@@ -207,8 +207,16 @@ namespace Pode
                 // Run the receive operation asynchronously in a new task.
                 _ = Task.Run(async () => await context.Receive().ConfigureAwait(false), Listener.CancellationToken);
             }
-            catch (OperationCanceledException ex) { PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle cancellation.
-            catch (IOException ex) { PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle I/O exceptions.
+            catch (OperationCanceledException ex)
+            {
+                // Handle cancellation.
+                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+            }
+            catch (IOException ex)
+            {
+                // Handle I/O exceptions.
+                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+            }
             catch (AggregateException aex)
             {
                 // Handle aggregated exceptions.
@@ -258,14 +266,24 @@ namespace Pode
                 {
                     _ = Task.Run(async () => await StartReceive(accepted), Listener.CancellationToken).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException ex) { PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose); }
-                catch (IOException ex) { PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose); }
+                catch (OperationCanceledException ex)
+                {
+                    // Handle cancellation.
+                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+                }
+                catch (IOException ex)
+                {
+                    // Handle I/O exceptions.
+                    PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Verbose);
+                }
                 catch (AggregateException aex)
                 {
+                    // Handle aggregated exceptions.
                     PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
                 }
                 catch (Exception ex)
                 {
+                    // Handle any other exceptions.
                     PodeHelpers.WriteException(ex, Listener);
                 }
             }
@@ -289,12 +307,12 @@ namespace Pode
                 // If the context should be closed immediately, dispose it.
                 if (context.CloseImmediately)
                 {
-                    // Check if the error is not an HttpRequestException with a PodeStatusCode 408 (Request Timeout).
-                    if (!(context.Request.Error is HttpRequestException httpRequestException) ||
-                        ((int)httpRequestException.Data["PodeStatusCode"] != 408))
+                    // Check if the request is aborted with a non-StatusCode of 408 (Request Timeout).
+                    if (context.Request.IsAborted)
                     {
-                        PodeHelpers.WriteException(context.Request.Error, Listener);
+                        PodeHelpers.WriteException(context.Request.Error, Listener, context.Request.Error.LoggingLevel);
                     }
+
                     context.Dispose(true);
                     process = false;
                 }
@@ -385,10 +403,14 @@ namespace Pode
             lock (PendingSockets)
             {
                 var socketId = socket.GetHashCode().ToString();
+#if NETCOREAPP2_1_OR_GREATER
+                PendingSockets.TryAdd(socketId, socket);
+#else
                 if (!PendingSockets.ContainsKey(socketId))
                 {
                     PendingSockets.Add(socketId, socket);
                 }
+#endif
             }
         }
 
@@ -400,11 +422,7 @@ namespace Pode
         {
             lock (PendingSockets)
             {
-                var socketId = socket.GetHashCode().ToString();
-                if (PendingSockets.ContainsKey(socketId))
-                {
-                    PendingSockets.Remove(socketId);
-                }
+                PendingSockets.Remove(socket.GetHashCode().ToString());
             }
         }
 

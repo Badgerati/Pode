@@ -706,6 +706,7 @@ function Get-PodeStatusDescription {
         440 { return 'Login Time-out' }
         450 { return 'Blocked by Windows Parental Controls' }
         451 { return 'Unavailable For Legal Reasons' }
+        495 { return 'SSL Certificate Error' }
         500 { return 'Internal Server Error' }
         501 { return 'Not Implemented' }
         502 { return 'Bad Gateway' }
