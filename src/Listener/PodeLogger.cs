@@ -130,7 +130,7 @@ namespace Pode
             }
 
             // Exit if logging is disabled or the logging level isn’t configured in the connector
-            if (connector != null && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }
@@ -177,7 +177,7 @@ namespace Pode
             }
 
             // Exit if logging is disabled or the level isn’t configured in the connector
-            if (connector != null && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
+            if (connector != default(PodeConnector) && (!connector.ErrorLoggingEnabled || !connector.ErrorLoggingLevels.Contains(level.ToString(), StringComparer.InvariantCultureIgnoreCase)))
             {
                 return;
             }
@@ -185,7 +185,7 @@ namespace Pode
             // If Terminal logging is enabled, output message to the console, including context ID if provided
             if (Terminal)
             {
-                if (context == null)
+                if (context == default(PodeContext))
                 {
                     Console.WriteLine($"[{level}]: {message}");
                 }

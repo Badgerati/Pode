@@ -189,21 +189,13 @@ namespace Pode
             try
             {
                 await Request.Open(CancellationToken.None).ConfigureAwait(false);
-                State = PodeContextState.Open;
-            }
-            catch (AggregateException aex)
-            {
-                PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Debug, true);
-                State = Request.InputStream == default(Stream)
-                    ? PodeContextState.Error
-                    : PodeContextState.SslError;
+                 State = Request.State == PodeStreamState.Open
+                ? PodeContextState.Open
+                : PodeContextState.Error;
             }
             catch (Exception ex)
             {
                 PodeLogger.LogException(ex, Listener, PodeLoggingLevel.Debug);
-                State = Request.InputStream == default(Stream)
-                    ? PodeContextState.Error
-                    : PodeContextState.SslError;
             }
 
             // If the request is SMTP or TCP, send acknowledgment if available.

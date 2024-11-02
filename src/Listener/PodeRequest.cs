@@ -137,7 +137,7 @@ namespace Pode
                 }
                 else
                 {
-                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                    PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Debug);
                 }
 
                 State = PodeStreamState.Error;
