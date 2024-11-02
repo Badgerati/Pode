@@ -46,7 +46,7 @@ namespace Pode
 
 
 
-        public static void HandleAggregateException(AggregateException aex, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
+        public static void HandleAggregateException(AggregateException aex, PodeConnector connector = default, PodeLoggingLevel level = PodeLoggingLevel.Error, bool handled = false)
         {
             try
             {
@@ -98,7 +98,11 @@ namespace Pode
             // Perform the asynchronous write operation
             if (count > 0)
             {
+#if NETCOREAPP2_1_OR_GREATER
+                await stream.WriteAsync(array.AsMemory(startIndex, count), cancellationToken).ConfigureAwait(false);
+#else
                 await stream.WriteAsync(array, startIndex, count, cancellationToken).ConfigureAwait(false);
+#endif
             }
         }
 
@@ -149,7 +153,7 @@ namespace Pode
         {
             var lines = new List<byte[]>();
             var index = 0;
-            var nextIndex = 0;
+            int nextIndex;
 
             while ((nextIndex = Array.IndexOf(bytes, NEW_LINE_BYTE, index)) > 0)
             {

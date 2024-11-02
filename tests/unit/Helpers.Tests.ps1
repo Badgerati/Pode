@@ -1312,7 +1312,7 @@ Describe 'Out-PodeHost' {
     }
 
     It 'Writes an Array to the Host by pipeline' {
-        @('France','Rick',21 ,'male') | Out-PodeHost
+        @('France', 'Rick', 21 , 'male') | Out-PodeHost
         Assert-MockCalled Out-Default -Scope It -Times 1
     }
 }
@@ -1443,12 +1443,15 @@ Describe 'ConvertFrom-PodeHeaderQValue' {
 
 Describe 'Get-PodeAcceptEncoding' {
     BeforeEach {
+        Mock New-PodeRequestException { return [System.Net.Http.HttpRequestException]::new() }
+
         $PodeContext = @{
             Server = @{
                 Web         = @{ Compression = @{ Enabled = $true } }
                 Compression = @{ Encodings = @('gzip', 'deflate', 'x-gzip') }
             }
-        } }
+        }
+    }
 
     It 'Returns empty for no encoding' {
         Get-PodeAcceptEncoding -AcceptEncoding '' | Should -Be ''
@@ -1502,11 +1505,13 @@ Describe 'Get-PodeAcceptEncoding' {
     It 'Errors when no encoding matches, and identity disabled' {
         $PodeContext.Server.Web.Compression.Enabled = $true
         { Get-PodeAcceptEncoding -AcceptEncoding 'br,identity;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
+        Assert-MockCalled New-PodeRequestException -Scope It -Times 1
     }
 
     It 'Errors when no encoding matches, and wildcard disabled' {
         $PodeContext.Server.Web.Compression.Enabled = $true
         { Get-PodeAcceptEncoding -AcceptEncoding 'br,*;q=0' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
+        Assert-MockCalled New-PodeRequestException -Scope It -Times 1
     }
 
     It 'Returns empty if identity is allowed, but wildcard disabled' {
@@ -1516,9 +1521,13 @@ Describe 'Get-PodeAcceptEncoding' {
 }
 
 Describe 'Get-PodeTransferEncoding' {
-    $PodeContext = @{
-        Server = @{
-            Compression = @{ Encodings = @('gzip', 'deflate', 'x-gzip') }
+    BeforeEach {
+        Mock New-PodeRequestException { return [System.Net.Http.HttpRequestException]::new() }
+
+        $PodeContext = @{
+            Server = @{
+                Compression = @{ Encodings = @('gzip', 'deflate', 'x-gzip') }
+            }
         }
     }
 
@@ -1545,6 +1554,7 @@ Describe 'Get-PodeTransferEncoding' {
 
     It 'Errors when no encoding matches' {
         { Get-PodeTransferEncoding -TransferEncoding 'compress,chunked' -ThrowError } | Should -Throw -ExceptionType 'System.Net.Http.HttpRequestException'
+        Assert-MockCalled New-PodeRequestException -Scope It -Times 1
     }
 }
 
@@ -1759,10 +1769,10 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
     }
 
 
-     # Test case for a hashtable containing a key named 'Count'
-     Context "When a hashtable contains a 'Count' key" {
+    # Test case for a hashtable containing a key named 'Count'
+    Context "When a hashtable contains a 'Count' key" {
 
-        It "Should convert the hashtable to YAML without error" {
+        It 'Should convert the hashtable to YAML without error' {
             # Arrange
             $hashtable = @{
                 Name  = 'Sample'
@@ -1770,21 +1780,21 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
             }
 
             # Act
-            $result = { ConvertTo-PodeYamlInternal -InputObject $hashtable -NoNewLine} | Should -Not -Throw
+            $result = { ConvertTo-PodeYamlInternal -InputObject $hashtable -NoNewLine } | Should -Not -Throw
 
             # Assert
             $yaml = ConvertTo-PodeYamlInternal -InputObject $hashtable -NoNewLine
 
             # Check if YAML conversion includes both 'Name' and 'Count' keys in the YAML output
-            $yaml | Should -Match "Name: Sample"
-            $yaml | Should -Match "Count: 10"
+            $yaml | Should -Match 'Name: Sample'
+            $yaml | Should -Match 'Count: 10'
         }
     }
 
     # Test case for a PSCustomObject containing a key named 'Count'
     Context "When a PSCustomObject contains a 'Count' property" {
 
-        It "Should convert the PSCustomObject to YAML without error" {
+        It 'Should convert the PSCustomObject to YAML without error' {
             # Arrange
             $object = [pscustomobject]@{
                 Name  = 'Sample'
@@ -1792,14 +1802,14 @@ Describe 'ConvertTo-PodeYamlInternal Tests' {
             }
 
             # Act
-            $result = { ConvertTo-PodeYamlInternal -InputObject $object -NoNewLine} | Should -Not -Throw
+            $result = { ConvertTo-PodeYamlInternal -InputObject $object -NoNewLine } | Should -Not -Throw
 
             # Assert
             $yaml = ConvertTo-PodeYamlInternal -InputObject $object -NoNewLine
 
             # Check if YAML conversion includes both 'Name' and 'Count' properties in the YAML output
-            $yaml | Should -Match "Name: Sample"
-            $yaml | Should -Match "Count: 20"
+            $yaml | Should -Match 'Name: Sample'
+            $yaml | Should -Match 'Count: 20'
         }
     }
 

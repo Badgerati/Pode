@@ -257,7 +257,7 @@ namespace Pode
                     break;
 
                 default:
-                    throw new HttpRequestException("Invalid SMTP command");
+                    throw new PodeRequestException("Invalid SMTP command");
             }
 
             return true;

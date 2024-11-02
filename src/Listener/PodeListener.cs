@@ -196,13 +196,13 @@ namespace Pode
         public bool TestSseConnectionExists(string name, string clientId)
         {
             // check name
-            if (!ServerEvents.ContainsKey(name))
+            if (!ServerEvents.TryGetValue(name, out IDictionary<string, PodeServerEvent> value))
             {
                 return false;
             }
 
             // check clientId
-            if (!string.IsNullOrEmpty(clientId) && !ServerEvents[name].ContainsKey(clientId))
+            if (!string.IsNullOrEmpty(clientId) && !value.ContainsKey(clientId))
             {
                 return false;
             }
