@@ -66,7 +66,7 @@ namespace Pode
 
         public void Reset()
         {
-            PodeLogger.WriteErrorMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeLogger.LogMessage($"Request reset", Context.Listener, PodeLoggingLevel.Verbose, Context);
             _body = string.Empty;
             RawBody = default;
         }

@@ -180,7 +180,7 @@ namespace Pode
 
             // Create the context for the connection.
             var context = new PodeContext(acceptedSocket, this, Listener);
-            PodeLogger.WriteErrorMessage($"Opening Receive", Listener, PodeLoggingLevel.Verbose, context);
+            PodeLogger.LogMessage($"Opening Receive", Listener, PodeLoggingLevel.Verbose, context);
 
             // Initialize the context.
             await context.Initialise().ConfigureAwait(false);
@@ -200,15 +200,15 @@ namespace Pode
         /// <param name="context">The context to start receiving for.</param>
         public void StartReceive(PodeContext context)
         {
-            PodeLogger.WriteErrorMessage($"Starting Receive", Listener, PodeLoggingLevel.Verbose, context);
+            PodeLogger.LogMessage($"Starting Receive", Listener, PodeLoggingLevel.Verbose, context);
 
             try
             {
                 // Run the receive operation asynchronously in a new task.
                 _ = Task.Run(async () => await context.Receive().ConfigureAwait(false), Listener.CancellationToken);
             }
-            catch (OperationCanceledException ex) { PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle cancellation.
-            catch (IOException ex) { PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle I/O exceptions.
+            catch (OperationCanceledException ex) { PodeLogger.LogException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle cancellation.
+            catch (IOException ex) { PodeLogger.LogException(ex, Listener, PodeLoggingLevel.Verbose); } // Handle I/O exceptions.
             catch (AggregateException aex)
             {
                 // Handle aggregated exceptions.
@@ -218,7 +218,7 @@ namespace Pode
             catch (Exception ex)
             {
                 // Handle any other exceptions.
-                PodeLogger.WriteException(ex, Listener);
+                PodeLogger.LogException(ex, Listener);
                 context.Socket.Close();
             }
         }
@@ -242,7 +242,7 @@ namespace Pode
             {
                 if (error != SocketError.Success)
                 {
-                    PodeLogger.WriteErrorMessage($"Closing accepting socket: {error}", Listener, PodeLoggingLevel.Debug);
+                    PodeLogger.LogMessage($"Closing accepting socket: {error}", Listener, PodeLoggingLevel.Debug);
                 }
 
                 // Close socket if it was accepted but there's an error.
@@ -258,15 +258,15 @@ namespace Pode
                 {
                     _ = Task.Run(async () => await StartReceive(accepted), Listener.CancellationToken).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException ex) { PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Verbose); }
-                catch (IOException ex) { PodeLogger.WriteException(ex, Listener, PodeLoggingLevel.Verbose); }
+                catch (OperationCanceledException ex) { PodeLogger.LogException(ex, Listener, PodeLoggingLevel.Verbose); }
+                catch (IOException ex) { PodeLogger.LogException(ex, Listener, PodeLoggingLevel.Verbose); }
                 catch (AggregateException aex)
                 {
                     PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Error, true);
                 }
                 catch (Exception ex)
                 {
-                    PodeLogger.WriteException(ex, Listener);
+                    PodeLogger.LogException(ex, Listener);
                 }
             }
 
@@ -293,7 +293,7 @@ namespace Pode
                     if (!(context.Request.Error is HttpRequestException httpRequestException) ||
                         ((int)httpRequestException.Data["PodeStatusCode"] != 408))
                     {
-                        PodeLogger.WriteException(context.Request.Error, Listener);
+                        PodeLogger.LogException(context.Request.Error, Listener);
                     }
                     context.Dispose(true);
                     process = false;
@@ -334,13 +334,13 @@ namespace Pode
                 {
                     if (context.IsWebSocket)
                     {
-                        PodeLogger.WriteErrorMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, context);
+                        PodeLogger.LogMessage($"Received client signal", Listener, PodeLoggingLevel.Verbose, context);
                         Listener.AddClientSignal(context.SignalRequest.NewClientSignal());
                         context.Dispose();
                     }
                     else
                     {
-                        PodeLogger.WriteErrorMessage($"Received request", Listener, PodeLoggingLevel.Verbose, context);
+                        PodeLogger.LogMessage($"Received request", Listener, PodeLoggingLevel.Verbose, context);
                         Listener.AddContext(context);
                     }
                 }
@@ -348,7 +348,7 @@ namespace Pode
             catch (Exception ex)
             {
                 // Log any exceptions that occur while handling the context.
-                PodeLogger.WriteException(ex, Listener);
+                PodeLogger.LogException(ex, Listener);
             }
         }
 
@@ -452,7 +452,7 @@ namespace Pode
                 }
                 catch (Exception ex)
                 {
-                    PodeLogger.WriteException(ex, Listener);
+                    PodeLogger.LogException(ex, Listener);
                 }
             }
             finally

@@ -146,12 +146,12 @@ namespace Pode
                     InputStream = ssl;
                     SslUpgraded = true;
                 }
-                catch (OperationCanceledException ex) { PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
-                catch (IOException ex) { PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
-                catch (ObjectDisposedException ex) { PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
+                catch (OperationCanceledException ex) { PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
+                catch (IOException ex) { PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
+                catch (ObjectDisposedException ex) { PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Verbose); }
                 catch (Exception ex)
                 {
-                    PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                    PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Error);
                     Error = new HttpRequestException(ex.Message, ex);
                     Error.Data.Add("PodeStatusCode", 502);
                 }
@@ -238,20 +238,20 @@ namespace Pode
             }
             catch (OperationCanceledException ex)
             {
-                PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Verbose);
             }
             catch (IOException ex)
             {
-                PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Verbose);
             }
             catch (HttpRequestException httpex)
             {
-                PodeLogger.WriteException(httpex, Context.Listener, PodeLoggingLevel.Error);
+                PodeLogger.LogException(httpex, Context.Listener, PodeLoggingLevel.Error);
                 Error = httpex;
             }
             catch (Exception ex)
             {
-                PodeLogger.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                PodeLogger.LogException(ex, Context.Listener, PodeLoggingLevel.Error);
                 Error = new HttpRequestException(ex.Message, ex);
                 Error.Data.Add("PodeStatusCode", 400);
             }
@@ -405,7 +405,7 @@ namespace Pode
             }
 
             PartialDispose();
-            PodeLogger.WriteErrorMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
+            PodeLogger.LogMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
         }
     }
 }

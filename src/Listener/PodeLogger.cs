@@ -83,7 +83,7 @@ namespace Pode
             }
         }
         // Method to log an exception
-        public static void WriteException(Exception ex, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error)
+        public static void LogException(Exception ex, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error)
         {
             if (ex == default(Exception))
             {
@@ -122,8 +122,8 @@ namespace Pode
             }
         }
 
-        // Method to log an error message
-        public static void WriteErrorMessage(string message, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default(PodeContext))
+        // Method to log a message
+        public static void LogMessage(string message, PodeConnector connector = default(PodeConnector), PodeLoggingLevel level = PodeLoggingLevel.Error, PodeContext context = default(PodeContext))
         {
             // Do nothing if the message is empty or whitespace
             if (string.IsNullOrWhiteSpace(message))

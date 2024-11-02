@@ -129,11 +129,11 @@ namespace Pode
 
         public override void Dispose()
         {
-             // Check if already disposed to avoid repeated cleanup
+            // Check if already disposed to avoid repeated cleanup
             if (!IsDisposed)
             {
                 // Log and send the close frame
-                PodeLogger.WriteErrorMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
+                PodeLogger.LogMessage($"Closing Websocket", Context.Listener, PodeLoggingLevel.Verbose, Context);
                 _ = Context.Response.WriteFrame(string.Empty, PodeWsOpCode.Close);
             }
 

@@ -87,7 +87,7 @@ namespace Pode
 
         private void FileErrorEventHandler(object _, FileWatcherErrorEventArgs e)
         {
-            PodeLogger.WriteException(e.Error, Watcher);
+            PodeLogger.LogException(e.Error, Watcher);
         }
     }
 }

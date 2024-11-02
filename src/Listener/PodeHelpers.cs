@@ -57,7 +57,7 @@ namespace Pode
                         return true;
                     }
 
-                    PodeLogger.WriteException(ex, connector, level);
+                    PodeLogger.LogException(ex, connector, level);
                     return false;
                 });
             }
