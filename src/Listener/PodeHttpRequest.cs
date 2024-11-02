@@ -59,8 +59,7 @@ namespace Pode
 
         public override bool CloseImmediately
         {
-            get => string.IsNullOrWhiteSpace(HttpMethod)
-                || (IsWebSocket && !HttpMethod.Equals("GET", StringComparison.InvariantCultureIgnoreCase));
+            get => !IsHttpMethodValid();
         }
 
         public override bool IsProcessable
@@ -106,7 +105,7 @@ namespace Pode
 
                 if (reqMeta.Length != 3)
                 {
-                    throw new HttpRequestException($"Invalid request line: {reqLine} [{reqMeta.Length}]");
+                    throw new PodeRequestException($"Invalid request line: {reqLine} [{reqMeta.Length}]");
                 }
 
                 IsRequestLineValid = true;
@@ -166,7 +165,7 @@ namespace Pode
 
             // parse the body
             await ParseBody(bytes, newline, bodyIndex, cancellationToken).ConfigureAwait(false);
-            AwaitingBody = ContentLength > 0 && BodyStream.Length < ContentLength && Error == default(HttpRequestException);
+            AwaitingBody = ContentLength > 0 && BodyStream.Length < ContentLength && Error == default(PodeRequestException);
 
             if (!AwaitingBody)
             {
@@ -192,14 +191,14 @@ namespace Pode
             var reqMeta = reqLines[0].Trim().Split(' ');
             if (reqMeta.Length != 3)
             {
-                throw new HttpRequestException($"Invalid request line: {reqLines[0]} [{reqMeta.Length}]");
+                throw new PodeRequestException($"Invalid request line: {reqLines[0]} [{reqMeta.Length}]");
             }
 
             // http method
-            HttpMethod = reqMeta[0].Trim();
+            HttpMethod = reqMeta[0].Trim().ToUpper();
             if (!PodeHelpers.HTTP_METHODS.Contains(HttpMethod))
             {
-                throw new HttpRequestException($"Invalid request HTTP method: {HttpMethod}");
+                throw new PodeRequestException($"Invalid request HTTP method: {HttpMethod}", 405);
             }
 
             // query string
@@ -214,7 +213,7 @@ namespace Pode
             Protocol = (reqMeta[2] ?? "HTTP/1.1").Trim();
             if (!Protocol.StartsWith("HTTP/"))
             {
-                throw new HttpRequestException($"Invalid request version: {Protocol}");
+                throw new PodeRequestException($"Invalid request version: {Protocol}", 505);
             }
 
             ProtocolVersion = Protocol.Split('/')[1];
@@ -252,7 +251,7 @@ namespace Pode
             // check the host header
             if (string.IsNullOrWhiteSpace(Host) || !Context.PodeSocket.CheckHostname(Host))
             {
-                throw new HttpRequestException($"Invalid Host header: {Host}");
+                throw new PodeRequestException($"Invalid Host header: {Host}");
             }
 
             // build the URL
@@ -325,7 +324,7 @@ namespace Pode
             // if chunked, and we have a content-length, fail
             if (isChunked && ContentLength > 0)
             {
-                throw new HttpRequestException($"Cannot supply a Content-Length and a chunked Transfer-Encoding");
+                throw new PodeRequestException($"Cannot supply a Content-Length and a chunked Transfer-Encoding", 409);
             }
 
             // parse for chunked
@@ -378,15 +377,28 @@ namespace Pode
             if (BodyStream.Length > Context.Listener.RequestBodySize)
             {
                 AwaitingBody = false;
-                var err = new HttpRequestException("Payload too large");
-                err.Data.Add("PodeStatusCode", 413);
-                throw err;
+                throw new PodeRequestException("Payload too large", 413);
             }
         }
 
         public void ParseFormData()
         {
             Form = PodeForm.Parse(RawBody, ContentType, ContentEncoding);
+        }
+
+        public bool IsHttpMethodValid()
+        {
+            if (string.IsNullOrWhiteSpace(HttpMethod) || !PodeHelpers.HTTP_METHODS.Contains(HttpMethod))
+            {
+                return false;
+            }
+
+            if (IsWebSocket && HttpMethod != "GET")
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public override void PartialDispose()

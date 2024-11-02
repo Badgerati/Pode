@@ -53,7 +53,7 @@ namespace Pode
             }
             else
             {
-                throw new HttpRequestException("No multipart/form-data boundary found");
+                throw new PodeRequestException("No multipart/form-data boundary found");
             }
 
             // get the boundary start/end
@@ -91,7 +91,7 @@ namespace Pode
                 currentLineIndex = boundaryLineIndexes[i] + 1;
 
                 // parse headers until we see a blank line
-                while (!string.IsNullOrWhiteSpace((currentLine = GetLineString(lines[currentLineIndex], contentEncoding))))
+                while (!string.IsNullOrWhiteSpace(currentLine = GetLineString(lines[currentLineIndex], contentEncoding)))
                 {
                     currentLineIndex++;
 
@@ -107,13 +107,13 @@ namespace Pode
                 currentLineIndex++;
 
                 // get the content disposition fields
-                if (!headers.ContainsKey("Content-Disposition"))
+                if (!headers.TryGetValue("Content-Disposition", out string contentDispHeader))
                 {
-                    throw new HttpRequestException("No Content-Disposition found in multipart/form-data");
+                    throw new PodeRequestException("No Content-Disposition found in multipart/form-data");
                 }
 
                 // foreach (var line in disposition.Split(';'))
-                foreach (var line in headers["Content-Disposition"].Split(';'))
+                foreach (var line in contentDispHeader.Split(';'))
                 {
                     var atoms = line.Split('=');
                     if (atoms.Length == 2)
@@ -123,7 +123,7 @@ namespace Pode
                 }
 
                 // is this just a regular data field?
-                if (!fields.ContainsKey("filename"))
+                if (!fields.TryGetValue("filename", out string filenameField))
                 {
                     // add the data item as name=value
                     form.Data.Add(new PodeFormData(fields["name"], GetLineString(lines[currentLineIndex], contentEncoding)));
@@ -136,15 +136,15 @@ namespace Pode
                     var currentData = form.Data.FirstOrDefault(x => x.Key == fields["name"]);
                     if (currentData == default(PodeFormData))
                     {
-                        form.Data.Add(new PodeFormData(fields["name"], fields["filename"]));
+                        form.Data.Add(new PodeFormData(fields["name"], filenameField));
                     }
                     else
                     {
-                        currentData.AddValue(fields["filename"]);
+                        currentData.AddValue(filenameField);
                     }
 
                     // do we actually have a filename?
-                    if (string.IsNullOrWhiteSpace(fields["filename"]))
+                    if (string.IsNullOrWhiteSpace(filenameField))
                     {
                         continue;
                     }
@@ -173,7 +173,7 @@ namespace Pode
                     }
 
                     // add a file item for filename=stream [+name/content-type]
-                    form.Files.Add(new PodeFormFile(fields["filename"], stream, fields["name"], headers["Content-Type"].Trim()));
+                    form.Files.Add(new PodeFormFile(filenameField, stream, fields["name"], headers["Content-Type"].Trim()));
                 }
             }
 

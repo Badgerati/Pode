@@ -84,7 +84,7 @@ namespace Pode
         public bool IsKeepAlive => (Request.IsKeepAlive && Response.SseScope != PodeSseScope.Local) || Response.SseScope == PodeSseScope.Global;
 
         // Flags for different context states.
-        public bool IsErrored => State == PodeContextState.Error || State == PodeContextState.SslError;
+        public bool IsErrored => State == PodeContextState.Error;
         public bool IsTimeout => State == PodeContextState.Timeout;
         public bool IsClosed => State == PodeContextState.Closed;
         public bool IsOpened => State == PodeContextState.Open;
@@ -144,8 +144,7 @@ namespace Pode
                 State = PodeContextState.Timeout;
 
                 Response.StatusCode = 408;
-                Request.Error = new HttpRequestException($"Request timeout [ContextId: {this.ID}]");
-                Request.Error.Data.Add("PodeStatusCode", 408);
+                Request.Error = new PodeRequestException($"Request timeout [ContextId: {this.ID}]", 408);
 
                 Dispose();
                 PodeHelpers.WriteErrorMessage($"Request timeout reached: Dispose", Listener, PodeLoggingLevel.Debug, this);
@@ -187,25 +186,10 @@ namespace Pode
             }
 
             // Attempt to open the request stream.
-            try
-            {
-                await Request.Open(CancellationToken.None).ConfigureAwait(false);
-                State = PodeContextState.Open;
-            }
-            catch (AggregateException aex)
-            {
-                PodeHelpers.HandleAggregateException(aex, Listener, PodeLoggingLevel.Debug, true);
-                State = Request.InputStream == default(Stream)
-                    ? PodeContextState.Error
-                    : PodeContextState.SslError;
-            }
-            catch (Exception ex)
-            {
-                PodeHelpers.WriteException(ex, Listener, PodeLoggingLevel.Debug);
-                State = Request.InputStream == default(Stream)
-                    ? PodeContextState.Error
-                    : PodeContextState.SslError;
-            }
+            await Request.Open(CancellationToken.None).ConfigureAwait(false);
+            State = Request.State == PodeStreamState.Open
+                ? PodeContextState.Open
+                : PodeContextState.Error;
 
             // If the request is SMTP or TCP, send acknowledgment if available.
             if (IsOpened)
@@ -237,7 +221,7 @@ namespace Pode
                 case PodeProtocolType.Smtp:
                     if (!Request.IsSmtp)
                     {
-                        throw new HttpRequestException("Request is not Smtp");
+                        throw new PodeRequestException("Request is not Smtp", 422);
                     }
                     Type = PodeProtocolType.Smtp;
                     break;
@@ -245,7 +229,7 @@ namespace Pode
                 case PodeProtocolType.Tcp:
                     if (!Request.IsTcp)
                     {
-                        throw new HttpRequestException("Request is not Tcp");
+                        throw new PodeRequestException("Request is not Tcp", 422);
                     }
                     Type = PodeProtocolType.Tcp;
                     break;
@@ -253,7 +237,7 @@ namespace Pode
                 case PodeProtocolType.Http:
                     if (Request.IsWebSocket)
                     {
-                        throw new HttpRequestException("Request is not Http");
+                        throw new PodeRequestException("Request is not Http", 422);
                     }
                     Type = PodeProtocolType.Http;
                     break;
@@ -261,7 +245,7 @@ namespace Pode
                 case PodeProtocolType.Ws:
                     if (!Request.IsWebSocket)
                     {
-                        throw new HttpRequestException("Request is not for a WebSocket");
+                        throw new PodeRequestException("Request is not for a WebSocket", 422);
                     }
                     Type = PodeProtocolType.Ws;
                     break;
@@ -305,9 +289,7 @@ namespace Pode
                 {
                     PodeHelpers.WriteErrorMessage("Request timed out during receive operation", Listener, PodeLoggingLevel.Warning, this);
                     State = PodeContextState.Timeout;  // Explicitly set the state to Timeout
-                    var timeoutException = new HttpRequestException("Request timed out", ex);
-                    timeoutException.Data.Add("PodeStatusCode", 408);
-                    Request.Error = timeoutException;
+                    Request.Error = new PodeRequestException("Request timed out", ex, 408);
                 }
             }
             catch (Exception ex)
@@ -350,14 +332,14 @@ namespace Pode
         /// </summary>
         /// <param name="clientId">The client identifier for the WebSocket connection.</param>
         /// <returns>A Task representing the async operation.</returns>
-        /// <exception cref="HttpRequestException">Thrown if the request cannot be upgraded to a WebSocket.</exception>
+        /// <exception cref="PodeRequestException">Thrown if the request cannot be upgraded to a WebSocket.</exception>
         public async Task UpgradeWebSocket(string clientId = null)
         {
             PodeHelpers.WriteErrorMessage($"Upgrading Websocket", Listener, PodeLoggingLevel.Verbose, this);
 
             if (!IsWebSocket)
             {
-                throw new HttpRequestException("Cannot upgrade a non-websocket request");
+                throw new PodeRequestException("Cannot upgrade a non-websocket request", 412);
             }
 
             // Set a default clientId if none is provided.
@@ -403,7 +385,7 @@ namespace Pode
         /// </summary>
         public void Dispose()
         {
-            Dispose(Request.Error != default(HttpRequestException));
+            Dispose(Request.Error != default(PodeRequestException));
             GC.SuppressFinalize(this);
         }
 
@@ -437,7 +419,7 @@ namespace Pode
                     // Set error status code if context is errored.
                     if (IsErrored)
                     {
-                        Response.StatusCode = 500;
+                        Response.StatusCode = Request.IsAborted ? Request.Error.StatusCode : 500;
                     }
 
                     // Determine if the HTTP request is awaiting more data.
@@ -447,7 +429,7 @@ namespace Pode
                     }
 
                     // Send response if HTTP and not awaiting body.
-                    if (IsHttp && State != PodeContextState.SslError && !_awaitingBody)
+                    if (IsHttp && Request.IsOpen && !_awaitingBody)
                     {
                         if (IsTimeout)
                         {
@@ -489,7 +471,7 @@ namespace Pode
                 }
                 finally
                 {
-                    // Handle re-receiving or socket cleanup.
+                    // Handle re-receiving or socket clean-up.
                     if ((_awaitingBody || (IsKeepAlive && !IsErrored && !IsTimeout && !Response.SseEnabled)) && !force)
                     {
                         PodeHelpers.WriteErrorMessage($"Re-receiving Request", Listener, PodeLoggingLevel.Verbose, this);
