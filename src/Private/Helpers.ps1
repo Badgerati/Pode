@@ -1370,9 +1370,7 @@ function New-PodeRequestException {
         $StatusCode
     )
 
-    $err = [System.Net.Http.HttpRequestException]::new()
-    $err.Data.Add('PodeStatusCode', $StatusCode)
-    return $err
+    return [PodeRequestException]::new($StatusCode)
 }
 
 function ConvertTo-PodeResponseContent {
