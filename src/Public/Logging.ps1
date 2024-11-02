@@ -263,7 +263,7 @@ function Enable-PodeRequestLogging {
 
         Test-PodeIsServerless -FunctionName 'Enable-PodeRequestLogging' -ThrowError
 
-        $name = Get-PodeRequestLoggingName
+        $name = [Pode.PodeLogger]::RequestLogName
 
         # error if it's already enabled
         if ($PodeContext.Server.Logging.Type.Contains($name)) {
@@ -537,7 +537,7 @@ function Disable-PodeRequestLogging {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogger -Name (Get-PodeRequestLoggingName)
+    Remove-PodeLogger -Name ([Pode.PodeLogger]::RequestLogName)
 }
 
 <#
@@ -578,7 +578,7 @@ function Disable-PodeErrorLogging {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogger -Name (Get-PodeErrorLoggingName)
+    Remove-PodeLogger -Name ([Pode.PodeLogger]::ErrorLogName)
 
 }
 
@@ -597,7 +597,7 @@ function Disable-PodeDefaultLogging {
     [CmdletBinding()]
     param()
 
-    Remove-PodeLogger -Name (Get-PodeDefaultLoggingName)
+    Remove-PodeLogger -Name ([Pode.PodeLogger]::DefaultLogName)
 
 }
 
@@ -842,10 +842,10 @@ function Write-PodeErrorLog {
     )
 
     Process {
-        $name = Get-PodeErrorLoggingName
+        $name = [Pode.PodeLogger]::ErrorLogName
         Write-PodeLog @PSBoundParameters -name $name -SuppressErrorLog
         if ($PodeContext.Server.Logging.Type[$name].DuplicateToDefaultLog -and ! $SuppressDefaultLog) {
-            Write-PodeLog @PSBoundParameters -name (Get-PodeDefaultLoggingName) -SuppressErrorLog
+            Write-PodeLog @PSBoundParameters -name ([Pode.PodeLogger]::DefaultLogName) -SuppressErrorLog
         }
     }
 }
@@ -962,7 +962,7 @@ function Write-PodeLog {
     )
     begin {
         if (!$Name) {
-            $Name = Get-PodeDefaultLoggingName
+            $Name = [Pode.PodeLogger]::DefaultLogName
         }
 
         # Get the configured log method.
@@ -1040,7 +1040,7 @@ function Write-PodeLog {
             if ((! $SuppressErrorLog.IsPresent) -and (Test-PodeErrorLoggingEnabled)) {
                 if ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'exception') {
                     [Pode.PodeLogger]::Enqueue( @{
-                            Name = Get-PodeErrorLoggingName
+                            Name = [Pode.PodeLogger]::ErrorLogName
                             Item = @{
                                 Server     = $logItem.Item.Server
                                 Level      = $Level
@@ -1056,7 +1056,7 @@ function Write-PodeLog {
                 }
                 elseif ($PSCmdlet.ParameterSetName.ToLowerInvariant() -eq 'errorrecord') {
                     [Pode.PodeLogger]::Enqueue( @{
-                            Name = Get-PodeErrorLoggingName
+                            Name = [Pode.PodeLogger]::ErrorLogName
                             Item = @{
                                 Server     = $logItem.Item.Server
                                 Level      = $Level
@@ -1071,7 +1071,7 @@ function Write-PodeLog {
                 }
                 elseif ($Level -eq 'Error') {
                     [Pode.PodeLogger]::Enqueue( @{
-                            Name = Get-PodeErrorLoggingName
+                            Name = [Pode.PodeLogger]::ErrorLogName
                             Item = @{
                                 Server   = $logItem.Item.Server
                                 Level    = $Level

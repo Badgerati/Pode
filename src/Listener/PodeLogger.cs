@@ -8,6 +8,27 @@ namespace Pode
 {
     public static class PodeLogger
     {
+        /// <summary>
+        /// The name used for the request logger.
+        /// </summary>
+        public const string RequestLogName = "__pode_log_requests__";
+
+        /// <summary>
+        /// The name used for the default logger.
+        /// </summary>
+        public const string DefaultLogName = "__pode_log_Defaults__";
+
+        /// <summary>
+        /// The name used for the error logger.
+        /// </summary>
+        public const string ErrorLogName = "__pode_log_errors__";
+
+        /// <summary>
+        /// The name used for the error logger.
+        /// </summary>
+        public const string ListenerLogName = "__pode_log_Listener__";
+
+
         // Static fields to control logging and store log entries in a thread-safe queue
         private static bool _enabled;
         private static ConcurrentQueue<Hashtable> _queue;
@@ -132,7 +153,7 @@ namespace Pode
             {
                 Hashtable logEntry = new Hashtable
                 {
-                    ["Name"] = "Listener",
+                    ["Name"] = ListenerLogName,
                     ["Item"] = ex
                 };
 
@@ -179,7 +200,7 @@ namespace Pode
             {
                 Hashtable logEntry = new Hashtable
                 {
-                    ["Name"] = "Listener",
+                    ["Name"] = ListenerLogName,
                     ["Item"] = new Hashtable
                     {
                         ["Message"] = message,
@@ -206,8 +227,8 @@ namespace Pode
         /// <returns>The masked log item as a string.</returns>
         public static string ProtectLogItem(string item, Hashtable masking)
         {
-            // Exit if there are no masking patterns
-            if (masking == null || masking.Count == 0)
+            // Exit if there are no masking patterns or if the mask value is null, empty, or missing
+            if (masking == null || masking.Count == 0 || !masking.ContainsKey("Mask") || string.IsNullOrEmpty(masking["Mask"]?.ToString()))
             {
                 return item;
             }

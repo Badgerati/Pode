@@ -342,7 +342,7 @@ function Get-PodeLoggingEventViewerMethod {
                         $entryLog.Source = $Options.Source
 
                         try {
-                            # Mask values and write the event to the Event Viewer 
+                            # Mask values and write the event to the Event Viewer
                             $message = ([pode.PodeLogger]::ProtectLogItem($Item[$i], $PodeContext.Server.Logging.Masking))
                             $entryLog.WriteEvent($entryInstance, $message)
                         }
@@ -453,62 +453,6 @@ function Get-PodeLoggingInbuiltType {
 
 <#
 .SYNOPSIS
-Gets the name of the request logger.
-
-.DESCRIPTION
-This function returns the name of the logger used for logging requests in Pode.
-
-.RETURNS
-[string] - The name of the request logger.
-
-.EXAMPLE
-Get-PodeRequestLoggingName
-#>
-function Get-PodeRequestLoggingName {
-    # Return the name of the request logger
-    return '__pode_log_requests__'
-}
-
-
-<#
-.SYNOPSIS
-Gets the name of the error logger.
-
-.DESCRIPTION
-This function returns the name of the logger used for logging errors in Pode.
-
-.RETURNS
-[string] - The name of the error logger.
-
-.EXAMPLE
-Get-PodeErrorLoggingName
-#>
-function Get-PodeErrorLoggingName {
-    # Return the name of the error logger
-    return '__pode_log_errors__'
-}
-
-
-<#
-.SYNOPSIS
-Gets the name of the Default logger.
-
-.DESCRIPTION
-This function returns the name of the logger used for logging Defaults in Pode.
-
-.RETURNS
-[string] - The name of the Default logger.
-
-.EXAMPLE
-Get-PodeDefaultLoggingName
-#>
-function Get-PodeDefaultLoggingName {
-    # Return the name of the Default logger
-    return '__pode_log_Defaults__'
-}
-
-<#
-.SYNOPSIS
     Retrieves a Pode logger by name.
 
 .DESCRIPTION
@@ -613,7 +557,7 @@ function Test-PodeLoggerEnabled {
     This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeErrorLoggingLevel {
-    return (Get-PodeLogger -Name (Get-PodeErrorLoggingName)).Arguments.Levels
+    return (Get-PodeLogger -Name ([Pode.PodeLogger]::ErrorLogName)).Arguments.Levels
 }
 
 <#
@@ -628,7 +572,7 @@ Test-PodeErrorLoggingEnabled
 #>
 function Test-PodeErrorLoggingEnabled {
     # Get the name of the error logger and test if it is enabled
-    return (Test-PodeLoggerEnabled -Name (Get-PodeErrorLoggingName))
+    return (Test-PodeLoggerEnabled -Name ([Pode.PodeLogger]::ErrorLogName))
 }
 
 <#
@@ -643,7 +587,7 @@ Test-PodeRequestLoggingEnabled
 #>
 function Test-PodeRequestLoggingEnabled {
     # Get the name of the request logger and test if it is enabled
-    return (Test-PodeLoggerEnabled -Name (Get-PodeRequestLoggingName))
+    return (Test-PodeLoggerEnabled -Name ([Pode.PodeLogger]::RequestLogName))
 }
 
 
@@ -681,7 +625,7 @@ function Write-PodeRequestLog {
         $Path
     )
     # Do nothing if logging is disabled, or request logging isn't set up
-    $name = Get-PodeRequestLoggingName
+    $name = [Pode.PodeLogger]::RequestLogName
     if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }
@@ -764,7 +708,7 @@ function Add-PodeRequestLogEndware {
     )
 
     # Do nothing if logging is disabled, or request logging isn't set up
-    $name = Get-PodeRequestLoggingName
+    $name = [Pode.PodeLogger]::RequestLogName
     if (!(Test-PodeLoggerEnabled -Name $name)) {
         return
     }
@@ -833,7 +777,7 @@ function Start-PodeLoggerDispatcher {
                                 Start-Sleep -Milliseconds 100
                                 continue
                             }
-                            if ($log.Name -eq 'Listener') {
+                            if ($log.Name -eq [pode.PodeLogger]::ListenerLogName) {
 
                                 if ($log.Item -is [System.Exception]) {
                                     Write-PodeErrorLog -Exception $log.Item -Level 'Error' -ThreadId $log.Item.ThreadId
@@ -1092,11 +1036,11 @@ function Enable-PodeLoggingInternal {
     switch ($Type.ToLowerInvariant()) {
 
         'errors' {
-            $name = Get-PodeErrorLoggingName
+            $name = [Pode.PodeLogger]::ErrorLogName
             $scriptBlock = (Get-PodeLoggingInbuiltType -Type Errors)
         }
         'Default' {
-            $name = Get-PodeDefaultLoggingName
+            $name = [Pode.PodeLogger]::DefaultLogName
             $scriptBlock = (Get-PodeLoggingInbuiltType -Type Default)
         }
     }

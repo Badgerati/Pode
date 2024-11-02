@@ -8,7 +8,7 @@ namespace Pode
     public static class PodeFormat
     {
         /// <summary>
-        /// Helper function to sanitize input by returning a default value if the input is null or whitespace.
+        /// Sanitizes input by returning a default value if the input is null or whitespace.
         /// </summary>
         /// <param name="value">The object value to be sanitized.</param>
         /// <returns>A sanitized string, or "-" if the input is null or whitespace.</returns>
@@ -18,37 +18,38 @@ namespace Pode
         }
 
         /// <summary>
-        /// Formats error log entries based on the provided options. Includes details like Date, Level, ThreadId, Server, Category, Message, and StackTrace.
+        /// Formats error log entries based on the provided options, including Date, Level, ThreadId, Server, Category, Message, and StackTrace.
         /// </summary>
         /// <param name="item">A hashtable containing log details.</param>
         /// <param name="options">A hashtable containing format options such as Levels, Raw, and DataFormat.</param>
         /// <returns>A formatted log string, or the original item if Raw is specified, or null if Level is not in options.Levels.</returns>
         public static object ErrorsLog(Hashtable item, Hashtable options)
         {
-            // Check if required keys are present and valid
             if (item == null || options == null) return null;
+
+            // Check for required keys in the log item
             if (!item.ContainsKey("Level") || !item.ContainsKey("Date") || !item.ContainsKey("ThreadId") ||
                 !item.ContainsKey("Server") || !item.ContainsKey("Category") || !item.ContainsKey("Message") || !item.ContainsKey("StackTrace"))
             {
                 return null;
             }
 
-            // Check if the error level is present in the options' Levels array
+            // Ensure the log level is present in the allowed levels
             if (options.ContainsKey("Levels") && !((IList)options["Levels"]).Contains(item["Level"]))
             {
                 return null;
             }
 
-            // Return the raw item if Raw is set
+            // Return raw item if Raw option is set
             if (options.ContainsKey("Raw") && (bool)options["Raw"])
             {
                 return item;
             }
 
-            // Retrieve data format or default to a basic date format
+            // Set the date format or use a default
             string dataFormat = options.ContainsKey("DataFormat") ? options["DataFormat"].ToString() : "yyyy-MM-dd HH:mm:ss";
 
-            // Construct the log entry with specified fields
+            // Build the log entry string
             StringBuilder sb = new StringBuilder();
             return sb.Append("Date: ").Append(((DateTime)item["Date"]).ToString(dataFormat)).Append(" Level: ").Append(Sanitize(item["Level"]))
                      .Append(" ThreadId: ").Append(Sanitize(item["ThreadId"])).Append(" Server: ").Append(Sanitize(item["Server"])).Append(" Category: ")
@@ -57,7 +58,7 @@ namespace Pode
         }
 
         /// <summary>
-        /// Formats request log entries based on the provided log format in options. Supports "extended", "common", "json", and "combined" formats.
+        /// Formats request log entries based on the specified format in options, supporting formats like "extended", "common", "json", and "combined".
         /// </summary>
         /// <param name="item">A hashtable containing request log details.</param>
         /// <param name="options">A hashtable containing format options such as LogFormat and Raw.</param>
@@ -66,16 +67,15 @@ namespace Pode
         {
             if (item == null || options == null) return null;
 
-            // Return the raw item if Raw is set
+            // Return raw item if Raw option is set
             if (options.ContainsKey("Raw") && (bool)options["Raw"])
             {
                 return item;
             }
 
-            // Retrieve log format or default to "combined"
+            // Retrieve the log format, defaulting to "combined"
             string logFormat = options.ContainsKey("LogFormat") ? options["LogFormat"].ToString().ToLowerInvariant() : "combined";
 
-            // Construct the log entry based on the specified format
             StringBuilder sb = new StringBuilder();
 
             switch (logFormat)
@@ -137,7 +137,7 @@ namespace Pode
         }
 
         /// <summary>
-        /// Formats general log entries, checking for level filtering and the presence of required fields.
+        /// Formats general log entries by checking for level filtering and required fields.
         /// </summary>
         /// <param name="item">A hashtable containing general log details.</param>
         /// <param name="options">A hashtable containing format options such as Levels, Raw, and DataFormat.</param>
@@ -146,37 +146,41 @@ namespace Pode
         {
             if (item == null || options == null) return null;
 
-            // Check if the error level is present in the options' Levels array
+            // Ensure the log level is present in the allowed levels
             if (options.ContainsKey("Levels") && !((IList)options["Levels"]).Contains(item["Level"]))
             {
                 return null;
             }
 
-            // Return the raw item if Raw is set
+            // Return raw item if Raw option is set
             if (options.ContainsKey("Raw") && (bool)options["Raw"])
             {
                 return item;
             }
 
-            // Retrieve data format or default to a basic date format
+            // Set the date format or use a default
             string dataFormat = options.ContainsKey("DataFormat") ? options["DataFormat"].ToString() : "yyyy-MM-dd HH:mm:ss";
 
-            // Construct the log entry with specified fields
+            // Build the log entry string
             StringBuilder sb = new StringBuilder();
             return sb.Append('[').Append(((DateTime)item["Date"]).ToString(dataFormat)).Append("] ")
                      .Append(Sanitize(item["Level"])).Append(' ').Append(Sanitize(item["Tag"])).Append(' ').Append(Sanitize(item["ThreadId"])).Append(' ').Append(Sanitize(item["Message"]))
                      .ToString();
         }
 
-
-
-
+        /// <summary>
+        /// Formats a syslog message from raw data and applies masking where necessary.
+        /// </summary>
+        /// <param name="rawItem">A hashtable representing raw log data.</param>
+        /// <param name="options">A hashtable containing options for message formatting, such as Format, DataFormat, and MaxLength.</param>
+        /// <param name="masking">A hashtable with masking patterns to obfuscate sensitive information in the message.</param>
+        /// <returns>A formatted syslog message string.</returns>
         public static string Syslog(Hashtable rawItem, Hashtable options, Hashtable masking)
         {
             int maxLength = -1;
             string message = string.Empty;
 
-            // Process Message and StackTrace
+            // Process message and stack trace, applying masking if available
             if (rawItem.ContainsKey("Message"))
             {
                 if (rawItem.ContainsKey("StackTrace") && !string.IsNullOrEmpty(rawItem["StackTrace"] as string))
@@ -189,7 +193,7 @@ namespace Pode
                 }
             }
 
-            // Map Level to Syslog Severity
+            // Map log level to syslog severity
             int severity;
             string level = rawItem["Level"].ToString().ToLowerInvariant();
             switch (level)
@@ -203,22 +207,21 @@ namespace Pode
                 case "info":
                 case "informational": severity = 6; break;
                 case "debug": severity = 7; break;
-                default: severity = 6; break; // Default to Informational
+                default: severity = 6; break;
             }
 
-            // Define Tag
+            // Set tag and priority
             string tag = string.IsNullOrEmpty(rawItem["Tag"] as string)
                 ? (options != null && options.ContainsKey("DefaultTag") ? options["DefaultTag"].ToString() : "DefaultTag")
                 : rawItem["Tag"].ToString();
 
-            // Define Facility and Priority
             int facility = 1; // User-level messages
             int priority = (facility * 8) + severity;
             int processId = System.Diagnostics.Process.GetCurrentProcess().Id;
             string fullSyslogMessage;
             string timestamp;
 
-            // Determine Syslog Message Format
+            // Determine syslog format and format accordingly
             switch (options["Format"].ToString().ToUpper())
             {
                 case "RFC3164":
