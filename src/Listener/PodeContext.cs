@@ -84,7 +84,7 @@ namespace Pode
         public bool IsKeepAlive => (Request.IsKeepAlive && Response.SseScope != PodeSseScope.Local) || Response.SseScope == PodeSseScope.Global;
 
         // Flags for different context states.
-        public bool IsErrored => State == PodeContextState.Error || State == PodeContextState.SslError;
+        public bool IsErrored => State == PodeContextState.Error;
         public bool IsTimeout => State == PodeContextState.Timeout;
         public bool IsClosed => State == PodeContextState.Closed;
         public bool IsOpened => State == PodeContextState.Open;
@@ -192,13 +192,16 @@ namespace Pode
                 : PodeContextState.Error;
 
             // If the request is SMTP or TCP, send acknowledgment if available.
-            if (PodeSocket.IsSmtp)
+            if (IsOpened)
             {
-                await SmtpRequest.SendAck().ConfigureAwait(false);
-            }
-            else if (PodeSocket.IsTcp && !string.IsNullOrWhiteSpace(PodeSocket.AcknowledgeMessage))
-            {
-                await Response.WriteLine(PodeSocket.AcknowledgeMessage, true).ConfigureAwait(false);
+                if (PodeSocket.IsSmtp)
+                {
+                    await SmtpRequest.SendAck().ConfigureAwait(false);
+                }
+                else if (PodeSocket.IsTcp && !string.IsNullOrWhiteSpace(PodeSocket.AcknowledgeMessage))
+                {
+                    await Response.WriteLine(PodeSocket.AcknowledgeMessage, true).ConfigureAwait(false);
+                }
             }
         }
 
