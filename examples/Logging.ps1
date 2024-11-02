@@ -100,7 +100,7 @@ Start-PodeServer -browse {
         (New-PodeFileLoggingMethod -Name 'defaultRFC5424' -MaxDays 4 -Format RFC5424 -ISO8601 -DefaultTag 'filetestRFC5424')
         (New-PodeSyslogLoggingMethod -Server 127.0.0.1  -Transport UDP -AsUTC -ISO8601 -SyslogProtocol RFC3164 -FailureAction Report -DefaultTag 'test')
     ) | Enable-PodeDefaultLogging -Raw
-    $logging | Add-PodeLogging -Name 'mylog' -Raw:$Raw
+    $logging | Add-PodeLoggingMethod -Name 'mylog' -Raw:$Raw
 
     Write-PodeLog -Name 'mylog' -Message 'just started' -Level 'Info'
     # GET request for web page on "localhost:8081/"

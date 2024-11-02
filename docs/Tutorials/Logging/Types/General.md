@@ -3,11 +3,11 @@
 
 Pode supports general logging, allowing you to define custom logging methods and log levels. This feature enables you to write logs based on specified methods, ensuring flexibility and control over logging outputs.
 
-To enable general logging, use the `Add-PodeLogging` function. This function takes a hashtable defining the logging method, including a ScriptBlock for log output. You can specify various log levels to be enabled, such as Error, Emergency, Alert, Critical, Warning, Notice, Informational, Info, Verbose, and Debug.
+To enable general logging, use the `Add-PodeLoggingMethod` function. This function takes a hashtable defining the logging method, including a ScriptBlock for log output. You can specify various log levels to be enabled, such as Error, Emergency, Alert, Critical, Warning, Notice, Informational, Info, Verbose, and Debug.
 
 ## Enabling General Logging
 
-To enable general logging, use the `Add-PodeLogging` function, supplying the necessary parameters:
+To enable general logging, use the `Add-PodeLoggingMethod` function, supplying the necessary parameters:
 
 - `Method`: The hashtable defining the logging method, including the ScriptBlock for log output.
 - `Levels`: An array of log levels to be enabled for the logging method (default includes Error, Emergency, Alert, Critical, Warning, Notice, Informational, Info, Verbose, Debug).
@@ -18,17 +18,17 @@ To enable general logging, use the `Add-PodeLogging` function, supplying the nec
 
 ```powershell
 $method = New-PodeLoggingMethod -syslog -Server 127.0.0.1 -Transport UDP
-$method | Add-PodeLogging -Name "mysyslog"
+$method | Add-PodeLoggingMethod -Name "mysyslog"
 ```
 
 ## Disabling General Logging
 
-To disable a general logging method, use the `Remove-PodeLogging` function with the `Name` parameter:
+To disable a general logging method, use the `Remove-PodeLoggingMethod` function with the `Name` parameter:
 
 ### Example
 
 ```powershell
-Remove-PodeLogging -Name 'mysyslog'
+Remove-PodeLoggingMethod -Name 'mysyslog'
 ```
 
 With these functions, Pode ensures robust and customizable logging capabilities, allowing you to manage logs effectively based on your specific requirements.

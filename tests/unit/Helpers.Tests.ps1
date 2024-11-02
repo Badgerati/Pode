@@ -1143,7 +1143,7 @@ Describe 'Close-PodeServerInternal' {
         Mock Close-PodeDisposable { }
         Mock Remove-PodePSDrive { }
         Mock Write-Host { }
-        Mock Disable-PodeLogging { }
+        Mock Disable-PodeLog { }
     }
 
     It 'Closes out pode, but with no done flag' {

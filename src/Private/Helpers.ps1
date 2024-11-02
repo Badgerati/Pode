@@ -615,7 +615,7 @@ function Close-PodeServerInternal {
         $ShowDoneMessage
     )
     #Disable Logging before closing
-    Disable-PodeLogging
+    Disable-PodeLog
 
     # ensure the token is cancelled
     if ($null -ne $PodeContext.Tokens.Cancellation) {
@@ -3821,4 +3821,3 @@ function Copy-PodeObjectDeepClone {
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }
- 

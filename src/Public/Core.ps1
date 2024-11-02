@@ -192,9 +192,9 @@ function Start-PodeServer {
             }
 
             if ($PodeContext.Server.Logging.Enabled) {
-                Enable-PodeLogging
+                Enable-PodeLog
             }
-            
+
             # start the file monitor for interally restarting
             Start-PodeFileMonitor
 
