@@ -190,6 +190,17 @@ function New-PodeContext {
         'Errors' = 'errors'
     }
 
+    $ctx.Server.Debug = @{
+        Breakpoints = @{
+            Debug = $false
+        }
+        Dump        = @{
+            Enable = $true
+            Format = 'Json'
+            Path   = './Dump'
+        }
+    }
+
     # check if there is any global configuration
     $ctx.Server.Configuration = Open-PodeConfiguration -ServerRoot $ServerRoot -Context $ctx
 
@@ -214,10 +225,6 @@ function New-PodeContext {
 
     # debugging
     if ($EnableBreakpoints) {
-        if ($null -eq $ctx.Server.Debug) {
-            $ctx.Server.Debug = @{ Breakpoints = @{} }
-        }
-
         $ctx.Server.Debug.Breakpoints.Enabled = $EnableBreakpoints.IsPresent
     }
 
@@ -320,13 +327,13 @@ function New-PodeContext {
 
     # routes for pages and api
     $ctx.Server.Routes = [ordered]@{
-# common methods
+        # common methods
         'get'     = [ordered]@{}
         'post'    = [ordered]@{}
         'put'     = [ordered]@{}
         'patch'   = [ordered]@{}
         'delete'  = [ordered]@{}
-# other methods
+        # other methods
         'connect' = [ordered]@{}
         'head'    = [ordered]@{}
         'merge'   = [ordered]@{}
@@ -900,7 +907,12 @@ function Set-PodeServerConfiguration {
     # debug
     $Context.Server.Debug = @{
         Breakpoints = @{
-            Enabled = [bool]$Configuration.Debug.Breakpoints.Enable
+            Enabled = [bool](Protect-PodeValue -Value  $Configuration.Debug.Breakpoints.Enable -Default $Context.Server.Debug.Breakpoints.Enable)
+        }
+        Dump        = @{
+            Enable = [bool](Protect-PodeValue -Value  $Configuration.Debug.Dump.Enable -Default $Context.Server.Debug.Dump.Enable)
+            Format = [string] (Protect-PodeValue -Value  $Configuration.Debug.Dump.Format -Default $Context.Server.Debug.Dump.Format)
+            Path   = [string] (Protect-PodeValue -Value  $Configuration.Debug.Dump.Path -Default $Context.Server.Debug.Dump.Path)
         }
     }
 }

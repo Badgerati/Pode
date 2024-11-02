@@ -63,6 +63,11 @@
             Breakpoints = @{
                 Enable = $true
             }
+            Dump        = @{
+                Enable = $true
+                Format = 'Yaml'
+                Path   = './Dump'
+            }
         }
     }
 }

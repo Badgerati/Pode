@@ -246,3 +246,90 @@ Add-PodeSchedule -Name 'TestSchedule' -Cron '@hourly' -ScriptBlock {
 ```
 
 In this example, the schedule outputs the name of the runspace executing the script block every hour. This can be useful for logging and monitoring purposes when dealing with multiple schedules or tasks.
+ 
+
+## Memory Dump for Diagnostics
+
+Pode provides a powerful memory dump feature to capture detailed information during critical failures or fatal exceptions. This feature, triggered by the `Invoke-PodeDump` function, captures the state of your application, including memory usage, runspace details, variables, and stack traces. You can configure the dump format, enable or disable it, and specify the save location. By default, Pode saves the dump in JSON format, but you can also choose from other supported formats.
+
+### Configuring Dump Defaults
+
+To set up default options for the memory dump feature in Pode, you can configure them in the `server.psd1` configuration file. Under the `Server.Debug.Dump` section, you can specify whether to enable the dump, the default format, and the save path. Below is an example configuration for setting up defaults:
+
+```powershell
+@{
+    Server = @{
+        Debug = @{
+            Breakpoints = @{
+                Enable = $true
+            }
+            Dump = @{
+                Enable = $true
+                Format = 'Yaml'  # Options: 'json', 'clixml', 'txt', 'bin', 'yaml'
+                Path = './Dump'  # Path to save the dump files
+            }
+        }
+    }
+}
+```
+
+- **Enable**: Boolean value to enable or disable the memory dump feature.
+- **Format**: Specifies the default format for the dump file. Supported formats are `json`, `clixml`, `txt`, `bin`, and `yaml`.
+- **Path**: Specifies the directory where the dump file will be saved. If the directory does not exist, it will be created.
+
+### Overriding Default Settings at Runtime
+
+The `Invoke-PodeDump` function allows you to override these defaults at runtime by passing parameters to specify the format and path. This can be useful for debugging in specific cases without altering the default configuration.
+
+```powershell
+try {
+    # Simulate a critical error
+    throw [System.OutOfMemoryException] "Simulated out of memory error"
+}
+catch {
+    # Capture the dump with custom options
+    Invoke-PodeDump -ErrorRecord $_ -Format 'clixml' -Path 'C:\CustomDump' -Halt
+}
+```
+
+In this example:
+- The memory dump is saved in CLIXML format instead of the default.
+- The dump file is saved in the specified directory (`C:\CustomDump`) instead of the default path.
+- The `-Halt` switch will terminate the application after the dump is saved.
+
+### Using the Dump Feature in Pode
+
+To use the dump feature effectively in your Pode server, you may want to include it in specific places within your code to capture state information when critical errors occur.
+
+Example usage in a Pode server:
+
+```powershell
+Start-PodeServer -EnableBreakpoints {
+    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
+
+    Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
+        try {
+            # Simulate an operation that could fail
+            $processes = Get-Process -ErrorAction Stop
+            Write-PodeJsonResponse -Value @{ Process = $processes[0] }
+        }
+        catch {
+            # Invoke a memory dump when a critical error occurs
+            Invoke-PodeDump -ErrorRecord $_ -Halt
+        }
+    }
+}
+```
+
+In this setup, if an error occurs in the route, `Invoke-PodeDump` is called, capturing the current state and halting the application if the `-Halt` switch is set.
+
+### Dumping Options and Best Practices
+
+- **Enabling Dump in Production**: Enabling the dump in production can be valuable for diagnosing unexpected failures. However, use it selectively, especially if you are using binary or CLIXML formats, as they can produce large files.
+- **Specifying Formats**: Choose a format based on your needs:
+  - **JSON** and **YAML** are human-readable and suitable for quick inspection.
+  - **CLIXML** is ideal for preserving object structures, especially when analyzing PowerShell-specific data.
+  - **Binary** is compact and suitable for raw state captures but requires deserialization for inspection.
+- **Setting the Path**: Use a dedicated folder for dump files (e.g., `./Dump`) to keep diagnostic files organized. The default path in the configuration can be overridden at runtime if needed.
+
+With these configurations and usage practices, the memory dump feature in Pode can provide a powerful tool for diagnostics and debugging, capturing critical state information at the time of failure.

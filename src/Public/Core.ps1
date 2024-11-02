@@ -232,6 +232,12 @@ function Start-PodeServer {
             $PodeContext.Tokens.Cancellation.Cancel()
         }
         catch {
+            $_ | Write-PodeErrorLog
+
+            if ($PodeContext.Server.Debug.Dump.Enable) {
+                Invoke-PodeDump -ErrorRecord $_ -Format $PodeContext.Server.Debug.Dump.Format -Path $PodeContext.Server.Debug.Dump.Path
+            }
+
             Invoke-PodeEvent -Type Crash
             $ShowDoneMessage = $false
             throw
