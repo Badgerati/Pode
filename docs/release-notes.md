@@ -1,5 +1,39 @@
 # Release Notes
 
+## v2.11.1
+
+Date: 3rd November 2024
+
+```plain
+### Enhancements
+* #1409: Adds new/missing CSP parameters in security headers
+
+### Bugs
+* #1407: 'Initialize-PodeOpenApiTable' fails to initialize OpenAPI table when 'DefaultDefinitionTag' param is Null (thanks @mdaneri!)
+* #1413: Fixes Test-PodeCacheStorage being called with incorrect -Key parameter (thanks @willgladstone!)
+* #1418: Fix for ConvertTo-PodeYaml failing, when passed object contains a Key named "Count" (thanks @mdaneri!)
+* #1420: Fix for OpenAPI Component Properties, Server Endpoint, and Path Filtering Issues (thanks @mdaneri!)
+* #1423: Fix OpenAPI Route Path Conversion for Placeholder Unescaping and Relocate Function (#1422) (thanks @mdaneri!)
+* #1424: Refactor Byte Conversion Functions (thanks @mdaneri!)
+* #1424: Remove Duplicate Task Process Definitions (thanks @mdaneri!)
+* #1427: Fixes "collection modified" error when cleaning up sessions
+* #1430: Add-PodeOAComponentRequestBody now supports hashtable/ordered input (thanks @mdaneri!)
+* #1430: Fix OpenAPI Route parameters so they respect the DefinitionTag (thanks @mdaneri!)
+* #1430: More appropriately order responses, parameters, and request bodies in OpenAPI (thanks @mdaneri!)
+* #1430: Order Routes in OpenAPI specification by creation, and HTTP methods in a more conventional order (thanks @mdaneri!)
+* #1434: Fixes the clean-up of old log files (thanks @DoLearnWhileAlive!)
+* #1436: Add -AllowNonStandardBody Parameter to Enable Request Bodies for Non-Standard HTTP Methods in OpenAPI (thanks @mdaneri!)
+* #1438: Fixes the unnecessary Error Logging on HTTP Request Timeouts (thanks @mdaneri!)
+* #1439: Don't setup the Caching Housekeeper Timer in a Serverless context
+* #1440: Fixes error message appearing when using self-signed certificates on localhost
+
+### Security
+* #1428: Migrates Stream functions into the .NET Listener
+
+### Packaging
+* #1404: Add Pester Test to Check for Duplicate Function Definitions (thanks @mdaneri!)
+```
+
 ## v2.11.0
 
 Date: 29th September 2024

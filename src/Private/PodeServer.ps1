@@ -182,11 +182,11 @@ function Start-PodeWebServer {
                             # if we have an sse clientId, verify it and then set details in WebEvent
                             if ($WebEvent.Request.HasSseClientId) {
                                 if (!(Test-PodeSseClientIdValid)) {
-                                    throw [System.Net.Http.HttpRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
+                                    throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
                                 }
 
                                 if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
-                                    throw [System.Net.Http.HttpRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)")
+                                    throw [Pode.PodeRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)", 404)
                                 }
 
                                 $WebEvent.Sse = @{
@@ -237,12 +237,12 @@ function Start-PodeWebServer {
                         catch [System.OperationCanceledException] {
                             $_ | Write-PodeErrorLog -Level Debug
                         }
-                        catch [System.Net.Http.HttpRequestException] {
+                        catch [Pode.PodeRequestException] {
                             if ($Response.StatusCode -ge 500) {
                                 $_.Exception | Write-PodeErrorLog -CheckInnerException
                             }
 
-                            $code = [int]($_.Exception.Data['PodeStatusCode'])
+                            $code = $_.Exception.StatusCode
                             if ($code -le 0) {
                                 $code = 400
                             }

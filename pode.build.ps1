@@ -291,7 +291,7 @@ Task PrintChecksum {
 Task ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
-        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        Invoke-Expression ([System.Net.WebClient]::new().DownloadString('https://chocolatey.org/install.ps1'))
     }
 }
 
