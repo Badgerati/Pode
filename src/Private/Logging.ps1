@@ -575,41 +575,12 @@ function Get-PodeLoggingInbuiltType {
             $script = {
                 param($item, $options)
                 return [Pode.PodeFormat]::ErrorsLog($item, $options)
-                <#       # Do nothing if the error level isn't present
-                if (@($options.Levels) -inotcontains $item.Level) {
-                    return
-                }
-
-                # Just return the item if Raw is set
-                if ($options.Raw) {
-                    return $item
-                }
-                # Optimized concatenation using Append
-                return [System.Text.StringBuilder]::new().
-                Append('Date: ').Append($item.Date.ToString($options.DataFormat)).Append('Level: ').Append($item.Level).
-                Append('ThreadId: ').Append($item.ThreadId).Append('Server: ').Append($item.Server).Append('Category: ').
-                Append($item.Category).Append('Message: ').Append($item.Message).Append('StackTrace: ').Append($item.StackTrace).ToString()
-#>
             }
         }
         'general' {
             $script = {
                 param($item, $options)
                 return [Pode.PodeFormat]::GeneralLog($item, $options)
-                <#       # Do nothing if the error level isn't present
-                if (@($options.Levels) -inotcontains $item.Level) {
-                    return
-                }
-
-                # Just return the item if Raw is set
-                if ($options.Raw) {
-                    return $item
-                }
-                # Optimized concatenation using Append
-                return [System.Text.StringBuilder]::new().
-                Append('[').Append($item.Date.ToString($options.DataFormat)).Append('] ').
-                Append($item.Level).Append(' ').Append($item.Tag).Append(' ').Append($item.ThreadId).Append(' ').Append($item.Message).ToString()
-                #>
             }
         }
 
@@ -617,15 +588,6 @@ function Get-PodeLoggingInbuiltType {
             $script = {
                 param($item, $options)
                 return [Pode.PodeFormat]::GeneralLog($item, $options)
-                <#    # Just return the item if Raw is set
-                if ($options.Raw) {
-                    return $item
-                }
-                # Optimized concatenation using Append
-                return [System.Text.StringBuilder]::new().
-                Append('[').Append($item.Date.ToString($options.DataFormat)).Append('] ').
-                Append($item.Level).Append(' ').Append($item.Tag).Append(' ').Append($item.ThreadId).Append(' ').Append($item.Message).ToString()
-                #>
             }
         }
     }

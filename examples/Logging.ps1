@@ -91,7 +91,7 @@ Start-PodeServer -browse {
         throw 'No logging selected'
     }
     if ( $requestLogging) {
-        $requestLogging | Enable-PodeRequestLogging
+        $requestLogging | Enable-PodeRequestLogging -LogFormat Extended
     }
 
     New-PodeFileLoggingMethod -Name 'error' -MaxDays 4 -Format RFC5424 -ISO8601 | Enable-PodeErrorLogging -Raw -Levels Error
