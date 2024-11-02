@@ -298,7 +298,7 @@ function Enable-PodeRequestLogging {
                 Username = $UsernameProperty
             }
             Arguments   = @{
-                Raw        = $Raw
+                Raw        = $Raw.IsPresent
                 DataFormat = $Method.Arguments.DataFormat
                 LogFormat  = $LogFormat
             }
@@ -512,7 +512,7 @@ function Add-PodeLoggingMethod {
             Method      = $Method
             ScriptBlock = (Get-PodeLoggingInbuiltType -Type General)
             Arguments   = @{
-                Raw        = $Raw
+                Raw        = $Raw.IsPresent
                 Levels     = $Levels
                 DataFormat = $Method.Arguments.DataFormat
             }

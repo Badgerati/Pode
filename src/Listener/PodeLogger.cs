@@ -2,6 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Pode
 {
@@ -172,5 +174,11 @@ namespace Pode
                 Enqueue(logEntry);
             }
         }
+
+
+       
     }
+
+
+
 }

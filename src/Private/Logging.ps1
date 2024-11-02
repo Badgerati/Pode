@@ -567,61 +567,15 @@ function Get-PodeLoggingInbuiltType {
         'requests' {
             $script = {
                 param($item, $options)
-
-                # Just return the item if Raw is set
-                if ($options.Raw) {
-                    return $item
-                }
-
-                # Helper function to sanitize and return a default value if the input is null or whitespace
-                function sg($value) {
-                    if ([string]::IsNullOrWhiteSpace($value)) {
-                        return '-'
-                    }
-                    return $value
-                }
-
-                switch ($options.LogFormat.ToLowerInvariant()) {
-                    'extended' {
-                        return [System.Text.StringBuilder]::new().
-                        $sb.Append('Date: ').Append($item.Date.ToString('yyyy-MM-dd')).Append(' ').Append($item.Date.ToString('HH:mm:ss')).Append(' ').
-                        $sb.Append((sg $item.Host)).Append(' ').Append((sg $item.User)).Append(' ').Append((sg $item.Request.Method)).Append(' ').
-                        $sb.Append((sg $item.Request.Resource)).Append(' ').Append((sg $item.Request.Query)).Append(' ').Append((sg $item.Response.StatusCode)).
-                        $sb.Append(' ').Append((sg $item.Response.Size)).Append(' "').Append((sg $item.Request.Agent)).Append('"').ToString()
-                    }
-                    'common' {
-                        return [System.Text.StringBuilder]::new()
-                        Append((sg $item.Host)).Append(' ').Append((sg $item.RfcUserIdentity)).Append(' ').Append((sg $item.User)).Append(' [').
-                        Append(([regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2'))).Append('] "').
-                        Append((sg $item.Request.Method)).Append(' ').Append((sg $item.Request.Resource)).Append(' ').Append((sg $item.Request.Protocol)).
-                        Append('" ').Append((sg $item.Response.StatusCode)).Append(' ').Append((sg $item.Response.Size)).ToString()
-                    }
-                    'json' {
-                        return [System.Text.StringBuilder]::new().
-                        Append('{"time": "').Append($item.Date.ToString('yyyy-MM-ddTHH:mm:ssK')).Append('","remote_ip": "').Append((sg $item.Host)).
-                        Append('","user": "').Append((sg $item.User)).Append('","method": "').Append((sg $item.Request.Method)).Append('","uri": "').
-                        Append((sg $item.Request.Resource)).Append('","query": "').Append((sg $item.Request.Query)).Append('","status": ').
-                        Append((sg $item.Response.StatusCode)).Append(',"response_size": ').Append((sg $item.Response.Size)).
-                        Append(',"user_agent": "').Append((sg $item.Request.Agent)).Append('"}').ToString()
-                    }
-                    # Combined is the default
-                    default {
-                        return [System.Text.StringBuilder]::new().Append((sg $item.Host)).Append(' ').Append((sg $item.RfcUserIdentity)).Append(' ').Append((sg $item.User)).
-                        Append(' [').Append(([regex]::Replace(($item.Date.ToString('dd/MMM/yyyy:HH:mm:ss zzz')), '([+-]\d{2}):(\d{2})', '$1$2'))).
-                        Append('] "').Append((sg $item.Request.Method)).Append(' ').Append((sg $item.Request.Resource)).Append(' ').
-                        Append((sg $item.Request.Protocol)).Append('" ').Append((sg $item.Response.StatusCode)).Append(' ').Append((sg $item.Response.Size)).
-                        Append(' "').Append((sg $item.Request.Referrer)).Append('" "').Append((sg $item.Request.Agent)).Append('"').ToString()
-                    }
-                }
-                return $item
+                return [Pode.PodeFormat]::RequestLog($item, $options)
             }
         }
 
         'errors' {
             $script = {
                 param($item, $options)
-
-                # Do nothing if the error level isn't present
+                return [Pode.PodeFormat]::ErrorsLog($item, $options)
+                <#       # Do nothing if the error level isn't present
                 if (@($options.Levels) -inotcontains $item.Level) {
                     return
                 }
@@ -635,14 +589,14 @@ function Get-PodeLoggingInbuiltType {
                 Append('Date: ').Append($item.Date.ToString($options.DataFormat)).Append('Level: ').Append($item.Level).
                 Append('ThreadId: ').Append($item.ThreadId).Append('Server: ').Append($item.Server).Append('Category: ').
                 Append($item.Category).Append('Message: ').Append($item.Message).Append('StackTrace: ').Append($item.StackTrace).ToString()
-
+#>
             }
         }
         'general' {
             $script = {
                 param($item, $options)
-
-                # Do nothing if the error level isn't present
+                return [Pode.PodeFormat]::GeneralLog($item, $options)
+                <#       # Do nothing if the error level isn't present
                 if (@($options.Levels) -inotcontains $item.Level) {
                     return
                 }
@@ -655,14 +609,15 @@ function Get-PodeLoggingInbuiltType {
                 return [System.Text.StringBuilder]::new().
                 Append('[').Append($item.Date.ToString($options.DataFormat)).Append('] ').
                 Append($item.Level).Append(' ').Append($item.Tag).Append(' ').Append($item.ThreadId).Append(' ').Append($item.Message).ToString()
+                #>
             }
         }
 
         'Default' {
             $script = {
                 param($item, $options)
-
-                # Just return the item if Raw is set
+                return [Pode.PodeFormat]::GeneralLog($item, $options)
+                <#    # Just return the item if Raw is set
                 if ($options.Raw) {
                     return $item
                 }
@@ -670,6 +625,7 @@ function Get-PodeLoggingInbuiltType {
                 return [System.Text.StringBuilder]::new().
                 Append('[').Append($item.Date.ToString($options.DataFormat)).Append('] ').
                 Append($item.Level).Append(' ').Append($item.Tag).Append(' ').Append($item.ThreadId).Append(' ').Append($item.Message).ToString()
+                #>
             }
         }
     }
@@ -1340,7 +1296,7 @@ function Enable-PodeLoggingInternal {
         Method      = $Method
         ScriptBlock = $scriptBlock
         Arguments   = @{
-            Raw        = $Raw
+            Raw        = $Raw.IsPresent
             Levels     = $Levels
             DataFormat = $Method.Arguments.DataFormat
         }
