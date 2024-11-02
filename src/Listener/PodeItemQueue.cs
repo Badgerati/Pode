@@ -20,11 +20,9 @@ namespace Pode
             ProcessingItems = new List<T>();
         }
 
-        public T Get(CancellationToken cancellationToken = default(CancellationToken))
+        public T Get(CancellationToken cancellationToken = default)
         {
-            var item = (cancellationToken == default(CancellationToken)
-                ? Items.Take()
-                : Items.Take(cancellationToken));
+            var item = Items.Take(cancellationToken == default ? CancellationToken.None : cancellationToken);
 
             lock (ProcessingItems)
             {
@@ -34,11 +32,11 @@ namespace Pode
             return item;
         }
 
-        public Task<T> GetAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task<T> GetAsync(CancellationToken cancellationToken = default)
         {
-            return (cancellationToken == default(CancellationToken)
+            return cancellationToken == default
                 ? Task.Factory.StartNew(() => Get())
-                : Task.Factory.StartNew(() => Get(cancellationToken), cancellationToken));
+                : Task.Factory.StartNew(() => Get(cancellationToken), cancellationToken);
         }
 
         public void Add(T item)
