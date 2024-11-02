@@ -1115,37 +1115,8 @@ function Protect-PodeLogItem {
     )
 
     Process {
-        # do nothing if there are no masks
-        if (Test-PodeIsEmpty $PodeContext.Server.Logging.Masking.Patterns) {
-            return $item
-        }
 
-        # attempt to apply each mask
-        foreach ($mask in $PodeContext.Server.Logging.Masking.Patterns) {
-            if ($Item -imatch $mask) {
-                # has both keep before/after
-                if ($Matches.ContainsKey('keep_before') -and $Matches.ContainsKey('keep_after')) {
-                    $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
-                }
-
-                # has just keep before
-                elseif ($Matches.ContainsKey('keep_before')) {
-                    $Item = ($Item -ireplace $mask, "`${keep_before}$($PodeContext.Server.Logging.Masking.Mask)")
-                }
-
-                # has just keep after
-                elseif ($Matches.ContainsKey('keep_after')) {
-                    $Item = ($Item -ireplace $mask, "$($PodeContext.Server.Logging.Masking.Mask)`${keep_after}")
-                }
-
-                # normal mask
-                else {
-                    $Item = ($Item -ireplace $mask, $PodeContext.Server.Logging.Masking.Mask)
-                }
-            }
-        }
-
-        return $Item
+        return ([pode.PodeLogger]::ProtectLogItem($Item, $PodeContext.Server.Logging.Masking))
     }
 }
 

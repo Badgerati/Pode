@@ -687,7 +687,7 @@ function New-PodeSyslogLoggingMethod {
             Hostname             = $Hostname
             TlsProtocols         = $TlsProtocol
             SkipCertificateCheck = $SkipCertificateCheck.IsPresent
-            SyslogProtocol       = $SyslogProtocol
+            Format               = $SyslogProtocol
             Encoding             = $selectedEncoding
             FailureAction        = $FailureAction
             DataFormat           = $DataFormat
@@ -857,7 +857,7 @@ function New-PodeAwsLoggingMethod {
                         # Format each log entry for CloudWatch Logs.
                         $events = $Item | ForEach-Object {
                             @{
-                                message   = ($_ | Protect-PodeLogItem)  # Sanitize log message content
+                                message   = ([pode.PodeLogger]::ProtectLogItem($_, $PodeContext.Server.Logging.Masking)) #($_ | Protect-PodeLogItem)  # Sanitize log message content  # Sanitize log message content
                                 timestamp = [math]::Round(($RawItem.Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalMilliseconds)  # Timestamp in milliseconds since epoch
                             }
                         }
@@ -1051,7 +1051,7 @@ function New-PodeAzureLoggingMethod {
                         # Format each log entry for Azure Monitor.
                         $records = $Item | ForEach-Object {
                             @{
-                                message   = ($_ | Protect-PodeLogItem)  # Sanitize log message content
+                                message   = ([pode.PodeLogger]::ProtectLogItem($_, $PodeContext.Server.Logging.Masking)) #($_ | Protect-PodeLogItem)  # Sanitize log message content  # Sanitize log message content
                                 severity  = $RawItem.Level.ToUpperInvariant()  # Set log severity level
                                 timestamp = $RawItem.Date.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')  # Format timestamp in ISO 8601
                                 tag       = $RawItem.Tag  # Include tag if provided
@@ -1238,7 +1238,7 @@ function New-PodeGoogleLoggingMethod {
                         # Format each log entry for Google Cloud Logging.
                         $entries = $Item | ForEach-Object {
                             @{
-                                textPayload = ($_ | Protect-PodeLogItem)  # Sanitize log message content
+                                textPayload = ([pode.PodeLogger]::ProtectLogItem($_, $PodeContext.Server.Logging.Masking)) #($_ | Protect-PodeLogItem)  # Sanitize log message content  # Sanitize log message content
                                 severity    = $RawItem.Level.ToUpperInvariant()  # Set log severity level
                                 timestamp   = $RawItem.Date.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')  # Format timestamp in ISO 8601
                                 labels      = @{
@@ -1429,7 +1429,7 @@ function New-PodeDatadogLoggingMethod {
                         # Format each log entry for Datadog.
                         $events = $Item | ForEach-Object {
                             @{
-                                message       = ($_ | Protect-PodeLogItem)  # Sanitize log message content
+                                message       = ([pode.PodeLogger]::ProtectLogItem($_, $PodeContext.Server.Logging.Masking)) #($_ | Protect-PodeLogItem)  # Sanitize log message content  # Sanitize log message content
                                 host          = $PodeContext.Server.ComputerName  # Add hostname
                                 service       = $RawItem.Tag  # Use tag as the service if provided
                                 date_happened = [math]::Round(($RawItem.Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)  # Convert timestamp to seconds since epoch
@@ -1609,7 +1609,7 @@ function New-PodeElasticsearchLoggingMethod {
                         # Format each log entry for Elasticsearch.
                         $documents = $Item | ForEach-Object {
                             @{
-                                message   = ($_ | Protect-PodeLogItem)  # Sanitize log message content
+                                message   = ([pode.PodeLogger]::ProtectLogItem($_, $PodeContext.Server.Logging.Masking)) #($_ | Protect-PodeLogItem)  # Sanitize log message content  # Sanitize log message content
                                 timestamp = $RawItem.Date.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')  # Format timestamp in ISO 8601
                                 severity  = $RawItem.Level.ToUpperInvariant()  # Set log severity level
                                 host      = $PodeContext.Server.ComputerName  # Add hostname
@@ -1783,7 +1783,7 @@ function New-PodeGraylogLoggingMethod {
                             @{
                                 version       = '1.1'  # GELF version
                                 host          = $PodeContext.Server.ComputerName  # Add hostname
-                                short_message = ($_ | Protect-PodeLogItem)  # Sanitize log message content
+                                short_message = ([pode.PodeLogger]::ProtectLogItem($_, $PodeContext.Server.Logging.Masking)) #($_ | Protect-PodeLogItem)  # Sanitize log message content  # Sanitize log message content
                                 timestamp     = [math]::Round(($RawItem.Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)  # Convert timestamp to seconds since epoch
                                 level         = $RawItem.Level.ToUpperInvariant()  # Set log severity level
                                 _tag          = $RawItem.Tag  # Include tag if provided
@@ -1961,7 +1961,7 @@ function New-PodeSplunkLoggingMethod {
                         # Format each log entry for Splunk.
                         $events = $Item | ForEach-Object {
                             @{
-                                event  = ($_ | Protect-PodeLogItem)  # Sanitize log message content
+                                event  = ([pode.PodeLogger]::ProtectLogItem($_, $PodeContext.Server.Logging.Masking)) #($_ | Protect-PodeLogItem)  # Sanitize log message content  # Sanitize log message content
                                 host   = $PodeContext.Server.ComputerName  # Add hostname
                                 source = $RawItem.Tag  # Use tag as the source if provided
                                 time   = [math]::Round(($RawItem.Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalSeconds)  # Convert timestamp to seconds since epoch
@@ -2138,7 +2138,7 @@ function New-PodeLogInsightLoggingMethod {
                         # Process each log entry and format as required by Log Insight
                         $messages = $Item | ForEach-Object {
                             @{
-                                text      = ($_ | Protect-PodeLogItem)  # Sanitize the log message
+                                text      = ([pode.PodeLogger]::ProtectLogItem($_, $PodeContext.Server.Logging.Masking)) #($_ | Protect-PodeLogItem)  # Sanitize log message content  # Sanitize the log message
                                 timestamp = [math]::Round(($RawItem.Date).ToUniversalTime().Subtract(([datetime]::UnixEpoch)).TotalMilliseconds)  # Convert date to milliseconds since epoch
                                 fields    = @{
                                     severity = $RawItem.Level.ToUpperInvariant()  # Add severity level
