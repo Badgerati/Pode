@@ -246,7 +246,7 @@ Add-PodeSchedule -Name 'TestSchedule' -Cron '@hourly' -ScriptBlock {
 ```
 
 In this example, the schedule outputs the name of the runspace executing the script block every hour. This can be useful for logging and monitoring purposes when dealing with multiple schedules or tasks.
- 
+
 
 ## Memory Dump for Diagnostics
 
@@ -315,7 +315,7 @@ Start-PodeServer -EnableBreakpoints {
         }
         catch {
             # Invoke a memory dump when a critical error occurs
-            Invoke-PodeDump -ErrorRecord $_ -Halt
+            $_ | Invoke-PodeDump -Halt
         }
     }
 }
