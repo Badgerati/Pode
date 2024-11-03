@@ -39,7 +39,7 @@ function Get-PodeContentType {
         '.accdw' { return 'application/msaccess.webapplication' }
         '.accft' { return 'application/msaccess.ftemplate' }
         '.acx' { return 'application/internet-property-stream' }
-        '.addin' { return 'text/xml' }
+        '.addin' { return 'application/xml' }
         '.ade' { return 'application/msaccess' }
         '.adobebridge' { return 'application/x-bridge-url' }
         '.adp' { return 'application/msaccess' }
@@ -123,10 +123,10 @@ function Get-PodeContentType {
         '.dib' { return 'image/bmp' }
         '.dif' { return 'video/x-dv' }
         '.dir' { return 'application/x-director' }
-        '.disco' { return 'text/xml' }
+        '.disco' { return 'application/xml' }
         '.divx' { return 'video/divx' }
         '.dll' { return 'application/x-msdownload' }
-        '.dll.config' { return 'text/xml' }
+        '.dll.config' { return 'application/xml' }
         '.dlm' { return 'text/dlm' }
         '.doc' { return 'application/msword' }
         '.docm' { return 'application/vnd.ms-word.document.macroEnabled.12' }
@@ -136,8 +136,8 @@ function Get-PodeContentType {
         '.dotx' { return 'application/vnd.openxmlformats-officedocument.wordprocessingml.template' }
         '.dsp' { return 'application/octet-stream' }
         '.dsw' { return 'text/plain' }
-        '.dtd' { return 'text/xml' }
-        '.dtsconfig' { return 'text/xml' }
+        '.dtd' { return 'application/xml' }
+        '.dtsconfig' { return 'application/xml' }
         '.dv' { return 'video/x-dv' }
         '.dvi' { return 'application/x-dvi' }
         '.dwf' { return 'drawing/x-dwf' }
@@ -153,7 +153,7 @@ function Get-PodeContentType {
         '.etx' { return 'text/x-setext' }
         '.evy' { return 'application/envoy' }
         '.exe' { return 'application/octet-stream' }
-        '.exe.config' { return 'text/xml' }
+        '.exe.config' { return 'application/xml' }
         '.fdf' { return 'application/vnd.fdf' }
         '.fif' { return 'application/fractals' }
         '.filters' { return 'application/xml' }
@@ -284,7 +284,7 @@ function Get-PodeContentType {
         '.mka' { return 'audio/x-matroska' }
         '.mkv' { return 'video/x-matroska' }
         '.mmf' { return 'application/x-smaf' }
-        '.mno' { return 'text/xml' }
+        '.mno' { return 'application/xml' }
         '.mny' { return 'application/x-msmoney' }
         '.mod' { return 'video/mpeg' }
         '.mov' { return 'video/quicktime' }
@@ -479,7 +479,7 @@ function Get-PodeContentType {
         '.spx' { return 'audio/ogg' }
         '.src' { return 'application/x-wais-source' }
         '.srf' { return 'text/plain' }
-        '.ssisdeploymentmanifest' { return 'text/xml' }
+        '.ssisdeploymentmanifest' { return 'application/xml' }
         '.ssm' { return 'application/streamingmedia' }
         '.sst' { return 'application/vnd.ms-pki.certstore' }
         '.stl' { return 'application/vnd.ms-pki.stl' }
@@ -531,22 +531,22 @@ function Get-PodeContentType {
         '.vdp' { return 'text/plain' }
         '.vdproj' { return 'text/plain' }
         '.vdx' { return 'application/vnd.ms-visio.viewer' }
-        '.vml' { return 'text/xml' }
+        '.vml' { return 'application/xml' }
         '.vscontent' { return 'application/xml' }
-        '.vsct' { return 'text/xml' }
+        '.vsct' { return 'application/xml' }
         '.vsd' { return 'application/vnd.visio' }
         '.vsi' { return 'application/ms-vsi' }
         '.vsix' { return 'application/vsix' }
-        '.vsixlangpack' { return 'text/xml' }
-        '.vsixmanifest' { return 'text/xml' }
+        '.vsixlangpack' { return 'application/xml' }
+        '.vsixmanifest' { return 'application/xml' }
         '.vsmdi' { return 'application/xml' }
         '.vspscc' { return 'text/plain' }
         '.vss' { return 'application/vnd.visio' }
         '.vsscc' { return 'text/plain' }
-        '.vssettings' { return 'text/xml' }
+        '.vssettings' { return 'application/xml' }
         '.vssscc' { return 'text/plain' }
         '.vst' { return 'application/vnd.visio' }
-        '.vstemplate' { return 'text/xml' }
+        '.vstemplate' { return 'application/xml' }
         '.vsto' { return 'application/x-ms-vsto' }
         '.vsw' { return 'application/vnd.visio' }
         '.vsx' { return 'application/vnd.visio' }
@@ -590,7 +590,7 @@ function Get-PodeContentType {
         '.wrl' { return 'x-world/x-vrml' }
         '.wrz' { return 'x-world/x-vrml' }
         '.wsc' { return 'text/scriptlet' }
-        '.wsdl' { return 'text/xml' }
+        '.wsdl' { return 'application/xml' }
         '.wvx' { return 'video/x-ms-wvx' }
         '.x' { return 'application/directx' }
         '.xaf' { return 'x-world/x-vrml' }
@@ -616,26 +616,26 @@ function Get-PodeContentType {
         '.xltm' { return 'application/vnd.ms-excel.template.macroEnabled.12' }
         '.xltx' { return 'application/vnd.openxmlformats-officedocument.spreadsheetml.template' }
         '.xlw' { return 'application/vnd.ms-excel' }
-        '.xml' { return 'text/xml' }
+        '.xml' { return 'application/xml' }
         '.xmp' { return 'application/octet-stream' }
         '.xmta' { return 'application/xml' }
         '.xof' { return 'x-world/x-vrml' }
         '.xoml' { return 'text/plain' }
         '.xpm' { return 'image/x-xpixmap' }
         '.xps' { return 'application/vnd.ms-xpsdocument' }
-        '.xrm-ms' { return 'text/xml' }
+        '.xrm-ms' { return 'application/xml' }
         '.xsc' { return 'application/xml' }
-        '.xsd' { return 'text/xml' }
-        '.xsf' { return 'text/xml' }
-        '.xsl' { return 'text/xml' }
-        '.xslt' { return 'text/xml' }
+        '.xsd' { return 'application/xml' }
+        '.xsf' { return 'application/xml' }
+        '.xsl' { return 'application/xml' }
+        '.xslt' { return 'application/xml' }
         '.xsn' { return 'application/octet-stream' }
         '.xss' { return 'application/xml' }
         '.xspf' { return 'application/xspf+xml' }
         '.xtp' { return 'application/octet-stream' }
         '.xwd' { return 'image/x-xwindowdump' }
-        '.yaml' { return 'application/x-yaml' }
-        '.yml' { return 'application/x-yaml' }
+        '.yaml' { return 'application/yaml' } #RFC 9512
+        '.yml' { return 'application/yaml' }
         '.z' { return 'application/x-compress' }
         '.zip' { return 'application/zip' }
         default { return (Resolve-PodeValue -Check $DefaultIsNull -TrueValue $null -FalseValue 'text/plain') }
@@ -706,6 +706,7 @@ function Get-PodeStatusDescription {
         440 { return 'Login Time-out' }
         450 { return 'Blocked by Windows Parental Controls' }
         451 { return 'Unavailable For Legal Reasons' }
+        495 { return 'SSL Certificate Error' }
         500 { return 'Internal Server Error' }
         501 { return 'Not Implemented' }
         502 { return 'Bad Gateway' }

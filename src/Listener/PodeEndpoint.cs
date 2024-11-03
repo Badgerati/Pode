@@ -1,6 +1,8 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Pode
 {
@@ -52,21 +54,16 @@ namespace Pode
             Socket.Listen(int.MaxValue);
         }
 
-        public bool AcceptAsync(SocketAsyncEventArgs args)
+        public bool Accept(SocketAsyncEventArgs args)
         {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException("PodeEndpoint disposed");
-            }
-
-            return Socket.AcceptAsync(args);
+            return IsDisposed ? throw new ObjectDisposedException("PodeEndpoint disposed") : Socket.AcceptAsync(args);
         }
 
         public void Dispose()
         {
             IsDisposed = true;
             PodeSocket.CloseSocket(Socket);
-            Socket = default(Socket);
+            Socket = default;
         }
 
         public new bool Equals(object obj)

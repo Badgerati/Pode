@@ -68,7 +68,7 @@ function Get-PodeLoggingFileMethod {
 
             $null = Get-ChildItem -Path $options.Path -Filter '*.log' -Force |
                 Where-Object { $_.CreationTime -lt $date } |
-                Remove-Item $_ -Force
+                Remove-Item -Force
 
             $options.NextClearDown = [DateTime]::Now.Date.AddDays(1)
         }
@@ -104,6 +104,7 @@ function Get-PodeLoggingEventViewerMethod {
                 $entryLog.WriteEvent($entryInstance, $message)
             }
             catch {
+                $_ | Write-PodeErrorLog -Level Debug
             }
         }
     }
@@ -207,7 +208,25 @@ function Get-PodeErrorLoggingName {
     return '__pode_log_errors__'
 }
 
+<#
+.SYNOPSIS
+    Retrieves a Pode logger by name.
+
+.DESCRIPTION
+    This function allows you to retrieve a Pode logger by specifying its name. It returns the logger object associated with the given name.
+
+.PARAMETER Name
+    The name of the Pode logger to retrieve.
+
+.OUTPUTS
+    A Pode logger object.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
 function Get-PodeLogger {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -227,7 +246,23 @@ function Test-PodeLoggerEnabled {
     return ($PodeContext.Server.Logging.Enabled -and $PodeContext.Server.Logging.Types.ContainsKey($Name))
 }
 
-function Get-PodeErrorLoggingLevels {
+<#
+.SYNOPSIS
+    Gets the error logging levels for Pode.
+
+.DESCRIPTION
+    This function retrieves the error logging levels configured for Pode. It returns an array of available error levels.
+
+.PARAMETER Name
+    The name of the Pode logger to retrieve.
+
+.OUTPUTS
+    An array of error logging levels.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeErrorLoggingLevel {
     return (Get-PodeLogger -Name (Get-PodeErrorLoggingName)).Arguments.Levels
 }
 
@@ -340,79 +375,105 @@ function Start-PodeLoggingRunspace {
     }
 
     $script = {
-        while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-            # if there are no logs to process, just sleep for a few seconds - but after checking the batch
-            if ($PodeContext.LogsToProcess.Count -eq 0) {
-                Test-PodeLoggerBatches
-                Start-Sleep -Seconds 5
-                continue
-            }
+        try {
+            while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                try {
+                    # if there are no logs to process, just sleep for a few seconds - but after checking the batch
+                    if ($PodeContext.LogsToProcess.Count -eq 0) {
+                        Test-PodeLoggerBatch
+                        Start-Sleep -Seconds 5
+                        continue
+                    }
 
-            # safely pop off the first log from the array
-            $log = (Lock-PodeObject -Return -Object $PodeContext.LogsToProcess -ScriptBlock {
-                    $log = $PodeContext.LogsToProcess[0]
-                    $null = $PodeContext.LogsToProcess.RemoveAt(0)
-                    return $log
-                })
+                    # safely pop off the first log from the array
+                    $log = (Lock-PodeObject -Return -Object $PodeContext.LogsToProcess -ScriptBlock {
+                            $log = $PodeContext.LogsToProcess[0]
+                            $null = $PodeContext.LogsToProcess.RemoveAt(0)
+                            return $log
+                        })
 
-            # run the log item through the appropriate method
-            $logger = Get-PodeLogger -Name $log.Name
-            $now = [datetime]::Now
+                    # run the log item through the appropriate method
+                    $logger = Get-PodeLogger -Name $log.Name
+                    $now = [datetime]::Now
 
-            # if the log is null, check batch then sleep and skip
-            if ($null -eq $log) {
-                Start-Sleep -Milliseconds 100
-                continue
-            }
+                    # if the log is null, check batch then sleep and skip
+                    if ($null -eq $log) {
+                        Start-Sleep -Milliseconds 100
+                        continue
+                    }
 
-            # convert to log item into a writable format
-            $rawItems = $log.Item
-            $_args = @($log.Item) + @($logger.Arguments)
-            $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
+                    # convert to log item into a writable format
+                    $rawItems = $log.Item
+                    $_args = @($log.Item) + @($logger.Arguments)
+                    $result = @(Invoke-PodeScriptBlock -ScriptBlock $logger.ScriptBlock -Arguments $_args -UsingVariables $logger.UsingVariables -Return -Splat)
 
-            # check batching
-            $batch = $logger.Method.Batch
-            if ($batch.Size -gt 1) {
-                # add current item to batch
-                $batch.Items += $result
-                $batch.RawItems += $log.Item
-                $batch.LastUpdate = $now
+                    # check batching
+                    $batch = $logger.Method.Batch
+                    if ($batch.Size -gt 1) {
+                        # add current item to batch
+                        $batch.Items += $result
+                        $batch.RawItems += $log.Item
+                        $batch.LastUpdate = $now
 
-                # if the current amount of items matches the batch, write
-                $result = $null
-                if ($batch.Items.Length -ge $batch.Size) {
-                    $result = $batch.Items
-                    $rawItems = $batch.RawItems
+                        # if the current amount of items matches the batch, write
+                        $result = $null
+                        if ($batch.Items.Length -ge $batch.Size) {
+                            $result = $batch.Items
+                            $rawItems = $batch.RawItems
+                        }
+
+                        # if we're writing, reset the items
+                        if ($null -ne $result) {
+                            $batch.Items = @()
+                            $batch.RawItems = @()
+                        }
+                    }
+
+                    # send the writable log item off to the log writer
+                    if ($null -ne $result) {
+                        $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
+                        $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
+                    }
+
+                    # small sleep to lower cpu usage
+                    Start-Sleep -Milliseconds 100
                 }
-
-                # if we're writing, reset the items
-                if ($null -ne $result) {
-                    $batch.Items = @()
-                    $batch.RawItems = @()
+                catch {
+                    $_ | Write-PodeErrorLog
                 }
             }
-
-            # send the writable log item off to the log writer
-            if ($null -ne $result) {
-                $_args = @(, $result) + @($logger.Method.Arguments) + @(, $rawItems)
-                $null = Invoke-PodeScriptBlock -ScriptBlock $logger.Method.ScriptBlock -Arguments $_args -UsingVariables $logger.Method.UsingVariables -Splat
-            }
-
-            # small sleep to lower cpu usage
-            Start-Sleep -Milliseconds 100
+        }
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
         }
     }
 
-    Add-PodeRunspace -Type Main -ScriptBlock $script
+    Add-PodeRunspace -Type Main -Name 'Logging' -ScriptBlock $script
 }
 
-function Test-PodeLoggerBatches {
+<#
+.SYNOPSIS
+    Tests whether Pode logger batches need to be written.
+
+.DESCRIPTION
+    This function checks each Pode logger and determines if its batch needs to be written. It evaluates the batch size, timeout, and last update timestamp to decide whether to process the batch and write the log entries.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeLoggerBatch {
     $now = [datetime]::Now
 
     # check each logger, and see if its batch needs to be written
     foreach ($logger in $PodeContext.Server.Logging.Types.Values) {
         $batch = $logger.Method.Batch
-        if (($batch.Size -gt 1) -and ($batch.Items.Length -gt 0) -and ($batch.Timeout -gt 0) -and ($null -ne $batch.LastUpdate) -and ($batch.LastUpdate.AddSeconds($batch.Timeout) -le $now)) {
+        if (($batch.Size -gt 1) -and ($batch.Items.Length -gt 0) -and ($batch.Timeout -gt 0) `
+                -and ($null -ne $batch.LastUpdate) -and ($batch.LastUpdate.AddSeconds($batch.Timeout) -le $now)
+        ) {
             $result = $batch.Items
             $rawItems = $batch.RawItems
 

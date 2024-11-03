@@ -59,7 +59,8 @@ function Add-PodeHandler {
 
     # ensure handler isn't already set
     if ($PodeContext.Server.Handlers[$Type].ContainsKey($Name)) {
-        throw "[$($Type)] $($Name): Handler already defined"
+        # [Type] Name: Handler already defined
+        throw ($PodeLocale.handlerAlreadyDefinedExceptionMessage -f $Type, $Name)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -131,6 +132,7 @@ The Type of Handlers to remove.
 Clear-PodeHandlers -Type Smtp
 #>
 function Clear-PodeHandlers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -166,6 +168,7 @@ Use-PodeHandlers
 Use-PodeHandlers -Path './my-handlers'
 #>
 function Use-PodeHandlers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

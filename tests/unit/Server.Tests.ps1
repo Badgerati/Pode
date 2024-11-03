@@ -5,6 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
 
     $PodeContext = @{
@@ -18,7 +19,7 @@ Describe 'Start-PodeInternalServer' {
         Mock Add-PodePSInbuiltDrive { }
         Mock Invoke-PodeScriptBlock { }
         Mock New-PodeRunspaceState { }
-        Mock New-PodeRunspacePools { }
+        Mock New-PodeRunspacePool { }
         Mock Start-PodeLoggingRunspace { }
         Mock Start-PodeTimerRunspace { }
         Mock Start-PodeScheduleRunspace { }
@@ -36,6 +37,7 @@ Describe 'Start-PodeInternalServer' {
         Mock Invoke-PodeEvent { }
         Mock Write-Verbose { }
         Mock Add-PodeScopedVariablesInbuilt { }
+        Mock Write-PodeHost { }
     }
 
     It 'Calls one-off script logic' {
@@ -43,7 +45,7 @@ Describe 'Start-PodeInternalServer' {
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
@@ -57,7 +59,7 @@ Describe 'Start-PodeInternalServer' {
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
@@ -71,7 +73,7 @@ Describe 'Start-PodeInternalServer' {
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
@@ -85,7 +87,7 @@ Describe 'Start-PodeInternalServer' {
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
-        Assert-MockCalled New-PodeRunspacePools -Times 1 -Scope It
+        Assert-MockCalled New-PodeRunspacePool -Times 1 -Scope It
         Assert-MockCalled New-PodeRunspaceState -Times 1 -Scope It
         Assert-MockCalled Start-PodeTimerRunspace -Times 1 -Scope It
         Assert-MockCalled Start-PodeScheduleRunspace -Times 1 -Scope It
@@ -98,19 +100,20 @@ Describe 'Start-PodeInternalServer' {
 Describe 'Restart-PodeInternalServer' {
     BeforeAll {
         Mock Write-Host { }
-        Mock Close-PodeRunspaces { }
-        Mock Remove-PodePSDrives { }
+        Mock Close-PodeRunspace { }
+        Mock Remove-PodePSDrive { }
         Mock Open-PodeConfiguration { return $null }
         Mock Start-PodeInternalServer { }
         Mock Write-PodeErrorLog { }
         Mock Close-PodeDisposable { }
         Mock Invoke-PodeEvent { }
     }
+
     It 'Resetting the server values' {
         $PodeContext = @{
             Tokens    = @{
-                Cancellation = New-Object System.Threading.CancellationTokenSource
-                Restart      = New-Object System.Threading.CancellationTokenSource
+                Cancellation = [System.Threading.CancellationTokenSource]::new()
+                Restart      = [System.Threading.CancellationTokenSource]::new()
             }
             Server    = @{
                 Routes          = @{
@@ -220,11 +223,11 @@ Describe 'Restart-PodeInternalServer' {
                 Processes = @{}
             }
             Tasks     = @{
-                Enabled = $true
-                Items   = @{
+                Enabled   = $true
+                Items     = @{
                     key = 'value'
                 }
-                Results = @{}
+                Processes = @{}
             }
             Fim       = @{
                 Enabled = $true

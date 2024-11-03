@@ -368,18 +368,32 @@ function Get-PodeRouteByUrl {
     return $null
 }
 
+ 
+<#
+.SYNOPSIS
+    Updates a Pode route path to ensure proper formatting.
 
-function ConvertTo-PodeOpenApiRoutePath {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Path
-    )
+.DESCRIPTION
+    This function takes a Pode route path and ensures that it starts with a leading slash ('/') and follows the correct format for static routes. It also replaces '*' with '.*' for proper regex matching.
 
-    return (Resolve-PodePlaceholders -Path $Path -Pattern '\:(?<tag>[\w]+)' -Prepend '{' -Append '}')
-}
+.PARAMETER Path
+    The Pode route path to update.
 
-function Update-PodeRouteSlashes {
+.PARAMETER Static
+    Indicates whether the route is a static route (default is false).
+
+.PARAMETER NoLeadingSlash
+    Indicates whether the route should not have a leading slash (default is false).
+
+.OUTPUTS
+    The updated Pode route path.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Update-PodeRouteSlash {
+    [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -432,8 +446,8 @@ function ConvertTo-PodeRouteRegex {
     $Path = Protect-PodeValue -Value $Path -Default '/'
     $Path = Split-PodeRouteQuery -Path $Path
     $Path = Protect-PodeValue -Value $Path -Default '/'
-    $Path = Update-PodeRouteSlashes -Path $Path
-    $Path = Resolve-PodePlaceholders -Path $Path
+    $Path = Update-PodeRouteSlash -Path $Path
+    $Path = Resolve-PodePlaceholder -Path $Path
 
     return $Path
 }
@@ -504,10 +518,10 @@ function Test-PodeRouteInternal {
     }
 
     if ([string]::IsNullOrEmpty($_url)) {
-        throw "[$($Method)] $($Path): Already defined"
+        throw ($PodeLocale.methodPathAlreadyDefinedExceptionMessage -f $Method, $Path) #"[$($Method)] $($Path): Already defined"
     }
 
-    throw "[$($Method)] $($Path): Already defined for $($_url)"
+    throw ($PodeLocale.methodPathAlreadyDefinedForUrlExceptionMessage -f $Method, $Path, $_url) #"[$($Method)] $($Path): Already defined for $($_url)"
 }
 
 function Convert-PodeFunctionVerbToHttpMethod {
@@ -652,17 +666,19 @@ function ConvertTo-PodeMiddleware {
 
         # check middleware is a type valid
         if (($mid -isnot [scriptblock]) -and ($mid -isnot [hashtable])) {
-            throw "One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: $($mid.GetType().Name)"
+            throw ($PodeLocale.invalidMiddlewareTypeExceptionMessage -f $mid.GetType().Name)#"One of the Middlewares supplied is an invalid type. Expected either a ScriptBlock or Hashtable, but got: $($mid.GetType().Name)"
         }
 
         # if middleware is hashtable, ensure the keys are valid (logic is a scriptblock)
         if ($mid -is [hashtable]) {
             if ($null -eq $mid.Logic) {
-                throw 'A Hashtable Middleware supplied has no Logic defined'
+                # A Hashtable Middleware supplied has no Logic defined
+                throw ($PodeLocale.hashtableMiddlewareNoLogicExceptionMessage)
             }
 
             if ($mid.Logic -isnot [scriptblock]) {
-                throw "A Hashtable Middleware supplied has an invalid Logic type. Expected ScriptBlock, but got: $($mid.Logic.GetType().Name)"
+                # A Hashtable Middleware supplied has an invalid Logic type. Expected ScriptBlock, but got: {0}
+                throw ($PodeLocale.invalidLogicTypeInHashtableMiddlewareExceptionMessage -f $mid.Logic.GetType().Name)
             }
         }
     }

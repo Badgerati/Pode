@@ -1,18 +1,21 @@
 function Start-PodeServiceServer {
     # ensure we have service handlers
     if (Test-PodeIsEmpty (Get-PodeHandler -Type Service)) {
-        throw 'No Service handlers have been defined'
+        # No Service handlers have been defined
+        throw ($PodeLocale.noServiceHandlersDefinedExceptionMessage)
     }
 
     # state we're running
-    Write-PodeHost "Server looping every $($PodeContext.Server.Interval)secs" -ForegroundColor Yellow
+    # Server looping every $PodeContext.Server.Interval secs
+    Write-PodeHost ($PodeLocale.serverLoopingMessage -f $PodeContext.Server.Interval) -ForegroundColor Yellow
 
     # script for the looping server
     $serverScript = {
+
         try {
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 # the event object
-                $ServiceEvent = @{
+                $script:ServiceEvent = @{
                     Lockable = $PodeContext.Threading.Lockables.Global
                     Metadata = @{}
                 }
@@ -28,7 +31,9 @@ function Start-PodeServiceServer {
                 Start-Sleep -Seconds $PodeContext.Server.Interval
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             throw $_.Exception
@@ -36,5 +41,5 @@ function Start-PodeServiceServer {
     }
 
     # start the runspace for the server
-    Add-PodeRunspace -Type Main -ScriptBlock $serverScript
+    Add-PodeRunspace -Type Main -Name 'ServiceServer' -ScriptBlock $serverScript
 }

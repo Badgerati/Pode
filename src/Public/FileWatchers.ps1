@@ -118,31 +118,33 @@ function Add-PodeFileWatcher {
 
     # resolve path if relative
     if (!(Test-PodeIsPSCore)) {
-        $Path = Convert-PodePlaceholders -Path $Path -Prepend '%' -Append '%'
+        $Path = Convert-PodePlaceholder -Path $Path -Prepend '%' -Append '%'
     }
 
     $Path = Get-PodeRelativePath -Path $Path -JoinRoot -Resolve
 
     if (!(Test-PodeIsPSCore)) {
-        $Path = Convert-PodePlaceholders -Path $Path -Pattern '\%(?<tag>[\w]+)\%' -Prepend ':' -Append ([string]::Empty)
+        $Path = Convert-PodePlaceholder -Path $Path -Pattern '\%(?<tag>[\w]+)\%' -Prepend ':' -Append ([string]::Empty)
     }
 
     # resolve path, and test it
-    $hasPlaceholders = Test-PodePlaceholders -Path $Path
+    $hasPlaceholders = Test-PodePlaceholder -Path $Path
     if ($hasPlaceholders) {
-        $rgxPath = Update-PodeRouteSlashes -Path $Path -NoLeadingSlash
-        $rgxPath = Resolve-PodePlaceholders -Path $rgxPath -Slashes
+        $rgxPath = Update-PodeRouteSlash -Path $Path -NoLeadingSlash
+        $rgxPath = Resolve-PodePlaceholder -Path $rgxPath -Slashes
         $Path = $Path -ireplace (Get-PodePlaceholderRegex), '*'
     }
 
     # test path to make sure it exists
     if (!(Test-PodePath $Path -NoStatus)) {
-        throw "The path does not exist: $($Path)"
+        # Path does not exist
+        throw ($PodeLocale.pathNotExistExceptionMessage -f $Path)
     }
 
     # test if we have the file watcher already
     if (Test-PodeFileWatcher -Name $Name) {
-        throw "A File Watcher with the name '$($Name)' has already been defined"
+        # A File Watcher named has already been defined
+        throw ($PodeLocale.fileWatcherAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -290,6 +292,7 @@ Removes all File Watchers.
 Clear-PodeFileWatchers
 #>
 function Clear-PodeFileWatchers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -313,6 +316,7 @@ Use-PodeFileWatchers
 Use-PodeFileWatchers -Path './my-watchers'
 #>
 function Use-PodeFileWatchers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

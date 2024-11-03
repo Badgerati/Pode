@@ -22,7 +22,7 @@ function New-PodeWebSocketReceiver {
     try {
         $receiver = [PodeReceiver]::new($PodeContext.Tokens.Cancellation.Token)
         $receiver.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-        $receiver.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
+        $receiver.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
         $PodeContext.Server.WebSockets.Receiver = $receiver
         $PodeContext.Receivers += $receiver
     }
@@ -39,7 +39,7 @@ function Start-PodeWebSocketRunspace {
         return
     }
 
-    # script for listening out of for incoming requests
+    # script for listening out of for incoming requests (Receiver)
     $receiveScript = {
         param(
             [Parameter(Mandatory = $true)]
@@ -81,7 +81,9 @@ function Start-PodeWebSocketRunspace {
                         # invoke websocket script
                         $null = Invoke-PodeScriptBlock -ScriptBlock $websocket.Logic -Arguments $websocket.Arguments -UsingVariables $websocket.UsingVariables -Scoped -Splat
                     }
-                    catch [System.OperationCanceledException] {}
+                    catch [System.OperationCanceledException] {
+                        $_ | Write-PodeErrorLog -Level Debug
+                    }
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -93,7 +95,9 @@ function Start-PodeWebSocketRunspace {
                 }
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -103,7 +107,7 @@ function Start-PodeWebSocketRunspace {
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.WebSockets | ForEach-Object {
-        Add-PodeRunspace -Type WebSockets -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type WebSockets -Name 'Receiver' -Id $_ -ScriptBlock $receiveScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver; 'ThreadId' = $_ }
     }
 
     # script to keep websocket server receiving until cancelled
@@ -119,7 +123,9 @@ function Start-PodeWebSocketRunspace {
                 Start-Sleep -Seconds 1
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -130,5 +136,5 @@ function Start-PodeWebSocketRunspace {
         }
     }
 
-    Add-PodeRunspace -Type WebSockets -ScriptBlock $waitScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver } -NoProfile
+    Add-PodeRunspace -Type WebSockets -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Receiver' = $PodeContext.Server.WebSockets.Receiver } -NoProfile
 }

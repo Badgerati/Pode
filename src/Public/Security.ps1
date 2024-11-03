@@ -14,6 +14,9 @@ If supplied, the Strict-Transport-Security header will be set.
 .PARAMETER XssBlock
 If supplied, the X-XSS-Protection header will be set to blocking mode. (Default: Off)
 
+.PARAMETER CspReportOnly
+If supplied, the Content-Security-Policy header will be set as the Content-Security-Policy-Report-Only header.
+
 .EXAMPLE
 Set-PodeSecurity -Type Simple
 
@@ -32,7 +35,10 @@ function Set-PodeSecurity {
         $UseHsts,
 
         [switch]
-        $XssBlock
+        $XssBlock,
+
+        [switch]
+        $CspReportOnly
     )
 
     # general headers
@@ -55,7 +61,7 @@ function Set-PodeSecurity {
 
     Set-PodeSecurityCrossOrigin -Embed Require-Corp -Open Same-Origin -Resource Same-Origin
     Set-PodeSecurityAccessControl -Origin '*' -Methods '*' -Headers '*' -Duration 7200
-    Set-PodeSecurityContentSecurityPolicy -Default 'self' -XssBlock:$XssBlock
+    Set-PodeSecurityContentSecurityPolicy -Default 'self' -XssBlock:$XssBlock -ReportOnly:$CspReportOnly
 
     # only add hsts if specifiec
     if ($UseHsts) {
@@ -223,6 +229,7 @@ The Type to use.
 Set-PodeSecurityFrameOptions -Type SameOrigin
 #>
 function Set-PodeSecurityFrameOptions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -245,6 +252,7 @@ Removes definition for the X-Frame-Options header.
 Remove-PodeSecurityFrameOptions
 #>
 function Remove-PodeSecurityFrameOptions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -300,14 +308,41 @@ The values to use for the FormAction portion of the header.
 .PARAMETER FrameAncestor
 The values to use for the FrameAncestor portion of the header.
 
+.PARAMETER FencedFrame
+The values to use for the FencedFrame portion of the header.
+
+.PARAMETER Prefetch
+The values to use for the Prefetch portion of the header.
+
+.PARAMETER ScriptAttr
+The values to use for the ScriptAttr portion of the header.
+
+.PARAMETER ScriptElem
+The values to use for the ScriptElem portion of the header.
+
+.PARAMETER StyleAttr
+The values to use for the StyleAttr portion of the header.
+
+.PARAMETER StyleElem
+The values to use for the StyleElem portion of the header.
+
+.PARAMETER Worker
+The values to use for the Worker portion of the header.
+
 .PARAMETER Sandbox
 The value to use for the Sandbox portion of the header.
+
+.PARAMETER ReportUri
+The value to use for the ReportUri portion of the header.
 
 .PARAMETER UpgradeInsecureRequests
 If supplied, the header will have the upgrade-insecure-requests value added.
 
 .PARAMETER XssBlock
 If supplied, the X-XSS-Protection header will be set to blocking mode. (Default: Off)
+
+.PARAMETER ReportOnly
+If supplied, the header will be set as a report-only header.
 
 .EXAMPLE
 Set-PodeSecurityContentSecurityPolicy -Default 'self'
@@ -372,59 +407,55 @@ function Set-PodeSecurityContentSecurityPolicy {
         $FrameAncestor,
 
         [Parameter()]
+        [string[]]
+        $FencedFrame,
+
+        [Parameter()]
+        [string[]]
+        $Prefetch,
+
+        [Parameter()]
+        [string[]]
+        $ScriptAttr,
+
+        [Parameter()]
+        [string[]]
+        $ScriptElem,
+
+        [Parameter()]
+        [string[]]
+        $StyleAttr,
+
+        [Parameter()]
+        [string[]]
+        $StyleElem,
+
+        [Parameter()]
+        [string[]]
+        $Worker,
+
+        [Parameter()]
         [ValidateSet('', 'Allow-Downloads', 'Allow-Downloads-Without-User-Activation', 'Allow-Forms', 'Allow-Modals', 'Allow-Orientation-Lock',
             'Allow-Pointer-Lock', 'Allow-Popups', 'Allow-Popups-To-Escape-Sandbox', 'Allow-Presentation', 'Allow-Same-Origin', 'Allow-Scripts',
             'Allow-Storage-Access-By-User-Activation', 'Allow-Top-Navigation', 'Allow-Top-Navigation-By-User-Activation', 'None')]
         [string]
         $Sandbox = 'None',
 
+        [Parameter()]
+        [string]
+        $ReportUri,
+
         [switch]
         $UpgradeInsecureRequests,
 
         [switch]
-        $XssBlock
+        $XssBlock,
+
+        [switch]
+        $ReportOnly
     )
 
-    # build the header's value
-    $values = @(
-        Protect-PodeContentSecurityKeyword -Name 'default-src' -Value $Default
-        Protect-PodeContentSecurityKeyword -Name 'child-src' -Value $Child
-        Protect-PodeContentSecurityKeyword -Name 'connect-src' -Value $Connect
-        Protect-PodeContentSecurityKeyword -Name 'font-src' -Value $Font
-        Protect-PodeContentSecurityKeyword -Name 'frame-src' -Value $Frame
-        Protect-PodeContentSecurityKeyword -Name 'img-src' -Value $Image
-        Protect-PodeContentSecurityKeyword -Name 'manifest-src' -Value $Manifest
-        Protect-PodeContentSecurityKeyword -Name 'media-src' -Value $Media
-        Protect-PodeContentSecurityKeyword -Name 'object-src' -Value $Object
-        Protect-PodeContentSecurityKeyword -Name 'script-src' -Value $Scripts
-        Protect-PodeContentSecurityKeyword -Name 'style-src' -Value $Style
-        Protect-PodeContentSecurityKeyword -Name 'base-uri' -Value $BaseUri
-        Protect-PodeContentSecurityKeyword -Name 'form-action' -Value $FormAction
-        Protect-PodeContentSecurityKeyword -Name 'frame-ancestors' -Value $FrameAncestor
-    )
-
-    if ($Sandbox -ine 'None') {
-        $values += "sandbox $($Sandbox.ToLowerInvariant())".Trim()
-    }
-
-    if ($UpgradeInsecureRequests) {
-        $values += 'upgrade-insecure-requests'
-    }
-
-    $values = ($values -ne $null)
-    $value = ($values -join '; ')
-
-    # add the header
-    Add-PodeSecurityHeader -Name 'Content-Security-Policy' -Value $value
-
-    # this is done to explicitly disable XSS auditors in modern browsers
-    # as having it enabled has now been found to cause more vulnerabilities
-    if ($XssBlock) {
-        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '1; mode=block'
-    }
-    else {
-        Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '0'
-    }
+    Set-PodeSecurityContentSecurityPolicyInternal -Params $PSBoundParameters
 }
 
 <#
@@ -476,11 +507,38 @@ The values to add for the FormAction portion of the header.
 .PARAMETER FrameAncestor
 The values to add for the FrameAncestor portion of the header.
 
+.PARAMETER FencedFrame
+The values to add for the FencedFrame portion of the header.
+
+.PARAMETER Prefetch
+The values to add for the Prefetch portion of the header.
+
+.PARAMETER ScriptAttr
+The values to add for the ScriptAttr portion of the header.
+
+.PARAMETER ScriptElem
+The values to add for the ScriptElem portion of the header.
+
+.PARAMETER StyleAttr
+The values to add for the StyleAttr portion of the header.
+
+.PARAMETER StyleElem
+The values to add for the StyleElem portion of the header.
+
+.PARAMETER Worker
+The values to add for the Worker portion of the header.
+
 .PARAMETER Sandbox
 The value to use for the Sandbox portion of the header.
 
+.PARAMETER ReportUri
+The value to use for the ReportUri portion of the header.
+
 .PARAMETER UpgradeInsecureRequests
 If supplied, the header will have the upgrade-insecure-requests value added.
+
+.PARAMETER ReportOnly
+If supplied, the header will be set as a report-only header.
 
 .EXAMPLE
 Add-PodeSecurityContentSecurityPolicy -Default '*.twitter.com' -Image 'data'
@@ -545,47 +603,52 @@ function Add-PodeSecurityContentSecurityPolicy {
         $FrameAncestor,
 
         [Parameter()]
+        [string[]]
+        $FencedFrame,
+
+        [Parameter()]
+        [string[]]
+        $Prefetch,
+
+        [Parameter()]
+        [string[]]
+        $ScriptAttr,
+
+        [Parameter()]
+        [string[]]
+        $ScriptElem,
+
+        [Parameter()]
+        [string[]]
+        $StyleAttr,
+
+        [Parameter()]
+        [string[]]
+        $StyleElem,
+
+        [Parameter()]
+        [string[]]
+        $Worker,
+
+        [Parameter()]
         [ValidateSet('', 'Allow-Downloads', 'Allow-Downloads-Without-User-Activation', 'Allow-Forms', 'Allow-Modals', 'Allow-Orientation-Lock',
             'Allow-Pointer-Lock', 'Allow-Popups', 'Allow-Popups-To-Escape-Sandbox', 'Allow-Presentation', 'Allow-Same-Origin', 'Allow-Scripts',
             'Allow-Storage-Access-By-User-Activation', 'Allow-Top-Navigation', 'Allow-Top-Navigation-By-User-Activation', 'None')]
         [string]
         $Sandbox = 'None',
 
+        [Parameter()]
+        [string]
+        $ReportUri,
+
         [switch]
-        $UpgradeInsecureRequests
+        $UpgradeInsecureRequests,
+
+        [switch]
+        $ReportOnly
     )
 
-    # build the header's value
-    $values = @(
-        Protect-PodeContentSecurityKeyword -Name 'default-src' -Value $Default -Append
-        Protect-PodeContentSecurityKeyword -Name 'child-src' -Value $Child -Append
-        Protect-PodeContentSecurityKeyword -Name 'connect-src' -Value $Connect -Append
-        Protect-PodeContentSecurityKeyword -Name 'font-src' -Value $Font -Append
-        Protect-PodeContentSecurityKeyword -Name 'frame-src' -Value $Frame -Append
-        Protect-PodeContentSecurityKeyword -Name 'img-src' -Value $Image -Append
-        Protect-PodeContentSecurityKeyword -Name 'manifest-src' -Value $Manifest -Append
-        Protect-PodeContentSecurityKeyword -Name 'media-src' -Value $Media -Append
-        Protect-PodeContentSecurityKeyword -Name 'object-src' -Value $Object -Append
-        Protect-PodeContentSecurityKeyword -Name 'script-src' -Value $Scripts -Append
-        Protect-PodeContentSecurityKeyword -Name 'style-src' -Value $Style -Append
-        Protect-PodeContentSecurityKeyword -Name 'base-uri' -Value $BaseUri -Append
-        Protect-PodeContentSecurityKeyword -Name 'form-action' -Value $FormAction -Append
-        Protect-PodeContentSecurityKeyword -Name 'frame-ancestors' -Value $FrameAncestor -Append
-    )
-
-    if ($Sandbox -ine 'None') {
-        $values += "sandbox $($Sandbox.ToLowerInvariant())".Trim()
-    }
-
-    if ($UpgradeInsecureRequests) {
-        $values += 'upgrade-insecure-requests'
-    }
-
-    $values = ($values -ne $null)
-    $value = ($values -join '; ')
-
-    # add the header
-    Add-PodeSecurityHeader -Name 'Content-Security-Policy' -Value $value
+    Set-PodeSecurityContentSecurityPolicyInternal -Params $PSBoundParameters -Append
 }
 
 <#
@@ -703,10 +766,9 @@ The values to use for the WebShare portion of the header.
 .PARAMETER XrSpatialTracking
 The values to use for the XrSpatialTracking portion of the header.
 
-.EXAMPLE
-Set-PodeSecurityPermissionsPolicy -LayoutAnimations 'none' -UnoptimisedImages 'none' -OversizedImages 'none' -SyncXhr 'none' -UnsizedMedia 'none'
 #>
 function Set-PodeSecurityPermissionsPolicy {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -830,45 +892,7 @@ function Set-PodeSecurityPermissionsPolicy {
         $XrSpatialTracking
     )
 
-    # build the header's value
-    $values = @(
-        Protect-PodePermissionsPolicyKeyword -Name 'accelerometer' -Value $Accelerometer
-        Protect-PodePermissionsPolicyKeyword -Name 'ambient-light-sensor' -Value $AmbientLightSensor
-        Protect-PodePermissionsPolicyKeyword -Name 'autoplay' -Value $Autoplay
-        Protect-PodePermissionsPolicyKeyword -Name 'battery' -Value $Battery
-        Protect-PodePermissionsPolicyKeyword -Name 'camera' -Value $Camera
-        Protect-PodePermissionsPolicyKeyword -Name 'display-capture' -Value $DisplayCapture
-        Protect-PodePermissionsPolicyKeyword -Name 'document-domain' -Value $DocumentDomain
-        Protect-PodePermissionsPolicyKeyword -Name 'encrypted-media' -Value $EncryptedMedia
-        Protect-PodePermissionsPolicyKeyword -Name 'fullscreen' -Value $Fullscreen
-        Protect-PodePermissionsPolicyKeyword -Name 'gamepad' -Value $Gamepad
-        Protect-PodePermissionsPolicyKeyword -Name 'geolocation' -Value $Geolocation
-        Protect-PodePermissionsPolicyKeyword -Name 'gyroscope' -Value $Gyroscope
-        Protect-PodePermissionsPolicyKeyword -Name 'interest-cohort' -Value $InterestCohort
-        Protect-PodePermissionsPolicyKeyword -Name 'layout-animations' -Value $LayoutAnimations
-        Protect-PodePermissionsPolicyKeyword -Name 'legacy-image-formats' -Value $LegacyImageFormats
-        Protect-PodePermissionsPolicyKeyword -Name 'magnetometer' -Value $Magnetometer
-        Protect-PodePermissionsPolicyKeyword -Name 'microphone' -Value $Microphone
-        Protect-PodePermissionsPolicyKeyword -Name 'midi' -Value $Midi
-        Protect-PodePermissionsPolicyKeyword -Name 'oversized-images' -Value $OversizedImages
-        Protect-PodePermissionsPolicyKeyword -Name 'payment' -Value $Payment
-        Protect-PodePermissionsPolicyKeyword -Name 'picture-in-picture' -Value $PictureInPicture
-        Protect-PodePermissionsPolicyKeyword -Name 'publickey-credentials-get' -Value $PublicKeyCredentials
-        Protect-PodePermissionsPolicyKeyword -Name 'speaker-selection' -Value $Speakers
-        Protect-PodePermissionsPolicyKeyword -Name 'sync-xhr' -Value $SyncXhr
-        Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $UnoptimisedImages
-        Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $UnsizedMedia
-        Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Usb
-        Protect-PodePermissionsPolicyKeyword -Name 'screen-wake-lock' -Value $ScreenWakeLake
-        Protect-PodePermissionsPolicyKeyword -Name 'web-share' -Value $WebShare
-        Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking
-    )
-
-    $values = ($values -ne $null)
-    $value = ($values -join ', ')
-
-    # add the header
-    Add-PodeSecurityHeader -Name 'Permissions-Policy' -Value $value
+    Set-PodeSecurityPermissionsPolicyInternal -Params $PSBoundParameters
 }
 
 <#
@@ -1095,45 +1119,7 @@ function Add-PodeSecurityPermissionsPolicy {
         $XrSpatialTracking
     )
 
-    # build the header's value
-    $values = @(
-        Protect-PodePermissionsPolicyKeyword -Name 'accelerometer' -Value $Accelerometer -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'ambient-light-sensor' -Value $AmbientLightSensor -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'autoplay' -Value $Autoplay -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'battery' -Value $Battery -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'camera' -Value $Camera -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'display-capture' -Value $DisplayCapture -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'document-domain' -Value $DocumentDomain -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'encrypted-media' -Value $EncryptedMedia -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'fullscreen' -Value $Fullscreen -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'gamepad' -Value $Gamepad -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'geolocation' -Value $Geolocation -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'gyroscope' -Value $Gyroscope -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'interest-cohort' -Value $InterestCohort -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'layout-animations' -Value $LayoutAnimations -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'legacy-image-formats' -Value $LegacyImageFormats -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'magnetometer' -Value $Magnetometer -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'microphone' -Value $Microphone -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'midi' -Value $Midi -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'oversized-images' -Value $OversizedImages -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'payment' -Value $Payment -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'picture-in-picture' -Value $PictureInPicture -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'publickey-credentials-get' -Value $PublicKeyCredentials -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'speaker-selection' -Value $Speakers -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'sync-xhr' -Value $SyncXhr -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $UnoptimisedImages -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $UnsizedMedia -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Usb -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'screen-wake-lock' -Value $ScreenWakeLake -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'web-share' -Value $WebShare -Append
-        Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $XrSpatialTracking -Append
-    )
-
-    $values = ($values -ne $null)
-    $value = ($values -join ', ')
-
-    # add the header
-    Add-PodeSecurityHeader -Name 'Permissions-Policy' -Value $value
+    Set-PodeSecurityPermissionsPolicyInternal -Params $PSBoundParameters -Append
 }
 
 <#
@@ -1207,6 +1193,7 @@ Set a value for the X-Content-Type-Options header to "nosniff".
 Set-PodeSecurityContentTypeOptions
 #>
 function Set-PodeSecurityContentTypeOptions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -1224,6 +1211,7 @@ Removes definitions for the X-Content-Type-Options header.
 Remove-PodeSecurityContentTypeOptions
 #>
 function Remove-PodeSecurityContentTypeOptions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -1258,7 +1246,8 @@ function Set-PodeSecurityStrictTransportSecurity {
     )
 
     if ($Duration -le 0) {
-        throw "Invalid Strict-Transport-Security duration supplied: $($Duration). Should be greater than 0"
+        # Invalid Strict-Transport-Security duration supplied
+        throw ($PodeLocale.invalidStrictTransportSecurityDurationExceptionMessage -f $Duration)
     }
 
     $value = "max-age=$($Duration)"
@@ -1453,7 +1442,8 @@ function Set-PodeSecurityAccessControl {
     if (![string]::IsNullOrWhiteSpace($Headers) -or $AuthorizationHeader -or $CrossDomainXhrRequests) {
         if ($Headers -icontains '*') {
             if ($Credentials) {
-                throw 'The * wildcard for Headers, when Credentials is passed, will be taken as a literal string and not a wildcard'
+                # When Credentials is passed, The * wildcard for Headers will be taken as a literal string and not a wildcard
+                throw ($PodeLocale.credentialsPassedWildcardForHeadersLiteralExceptionMessage)
             }
 
             $Headers = @('*')
@@ -1478,7 +1468,8 @@ function Set-PodeSecurityAccessControl {
 
     if ($AutoHeaders) {
         if ($Headers -icontains '*') {
-            throw 'The * wildcard for Headers, is not comptatibile with the AutoHeaders switch'
+            # The * wildcard for Headers is incompatible with the AutoHeaders switch
+            throw ($PodeLocale.wildcardHeadersIncompatibleWithAutoHeadersExceptionMessage)
         }
 
         Add-PodeSecurityHeader -Name 'Access-Control-Allow-Headers' -Value 'content-type' -Append
@@ -1487,7 +1478,8 @@ function Set-PodeSecurityAccessControl {
 
     if ($AutoMethods) {
         if ($Methods -icontains '*') {
-            throw 'The * wildcard for Methods, is not comptatibile with the AutoMethods switch'
+            # The * wildcard for Methods is incompatible with the AutoMethods switch
+            throw ($PodeLocale.wildcardMethodsIncompatibleWithAutoMethodsExceptionMessage)
         }
         if ($WithOptions) {
             Add-PodeSecurityHeader -Name 'Access-Control-Allow-Methods' -Value 'Options' -Append
@@ -1497,7 +1489,8 @@ function Set-PodeSecurityAccessControl {
 
     # duration
     if ($Duration -le 0) {
-        throw "Invalid Access-Control-Max-Age duration supplied: $($Duration). Should be greater than 0"
+        # Invalid Access-Control-Max-Age duration supplied
+        throw ($PodeLocale.invalidAccessControlMaxAgeDurationExceptionMessage -f $Duration)
     }
 
     Add-PodeSecurityHeader -Name 'Access-Control-Max-Age' -Value $Duration

@@ -1,5 +1,9 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingCmdletAliases', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUSeDeclaredVarsMoreThanAssignments', '')]
 param(
     [string]
     $Version = '0.0.0',
@@ -12,7 +16,10 @@ param(
     $PowerShellVersion = 'lts',
 
     [string]
-    $ReleaseNoteVersion
+    $ReleaseNoteVersion,
+
+    [string]
+    $UICulture = 'en-US'
 )
 
 # Fix for PS7.5 Preview - https://github.com/PowerShell/PowerShell/issues/23868
@@ -22,7 +29,7 @@ $ProgressPreference = 'SilentlyContinue'
 # Dependency Versions
 #>
 $Versions = @{
-    Pester      = '5.5.0'
+    Pester      = '5.6.1'
     MkDocs      = '1.6.0'
     PSCoveralls = '1.0.0'
     SevenZip    = '18.5.0.20180730'
@@ -289,7 +296,7 @@ Task PrintChecksum {
 Task ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
-        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        Invoke-Expression ([System.Net.WebClient]::new().DownloadString('https://chocolatey.org/install.ps1'))
     }
 }
 
@@ -342,6 +349,43 @@ Task DocsDeps ChocoDeps, {
     Install-PodeBuildModule PlatyPS
 }
 
+Task IndexSamples {
+    $examplesPath = './examples'
+    if (!(Test-Path -PathType Container -Path $examplesPath)) {
+        return
+    }
+
+    # List of directories to exclude
+    $sampleMarkDownPath = './docs/Getting-Started/Samples.md'
+    $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
+        'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues')
+
+    # Convert exlusion list into single regex pattern for directory matching
+    $dirSeparator = [IO.Path]::DirectorySeparatorChar
+    $excludeDirs = "\$($dirSeparator)($($excludeDirs -join '|'))\$($dirSeparator)"
+
+    # build the page content
+    Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse -File -Force |
+        Where-Object {
+            $_.FullName -inotmatch $excludeDirs
+        } |
+        Sort-Object -Property FullName |
+        ForEach-Object {
+            Write-Verbose "Processing Sample: $($_.FullName)"
+
+            # get the script help
+            $help = Get-Help -Name $_.FullName -ErrorAction Stop
+
+            # add help content
+            $urlFileName = ($_.FullName -isplit 'examples')[1].Trim('\/') -replace '[\\/]', '/'
+            $markdownContent += "## [$($_.BaseName)](https://github.com/Badgerati/Pode/blob/develop/examples/$($urlFileName))`n`n"
+            $markdownContent += "**Synopsis**`n`n$($help.Synopsis)`n`n"
+            $markdownContent += "**Description**`n`n$($help.Description.Text)`n`n"
+        }
+
+    Write-Output "Write Markdown document for the sample files to $($sampleMarkDownPath)"
+    Set-Content -Path $sampleMarkDownPath -Value "# Sample Scripts`n`n$($markdownContent)" -Force
+}
 
 <#
 # Building
@@ -374,9 +418,19 @@ Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
 }, PrintChecksum
 
+#Synopsis: Create the Deliverable folder
+Task DeliverableFolder {
+    $path = './deliverable'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    # create the deliverable dir
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+}
 
 # Synopsis: Creates a Zip of the Module
-Task Compress StampVersion, {
+Task Compress PackageFolder, StampVersion, DeliverableFolder, {
     $path = './deliverable'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -387,13 +441,13 @@ Task Compress StampVersion, {
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
-Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
+Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, PackageFolder, StampVersion, DeliverableFolder, {
     exec { choco pack ./packers/choco/pode.nuspec }
     Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
 
 # Synopsis: Create docker tags
-Task DockerPack {
+Task DockerPack PackageFolder, StampVersion, {
     # check if github and windows, and output warning
     if ((Test-PodeBuildIsGitHub) -and (Test-PodeBuildIsWindows)) {
         Write-Warning 'Docker images are not built on GitHub Windows runners, and Docker is in Windows container only mode. Exiting task.'
@@ -425,7 +479,10 @@ Task DockerPack {
 }
 
 # Synopsis: Package up the Module
-Task Pack Build, {
+Task Pack Compress, ChocoPack, DockerPack
+
+# Synopsis: Package up the Module into a /pkg folder
+Task PackageFolder Build, {
     $path = './pkg'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -435,7 +492,7 @@ Task Pack Build, {
     New-Item -Path $path -ItemType Directory -Force | Out-Null
 
     # which source folders do we need? create them and copy their contents
-    $folders = @('Private', 'Public', 'Misc', 'Libs')
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales')
     $folders | ForEach-Object {
         New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
         Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
@@ -453,7 +510,7 @@ Task Pack Build, {
     $files | ForEach-Object {
         Copy-Item -Path "./$($_)" -Destination $path -Force | Out-Null
     }
-}, StampVersion, Compress, ChocoPack, DockerPack
+}
 
 
 <#
@@ -472,7 +529,13 @@ Task TestNoBuild TestDeps, {
     if (Test-PodeBuildIsWindows) {
         netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
     }
-
+    if ($UICulture -ne ([System.Threading.Thread]::CurrentThread.CurrentUICulture) ) {
+        $originalUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
+        Write-Output "Original UICulture is $originalUICulture"
+        Write-Output "Set UICulture to $UICulture"
+        # set new UICulture
+        [System.Threading.Thread]::CurrentThread.CurrentUICulture = $UICulture
+    }
     $Script:TestResultFile = "$($pwd)/TestResults.xml"
 
     # get default from static property
@@ -493,11 +556,15 @@ Task TestNoBuild TestDeps, {
     else {
         $Script:TestStatus = Invoke-Pester -Configuration $configuration
     }
+    if ($originalUICulture) {
+        Write-Output "Restore UICulture to $originalUICulture"
+        # restore original UICulture
+        [System.Threading.Thread]::CurrentThread.CurrentUICulture = $originalUICulture
+    }
 }, PushCodeCoverage, CheckFailedTests
 
 # Synopsis: Run tests after a build
 Task Test Build, TestNoBuild
-
 
 # Synopsis: Check if any of the tests failed
 Task CheckFailedTests {
@@ -532,7 +599,7 @@ Task Docs DocsDeps, DocsHelpBuild, {
 }
 
 # Synopsis: Build the function help documentation
-Task DocsHelpBuild DocsDeps, Build, {
+Task DocsHelpBuild IndexSamples, DocsDeps, Build, {
     # import the local module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
     Import-Module ./src/Pode.psm1 -Force | Out-Null
@@ -586,7 +653,7 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 #>
 
 # Synopsis: Clean the build enviroment
-Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener
+Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
 
 # Synopsis: Clean the Deliverable folder
 Task CleanDeliverable {
@@ -641,7 +708,13 @@ Task CleanListener {
     Write-Host "Cleanup $path done"
 }
 
-
+Task CleanDocs {
+    $path = './docs/Getting-Started/Samples.md'
+    if (Test-Path -Path $path -PathType Leaf) {
+        Write-Host "Removing $path"
+        Remove-Item -Path $path -Force | Out-Null
+    }
+}
 <#
 # Local module management
 #>
@@ -660,7 +733,7 @@ Task Install-Module -If ($Version) Pack, {
     $path = './pkg'
 
     # copy over folders
-    $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses')
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses', 'Locales')
     $folders | ForEach-Object {
         Copy-Item -Path (Join-Path -Path $path -ChildPath $_) -Destination $dest -Force -Recurse | Out-Null
     }
@@ -744,29 +817,41 @@ Task SetupPowerShell {
             osx   = "powershell-$($PowerShellVersion)-$($os)-$($arch).tar.gz"
         })[$os]
 
-    # build the blob name
-    $blobName = "v$($PowerShellVersion -replace '\.', '-')"
+    # build the URL
+    $urls = @{
+        Old = "https://pscoretestdata.blob.core.windows.net/v$($PowerShellVersion -replace '\.', '-')/$($packageName)"
+        New = "https://powershellinfraartifacts-gkhedzdeaghdezhr.z01.azurefd.net/install/v$($PowerShellVersion)/$($packageName)"
+    }
 
     # download the package to a temp location
     $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
     $downloadParams = @{
-        Uri         = "https://pscoretestdata.blob.core.windows.net/$($blobName)/$($packageName)"
+        Uri         = $urls.New
         OutFile     = $outputFile
         ErrorAction = 'Stop'
     }
 
-    Write-Host "Downloading $($packageName) from $($downloadParams.Uri)"
     Write-Host "Output file: $($outputFile)"
 
-    # retry the download 3 times, with a sleep of 10s between each attempt
+    # retry the download 6 times, with a sleep of 10s between each attempt, and altering between old and new URLs
     $counter = 0
     $success = $false
 
     do {
         try {
             $counter++
-            Write-Host "Attempt $($counter) of 3"
+            Write-Host "Attempt $($counter) of 6"
 
+            # use new URL for odd attempts, and old URL for even attempts
+            if ($counter % 2 -eq 0) {
+                $downloadParams.Uri = $urls.Old
+            }
+            else {
+                $downloadParams.Uri = $urls.New
+            }
+
+            # download the package
+            Write-Host "Attempting download of $($packageName) from $($downloadParams.Uri)"
             Invoke-WebRequest @downloadParams
 
             $success = $true
@@ -774,11 +859,11 @@ Task SetupPowerShell {
         }
         catch {
             $success = $false
-            if ($counter -ge 3) {
-                throw "Failed to download PowerShell package after 3 attempts. Error: $($_.Exception.Message)"
+            if ($counter -ge 6) {
+                throw "Failed to download PowerShell package after 6 attempts. Error: $($_.Exception.Message)"
             }
 
-            Start-Sleep -Seconds 10
+            Start-Sleep -Seconds 5
         }
     } while (!$success)
 
@@ -835,6 +920,10 @@ task ReleaseNotes {
     $dependabot = @{}
 
     foreach ($pr in $prs) {
+        if ($pr.labels.name -icontains 'superseded') {
+            continue
+        }
+
         $label = ($pr.labels[0].name -split ' ')[0]
         if ($label -iin @('new-release', 'internal-code')) {
             continue
@@ -881,7 +970,7 @@ task ReleaseNotes {
             }
         }
 
-        $titles = @($pr.title)
+        $titles = @($pr.title).Trim()
         if ($pr.title.Contains(';')) {
             $titles = ($pr.title -split ';').Trim()
         }
@@ -892,7 +981,7 @@ task ReleaseNotes {
         }
 
         foreach ($title in $titles) {
-            $str = "* #$($pr.number): $($title)"
+            $str = "* #$($pr.number): $($title -replace '`', "'")"
             if (![string]::IsNullOrWhiteSpace($author)) {
                 $str += " (thanks @$($author)!)"
             }

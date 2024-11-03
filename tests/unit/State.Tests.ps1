@@ -5,6 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
     $PodeContext = @{ 'Server' = $null; }
 }
@@ -12,7 +13,7 @@ BeforeAll {
 Describe 'Set-PodeState' {
     It 'Throws error when not initialised' {
         $PodeContext.Server = @{ 'State' = $null }
-        { Set-PodeState -Name 'test' } | Should -Throw -ExpectedMessage 'Pode has not been initialised'
+        { Set-PodeState -Name 'test' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
     It 'Sets and returns an object' {
@@ -23,12 +24,21 @@ Describe 'Set-PodeState' {
         $PodeContext.Server.State['test'].Value | Should -Be 7
         $PodeContext.Server.State['test'].Scope | Should -Be @()
     }
+
+    It 'Sets by pipe and returns an object array' {
+        $PodeContext.Server = @{ 'State' = @{} }
+        $result =  @(7,3,4)|Set-PodeState -Name 'test'
+
+        $result | Should -Be @(7,3,4)
+        $PodeContext.Server.State['test'].Value | Should -Be @(7,3,4)
+        $PodeContext.Server.State['test'].Scope | Should -Be @()
+    }
 }
 
 Describe 'Get-PodeState' {
     It 'Throws error when not initialised' {
         $PodeContext.Server = @{ 'State' = $null }
-        { Get-PodeState -Name 'test' } | Should -Throw -ExpectedMessage 'Pode has not been initialised'
+        { Get-PodeState -Name 'test' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
     It 'Gets an object from the state' {
@@ -41,7 +51,7 @@ Describe 'Get-PodeState' {
 Describe 'Remove-PodeState' {
     It 'Throws error when not initialised' {
         $PodeContext.Server = @{ 'State' = $null }
-        { Remove-PodeState -Name 'test' } | Should -Throw -ExpectedMessage 'Pode has not been initialised'
+        { Remove-PodeState -Name 'test' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
     It 'Removes an object from the state' {
@@ -55,7 +65,7 @@ Describe 'Remove-PodeState' {
 Describe 'Save-PodeState' {
     It 'Throws error when not initialised' {
         $PodeContext.Server = @{ 'State' = $null }
-        { Save-PodeState -Path 'some/path' } | Should -Throw -ExpectedMessage 'Pode has not been initialised'
+        { Save-PodeState -Path 'some/path' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
     It 'Saves the state to file' {
@@ -95,7 +105,7 @@ Describe 'Save-PodeState' {
 Describe 'Restore-PodeState' {
     It 'Throws error when not initialised' {
         $PodeContext.Server = @{ 'State' = $null }
-        { Restore-PodeState -Path 'some/path' } | Should -Throw -ExpectedMessage 'Pode has not been initialised'
+        { Restore-PodeState -Path 'some/path' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
     It 'Restores the state from file' {
@@ -112,7 +122,7 @@ Describe 'Restore-PodeState' {
 Describe 'Test-PodeState' {
     It 'Throws error when not initialised' {
         $PodeContext.Server = @{ 'State' = $null }
-        { Test-PodeState -Name 'test' } | Should -Throw -ExpectedMessage 'Pode has not been initialised'
+        { Test-PodeState -Name 'test' } | Should -Throw -ExpectedMessage $PodeLocale.podeNotInitializedExceptionMessage # Pode has not been initialized.
     }
 
     It 'Returns true for an object being in the state' {

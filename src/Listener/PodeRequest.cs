@@ -12,59 +12,83 @@ using System.Threading;
 
 namespace Pode
 {
+    /// <summary>
+    /// Represents an incoming request in Pode, handling different protocols, SSL/TLS upgrades, and client communication.
+    /// </summary>
     public class PodeRequest : PodeProtocol, IDisposable
     {
+        // Endpoint information for remote and local addresses
         public EndPoint RemoteEndPoint { get; private set; }
         public EndPoint LocalEndPoint { get; private set; }
+
+        // SSL/TLS properties
         public bool IsSsl { get; private set; }
         public bool SslUpgraded { get; private set; }
         public bool IsKeepAlive { get; protected set; }
+
+        // Flags indicating request characteristics and handling status
         public virtual bool CloseImmediately { get => false; }
         public virtual bool IsProcessable { get => true; }
 
+        // Input stream for incoming request data
         public Stream InputStream { get; private set; }
+        public PodeStreamState State { get; private set; }
+        public bool IsOpen => State == PodeStreamState.Open;
+
+        // Certificate properties
         public X509Certificate Certificate { get; private set; }
         public bool AllowClientCertificate { get; private set; }
         public PodeTlsMode TlsMode { get; private set; }
         public X509Certificate2 ClientCertificate { get; set; }
         public SslPolicyErrors ClientCertificateErrors { get; set; }
         public SslProtocols Protocols { get; private set; }
-        public HttpRequestException Error { get; set; }
-        public bool IsAborted => (Error != default(HttpRequestException));
+
+        // Error handling for request processing
+        public PodeRequestException Error { get; set; }
+        public bool IsAborted => Error != default(PodeRequestException);
         public bool IsDisposed { get; private set; }
 
-        public virtual string Address
-        {
-            get => (Context.PodeSocket.HasHostnames
+        // Address and Scheme properties for the request
+        public virtual string Address => Context.PodeSocket.HasHostnames
                 ? $"{Context.PodeSocket.Hostname}:{((IPEndPoint)LocalEndPoint).Port}"
-                : $"{((IPEndPoint)LocalEndPoint).Address}:{((IPEndPoint)LocalEndPoint).Port}");
-        }
+                : $"{((IPEndPoint)LocalEndPoint).Address}:{((IPEndPoint)LocalEndPoint).Port}";
 
-        public virtual string Scheme
-        {
-            get => (SslUpgraded ? $"{Context.PodeSocket.Type}s" : $"{Context.PodeSocket.Type}");
-        }
+        public virtual string Scheme => SslUpgraded ? $"{Context.PodeSocket.Type}s" : $"{Context.PodeSocket.Type}";
 
+        // Socket and Context associated with the request
         private Socket Socket;
         protected PodeContext Context;
-        protected static UTF8Encoding Encoding = new UTF8Encoding();
 
+        // Encoding and buffer for handling incoming data
+        protected static UTF8Encoding Encoding = new UTF8Encoding();
         private byte[] Buffer;
         private MemoryStream BufferStream;
         private const int BufferSize = 16384;
 
-        public PodeRequest(Socket socket, PodeSocket podeSocket)
+        /// <summary>
+        /// Initializes a new instance of the PodeRequest class.
+        /// </summary>
+        /// <param name="socket">The socket used for communication.</param>
+        /// <param name="podeSocket">The PodeSocket managing this request.</param>
+        /// <param name="context">The PodeContext associated with this request.</param>
+        public PodeRequest(Socket socket, PodeSocket podeSocket, PodeContext context)
         {
             Socket = socket;
             RemoteEndPoint = socket.RemoteEndPoint;
             LocalEndPoint = socket.LocalEndPoint;
             TlsMode = podeSocket.TlsMode;
             Certificate = podeSocket.Certificate;
-            IsSsl = (Certificate != default(X509Certificate));
+            IsSsl = Certificate != default(X509Certificate);
             AllowClientCertificate = podeSocket.AllowClientCertificate;
             Protocols = podeSocket.Protocols;
+            Context = context;
+            State = PodeStreamState.New;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the PodeRequest class by copying properties from another request.
+        /// </summary>
+        /// <param name="request">The PodeRequest to copy properties from.</param>
         public PodeRequest(PodeRequest request)
         {
             IsSsl = request.IsSsl;
@@ -79,121 +103,250 @@ namespace Pode
             AllowClientCertificate = request.AllowClientCertificate;
             Protocols = request.Protocols;
             TlsMode = request.TlsMode;
+            State = request.State;
         }
 
-        public void Open()
+        /// <summary>
+        /// Opens the socket stream, upgrading to SSL/TLS if necessary.
+        /// </summary>
+        /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the async operation.</returns>
+        public async Task Open(CancellationToken cancellationToken)
         {
-            // open the socket's stream
-            InputStream = new NetworkStream(Socket, true);
-            if (!IsSsl || TlsMode == PodeTlsMode.Explicit)
+            try
             {
-                // if not ssl, use the main network stream
-                return;
-            }
+                // Open the input stream for the socket
+                InputStream = new NetworkStream(Socket, true);
 
-            // otherwise, convert the stream to an ssl stream
-            UpgradeToSSL();
+                // Upgrade to SSL if necessary
+                if (!IsSsl || TlsMode == PodeTlsMode.Explicit)
+                {
+                    // If not SSL, use the main network stream
+                    State = PodeStreamState.Open;
+                    return;
+                }
+
+                // Upgrade to SSL if necessary
+                await UpgradeToSSL(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (ex is AggregateException)
+                {
+                    PodeHelpers.HandleAggregateException(ex as AggregateException, Context.Listener, PodeLoggingLevel.Debug, true);
+                }
+                else
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                }
+
+                State = PodeStreamState.Error;
+                Error = new PodeRequestException(ex, 502);
+            }
         }
 
-        public void UpgradeToSSL()
+        /// <summary>
+        /// Upgrades the current connection to SSL/TLS.
+        /// </summary>
+        /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the async operation.</returns>
+        public async Task UpgradeToSSL(CancellationToken cancellationToken)
         {
             if (SslUpgraded)
             {
-                return;
+                State = PodeStreamState.Open;
+                return; // Already upgraded
             }
 
+            // Create an SSL stream for secure communication
             var ssl = new SslStream(InputStream, false, new RemoteCertificateValidationCallback(ValidateCertificateCallback));
-            ssl.AuthenticateAsServerAsync(Certificate, AllowClientCertificate, Protocols, false).Wait(Context.Listener.CancellationToken);
-            InputStream = ssl;
-            SslUpgraded = true;
+
+            // Authenticate the SSL stream, handling cancellation and exceptions
+            using (cancellationToken.Register(() => ssl.Dispose()))
+            {
+                try
+                {
+                    // Authenticate the SSL stream
+                    await ssl.AuthenticateAsServerAsync(Certificate, AllowClientCertificate, Protocols, false).ConfigureAwait(false);
+
+                    // Set InputStream to the upgraded SSL stream
+                    InputStream = ssl;
+                    SslUpgraded = true;
+                    State = PodeStreamState.Open;
+                }
+                catch (Exception ex) when (ex is OperationCanceledException || ex is IOException || ex is ObjectDisposedException)
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+                    State = PodeStreamState.Error;
+                    Error = new PodeRequestException(ex, 500);
+                }
+                catch (AuthenticationException ex)
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Debug);
+                    State = PodeStreamState.Error;
+                    Error = new PodeRequestException(ex, 400);
+                }
+                catch (Exception ex)
+                {
+                    PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                    State = PodeStreamState.Error;
+                    Error = new PodeRequestException(ex, 502);
+                }
+            }
         }
 
+        /// <summary>
+        /// Callback to validate client certificates during the SSL handshake.
+        /// </summary>
+        /// <param name="sender">The sender of the callback.</param>
+        /// <param name="certificate">The client certificate to validate.</param>
+        /// <param name="chain">The chain of the certificate.</param>
+        /// <param name="sslPolicyErrors">Any SSL policy errors found.</param>
+        /// <returns>True if the certificate is valid; otherwise, false.</returns>
         private bool ValidateCertificateCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             ClientCertificateErrors = sslPolicyErrors;
 
             ClientCertificate = certificate == default(X509Certificate)
-                ? default(X509Certificate2)
+                ? default
                 : new X509Certificate2(certificate);
 
             return true;
         }
 
-        protected async Task<int> BeginRead(byte[] buffer, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            return await Task<int>.Factory.FromAsync(InputStream.BeginRead, InputStream.EndRead, buffer, 0, BufferSize, null);
-        }
-
+        /// <summary>
+        /// Receives data from the input stream and processes it.
+        /// </summary>
+        /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the async operation, with a boolean indicating whether the connection should be closed.</returns>
         public async Task<bool> Receive(CancellationToken cancellationToken)
         {
+            // Check if the stream is open
+            if (State != PodeStreamState.Open)
+            {
+                return false;
+            }
+
             try
             {
-                Error = default(HttpRequestException);
+                Error = default;
 
                 Buffer = new byte[BufferSize];
-                BufferStream = new MemoryStream();
-
-                var read = 0;
-                var close = true;
-
-                while ((read = await BeginRead(Buffer, cancellationToken)) > 0)
+                using (BufferStream = new MemoryStream())
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    BufferStream.Write(Buffer, 0, read);
+                    var close = true;
 
-                    if (Socket.Available > 0 || !ValidateInput(BufferStream.ToArray()))
+                    while (true)
                     {
-                        continue;
+#if NETCOREAPP2_1_OR_GREATER
+                        // Read data from the input stream
+                        var read = await InputStream.ReadAsync(Buffer.AsMemory(0, BufferSize), cancellationToken).ConfigureAwait(false);
+                        if (read <= 0)
+                        {
+                            break;
+                        }
+
+                        // Write the data to the buffer stream
+                        await BufferStream.WriteAsync(Buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+#else
+                        // Read data from the input stream
+                        var read = await InputStream.ReadAsync(Buffer, 0, BufferSize, cancellationToken).ConfigureAwait(false);
+                        if (read <= 0)
+                        {
+                            break;
+                        }
+
+                        // Write the data to the buffer stream
+                        await BufferStream.WriteAsync(Buffer, 0, read, cancellationToken).ConfigureAwait(false);
+#endif
+
+                        // Validate and parse the data if available
+                        if (Socket.Available > 0 || !ValidateInput(BufferStream.ToArray()))
+                        {
+                            continue;
+                        }
+
+                        if (!await Parse(BufferStream.ToArray(), cancellationToken).ConfigureAwait(false))
+                        {
+                            BufferStream.SetLength(0);
+                            continue;
+                        }
+
+                        close = false;
+                        break;
                     }
 
-                    if (!Parse(BufferStream.ToArray()))
-                    {
-                        BufferStream.Dispose();
-                        BufferStream = new MemoryStream();
-                        continue;
-                    }
-
-                    close = false;
-                    break;
+                    return close;
                 }
-
-                cancellationToken.ThrowIfCancellationRequested();
-                return close;
             }
-            catch (HttpRequestException httpex)
+            catch (OperationCanceledException ex)
             {
-                Error = httpex;
+                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+            }
+            catch (IOException ex)
+            {
+                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+            }
+            catch (PodeRequestException ex)
+            {
+                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                Error = ex;
             }
             catch (Exception ex)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                Error = new HttpRequestException(ex.Message, ex);
-                Error.Data.Add("PodeStatusCode", 400);
+                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);
+                Error = new PodeRequestException(ex, 500);
             }
             finally
             {
-                BufferStream.Dispose();
-                BufferStream = default(MemoryStream);
-                Buffer = default(byte[]);
+                PartialDispose();
             }
 
             return false;
         }
 
+        /// <summary>
+        /// Reads data from the input stream until the specified bytes are found.
+        /// </summary>
+        /// <param name="checkBytes">The bytes to check for in the input stream.</param>
+        /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the async operation, with a string containing the data read.</returns>
         public async Task<string> Read(byte[] checkBytes, CancellationToken cancellationToken)
         {
-            var buffer = new byte[BufferSize];
-            var bufferStream = new MemoryStream();
-
-            try
+            // Check if the stream is open
+            if (State != PodeStreamState.Open)
             {
-                var read = 0;
-                while ((read = await BeginRead(buffer, cancellationToken)) > 0)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    bufferStream.Write(buffer, 0, read);
+                return string.Empty;
+            }
 
+            // Read data from the input stream until the check bytes are found
+            var buffer = new byte[BufferSize];
+            using (var bufferStream = new MemoryStream())
+            {
+                while (true)
+                {
+#if NETCOREAPP2_1_OR_GREATER
+                    // Read data from the input stream
+                    var read = await InputStream.ReadAsync(buffer.AsMemory(0, BufferSize), cancellationToken).ConfigureAwait(false);
+                    if (read <= 0)
+                    {
+                        break;
+                    }
+
+                    // Write the data to the buffer stream
+                    await bufferStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+#else
+                    // Read data from the input stream
+                    var read = await InputStream.ReadAsync(buffer, 0, BufferSize, cancellationToken).ConfigureAwait(false);
+                    if (read <= 0)
+                    {
+                        break;
+                    }
+
+                    // Write the data to the buffer stream
+                    await bufferStream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+#endif
+                    // Validate the input data
                     if (Socket.Available > 0 || !ValidateInputInternal(bufferStream.ToArray(), checkBytes))
                     {
                         continue;
@@ -202,38 +355,34 @@ namespace Pode
                     break;
                 }
 
-                cancellationToken.ThrowIfCancellationRequested();
                 return Encoding.GetString(bufferStream.ToArray()).Trim();
-            }
-            finally
-            {
-                bufferStream.Dispose();
-                bufferStream = default(MemoryStream);
-                buffer = default(byte[]);
             }
         }
 
-        private bool ValidateInputInternal(byte[] bytes, byte[] checkBytes)
+        /// <summary>
+        /// Validates the input bytes against the specified check bytes.
+        /// </summary>
+        /// <param name="bytes">The bytes to validate.</param>
+        /// <param name="checkBytes">The bytes to check against.</param>
+        /// <returns>True if validation is successful, otherwise false.</returns>
+        private static bool ValidateInputInternal(byte[] bytes, byte[] checkBytes)
         {
-            // we need more bytes!
             if (bytes.Length == 0)
             {
-                return false;
+                return false; // Need more bytes
             }
 
-            // do we have any checkBytes?
             if (checkBytes == default(byte[]) || checkBytes.Length == 0)
             {
-                return true;
+                return true; // No specific bytes to check
             }
 
-            // check bytes against checkBytes length
             if (bytes.Length < checkBytes.Length)
             {
-                return false;
+                return false; // Not enough bytes
             }
 
-            // expect to end with checkBytes?
+            // Check if the input ends with checkBytes
             for (var i = 0; i < checkBytes.Length; i++)
             {
                 if (bytes[bytes.Length - (checkBytes.Length - i)] != checkBytes[i])
@@ -245,21 +394,45 @@ namespace Pode
             return true;
         }
 
-        protected virtual bool Parse(byte[] bytes)
+        /// <summary>
+        /// Parses the received bytes. This method should be implemented in derived classes.
+        /// </summary>
+        /// <param name="bytes">The bytes to parse.</param>
+        /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the async operation, returning true if parsing was successful.</returns>
+        /// <exception cref="NotImplementedException">Thrown when called directly from PodeRequest.</exception>
+        protected virtual Task<bool> Parse(byte[] bytes, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Validates the incoming input bytes. Can be overridden by derived classes.
+        /// </summary>
+        /// <param name="bytes">The bytes to validate.</param>
+        /// <returns>True if validation is successful, otherwise false.</returns>
         protected virtual bool ValidateInput(byte[] bytes)
         {
             return true;
         }
 
-        public void SetContext(PodeContext context)
+        /// <summary>
+        /// Partially disposes resources used during request processing.
+        /// </summary>
+        public virtual void PartialDispose()
         {
-            Context = context;
+            if (BufferStream != default(MemoryStream))
+            {
+                BufferStream.Dispose();
+                BufferStream = default;
+            }
+
+            Buffer = default;
         }
 
+        /// <summary>
+        /// Disposes of the request and its associated resources.
+        /// </summary>
         public virtual void Dispose()
         {
             if (IsDisposed)
@@ -276,16 +449,12 @@ namespace Pode
 
             if (InputStream != default(Stream))
             {
+                State = PodeStreamState.Closed;
                 InputStream.Dispose();
-                InputStream = default(Stream);
+                InputStream = default;
             }
 
-            if (BufferStream != default(MemoryStream))
-            {
-                BufferStream.Dispose();
-                BufferStream = default(MemoryStream);
-            }
-
+            PartialDispose();
             PodeHelpers.WriteErrorMessage($"Request disposed", Context.Listener, PodeLoggingLevel.Verbose, Context);
         }
     }

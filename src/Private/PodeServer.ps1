@@ -24,7 +24,7 @@ function Start-PodeWebServer {
     $endpoints = @()
     $endpointsMap = @{}
 
-    @(Get-PodeEndpoints -Type Http, Ws) | ForEach-Object {
+    @(Get-PodeEndpointByProtocolType -Type Http, Ws) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
@@ -71,7 +71,7 @@ function Start-PodeWebServer {
     # create the listener
     $listener = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)Listener -CancellationToken `$PodeContext.Tokens.Cancellation.Token")))
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
+    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
     $listener.ShowServerDetails = [bool]$PodeContext.Server.Security.ServerDetails
@@ -103,7 +103,7 @@ function Start-PodeWebServer {
     }
 
     # only if HTTP endpoint
-    if (Test-PodeEndpoints -Type Http) {
+    if (Test-PodeEndpointByProtocolType -Type Http) {
         # script for listening out for incoming requests
         $listenScript = {
             param(
@@ -169,7 +169,7 @@ function Start-PodeWebServer {
                             # accept/transfer encoding
                             $WebEvent.TransferEncoding = (Get-PodeTransferEncoding -TransferEncoding (Get-PodeHeader -Name 'Transfer-Encoding') -ThrowError)
                             $WebEvent.AcceptEncoding = (Get-PodeAcceptEncoding -AcceptEncoding (Get-PodeHeader -Name 'Accept-Encoding') -ThrowError)
-                            $WebEvent.Ranges = (Get-PodeRanges -Range (Get-PodeHeader -Name 'Range') -ThrowError)
+                            $WebEvent.Ranges = (Get-PodeRange -Range (Get-PodeHeader -Name 'Range') -ThrowError)
 
                             # add logging endware for post-request
                             Add-PodeRequestLogEndware -WebEvent $WebEvent
@@ -182,11 +182,11 @@ function Start-PodeWebServer {
                             # if we have an sse clientId, verify it and then set details in WebEvent
                             if ($WebEvent.Request.HasSseClientId) {
                                 if (!(Test-PodeSseClientIdValid)) {
-                                    throw [System.Net.Http.HttpRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
+                                    throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
                                 }
 
                                 if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
-                                    throw [System.Net.Http.HttpRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)")
+                                    throw [Pode.PodeRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)", 404)
                                 }
 
                                 $WebEvent.Sse = @{
@@ -234,13 +234,15 @@ function Start-PodeWebServer {
                                 }
                             }
                         }
-                        catch [System.OperationCanceledException] {}
-                        catch [System.Net.Http.HttpRequestException] {
+                        catch [System.OperationCanceledException] {
+                            $_ | Write-PodeErrorLog -Level Debug
+                        }
+                        catch [Pode.PodeRequestException] {
                             if ($Response.StatusCode -ge 500) {
                                 $_.Exception | Write-PodeErrorLog -CheckInnerException
                             }
 
-                            $code = [int]($_.Exception.Data['PodeStatusCode'])
+                            $code = $_.Exception.StatusCode
                             if ($code -le 0) {
                                 $code = 400
                             }
@@ -253,7 +255,7 @@ function Start-PodeWebServer {
                             Set-PodeResponseStatus -Code 500 -Exception $_
                         }
                         finally {
-                            Update-PodeServerRequestMetrics -WebEvent $WebEvent
+                            Update-PodeServerRequestMetric -WebEvent $WebEvent
                         }
 
                         # invoke endware specifc to the current web event
@@ -266,7 +268,9 @@ function Start-PodeWebServer {
                     }
                 }
             }
-            catch [System.OperationCanceledException] {}
+            catch [System.OperationCanceledException] {
+                $_ | Write-PodeErrorLog -Level Debug
+            }
             catch {
                 $_ | Write-PodeErrorLog
                 $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -276,12 +280,12 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Web -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+            Add-PodeRunspace -Type Web -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
     }
 
     # only if WS endpoint
-    if (Test-PodeEndpoints -Type Ws) {
+    if (Test-PodeEndpointByProtocolType -Type Ws) {
         # script to write messages back to the client(s)
         $signalScript = {
             param(
@@ -322,14 +326,16 @@ function Start-PodeWebServer {
                         # send the message to all found sockets
                         foreach ($socket in $sockets) {
                             try {
-                                $socket.Context.Response.SendSignal($message)
+                                $null = Wait-PodeTask -Task $socket.Context.Response.SendSignal($message)
                             }
                             catch {
                                 $null = $Listener.Signals.Remove($socket.ClientId)
                             }
                         }
                     }
-                    catch [System.OperationCanceledException] {}
+                    catch [System.OperationCanceledException] {
+                        $_ | Write-PodeErrorLog -Level Debug
+                    }
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -339,7 +345,9 @@ function Start-PodeWebServer {
                     }
                 }
             }
-            catch [System.OperationCanceledException] {}
+            catch [System.OperationCanceledException] {
+                $_ | Write-PodeErrorLog -Level Debug
+            }
             catch {
                 $_ | Write-PodeErrorLog
                 $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -347,11 +355,11 @@ function Start-PodeWebServer {
             }
         }
 
-        Add-PodeRunspace -Type Signals -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
+        Add-PodeRunspace -Type Signals -Name 'Listener' -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
     }
 
     # only if WS endpoint
-    if (Test-PodeEndpoints -Type Ws) {
+    if (Test-PodeEndpointByProtocolType -Type Ws) {
         # script to queue messages from clients to send back to other clients from the server
         $clientScript = {
             param(
@@ -405,18 +413,22 @@ function Start-PodeWebServer {
                             Send-PodeSignal -Value $SignalEvent.Data.Message -Path $SignalEvent.Data.Path -ClientId $SignalEvent.Data.ClientId
                         }
                     }
-                    catch [System.OperationCanceledException] {}
+                    catch [System.OperationCanceledException] {
+                        $_ | Write-PodeErrorLog -Level Debug
+                    }
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
                     }
                     finally {
-                        Update-PodeServerSignalMetrics -SignalEvent $SignalEvent
+                        Update-PodeServerSignalMetric -SignalEvent $SignalEvent
                         Close-PodeDisposable -Disposable $context
                     }
                 }
             }
-            catch [System.OperationCanceledException] {}
+            catch [System.OperationCanceledException] {
+                $_ | Write-PodeErrorLog -Level Debug
+            }
             catch {
                 $_ | Write-PodeErrorLog
                 $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -426,7 +438,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Signals -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+            Add-PodeRunspace -Type Signals -Name 'Broadcaster' -Id $_ -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
     }
 
@@ -443,7 +455,9 @@ function Start-PodeWebServer {
                 Start-Sleep -Seconds 1
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -454,12 +468,13 @@ function Start-PodeWebServer {
         }
     }
 
-    $waitType = 'Web'
-    if (!(Test-PodeEndpoints -Type Http)) {
-        $waitType = 'Signals'
-    }
 
-    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    if (Test-PodeEndpointByProtocolType -Type Http) {
+        Add-PodeRunspace -Type 'Web' -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    }
+    else {
+        Add-PodeRunspace -Type 'Signals' -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    }
 
     # browse to the first endpoint, if flagged
     if ($Browse) {

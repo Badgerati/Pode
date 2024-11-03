@@ -15,9 +15,8 @@ namespace Pode
         {
             CancellationToken = cancellationToken == default(CancellationToken)
                 ? cancellationToken
-                : (new CancellationTokenSource()).Token;
+                : new CancellationTokenSource().Token;
 
-            // IsConnected = true;
             IsDisposed = false;
         }
 

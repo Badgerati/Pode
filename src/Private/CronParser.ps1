@@ -1,5 +1,21 @@
-function Get-PodeCronFields {
-    return @(
+<#
+.SYNOPSIS
+    Provides a list of cron expression fields.
+
+.DESCRIPTION
+    This function returns an array of strings representing the different fields in a cron expression. These fields include 'Minute', 'Hour', 'DayOfMonth', 'Month', and 'DayOfWeek'.
+
+.OUTPUTS
+    Returns an array of strings representing cron expression fields.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeCronField {
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param()
+    return [string[]]@(
         'Minute',
         'Hour',
         'DayOfMonth',
@@ -8,7 +24,23 @@ function Get-PodeCronFields {
     )
 }
 
-function Get-PodeCronFieldConstraints {
+<#
+.SYNOPSIS
+    Provides constraints and information for cron expression fields.
+
+.DESCRIPTION
+    This function returns a hashtable containing constraints and information for various cron expression fields. It includes details such as valid ranges for minutes, hours, days of the month, months, and days of the week.
+
+.OUTPUTS
+    Returns a hashtable with constraints and information for cron expression fields.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeCronFieldConstraint {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
     return @{
         MinMax       = @(
             @(0, 59),
@@ -49,7 +81,23 @@ function Get-PodeCronPredefined {
     }
 }
 
-function Get-PodeCronFieldAliases {
+<#
+.SYNOPSIS
+    Provides aliases for cron expression fields.
+
+.DESCRIPTION
+    This function returns a hashtable containing aliases for cron expression fields. It includes mappings for month abbreviations (e.g., 'Jan' to 1) and day of the week abbreviations (e.g., 'Sun' to 0).
+
+.OUTPUTS
+    Returns a hashtable with aliases for cron expression fields.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Get-PodeCronFieldAlias {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
     return @{
         Month     = @{
             Jan = 1
@@ -77,193 +125,223 @@ function Get-PodeCronFieldAliases {
     }
 }
 
-function ConvertFrom-PodeCronExpressions {
+<#
+.SYNOPSIS
+    Converts a Pode-style cron expression into a hashtable representation.
+
+.DESCRIPTION
+    This function takes an array of Pode-style cron expressions and converts them into a hashtable format. Each hashtable represents a cron expression with its individual components.
+
+.PARAMETER Expression
+    An array of Pode-style cron expressions to convert.
+
+.OUTPUTS
+    A hashtable representing the cron expression with the following keys:
+    - 'Minute'
+    - 'Hour'
+    - 'DayOfMonth'
+    - 'Month'
+    - 'DayOfWeek'
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+
+function ConvertFrom-PodeCronExpression {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string[]]
-        $Expressions
-    )
-
-    return @(@($Expressions) | ForEach-Object {
-            ConvertFrom-PodeCronExpression -Expression $_
-        })
-}
-
-function ConvertFrom-PodeCronExpression {
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
         $Expression
     )
+    $cronList = @()
 
-    $Expression = $Expression.Trim()
+    foreach ($item in $Expression) {
+        if ([string]::IsNullOrEmpty($item)) {
+            continue
+        }
+        $item = $item.Trim()
 
-    # check predefineds
-    $predef = Get-PodeCronPredefined
-    if (!(Test-PodeIsEmpty $predef[$Expression])) {
-        $Expression = $predef[$Expression]
-    }
-
-    # split and check atoms length
-    $atoms = @($Expression -isplit '\s+')
-    if ($atoms.Length -ne 5) {
-        throw "Cron expression should only consist of 5 parts: $($Expression)"
-    }
-
-    # basic variables
-    $aliasRgx = '(?<tag>[a-z]{3})'
-
-    # get cron obj and validate atoms
-    $fields = Get-PodeCronFields
-    $constraints = Get-PodeCronFieldConstraints
-    $aliases = Get-PodeCronFieldAliases
-    $cron = @{}
-
-    for ($i = 0; $i -lt $atoms.Length; $i++) {
-        $_cronExp = @{
-            Range       = $null
-            Values      = $null
-            Constraints = $null
-            Random      = $false
-            WildCard    = $false
+        # check predefineds
+        $predef = Get-PodeCronPredefined
+        if (!(Test-PodeIsEmpty $predef[$item])) {
+            $item = $predef[$item]
         }
 
-        $_atom = $atoms[$i]
-        $_field = $fields[$i]
-        $_constraint = $constraints.MinMax[$i]
-        $_aliases = $aliases[$_field]
+        # split and check atoms length
+        $atoms = @($item -isplit '\s+')
+        if ($atoms.Length -ne 5) {
+            # Cron expression should only consist of 5 parts
+            throw ($PodeLocale.cronExpressionInvalidExceptionMessage -f $Expression)
+        }
+
+        # basic variables
+        $aliasRgx = '(?<tag>[a-z]{3})'
+
+        # get cron obj and validate atoms
+        $fields = Get-PodeCronField
+        $constraints = Get-PodeCronFieldConstraint
+        $aliases = Get-PodeCronFieldAlias
+        $cron = @{}
+
+        for ($i = 0; $i -lt $atoms.Length; $i++) {
+            $_cronExp = @{
+                Range       = $null
+                Values      = $null
+                Constraints = $null
+                Random      = $false
+                WildCard    = $false
+            }
+
+            $_atom = $atoms[$i]
+            $_field = $fields[$i]
+            $_constraint = $constraints.MinMax[$i]
+            $_aliases = $aliases[$_field]
 
         # replace day of week and months with numbers
         if (@('month', 'dayofweek') -icontains $_field) {
             while ($_atom -imatch $aliasRgx) {
                 $_alias = $_aliases[$Matches['tag']]
                 if ($null -eq $_alias) {
-                    throw "Invalid $($_field) alias found: $($Matches['tag'])"
+                    # Invalid $($_field) alias found: $($Matches['tag'])
+                    throw ($PodeLocale.invalidAliasFoundExceptionMessage -f $_field, $Matches['tag'])
                 }
 
-                $_atom = $_atom -ireplace $Matches['tag'], $_alias
-                $null = $_atom -imatch $aliasRgx
+                    $_atom = $_atom -ireplace $Matches['tag'], $_alias
+                    $null = $_atom -imatch $aliasRgx
+                }
             }
-        }
 
         # ensure atom is a valid value
         if (!($_atom -imatch '^[\d|/|*|\-|,r]+$')) {
-            throw "Invalid atom character: $($_atom)"
+            # Invalid atom character
+            throw ($PodeLocale.invalidAtomCharacterExceptionMessage -f $_atom)
         }
 
-        # replace * with min/max constraint
-        if ($_atom -ieq '*') {
-            $_cronExp.WildCard = $true
-            $_atom = ($_constraint -join '-')
-        }
-
-        # parse the atom for either a literal, range, array, or interval
-        # literal
-        if ($_atom -imatch '^(\d+|r)$') {
-            # check if it's random
-            if ($_atom -ieq 'r') {
-                $_cronExp.Values = @(Get-Random -Minimum $_constraint[0] -Maximum ($_constraint[1] + 1))
-                $_cronExp.Random = $true
-            }
-            else {
-                $_cronExp.Values = @([int]$_atom)
-            }
-        }
-
-        # range
-        elseif ($_atom -imatch '^(?<min>\d+)\-(?<max>\d+)$') {
-            $_cronExp.Range = @{ 'Min' = [int]($Matches['min'].Trim()); 'Max' = [int]($Matches['max'].Trim()); }
-        }
-
-        # array
-        elseif ($_atom -imatch '^[\d,]+$') {
-            $_cronExp.Values = [int[]](@($_atom -split ',').Trim())
-        }
-
-        # interval
-        elseif ($_atom -imatch '(?<start>(\d+|\*))\/(?<interval>(\d+|r))$') {
-            $start = $Matches['start']
-            $interval = $Matches['interval']
-
-            if ($interval -ieq '0') {
-                $interval = '1'
+            # replace * with min/max constraint
+            if ($_atom -ieq '*') {
+                $_cronExp.WildCard = $true
+                $_atom = ($_constraint -join '-')
             }
 
-            if ([string]::IsNullOrWhiteSpace($start) -or ($start -ieq '*')) {
-                $start = '0'
-            }
-
-            # set the initial trigger value
-            $_cronExp.Values = @([int]$start)
-
-            # check if it's random
-            if ($interval -ieq 'r') {
-                $_cronExp.Random = $true
-            }
-            else {
-                # loop to get all next values
-                $next = [int]$start + [int]$interval
-                while ($next -le $_constraint[1]) {
-                    $_cronExp.Values += $next
-                    $next += [int]$interval
+            # parse the atom for either a literal, range, array, or interval
+            # literal
+            if ($_atom -imatch '^(\d+|r)$') {
+                # check if it's random
+                if ($_atom -ieq 'r') {
+                    $_cronExp.Values = @(Get-Random -Minimum $_constraint[0] -Maximum ($_constraint[1] + 1))
+                    $_cronExp.Random = $true
+                }
+                else {
+                    $_cronExp.Values = @([int]$_atom)
                 }
             }
-        }
+
+            # range
+            elseif ($_atom -imatch '^(?<min>\d+)\-(?<max>\d+)$') {
+                $_cronExp.Range = @{ 'Min' = [int]($Matches['min'].Trim()); 'Max' = [int]($Matches['max'].Trim()); }
+            }
+
+            # array
+            elseif ($_atom -imatch '^[\d,]+$') {
+                $_cronExp.Values = [int[]](@($_atom -split ',').Trim())
+            }
+
+            # interval
+            elseif ($_atom -imatch '(?<start>(\d+|\*))\/(?<interval>(\d+|r))$') {
+                $start = $Matches['start']
+                $interval = $Matches['interval']
+
+                if ($interval -ieq '0') {
+                    $interval = '1'
+                }
+
+                if ([string]::IsNullOrWhiteSpace($start) -or ($start -ieq '*')) {
+                    $start = '0'
+                }
+
+                # set the initial trigger value
+                $_cronExp.Values = @([int]$start)
+
+                # check if it's random
+                if ($interval -ieq 'r') {
+                    $_cronExp.Random = $true
+                }
+                else {
+                    # loop to get all next values
+                    $next = [int]$start + [int]$interval
+                    while ($next -le $_constraint[1]) {
+                        $_cronExp.Values += $next
+                        $next += [int]$interval
+                    }
+                }
+            }
 
         # error
         else {
-            throw "Invalid cron atom format found: $($_atom)"
+            # Invalid cron atom format found
+            throw ($PodeLocale.invalidCronAtomFormatExceptionMessage -f $_atom)
         }
 
         # ensure cron expression values are valid
         if ($null -ne $_cronExp.Range) {
             if ($_cronExp.Range.Min -gt $_cronExp.Range.Max) {
-                throw "Min value for $($_field) should not be greater than the max value"
+                # Min value should not be greater than the max value
+                throw ($PodeLocale.minValueGreaterThanMaxExceptionMessage -f $_field)
             }
 
             if ($_cronExp.Range.Min -lt $_constraint[0]) {
-                throw "Min value '$($_cronExp.Range.Min)' for $($_field) is invalid, should be greater than/equal to $($_constraint[0])"
+                # Min value for $($_field) is invalid, should be greater than/equal
+                throw ($PodeLocale.minValueInvalidExceptionMessage -f $_cronExp.Range.Min, $_field, $_constraint[0])
             }
 
             if ($_cronExp.Range.Max -gt $_constraint[1]) {
-                throw "Max value '$($_cronExp.Range.Max)' for $($_field) is invalid, should be less than/equal to $($_constraint[1])"
+                # Max value for $($_field) is invalid, should be greater than/equal
+                throw ($PodeLocale.maxValueInvalidExceptionMessage -f $_cronExp.Range.Max, $_field, $_constraint[1])
             }
         }
 
         if ($null -ne $_cronExp.Values) {
             $_cronExp.Values | ForEach-Object {
                 if ($_ -lt $_constraint[0] -or $_ -gt $_constraint[1]) {
-                    throw "Value '$($_)' for $($_field) is invalid, should be between $($_constraint[0]) and $($_constraint[1])"
+                    # Value is invalid, should be between
+                    throw ($PodeLocale.valueOutOfRangeExceptionMessage -f $value, $_field, $_constraint[0], $_constraint[1])
                 }
             }
         }
 
-        # assign value
-        $_cronExp.Constraints = $_constraint
-        $cron[$_field] = $_cronExp
-    }
+            # assign value
+            $_cronExp.Constraints = $_constraint
+            $cron[$_field] = $_cronExp
+        }
 
     # post validation for month/days in month
     if (($null -ne $cron['Month'].Values) -and ($null -ne $cron['DayOfMonth'].Values)) {
         foreach ($mon in $cron['Month'].Values) {
             foreach ($day in $cron['DayOfMonth'].Values) {
                 if ($day -gt $constraints.DaysInMonths[$mon - 1]) {
-                    throw "$($constraints.Months[$mon - 1]) only has $($constraints.DaysInMonths[$mon - 1]) days, but $($day) was supplied"
+                    # $($constraints.Months[$mon - 1]) only has $($constraints.DaysInMonths[$mon - 1]) days, but $($day) was supplied
+                    throw ($PodeLocale.daysInMonthExceededExceptionMessage -f $constraints.Months[$mon - 1], $constraints.DaysInMonths[$mon - 1], $day)
                 }
             }
         }
     }
 
-    # flag if this cron contains a random atom
-    $cron['Random'] = (($cron.Values | Where-Object { $_.Random } | Measure-Object).Count -gt 0)
+        # flag if this cron contains a random atom
+        $cron['Random'] = (($cron.Values | Where-Object { $_.Random } | Measure-Object).Count -gt 0)
 
-    # return the parsed cron expression
-    return $cron
+        # add the cron to the list
+        $cronList += $cron
+    }
+
+    # return the cronlist
+    return $cronList
 }
 
 function Reset-PodeRandomCronExpressions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
@@ -308,6 +386,7 @@ function Reset-PodeRandomCronExpression {
 }
 
 function Test-PodeCronExpressions {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
@@ -518,7 +597,7 @@ function Get-PodeCronNextTrigger {
 
     # before we return, make sure the time is valid
     if (!(Test-PodeCronExpression -Expression $Expression -DateTime $NextTime)) {
-        throw "Looks like something went wrong trying to calculate the next trigger datetime: $($NextTime)"
+        throw ($PodeLocale.nextTriggerCalculationErrorExceptionMessage -f $NextTime) #"Looks like something went wrong trying to calculate the next trigger datetime: $($NextTime)"
     }
 
     # if before the start or after end then return null

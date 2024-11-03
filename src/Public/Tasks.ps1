@@ -1,27 +1,33 @@
 <#
 .SYNOPSIS
-Adds a new Task.
+    Adds a new Task.
 
 .DESCRIPTION
-Adds a new Task, which can be asynchronously or synchronously invoked.
+    Adds a new Task, which can be asynchronously or synchronously invoked.
 
 .PARAMETER Name
-The Name of the Task.
+    The Name of the Task.
 
 .PARAMETER ScriptBlock
-The script for the Task.
+    The script for the Task.
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Task's logic.
+    A literal, or relative, path to a file containing a ScriptBlock for the Task's logic.
 
 .PARAMETER ArgumentList
-A hashtable of arguments to supply to the Task's ScriptBlock.
+    A hashtable of arguments to supply to the Task's ScriptBlock.
+
+.PARAMETER Timeout
+    A Timeout, in seconds, to abort running the Task process. (Default: -1 [never timeout])
+
+.PARAMETER TimeoutFrom
+    Where to start the Timeout from, either 'Create', 'Start'. (Default: 'Create')
 
 .EXAMPLE
-Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
+    Add-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeLogic }
 
 .EXAMPLE
-Add-PodeTask -Name 'Example1' -ScriptBlock { return Get-SomeObject }
+    Add-PodeTask -Name 'Example1' -ScriptBlock { return Get-SomeObject }
 #>
 function Add-PodeTask {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -40,11 +46,21 @@ function Add-PodeTask {
 
         [Parameter()]
         [hashtable]
-        $ArgumentList
+        $ArgumentList,
+
+        [Parameter()]
+        [int]
+        $Timeout = -1,
+
+        [Parameter()]
+        [ValidateSet('Create', 'Start')]
+        [string]
+        $TimeoutFrom = 'Create'
     )
     # ensure the task doesn't already exist
     if ($PodeContext.Tasks.Items.ContainsKey($Name)) {
-        throw "[Task] $($Name): Task already defined"
+        # [Task] Task already defined
+        throw ($PodeLocale.taskAlreadyDefinedExceptionMessage -f $Name)
     }
 
     # if we have a file path supplied, load that path as a scriptblock
@@ -62,6 +78,10 @@ function Add-PodeTask {
         Script         = $ScriptBlock
         UsingVariables = $usingVars
         Arguments      = (Protect-PodeValue -Value $ArgumentList -Default @{})
+        Timeout        = @{
+            Value = $Timeout
+            From  = $TimeoutFrom
+        }
     }
 }
 
@@ -88,7 +108,9 @@ function Set-PodeTaskConcurrency {
 
     # error if <=0
     if ($Maximum -le 0) {
-        throw "Maximum concurrent tasks must be >=1 but got: $($Maximum)"
+        # Maximum concurrent tasks must be >=1 but got
+        throw ($PodeLocale.maximumConcurrentTasksInvalidExceptionMessage -f $Maximum)
+
     }
 
     # ensure max > min
@@ -98,7 +120,8 @@ function Set-PodeTaskConcurrency {
     }
 
     if ($_min -gt $Maximum) {
-        throw "Maximum concurrent tasks cannot be less than the minimum of $($_min) but got: $($Maximum)"
+        # Maximum concurrent tasks cannot be less than the minimum of $_min but got $Maximum
+        throw ($PodeLocale.maximumConcurrentTasksLessThanMinimumExceptionMessage -f $_min, $Maximum)
     }
 
     # set the max tasks
@@ -114,6 +137,7 @@ Invoke a Task.
 
 .DESCRIPTION
 Invoke a Task either asynchronously or synchronously, with support for returning values.
+The function returns the Task process onbject which was triggered.
 
 .PARAMETER Name
 The Name of the Task.
@@ -122,10 +146,16 @@ The Name of the Task.
 A hashtable of arguments to supply to the Task's ScriptBlock.
 
 .PARAMETER Timeout
-A Timeout, in seconds, to abort running the task. (Default: -1 [never timeout])
+A Timeout, in seconds, to abort running the Task process. (Default: -1 [never timeout])
+
+.PARAMETER TimeoutFrom
+Where to start the Timeout from, either 'Default', 'Create', or 'Start'. (Default: 'Default' - will use the value from Add-PodeTask)
 
 .PARAMETER Wait
-If supplied, Pode will wait until the Task has finished executing, and then return any values.
+If supplied, Pode will wait until the Task process has finished executing, and then return any values.
+
+.OUTPUTS
+The triggered Task process.
 
 .EXAMPLE
 Invoke-PodeTask -Name 'Example1' -Wait -Timeout 5
@@ -139,7 +169,7 @@ Invoke-PodeTask -Name 'Example1' | Wait-PodeTask -Timeout 3
 function Invoke-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -151,25 +181,32 @@ function Invoke-PodeTask {
         [int]
         $Timeout = -1,
 
+        [Parameter()]
+        [ValidateSet('Default', 'Create', 'Start')]
+        [string]
+        $TimeoutFrom = 'Default',
+
         [switch]
         $Wait
     )
+    process {
+        # ensure the task exists
+        if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
+            # Task does not exist
+            throw ($PodeLocale.taskDoesNotExistExceptionMessage -f $Name)
+        }
 
-    # ensure the task exists
-    if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
-        throw "Task '$($Name)' does not exist"
+        # run task logic
+        $task = Invoke-PodeInternalTask -Task $PodeContext.Tasks.Items[$Name] -ArgumentList $ArgumentList -Timeout $Timeout -TimeoutFrom $TimeoutFrom
+
+        # wait, and return result?
+        if ($Wait) {
+            return (Wait-PodeTask -Task $task -Timeout $Timeout)
+        }
+
+        # return task
+        return $task
     }
-
-    # run task logic
-    $task = Invoke-PodeInternalTask -Task $PodeContext.Tasks.Items[$Name] -ArgumentList $ArgumentList -Timeout $Timeout
-
-    # wait, and return result?
-    if ($Wait) {
-        return (Wait-PodeTask -Task $task -Timeout $Timeout)
-    }
-
-    # return task
-    return $task
 }
 
 <#
@@ -188,12 +225,13 @@ Remove-PodeTask -Name 'Example1'
 function Remove-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name
     )
-
-    $null = $PodeContext.Tasks.Items.Remove($Name)
+    process {
+        $null = $PodeContext.Tasks.Items.Remove($Name)
+    }
 }
 
 <#
@@ -207,6 +245,7 @@ Removes all Tasks.
 Clear-PodeTasks
 #>
 function Clear-PodeTasks {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -235,7 +274,7 @@ Edit-PodeTask -Name 'Example1' -ScriptBlock { Invoke-SomeNewLogic }
 function Edit-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -247,24 +286,26 @@ function Edit-PodeTask {
         [hashtable]
         $ArgumentList
     )
+    process {
+        # ensure the task exists
+        if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
+            # Task does not exist
+            throw ($PodeLocale.taskDoesNotExistExceptionMessage -f $Name)
+        }
 
-    # ensure the task exists
-    if (!$PodeContext.Tasks.Items.ContainsKey($Name)) {
-        throw "Task '$($Name)' does not exist"
-    }
+        $_task = $PodeContext.Tasks.Items[$Name]
 
-    $_task = $PodeContext.Tasks.Items[$Name]
+        # edit scriptblock if supplied
+        if (!(Test-PodeIsEmpty $ScriptBlock)) {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $_task.Script = $ScriptBlock
+            $_task.UsingVariables = $usingVars
+        }
 
-    # edit scriptblock if supplied
-    if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $_task.Script = $ScriptBlock
-        $_task.UsingVariables = $usingVars
-    }
-
-    # edit arguments if supplied
-    if (!(Test-PodeIsEmpty $ArgumentList)) {
-        $_task.Arguments = $ArgumentList
+        # edit arguments if supplied
+        if (!(Test-PodeIsEmpty $ArgumentList)) {
+            $_task.Arguments = $ArgumentList
+        }
     }
 }
 
@@ -328,6 +369,7 @@ Use-PodeTasks
 Use-PodeTasks -Path './my-tasks'
 #>
 function Use-PodeTasks {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -354,47 +396,50 @@ Invoke-PodeTask -Name 'Example1' | Close-PodeTask
 function Close-PodeTask {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Task
     )
-
-    Close-PodeTaskInternal -Result $Task
+    process {
+        Close-PodeTaskInternal -Process $Task
+    }
 }
 
 <#
 .SYNOPSIS
-Test if a running Task has completed.
+Test if a running Task process has completed.
 
 .DESCRIPTION
-Test if a running Task has completed.
+Test if a running Task process has completed.
 
 .PARAMETER Task
-The Task to be check.
+The Task process to be check. The process returned by either Invoke-PodeTask or Get-PodeTaskProcess.
 
 .EXAMPLE
 Invoke-PodeTask -Name 'Example1' | Test-PodeTaskCompleted
 #>
 function Test-PodeTaskCompleted {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [hashtable]
         $Task
     )
-
-    return [bool]$Task.Runspace.Handler.IsCompleted
+    process {
+        return [bool]$Task.Runspace.Handler.IsCompleted
+    }
 }
 
 <#
 .SYNOPSIS
-Waits for a task to finish, and returns a result if there is one.
+Waits for a Task process to finish, and returns a result if there is one.
 
 .DESCRIPTION
-Waits for a task to finish, and returns a result if there is one.
+Waits for a Task process to finish, and returns a result if there is one.
 
 .PARAMETER Task
-The task to wait on.
+The Task process to wait on. The process returned by either Invoke-PodeTask or Get-PodeTaskProcess.
 
 .PARAMETER Timeout
 An optional Timeout in milliseconds.
@@ -409,21 +454,122 @@ function Wait-PodeTask {
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         $Task,
 
         [Parameter()]
         [int]
         $Timeout = -1
     )
-
-    if ($Task -is [System.Threading.Tasks.Task]) {
-        return (Wait-PodeNetTaskInternal -Task $Task -Timeout $Timeout)
+    begin {
+        $pipelineItemCount = 0
     }
 
-    if ($Task -is [hashtable]) {
-        return (Wait-PodeTaskInternal -Task $Task -Timeout $Timeout)
+    process {
+        $pipelineItemCount++
     }
 
-    throw 'Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]'
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        if ($Task -is [System.Threading.Tasks.Task]) {
+            return (Wait-PodeNetTaskInternal -Task $Task -Timeout $Timeout)
+        }
+
+        if ($Task -is [hashtable]) {
+            return (Wait-PodeTaskInternal -Task $Task -Timeout $Timeout)
+        }
+
+        # Task type is invalid, expected either [System.Threading.Tasks.Task] or [hashtable]
+        throw ($PodeLocale.invalidTaskTypeExceptionMessage)
+    }
+}
+
+<#
+.SYNOPSIS
+Get all Task Processes.
+
+.DESCRIPTION
+Get all Task Processes, with support for filtering. These are the processes created when using Invoke-PodeTask.
+
+.PARAMETER Name
+An optional Name of the Task to filter by, can be one or more.
+
+.PARAMETER Id
+An optional ID of the Task process to filter by, can be one or more.
+
+.PARAMETER State
+An optional State of the Task process to filter by, can be one or more.
+
+.EXAMPLE
+Get-PodeTaskProcess
+
+.EXAMPLE
+Get-PodeTaskProcess -Name 'TaskName'
+
+.EXAMPLE
+Get-PodeTaskProcess -Id 'TaskId'
+
+.EXAMPLE
+Get-PodeTaskProcess -State 'Running'
+#>
+function Get-PodeTaskProcess {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string[]]
+        $Name,
+
+        [Parameter()]
+        [string[]]
+        $Id,
+
+        [Parameter()]
+        [ValidateSet('All', 'Pending', 'Running', 'Completed', 'Failed')]
+        [string[]]
+        $State = 'All'
+    )
+
+    $processes = $PodeContext.Tasks.Processes.Values
+
+    # filter processes by name
+    if (($null -ne $Name) -and ($Name.Length -gt 0)) {
+        $processes = @(foreach ($_name in $Name) {
+                foreach ($process in $processes) {
+                    if ($process.Task -ine $_name) {
+                        continue
+                    }
+
+                    $process
+                }
+            })
+    }
+
+    # filter processes by id
+    if (($null -ne $Id) -and ($Id.Length -gt 0)) {
+        $processes = @(foreach ($_id in $Id) {
+                foreach ($process in $processes) {
+                    if ($process.ID -ine $_id) {
+                        continue
+                    }
+
+                    $process
+                }
+            })
+    }
+
+    # filter processes by status
+    if ($State -inotcontains 'All') {
+        $processes = @(foreach ($process in $processes) {
+                if ($State -inotcontains $process.State) {
+                    continue
+                }
+
+                $process
+            })
+    }
+
+    # return processes
+    return $processes
 }

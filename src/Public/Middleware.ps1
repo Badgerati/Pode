@@ -142,7 +142,8 @@ function New-PodeCsrfToken {
 
     # fail if the csrf logic hasn't been initialised
     if (!(Test-PodeCsrfConfigured)) {
-        throw 'CSRF Middleware has not been initialised'
+        # CSRF Middleware has not been initialized
+        throw ($PodeLocale.csrfMiddlewareNotInitializedExceptionMessage)
     }
 
     # generate a new secret and salt
@@ -171,7 +172,8 @@ function Get-PodeCsrfMiddleware {
 
     # fail if the csrf logic hasn't been initialised
     if (!(Test-PodeCsrfConfigured)) {
-        throw 'CSRF Middleware has not been initialised'
+        # CSRF Middleware has not been initialized
+        throw ($PodeLocale.csrfMiddlewareNotInitializedExceptionMessage)
     }
 
     # return scriptblock for the csrf route middleware to test tokens
@@ -239,7 +241,8 @@ function Initialize-PodeCsrf {
 
     # if sessions haven't been setup and we're not using cookies, error
     if (!$UseCookies -and !(Test-PodeSessionsEnabled)) {
-        throw 'Sessions are required to use CSRF unless you want to use cookies'
+        # Sessions are required to use CSRF unless you want to use cookies
+        throw ($PodeLocale.sessionsRequiredForCsrfExceptionMessage)
     }
 
     # if we're using cookies, ensure a global secret exists
@@ -247,7 +250,8 @@ function Initialize-PodeCsrf {
         $Secret = (Protect-PodeValue -Value $Secret -Default (Get-PodeCookieSecret -Global))
 
         if (Test-PodeIsEmpty $Secret) {
-            throw "When using cookies for CSRF, a Secret is required. You can either supply a Secret, or set the Cookie global secret - (Set-PodeCookieSecret '<value>' -Global)"
+            # When using cookies for CSRF, a Secret is required
+            throw ($PodeLocale.csrfCookieRequiresSecretExceptionMessage)
         }
     }
 
@@ -355,18 +359,31 @@ function Add-PodeBodyParser {
         [scriptblock]
         $ScriptBlock
     )
-
-    # if a parser for the type already exists, fail
-    if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
-        throw "There is already a body parser defined for the $($ContentType) content-type"
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # check for scoped vars
-    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    process {
+        $pipelineItemCount++
+    }
 
-    $PodeContext.Server.BodyParsers[$ContentType] = @{
-        ScriptBlock    = $ScriptBlock
-        UsingVariables = $usingVars
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        # if a parser for the type already exists, fail
+        if ($PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
+            # A body-parser is already defined for the content-type
+            throw ($PodeLocale.bodyParserAlreadyDefinedForContentTypeExceptionMessage -f $ContentType)
+        }
+
+        # check for scoped vars
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        $PodeContext.Server.BodyParsers[$ContentType] = @{
+            ScriptBlock    = $ScriptBlock
+            UsingVariables = $usingVars
+        }
     }
 }
 
@@ -392,12 +409,14 @@ function Remove-PodeBodyParser {
         $ContentType
     )
 
-    # if there's no parser for the type, return
-    if (!$PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
-        return
-    }
+    process {
+        # if there's no parser for the type, return
+        if (!$PodeContext.Server.BodyParsers.ContainsKey($ContentType)) {
+            return
+        }
 
-    $null = $PodeContext.Server.BodyParsers.Remove($ContentType)
+        $null = $PodeContext.Server.BodyParsers.Remove($ContentType)
+    }
 }
 
 <#
@@ -442,7 +461,7 @@ function Add-PodeMiddleware {
         [scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'Input', ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ParameterSetName = 'Input')]
         [hashtable]
         $InputObject,
 
@@ -454,36 +473,51 @@ function Add-PodeMiddleware {
         [object[]]
         $ArgumentList
     )
-
-    # ensure name doesn't already exist
-    if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
-        throw "[Middleware] $($Name): Middleware already defined"
+    begin {
+        $pipelineItemCount = 0
     }
 
-    # if it's a script - call New-PodeMiddleware
-    if ($PSCmdlet.ParameterSetName -ieq 'script') {
-        $InputObject = (New-PodeMiddlewareInternal `
-                -ScriptBlock $ScriptBlock `
-                -Route $Route `
-                -ArgumentList $ArgumentList `
-                -PSSession $PSCmdlet.SessionState)
-    }
-    else {
-        $Route = ConvertTo-PodeRouteRegex -Path $Route
-        $InputObject.Route = Protect-PodeValue -Value $Route -Default $InputObject.Route
-        $InputObject.Options = Protect-PodeValue -Value $Options -Default $InputObject.Options
+    process {
+        $pipelineItemCount++
     }
 
-    # ensure we have a script to run
-    if (Test-PodeIsEmpty $InputObject.Logic) {
-        throw '[Middleware]: No logic supplied in ScriptBlock'
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        # ensure name doesn't already exist
+        if (($PodeContext.Server.Middleware | Where-Object { $_.Name -ieq $Name } | Measure-Object).Count -gt 0) {
+            # [Middleware] Name: Middleware already defined
+            throw ($PodeLocale.middlewareAlreadyDefinedExceptionMessage -f $Name)
+
+        }
+
+        # if it's a script - call New-PodeMiddleware
+        if ($PSCmdlet.ParameterSetName -ieq 'script') {
+            $InputObject = (New-PodeMiddlewareInternal `
+                    -ScriptBlock $ScriptBlock `
+                    -Route $Route `
+                    -ArgumentList $ArgumentList `
+                    -PSSession $PSCmdlet.SessionState)
+        }
+        else {
+            $Route = ConvertTo-PodeRouteRegex -Path $Route
+            $InputObject.Route = Protect-PodeValue -Value $Route -Default $InputObject.Route
+            $InputObject.Options = Protect-PodeValue -Value $Options -Default $InputObject.Options
+        }
+
+        # ensure we have a script to run
+        if (Test-PodeIsEmpty $InputObject.Logic) {
+            # [Middleware]: No logic supplied in ScriptBlock
+            throw ($PodeLocale.middlewareNoLogicSuppliedExceptionMessage)
+        }
+
+        # set name, and override route/args
+        $InputObject.Name = $Name
+
+        # add the logic to array of middleware that needs to be run
+        $PodeContext.Server.Middleware += $InputObject
     }
-
-    # set name, and override route/args
-    $InputObject.Name = $Name
-
-    # add the logic to array of middleware that needs to be run
-    $PodeContext.Server.Middleware += $InputObject
 }
 
 <#
@@ -512,7 +546,7 @@ function New-PodeMiddleware {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -524,12 +558,24 @@ function New-PodeMiddleware {
         [object[]]
         $ArgumentList
     )
+    begin {
+        $pipelineItemCount = 0
+    }
 
-    return New-PodeMiddlewareInternal `
-        -ScriptBlock $ScriptBlock `
-        -Route $Route `
-        -ArgumentList $ArgumentList `
-        -PSSession $PSCmdlet.SessionState
+    process {
+        $pipelineItemCount++
+    }
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        return New-PodeMiddlewareInternal `
+            -ScriptBlock $ScriptBlock `
+            -Route $Route `
+            -ArgumentList $ArgumentList `
+            -PSSession $PSCmdlet.SessionState
+    }
 }
 
 <#

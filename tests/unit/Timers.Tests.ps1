@@ -1,10 +1,12 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
+    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 
     $PodeContext = @{ 'Server' = $null; }
 }
@@ -12,11 +14,11 @@ BeforeAll {
 Describe 'Find-PodeTimer' {
     Context 'Invalid parameters supplied' {
         It 'Throw null name parameter error' {
-            { Find-PodeTimer -Name $null } | Should -Throw -ExpectedMessage '*The argument is null or empty*'
+            { Find-PodeTimer -Name $null } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Find-PodeTimer'
         }
 
         It 'Throw empty name parameter error' {
-            { Find-PodeTimer -Name ([string]::Empty) } | Should -Throw -ExpectedMessage  '*The argument is null or empty*'
+            { Find-PodeTimer -Name ([string]::Empty) } | Should -Throw -ErrorId 'ParameterArgumentValidationError,Find-PodeTimer'
         }
     }
 
@@ -39,32 +41,37 @@ Describe 'Find-PodeTimer' {
 Describe 'Add-PodeTimer' {
     It 'Throws error because timer already exists' {
         $PodeContext = @{ 'Timers' = @{ Items = @{ 'test' = $null }; } }
-        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} } | Should -Throw -ExpectedMessage '*already defined*'
+        $expectedMessage = ($PodeLocale.timerAlreadyDefinedExceptionMessage -f 'test' ).Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} } | Should -Throw -ExpectedMessage $expectedMessage #'*already defined*'
     }
 
     It 'Throws error because interval is 0' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        { Add-PodeTimer -Name 'test' -Interval 0 -ScriptBlock {} } | Should -Throw -ExpectedMessage '*interval must be greater than 0*'
+        $expectedMessage = ($PodeLocale.timerParameterMustBeGreaterThanZeroExceptionMessage -f 'test', 'interval').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeTimer -Name 'test' -Interval 0 -ScriptBlock {} } | Should -Throw -ExpectedMessage $expectedMessage #'*interval must be greater than 0*'
     }
 
     It 'Throws error because interval is less than 0' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        { Add-PodeTimer -Name 'test' -Interval -1 -ScriptBlock {} } | Should -Throw -ExpectedMessage '*interval must be greater than 0*'
+        $expectedMessage = ($PodeLocale.timerParameterMustBeGreaterThanZeroExceptionMessage -f 'test', 'interval').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeTimer -Name 'test' -Interval -1 -ScriptBlock {} } | Should -Throw -ExpectedMessage $expectedMessage #'*interval must be greater than 0*'
     }
 
     It 'Throws error because limit is negative' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Limit -1 } | Should -Throw -ExpectedMessage '*negative limit*'
+        $expectedMessage = ($PodeLocale.timerParameterMustBeGreaterThanZeroExceptionMessage -f 'test', 'Limit').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Limit -1 } | Should -Throw -ExpectedMessage $expectedMessage #[Timer] {0}: {1} must be greater than 0.
     }
 
     It 'Throws error because skip is negative' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Skip -1 } | Should -Throw -ExpectedMessage '*negative skip*'
+        $expectedMessage = ($PodeLocale.timerParameterMustBeGreaterThanZeroExceptionMessage -f 'test', 'skip').Replace('[', '`[').Replace(']', '`]') # -replace '\[', '`[' -replace '\]', '`]'
+        { Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock {} -Skip -1 } | Should -Throw -ExpectedMessage $expectedMessage #[Timer] {0}: {1} must be greater than 0.
     }
 
     It 'Adds new timer to session with no limit' {
         $PodeContext = @{ 'Timers' = @{ Items = @{} }; }
-        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1
+        Add-PodeTimer -Name 'test' -Interval 1 -ScriptBlock { Write-Host 'hello' } -Limit 0 -Skip 1 
 
         $timer = $PodeContext.Timers.Items['test']
         $timer | Should -Not -Be $null

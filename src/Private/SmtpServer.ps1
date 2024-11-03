@@ -3,13 +3,14 @@ using namespace Pode
 function Start-PodeSmtpServer {
     # ensure we have smtp handlers
     if (Test-PodeIsEmpty (Get-PodeHandler -Type Smtp)) {
-        throw 'No SMTP handlers have been defined'
+        # No SMTP handlers have been defined
+        throw ($PodeLocale.noSmtpHandlersDefinedExceptionMessage)
     }
 
     # work out which endpoints to listen on
     $endpoints = @()
 
-    @(Get-PodeEndpoints -Type Smtp) | ForEach-Object {
+    @(Get-PodeEndpointByProtocolType -Type Smtp) | ForEach-Object {
         # get the ip address
         $_ip = [string]($_.Address)
         $_ip = Get-PodeIPAddressesForHostname -Hostname $_ip -Type All | Select-Object -First 1
@@ -48,7 +49,7 @@ function Start-PodeSmtpServer {
     # create the listener
     $listener = [PodeListener]::new($PodeContext.Tokens.Cancellation.Token)
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
-    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevels)
+    $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
     $listener.RequestBodySize = $PodeContext.Server.Request.BodySize
 
@@ -98,7 +99,7 @@ function Start-PodeSmtpServer {
                         $Request = $context.Request
                         $Response = $context.Response
 
-                        $SmtpEvent = @{
+                        $script:SmtpEvent = @{
                             Response  = $Response
                             Request   = $Request
                             Lockable  = $PodeContext.Threading.Lockables.Global
@@ -150,19 +151,23 @@ function Start-PodeSmtpServer {
                             }
                         }
                     }
-                    catch [System.OperationCanceledException] {}
+                    catch [System.OperationCanceledException] {
+                        $_ | Write-PodeErrorLog -Level Debug
+                    }
                     catch {
                         $_ | Write-PodeErrorLog
                         $_.Exception | Write-PodeErrorLog -CheckInnerException
                     }
                 }
                 finally {
-                    $SmtpEvent = $null
+                    $script:SmtpEvent = $null
                     Close-PodeDisposable -Disposable $context
                 }
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -172,7 +177,7 @@ function Start-PodeSmtpServer {
 
     # start the runspace for listening on x-number of threads
     1..$PodeContext.Threads.General | ForEach-Object {
-        Add-PodeRunspace -Type Smtp -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+        Add-PodeRunspace -Type Smtp -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
     }
 
     # script to keep smtp server listening until cancelled
@@ -188,7 +193,9 @@ function Start-PodeSmtpServer {
                 Start-Sleep -Seconds 1
             }
         }
-        catch [System.OperationCanceledException] {}
+        catch [System.OperationCanceledException] {
+            $_ | Write-PodeErrorLog -Level Debug
+        }
         catch {
             $_ | Write-PodeErrorLog
             $_.Exception | Write-PodeErrorLog -CheckInnerException
@@ -199,7 +206,7 @@ function Start-PodeSmtpServer {
         }
     }
 
-    Add-PodeRunspace -Type Smtp -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    Add-PodeRunspace -Type Smtp -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
 
     # state where we're running
     return @(foreach ($endpoint in $endpoints) {

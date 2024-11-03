@@ -1,3 +1,26 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+param()
+
+BeforeDiscovery {
+    $path = $PSCommandPath
+    $examplesPath = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/examples/'
+
+    # List of directories to exclude
+    $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
+        'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues','auth')
+
+    # Convert exlusion list into single regex pattern for directory matching
+    $dirSeparator = [IO.Path]::DirectorySeparatorChar
+    $excludeDirs = "\$($dirSeparator)($($excludeDirs -join '|'))\$($dirSeparator)"
+
+    # get the example scripts
+    $ps1Files = @(Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse -File -Force |
+            Where-Object {
+                $_.FullName -inotmatch $excludeDirs
+            }).FullName
+}
+
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
@@ -119,5 +142,95 @@ Describe 'All Aliases' {
         }
 
         $found | Should -Be @()
+    }
+}
+
+
+Describe 'Examples Script Headers' {
+    Context 'Checking file: [<_>]' -ForEach ($ps1Files) {
+        BeforeAll {
+            $content = Get-Content -Path $_ -Raw
+        }
+        It 'should have a .SYNOPSIS section' {
+            $hasSynopsis = $content -match '\.SYNOPSIS\s+([^\#]*)'
+            $hasSynopsis | Should -Be $true
+        }
+
+        It 'should have a .DESCRIPTION section' {
+            $hasDescription = $content -match '\.DESCRIPTION\s+([^\#]*)'
+            $hasDescription | Should -Be $true
+        }
+
+        It 'should have a .NOTES section with Author and License' {
+            $hasNotes = $content -match '\.NOTES\s+([^\#]*?)Author:\s*Pode Team\s*License:\s*MIT License'
+            $hasNotes | Should -Be $true
+        }
+
+        It 'should have a .LINK section' {
+            $hasDescription = $content -match '\.LINK\s+([^\#]*)'
+            $hasDescription | Should -Be $true
+        }
+
+        It 'should have a .EXAMPLE section' {
+            $hasDescription = $content -match '\.EXAMPLE\s+([^\#]*)'
+            $hasDescription | Should -Be $true
+        }
+    }
+
+}
+
+
+Describe 'Check for Duplicate Function Definitions' {
+    BeforeAll { $path = $PSCommandPath
+        $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
+        # Retrieve all function definitions from the module files
+        $functionNames = @{}
+        $duplicatedFunctionNames = @{}
+        $moduleFiles = Get-ChildItem -Path $src -Recurse -Include '*.ps1', '*.psm1'
+
+        foreach ($file in $moduleFiles) {
+            $content = Get-Content -Path $file.FullName
+            $lineNumber = 0
+            foreach ($line in $content) {
+                # Increment line number for accurate tracking
+                $lineNumber++
+                # Match function definitions (e.g., "function MyFunction {")
+                if ($line -match 'function\s+([^\s{]+)\s*{') {
+                    $functionName = $Matches[1]
+
+                    # Check if function name already exists
+                    if (! $functionNames.ContainsKey($functionName)) {
+                        $functionNames[$functionName] = @{
+                            FunctionName = $functionName
+                            FilePath     = @( )
+                            LineNumber   = @( )
+                        }
+                    }
+                    else {
+                        # Add to duplicated function names if not already tracked
+                        $duplicatedFunctionNames[$functionName] = $functionNames[$functionName]
+                    }
+                    # Update the function details
+                    $functionNames[$functionName].LineNumber += $lineNumber
+                    $functionNames[$functionName].FilePath += $file.FullName
+                }
+            }
+        }
+
+        # Additional information in case of failure
+        if ($duplicatedFunctionNames.Count -gt 0) {
+            Write-host 'The following functions have multiple definitions:'
+            foreach ($key in $duplicatedFunctionNames.Keys) {
+                Write-host "Function: $($key)"
+                for ($i = 0; $i -lt $duplicatedFunctionNames[$key].LineNumber.Count ; $i++) {
+                    Write-host " - File: $($duplicatedFunctionNames[$key].FilePath[$i]), Line: $($duplicatedFunctionNames[$key].LineNumber[$i])"
+                }
+            }
+        }
+    }
+
+    It 'should not have duplicate function definitions' {
+        # Assert no duplicate function definitions
+        $duplicatedFunctionNames.Count | Should -Be 0
     }
 }

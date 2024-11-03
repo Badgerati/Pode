@@ -23,7 +23,10 @@ $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock
 $ScriptBlock = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -Exclude Session, Using
 #>
 function Convert-PodeScopedVariables {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
+    [OutputType([scriptblock])]
     param(
         [Parameter(ValueFromPipeline = $true)]
         [scriptblock]
@@ -95,6 +98,7 @@ $ScriptBlock, $otherResults = Convert-PodeScopedVariable -Name Using -ScriptBloc
 #>
 function Convert-PodeScopedVariable {
     [CmdletBinding()]
+    [OutputType([scriptblock])]
     param(
         [Parameter(Mandatory = $true)]
         [string]
@@ -116,7 +120,8 @@ function Convert-PodeScopedVariable {
 
     # check if scoped var defined
     if (!(Test-PodeScopedVariable -Name $Name)) {
-        throw "Scoped Variable not found: $($Name)"
+        # Scoped Variable not found
+        throw ($PodeLocale.scopedVariableNotFoundExceptionMessage -f $Name)
     }
 
     # get the scoped var metadata
@@ -297,6 +302,10 @@ Removes all Scoped Variables.
 Clear-PodeScopedVariables
 #>
 function Clear-PodeScopedVariables {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
+    [CmdletBinding()]
+    param()
+
     $null = $PodeContext.Server.ScopedVariables.Clear()
 }
 
@@ -318,6 +327,7 @@ Get-PodeScopedVariable -Name State, Using
 #>
 function Get-PodeScopedVariable {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter()]
         [string[]]
@@ -352,6 +362,7 @@ Use-PodeScopedVariables
 Use-PodeScopedVariables -Path './my-vars'
 #>
 function Use-PodeScopedVariables {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

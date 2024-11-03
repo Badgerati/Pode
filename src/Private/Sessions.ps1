@@ -40,7 +40,8 @@ function Get-PodeSessionFullId {
 
 function Set-PodeSession {
     if ($null -eq $WebEvent.Session) {
-        throw 'there is no session available to set on the response'
+        # There is no session available to set on the response
+        throw ($PodeLocale.noSessionToSetOnResponseExceptionMessage)
     }
 
     # convert secret to strict mode
@@ -137,7 +138,8 @@ function Revoke-PodeSession {
 
 function Set-PodeSessionDataHash {
     if ($null -eq $WebEvent.Session) {
-        throw 'No session available to calculate data hash'
+        # No session available to calculate data hash
+        throw ($PodeLocale.noSessionToCalculateDataHashExceptionMessage)
     }
 
     if (($null -eq $WebEvent.Session.Data) -or ($WebEvent.Session.Data.Count -eq 0)) {
@@ -230,7 +232,7 @@ function Remove-PodeSessionInternal {
 }
 
 function Get-PodeSessionInMemStore {
-    $store = New-Object -TypeName psobject
+    $store = [psobject]::new()
 
     # add in-mem storage
     $store | Add-Member -MemberType NoteProperty -Name Memory -Value @{}
@@ -288,7 +290,7 @@ function Set-PodeSessionInMemClearDown {
 
         # remove sessions that have expired, or where the parent is gone
         $now = [DateTime]::UtcNow
-        foreach ($key in $store.Memory.Keys) {
+        foreach ($key in $store.Memory.Keys.Clone()) {
             # expired
             if ($store.Memory[$key].Expiry -lt $now) {
                 $null = $store.Memory.Remove($key)
