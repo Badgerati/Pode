@@ -14974,7 +14974,7 @@
 
 <h1 id="security-headers">Security Headers</h1>
 <p>The security headers middleware runs at the beginning of every request, and if any security headers are defined they will be added onto the response.</p>
-<p>The following headers are currently supported, but you can add custom header values:</p>
+<p>The following headers are currently supported, but you can add custom header values via <a href="../../../../Functions/Security/Add-PodeSecurityHeader"><code>Add-PodeSecurityHeader</code></a> for any missing:</p>
 <ul>
 <li>Access-Control-Max-Age</li>
 <li>Access-Control-Allow-Methods</li>
@@ -14985,6 +14985,7 @@
 <li>Cross-Origin-Opener-Policy</li>
 <li>Strict-Transport-Security</li>
 <li>Content-Security-Policy</li>
+<li>Content-Security-Policy-Report-Only</li>
 <li>X-XSS-Protection</li>
 <li>Permissions-Policy</li>
 <li>X-Frame-Options</li>
@@ -15187,9 +15188,10 @@
 <li><a href="../../../../Functions/Security/Set-PodeSecurityContentSecurityPolicy"><code>Set-PodeSecurityContentSecurityPolicy</code></a></li>
 <li><a href="../../../../Functions/Security/Remove-PodeSecurityContentSecurityPolicy"><code>Remove-PodeSecurityContentSecurityPolicy</code></a></li>
 </ul>
-<p>The <code>Content-Security-Policy</code> header controls a whitelist of approved sourced from which the browser can load resoures. For example:</p>
+<p>The <code>Content-Security-Policy</code> header controls a whitelist of approved sources from which the browser can load resources. For example:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">Set-PodeSecurityContentSecurityPolicy</span> <span class="n">-Default</span> <span class="s1">&#39;self&#39;</span> <span class="n">-Image</span> <span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span>
 </code></pre></div>
+<p>By supplying the <code>-ReportOnly</code> switch, the <code>Content-Security-Policy-Report-Only</code> header will be used instead.</p>
 <h3 id="permissions-policy">Permissions Policy</h3>
 <p>The following functions exist:</p>
 <ul>

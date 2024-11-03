@@ -7895,6 +7895,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#-cspreportonly" class="md-nav__link">
+    <span class="md-ellipsis">
+      -CspReportOnly
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-progressaction" class="md-nav__link">
     <span class="md-ellipsis">
       -ProgressAction
@@ -14892,6 +14901,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#-cspreportonly" class="md-nav__link">
+    <span class="md-ellipsis">
+      -CspReportOnly
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-progressaction" class="md-nav__link">
     <span class="md-ellipsis">
       -ProgressAction
@@ -15012,7 +15030,7 @@
 <h2 id="synopsis">SYNOPSIS</h2>
 <p>Sets inbuilt definitions for security headers.</p>
 <h2 id="syntax">SYNTAX</h2>
-<div class="highlight"><pre><span></span><code>Set-PodeSecurity [-Type] &lt;String&gt; [-UseHsts] [-XssBlock] [-ProgressAction &lt;ActionPreference&gt;]
+<div class="highlight"><pre><span></span><code>Set-PodeSecurity [-Type] &lt;String&gt; [-UseHsts] [-XssBlock] [-CspReportOnly] [-ProgressAction &lt;ActionPreference&gt;]
  [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h2 id="description">DESCRIPTION</h2>
@@ -15025,6 +15043,18 @@
 <div class="highlight"><pre><span></span><code>Set-PodeSecurity -Type Strict -UseHsts
 </code></pre></div>
 <h2 id="parameters">PARAMETERS</h2>
+<h3 id="-cspreportonly">-CspReportOnly</h3>
+<p>If supplied, the Content-Security-Policy header will be set as the Content-Security-Policy-Report-Only header.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
 <h3 id="-progressaction">-ProgressAction</h3>
 <p>{{ Fill ProgressAction Description }}</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ActionPreference</span>

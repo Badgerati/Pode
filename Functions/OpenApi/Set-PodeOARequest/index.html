@@ -5145,6 +5145,24 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#-allownonstandardbody" class="md-nav__link">
+    <span class="md-ellipsis">
+      -AllowNonStandardBody
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-definitiontag" class="md-nav__link">
+    <span class="md-ellipsis">
+      -DefinitionTag
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       -Parameters
@@ -14898,6 +14916,24 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#-allownonstandardbody" class="md-nav__link">
+    <span class="md-ellipsis">
+      -AllowNonStandardBody
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-definitiontag" class="md-nav__link">
+    <span class="md-ellipsis">
+      -DefinitionTag
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       -Parameters
@@ -15040,20 +15076,49 @@
 
 <h1 id="set-podeoarequest">Set-PodeOARequest</h1>
 <h2 id="synopsis">SYNOPSIS</h2>
-<p>Sets the definition of a request for a route.</p>
+<p>Sets the OpenAPI request definition for a route.</p>
 <h2 id="syntax">SYNTAX</h2>
 <div class="highlight"><pre><span></span><code>Set-PodeOARequest [-Route] &lt;Hashtable[]&gt; [-Parameters &lt;Hashtable[]&gt;] [-RequestBody &lt;Hashtable&gt;] [-PassThru]
- [-ProgressAction &lt;ActionPreference&gt;] [&lt;CommonParameters&gt;]
+ [-AllowNonStandardBody] [-DefinitionTag &lt;String[]&gt;] [-ProgressAction &lt;ActionPreference&gt;] [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h2 id="description">DESCRIPTION</h2>
-<p>Sets the definition of a request for a route.</p>
+<p>Configures the OpenAPI request properties for a specified route, including parameters and request body definition.
+This function defines how the route should handle incoming requests in accordance with OpenAPI standards.</p>
 <h2 id="examples">EXAMPLES</h2>
 <h3 id="example-1">EXAMPLE 1</h3>
-<div class="highlight"><pre><span></span><code>Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Schema &#39;UserIdBody&#39;)
+<div class="highlight"><pre><span></span><code>Add-PodeRoute -PassThru | Set-PodeOARequest -RequestBody (New-PodeOARequestBody -Schema &#39;UserIdBody&#39;) -AllowNonStandardBody
 </code></pre></div>
+<p>Sets the request body for a route and allows non-standard HTTP methods like DELETE to use a request body.</p>
 <h2 id="parameters">PARAMETERS</h2>
+<h3 id="-allownonstandardbody">-AllowNonStandardBody</h3>
+<p>Allows methods like DELETE and GET to include a request body, which is generally discouraged by RFC 7231.
+This can be used to relax the default restriction and enable a body for HTTP methods that don't typically support it.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
+<h3 id="-definitiontag">-DefinitionTag</h3>
+<p>An Array of strings representing the unique tag for the API specification.
+This tag helps distinguish between different versions or types of API specifications within the application.
+You can use this tag to reference the specific API documentation, schema, or version that your function interacts with.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">String[]</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
+<span class="nt">Aliases</span><span class="p">:</span>
+
+<span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Named</span>
+<span class="nt">Default value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="nt">Accept pipeline input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="nt">Accept wildcard characters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
 <h3 id="-parameters">-Parameters</h3>
-<p>The Parameter definitions the request uses (from ConvertTo-PodeOAParameter).</p>
+<p>Defines the parameters for the request, provided by ConvertTo-PodeOAParameter.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Hashtable[]</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
@@ -15065,7 +15130,7 @@
 <span class="nt">Accept wildcard characters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
 <h3 id="-passthru">-PassThru</h3>
-<p>If supplied, the route passed in will be returned for further chaining.</p>
+<p>If specified, returns the original route object for additional chaining after setting the request properties.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
@@ -15089,7 +15154,7 @@
 <span class="nt">Accept wildcard characters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
 <h3 id="-requestbody">-RequestBody</h3>
-<p>The Request Body definition the request uses (from New-PodeOARequestBody).</p>
+<p>Specifies the body schema for the request, provided by New-PodeOARequestBody.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Hashtable</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
@@ -15101,7 +15166,8 @@
 <span class="nt">Accept wildcard characters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
 <h3 id="-route">-Route</h3>
-<p>The route to set a request definition, usually from -PassThru on Add-PodeRoute.</p>
+<p>The route to set a request definition for.
+This is typically passed through from -PassThru on Add-PodeRoute.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Hashtable[]</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>

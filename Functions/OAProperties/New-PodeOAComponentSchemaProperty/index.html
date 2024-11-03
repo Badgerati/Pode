@@ -4559,27 +4559,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#-maxproperties" class="md-nav__link">
-    <span class="md-ellipsis">
-      -MaxProperties
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#-minitems" class="md-nav__link">
     <span class="md-ellipsis">
       -MinItems
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-minproperties" class="md-nav__link">
-    <span class="md-ellipsis">
-      -MinProperties
     </span>
   </a>
   
@@ -15138,27 +15120,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#-maxproperties" class="md-nav__link">
-    <span class="md-ellipsis">
-      -MaxProperties
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#-minitems" class="md-nav__link">
     <span class="md-ellipsis">
       -MinItems
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#-minproperties" class="md-nav__link">
-    <span class="md-ellipsis">
-      -MinProperties
     </span>
   </a>
   
@@ -15386,15 +15350,16 @@
 <h2 id="syntax">SYNTAX</h2>
 <h3 id="inbuilt-default">Inbuilt (Default)</h3>
 <div class="highlight"><pre><span></span><code>New-PodeOAComponentSchemaProperty [-ParamsList &lt;Hashtable[]&gt;] [-Name &lt;String&gt;] -Reference &lt;String&gt;
- [-XmlName &lt;String&gt;] [-XmlNamespace &lt;String&gt;] [-XmlPrefix &lt;String&gt;] [-XmlAttribute]
- [-ProgressAction &lt;ActionPreference&gt;] [&lt;CommonParameters&gt;]
+ [-XmlName &lt;String&gt;] [-XmlNamespace &lt;String&gt;] [-XmlPrefix &lt;String&gt;] [-XmlAttribute] [-Example &lt;Object&gt;]
+ [-Deprecated] [-Required] [-Nullable] [-ReadOnly] [-WriteOnly] [-ProgressAction &lt;ActionPreference&gt;]
+ [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h3 id="array">Array</h3>
 <div class="highlight"><pre><span></span><code>New-PodeOAComponentSchemaProperty [-ParamsList &lt;Hashtable[]&gt;] [-Name &lt;String&gt;] -Reference &lt;String&gt;
  [-Description &lt;String&gt;] [-XmlName &lt;String&gt;] [-XmlNamespace &lt;String&gt;] [-XmlPrefix &lt;String&gt;] [-XmlAttribute]
- [-XmlItemName &lt;String&gt;] [-XmlWrapped] [-Example &lt;Object&gt;] [-Deprecated] [-Required] [-Nullable] [-ReadOnly]
- [-WriteOnly] [-MinProperties &lt;Int32&gt;] [-MaxProperties &lt;Int32&gt;] [-Array] [-UniqueItems] [-MinItems &lt;Int32&gt;]
- [-MaxItems &lt;Int32&gt;] [-ProgressAction &lt;ActionPreference&gt;] [&lt;CommonParameters&gt;]
+ [-Example &lt;Object&gt;] [-Deprecated] [-Required] [-Nullable] [-ReadOnly] [-WriteOnly] [-XmlItemName &lt;String&gt;]
+ [-XmlWrapped] [-Array] [-UniqueItems] [-MinItems &lt;Int32&gt;] [-MaxItems &lt;Int32&gt;]
+ [-ProgressAction &lt;ActionPreference&gt;] [&lt;CommonParameters&gt;]
 </code></pre></div>
 <h2 id="description">DESCRIPTION</h2>
 <p>Creates a new OpenAPI component schema reference from another OpenAPI schema.</p>
@@ -15418,7 +15383,7 @@
 <h3 id="-deprecated">-Deprecated</h3>
 <p>If supplied, the schema will be treated as Deprecated where supported.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Array</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -15442,7 +15407,7 @@
 <h3 id="-example">-Example</h3>
 <p>An example of a parameter value</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Object</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Array</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -15463,32 +15428,8 @@
 <span class="nt">Accept pipeline input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="nt">Accept wildcard characters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
-<h3 id="-maxproperties">-MaxProperties</h3>
-<p>If supplied, will restrict the maximum number of properties allowed in an schema.</p>
-<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Int32</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Array</span>
-<span class="nt">Aliases</span><span class="p">:</span>
-
-<span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Named</span>
-<span class="nt">Default value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">Accept pipeline input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Accept wildcard characters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
-</code></pre></div>
 <h3 id="-minitems">-MinItems</h3>
 <p>If supplied, specify minimum length of an array</p>
-<div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Int32</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Array</span>
-<span class="nt">Aliases</span><span class="p">:</span>
-
-<span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Named</span>
-<span class="nt">Default value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">Accept pipeline input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
-<span class="nt">Accept wildcard characters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
-</code></pre></div>
-<h3 id="-minproperties">-MinProperties</h3>
-<p>If supplied, will restrict the minimun number of properties allowed in an schema.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Int32</span>
 <span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Array</span>
 <span class="nt">Aliases</span><span class="p">:</span>
@@ -15514,7 +15455,7 @@
 <h3 id="-nullable">-Nullable</h3>
 <p>If supplied, the schema will be treated as Nullable.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Array</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -15550,7 +15491,7 @@
 <h3 id="-readonly">-ReadOnly</h3>
 <p>If supplied, the schema will be included in a response but not in a request</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Array</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -15574,7 +15515,7 @@
 <h3 id="-required">-Required</h3>
 <p>If supplied, the object will be treated as Required where supported.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Array</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
@@ -15598,7 +15539,7 @@
 <h3 id="-writeonly">-WriteOnly</h3>
 <p>If supplied, the schema will be included in a request but not in a response</p>
 <div class="highlight"><pre><span></span><code><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SwitchParameter</span>
-<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Array</span>
+<span class="nt">Parameter Sets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">(All)</span>
 <span class="nt">Aliases</span><span class="p">:</span>
 
 <span class="nt">Required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>

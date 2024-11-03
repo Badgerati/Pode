@@ -506,6 +506,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v2111" class="md-nav__link">
+    <span class="md-ellipsis">
+      v2.11.1
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v2110" class="md-nav__link">
     <span class="md-ellipsis">
       v2.11.0
@@ -15350,6 +15359,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v2111" class="md-nav__link">
+    <span class="md-ellipsis">
+      v2.11.1
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v2110" class="md-nav__link">
     <span class="md-ellipsis">
       v2.11.0
@@ -16074,6 +16092,36 @@
 
 
 <h1 id="release-notes">Release Notes</h1>
+<h2 id="v2111">v2.11.1</h2>
+<p>Date: 3rd November 2024</p>
+<div class="highlight"><pre><span></span><code>### Enhancements
+* #1409: Adds new/missing CSP parameters in security headers
+
+### Bugs
+* #1407: &#39;Initialize-PodeOpenApiTable&#39; fails to initialize OpenAPI table when &#39;DefaultDefinitionTag&#39; param is Null (thanks @mdaneri!)
+* #1413: Fixes Test-PodeCacheStorage being called with incorrect -Key parameter (thanks @willgladstone!)
+* #1418: Fix for ConvertTo-PodeYaml failing, when passed object contains a Key named &quot;Count&quot; (thanks @mdaneri!)
+* #1420: Fix for OpenAPI Component Properties, Server Endpoint, and Path Filtering Issues (thanks @mdaneri!)
+* #1423: Fix OpenAPI Route Path Conversion for Placeholder Unescaping and Relocate Function (#1422) (thanks @mdaneri!)
+* #1424: Refactor Byte Conversion Functions (thanks @mdaneri!)
+* #1424: Remove Duplicate Task Process Definitions (thanks @mdaneri!)
+* #1427: Fixes &quot;collection modified&quot; error when cleaning up sessions
+* #1430: Add-PodeOAComponentRequestBody now supports hashtable/ordered input (thanks @mdaneri!)
+* #1430: Fix OpenAPI Route parameters so they respect the DefinitionTag (thanks @mdaneri!)
+* #1430: More appropriately order responses, parameters, and request bodies in OpenAPI (thanks @mdaneri!)
+* #1430: Order Routes in OpenAPI specification by creation, and HTTP methods in a more conventional order (thanks @mdaneri!)
+* #1434: Fixes the clean-up of old log files (thanks @DoLearnWhileAlive!)
+* #1436: Add -AllowNonStandardBody Parameter to Enable Request Bodies for Non-Standard HTTP Methods in OpenAPI (thanks @mdaneri!)
+* #1438: Fixes the unnecessary Error Logging on HTTP Request Timeouts (thanks @mdaneri!)
+* #1439: Don&#39;t setup the Caching Housekeeper Timer in a Serverless context
+* #1440: Fixes error message appearing when using self-signed certificates on localhost
+
+### Security
+* #1428: Migrates Stream functions into the .NET Listener
+
+### Packaging
+* #1404: Add Pester Test to Check for Duplicate Function Definitions (thanks @mdaneri!)
+</code></pre></div>
 <h2 id="v2110">v2.11.0</h2>
 <p>Date: 29th September 2024</p>
 <div class="highlight"><pre><span></span><code>### Features

@@ -10846,6 +10846,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#sampleauth" class="md-nav__link">
+    <span class="md-ellipsis">
+      SampleAuth
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#caching" class="md-nav__link">
     <span class="md-ellipsis">
       Caching
@@ -10966,6 +10975,15 @@
   <a href="#oneoff-script" class="md-nav__link">
     <span class="md-ellipsis">
       OneOff-Script
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#openapi-simplepotato" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenApi-SimplePotato
     </span>
   </a>
   
@@ -11677,6 +11695,15 @@
   <a href="#web-uploadkestrel" class="md-nav__link">
     <span class="md-ellipsis">
       Web-UploadKestrel
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#web-usepodeauth" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web-UsePodeAuth
     </span>
   </a>
   
@@ -15535,6 +15562,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#sampleauth" class="md-nav__link">
+    <span class="md-ellipsis">
+      SampleAuth
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#caching" class="md-nav__link">
     <span class="md-ellipsis">
       Caching
@@ -15655,6 +15691,15 @@
   <a href="#oneoff-script" class="md-nav__link">
     <span class="md-ellipsis">
       OneOff-Script
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#openapi-simplepotato" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenApi-SimplePotato
     </span>
   </a>
   
@@ -16372,6 +16417,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#web-usepodeauth" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web-UsePodeAuth
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#webauth-apikeyjwt" class="md-nav__link">
     <span class="md-ellipsis">
       WebAuth-ApikeyJWT
@@ -16439,6 +16493,10 @@
 
 
 <h1 id="sample-scripts">Sample Scripts</h1>
+<h2 id="sampleauth"><a href="https://github.com/Badgerati/Pode/blob/develop/examples/auth/SampleAuth.ps1">SampleAuth</a></h2>
+<p><strong>Synopsis</strong></p>
+<p>SampleAuth.ps1 </p>
+<p><strong>Description</strong></p>
 <h2 id="caching"><a href="https://github.com/Badgerati/Pode/blob/develop/examples/Caching.ps1">Caching</a></h2>
 <p><strong>Synopsis</strong></p>
 <p>A sample PowerShell script to set up a Pode server and integrate with Redis for caching.</p>
@@ -16534,6 +16592,13 @@ specific user agents, and rejecting requests from certain IP addresses.</p>
 <p><strong>Description</strong></p>
 <p>This script sets up a Pode server, enables terminal logging for errors, and writes a "hello, world!" message to the terminal.
 The server runs the logic once and then exits.</p>
+<h2 id="openapi-simplepotato"><a href="https://github.com/Badgerati/Pode/blob/develop/examples/OpenApi-SimplePotato.ps1">OpenApi-SimplePotato</a></h2>
+<p><strong>Synopsis</strong></p>
+<p>Sets up a Pode server with OpenAPI documentation, request logging, and routes for handling 'potato' requests.</p>
+<p><strong>Description</strong></p>
+<p>This script configures a Pode server to listen on a specified port, enables both request and error logging,
+and sets up OpenAPI documentation. It defines routes for fetching 'potato' data with responses in both
+JSON and plain text. OpenAPI documentation is exposed via Swagger and other viewers.</p>
 <h2 id="openapi-tuttifrutti"><a href="https://github.com/Badgerati/Pode/blob/develop/examples/OpenApi-TuttiFrutti.ps1">OpenApi-TuttiFrutti</a></h2>
 <p><strong>Synopsis</strong></p>
 <p>A sample PowerShell script to set up a Pode server with OpenAPI 3.0 and 3.1 specifications.</p>
@@ -17043,6 +17108,15 @@ for uploading single and multiple files.</p>
 <p><strong>Description</strong></p>
 <p>This script sets up a Pode server that listens on a specified port using the Kestrel listener type.
 It serves a web page for file upload and processes file uploads, saving them to the server.</p>
+<h2 id="web-usepodeauth"><a href="https://github.com/Badgerati/Pode/blob/develop/examples/Web-UsePodeAuth.ps1">Web-UsePodeAuth</a></h2>
+<p><strong>Synopsis</strong></p>
+<p>A PowerShell script to set up a Pode server with API key authentication and various route configurations.</p>
+<p><strong>Description</strong></p>
+<p>Sets up a Pode server that listens on a specified port, enables request and error logging, and configures API key
+authentication. The script uses the <code>Use-PodeAuth</code> function to load and apply the authentication defined in
+<code>./auth/SampleAuth.ps1</code>. The authentication is applied globally to the API routes using <code>Add-PodeAuthMiddleware</code>.
+The script defines a route to fetch a list of users, which requires authentication using a specified location
+for the API key (Header, Query, or Cookie).</p>
 <h2 id="webauth-apikeyjwt"><a href="https://github.com/Badgerati/Pode/blob/develop/examples/WebAuth-ApikeyJWT.ps1">WebAuth-ApikeyJWT</a></h2>
 <p><strong>Synopsis</strong></p>
 <p>A PowerShell script to set up a Pode server with JWT authentication and various route configurations.</p>
