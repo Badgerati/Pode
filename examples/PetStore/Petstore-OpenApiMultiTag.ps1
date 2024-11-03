@@ -88,9 +88,16 @@ Start-PodeServer -Threads 1 -ScriptBlock {
 
 
     if ((Get-PodeConfig).Protocol -eq 'Https') {
-        $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
-        $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
-        Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default
+        if ((Get-PodeConfig).SelfSignedCertificate) {
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -SelfSigned -Default -Name 'endpoint_v3'
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port ((Get-PodeConfig).RestFulPort + 1) -Protocol Https -SelfSigned -Default -Name 'endpoint_v3.1'
+        }
+        else {
+            $Certificate = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).Certificate
+            $CertificateKey = Join-Path -Path $CertsPath -ChildPath (Get-PodeConfig).CertificateKey
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default -Name 'endpoint_v3'
+            Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port ((Get-PodeConfig).RestFulPort + 1) -Protocol Https -Certificate $Certificate -CertificateKey $CertificateKey -CertificatePassword (Get-PodeConfig).CertificatePassword -Default -Name 'endpoint_v3.1'
+        }
     }
     else {
         Add-PodeEndpoint -Address (Get-PodeConfig).Address -Port (Get-PodeConfig).RestFulPort -Protocol Http -Default -Name 'endpoint_v3'
@@ -134,7 +141,6 @@ Some useful links:
 
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'V3 Endpoint' -DefinitionTag 'v3.0.3'
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'V3.1 Endpoint' -DefinitionTag 'v3.1'
-    Add-PodeOAServerEndpoint -url '/api' -Description 'Default Endpoint' -DefinitionTag 'v3.0.3','v3.1'
 
     #OpenAPI 3.0
     Enable-PodeOAViewer -Type Swagger -Path '/docs/swagger' -DefinitionTag 'v3.0.3'
@@ -202,8 +208,6 @@ Some useful links:
 
     New-PodeAuthScheme -Basic -Realm 'PetStore' | Add-PodeAuth -Name 'Basic' -Sessionless -ScriptBlock {
         param($username, $password)
-        write-host $username
-        write-host $password
 
         # here you'd check a real user storage, this is just for example
         if ($username -eq 'morty' -and $password -eq 'pickle') {

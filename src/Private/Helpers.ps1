@@ -1370,9 +1370,7 @@ function New-PodeRequestException {
         $StatusCode
     )
 
-    $err = [System.Net.Http.HttpRequestException]::new()
-    $err.Data.Add('PodeStatusCode', $StatusCode)
-    return $err
+    return [PodeRequestException]::new($StatusCode)
 }
 
 function ConvertTo-PodeResponseContent {
@@ -1535,14 +1533,7 @@ function ConvertFrom-PodeRequestContent {
         else {
             # if the request is compressed, attempt to uncompress it
             if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
-                # create a compressed stream to decompress the req bytes
-                $ms = [System.IO.MemoryStream]::new()
-                $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
-                $null = $ms.Seek(0, 0)
-                $stream = Get-PodeCompressionStream -InputStream $ms -Encoding $TransferEncoding -Mode Decompress
-
-                # read the decompressed bytes
-                $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Request.ContentEncoding
+                $Content = [PodeHelpers]::DecompressBytes($Request.RawBody, $TransferEncoding, $Request.ContentEncoding)
             }
             else {
                 $Content = $Request.Body
@@ -3573,7 +3564,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'hashtable' {
-                if ($InputObject.Count -gt 0 ) {
+                if ($InputObject.GetEnumerator().MoveNext()) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
@@ -3599,7 +3590,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'pscustomobject' {
-                if ($InputObject.Count -gt 0 ) {
+                if ($InputObject.PSObject.Properties.Count -gt 0) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in ($InputObject | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name)) {

@@ -288,7 +288,8 @@
     taskProcessDoesNotExistExceptionMessage                           = "Taakproces '{0}' bestaat niet."
     scheduleProcessDoesNotExistExceptionMessage                       = "Schema-proces '{0}' bestaat niet."
     definitionTagChangeNotAllowedExceptionMessage                     = 'Definitietag voor een route kan niet worden gewijzigd.'
-    getRequestBodyNotAllowedExceptionMessage                          = '{0}-operaties kunnen geen Request Body hebben.'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' operaties kunnen geen aanvraagbody hebben. Gebruik -AllowNonStandardBody om deze beperking te omzeilen."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "De functie '{0}' accepteert geen array als pipeline-invoer."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Niet-ondersteunde streamcompressie-encodering: {0}'
+    LocalEndpointConflictExceptionMessage                             = "Zowel '{0}' als '{1}' zijn gedefinieerd als lokale OpenAPI-eindpunten, maar er is slechts één lokaal eindpunt per API-definitie toegestaan."
 }

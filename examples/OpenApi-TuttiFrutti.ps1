@@ -92,7 +92,6 @@ Some useful links:
 
 
     Add-PodeOAServerEndpoint -url '/api/v3' -Description 'default endpoint'  -DefinitionTag 'v3', 'v3.1'
-
     Add-PodeOAInfo -Title 'Swagger Petstore - OpenAPI 3.0' -Version 1.0.17 -Description $InfoDescription  -TermsOfService 'http://swagger.io/terms/' -LicenseName 'Apache 2.0' `
         -LicenseUrl 'http://www.apache.org/licenses/LICENSE-2.0.html' -ContactName 'API Support' -ContactEmail 'apiteam@swagger.io' -DefinitionTag 'v3'
 
@@ -303,7 +302,7 @@ Some useful links:
         New-PodeOAStringProperty -Name 'message' | New-PodeOAIntProperty -Name 'code'-Format Int32 | New-PodeOAObjectProperty | Add-PodeOAComponentSchema -Name 'ErrorModel'
 
 
-        Add-PodeRoute -PassThru -Method Get -Path '/peta/:id' -ScriptBlock {
+        Add-PodeRoute -PassThru -Method Get -Path '/peta/:id' -OADefinitionTag 'v3.1' -ScriptBlock {
             Write-PodeJsonResponse -Value (Get-Pet -Id $WebEvent.Parameters['id']) -StatusCode 200
         } |
             Set-PodeOARouteInfo -Summary 'Find pets by ID' -Description 'Returns pets based on ID'  -OperationId 'getPetsById' -PassThru |
@@ -421,9 +420,9 @@ Some useful links:
         New-PodeOAExample -ContentType 'text/plain' -Name 'user' -Summary   'User Example in Plain text' -ExternalValue 'http://foo.bar/examples/user-example.txt' |
         New-PodeOAExample -ContentType '*/*' -Name 'user' -Summary   'User example in other forma' -ExternalValue  'http://foo.bar/examples/user-example.whatever'
     Select-PodeOADefinition -Tag 'v3' -Scriptblock {
-        Add-PodeRouteGroup -Path '/api/v4'     -Routes {
+        Add-PodeRouteGroup -Path '/api/v3/private'     -Routes {
 
-            Add-PodeRoute -PassThru -Method Put -Path '/pat/:petId' -ScriptBlock {
+            Add-PodeRoute -PassThru -Method Put,Post -Path '/pat/:petId' -ScriptBlock {
                 $JsonPet = ConvertTo-Json $WebEvent.data
                 if ( Update-Pet -Id $WebEvent.Parameters['petId'] -Data  $JsonPet) {
                     Write-PodeJsonResponse -Value @{} -StatusCode 200
@@ -431,7 +430,7 @@ Some useful links:
                 else {
                     Write-PodeJsonResponse -Value @{} -StatusCode 405
                 }
-            } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet' -OperationId 'updatePasdadaetWithForm' -PassThru |
+            } | Set-PodeOARouteInfo -Summary 'Updates a pet in the store with form data'   -Tags 'pet'   -PassThru |
                 Set-PodeOARequest  -Parameters @(
             (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
                 ) -RequestBody (
@@ -440,6 +439,9 @@ Some useful links:
                 ) -PassThru |
                 Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.' -Content (@{  'application/json' = '' ; 'application/xml' = '' }) -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Method Not Allowed' -Content  (@{  'application/json' = '' ; 'application/xml' = '' })
+
+
+
 
             Add-PodeRoute -PassThru -Method Put -Path '/paet/:petId' -ScriptBlock {
                 $JsonPet = ConvertTo-Json $WebEvent.data
@@ -563,7 +565,7 @@ Some useful links:
         } -PassThru | Set-PodeOARouteInfo -Summary 'Shutdown the server' -PassThru | Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation'
 
 
-        Add-PodeRouteGroup -Path '/api/v3'    -Routes {
+        Add-PodeRouteGroup -Path '/api/v3' -Routes {
             #PUT
             Add-PodeRoute -PassThru -Method Put -Path '/pet' -ScriptBlock {
                 $JsonPet = ConvertTo-Json $WebEvent.data
