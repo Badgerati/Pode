@@ -2,6 +2,7 @@ name: VirusTotal Scan
 
 on:
   push:
+    branches:
     - '*'
     - '!gh-pages'
     paths:
