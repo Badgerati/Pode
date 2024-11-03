@@ -1,0 +1,53 @@
+name: VirusTotal Scan
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'pode.build.ps1'
+      - '.github/workflows/VirusTotal.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'pode.build.ps1'
+      - '.github/workflows/VirusTotal.yml'
+
+env:
+  INVOKE_BUILD_VERSION: '5.11.1'
+  POWERSHELL_VERSION: 'lts'
+
+job:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Setup Powershell
+      shell: pwsh
+      run: |
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+        Invoke-Build SetupPowerShell -PowerShellVersion $env:POWERSHELL_VERSION
+
+    - name: Install Invoke-Build
+      shell: pwsh
+      run: |
+        Install-Module -Name InvokeBuild -RequiredVersion $env:INVOKE_BUILD_VERSION -Force
+
+    - name: Build Zip Package
+      shell: pwsh
+      run: |
+        Invoke-Build Compress
+
+    - name: Run VirusTotal Scan
+      use: crazy-max/ghaction-virustotal@v4
+      with:
+        vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+        request_rate: 4
+        files: |
+          ./deliverable/*.zip
