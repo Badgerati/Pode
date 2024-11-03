@@ -2,15 +2,19 @@ name: VirusTotal Scan
 
 on:
   push:
+    - '*'
+    - '!gh-pages'
     paths:
-      - 'src/**'
-      - 'pode.build.ps1'
-      - '.github/workflows/VirusTotal.yml'
+    - 'src/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/VirusTotal.yml'
   pull_request:
+    branches:
+    - '*'
     paths:
-      - 'src/**'
-      - 'pode.build.ps1'
-      - '.github/workflows/VirusTotal.yml'
+    - 'src/**'
+    - 'pode.build.ps1'
+    - '.github/workflows/VirusTotal.yml'
 
 env:
   INVOKE_BUILD_VERSION: '5.11.1'
