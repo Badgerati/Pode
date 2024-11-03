@@ -2,6 +2,8 @@
     "editor.formatOnSave": true,
     "editor.formatOnType": false,
     "editor.minimap.enabled": false,
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
     "powershell.codeFormatting.addWhitespaceAroundPipe": true,
     "powershell.codeFormatting.alignPropertyValuePairs": true,
     "powershell.codeFormatting.autoCorrectAliases": true,
