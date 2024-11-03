@@ -413,9 +413,19 @@ Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
     exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
 }, PrintChecksum
 
+#Synopsis: Create the Deliverable folder
+Task DeliverableFolder {
+    $path = './deliverable'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+
+    # create the deliverable dir
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+}
 
 # Synopsis: Creates a Zip of the Module
-Task Compress StampVersion, {
+Task Compress PackageFolder, StampVersion, DeliverableFolder, {
     $path = './deliverable'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -426,13 +436,13 @@ Task Compress StampVersion, {
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
-Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
+Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, PackageFolder, StampVersion, DeliverableFolder, {
     exec { choco pack ./packers/choco/pode.nuspec }
     Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
 
 # Synopsis: Create docker tags
-Task DockerPack {
+Task DockerPack PackageFolder, StampVersion, {
     # check if github and windows, and output warning
     if ((Test-PodeBuildIsGitHub) -and (Test-PodeBuildIsWindows)) {
         Write-Warning 'Docker images are not built on GitHub Windows runners, and Docker is in Windows container only mode. Exiting task.'
@@ -464,7 +474,10 @@ Task DockerPack {
 }
 
 # Synopsis: Package up the Module
-Task Pack Build, {
+Task Pack Compress, ChocoPack, DockerPack
+
+# Synopsis: Package up the Module into a /pkg folder
+Task PackageFolder Build, {
     $path = './pkg'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -492,7 +505,7 @@ Task Pack Build, {
     $files | ForEach-Object {
         Copy-Item -Path "./$($_)" -Destination $path -Force | Out-Null
     }
-}, StampVersion, Compress, ChocoPack, DockerPack
+}
 
 
 <#
