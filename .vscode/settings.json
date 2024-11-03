@@ -35,5 +35,8 @@
     "javascript.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": false,
     "javascript.format.insertSpaceAfterKeywordsInControlFlowStatements": true,
     "javascript.format.insertSpaceBeforeAndAfterBinaryOperators": true,
-    "javascript.format.insertSpaceBeforeFunctionParenthesis": false
+    "javascript.format.insertSpaceBeforeFunctionParenthesis": false,
+    "[yaml]": {
+        "editor.tabSize": 2
+    }
 }
