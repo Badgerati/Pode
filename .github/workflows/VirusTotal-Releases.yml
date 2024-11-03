@@ -10,7 +10,7 @@ jobs:
 
     steps:
     - name: Run VirusTotal Scan
-      use: crazy-max/ghaction-virustotal@v4
+      uses: crazy-max/ghaction-virustotal@v4
       with:
         vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
         github_token: ${{ secrets.GITHUB_TOKEN }}

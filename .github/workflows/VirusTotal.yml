@@ -45,7 +45,7 @@ jobs:
         Invoke-Build Compress
 
     - name: Run VirusTotal Scan
-      use: crazy-max/ghaction-virustotal@v4
+      uses: crazy-max/ghaction-virustotal@v4
       with:
         vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
         request_rate: 4
