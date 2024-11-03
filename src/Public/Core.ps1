@@ -147,7 +147,7 @@ function Start-PodeServer {
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
         # ensure the session is clean
-        $PodeContext = $null
+        $Script:PodeContext = $null
         $ShowDoneMessage = $true
 
         try {
@@ -214,6 +214,10 @@ function Start-PodeServer {
                     Restart-PodeInternalServer
                 }
 
+                if (($PodeContext.Tokens.Dump.IsCancellationRequested)  ) {
+                    Invoke-PodeDumpInternal -Halt
+                }
+
                 # check for open browser
                 if (Test-PodeOpenBrowserPressed -Key $key) {
                     Invoke-PodeEvent -Type Browser
@@ -235,7 +239,7 @@ function Start-PodeServer {
             $_ | Write-PodeErrorLog
 
             if ($PodeContext.Server.Debug.Dump.Enable) {
-                Invoke-PodeDump -ErrorRecord $_ -Format $PodeContext.Server.Debug.Dump.Format -Path $PodeContext.Server.Debug.Dump.Path
+                Invoke-PodeDumpInternal -ErrorRecord $_
             }
 
             Invoke-PodeEvent -Type Crash

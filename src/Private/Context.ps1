@@ -415,6 +415,7 @@ function New-PodeContext {
     $ctx.Tokens = @{
         Cancellation = [System.Threading.CancellationTokenSource]::new()
         Restart      = [System.Threading.CancellationTokenSource]::new()
+        Dump      = [System.Threading.CancellationTokenSource]::new()
     }
 
     # requests that should be logged

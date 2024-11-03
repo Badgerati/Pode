@@ -895,5 +895,17 @@ Some useful links:
             Set-PodeOARequest -Parameters   (  New-PodeOAStringProperty -Name 'username' -Description 'The name that needs to be deleted.' -Required | ConvertTo-PodeOAParameter -In Path ) -PassThru |
             Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username supplied' -PassThru |
             Add-PodeOAResponse -StatusCode 404 -Description 'User not found'
+
+        Add-PodeRoute -PassThru -Method Get -Path '/dump' -ScriptBlock {
+            $format = $WebEvent.Query['format']
+            try {
+                # Simulate a critical error
+                throw [System.DivideByZeroException] 'Simulated divide by zero error'
+            }
+            catch {
+                $_ | Invoke-PodeDump #-Halt -Format $format
+            }
+        } | Set-PodeOARouteInfo -Summary 'Dump state' -Description 'Dump the memory state of the server.' -Tags 'dump'  -OperationId 'dump'-PassThru |
+            Set-PodeOARequest -Parameters (New-PodeOAStringProperty -Name 'format' -Description 'Dump export format.' -Enum 'json', 'clixml', 'txt', 'bin', 'yaml' -Default 'json' | ConvertTo-PodeOAParameter -In Query )
     }
 }

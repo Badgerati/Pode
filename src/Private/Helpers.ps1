@@ -3767,3 +3767,284 @@ function Copy-PodeObjectDeepClone {
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }
+
+
+
+
+# Function to collect variables by scope
+function Get-ScopedVariable {
+    param ()
+    # Safeguard against deeply nested objects
+    function ConvertTo-SerializableObject {
+        param (
+            [object]$InputObject,
+            [int]$MaxDepth = 5, # Default max depth
+            [int]$CurrentDepth = 0
+        )
+
+        if ($CurrentDepth -ge $MaxDepth) {
+            return 'Max depth reached'
+        }
+
+        if ($InputObject -is [System.Collections.ListDictionaryInternal] -or $InputObject -is [hashtable]) {
+            $result = @{}
+            foreach ($key in $InputObject.Keys) {
+                $strKey = $key.ToString()
+                $result[$strKey] = ConvertTo-SerializableObject -InputObject $InputObject[$key] -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
+            }
+            return $result
+        }
+        elseif ($InputObject -is [PSCustomObject]) {
+            $result = @{}
+            foreach ($property in $InputObject.PSObject.Properties) {
+                $result[$property.Name.ToString()] = ConvertTo-SerializableObject -InputObject $property.Value -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
+            }
+            return $result
+        }
+        elseif ($InputObject -is [System.Collections.IEnumerable] -and -not ($InputObject -is [string])) {
+            return $InputObject | ForEach-Object { ConvertTo-SerializableObject -InputObject $_ -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1) }
+        }
+        else {
+            return $InputObject
+        }
+    }
+
+    $scopes = @{
+        Local  = Get-Variable -Scope 0
+        Script = Get-Variable -Scope Script
+        Global = Get-Variable -Scope Global
+    }
+
+    $scopedVariables = @{}
+    foreach ($scope in $scopes.Keys) {
+        $variables = @{}
+        foreach ($var in $scopes[$scope]) {
+            $variables[$var.Name] = try { $var.Value } catch { 'Error retrieving value' }
+        }
+        $scopedVariables[$scope] = ConvertTo-SerializableObject -InputObject $variables -MaxDepth $MaxDepth
+    }
+    return $scopedVariables
+}
+
+
+
+<#
+.SYNOPSIS
+    Captures a memory dump with runspace and exception details when a fatal exception occurs, with an optional halt switch to close the application.
+
+.DESCRIPTION
+    The Invoke-PodeDump function gathers diagnostic information, including process memory usage, exception details, runspace information, and
+    variables from active runspaces. It saves this data in the specified format (JSON, CLIXML, Plain Text, Binary, or YAML) in a "Dump" folder within
+    the current directory. If the folder does not exist, it will be created. An optional `-Halt` switch is available to terminate the PowerShell process
+    after saving the dump.
+
+.PARAMETER ErrorRecord
+    The ErrorRecord object representing the fatal exception that triggered the memory dump. This provides details on the error, such as message and stack trace.
+    Accepts input from the pipeline.
+
+.PARAMETER Format
+    Specifies the format for saving the dump file. Supported formats are 'json', 'clixml', 'txt', 'bin', and 'yaml'.
+
+.PARAMETER Halt
+    Switch to specify whether to terminate the application after saving the memory dump. If set, the function will close the PowerShell process.
+
+.PARAMETER Path
+    Specifies the directory where the dump file will be saved. If the directory does not exist, it will be created. Defaults to a "Dump" folder.
+
+.EXAMPLE
+    try {
+        # Simulate a critical error
+        throw [System.OutOfMemoryException] "Simulated out of memory error"
+    }
+    catch {
+        # Capture the dump in JSON format and halt the application
+        $_ | Invoke-PodeDump -Format 'json' -Halt
+    }
+
+    This example catches a simulated OutOfMemoryException and pipes it to Invoke-PodeDump to capture the error in JSON format and halt the application.
+
+.EXAMPLE
+    try {
+        # Simulate a critical error
+        throw [System.AccessViolationException] "Simulated access violation error"
+    }
+    catch {
+        # Capture the dump in YAML format without halting
+        $_ | Invoke-PodeDump -Format 'yaml'
+    }
+
+    This example catches a simulated AccessViolationException and pipes it to Invoke-PodeDump to capture the error in YAML format without halting the application.
+
+.NOTES
+    This function is designed to assist with post-mortem analysis by capturing critical application state information when a fatal error occurs.
+    It may be further adapted to log additional details or support different formats for captured data.
+
+#>
+function Invoke-PodeDumpInternal {
+    param (
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [System.Management.Automation.ErrorRecord]
+        $ErrorRecord,
+
+        [Parameter()]
+        [ValidateSet('json', 'clixml', 'txt', 'bin', 'yaml')]
+        [string]
+        $Format,
+
+        [string]
+        $Path,
+
+        [switch]
+        $Halt,
+
+        [int]
+        $MaxDepth = 5
+    )
+
+    # Begin block to handle pipeline input
+    begin {
+        # Default format and path from PodeContext
+        if ([string]::IsNullOrEmpty($Format)) {
+            $Format = $PodeContext.Server.Debug.Dump.Format
+        }
+        if ([string]::IsNullOrEmpty($Path)) {
+            $Path = $PodeContext.Server.Debug.Dump.Path
+        }
+        if ($null -eq $ErrorRecord) {
+            $ErrorRecord = [System.Management.Automation.ErrorRecord]::new()
+        }
+    }
+
+    # Process block to handle each pipeline input
+    process {
+        # Ensure Dump directory exists in the specified path
+        $dumpDirectory = (Get-PodeRelativePath -Path $Path -JoinRoot)
+        if (!(Test-Path -Path $dumpDirectory)) {
+            New-Item -ItemType Directory -Path $dumpDirectory | Out-Null
+        }
+
+        # Capture process memory details
+        $process = Get-Process -Id $PID
+        $memoryDetails = @(
+            [Ordered]@{
+                ProcessId     = $process.Id
+                ProcessName   = $process.ProcessName
+                WorkingSet    = [math]::Round($process.WorkingSet64 / 1MB, 2)
+                PrivateMemory = [math]::Round($process.PrivateMemorySize64 / 1MB, 2)
+                VirtualMemory = [math]::Round($process.VirtualMemorySize64 / 1MB, 2)
+            }
+        )
+
+        # Capture the code causing the exception
+        $scriptContext = @(
+            [Ordered]@{
+                ScriptName      = $ErrorRecord.InvocationInfo.ScriptName
+                Line            = $ErrorRecord.InvocationInfo.Line
+                PositionMessage = $ErrorRecord.InvocationInfo.PositionMessage
+            }
+        )
+
+        # Capture stack trace information if available
+        $stackTrace = if ($ErrorRecord.Exception.StackTrace) {
+            $ErrorRecord.Exception.StackTrace -split "`n"
+        }
+        else {
+            'No stack trace available'
+        }
+
+        # Capture exception details
+        $exceptionDetails = @(
+            [Ordered]@{
+                ExceptionType  = $ErrorRecord.Exception.GetType().FullName
+                Message        = $ErrorRecord.Exception.Message
+                InnerException = if ($ErrorRecord.Exception.InnerException) { $ErrorRecord.Exception.InnerException.Message } else { $null }
+            }
+        )
+
+        # Collect variables by scope
+        $scopedVariables = Get-ScopedVariable
+
+        # Check if RunspacePools is not null before iterating
+        $runspacePoolDetails = @()
+        if ($null -ne $PodeContext.RunspacePools) {
+            write-podehost $PodeContext -explode -showtype
+            write-podehost 'sss'
+            foreach ($poolName in $PodeContext.RunspacePools.Keys) {
+                $pool = $PodeContext.RunspacePools[$poolName]
+
+                if ($null -ne $pool -and $null -ne $pool.Pool) {
+                    $runspaceVariables = @()
+
+                    if ($pool.Pool.RunspacePoolStateInfo.State -eq 'Opened') {
+                        #     write-podehost $pool.Pool -Explode -ShowType
+                        foreach ($runspace in $pool.Pool.GetRunspaces()) {
+                            $variables = $runspace.SessionStateProxy.InvokeCommand.InvokeScript({
+                                    Get-ScopedVariable
+                                })
+                            $runspaceVariables += @(
+                                [Ordered]@{
+                                    RunspaceId = $runspace.InstanceId
+                                    ThreadId   = $runspace.GetExecutionContext().CurrentThread.ManagedThreadId
+                                    Variables  = $variables
+                                }
+                            )
+                        }
+                    }
+
+                    $runspacePoolDetails += @(
+                        [Ordered]@{
+                            PoolName          = $poolName
+                            State             = $pool.State
+                            MaxThreads        = $pool.Pool.MaxRunspaces
+                            AvailableThreads  = $pool.Pool.GetAvailableRunspaces()
+                            RunspaceVariables = $runspaceVariables
+                        }
+                    )
+                }
+            }
+        }
+
+        # Combine all captured information into a single object
+        $dumpInfo = [Ordered]@{
+            Timestamp        = (Get-Date).ToString('s')
+            Memory           = $memoryDetails
+            ScriptContext    = $scriptContext
+            StackTrace       = $stackTrace
+            ExceptionDetails = $exceptionDetails
+            ScopedVariables  = $scopedVariables
+            RunspacePools    = $runspacePoolDetails
+        }
+
+        # Determine file extension and save format based on selected Format
+        switch ($Format) {
+            'json' {
+                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
+                $dumpInfo | ConvertTo-Json -Depth $MaxDepth | Out-File -FilePath $dumpFilePath
+            }
+            'clixml' {
+                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').clixml"
+                $dumpInfo | Export-Clixml -Path $dumpFilePath
+            }
+            'txt' {
+                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
+                $dumpInfo | Out-String | Out-File -FilePath $dumpFilePath
+            }
+            'bin' {
+                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').bin"
+                [System.IO.File]::WriteAllBytes($dumpFilePath, [System.Text.Encoding]::UTF8.GetBytes([System.Management.Automation.PSSerializer]::Serialize($dumpInfo, 1)))
+            }
+            'yaml' {
+                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').yaml"
+                $dumpInfo | ConvertTo-PodeYaml | Out-File -FilePath $dumpFilePath
+            }
+        }
+
+        Write-PodeHost -ForegroundColor Yellow "Memory dump saved to $dumpFilePath"
+
+        # If Halt switch is specified, close the application
+        if ($Halt) {
+            Write-PodeHost -ForegroundColor Red 'Halt switch detected. Closing the application.'
+            Stop-Process -Id  $PID -Force
+        }
+    }
+}

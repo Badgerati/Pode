@@ -335,6 +335,9 @@ function Restart-PodeInternalServer {
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
         $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
 
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Dump
+        $PodeContext.Tokens.Dump = [System.Threading.CancellationTokenSource]::new()
+
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext
 
