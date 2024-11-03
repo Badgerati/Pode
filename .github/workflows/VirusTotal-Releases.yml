@@ -1,0 +1,20 @@
+name: VirusTotal Scan - Releases
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Run VirusTotal Scan
+      uses: crazy-max/ghaction-virustotal@v4
+      with:
+        vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        update_release_body: true
+        request_rate: 4
+        files: |
+          .zip$
