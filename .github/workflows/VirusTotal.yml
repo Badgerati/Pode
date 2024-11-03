@@ -16,7 +16,7 @@ env:
   INVOKE_BUILD_VERSION: '5.11.1'
   POWERSHELL_VERSION: 'lts'
 
-job:
+jobs:
   build:
     runs-on: ubuntu-latest
 
