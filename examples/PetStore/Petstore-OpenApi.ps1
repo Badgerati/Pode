@@ -903,7 +903,7 @@ Some useful links:
                 throw [System.DivideByZeroException] 'Simulated divide by zero error'
             }
             catch {
-                $_ | Invoke-PodeDump #-Halt -Format $format
+                $_ | Invoke-PodeDump  -Format $format
             }
         } | Set-PodeOARouteInfo -Summary 'Dump state' -Description 'Dump the memory state of the server.' -Tags 'dump'  -OperationId 'dump'-PassThru |
             Set-PodeOARequest -Parameters (New-PodeOAStringProperty -Name 'format' -Description 'Dump export format.' -Enum 'json', 'clixml', 'txt', 'bin', 'yaml' -Default 'json' | ConvertTo-PodeOAParameter -In Query )

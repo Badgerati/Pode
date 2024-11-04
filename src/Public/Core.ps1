@@ -208,14 +208,18 @@ function Start-PodeServer {
 
                 # get the next key presses
                 $key = Get-PodeConsoleKey
-
+                
                 # check for internal restart
                 if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
                     Restart-PodeInternalServer
                 }
 
-                if (($PodeContext.Tokens.Dump.IsCancellationRequested)  ) {
-                    Invoke-PodeDumpInternal -Halt
+                if (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
+                    Invoke-PodeDumpInternal
+                    if ($PodeContext.Server.Debug.Dump.Param.Halt) {
+                        Write-PodeHost -ForegroundColor Red 'Halt switch detected. Closing the application.'
+                        break
+                    }
                 }
 
                 # check for open browser

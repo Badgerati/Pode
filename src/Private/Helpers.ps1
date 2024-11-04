@@ -591,6 +591,15 @@ function Test-PodeOpenBrowserPressed {
     return (Test-PodeKeyPressed -Key $Key -Character 'b')
 }
 
+function Test-PodeDumpPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'd')
+}
+
 function Test-PodeKeyPressed {
     param(
         [Parameter()]
@@ -3772,7 +3781,7 @@ function Copy-PodeObjectDeepClone {
 
 
 # Function to collect variables by scope
-function Get-ScopedVariable {
+function Get-PodeDumpScopedVariable {
     param ()
     # Safeguard against deeply nested objects
     function ConvertTo-SerializableObject {
@@ -3786,26 +3795,49 @@ function Get-ScopedVariable {
             return 'Max depth reached'
         }
 
-        if ($InputObject -is [System.Collections.ListDictionaryInternal] -or $InputObject -is [hashtable]) {
+        if ($null -eq $InputObject ) {
+            return $null
+        }
+        elseif ($InputObject -is [System.Collections.ListDictionaryInternal] -or $InputObject -is [hashtable]) {
             $result = @{}
-            foreach ($key in $InputObject.Keys) {
-                $strKey = $key.ToString()
-                $result[$strKey] = ConvertTo-SerializableObject -InputObject $InputObject[$key] -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
+            try {
+                foreach ($key in $InputObject.Keys) {
+                    try {
+                        $strKey = $key.ToString()
+                        $result[$strKey] = ConvertTo-SerializableObject -InputObject $InputObject[$key] -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
+                    }
+                    catch {
+                        write-podehost $_ -ForegroundColor Red
+                    }
+                }
+            }
+            catch {
+                write-podehost $_ -ForegroundColor Red
             }
             return $result
         }
         elseif ($InputObject -is [PSCustomObject]) {
             $result = @{}
-            foreach ($property in $InputObject.PSObject.Properties) {
-                $result[$property.Name.ToString()] = ConvertTo-SerializableObject -InputObject $property.Value -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
+            try {
+                foreach ($property in $InputObject.PSObject.Properties) {
+                    try {
+                        $result[$property.Name.ToString()] = ConvertTo-SerializableObject -InputObject $property.Value -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
+                    }
+                    catch {
+                        write-podehost $_ -ForegroundColor Red
+                    }
+                }
+            }
+            catch {
+                write-podehost $_ -ForegroundColor Red
             }
             return $result
         }
         elseif ($InputObject -is [System.Collections.IEnumerable] -and -not ($InputObject -is [string])) {
             return $InputObject | ForEach-Object { ConvertTo-SerializableObject -InputObject $_ -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1) }
         }
-        else {
-            return $InputObject
+        else  {
+            return $InputObject.ToString()
         }
     }
 
@@ -3894,33 +3926,61 @@ function Invoke-PodeDumpInternal {
         [string]
         $Path,
 
-        [switch]
-        $Halt,
-
         [int]
-        $MaxDepth = 5
+        $MaxDepth
     )
 
     # Begin block to handle pipeline input
     begin {
+
         # Default format and path from PodeContext
         if ([string]::IsNullOrEmpty($Format)) {
-            $Format = $PodeContext.Server.Debug.Dump.Format
+            if ($PodeContext.Server.Debug.Dump.Param.Format) {
+                $Format = $PodeContext.Server.Debug.Dump.Param.Format
+            }
+            else {
+                $Format = $PodeContext.Server.Debug.Dump.Format
+            }
         }
         if ([string]::IsNullOrEmpty($Path)) {
-            $Path = $PodeContext.Server.Debug.Dump.Path
+            if ($PodeContext.Server.Debug.Dump.Param.Path) {
+                $Path = $PodeContext.Server.Debug.Dump.Param.Path
+            }
+            else {
+                $Path = $PodeContext.Server.Debug.Dump.Path
+            }
         }
         if ($null -eq $ErrorRecord) {
-            $ErrorRecord = [System.Management.Automation.ErrorRecord]::new()
+            if ($PodeContext.Server.Debug.Dump.Param.ErrorRecord) {
+                $ErrorRecord = $PodeContext.Server.Debug.Dump.Param.ErrorRecord
+            }
+            else {
+                $ErrorRecord = $null
+            }
         }
+
+        if ($MaxDepth -lt 1) {
+            if ($PodeContext.Server.Debug.Dump.Param.MaxDepth) {
+                $MaxDepth = $PodeContext.Server.Debug.Dump.Param.MaxDepth
+            }
+            else {
+                $MaxDepth = $PodeContext.Server.Debug.Dump.MaxDepth
+            }
+        }
+        $PodeContext.Server.Debug.Dump.Param.Clear()
+
+        Write-PodeHost -ForegroundColor Yellow 'Preparing Memory Dump ...'
     }
 
     # Process block to handle each pipeline input
     process {
         # Ensure Dump directory exists in the specified path
-        $dumpDirectory = (Get-PodeRelativePath -Path $Path -JoinRoot)
-        if (!(Test-Path -Path $dumpDirectory)) {
-            New-Item -ItemType Directory -Path $dumpDirectory | Out-Null
+        if ( $Path -match '^\.{1,2}([\\\/]|$)') {
+            $Path = [System.IO.Path]::Combine($PodeContext.Server.Root, $Path.Substring(2))
+        }
+
+        if (!(Test-Path -Path $Path)) {
+            New-Item -ItemType Directory -Path $Path | Out-Null
         }
 
         # Capture process memory details
@@ -3936,61 +3996,66 @@ function Invoke-PodeDumpInternal {
         )
 
         # Capture the code causing the exception
-        $scriptContext = @(
-            [Ordered]@{
+        $scriptContext = @()
+        $exceptionDetails = @()
+        $stackTrace = ''
+
+        if ($null -ne $ErrorRecord) {
+
+            $scriptContext += [Ordered]@{
                 ScriptName      = $ErrorRecord.InvocationInfo.ScriptName
                 Line            = $ErrorRecord.InvocationInfo.Line
                 PositionMessage = $ErrorRecord.InvocationInfo.PositionMessage
             }
-        )
 
-        # Capture stack trace information if available
-        $stackTrace = if ($ErrorRecord.Exception.StackTrace) {
-            $ErrorRecord.Exception.StackTrace -split "`n"
-        }
-        else {
-            'No stack trace available'
-        }
+            # Capture stack trace information if available
+            $stackTrace = if ($ErrorRecord.Exception.StackTrace) {
+                $ErrorRecord.Exception.StackTrace -split "`n"
+            }
+            else {
+                'No stack trace available'
+            }
 
-        # Capture exception details
-        $exceptionDetails = @(
-            [Ordered]@{
+            # Capture exception details
+            $exceptionDetails += [Ordered]@{
                 ExceptionType  = $ErrorRecord.Exception.GetType().FullName
                 Message        = $ErrorRecord.Exception.Message
                 InnerException = if ($ErrorRecord.Exception.InnerException) { $ErrorRecord.Exception.InnerException.Message } else { $null }
             }
-        )
+        }
 
         # Collect variables by scope
-        $scopedVariables = Get-ScopedVariable
+        $scopedVariables = Get-PodeDumpScopedVariable
 
         # Check if RunspacePools is not null before iterating
         $runspacePoolDetails = @()
+
+
+        <#      Reflection in powershell
+  foreach ($r in $PodeContext.Runspaces) {
+            try {
+                # Define BindingFlags for non-public and instance members
+                $Flag = [System.Reflection.BindingFlags]::NonPublic -bor [System.Reflection.BindingFlags]::Instance
+
+                # Access _worker field
+                $_worker = $r.Pipeline.GetType().GetField('_worker', $Flag)
+                $worker = $_worker.GetValue($r.Pipeline)
+
+                # Access CurrentlyRunningPipeline property
+                $_CRPProperty = $worker.GetType().GetProperty('CurrentlyRunningPipeline', $Flag)
+                $currentPipeline = $_CRPProperty.GetValue($worker)
+
+                # Access the Runspace
+                $runspace = $currentPipeline.Runspace
+
+                #>
+
+
         if ($null -ne $PodeContext.RunspacePools) {
-            write-podehost $PodeContext -explode -showtype
-            write-podehost 'sss'
             foreach ($poolName in $PodeContext.RunspacePools.Keys) {
                 $pool = $PodeContext.RunspacePools[$poolName]
 
                 if ($null -ne $pool -and $null -ne $pool.Pool) {
-                    $runspaceVariables = @()
-
-                    if ($pool.Pool.RunspacePoolStateInfo.State -eq 'Opened') {
-                        #     write-podehost $pool.Pool -Explode -ShowType
-                        foreach ($runspace in $pool.Pool.GetRunspaces()) {
-                            $variables = $runspace.SessionStateProxy.InvokeCommand.InvokeScript({
-                                    Get-ScopedVariable
-                                })
-                            $runspaceVariables += @(
-                                [Ordered]@{
-                                    RunspaceId = $runspace.InstanceId
-                                    ThreadId   = $runspace.GetExecutionContext().CurrentThread.ManagedThreadId
-                                    Variables  = $variables
-                                }
-                            )
-                        }
-                    }
-
                     $runspacePoolDetails += @(
                         [Ordered]@{
                             PoolName          = $poolName
@@ -4018,33 +4083,31 @@ function Invoke-PodeDumpInternal {
         # Determine file extension and save format based on selected Format
         switch ($Format) {
             'json' {
-                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
+                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
                 $dumpInfo | ConvertTo-Json -Depth $MaxDepth | Out-File -FilePath $dumpFilePath
             }
             'clixml' {
-                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').clixml"
+                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').clixml"
                 $dumpInfo | Export-Clixml -Path $dumpFilePath
             }
             'txt' {
-                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
+                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
                 $dumpInfo | Out-String | Out-File -FilePath $dumpFilePath
             }
             'bin' {
-                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').bin"
+                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').bin"
                 [System.IO.File]::WriteAllBytes($dumpFilePath, [System.Text.Encoding]::UTF8.GetBytes([System.Management.Automation.PSSerializer]::Serialize($dumpInfo, 1)))
             }
             'yaml' {
-                $dumpFilePath = Join-Path -Path $dumpDirectory -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').yaml"
-                $dumpInfo | ConvertTo-PodeYaml | Out-File -FilePath $dumpFilePath
+                $dumpFilePath = Join-Path -Path $Path -ChildPath "PowerShellDump_$(Get-Date -Format 'yyyyMMdd_HHmmss').yaml"
+                $dumpInfo | ConvertTo-PodeYaml -Depth $MaxDepth | Out-File -FilePath $dumpFilePath
             }
         }
 
         Write-PodeHost -ForegroundColor Yellow "Memory dump saved to $dumpFilePath"
-
-        # If Halt switch is specified, close the application
-        if ($Halt) {
-            Write-PodeHost -ForegroundColor Red 'Halt switch detected. Closing the application.'
-            Stop-Process -Id  $PID -Force
-        }
+    }
+    end {
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.Dump
+        $PodeContext.Tokens.Dump = [System.Threading.CancellationTokenSource]::new()
     }
 }

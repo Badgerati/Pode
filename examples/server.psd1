@@ -64,9 +64,10 @@
                 Enable = $true
             }
             Dump        = @{
-                Enable = $true
-                Format = 'Yaml'
-                Path   = './Dump'
+                Enabled = $true
+                Format  = 'json'
+                Path    = './Dump'
+                MaxDepth = 6
             }
         }
     }
