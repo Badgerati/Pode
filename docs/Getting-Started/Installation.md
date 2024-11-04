@@ -93,7 +93,7 @@ docker pull docker.pkg.github.com/badgerati/pode/pode:2.2.2
 
 ```powershell
 # for latest
-docker pull docker.pkg.github.com/badgerati/pode/pode:latest-apline
+docker pull docker.pkg.github.com/badgerati/pode/pode:latest-alpine
 
 # or the following for a specific version:
 docker pull docker.pkg.github.com/badgerati/pode/pode:2.2.2-alpine
