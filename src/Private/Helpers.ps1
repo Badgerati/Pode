@@ -3836,7 +3836,7 @@ function Get-PodeDumpScopedVariable {
         elseif ($InputObject -is [System.Collections.IEnumerable] -and -not ($InputObject -is [string])) {
             return $InputObject | ForEach-Object { ConvertTo-SerializableObject -InputObject $_ -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1) }
         }
-        else  {
+        else {
             return $InputObject.ToString()
         }
     }
@@ -4031,8 +4031,8 @@ function Invoke-PodeDumpInternal {
         $runspacePoolDetails = @()
 
 
-        <#      Reflection in powershell
-  foreach ($r in $PodeContext.Runspaces) {
+        #      Reflection in powershell
+     <#   foreach ($r in $PodeContext.Runspaces) {
             try {
                 # Define BindingFlags for non-public and instance members
                 $Flag = [System.Reflection.BindingFlags]::NonPublic -bor [System.Reflection.BindingFlags]::Instance
@@ -4048,8 +4048,15 @@ function Invoke-PodeDumpInternal {
                 # Access the Runspace
                 $runspace = $currentPipeline.Runspace
 
-                #>
-
+                # Enable debugging for the runspace
+                #Enable-RunspaceDebug -BreakAll -Runspace $runspace
+                $vars = Get-PodeRunspaceVariablesViaDebugger -Runspace $runspace
+                start-sleep 3
+            }
+            catch {
+                write-podehost $_``
+            }
+        }#>
 
         if ($null -ne $PodeContext.RunspacePools) {
             foreach ($poolName in $PodeContext.RunspacePools.Keys) {
@@ -4111,3 +4118,91 @@ function Invoke-PodeDumpInternal {
         $PodeContext.Tokens.Dump = [System.Threading.CancellationTokenSource]::new()
     }
 }
+function Get-PodeRunspaceVariablesViaDebugger {
+    param (
+        [System.Management.Automation.Runspaces.Runspace]$Runspace
+    )
+
+    $variables = @()
+
+
+
+    try {
+        # Attach the DebuggerStop event
+
+      #  Register-ObjectEvent -InputObject $Runspace.Debugger -EventName 'DebuggerStop' -Action { param ($sender, $args); Write-PodeHost 'Debugger stopped!'; $Runspace.Debugger.SetDebuggerStepMode($true) }
+
+
+        $Runspace.Debugger.SetDebuggerStepMode($true)
+        # Enable debugging and break all
+        Enable-RunspaceDebug -BreakAll -Runspace $Runspace
+
+
+        # Continuously check for the breakpoint state
+        while ($true) {
+            if ($Runspace.Debugger.InBreakpoint) {
+                # Prepare the command to run in the debugger
+                $command = [System.Management.Automation.PSCommand]::new().AddCommand('Get-Variable')
+                $outputCollection =  [System.Management.Automation.PSDataCollection[System.Management.Automation.PSObject]]::new()
+
+                # Process the command within the debugger safely
+                $Runspace.Debugger.ProcessCommand($command, $outputCollection)
+
+                # Collect and parse the output
+                foreach ($output in $outputCollection) {
+                    $variables += [PSCustomObject]@{
+                        Name  = $output.Properties['Name'].Value
+                        Value = $output.Properties['Value'].Value
+                    }
+                }
+
+                # Resume execution after capturing variables
+                $Runspace.Debugger.SetDebuggerAction([System.Management.Automation.DebuggerResumeAction]::Continue)
+                break
+            }
+            Start-Sleep -Milliseconds 100
+        }
+    }
+    finally {
+        # Disable debugging for the runspace
+        Disable-RunspaceDebug -Runspace $Runspace
+        #     Unregister-ObjectEvent -InputObject $Runspace.Debugger -EventName 'DebuggerStop'
+    }
+
+    return $variables
+}
+
+
+function Invoke-PodeDebuggerStopEvent {
+    param (
+        [System.Management.Automation.Runspaces.Runspace]$Runspace
+    )
+
+    try {
+        # Using reflection to get the protected RaiseDebuggerStopEvent method
+        $methodInfo = $Runspace.Debugger.GetType().GetMethod("RaiseDebuggerStopEvent", [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::NonPublic)
+
+        if ($null -eq $methodInfo) {
+            Write-Error "Could not find the method RaiseDebuggerStopEvent."
+            return
+        }
+
+        # Create an empty collection of breakpoints
+        $breakpoints = [System.Collections.ObjectModel.Collection[System.Management.Automation.Breakpoint]]::new()
+
+        # Set resume action to Continue
+        $resumeAction = [System.Management.Automation.DebuggerResumeAction]::Stop
+
+        # Create the DebuggerStopEventArgs
+        $eventArgs = [System.Management.Automation.DebuggerStopEventArgs]::new($null, $breakpoints, $resumeAction)
+
+        # Invoke the method
+        $methodInfo.Invoke($Runspace.Debugger, @($eventArgs))
+
+        Write-Host "DebuggerStopEvent raised successfully."
+    }
+    catch {
+        Write-Error "Error invoking RaiseDebuggerStopEvent: $_"
+    }
+}
+
