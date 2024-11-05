@@ -2372,3 +2372,67 @@ function Test-PodeRouteOADefinitionTag {
 
     return  $oaDefinitionTag
 }
+
+
+<#
+.SYNOPSIS
+    Displays OpenAPI endpoint information for each definition in Pode.
+
+.DESCRIPTION
+    The `Show-PodeOAConsoleInfo` function iterates through the OpenAPI definitions
+    configured in the Pode server and displays their associated specification and
+    documentation endpoints in the console. The information includes protocol, address,
+    and paths for specification and documentation endpoints.
+
+.EXAMPLE
+    Show-PodeOAConsoleInfo
+
+    This command will output the OpenAPI information for all definitions currently
+    configured in the Pode server, including specification and documentation URLs.
+
+.NOTES
+    This function uses the `Write-PodeHost` cmdlet to output messages to the console,
+    with color-coded messages for better readability.
+
+#>
+function Show-PodeOAConsoleInfo {
+    # state the OpenAPI endpoints for each definition
+    foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
+        $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
+        if ( $bookmarks) {
+            Write-PodeHost
+            if (!$OpenAPIHeader) {
+                # OpenAPI Info
+                Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor Green
+                $OpenAPIHeader = $true
+            }
+            Write-PodeHost " '$key':" -ForegroundColor Yellow
+
+            if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
+                # Specification
+                Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
+                foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                    Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor White
+                }
+                # Documentation
+                Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
+                foreach ($endpoint in   $bookmarks.route.Endpoint) {
+                    Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor White
+                }
+            }
+            else {
+                # Specification
+                Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
+                $PodeContext.Server.EndpointsInfo | ForEach-Object {
+                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
+                    Write-PodeHost "     . $url" -ForegroundColor White
+                }
+                Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
+                $PodeContext.Server.EndpointsInfo | ForEach-Object {
+                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
+                    Write-PodeHost "     . $url" -ForegroundColor White
+                }
+            }
+        }
+    }
+}

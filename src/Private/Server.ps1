@@ -9,7 +9,14 @@ function Start-PodeInternalServer {
 
     try {
         # Check if the running version of Powershell is EOL
-        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID))" -ForegroundColor Cyan
+        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID)) " -ForegroundColor Cyan -NoNewline
+
+        if($PodeContext.Metrics.Server.RestartCount -gt 0){
+            Write-PodeHost  "[Restarting]" -ForegroundColor Cyan
+        }else{
+            Write-PodeHost  "[Initializing]" -ForegroundColor Cyan
+        }
+
         $null = Test-PodeVersionPwshEOL -ReportUntested
 
         # setup temp drives for internal dirs
@@ -83,7 +90,7 @@ function Start-PodeInternalServer {
         }
 
         # start the appropriate server
-        $endpoints = @()
+        $PodeContext.Server.EndpointsInfo = @()
 
         # - service
         if ($PodeContext.Server.IsService) {
@@ -109,21 +116,21 @@ function Start-PodeInternalServer {
             foreach ($_type in $PodeContext.Server.Types) {
                 switch ($_type.ToUpperInvariant()) {
                     'SMTP' {
-                        $endpoints += (Start-PodeSmtpServer)
+                        $PodeContext.Server.EndpointsInfo += (Start-PodeSmtpServer)
                     }
 
                     'TCP' {
-                        $endpoints += (Start-PodeTcpServer)
+                        $PodeContext.Server.EndpointsInfo += (Start-PodeTcpServer)
                     }
 
                     'HTTP' {
-                        $endpoints += (Start-PodeWebServer -Browse:$Browse)
+                        $PodeContext.Server.EndpointsInfo += (Start-PodeWebServer -Browse:$Browse)
                     }
                 }
             }
 
             # now go back through, and wait for each server type's runspace pool to be ready
-            foreach ($pool in ($endpoints.Pool | Sort-Object -Unique)) {
+            foreach ($pool in ($PodeContext.Server.EndpointsInfo.Pool | Sort-Object -Unique)) {
                 $start = [datetime]::Now
                 Write-Verbose "Waiting for the $($pool) RunspacePool to be Ready"
 
@@ -146,80 +153,52 @@ function Start-PodeInternalServer {
 
         # run running event hooks
         Invoke-PodeEvent -Type Running
-        # state what endpoints are being listened on
-        if ($endpoints.Length -gt 0) {
 
-            # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
-            Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $endpoints.Length, $PodeContext.Threads.General) -ForegroundColor Yellow
-            $endpoints | ForEach-Object {
-                $flags = @()
-                if ($_.DualMode) {
-                    $flags += 'DualMode'
-                }
-
-                if ($flags.Length -eq 0) {
-                    $flags = [string]::Empty
-                }
-                else {
-                    $flags = "[$($flags -join ',')]"
-                }
-
-                Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
-            }
-        }
-        # state the OpenAPI endpoints for each definition
-        foreach ($key in  $PodeContext.Server.OpenAPI.Definitions.keys) {
-            $bookmarks = $PodeContext.Server.OpenAPI.Definitions[$key].hiddenComponents.bookmarks
-            if ( $bookmarks) {
-                Write-PodeHost
-                if (!$OpenAPIHeader) {
-                    # OpenAPI Info
-                    Write-PodeHost $PodeLocale.openApiInfoMessage -ForegroundColor Green
-                    $OpenAPIHeader = $true
-                }
-                Write-PodeHost " '$key':" -ForegroundColor Yellow
-
-                if ($bookmarks.route.count -gt 1 -or $bookmarks.route.Endpoint.Name) {
-                    # Specification
-                    Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
-                    foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                        Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.openApiUrl)" -ForegroundColor White
-                    }
-                    # Documentation
-                    Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
-                    foreach ($endpoint in   $bookmarks.route.Endpoint) {
-                        Write-PodeHost "     . $($endpoint.Protocol)://$($endpoint.Address)$($bookmarks.path)" -ForegroundColor White
-                    }
-                }
-                else {
-                    # Specification
-                    Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
-                    $endpoints | ForEach-Object {
-                        $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
-                        Write-PodeHost "     . $url" -ForegroundColor White
-                    }
-                    Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
-                    $endpoints | ForEach-Object {
-                        $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
-                        Write-PodeHost "     . $url" -ForegroundColor White
-                    }
-                }
-            }
-        }
-
-        if (! $PodeContext.Server.DisableTermination) {
-            Write-PodeHost
-            Write-PodeHost 'Server Control Commands:' -ForegroundColor Green
-            Write-PodeHost '    Ctrl+C   : Gracefully terminate the server.' -ForegroundColor Cyan
-            Write-PodeHost '    Ctrl+R   : Restart the server and reload configurations.' -ForegroundColor Cyan
-            if ($PodeContext.Server.Debug.Dump.Enabled) {
-                Write-PodeHost '    Ctrl+D   : Generate a diagnostic dump for debugging purposes.' -ForegroundColor Cyan
-            }
-        }
+        Show-ConsoleInfo -ClearHost -ShowHeader
 
     }
     catch {
         throw
+    }
+}
+
+
+function Show-ConsoleInfo {
+    param(
+        [switch]
+        $ClearHost,
+
+        [switch]
+        $ShowHeader
+    )
+
+    if ( $ClearHost ) {
+        Clear-Host
+    }
+    if ($ShowHeader) {
+        $status = $(if ($PodeContext.Server.Suspended) { 'Suspended' } else { 'Running' })
+        Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID)) [$status]" -ForegroundColor Cyan
+    }
+
+    if (!$PodeContext.Server.Suspended) {
+        # state what endpoints are being listened on
+        Show-PodeEndPointConsoleInfo
+
+        # state the OpenAPI endpoints for each definition
+        Show-PodeOAConsoleInfo
+    }
+
+    if (! $PodeContext.Server.DisableTermination) {
+        $resumeOrSuspend = $(if ($PodeContext.Server.Suspended) { 'Resume' } else { 'Suspend' })
+        Write-PodeHost
+        Write-PodeHost 'Server Control Commands:' -ForegroundColor Green
+        Write-PodeHost '    Ctrl+C   : Gracefully terminate the server.' -ForegroundColor Cyan
+        Write-PodeHost '    Ctrl+R   : Restart the server and reload configurations.' -ForegroundColor Cyan
+        Write-PodeHost "    Ctrl+U   : $resumeOrSuspend the server." -ForegroundColor Cyan
+
+        if ($PodeContext.Server.Debug.Dump.Enabled) {
+            Write-PodeHost '    Ctrl+D   : Generate a diagnostic dump for debugging purposes.' -ForegroundColor Cyan
+        }
     }
 }
 
@@ -378,3 +357,83 @@ function Test-PodeServerKeepOpen {
     # keep server open
     return $true
 }
+
+function Suspend-Server {
+    param(
+        [int]
+        $Timeout = 30
+    )
+    try {
+          # inform suspend
+        # Suspending server...
+        Write-PodeHost 'Suspending server...'  -ForegroundColor Cyan
+        Invoke-PodeEvent -Type Suspend
+        $PodeContext.Server.Suspended = $true
+        $runspaces = Get-Runspace -name 'Pode_*'
+        foreach ($r in $runspaces) {
+            try {
+                [Pode.Embedded.DebuggerHandler]::AttachDebugger($r, $false)
+                # Suspend
+                Enable-RunspaceDebug -BreakAll -Runspace $r
+
+                Write-PodeHost "Waiting for $($r.Name) to be suspended ." -NoNewLine -ForegroundColor Yellow
+
+                # Initialize the timer
+                $startTime = [DateTime]::UtcNow
+
+                # Wait for the event to be triggered or timeout
+                while (! [Pode.Embedded.DebuggerHandler]::IsEventTriggered()) {
+                    Start-Sleep -Milliseconds 1000
+                    Write-PodeHost '.' -NoNewLine
+
+                    if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
+                        Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)" -ForegroundColor Red
+                        return
+                    }
+                }
+                Write-PodeHost 'Done' -ForegroundColor Green
+            }
+            finally {
+                [Pode.Embedded.DebuggerHandler]::DetachDebugger($r)
+            }
+
+        }
+        start-sleep -seconds 5
+        Show-ConsoleInfo -ClearHost -ShowHeader
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+    }
+    finally {
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.SuspendResume
+        $PodeContext.Tokens.SuspendResume = [System.Threading.CancellationTokenSource]::new()
+    }
+}
+
+
+function Resume-Server {
+    try {
+         # inform resume
+        # Resuming server...
+        Write-PodeHost 'Resuming server...' -NoNewline -ForegroundColor Cyan
+
+        Invoke-PodeEvent -Type Resume
+        $PodeContext.Server.Suspended = $false
+        Start-Sleep 5
+        $runspaces = Get-Runspace -name 'Pode_*'
+        foreach ($r in $runspaces) {
+            # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
+            Disable-RunspaceDebug -Runspace $r
+        }
+        Write-PodeHost 'Done' -ForegroundColor Green
+        Start-Sleep 1
+        Show-ConsoleInfo -ClearHost -ShowHeader
+    }
+    finally {
+        Close-PodeDisposable -Disposable $PodeContext.Tokens.SuspendResume
+        $PodeContext.Tokens.SuspendResume = [System.Threading.CancellationTokenSource]::new()
+    }
+
+}
+
+

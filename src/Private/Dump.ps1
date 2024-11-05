@@ -70,7 +70,7 @@ function Invoke-PodeDumpInternal {
 
     # Begin block to handle pipeline input
     begin {
-
+        Invoke-PodeEvent -Type Dump
         # Default format and path from PodeContext
         if ([string]::IsNullOrEmpty($Format)) {
             if ($PodeContext.Server.Debug.Dump.Param.Format) {
@@ -167,10 +167,9 @@ function Invoke-PodeDumpInternal {
 
         # Check if RunspacePools is not null before iterating
         $runspacePoolDetails = @()
-        $runspaces = Get-Runspace
+        $runspaces = Get-Runspace -name 'Pode_*'
         $runspaceDetails = @{}
         foreach ($r in $runspaces) {
-            if ($r.Name.StartsWith('Pode_') ) {
                 $runspaceDetails[$r.Name] = @{
                     Id                  = $r.Id
                     Name                = $r.Name
@@ -178,8 +177,6 @@ function Invoke-PodeDumpInternal {
                     RunspaceStateInfo   = $r.RunspaceStateInfo
                 }
                 $runspaceDetails[$r.Name].ScopedVariables = Get-PodeRunspaceVariablesViaDebugger -Runspace $r
-
-            }
         }
 
         if ($null -ne $PodeContext.RunspacePools) {
@@ -297,94 +294,9 @@ function Get-PodeRunspaceVariablesViaDebugger {
     # Initialize variables collection
     $variables = @()
     try {
-        # Embed C# code to handle the DebuggerStop event
-        Add-Type @'
-using System;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
-using System.Collections.ObjectModel;
-
-public class DebuggerHandler
-{
-    // Collection to store variables collected during the debugging session
-    private static PSDataCollection<PSObject> variables = new PSDataCollection<PSObject>();
-
-    // Event handler for the DebuggerStop event
-    private static EventHandler<DebuggerStopEventArgs> debuggerStopHandler;
-
-    // Flag to indicate whether the DebuggerStop event has been triggered
-    private static bool eventTriggered = false;
-
-    // Method to attach the DebuggerStop event handler to the runspace's debugger
-    public static void AttachDebugger(Runspace runspace)
-    {
-        // Initialize the event handler with the OnDebuggerStop method
-        debuggerStopHandler = new EventHandler<DebuggerStopEventArgs>(OnDebuggerStop);
-
-        // Attach the event handler to the DebuggerStop event of the runspace's debugger
-        runspace.Debugger.DebuggerStop += debuggerStopHandler;
-    }
-
-    // Method to detach the DebuggerStop event handler from the runspace's debugger
-    public static void DetachDebugger(Runspace runspace)
-    {
-        if (debuggerStopHandler != null)
-        {
-            // Remove the event handler to prevent further event handling
-            runspace.Debugger.DebuggerStop -= debuggerStopHandler;
-
-            // Set the handler to null to clean up
-            debuggerStopHandler = null;
-        }
-    }
-
-    // Event handler method that gets called when the debugger stops
-    private static void OnDebuggerStop(object sender, DebuggerStopEventArgs args)
-    {
-        // Set the eventTriggered flag to true
-        eventTriggered = true;
-
-        // Cast the sender to a Debugger object
-        var debugger = sender as Debugger;
-        if (debugger != null)
-        {
-            // Enable step mode to allow for command execution during the debug stop
-            debugger.SetDebuggerStepMode(true);
-
-            // Create a PSCommand to run the Get-PodeDumpScopedVariable command
-            PSCommand command = new PSCommand();
-            command.AddCommand("Get-PodeDumpScopedVariable");
-
-            // Create a collection to store the command output
-            PSDataCollection<PSObject> outputCollection = new PSDataCollection<PSObject>();
-
-            // Execute the command within the debugger
-            debugger.ProcessCommand(command, outputCollection);
-
-            // Add each result to the variables collection
-            foreach (var output in outputCollection)
-            {
-                variables.Add(output);
-            }
-        }
-    }
-
-    // Method to check if the DebuggerStop event has been triggered
-    public static bool IsEventTriggered()
-    {
-        return eventTriggered;
-    }
-
-    // Method to retrieve the collected variables
-    public static PSDataCollection<PSObject> GetVariables()
-    {
-        return variables;
-    }
-}
-'@
 
         # Attach the debugger using the embedded C# method
-        [DebuggerHandler]::AttachDebugger($Runspace)
+        [Pode.Embedded.DebuggerHandler]::AttachDebugger($Runspace, $true)
 
         # Enable debugging and break all
         Enable-RunspaceDebug -BreakAll -Runspace $Runspace
@@ -395,7 +307,7 @@ public class DebuggerHandler
         $startTime = [DateTime]::UtcNow
 
         # Wait for the event to be triggered or timeout
-        while (! [DebuggerHandler]::IsEventTriggered()) {
+        while (! [Pode.Embedded.DebuggerHandler]::IsEventTriggered()) {
             Start-Sleep -Milliseconds 1000
             Write-PodeHost '.' -NoNewLine
 
@@ -408,7 +320,7 @@ public class DebuggerHandler
         Write-PodeHost 'Done'
 
         # Retrieve and output the collected variables from the embedded C# code
-        $variables = [DebuggerHandler]::GetVariables()
+        $variables = [Pode.Embedded.DebuggerHandler]::GetVariables()
     }
     catch {
         # Log the error details using Write-PodeErrorLog.
@@ -417,7 +329,7 @@ public class DebuggerHandler
     }
     finally {
         # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
-        [DebuggerHandler]::DetachDebugger($Runspace)
+        [Pode.Embedded.DebuggerHandler]::DetachDebugger($Runspace)
 
         # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
         Disable-RunspaceDebug -Runspace $Runspace
@@ -573,4 +485,121 @@ function ConvertTo-PodeSerializableObject {
         # Convert other object types to string for serialization
         return $InputObject.ToString()
     }
+}
+
+function Initialize-DebugHandler {
+
+
+    # Embed C# code to handle the DebuggerStop event
+    Add-Type @'
+using System;
+using System.Management.Automation;
+using System.Management.Automation.Runspaces;
+using System.Collections.ObjectModel;
+
+namespace Pode.Embedded
+{
+    public class DebuggerHandler
+    {
+        // Collection to store variables collected during the debugging session
+        private static PSDataCollection<PSObject> variables = new PSDataCollection<PSObject>();
+
+        // Event handler for the DebuggerStop event
+        private static EventHandler<DebuggerStopEventArgs> debuggerStopHandler;
+
+        // Flag to indicate whether the DebuggerStop event has been triggered
+        private static bool eventTriggered = false;
+
+        // Flag to control whether variables should be collected during the DebuggerStop event
+        private static bool shouldCollectVariables = true;
+
+        // Method to attach the DebuggerStop event handler to the runspace's debugger
+        public static void AttachDebugger(Runspace runspace, bool collectVariables = true)
+        {
+            // Set the collection flag based on the parameter
+            shouldCollectVariables = collectVariables;
+
+            // Initialize the event handler with the OnDebuggerStop method
+            debuggerStopHandler = new EventHandler<DebuggerStopEventArgs>(OnDebuggerStop);
+
+            // Attach the event handler to the DebuggerStop event of the runspace's debugger
+            runspace.Debugger.DebuggerStop += debuggerStopHandler;
+        }
+
+        // Method to detach the DebuggerStop event handler from the runspace's debugger
+        public static void DetachDebugger(Runspace runspace)
+        {
+            if (debuggerStopHandler != null)
+            {
+                // Remove the event handler to prevent further event handling
+                runspace.Debugger.DebuggerStop -= debuggerStopHandler;
+
+                // Set the handler to null to clean up
+                debuggerStopHandler = null;
+            }
+        }
+
+        // Event handler method that gets called when the debugger stops
+        private static void OnDebuggerStop(object sender, DebuggerStopEventArgs args)
+        {
+            // Set the eventTriggered flag to true
+            eventTriggered = true;
+
+            // Cast the sender to a Debugger object
+            var debugger = sender as Debugger;
+            if (debugger != null)
+            {
+                // Enable step mode to allow for command execution during the debug stop
+                debugger.SetDebuggerStepMode(true);
+
+                PSCommand command = new PSCommand();
+
+                if (shouldCollectVariables)
+                {
+                    // Collect variables
+                    command.AddCommand("Get-PodeDumpScopedVariable");
+                }
+                else
+                {
+                    // Execute a break
+                    command.AddCommand( "while( $PodeContext.Server.Suspended){ Start-sleep 1}");
+                }
+
+                // Create a collection to store the command output
+                PSDataCollection<PSObject> outputCollection = new PSDataCollection<PSObject>();
+
+                // Execute the command within the debugger
+                debugger.ProcessCommand(command, outputCollection);
+
+                // Add results to the variables collection if collecting variables
+                if (shouldCollectVariables)
+                {
+                    foreach (var output in outputCollection)
+                    {
+                        variables.Add(output);
+                    }
+                }
+                else
+                {
+                    // Ensure the debugger remains ready for further interaction
+                    debugger.SetDebuggerStepMode(true);
+                }
+            }
+        }
+
+
+        // Method to check if the DebuggerStop event has been triggered
+        public static bool IsEventTriggered()
+        {
+            return eventTriggered;
+        }
+
+        // Method to retrieve the collected variables
+        public static PSDataCollection<PSObject> GetVariables()
+        {
+            return variables;
+        }
+    }
+}
+'@
 }

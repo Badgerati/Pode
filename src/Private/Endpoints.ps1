@@ -386,3 +386,48 @@ function Get-PodeEndpointByName {
 
     return $null
 }
+
+
+<#
+.SYNOPSIS
+    Displays information about the endpoints the Pode server is listening on.
+
+.DESCRIPTION
+    The `Show-PodeEndPointConsoleInfo` function checks the Pode server's `EndpointsInfo`
+    and displays details about each endpoint, including its URL and any specific flags
+    such as `DualMode`. It provides a summary of the total number of endpoints and the
+    number of general threads handling them.
+
+.EXAMPLE
+    Show-PodeEndPointConsoleInfo
+
+    This command will output details of all endpoints the Pode server is currently
+    listening on, including their URLs and any relevant flags.
+
+.NOTES
+    This function uses `Write-PodeHost` to display messages, with the `Yellow` foreground
+    color for clarity. It ensures each endpoint is displayed with its associated flags,
+    enhancing visibility of specific configurations like `DualMode`.
+#>
+function Show-PodeEndPointConsoleInfo {
+    if ($PodeContext.Server.EndpointsInfo.Length -gt 0) {
+
+        # Listening on the following $endpoints.Length endpoint(s) [$PodeContext.Threads.General thread(s)]
+        Write-PodeHost ($PodeLocale.listeningOnEndpointsMessage -f $PodeContext.Server.EndpointsInfo.Length, $PodeContext.Threads.General) -ForegroundColor Yellow
+        $PodeContext.Server.EndpointsInfo | ForEach-Object {
+            $flags = @()
+            if ($_.DualMode) {
+                $flags += 'DualMode'
+            }
+
+            if ($flags.Length -eq 0) {
+                $flags = [string]::Empty
+            }
+            else {
+                $flags = "[$($flags -join ',')]"
+            }
+
+            Write-PodeHost "`t- $($_.Url) $($flags)" -ForegroundColor Yellow
+        }
+    }
+}

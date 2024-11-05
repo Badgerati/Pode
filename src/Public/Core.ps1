@@ -146,6 +146,9 @@ function Start-PodeServer {
         # Sets the name of the current runspace
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
+        # Compile the Debug Handler
+        Initialize-DebugHandler
+
         # ensure the session is clean
         $Script:PodeContext = $null
         $ShowDoneMessage = $true
@@ -208,7 +211,7 @@ function Start-PodeServer {
 
                 # get the next key presses
                 $key = Get-PodeConsoleKey
-                
+
                 # check for internal restart
                 if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
                     Restart-PodeInternalServer
@@ -219,6 +222,16 @@ function Start-PodeServer {
                     if ($PodeContext.Server.Debug.Dump.Param.Halt) {
                         Write-PodeHost -ForegroundColor Red 'Halt switch detected. Closing the application.'
                         break
+                    }
+                }
+
+
+                if (($PodeContext.Tokens.Suspend.SuspendResume) -or (Test-PodeSuspendPressed -Key $key)) {
+                    if ( $PodeContext.Server.Suspended) {
+                        Resume-Server
+                    }
+                    else {
+                        Suspend-Server
                     }
                 }
 

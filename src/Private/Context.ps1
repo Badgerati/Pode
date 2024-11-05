@@ -415,9 +415,10 @@ function New-PodeContext {
 
     # create new cancellation tokens
     $ctx.Tokens = @{
-        Cancellation = [System.Threading.CancellationTokenSource]::new()
-        Restart      = [System.Threading.CancellationTokenSource]::new()
-        Dump         = [System.Threading.CancellationTokenSource]::new()
+        Cancellation  = [System.Threading.CancellationTokenSource]::new()
+        Restart       = [System.Threading.CancellationTokenSource]::new()
+        Dump          = [System.Threading.CancellationTokenSource]::new()
+        SuspendResume = [System.Threading.CancellationTokenSource]::new()
     }
 
     # requests that should be logged
@@ -913,11 +914,11 @@ function Set-PodeServerConfiguration {
             Enabled = [bool](Protect-PodeValue -Value  $Configuration.Debug.Breakpoints.Enable -Default $Context.Server.Debug.Breakpoints.Enable)
         }
         Dump        = @{
-            Enabled = [bool](Protect-PodeValue -Value  $Configuration.Debug.Dump.Enabled -Default $Context.Server.Debug.Dump.Enabled)
-            Format  = [string] (Protect-PodeValue -Value  $Configuration.Debug.Dump.Format -Default $Context.Server.Debug.Dump.Format)
-            Path    = [string] (Protect-PodeValue -Value  $Configuration.Debug.Dump.Path -Default $Context.Server.Debug.Dump.Path)
+            Enabled  = [bool](Protect-PodeValue -Value  $Configuration.Debug.Dump.Enabled -Default $Context.Server.Debug.Dump.Enabled)
+            Format   = [string] (Protect-PodeValue -Value  $Configuration.Debug.Dump.Format -Default $Context.Server.Debug.Dump.Format)
+            Path     = [string] (Protect-PodeValue -Value  $Configuration.Debug.Dump.Path -Default $Context.Server.Debug.Dump.Path)
             MaxDepth = [int] (Protect-PodeValue -Value  $Configuration.Debug.Dump.MaxDepth -Default $Context.Server.Debug.Dump.MaxDepth)
-            Param   = @{}
+            Param    = @{}
         }
     }
 }

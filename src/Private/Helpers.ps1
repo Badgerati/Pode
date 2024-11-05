@@ -600,6 +600,25 @@ function Test-PodeDumpPressed {
     return (Test-PodeKeyPressed -Key $Key -Character 'd')
 }
 
+function Test-PodeSuspendPressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'u')
+}
+
+
+function Test-PodeResumePressed {
+    param(
+        [Parameter()]
+        $Key = $null
+    )
+
+    return (Test-PodeKeyPressed -Key $Key -Character 'a')
+}
+
 function Test-PodeKeyPressed {
     param(
         [Parameter()]
@@ -3778,4 +3797,3 @@ function Copy-PodeObjectDeepClone {
 }
 
 
- 
