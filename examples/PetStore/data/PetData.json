@@ -43,14 +43,6 @@
         "petId": 1,
         "id": 2,
         "quantity": 50
-      },
-      "10": {
-        "id": 10,
-        "petId": 198772,
-        "quantity": 7,
-        "shipDate": "2024-11-04T02:08:54.351Z",
-        "status": "approved",
-        "complete": true
       }
     },
     "Scope": [
