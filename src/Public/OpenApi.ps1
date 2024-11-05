@@ -428,7 +428,7 @@ function Add-PodeOAServerEndpoint {
                 # If there's already a local endpoint, throw an exception, as only one local endpoint is allowed per definition
                 # Both are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition.
                 if ($srv.url -notmatch '^(?i)https?://') {
-                    throw ($PodeLocale.LocalEndpointConflictExceptionMessage -f $Url, $srv.url)
+                    throw ($PodeLocale.localEndpointConflictExceptionMessage -f $Url, $srv.url)
                 }
             }
         }

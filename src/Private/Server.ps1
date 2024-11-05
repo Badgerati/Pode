@@ -11,10 +11,11 @@ function Start-PodeInternalServer {
         # Check if the running version of Powershell is EOL
         Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID)) " -ForegroundColor Cyan -NoNewline
 
-        if($PodeContext.Metrics.Server.RestartCount -gt 0){
-            Write-PodeHost  "[Restarting]" -ForegroundColor Cyan
-        }else{
-            Write-PodeHost  "[Initializing]" -ForegroundColor Cyan
+        if ($PodeContext.Metrics.Server.RestartCount -gt 0) {
+            Write-PodeHost "[$( $PodeLocale.restartingMessage)]" -ForegroundColor Cyan
+        }
+        else {
+            Write-PodeHost "[$($PodeLocale.initializingMessage)]" -ForegroundColor Cyan
         }
 
         $null = Test-PodeVersionPwshEOL -ReportUntested
@@ -154,7 +155,7 @@ function Start-PodeInternalServer {
         # run running event hooks
         Invoke-PodeEvent -Type Running
 
-        Show-ConsoleInfo -ClearHost -ShowHeader
+        Show-PodeConsoleInfo -ClearHost -ShowHeader
 
     }
     catch {
@@ -162,8 +163,26 @@ function Start-PodeInternalServer {
     }
 }
 
+<#
+.SYNOPSIS
+    Displays Pode server information on the console, including version, PID, status, endpoints, and control commands.
 
-function Show-ConsoleInfo {
+.DESCRIPTION
+    The Show-PodeConsoleInfo function displays key information about the current Pode server instance.
+    It optionally clears the console before displaying server details such as version, process ID (PID), and running status.
+    If the server is running, it also displays information about active endpoints and OpenAPI definitions.
+    Additionally, it provides server control commands like restart, suspend, and generating diagnostic dumps.
+
+.PARAMETER ClearHost
+    Clears the console screen before displaying server information.
+
+.PARAMETER ShowHeader
+    Displays the Pode version, server process ID (PID), and current server status in the console header.
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+function Show-PodeConsoleInfo {
     param(
         [switch]
         $ClearHost,
@@ -172,11 +191,17 @@ function Show-ConsoleInfo {
         $ShowHeader
     )
 
-    if ( $ClearHost ) {
+    if ($ClearHost) {
         Clear-Host
     }
     if ($ShowHeader) {
-        $status = $(if ($PodeContext.Server.Suspended) { 'Suspended' } else { 'Running' })
+
+        if ($PodeContext.Server.Suspended) {
+            $status = $Podelocale.suspendedMessage # Suspended
+        }
+        else {
+            $status = $Podelocale.runningMessage # Running
+        }
         Write-PodeHost "Pode $(Get-PodeVersion) (PID: $($PID)) [$status]" -ForegroundColor Cyan
     }
 
@@ -188,16 +213,16 @@ function Show-ConsoleInfo {
         Show-PodeOAConsoleInfo
     }
 
-    if (! $PodeContext.Server.DisableTermination) {
-        $resumeOrSuspend = $(if ($PodeContext.Server.Suspended) { 'Resume' } else { 'Suspend' })
+    if (!$PodeContext.Server.DisableTermination) {
+        $resumeOrSuspend = $(if ($PodeContext.Server.Suspended) { $Podelocale.ResumeServerMessage } else { $Podelocale.SuspendServerMessage })
         Write-PodeHost
-        Write-PodeHost 'Server Control Commands:' -ForegroundColor Green
-        Write-PodeHost '    Ctrl+C   : Gracefully terminate the server.' -ForegroundColor Cyan
-        Write-PodeHost '    Ctrl+R   : Restart the server and reload configurations.' -ForegroundColor Cyan
-        Write-PodeHost "    Ctrl+U   : $resumeOrSuspend the server." -ForegroundColor Cyan
+        Write-PodeHost $Podelocale.ServerControlCommandsTitle -ForegroundColor Green
+        Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor Cyan
+        Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor Cyan
+        Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor Cyan
 
         if ($PodeContext.Server.Debug.Dump.Enabled) {
-            Write-PodeHost '    Ctrl+D   : Generate a diagnostic dump for debugging purposes.' -ForegroundColor Cyan
+            Write-PodeHost "    Ctrl+D   : $($Podelocale.GenerateDiagnosticDumpMessage)" -ForegroundColor Cyan
         }
     }
 }
@@ -206,7 +231,7 @@ function Restart-PodeInternalServer {
     try {
         # inform restart
         # Restarting server...
-        Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Cyan
+        Write-PodeHost $PodeLocale.restartingServerMessage -NoNewline -ForegroundColor Yellow
 
         # run restart event hooks
         Invoke-PodeEvent -Type Restart
@@ -358,82 +383,154 @@ function Test-PodeServerKeepOpen {
     return $true
 }
 
-function Suspend-Server {
+<#
+.SYNOPSIS
+    Suspends the Pode server and its runspaces.
+
+.DESCRIPTION
+    This function suspends the Pode server by pausing all associated runspaces and ensuring they enter a debug state.
+    It triggers the 'Suspend' event, updates the server's suspended status, and provides feedback during the suspension process.
+
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to be suspended before timing out. Default is 30 seconds.
+
+.NOTES
+    This is an internal function used within the Pode framework.
+    It may change in future releases.
+
+.EXAMPLE
+    Suspend-PodeServerInternal -Timeout 60
+    # Suspends the Pode server with a timeout of 60 seconds.
+
+#>
+function Suspend-PodeServerInternal {
     param(
         [int]
         $Timeout = 30
     )
     try {
-          # inform suspend
-        # Suspending server...
-        Write-PodeHost 'Suspending server...'  -ForegroundColor Cyan
-        Invoke-PodeEvent -Type Suspend
-        $PodeContext.Server.Suspended = $true
-        $runspaces = Get-Runspace -name 'Pode_*'
-        foreach ($r in $runspaces) {
-            try {
-                [Pode.Embedded.DebuggerHandler]::AttachDebugger($r, $false)
-                # Suspend
-                Enable-RunspaceDebug -BreakAll -Runspace $r
+        # Inform user that the server is suspending
+        Write-PodeHost $PodeLocale.SuspendingMessage -ForegroundColor Yellow
 
-                Write-PodeHost "Waiting for $($r.Name) to be suspended ." -NoNewLine -ForegroundColor Yellow
+        # Trigger the Suspend event
+        Invoke-PodeEvent -Type Suspend
+
+        # Update the server's suspended state
+        $PodeContext.Server.Suspended = $true
+
+        # Retrieve all runspaces related to Pode
+        $runspaces = Get-Runspace -name 'Pode_*'
+        foreach ($runspace in $runspaces) {
+            try {
+                # Attach debugger to the runspace
+                [Pode.Embedded.DebuggerHandler]::AttachDebugger($runspace, $false)
+
+                # Enable debugging and pause execution
+                Enable-RunspaceDebug -BreakAll -Runspace $runspace
+
+                # Inform user about the suspension process for the current runspace
+                Write-PodeHost "Waiting for $($runspace.Name) to be suspended." -NoNewLine -ForegroundColor Yellow
 
                 # Initialize the timer
                 $startTime = [DateTime]::UtcNow
 
-                # Wait for the event to be triggered or timeout
+                # Wait for the suspension event or until timeout
                 while (! [Pode.Embedded.DebuggerHandler]::IsEventTriggered()) {
                     Start-Sleep -Milliseconds 1000
                     Write-PodeHost '.' -NoNewLine
 
+                    # Check for timeout
                     if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
                         Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)" -ForegroundColor Red
                         return
                     }
                 }
+
+                # Inform user that the suspension is complete
                 Write-PodeHost 'Done' -ForegroundColor Green
             }
             finally {
-                [Pode.Embedded.DebuggerHandler]::DetachDebugger($r)
+                # Detach the debugger from the runspace
+                [Pode.Embedded.DebuggerHandler]::DetachDebugger($runspace)
             }
-
         }
-        start-sleep -seconds 5
-        Show-ConsoleInfo -ClearHost -ShowHeader
+
+        # Short pause before refreshing the console
+        Start-Sleep -Seconds 5
+
+        # Clear the host and display header information
+        Show-PodeConsoleInfo -ClearHost -ShowHeader
     }
     catch {
+        # Log any errors that occur
         $_ | Write-PodeErrorLog
     }
     finally {
+        # Ensure cleanup of disposable tokens
         Close-PodeDisposable -Disposable $PodeContext.Tokens.SuspendResume
+
+        # Reinitialize the CancellationTokenSource for future suspension/resumption
         $PodeContext.Tokens.SuspendResume = [System.Threading.CancellationTokenSource]::new()
     }
 }
 
 
-function Resume-Server {
-    try {
-         # inform resume
-        # Resuming server...
-        Write-PodeHost 'Resuming server...' -NoNewline -ForegroundColor Cyan
+<#
+.SYNOPSIS
+    Resumes the Pode server from a suspended state.
 
+.DESCRIPTION
+    This function resumes the Pode server, ensuring all associated runspaces are restored to their normal execution state.
+    It triggers the 'Resume' event, updates the server's suspended status, and clears the host for a refreshed console view.
+
+.NOTES
+    This is an internal function used within the Pode framework.
+    It may change in future releases.
+
+.EXAMPLE
+    Resume-PodeServerInternal
+    # Resumes the Pode server after a suspension.
+
+#>
+function Resume-PodeServerInternal {
+    try {
+        # Inform user that the server is resuming
+        Write-PodeHost $PodeLocale.ResumingMessage -NoNewline -ForegroundColor Yellow
+
+        # Trigger the Resume event
         Invoke-PodeEvent -Type Resume
+
+        # Update the server's suspended state
         $PodeContext.Server.Suspended = $false
+
+        # Pause briefly to ensure any required internal processes have time to stabilize
         Start-Sleep 5
+
+        # Retrieve all runspaces related to Pode
         $runspaces = Get-Runspace -name 'Pode_*'
-        foreach ($r in $runspaces) {
-            # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
-            Disable-RunspaceDebug -Runspace $r
+        foreach ($runspace in $runspaces) {
+            # Disable debugging for each runspace to restore normal execution
+            Disable-RunspaceDebug -Runspace $runspace
         }
+
+        # Inform user that the resume process is complete
         Write-PodeHost 'Done' -ForegroundColor Green
+
+        # Small delay before refreshing the console
         Start-Sleep 1
-        Show-ConsoleInfo -ClearHost -ShowHeader
+
+        # Clear the host and display header information
+        Show-PodeConsoleInfo -ClearHost -ShowHeader
+    }
+    catch {
+        # Log any errors that occur
+        $_ | Write-PodeErrorLog
     }
     finally {
+        # Ensure cleanup of disposable tokens
         Close-PodeDisposable -Disposable $PodeContext.Tokens.SuspendResume
+
+        # Reinitialize the CancellationTokenSource for future suspension/resumption
         $PodeContext.Tokens.SuspendResume = [System.Threading.CancellationTokenSource]::new()
     }
-
 }
-
-

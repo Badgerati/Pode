@@ -308,6 +308,8 @@
         'Get-PodeServerDefaultSecret',
         'Wait-PodeDebugger',
         'Get-PodeVersion',
+        'Suspend-PodeServer',
+        'Resume-PodeServer',
 
         # openapi
         'Enable-PodeOpenApi',

@@ -147,7 +147,7 @@ function Start-PodeServer {
         Set-PodeCurrentRunspaceName -Name 'PodeServer'
 
         # Compile the Debug Handler
-        Initialize-DebugHandler
+        Initialize-PodeDebugHandler
 
         # ensure the session is clean
         $Script:PodeContext = $null
@@ -225,13 +225,12 @@ function Start-PodeServer {
                     }
                 }
 
-
                 if (($PodeContext.Tokens.Suspend.SuspendResume) -or (Test-PodeSuspendPressed -Key $key)) {
                     if ( $PodeContext.Server.Suspended) {
-                        Resume-Server
+                        Resume-PodeServerInternal
                     }
                     else {
-                        Suspend-Server
+                        Suspend-PodeServerInternal
                     }
                 }
 
@@ -316,6 +315,53 @@ function Restart-PodeServer {
     param()
 
     $PodeContext.Tokens.Restart.Cancel()
+}
+
+
+<#
+.SYNOPSIS
+    Resumes the Pode server from a suspended state.
+
+.DESCRIPTION
+    This function resumes the Pode server, ensuring all associated runspaces are restored to their normal execution state.
+    It triggers the 'Resume' event, updates the server's suspended status, and clears the host for a refreshed console view.
+
+.EXAMPLE
+    Resume-PodeServer
+    # Resumes the Pode server after a suspension.
+
+#>
+function Resume-PodeServer {
+    [CmdletBinding()]
+    param()
+    if ( $PodeContext.Server.Suspended) {
+        $PodeContext.Tokens.SuspendResume.Cancel()
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Suspends the Pode server and its runspaces.
+
+.DESCRIPTION
+    This function suspends the Pode server by pausing all associated runspaces and ensuring they enter a debug state.
+    It triggers the 'Suspend' event, updates the server's suspended status, and provides feedback during the suspension process.
+
+.PARAMETER Timeout
+    The maximum time, in seconds, to wait for each runspace to be suspended before timing out. Default is 30 seconds.
+
+.EXAMPLE
+    Suspend-PodeServerInternal -Timeout 60
+    # Suspends the Pode server with a timeout of 60 seconds.
+
+#>
+function Suspend-PodeServer {
+    [CmdletBinding()]
+    param()
+    if (! $PodeContext.Server.Suspended) {
+        $PodeContext.Tokens.SuspendResume.Cancel()
+    }
 }
 
 <#

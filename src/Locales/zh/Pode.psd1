@@ -291,5 +291,17 @@
     getRequestBodyNotAllowedExceptionMessage                          = "'{0}' 操作无法包含请求体。使用 -AllowNonStandardBody 以解除此限制。"
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "函数 '{0}' 不接受数组作为管道输入。"
     unsupportedStreamCompressionEncodingExceptionMessage              = '不支持的流压缩编码: {0}'
-    LocalEndpointConflictExceptionMessage                             = "'{0}' 和 '{1}' 都被定义为 OpenAPI 的本地端点，但每个 API 定义仅允许一个本地端点。"
+    localEndpointConflictExceptionMessage                             = "'{0}' 和 '{1}' 都被定义为 OpenAPI 的本地端点，但每个 API 定义仅允许一个本地端点。"
+    suspendingMessage                                                 = '正在暂停服务器...'
+    resumingMessage                                                   = '正在恢复服务器...'
+    serverControlCommandsTitle                                        = '服务器控制命令:'
+    gracefullyTerminateMessage                                        = '正常终止服务器。'
+    restartServerMessage                                              = '重启服务器并重新加载配置。'
+    resumeServerMessage                                               = '恢复服务器。'
+    suspendServerMessage                                              = '暂停服务器。'
+    generateDiagnosticDumpMessage                                     = '生成诊断转储以用于调试。'
+    initializingMessage                                               = '初始化中'
+    restartingMessage                                                 = '正在重启'
+    suspendedMessage                                                  = '已暂停'
+    runningMessage                                                    = '运行中'
 }

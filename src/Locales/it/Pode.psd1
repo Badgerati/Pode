@@ -291,5 +291,17 @@
     getRequestBodyNotAllowedExceptionMessage                          = "Le operazioni '{0}' non possono avere un corpo della richiesta. Utilizzare -AllowNonStandardBody per aggirare questa restrizione."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La funzione '{0}' non accetta una matrice come input della pipeline."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La compressione dello stream non è supportata per la codifica {0}'
-    LocalEndpointConflictExceptionMessage                             = "Sia '{0}' che '{1}' sono definiti come endpoint locali OpenAPI, ma è consentito solo un endpoint locale per definizione API."
+    localEndpointConflictExceptionMessage                             = "Sia '{0}' che '{1}' sono definiti come endpoint locali OpenAPI, ma è consentito solo un endpoint locale per definizione API."
+    suspendingMessage                                                 = 'Sospensione del server...'
+    resumingMessage                                                   = 'Ripresa del server...'
+    serverControlCommandsTitle                                        = 'Comandi di controllo del server:'
+    gracefullyTerminateMessage                                        = 'Termina il server con grazia.'
+    restartServerMessage                                              = 'Riavviare il server e ricaricare le configurazioni.'
+    resumeServerMessage                                               = 'Riprendi il server.'
+    suspendServerMessage                                              = 'Sospendi il server.'
+    generateDiagnosticDumpMessage                                     = 'Genera un dump diagnostico a scopo di debug.'
+    initializingMessage                                               = 'Inizializzazione'
+    restartingMessage                                                 = 'Riavvio'
+    suspendedMessage                                                  = 'Sospeso'
+    runningMessage                                                    = 'In esecuzione'
 }

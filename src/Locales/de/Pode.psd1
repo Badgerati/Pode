@@ -291,5 +291,17 @@
     getRequestBodyNotAllowedExceptionMessage                          = "'{0}' Operationen dürfen keinen Anfragekörper haben. Verwenden Sie -AllowNonStandardBody, um diese Einschränkung zu umgehen."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Die Stream-Komprimierungskodierung wird nicht unterstützt: {0}'
-    LocalEndpointConflictExceptionMessage                             = "Sowohl '{0}' als auch '{1}' sind als lokale OpenAPI-Endpunkte definiert, aber es ist nur ein lokaler Endpunkt pro API-Definition erlaubt."
+    localEndpointConflictExceptionMessage                             = "Sowohl '{0}' als auch '{1}' sind als lokale OpenAPI-Endpunkte definiert, aber es ist nur ein lokaler Endpunkt pro API-Definition erlaubt."
+    suspendingMessage                                                 = 'Server wird angehalten...'
+    resumingMessage                                                   = 'Server wird fortgesetzt...'
+    serverControlCommandsTitle                                        = 'Serversteuerbefehle:'
+    gracefullyTerminateMessage                                        = 'Server sanft beenden.'
+    restartServerMessage                                              = 'Server neu starten und Konfigurationen laden.'
+    resumeServerMessage                                               = 'Server fortsetzen.'
+    suspendServerMessage                                              = 'Server anhalten.'
+    generateDiagnosticDumpMessage                                     = 'Diagnostischen Dump für Debuggingzwecke erstellen.'
+    initializingMessage                                               = 'Initialisierung'
+    restartingMessage                                                 = 'Neustart'
+    suspendedMessage                                                  = 'Angehalten'
+    runningMessage                                                    = 'Läuft'
 }

@@ -363,9 +363,6 @@ function Get-PodeDumpScopedVariable {
         [int]
         $MaxDepth = 5
     )
-
-
-
     # Collect variables from Local, Script, and Global scopes
     $scopes = @{
         Local  = Get-Variable -Scope 0
@@ -487,9 +484,7 @@ function ConvertTo-PodeSerializableObject {
     }
 }
 
-function Initialize-DebugHandler {
-
-
+function Initialize-PodeDebugHandler {
     # Embed C# code to handle the DebuggerStop event
     Add-Type @'
 using System;

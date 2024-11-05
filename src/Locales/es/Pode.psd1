@@ -291,5 +291,17 @@
     getRequestBodyNotAllowedExceptionMessage                          = "Las operaciones '{0}' no pueden tener un cuerpo de solicitud. Use -AllowNonStandardBody para evitar esta restricción."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La función '{0}' no acepta una matriz como entrada de canalización."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'La codificación de compresión de transmisión no es compatible: {0}'
-    LocalEndpointConflictExceptionMessage                             = "Tanto '{0}' como '{1}' están definidos como puntos finales locales de OpenAPI, pero solo se permite un punto final local por definición de API."
+    localEndpointConflictExceptionMessage                             = "Tanto '{0}' como '{1}' están definidos como puntos finales locales de OpenAPI, pero solo se permite un punto final local por definición de API."
+    suspendingMessage                                                 = 'Suspendiendo el servidor...'
+    resumingMessage                                                   = 'Reanudando el servidor...'
+    serverControlCommandsTitle                                        = 'Comandos de control del servidor:'
+    gracefullyTerminateMessage                                        = 'Terminar el servidor de manera ordenada.'
+    restartServerMessage                                              = 'Reiniciar el servidor y recargar configuraciones.'
+    resumeServerMessage                                               = 'Reanudar el servidor.'
+    suspendServerMessage                                              = 'Suspender el servidor.'
+    generateDiagnosticDumpMessage                                     = 'Generar un volcado de diagnóstico para fines de depuración.'
+    initializingMessage                                               = 'Inicializando'
+    restartingMessage                                                 = 'Reiniciando'
+    suspendedMessage                                                  = 'Suspendido'
+    runningMessage                                                    = 'En ejecución'
 }

@@ -1487,9 +1487,6 @@ function Invoke-PodeGC {
     [System.GC]::Collect()
 }
 
-
-
-
 <#
 .SYNOPSIS
     Captures a memory dump with runspace and exception details when a fatal exception occurs, with an optional halt switch to close the application.
@@ -1565,7 +1562,6 @@ function Invoke-PodeDump {
         [int]
         $MaxDepth
     )
-    write-podehost -explode $PSBoundParameters
     $PodeContext.Server.Debug.Dump.Param = $PSBoundParameters
     $PodeContext.Tokens.Dump.Cancel()
 }

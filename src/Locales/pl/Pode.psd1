@@ -291,5 +291,17 @@
     getRequestBodyNotAllowedExceptionMessage                          = "Operacje '{0}' nie mogą zawierać treści żądania. Użyj -AllowNonStandardBody, aby obejść to ograniczenie."
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Funkcja '{0}' nie akceptuje tablicy jako wejścia potoku."
     unsupportedStreamCompressionEncodingExceptionMessage              = 'Kodowanie kompresji strumienia nie jest obsługiwane: {0}'
-    LocalEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."
+    localEndpointConflictExceptionMessage                             = "Zarówno '{0}', jak i '{1}' są zdefiniowane jako lokalne punkty końcowe OpenAPI, ale na jedną definicję API dozwolony jest tylko jeden lokalny punkt końcowy."
+    suspendingMessage                                                 = 'Wstrzymywanie serwera...'
+    resumingMessage                                                   = 'Wznawianie serwera...'
+    serverControlCommandsTitle                                        = 'Polecenia sterowania serwerem:'
+    gracefullyTerminateMessage                                        = 'Łagodne zakończenie działania serwera.'
+    restartServerMessage                                              = 'Ponowne uruchomienie serwera i załadowanie konfiguracji.'
+    resumeServerMessage                                               = 'Wznowienie serwera.'
+    suspendServerMessage                                              = 'Wstrzymanie serwera.'
+    generateDiagnosticDumpMessage                                     = 'Wygeneruj zrzut diagnostyczny do celów debugowania.'
+    initializingMessage                                               = 'Inicjalizacja'
+    restartingMessage                                                 = 'Ponowne uruchamianie'
+    suspendedMessage                                                  = 'Wstrzymany'
+    runningMessage                                                    = 'Działa'
 }

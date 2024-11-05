@@ -291,5 +291,17 @@
     getRequestBodyNotAllowedExceptionMessage                          = "'{0}' 操作にはリクエストボディを含めることはできません。-AllowNonStandardBody を使用してこの制限を回避してください。"
     fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
     unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
-    LocalEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
+    localEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
+    suspendingMessage                                                 = 'サーバーを一時停止しています...'
+    resumingMessage                                                   = 'サーバーを再開しています...'
+    serverControlCommandsTitle                                        = 'サーバーコントロールコマンド:'
+    gracefullyTerminateMessage                                        = 'サーバーを正常に終了します。'
+    restartServerMessage                                              = 'サーバーを再起動して設定をリロードします。'
+    resumeServerMessage                                               = 'サーバーを再開します。'
+    suspendServerMessage                                              = 'サーバーを一時停止します。'
+    generateDiagnosticDumpMessage                                     = 'デバッグ目的の診断ダンプを生成します。'
+    initializingMessage                                               = '初期化中'
+    restartingMessage                                                 = '再起動中'
+    suspendedMessage                                                  = '一時停止中'
+    runningMessage                                                    = '実行中'
 }

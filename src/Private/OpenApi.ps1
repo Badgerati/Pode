@@ -2391,9 +2391,7 @@ function Test-PodeRouteOADefinitionTag {
     configured in the Pode server, including specification and documentation URLs.
 
 .NOTES
-    This function uses the `Write-PodeHost` cmdlet to output messages to the console,
-    with color-coded messages for better readability.
-
+    This is an internal function and may change in future releases of Pode.
 #>
 function Show-PodeOAConsoleInfo {
     # state the OpenAPI endpoints for each definition
