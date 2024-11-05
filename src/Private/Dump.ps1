@@ -1,5 +1,3 @@
-
-
 <#
 .SYNOPSIS
     Captures a memory dump with runspace and exception details when a fatal exception occurs, with an optional halt switch to close the application.
@@ -255,14 +253,51 @@ function Invoke-PodeDumpInternal {
         $PodeContext.Tokens.Dump = [System.Threading.CancellationTokenSource]::new()
     }
 }
+
+<#
+.SYNOPSIS
+    Collects scoped variables from a specified runspace using the PowerShell debugger.
+
+.DESCRIPTION
+    This function attaches a debugger to a given runspace, breaks execution, and collects scoped variables using a custom C# class.
+    It waits until the debugger stop event is triggered or until a specified timeout period elapses.
+    If the timeout is reached without triggering the event, it returns an empty hashtable.
+
+.PARAMETER Runspace
+    The runspace from which to collect scoped variables. This parameter is mandatory.
+
+.PARAMETER Timeout
+    The maximum time (in seconds) to wait for the debugger stop event to be triggered. Defaults to 60 seconds.
+
+.EXAMPLE
+    $runspace = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace()
+    $runspace.Open()
+    $variables = Get-PodeRunspaceVariablesViaDebugger -Runspace $runspace -Timeout 30
+    $runspace.Close()
+
+    This example opens a runspace, collects scoped variables with a 30-second timeout, and then closes the runspace.
+
+.NOTES
+    The function uses an embedded C# class to handle the `DebuggerStop` event. This class attaches and detaches the debugger and processes commands in the stopped state.
+    The collected variables are returned as a `PSObject`.
+
+.COMPONENT
+    Pode
+
+#>
 function Get-PodeRunspaceVariablesViaDebugger {
     param (
         [Parameter(Mandatory)]
-        [System.Management.Automation.Runspaces.Runspace]$Runspace
+        [System.Management.Automation.Runspaces.Runspace]$Runspace,
+
+        [Parameter()]
+        [int]$Timeout = 60
     )
 
+    # Initialize variables collection
     $variables = @()
     try {
+        # Embed C# code to handle the DebuggerStop event
         Add-Type @'
 using System;
 using System.Management.Automation;
@@ -271,245 +306,271 @@ using System.Collections.ObjectModel;
 
 public class DebuggerHandler
 {
+    // Collection to store variables collected during the debugging session
     private static PSDataCollection<PSObject> variables = new PSDataCollection<PSObject>();
+
+    // Event handler for the DebuggerStop event
     private static EventHandler<DebuggerStopEventArgs> debuggerStopHandler;
+
+    // Flag to indicate whether the DebuggerStop event has been triggered
     private static bool eventTriggered = false;
 
+    // Method to attach the DebuggerStop event handler to the runspace's debugger
     public static void AttachDebugger(Runspace runspace)
     {
+        // Initialize the event handler with the OnDebuggerStop method
         debuggerStopHandler = new EventHandler<DebuggerStopEventArgs>(OnDebuggerStop);
+
+        // Attach the event handler to the DebuggerStop event of the runspace's debugger
         runspace.Debugger.DebuggerStop += debuggerStopHandler;
     }
 
+    // Method to detach the DebuggerStop event handler from the runspace's debugger
     public static void DetachDebugger(Runspace runspace)
     {
         if (debuggerStopHandler != null)
         {
+            // Remove the event handler to prevent further event handling
             runspace.Debugger.DebuggerStop -= debuggerStopHandler;
+
+            // Set the handler to null to clean up
             debuggerStopHandler = null;
         }
     }
 
+    // Event handler method that gets called when the debugger stops
     private static void OnDebuggerStop(object sender, DebuggerStopEventArgs args)
     {
+        // Set the eventTriggered flag to true
         eventTriggered = true;
 
+        // Cast the sender to a Debugger object
         var debugger = sender as Debugger;
-        Console.WriteLine("Debugger stop event triggered.");
         if (debugger != null)
         {
+            // Enable step mode to allow for command execution during the debug stop
             debugger.SetDebuggerStepMode(true);
 
-            // Prepare the command to run in the debugger
+            // Create a PSCommand to run the Get-PodeDumpScopedVariable command
             PSCommand command = new PSCommand();
             command.AddCommand("Get-PodeDumpScopedVariable");
 
-            // Create output collection for ProcessCommand
+            // Create a collection to store the command output
             PSDataCollection<PSObject> outputCollection = new PSDataCollection<PSObject>();
 
-            // Process the command within the debugger
+            // Execute the command within the debugger
             debugger.ProcessCommand(command, outputCollection);
 
-            // Store output in a static collection
+            // Add each result to the variables collection
             foreach (var output in outputCollection)
             {
                 variables.Add(output);
             }
-
-            // Resume execution
-      //      debugger.SetDebuggerAction(DebuggerResumeAction.Continue);
-         //   Console.WriteLine("Debugger resumed.");
-        }else{
-          Console.WriteLine("Debugger stop event triggered, but no debugger found.");
         }
-
     }
 
+    // Method to check if the DebuggerStop event has been triggered
     public static bool IsEventTriggered()
     {
         return eventTriggered;
     }
 
+    // Method to retrieve the collected variables
     public static PSDataCollection<PSObject> GetVariables()
     {
         return variables;
     }
 }
 '@
+
         # Attach the debugger using the embedded C# method
         [DebuggerHandler]::AttachDebugger($Runspace)
-        #   $Runspace.Debugger.SetDebuggerStepMode($true)
+
         # Enable debugging and break all
         Enable-RunspaceDebug -BreakAll -Runspace $Runspace
 
         Write-PodeHost "Waiting for $($Runspace.Name) to enter in debug ." -NoNewLine
 
-        # Wait for the event to be triggered
+        # Initialize the timer
+        $startTime = [DateTime]::UtcNow
+
+        # Wait for the event to be triggered or timeout
         while (! [DebuggerHandler]::IsEventTriggered()) {
             Start-Sleep -Milliseconds 1000
             Write-PodeHost '.' -NoNewLine
+
+            if (([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Timeout) {
+                Write-PodeHost "Failed (Timeout reached after $Timeout seconds.)"
+                return @{}
+            }
         }
 
         Write-PodeHost 'Done'
-        Start-Sleep -Milliseconds 1000
+
         # Retrieve and output the collected variables from the embedded C# code
         $variables = [DebuggerHandler]::GetVariables()
-
     }
     catch {
-        Write-Error -Message $_
+        # Log the error details using Write-PodeErrorLog.
+        # This ensures that any exceptions thrown during the execution are logged appropriately.
+        $_ | Write-PodeErrorLog
     }
     finally {
+        # Detach the debugger from the runspace to clean up resources and prevent any lingering event handlers.
         [DebuggerHandler]::DetachDebugger($Runspace)
-        # Disable debugging for the runspace
+
+        # Disable debugging for the runspace. This ensures that the runspace returns to its normal execution state.
         Disable-RunspaceDebug -Runspace $Runspace
     }
 
     return $variables[0]
 }
 
+<#
+.SYNOPSIS
+    Collects and serializes variables from different scopes (Local, Script, Global).
 
-function Invoke-PodeDebuggerStopEvent {
-    param (
-        [System.Management.Automation.Runspaces.Runspace]$Runspace
-    )
+.DESCRIPTION
+    This function retrieves variables from Local, Script, and Global scopes and serializes them to ensure they can be output or logged.
+    It includes a safeguard against deeply nested objects by limiting the depth of serialization to prevent stack overflow or excessive memory usage.
 
-    try {
-        # Using reflection to get the protected RaiseDebuggerStopEvent method
-        $methodInfo = $Runspace.Debugger.GetType().GetMethod('RaiseDebuggerStopEvent', [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::NonPublic)
+.PARAMETER MaxDepth
+    Specifies the maximum depth for serializing nested objects. Defaults to 5 levels deep.
 
-        if ($null -eq $methodInfo) {
-            Write-Error 'Could not find the method RaiseDebuggerStopEvent.'
-            return
-        }
+.EXAMPLE
+    Get-PodeDumpScopedVariable -MaxDepth 3
 
-        # Create an empty collection of breakpoints
-        $breakpoints = [System.Collections.ObjectModel.Collection[System.Management.Automation.Breakpoint]]::new()
+    This example retrieves variables from all scopes and serializes them with a maximum depth of 3.
 
-        # Set resume action to Continue
-        $resumeAction = [System.Management.Automation.DebuggerResumeAction]::Stop
+.NOTES
+    This function is useful for debugging and logging purposes where variable data from different scopes needs to be safely serialized and inspected.
 
-        # Create the DebuggerStopEventArgs
-        $eventArgs = [System.Management.Automation.DebuggerStopEventArgs]::new($null, $breakpoints, $resumeAction)
-
-        # Invoke the method
-        $methodInfo.Invoke($Runspace.Debugger, @($eventArgs))
-
-        Write-Host 'DebuggerStopEvent raised successfully.'
-    }
-    catch {
-        Write-Error "Error invoking RaiseDebuggerStopEvent: $_"
-    }
-}
-
-
-
-
-function Get-RunspaceFromPipeline {
-    param(
-        [System.Management.Automation.PowerShell]
-        $Pipeline
-    )
-
-    if ($null -ne $Pipeline.Runspace) {
-        return $Pipeline.Runspace
-    }
-    # Define BindingFlags for non-public and instance members
-    $Flag = [System.Reflection.BindingFlags]::NonPublic -bor [System.Reflection.BindingFlags]::Instance
-
-    # Access _worker field
-    $_worker = $Pipeline.GetType().GetField('_worker', $Flag)
-    $worker = $_worker.GetValue($Pipeline)
-
-    # Access CurrentlyRunningPipeline property
-    $_CRPProperty = $worker.GetType().GetProperty('CurrentlyRunningPipeline', $Flag)
-    $currentPipeline = $_CRPProperty.GetValue($worker)
-
-    # return Runspace
-    return $currentPipeline.Runspace
-}
-
-
-
-
-# Function to collect variables by scope
+#>
 function Get-PodeDumpScopedVariable {
     param (
         [int]
-        $MaxDepth = 5  # Default max depth
+        $MaxDepth = 5
     )
-    # Safeguard against deeply nested objects
-    function ConvertTo-SerializableObject {
-        param (
-            [object]$InputObject,
-            [int]$MaxDepth = 5, # Default max depth
-            [int]$CurrentDepth = 0
-        )
 
-        if ($CurrentDepth -ge $MaxDepth) {
-            return 'Max depth reached'
-        }
 
-        if ($null -eq $InputObject ) {
-            return $null
-        }
-        elseif (  $InputObject -is [hashtable]) {
-            $result = @{}
-            try {
-                foreach ($key in $InputObject.Keys) {
-                    try {
-                        $strKey = $key.ToString()
-                        $result[$strKey] = ConvertTo-SerializableObject -InputObject $InputObject[$key] -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
-                    }
-                    catch {
-                        write-podehost $_ -ForegroundColor Red
-                    }
-                }
-            }
-            catch {
-                write-podehost $_ -ForegroundColor Red
-            }
-            return $result
-        }
-        elseif ($InputObject -is [PSCustomObject]) {
-            $result = @{}
-            try {
-                foreach ($property in $InputObject.PSObject.Properties) {
-                    try {
-                        $result[$property.Name.ToString()] = ConvertTo-SerializableObject -InputObject $property.Value -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
-                    }
-                    catch {
-                        write-podehost $_ -ForegroundColor Red
-                    }
-                }
-            }
-            catch {
-                write-podehost $_ -ForegroundColor Red
-            }
-            return $result
-        }
-        elseif ($InputObject -is [System.Collections.IEnumerable] -and -not ($InputObject -is [string])) {
-            return $InputObject | ForEach-Object { ConvertTo-SerializableObject -InputObject $_ -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1) }
-        }
-        else {
-            return $InputObject.ToString()
-        }
-    }
 
+    # Collect variables from Local, Script, and Global scopes
     $scopes = @{
         Local  = Get-Variable -Scope 0
         Script = Get-Variable -Scope Script
         Global = Get-Variable -Scope Global
     }
 
+    # Dictionary to hold serialized variables by scope
     $scopedVariables = @{}
     foreach ($scope in $scopes.Keys) {
         $variables = @{}
         foreach ($var in $scopes[$scope]) {
+            # Attempt to retrieve the variable's value, handling any errors
             $variables[$var.Name] = try { $var.Value } catch { 'Error retrieving value' }
         }
-        $scopedVariables[$scope] = ConvertTo-SerializableObject -InputObject $variables -MaxDepth $MaxDepth
+        # Serialize the variables to ensure safe output
+        $scopedVariables[$scope] = ConvertTo-PodeSerializableObject -InputObject $variables -MaxDepth $MaxDepth
     }
+
+    # Return the serialized variables by scope
     return $scopedVariables
 }
 
+<#
+.SYNOPSIS
+    Safely serializes an object, ensuring it doesn't exceed the specified depth.
+
+.DESCRIPTION
+    This function recursively serializes an object to a simpler, more displayable form, handling complex or deeply nested objects by limiting the serialization depth.
+    It supports various object types like hashtables, PSCustomObjects, and collections while avoiding overly deep recursion that could cause stack overflow or excessive resource usage.
+
+.PARAMETER InputObject
+    The object to be serialized.
+
+.PARAMETER MaxDepth
+    Specifies the maximum depth for serialization. Defaults to 5 levels deep.
+
+.PARAMETER CurrentDepth
+    The current depth in the recursive serialization process. Defaults to 0 and is used internally during recursion.
+
+.EXAMPLE
+    ConvertTo-PodeSerializableObject -InputObject $complexObject -MaxDepth 3
+
+    This example serializes a complex object with a maximum depth of 3.
+
+.NOTES
+    This function is useful for logging, debugging, and safely displaying complex objects in a readable format.
+
+#>
+function ConvertTo-PodeSerializableObject {
+    param (
+        [object]
+        $InputObject,
+
+        [int]
+        $MaxDepth = 5,
+
+        [int]
+        $CurrentDepth = 0
+    )
+
+    # Check if the current depth has reached or exceeded the maximum allowed depth
+    if ($CurrentDepth -ge $MaxDepth) {
+        # Return a simple message indicating that the maximum depth has been reached
+        return 'Max depth reached'
+    }
+
+    # Handle null input
+    if ($null -eq $InputObject) {
+        return $null  # Return null if the input object is null
+    }
+    # Handle hashtables
+    elseif ($InputObject -is [hashtable]) {
+        $result = @{}
+        try {
+            foreach ($key in $InputObject.Keys) {
+                try {
+                    # Serialize each key-value pair in the hashtable
+                    $strKey = $key.ToString()
+                    $result[$strKey] = ConvertTo-PodeSerializableObject -InputObject $InputObject[$key] -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
+                }
+                catch {
+                    Write-PodeHost $_ -ForegroundColor Red
+                }
+            }
+        }
+        catch {
+            Write-PodeHost $_ -ForegroundColor Red
+        }
+        return $result
+    }
+    # Handle PSCustomObjects
+    elseif ($InputObject -is [PSCustomObject]) {
+        $result = @{}
+        try {
+            foreach ($property in $InputObject.PSObject.Properties) {
+                try {
+                    # Serialize each property in the PSCustomObject
+                    $result[$property.Name.ToString()] = ConvertTo-PodeSerializableObject -InputObject $property.Value -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1)
+                }
+                catch {
+                    Write-PodeHost $_ -ForegroundColor Red
+                }
+            }
+        }
+        catch {
+            Write-PodeHost $_ -ForegroundColor Red
+        }
+        return $result
+    }
+    # Handle enumerable collections, excluding strings
+    elseif ($InputObject -is [System.Collections.IEnumerable] -and -not ($InputObject -is [string])) {
+        # Serialize each item in the collection
+        return $InputObject | ForEach-Object { ConvertTo-PodeSerializableObject -InputObject $_ -MaxDepth $MaxDepth -CurrentDepth ($CurrentDepth + 1) }
+    }
+    else {
+        # Convert other object types to string for serialization
+        return $InputObject.ToString()
+    }
+}
