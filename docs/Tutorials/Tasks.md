@@ -51,7 +51,7 @@ Add-PodeTask -Name 'Example' -ArgumentList @{ Name = 'Rick'; Environment = 'Mult
 }
 ```
 
-Tasks parameters **must** be bound in the param block in order to be used, but the values for the paramters can be set through the `-ArgumentList` hashtable parameter in either the Add-PodeTask definition or when invoking the task. The following snippet would populate the parameters to the task with the same values as the above example but the `-ArgumentList` parameter is populated during invocation. Note that Keys in the `-ArgumentList` hashtable parameter set during invocation override the same Keys set during task creation:
+Tasks parameters **must** be bound in the param block in order to be used, but the values for the parameters can be set through the `-ArgumentList` hashtable parameter in either the Add-PodeTask definition or when invoking the task. The following snippet would populate the parameters to the task with the same values as the above example but the `-ArgumentList` parameter is populated during invocation. Note that Keys in the `-ArgumentList` hashtable parameter set during invocation override the same Keys set during task creation:
 
 ```powershell
 Add-PodeTask -Name 'Example' -ScriptBlock {
@@ -72,7 +72,7 @@ You can invoke a task to run from anywhere, be it a route, schedule, middleware,
 
 ### Asynchronously
 
-When you use [`Invoke-PodeTask`](../../Functions/Tasks/Invoke-PodeTask) with just the name of the task, this will trigger a task to run asynchrounsly by default:
+When you use [`Invoke-PodeTask`](../../Functions/Tasks/Invoke-PodeTask) with just the name of the task, this will trigger a task to run asynchronously by default:
 
 ```powershell
 $task = Invoke-PodeTask -Name 'Example'
