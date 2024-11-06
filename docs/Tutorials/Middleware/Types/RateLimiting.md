@@ -55,7 +55,7 @@ Add-PodeLimitRule -Type Route -Values '/downloads' -Limit 5 -Seconds 1
 
 ### Endpoints
 
-To assign rate limiting to a specific endpoint, you can pass an enpoint's name to [`Add-PodeLimitRule`](../../../../Functions/Middleware/Add-PodeLimitRule). The following with limit the `User` endpoint to 5 requests every second:
+To assign rate limiting to a specific endpoint, you can pass an endpoint's name to [`Add-PodeLimitRule`](../../../../Functions/Middleware/Add-PodeLimitRule). The following with limit the `User` endpoint to 5 requests every second:
 
 ```powershell
 Add-PodeEndpoint -Address 127.0.0.2 -Port 8090 -Protocol Http -Name 'Admin'
