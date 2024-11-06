@@ -64,6 +64,7 @@ Start-PodeServer -EnableBreakpoints {
 The steps to attach to the Pode process are as follows:
 
 1. In a PowerShell console, start the above Pode server. You will see the following output, and you'll need the PID that is shown:
+
     ```plain
     Pode v2.10.0 (PID: 28324)
     Listening on the following 1 endpoint(s) [1 thread(s)]:
@@ -71,16 +72,19 @@ The steps to attach to the Pode process are as follows:
     ```
 
 2. In a browser or a new PowerShell console, invoke the `[GET] http://localhost:8080` Route to hit the breakpoint.
+
     ```powershell
     Invoke-RestMethod -Uri 'http://localhost:8080/'
     ```
 
 3. Open another new PowerShell console, and run the following command to enter the first PowerShell console running Pode - you'll need the PID as well:
+
     ```powershell
     Enter-PSHostProcess -Id '<PID_HERE>'
     ```
 
 4. Once you have entered the PowerShell console running Pode, run the below command to attach to the breakpoint:
+
     ```powershell
     Get-Runspace |
         Where-Object { $_.Debugger.InBreakpoint } |
@@ -101,6 +105,7 @@ The steps to attach to the Pode process are as follows:
 7. When you are done debugging the current request, hit the `d` key.
 
 8. When you're done with debugging altogether, you can exit the entered process as follows:
+
     ```powershell
     exit
     ```
@@ -110,6 +115,7 @@ The steps to attach to the Pode process are as follows:
 If you're using [`Wait-PodeDebugger`](../../Functions/Core/Wait-PodeDebugger) then you can leave these breakpoint lines in place, and toggle them in non-developer environments by passing `-EnableBreakpoints` to [`Start-PodeServer`](../../Functions/Core/Start-PodeServer). If you don't supply `-EnableBreakpoints`, or you explicitly pass `-EnableBreakpoints:$false`, then this will disable the breakpoints from being set.
 
 You can also toggle breakpoints via the `server.psd1` [configuration file](../../Tutorials/Configuration):
+
 ```powershell
 @{
     Server = @{
@@ -158,6 +164,7 @@ The steps to attach to the Pode process are as follows:
 1. In a PowerShell console, start the above Pode server.
 
 2. In a browser or a new PowerShell console, invoke the `[GET] http://localhost:8080` Route to hit the breakpoint.
+
     ```powershell
     Invoke-RestMethod -Uri 'http://localhost:8080/'
     ```
@@ -267,6 +274,7 @@ To set up default options for the memory dump feature in Pode, you can configure
                 Enable = $true
                 Format = 'Yaml'  # Options: 'json', 'clixml', 'txt', 'bin', 'yaml'
                 Path = './Dump'  # Path to save the dump files
+                MaxDepth = 6
             }
         }
     }
@@ -276,6 +284,8 @@ To set up default options for the memory dump feature in Pode, you can configure
 - **Enable**: Boolean value to enable or disable the memory dump feature.
 - **Format**: Specifies the default format for the dump file. Supported formats are `json`, `clixml`, `txt`, `bin`, and `yaml`.
 - **Path**: Specifies the directory where the dump file will be saved. If the directory does not exist, it will be created.
+- **MaxDepth**: Specifies the maximum depth to traverse when collecting information.
+
 
 ### Overriding Default Settings at Runtime
 
@@ -293,6 +303,7 @@ catch {
 ```
 
 In this example:
+
 - The memory dump is saved in CLIXML format instead of the default.
 - The dump file is saved in the specified directory (`C:\CustomDump`) instead of the default path.
 - The `-Halt` switch will terminate the application after the dump is saved.

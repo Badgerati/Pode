@@ -191,9 +191,14 @@ function Show-PodeConsoleInfo {
         $ShowHeader
     )
 
+    if ($PodeContext.Server.Quiet) {
+        return
+    }
+
     if ($ClearHost) {
         Clear-Host
     }
+    
     if ($ShowHeader) {
 
         if ($PodeContext.Server.Suspended) {

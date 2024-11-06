@@ -21,6 +21,9 @@
 .PARAMETER Path
     Specifies the directory where the dump file will be saved. If the directory does not exist, it will be created. Defaults to a "Dump" folder.
 
+.PARAMETER MaxDepth
+    Specifies the maximum depth to traverse when collecting information.
+
 .EXAMPLE
     try {
         # Simulate a critical error
