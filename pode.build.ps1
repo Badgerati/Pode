@@ -113,9 +113,9 @@ function Invoke-PodeBuildDotnetBuild($target) {
     # Determine if the target framework is compatible
     $isCompatible = $False
     switch ($majorVersion) {
-        8 { if ($target -in @('net6.0', 'netstandard2.0', 'net8.0')) { $isCompatible = $True } }
-        7 { if ($target -in @('net6.0', 'netstandard2.0')) { $isCompatible = $True } }
-        6 { if ($target -in @('net6.0', 'netstandard2.0')) { $isCompatible = $True } }
+        8 { if ($target -in @('net6.0', 'net48', 'net8.0')) { $isCompatible = $True } }
+        7 { if ($target -in @('net6.0', 'net48')) { $isCompatible = $True } }
+        6 { if ($target -in @('net6.0', 'net48')) { $isCompatible = $True } }
     }
 
     # Skip build if not compatible
@@ -394,7 +394,7 @@ Task Build BuildDeps, {
 
     try {
         Push-Location ./src/Listener
-        Invoke-PodeBuildDotnetBuild -target 'netstandard2.0'
+        Invoke-PodeBuildDotnetBuild -target 'net48'
         Invoke-PodeBuildDotnetBuild -target 'net6.0'
         Invoke-PodeBuildDotnetBuild -target 'net8.0'
     }

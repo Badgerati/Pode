@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net48;net6.0;net8.0</TargetFrameworks>
     <NoWarn>$(NoWarn);SYSLIB0001</NoWarn>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
+
+    <!-- Package reference for net48 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <Reference Include="System.Web" />
+  </ItemGroup>
 </Project>
