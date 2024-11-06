@@ -41,7 +41,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls one-off script logic' {
-        $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {} }
+        $PodeContext.Server = @{ Types = ([string]::Empty); Logic = {}; Quiet = $true }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -55,7 +55,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls smtp server logic' {
-        $PodeContext.Server = @{ Types = 'SMTP'; Logic = {} }
+        $PodeContext.Server = @{ Types = 'SMTP'; Logic = {}; Quiet = $true  }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -69,7 +69,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls tcp server logic' {
-        $PodeContext.Server = @{ Types = 'TCP'; Logic = {} }
+        $PodeContext.Server = @{ Types = 'TCP'; Logic = {}; Quiet = $true  }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -83,7 +83,7 @@ Describe 'Start-PodeInternalServer' {
     }
 
     It 'Calls http web server logic' {
-        $PodeContext.Server = @{ Types = 'HTTP'; Logic = {} }
+        $PodeContext.Server = @{ Types = 'HTTP'; Logic = {}; Quiet = $true  }
         Start-PodeInternalServer | Out-Null
 
         Assert-MockCalled Invoke-PodeScriptBlock -Times 1 -Scope It
@@ -203,6 +203,7 @@ Describe 'Restart-PodeInternalServer' {
                     Storage = @{}
                 }
                 ScopedVariables = @{}
+                Quiet = $true
             }
             Metrics   = @{
                 Server = @{
@@ -266,7 +267,7 @@ Describe 'Restart-PodeInternalServer' {
     }
 
     It 'Catches exception and throws it' {
-        Mock Write-Host { throw 'some error' }
+        Mock Write-PodeHost { throw 'some error' }
         Mock Write-PodeErrorLog {}
         { Restart-PodeInternalServer } | Should -Throw -ExpectedMessage 'some error'
     }
