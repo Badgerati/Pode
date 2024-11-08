@@ -2422,13 +2422,17 @@ function Show-PodeOAConsoleInfo {
                 # Specification
                 Write-PodeHost "   - $($PodeLocale.specificationMessage):" -ForegroundColor Yellow
                 $PodeContext.Server.EndpointsInfo | ForEach-Object {
-                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
-                    Write-PodeHost "     . $url" -ForegroundColor White
+                    if ($_.Pool -eq 'web') {
+                        $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.openApiUrl)
+                        Write-PodeHost "     . $url" -ForegroundColor White
+                    }
                 }
                 Write-PodeHost "   - $($PodeLocale.documentationMessage):" -ForegroundColor Yellow
                 $PodeContext.Server.EndpointsInfo | ForEach-Object {
-                    $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
-                    Write-PodeHost "     . $url" -ForegroundColor White
+                    if ($_.Pool -eq 'web') {
+                        $url = [System.Uri]::new( [System.Uri]::new($_.Url), $bookmarks.path)
+                        Write-PodeHost "     . $url" -ForegroundColor White
+                    }
                 }
             }
         }

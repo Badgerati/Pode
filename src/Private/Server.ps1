@@ -198,7 +198,7 @@ function Show-PodeConsoleInfo {
     if ($ClearHost) {
         Clear-Host
     }
-    
+
     if ($ShowHeader) {
 
         if ($PodeContext.Server.Suspended) {
@@ -365,6 +365,9 @@ function Restart-PodeInternalServer {
 
         # restart the server
         $PodeContext.Metrics.Server.RestartCount++
+
+        # Update the server's suspended state
+        $PodeContext.Server.Suspended = $false
         Start-PodeInternalServer
     }
     catch {
@@ -423,8 +426,9 @@ function Suspend-PodeServerInternal {
         # Update the server's suspended state
         $PodeContext.Server.Suspended = $true
 
-        # Retrieve all runspaces related to Pode
-        $runspaces = Get-Runspace -name 'Pode_*'
+        # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
+        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' } | Sort-Object Name
+
         foreach ($runspace in $runspaces) {
             try {
                 # Attach debugger to the runspace

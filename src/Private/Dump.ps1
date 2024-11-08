@@ -170,16 +170,19 @@ function Invoke-PodeDumpInternal {
 
         # Check if RunspacePools is not null before iterating
         $runspacePoolDetails = @()
-        $runspaces = Get-Runspace -name 'Pode_*'
+
+        # Retrieve all runspaces related to Pode ordered by name so the Main runspace are the first to be suspended (To avoid the process hunging)
+        $runspaces = Get-Runspace | Where-Object { $_.Name -like 'Pode_*' } | Sort-Object Name
+
         $runspaceDetails = @{}
         foreach ($r in $runspaces) {
-                $runspaceDetails[$r.Name] = @{
-                    Id                  = $r.Id
-                    Name                = $r.Name
-                    InitialSessionState = $r.InitialSessionState
-                    RunspaceStateInfo   = $r.RunspaceStateInfo
-                }
-                $runspaceDetails[$r.Name].ScopedVariables = Get-PodeRunspaceVariablesViaDebugger -Runspace $r
+            $runspaceDetails[$r.Name] = @{
+                Id                  = $r.Id
+                Name                = $r.Name
+                InitialSessionState = $r.InitialSessionState
+                RunspaceStateInfo   = $r.RunspaceStateInfo
+            }
+            $runspaceDetails[$r.Name].ScopedVariables = Get-PodeRunspaceVariablesViaDebugger -Runspace $r
         }
 
         if ($null -ne $PodeContext.RunspacePools) {

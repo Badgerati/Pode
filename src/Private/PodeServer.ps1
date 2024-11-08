@@ -68,8 +68,8 @@ function Start-PodeWebServer {
         }
     }
 
-    # create the listener
-    $listener = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)Listener -CancellationToken `$PodeContext.Tokens.Cancellation.Token")))
+    # Create the listener
+    $listener = & $("New-Pode$($PodeContext.Server.ListenerType)Listener") -CancellationToken $PodeContext.Tokens.Cancellation.Token
     $listener.ErrorLoggingEnabled = (Test-PodeErrorLoggingEnabled)
     $listener.ErrorLoggingLevels = @(Get-PodeErrorLoggingLevel)
     $listener.RequestTimeout = $PodeContext.Server.Request.Timeout
@@ -79,7 +79,20 @@ function Start-PodeWebServer {
     try {
         # register endpoints on the listener
         $endpoints | ForEach-Object {
-            $socket = (. ([scriptblock]::Create("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket -Name `$_.Name -Address `$_.Address -Port `$_.Port -SslProtocols `$_.SslProtocols -Type `$endpointsMap[`$_.Key].Type -Certificate `$_.Certificate -AllowClientCertificate `$_.AllowClientCertificate -DualMode:`$_.DualMode")))
+            # Create a hashtable of parameters for splatting
+            $socketParams = @{
+                Name                   = $_.Name
+                Address                = $_.Address
+                Port                   = $_.Port
+                SslProtocols           = $_.SslProtocols
+                Type                   = $endpointsMap[$_.Key].Type
+                Certificate            = $_.Certificate
+                AllowClientCertificate = $_.AllowClientCertificate
+                DualMode               = $_.DualMode
+            }
+
+            # Initialize a new listener socket with splatting
+            $socket = & $("New-Pode$($PodeContext.Server.ListenerType)ListenerSocket") @socketParams
             $socket.ReceiveTimeout = $PodeContext.Server.Sockets.ReceiveTimeout
 
             if (!$_.IsIPAddress) {
@@ -280,7 +293,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Web -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+           Add-PodeRunspace -Type Web -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
     }
 

@@ -39,13 +39,20 @@ try {
 catch { throw }
 
 # Start Pode server with specified script block
-Start-PodeServer -Threads 1 -ScriptBlock {
+Start-PodeServer -Threads 4  -ScriptBlock {
 
     # listen on localhost:8081
     Add-PodeEndpoint -Address localhost -Port 8081 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8082 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8083 -Protocol Http
+    Add-PodeEndpoint -Address localhost -Port 8025 -Protocol Smtp
+    Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Ws -Name 'WS1'
+    Add-PodeEndpoint -Address localhost -Port 8091 -Protocol Http -Name 'WS'
+    Add-PodeEndpoint -Address localhost -Port 8100 -Protocol Tcp
+
 
     # set view engine to pode renderer
-    Set-PodeViewEngine -Type Pode
+    Set-PodeViewEngine -Type Html
 
     # Enable error logging
     New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
@@ -87,5 +94,47 @@ Start-PodeServer -Threads 1 -ScriptBlock {
             }
         } | Set-PodeOARouteInfo -Summary 'Dump state' -Description 'Dump the memory state of the server.' -Tags 'dump'  -OperationId 'dump'-PassThru |
             Set-PodeOARequest -Parameters (New-PodeOAStringProperty -Name 'format' -Description 'Dump export format.' -Enum 'json', 'clixml', 'txt', 'bin', 'yaml' -Default 'json' | ConvertTo-PodeOAParameter -In Query )
+    }
+
+    Add-PodeVerb -Verb 'HELLO' -ScriptBlock {
+        Write-PodeTcpClient -Message 'HI'
+        'here' | Out-Default
+    }
+
+    # setup an smtp handler
+    Add-PodeHandler -Type Smtp -Name 'Main' -ScriptBlock {
+        Write-PodeHost '- - - - - - - - - - - - - - - - - -'
+        Write-PodeHost $SmtpEvent.Email.From
+        Write-PodeHost $SmtpEvent.Email.To
+        Write-PodeHost '|'
+        Write-PodeHost $SmtpEvent.Email.Body
+        Write-PodeHost '|'
+        # Write-PodeHost $SmtpEvent.Email.Data
+        # Write-PodeHost '|'
+        $SmtpEvent.Email.Attachments | Out-Default
+        if ($SmtpEvent.Email.Attachments.Length -gt 0) {
+            #$SmtpEvent.Email.Attachments[0].Save('C:\temp')
+        }
+        Write-PodeHost '|'
+        $SmtpEvent.Email | Out-Default
+        $SmtpEvent.Request | out-default
+        $SmtpEvent.Email.Headers | out-default
+        Write-PodeHost '- - - - - - - - - - - - - - - - - -'
+    }
+
+    # GET request for web page
+    Add-PodeRoute -Method Get -Path '/' -EndpointName 'WS' -ScriptBlock {
+        Write-PodeViewResponse -Path 'websockets'
+    }
+
+    # SIGNAL route, to return current date
+    Add-PodeSignalRoute -Path '/' -ScriptBlock {
+        $msg = $SignalEvent.Data.Message
+
+        if ($msg -ieq '[date]') {
+            $msg = [datetime]::Now.ToString()
+        }
+
+        Send-PodeSignal -Value @{ message = $msg }
     }
 }

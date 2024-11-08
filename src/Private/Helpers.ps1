@@ -579,6 +579,10 @@ function Test-PodeRestartPressed {
         $Key = $null
     )
 
+    if ($PodeContext.Server.DisableTermination) {
+        return $false
+    }
+
     return (Test-PodeKeyPressed -Key $Key -Character 'r')
 }
 
@@ -587,6 +591,10 @@ function Test-PodeOpenBrowserPressed {
         [Parameter()]
         $Key = $null
     )
+
+    if ($PodeContext.Server.DisableTermination) {
+        return $false
+    }
 
     return (Test-PodeKeyPressed -Key $Key -Character 'b')
 }
@@ -597,6 +605,9 @@ function Test-PodeDumpPressed {
         $Key = $null
     )
 
+    if ($PodeContext.Server.DisableTermination) {
+        return $false
+    }
     return (Test-PodeKeyPressed -Key $Key -Character 'd')
 }
 
@@ -606,18 +617,46 @@ function Test-PodeSuspendPressed {
         $Key = $null
     )
 
+    if ($PodeContext.Server.DisableTermination) {
+        return $false
+    }
+
     return (Test-PodeKeyPressed -Key $Key -Character 'u')
 }
 
 
-function Test-PodeResumePressed {
-    param(
-        [Parameter()]
-        $Key = $null
-    )
 
-    return (Test-PodeKeyPressed -Key $Key -Character 'a')
+<#
+.SYNOPSIS
+    Clears any remaining keys in the console input buffer.
+
+.DESCRIPTION
+    The `Clear-PodeKeyPressed` function checks if there are any keys remaining in the input buffer
+    and discards them, ensuring that no leftover key presses interfere with subsequent reads.
+
+.EXAMPLE
+    Clear-PodeKeyPressed
+    [Console]::ReadKey($true)
+
+    This example clears the buffer and then reads a new key without interference.
+
+.NOTES
+    This function is useful when using `[Console]::ReadKey($true)` to prevent previous key presses
+    from affecting the input.
+
+#>
+function Clear-PodeKeyPressed {
+    if ($PodeContext.Server.DisableTermination) {
+        return $false
+    }
+
+     # Clear any remaining keys in the input buffer
+    while ([Console]::KeyAvailable) {
+
+        [Console]::ReadKey($true) | Out-Null
+    }
 }
+
 
 function Test-PodeKeyPressed {
     param(
