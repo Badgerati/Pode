@@ -650,7 +650,7 @@ function Clear-PodeKeyPressed {
         return $false
     }
 
-     # Clear any remaining keys in the input buffer
+    # Clear any remaining keys in the input buffer
     while ([Console]::KeyAvailable) {
 
         [Console]::ReadKey($true) | Out-Null
@@ -2665,6 +2665,10 @@ function Get-PodeEndpointUrl {
         if ($null -eq $Endpoint) {
             $Endpoint = @($PodeContext.Server.Endpoints.Values | Where-Object { $_.Protocol -iin @('http', 'https') })[0]
         }
+    }
+
+    if ($null -eq $Endpoint) {
+        return $null
     }
 
     $url = $Endpoint.Url

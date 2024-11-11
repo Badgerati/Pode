@@ -239,8 +239,11 @@ function Start-PodeServer {
 
                     # check for open browser
                     if (Test-PodeOpenBrowserPressed -Key $key) {
-                        Invoke-PodeEvent -Type Browser
-                        Start-Process (Get-PodeEndpointUrl)
+                        $url = Get-PodeEndpointUrl
+                        if ($null -ne $url) {
+                            Invoke-PodeEvent -Type Browser
+                            Start-Process $url
+                        }
                     }
 
                     if (Test-PodeTerminationPressed -Key $key) {

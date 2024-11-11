@@ -225,6 +225,9 @@ function Show-PodeConsoleInfo {
         Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor Cyan
         Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor Cyan
         Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor Cyan
+        if (Get-PodeEndpointUrl) {
+            Write-PodeHost '    Ctrl+B   : Browser' -ForegroundColor Cyan
+        }
 
         if ($PodeContext.Server.Debug.Dump.Enabled) {
             Write-PodeHost "    Ctrl+D   : $($Podelocale.GenerateDiagnosticDumpMessage)" -ForegroundColor Cyan
