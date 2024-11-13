@@ -32,7 +32,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
         MkDocs      = '1.6.1'
         PSCoveralls = '1.0.0'
         SevenZip    = '18.5.0.20180730'
-        DotNet      = '9.0'
+        DotNet      = 'auto'
         MkDocsTheme = '9.5.44'
         PlatyPS     = '0.14.2'
     }
@@ -213,12 +213,21 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 
 
     function Get-PodeBuildDotNetEOL {
+        param(
+            [switch]
+            $LastVersion
+        )
         $uri = 'https://endoflife.date/api/dotnet.json'
         try {
             $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
-            return @{
-                eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
-                supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
+            if ($LastVersion) {
+                return (($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle)[0]
+            }
+            else {
+                return @{
+                    eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
+                    supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
+                }
             }
         }
         catch {
@@ -384,6 +393,10 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 
     # Synopsis: Install dependencies for compiling/building
     Task BuildDeps {
+        if ($Versions.DotNet -eq 'auto') {
+            $Versions.DotNet = Get-PodeBuildDotNetEOL -LastVersion
+        }
+
         # install dotnet
         if (Test-PodeBuildIsWindows) {
             $dotnet = 'dotnet'
@@ -502,7 +515,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
             foreach ($target in $targetFrameworks) {
                 Invoke-PodeBuildDotnetBuild -target $target
                 Write-Host
-                Write-Host "***********************" -ForegroundColor DarkMagenta
+                Write-Host '***********************' -ForegroundColor DarkMagenta
 
             }
         }
