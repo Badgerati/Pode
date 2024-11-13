@@ -207,51 +207,50 @@ function Start-PodeServer {
 
             # sit here waiting for termination/cancellation, or to restart the server
             while (  !($PodeContext.Tokens.Cancellation.IsCancellationRequested)) {
-                try {
-                    Start-Sleep -Seconds 1
+                Start-Sleep -Seconds 1
 
-                    if (!$PodeContext.Server.DisableTermination) {
-                        # get the next key presses
-                        $key = Get-PodeConsoleKey
-                    }
+                if (!$PodeContext.Server.DisableTermination) {
+                    # get the next key presses
+                    $key = Get-PodeConsoleKey
+                }
 
-                    # check for internal restart
-                    if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
-                        Restart-PodeInternalServer
-                    }
+                # check for internal restart
+                if (($PodeContext.Tokens.Restart.IsCancellationRequested) -or (Test-PodeRestartPressed -Key $key)) {
+                    Clear-PodeKeyPressed
+                    Restart-PodeInternalServer
+                }
 
-                    if (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
-                        Invoke-PodeDumpInternal
-                        if ($PodeContext.Server.Debug.Dump.Param.Halt) {
-                            Write-PodeHost -ForegroundColor Red 'Halt switch detected. Closing the application.'
-                            break
-                        }
-                    }
-
-                    if (($PodeContext.Tokens.Suspend.SuspendResume) -or (Test-PodeSuspendPressed -Key $key)) {
-                        if ( $PodeContext.Server.Suspended) {
-                            Resume-PodeServerInternal
-                        }
-                        else {
-                            Suspend-PodeServerInternal
-                        }
-                    }
-
-                    # check for open browser
-                    if (Test-PodeOpenBrowserPressed -Key $key) {
-                        $url = Get-PodeEndpointUrl
-                        if ($null -ne $url) {
-                            Invoke-PodeEvent -Type Browser
-                            Start-Process $url
-                        }
-                    }
-
-                    if (Test-PodeTerminationPressed -Key $key) {
+                if (($PodeContext.Tokens.Dump.IsCancellationRequested) -or (Test-PodeDumpPressed -Key $key) ) {
+                    Clear-PodeKeyPressed
+                    Invoke-PodeDumpInternal
+                    if ($PodeContext.Server.Debug.Dump.Param.Halt) {
+                        Write-PodeHost -ForegroundColor Red 'Halt switch detected. Closing the application.'
                         break
                     }
                 }
-                finally {
+
+                if (($PodeContext.Tokens.Suspend.SuspendResume) -or (Test-PodeSuspendPressed -Key $key)) {
                     Clear-PodeKeyPressed
+                    if ( $PodeContext.Server.Suspended) {
+                        Resume-PodeServerInternal
+                    }
+                    else {
+                        Suspend-PodeServerInternal
+                    }
+                }
+
+                # check for open browser
+                if (Test-PodeOpenBrowserPressed -Key $key) {
+                    Clear-PodeKeyPressed
+                    $url = Get-PodeEndpointUrl
+                    if ($null -ne $url) {
+                        Invoke-PodeEvent -Type Browser
+                        Start-Process $url
+                    }
+                }
+
+                if (Test-PodeTerminationPressed -Key $key) {
+                    break
                 }
             }
 
@@ -260,6 +259,7 @@ function Start-PodeServer {
                 Write-PodeHost $PodeLocale.iisShutdownMessage -NoNewLine -ForegroundColor Yellow
                 Write-PodeHost ' ' -NoNewLine
             }
+            
             # Terminating...
             Write-PodeHost $PodeLocale.terminatingMessage -NoNewLine -ForegroundColor Yellow
             Invoke-PodeEvent -Type Terminate

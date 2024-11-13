@@ -304,4 +304,5 @@
     restartingMessage                                                 = '正在重启'
     suspendedMessage                                                  = '已暂停'
     runningMessage                                                    = '运行中'
+    openHttpEndpointMessage                                           = '在默认浏览器中打开第一个 HTTP 端点。'
 }

@@ -304,4 +304,5 @@
     restartingMessage                                                 = '재시작 중'
     suspendedMessage                                                  = '일시 중지됨'
     runningMessage                                                    = '실행 중'
+    openHttpEndpointMessage                                           = '기본 브라우저에서 첫 번째 HTTP 엔드포인트를 엽니다.'
 }

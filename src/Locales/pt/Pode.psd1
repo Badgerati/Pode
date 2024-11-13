@@ -304,4 +304,5 @@
     restartingMessage                                                 = 'Reiniciando'
     suspendedMessage                                                  = 'Suspenso'
     runningMessage                                                    = 'Executando'
+    openHttpEndpointMessage                                           = 'Abrir o primeiro endpoint HTTP no navegador padrão.'
 }

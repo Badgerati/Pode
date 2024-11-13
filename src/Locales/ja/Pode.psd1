@@ -304,4 +304,5 @@
     restartingMessage                                                 = '再起動中'
     suspendedMessage                                                  = '一時停止中'
     runningMessage                                                    = '実行中'
+    openHttpEndpointMessage                                           = 'デフォルトのブラウザで最初の HTTP エンドポイントを開きます。'
 }

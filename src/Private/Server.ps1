@@ -225,8 +225,9 @@ function Show-PodeConsoleInfo {
         Write-PodeHost "    Ctrl+C   : $($Podelocale.GracefullyTerminateMessage)" -ForegroundColor Cyan
         Write-PodeHost "    Ctrl+R   : $($Podelocale.RestartServerMessage)" -ForegroundColor Cyan
         Write-PodeHost "    Ctrl+U   : $resumeOrSuspend" -ForegroundColor Cyan
-        if (Get-PodeEndpointUrl) {
-            Write-PodeHost '    Ctrl+B   : Browser' -ForegroundColor Cyan
+
+        if ((Get-PodeEndpointUrl) -and !($PodeContext.Server.Suspended)) {
+            Write-PodeHost "    Ctrl+B   : $($Podelocale.OpenHttpEndpointMessage)" -ForegroundColor Cyan
         }
 
         if ($PodeContext.Server.Debug.Dump.Enabled) {

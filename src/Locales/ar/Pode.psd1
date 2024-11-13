@@ -304,4 +304,5 @@
     restartingMessage                                                 = 'جارٍ إعادة التشغيل'
     suspendedMessage                                                  = 'معلق'
     runningMessage                                                    = 'يعمل'
+    openHttpEndpointMessage                                           = 'افتح أول نقطة نهاية HTTP في المتصفح الافتراضي.'
 }

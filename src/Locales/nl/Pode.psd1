@@ -304,4 +304,5 @@
     restartingMessage                                                 = 'Herstarten'
     suspendedMessage                                                  = 'Gepauzeerd'
     runningMessage                                                    = 'Actief'
+    openHttpEndpointMessage                                           = 'Open het eerste HTTP-eindpunt in de standaardbrowser.'
 }
