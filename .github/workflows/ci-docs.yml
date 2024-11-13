@@ -36,6 +36,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.x
+
     - name: Install Invoke-Build
       shell: pwsh
       run: |
