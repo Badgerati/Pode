@@ -19,7 +19,15 @@ param(
     $ReleaseNoteVersion,
 
     [string]
-    $UICulture = 'en-US'
+    $UICulture = 'en-US',
+
+    [string[]]
+    [ValidateSet('netstandard2.0', 'netstandard2.1', 'netcoreapp3.0', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')]
+    $TargetFrameworks,
+
+    [string]
+    [ValidateSet('netstandard2.0', 'netstandard2.1', 'netcoreapp3.0', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')]
+    $SdkVersion
 )
 
 
@@ -32,14 +40,11 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
         MkDocs      = '1.6.1'
         PSCoveralls = '1.0.0'
         SevenZip    = '18.5.0.20180730'
-        DotNet      = 'auto'
+        DotNet      = @($(if ($null -eq $TargetFrameworks) { 'auto' } else { $TargetFrameworks }))
         MkDocsTheme = '9.5.44'
         PlatyPS     = '0.14.2'
     }
 
-
-    $NetVersions = 'netstandard2.0', 'netstandard2.1', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0'
-    #Unsupported .NET Framework version 'net4.0', 'net4.5', 'net4.5.1', 'net4.5.2', 'net4.6', 'net4.6.1', 'net4.6.2', 'net4.7', 'net4.7.1', 'net4.7.2', 'net4.8'
 
     # Helper Functions
     function Test-PodeBuildIsWindows {
@@ -107,86 +112,92 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
         Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
     }
 
+    function Get-TargetFramework {
+        param(
+            [string]
+            $TargetFrameworks
+        )
+
+        switch ($TargetFrameworks) {
+            'netstandard2.0' { return  2 }
+            'netstandard2.1' { return  3 }
+            'netcoreapp3.0' { return  3 }
+            'net5.0' { return  5 }
+            'net6.0' { return  6 }
+            'net7.0' { return  7 }
+            'net8.0' { return 8 }
+            'net9.0' { return  9 }
+            default {
+                Write-Warning "$TargetFrameworks is not a valid  Framework. Rollback to netstandard2.0"
+                return 2
+            }
+        }
+    }
+
+
+    function Get-TargetFrameworkName {
+        param(
+            $Version
+        )
+
+        switch ( $Version) {
+            '2' { return 'netstandard2.0' }
+            '3' { return 'netstandard2.1' }
+            '5' { return  'net5.0' }
+            '6' { return  'net6.0' }
+            '7' { return  'net7.0' }
+            '8' { return  'net8.0' }
+            '9' { return 'net9.0' }
+            default {
+                Write-Warning "$Version is not a valid  Framework. Rollback to netstandard2.0"
+                return 'netstandard2.0'
+            }
+        }
+    }
+
     function Invoke-PodeBuildDotnetBuild {
         param (
             [string]$target
         )
 
-        # Verify if the target is a known .NET version
-        if ($target -notin $NetVersions) {
-            Write-Host "Unknown target framework '$target'. Please specify a valid .NET framework."
-            return
-        }
-
         # Retrieve the installed SDK versions
         $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-        $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
-
-        # Map target frameworks to minimum SDK versions
-        $targetSdkMap = @{
-            'netstandard2.0' = 2
-            'netstandard2.1' = 3
-            'netcoreapp3.1'  = 3
-            'net5.0'         = 5
-            'net6.0'         = 6
-            'net7.0'         = 7
-            'net8.0'         = 8
-            'net9.0'         = 9
-        }
-
-        # Determine if the target framework is compatible
-        $isCompatible = $False
-
-        if ($targetSdkMap.ContainsKey($target)) {
-            $requiredSdkVersion = $targetSdkMap[$target]
-
-            foreach ($sdkVersion in $sdkVersions) {
-                $sdkMajor = ([version]$sdkVersion).Major
-                if ($sdkMajor -ge $requiredSdkVersion) {
-                    $isCompatible = $True
-                    break
-                }
-            }
-        }
-        elseif ($target -like 'net4*') {
-            # .NET Framework targets require MSBuild, typically available with Visual Studio
-            $msbuildPath = Get-Command msbuild -ErrorAction SilentlyContinue
-            if ($msbuildPath) {
-                $isCompatible = $True
-            }
-            else {
-                Write-Host 'MSBuild is not available. Cannot build .NET Framework targets.'
-                return
-            }
-        }
-
-        if ($isCompatible) {
-            Write-Host "SDK for target framework '$target' is compatible with the installed SDKs."
+        if ([string]::IsNullOrEmpty($AvailableSdkVersion)) {
+            $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
         }
         else {
-            Write-Host "SDK for target framework '$target' is not compatible with the installed SDKs. Skipping build."
+            $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-TargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
+        }
+        # Map target frameworks to minimum SDK versions
+
+        if ($null -eq $majorVersions) {
+            Write-Error "The requested '$AvailableSdkVersion' framework is not available."
+            return
+        }
+        $requiredSdkVersion = Get-TargetFramework -TargetFrameworks $target
+
+        # Determine if the target framework is compatible
+        $isCompatible = $majorVersions -ge $requiredSdkVersion
+
+        if ($isCompatible) {
+            Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
+        }
+        else {
+            Write-Warning "SDK for target framework '$target' is not compatible with the '$AvailableSdkVersion' framework. Skipping build."
             return
         }
 
         # Optionally set assembly version
         if ($Version) {
-            Write-Host "Assembly Version: $Version"
+            Write-Output "Assembly Version: $Version"
             $AssemblyVersion = "-p:Version=$Version"
         }
         else {
             $AssemblyVersion = ''
         }
 
-        # Execute dotnet publish or MSBuild depending on the target
-        if ($target -like 'net4*') {
-            # Use MSBuild for .NET Framework targets
-            $projectFile = 'YourProject.csproj' # Replace with your actual project file
-            & msbuild $projectFile /p:Configuration=Release /p:TargetFramework=$target $AssemblyVersion /p:OutputPath="../Libs/$target"
-        }
-        else {
-            # Use dotnet publish for .NET Core and .NET 5+
-            dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
-        }
+        # Use dotnet publish for .NET Core and .NET 5+
+        dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
 
         if (!$?) {
             throw "Build failed for target framework '$target'."
@@ -215,12 +226,12 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     function Get-PodeBuildDotNetEOL {
         param(
             [switch]
-            $LastVersion
+            $LatestVersion
         )
         $uri = 'https://endoflife.date/api/dotnet.json'
         try {
             $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
-            if ($LastVersion) {
+            if ($LatestVersion) {
                 return (($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle)[0]
             }
             else {
@@ -357,7 +368,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 #>
 
     # Synopsis: Stamps the version onto the Module
-    Task StampVersion {
+    Add-BuildTask StampVersion {
         $pwshVersions = Get-PodeBuildPwshEOL
     (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
@@ -366,7 +377,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Generating a Checksum of the Zip
-    Task PrintChecksum {
+    Add-BuildTask PrintChecksum {
         $Script:Checksum = (Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
         Write-Host "Checksum: $($Checksum)"
     }
@@ -377,7 +388,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 #>
 
     # Synopsis: Installs Chocolatey
-    Task ChocoDeps -If (Test-PodeBuildIsWindows) {
+    Add-BuildTask ChocoDeps -If (Test-PodeBuildIsWindows) {
         if (!(Test-PodeBuildCommand 'choco')) {
             Set-ExecutionPolicy Bypass -Scope Process -Force
             Invoke-Expression ([System.Net.WebClient]::new().DownloadString('https://chocolatey.org/install.ps1'))
@@ -385,33 +396,60 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Install dependencies for packaging
-    Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
+    Add-BuildTask PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
         if (!(Test-PodeBuildCommand '7z')) {
             Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
         }
     }
 
     # Synopsis: Install dependencies for compiling/building
-    Task BuildDeps {
-        if ($Versions.DotNet -eq 'auto') {
-            $Versions.DotNet = Get-PodeBuildDotNetEOL -LastVersion
+    Add-BuildTask BuildDeps {
+        if ([string]::IsNullOrEmpty($SdkVersion)) {
+            $_sdkVersion = Get-PodeBuildDotNetEOL -LatestVersion
+        }
+        else {
+            $_sdkVersion = $SdkVersion
         }
 
         # install dotnet
         if (Test-PodeBuildIsWindows) {
             $dotnet = 'dotnet'
         }
+        elseif (Test-PodeBuildCommand 'brew') {
+            $dotnet = 'dotnet-sdk'
+        }
         else {
-            $dotnet = "dotnet-sdk-$($Versions.DotNet)"
+            $dotnet = "dotnet-sdk-$_sdkVersion"
         }
 
         if (!(Test-PodeBuildCommand 'dotnet')) {
-            Invoke-PodeBuildInstall $dotnet $Versions.DotNet
+            Invoke-PodeBuildInstall $dotnet $_sdkVersion
         }
+        elseif (![string]::IsNullOrEmpty($SdkVersion)) {
+            $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+            $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
+            if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
+                Invoke-PodeBuildInstall $dotnet $SdkVersion
+                $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+                $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
+                if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
+                    Write-Error "The requested framework '$SdkVersion' is not available."
+                    return
+                }
+
+            }
+            else {
+                $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
+                Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
+                return
+            }
+        }
+        $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $_sdkVersion
+
     }
 
     # Synopsis: Install dependencies for running tests
-    Task TestDeps {
+    Add-BuildTask TestDeps {
         # install pester
         Install-PodeBuildModule Pester
 
@@ -422,7 +460,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Install dependencies for documentation
-    Task DocsDeps ChocoDeps, {
+    Add-BuildTask DocsDeps ChocoDeps, {
         # install mkdocs
         if (!(Test-PodeBuildCommand 'mkdocs')) {
             Invoke-PodeBuildInstall 'mkdocs' $Versions.MkDocs
@@ -437,7 +475,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
         Install-PodeBuildModule PlatyPS
     }
 
-    Task IndexSamples {
+    Add-BuildTask IndexSamples {
         $examplesPath = './examples'
         if (!(Test-Path -PathType Container -Path $examplesPath)) {
             return
@@ -480,34 +518,37 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 #>
 
     # Synopsis: Build the .NET Listener
-    Task Build BuildDeps, {
+    Add-BuildTask Build BuildDeps, {
         if (Test-Path ./src/Libs) {
             Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
         }
+        if ($Versions.DotNet -eq 'auto') {
+            # Retrieve supported .NET versions
+            $eol = Get-PodeBuildDotNetEOL
 
-        # Retrieve supported .NET versions
-        $eol = Get-PodeBuildDotNetEOL
+            $targetFrameworks = @()
 
-        $targetFrameworks = @()
+            if (![string]::IsNullOrEmpty($eol.supported)) {
 
-        if (![string]::IsNullOrEmpty($eol.supported)) {
+                # Parse supported versions into an array
+                $supportedVersions = $eol['supported'] -split ','
 
-            # Parse supported versions into an array
-            $supportedVersions = $eol['supported'] -split ','
-
-            # Construct target framework monikers
-            $targetFrameworks += ($supportedVersions | ForEach-Object { "net$_.0" })
+                # Construct target framework monikers
+                $targetFrameworks += ($supportedVersions | ForEach-Object { "net$_.0" })
+            }
         }
-
+        else {
+            $targetFrameworks = $Versions.DotNet
+        }
         # Optionally include netstandard2.0
         $targetFrameworks += 'netstandard2.0'
 
 
         # Retrieve the SDK version being used
-        $sdkVersion = dotnet --version
+        #   $dotnetVersion = dotnet --version
 
         # Display the SDK version
-        Write-Output "Building target framework '$($targetFrameworks -join "','")' using .NET SDK version '$sdkVersion'"
+        Write-Output "Building targets '$($targetFrameworks -join "','")' using .NET '$AvailableSdkVersion' framework."
 
         # Build for supported target frameworks
         try {
@@ -531,12 +572,12 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 #>
 
     # Synopsis: Creates a Zip of the Module
-    Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
+    Add-BuildTask 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
         exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
     }, PrintChecksum
 
     #Synopsis: Create the Deliverable folder
-    Task DeliverableFolder {
+    Add-BuildTask DeliverableFolder {
         $path = './deliverable'
         if (Test-Path $path) {
             Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -547,7 +588,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Creates a Zip of the Module
-    Task Compress PackageFolder, StampVersion, DeliverableFolder, {
+    Add-BuildTask Compress PackageFolder, StampVersion, DeliverableFolder, {
         $path = './deliverable'
         if (Test-Path $path) {
             Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -558,13 +599,13 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }, PrintChecksum
 
     # Synopsis: Creates a Chocolately package of the Module
-    Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, PackageFolder, StampVersion, DeliverableFolder, {
+    Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, PackageFolder, StampVersion, DeliverableFolder, {
         exec { choco pack ./packers/choco/pode.nuspec }
         Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
     }
 
     # Synopsis: Create docker tags
-    Task DockerPack PackageFolder, StampVersion, {
+    Add-BuildTask DockerPack PackageFolder, StampVersion, {
         # check if github and windows, and output warning
         if ((Test-PodeBuildIsGitHub) -and (Test-PodeBuildIsWindows)) {
             Write-Warning 'Docker images are not built on GitHub Windows runners, and Docker is in Windows container only mode. Exiting task.'
@@ -596,10 +637,10 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Package up the Module
-    Task Pack Compress, ChocoPack, DockerPack
+    Add-BuildTask Pack Compress, ChocoPack, DockerPack
 
     # Synopsis: Package up the Module into a /pkg folder
-    Task PackageFolder Build, {
+    Add-BuildTask PackageFolder Build, {
         $path = './pkg'
         if (Test-Path $path) {
             Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -635,7 +676,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 #>
 
     # Synopsis: Run the tests
-    Task TestNoBuild TestDeps, {
+    Add-BuildTask TestNoBuild TestDeps, {
         $p = (Get-Command Invoke-Pester)
         if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
             Remove-Module Pester -Force -ErrorAction Ignore
@@ -681,17 +722,17 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }, PushCodeCoverage, CheckFailedTests
 
     # Synopsis: Run tests after a build
-    Task Test Build, TestNoBuild
+    Add-BuildTask Test Build, TestNoBuild
 
     # Synopsis: Check if any of the tests failed
-    Task CheckFailedTests {
+    Add-BuildTask CheckFailedTests {
         if ($TestStatus.FailedCount -gt 0) {
             throw "$($TestStatus.FailedCount) tests failed"
         }
     }
 
     # Synopsis: If AppyVeyor or GitHub, push code coverage stats
-    Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
+    Add-BuildTask PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
         try {
             $service = Get-PodeBuildService
             $branch = Get-PodeBuildBranch
@@ -711,12 +752,12 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 #>
 
     # Synopsis: Run the documentation locally
-    Task Docs DocsDeps, DocsHelpBuild, {
+    Add-BuildTask Docs DocsDeps, DocsHelpBuild, {
         mkdocs serve --open
     }
 
     # Synopsis: Build the function help documentation
-    Task DocsHelpBuild IndexSamples, DocsDeps, Build, {
+    Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
         # import the local module
         Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
         Import-Module ./src/Pode.psm1 -Force | Out-Null
@@ -760,7 +801,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Build the documentation
-    Task DocsBuild DocsDeps, DocsHelpBuild, {
+    Add-BuildTask DocsBuild DocsDeps, DocsHelpBuild, {
         mkdocs build --quiet
     }
 
@@ -770,10 +811,10 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 #>
 
     # Synopsis: Clean the build enviroment
-    Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
+    Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
 
     # Synopsis: Clean the Deliverable folder
-    Task CleanDeliverable {
+    Add-BuildTask CleanDeliverable {
         $path = './deliverable'
         if (Test-Path -Path $path -PathType Container) {
             Write-Host 'Removing ./deliverable folder'
@@ -783,7 +824,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Clean the pkg directory
-    Task CleanPkg {
+    Add-BuildTask CleanPkg {
         $path = './pkg'
         if ((Test-Path -Path $path -PathType Container )) {
             Write-Host 'Removing ./pkg folder'
@@ -804,7 +845,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Clean the libs folder
-    Task CleanLibs {
+    Add-BuildTask CleanLibs {
         $path = './src/Libs'
         if (Test-Path -Path $path -PathType Container) {
             Write-Host "Removing $path  contents"
@@ -815,7 +856,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Clean the Listener folder
-    Task CleanListener {
+    Add-BuildTask CleanListener {
         $path = './src/Listener/bin'
         if (Test-Path -Path $path -PathType Container) {
             Write-Host "Removing $path contents"
@@ -825,7 +866,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
         Write-Host "Cleanup $path done"
     }
 
-    Task CleanDocs {
+    Add-BuildTask CleanDocs {
         $path = './docs/Getting-Started/Samples.md'
         if (Test-Path -Path $path -PathType Leaf) {
             Write-Host "Removing $path"
@@ -837,7 +878,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 #>
 
     # Synopsis: Install Pode Module locally
-    Task Install-Module -If ($Version) Pack, {
+    Add-BuildTask Install-Module -If ($Version) Pack, {
         $PSPaths = Split-PodeBuildPwshPath
 
         $dest = Join-Path -Path $PSPaths[0] -ChildPath 'Pode' -AdditionalChildPath "$Version"
@@ -865,7 +906,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
     }
 
     # Synopsis: Remove the Pode Module from the local registry
-    Task Remove-Module {
+    Add-BuildTask Remove-Module {
         if (!$Version) {
             throw 'Parameter -Version is required'
         }
@@ -887,7 +928,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 #>
 
     # Synopsis: Setup the PowerShell environment
-    Task SetupPowerShell {
+    Add-BuildTask SetupPowerShell {
         # code for this step is altered versions of the code found here:
         # - https://github.com/bjompen/UpdatePWSHAction/blob/main/UpgradePwsh.ps1
         # - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1
