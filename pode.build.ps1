@@ -111,7 +111,7 @@ param(
 
     [string]
     [ValidateSet('netstandard2.0', 'netstandard2.1', 'netcoreapp3.0', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')]
-    $SdkVersion = 'net8.0'
+    $SdkVersion = 'net9.0'
 )
 
 # Dependency Versions
@@ -607,8 +607,6 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 
     # Synopsis: Install dependencies for compiling/building
     Add-BuildTask BuildDeps {
-
-
         # install dotnet
         if (Test-PodeBuildIsWindows) {
             $dotnet = 'dotnet'
@@ -629,8 +627,15 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
         $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
 
         if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
-            Write-Error "The requested framework '$SdkVersion' is not available."
-            return
+            Invoke-PodeBuildInstall $dotnet $SdkVersion
+            $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+            $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
+            $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
+
+            if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
+                Write-Error "The requested framework '$SdkVersion' is not available."
+                return
+            }
         }
         elseif ($majorVersions -gt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
             Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
