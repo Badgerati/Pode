@@ -302,7 +302,7 @@ function Get-PodeBuildPwshEOL {
     }
 }
 
- 
+
 
 function Test-PodeBuildOSWindows {
     return ($IsWindows -or
@@ -696,11 +696,16 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
             $dotnet = "dotnet-sdk-$SdkVersion"
         }
 
-        if (!(Test-PodeBuildCommand 'dotnet')) {
-            Invoke-PodeBuildInstall $dotnet $SdkVersion
+        #   if (!(Test-PodeBuildCommand 'dotnet')) {
+        #     Invoke-PodeBuildInstall $dotnet $SdkVersion
+        #  }
+        try {
+            $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
         }
-
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        catch {
+            Invoke-PodeBuildInstall $dotnet $SdkVersion
+            $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        }
         $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
         $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
 
