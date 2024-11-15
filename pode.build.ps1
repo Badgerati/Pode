@@ -702,6 +702,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 
         if (Test-PodeBuildIsGitHub){
             $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+            dotnet --list-sdks 
             Write-Warning $sdkVersions
             $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
             $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
