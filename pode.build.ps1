@@ -1,3 +1,87 @@
+<#
+.SYNOPSIS
+    Build script for the Pode project, defining tasks for compilation, testing, packaging, and deployment.
+
+.DESCRIPTION
+    This script uses Invoke-Build to automate the Pode project build process across different environments (Windows, macOS, Linux).
+    It includes tasks for setting up dependencies, compiling .NET targets, running tests, generating documentation, and packaging.
+
+.PARAMETER Version
+    Specifies the project version for stamping, packaging, and documentation. Defaults to '0.0.0'.
+
+.PARAMETER PesterVerbosity
+    Sets the verbosity level for Pester tests. Options: None, Normal, Detailed, Diagnostic.
+
+.PARAMETER PowerShellVersion
+    Defines the target PowerShell version for installation, e.g., 'lts' or a specific version.
+
+.PARAMETER ReleaseNoteVersion
+    Specifies the release version for generating release notes.
+
+.PARAMETER UICulture
+    Sets the culture for running tests, defaulting to 'en-US'.
+
+.PARAMETER TargetFrameworks
+    Specifies the target .NET frameworks for building the project, e.g., netstandard2.0, net8.0.
+
+.PARAMETER SdkVersion
+    Sets the SDK version used for building .NET projects, defaulting to net8.0.
+
+.NOTES
+    This build script requires Invoke-Build. Below is a list of all available tasks:
+
+    - Default: Lists all available tasks.
+    - StampVersion: Stamps the specified version onto the module.
+    - PrintChecksum: Generates and displays a checksum of the ZIP archive.
+    - ChocoDeps: Installs Chocolatey (for Windows).
+    - PackDeps: Installs dependencies required for packaging.
+    - BuildDeps: Installs dependencies required for building/compiling.
+    - TestDeps: Installs dependencies required for testing.
+    - DocsDeps: Installs dependencies required for documentation generation.
+    - IndexSamples: Indexes sample files for documentation.
+    - Build: Builds the .NET Listener for specified frameworks.
+    - 7Zip: Creates a ZIP archive of the module (Windows only).
+    - DeliverableFolder: Creates a folder for deliverables.
+    - Compress: Compresses the module into a ZIP format for distribution.
+    - ChocoPack: Creates a Chocolatey package of the module (Windows only).
+    - DockerPack: Builds Docker images for the module.
+    - Pack: Packages the module, including ZIP, Chocolatey, and Docker.
+    - PackageFolder: Creates the `pkg` folder for module packaging.
+    - TestNoBuild: Runs tests without building, including Pester tests.
+    - Test: Runs tests after building the project.
+    - CheckFailedTests: Checks if any tests failed and throws an error if so.
+    - PushCodeCoverage: Pushes code coverage results to a coverage service.
+    - Docs: Serves the documentation locally for review.
+    - DocsHelpBuild: Builds function help documentation.
+    - DocsBuild: Builds the documentation for distribution.
+    - Clean: Cleans the build environment, removing all generated files.
+    - CleanDeliverable: Removes the `deliverable` folder.
+    - CleanPkg: Removes the `pkg` folder.
+    - CleanLibs: Removes the `Libs` folder under `src`.
+    - CleanListener: Removes the Listener folder.
+    - CleanDocs: Cleans up generated documentation files.
+    - Install-Module: Installs the Pode module locally.
+    - Remove-Module: Removes the Pode module from the local registry.
+    - SetupPowerShell: Sets up the PowerShell environment for the build.
+    - ReleaseNotes: Generates release notes based on merged pull requests.
+
+.EXAMPLE
+    Invoke-Build -Task Default
+        # Displays a list of all available tasks.
+
+    Invoke-Build -Task Build -Version '1.2.3'
+        # Compiles the project for the specified version.
+
+    Invoke-Build -Task Test
+        # Runs tests on the project, including Pester tests.
+
+    Invoke-Build -Task Docs
+        # Builds and serves the documentation locally.
+
+.LINK
+    For more information, visit https://github.com/Badgerati/Pode
+#>
+
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
@@ -23,343 +107,462 @@ param(
 
     [string[]]
     [ValidateSet('netstandard2.0', 'netstandard2.1', 'netcoreapp3.0', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')]
-    $TargetFrameworks,
+    $TargetFrameworks = @('netstandard2.0', 'net8.0' ),
 
     [string]
     [ValidateSet('netstandard2.0', 'netstandard2.1', 'netcoreapp3.0', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')]
-    $SdkVersion
+    $SdkVersion = 'net8.0'
 )
 
+# Dependency Versions
+$Versions = @{
+    Pester      = '5.6.1'
+    MkDocs      = '1.6.1'
+    PSCoveralls = '1.0.0'
+    SevenZip    = '18.5.0.20180730'
+    DotNet      = $SdkVersion
+    MkDocsTheme = '9.5.44'
+    PlatyPS     = '0.14.2'
+}
 
-# Check if the script is running under Invoke-Build
-if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -or $null -ne $BuildRoot)) {
 
-    # Dependency Versions
-    $Versions = @{
-        Pester      = '5.6.1'
-        MkDocs      = '1.6.1'
-        PSCoveralls = '1.0.0'
-        SevenZip    = '18.5.0.20180730'
-        DotNet      = @($(if ($null -eq $TargetFrameworks) { 'auto' } else { $TargetFrameworks }))
-        MkDocsTheme = '9.5.44'
-        PlatyPS     = '0.14.2'
+# Helper Functions
+function Test-PodeBuildIsWindows {
+    $v = $PSVersionTable
+    return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
+}
+
+function Test-PodeBuildIsGitHub {
+    return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
+}
+
+function Test-PodeBuildCanCodeCoverage {
+    return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
+}
+
+function Get-PodeBuildService {
+    return 'github-actions'
+}
+
+function Test-PodeBuildCommand($cmd) {
+    $path = $null
+
+    if (Test-PodeBuildIsWindows) {
+        $path = (Get-Command $cmd -ErrorAction Ignore)
+    }
+    else {
+        $path = (which $cmd)
     }
 
+    return (![string]::IsNullOrWhiteSpace($path))
+}
 
-    # Helper Functions
-    function Test-PodeBuildIsWindows {
-        $v = $PSVersionTable
-        return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
+function Get-PodeBuildBranch {
+    return ($env:GITHUB_REF -ireplace 'refs\/heads\/', '')
+}
+
+function Invoke-PodeBuildInstall($name, $version) {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    if (Test-PodeBuildIsWindows) {
+        if (Test-PodeBuildCommand 'choco') {
+            choco install $name --version $version -y --no-progress
+        }
+    }
+    else {
+        if (Test-PodeBuildCommand 'brew') {
+            brew install $name
+        }
+        elseif (Test-PodeBuildCommand 'apt-get') {
+            sudo apt-get install $name -y
+        }
+        elseif (Test-PodeBuildCommand 'yum') {
+            sudo yum install $name -y
+        }
+    }
+}
+
+function Install-PodeBuildModule($name) {
+    if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions[$name] })) {
+        return
     }
 
-    function Test-PodeBuildIsGitHub {
-        return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
+    Write-Host "Installing $($name) v$($Versions[$name])"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
+}
+
+function Get-TargetFramework {
+    param(
+        [string]
+        $TargetFrameworks
+    )
+
+    switch ($TargetFrameworks) {
+        'netstandard2.0' { return  2 }
+        'netstandard2.1' { return  3 }
+        'netcoreapp3.0' { return  3 }
+        'net5.0' { return  5 }
+        'net6.0' { return  6 }
+        'net7.0' { return  7 }
+        'net8.0' { return 8 }
+        'net9.0' { return  9 }
+        default {
+            Write-Warning "$TargetFrameworks is not a valid  Framework. Rollback to netstandard2.0"
+            return 2
+        }
+    }
+}
+
+
+function Get-TargetFrameworkName {
+    param(
+        $Version
+    )
+
+    switch ( $Version) {
+        '2' { return 'netstandard2.0' }
+        '3' { return 'netstandard2.1' }
+        '5' { return  'net5.0' }
+        '6' { return  'net6.0' }
+        '7' { return  'net7.0' }
+        '8' { return  'net8.0' }
+        '9' { return 'net9.0' }
+        default {
+            Write-Warning "$Version is not a valid  Framework. Rollback to netstandard2.0"
+            return 'netstandard2.0'
+        }
+    }
+}
+
+function Invoke-PodeBuildDotnetBuild {
+    param (
+        [string]$target
+    )
+
+    # Retrieve the installed SDK versions
+    $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+    if ([string]::IsNullOrEmpty($AvailableSdkVersion)) {
+        $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
+    }
+    else {
+        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-TargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
+    }
+    # Map target frameworks to minimum SDK versions
+
+    if ($null -eq $majorVersions) {
+        Write-Error "The requested '$AvailableSdkVersion' framework is not available."
+        return
+    }
+    $requiredSdkVersion = Get-TargetFramework -TargetFrameworks $target
+
+    # Determine if the target framework is compatible
+    $isCompatible = $majorVersions -ge $requiredSdkVersion
+
+    if ($isCompatible) {
+        Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
+    }
+    else {
+        Write-Warning "SDK for target framework '$target' is not compatible with the '$AvailableSdkVersion' framework. Skipping build."
+        return
     }
 
-    function Test-PodeBuildCanCodeCoverage {
-        return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
+    # Optionally set assembly version
+    if ($Version) {
+        Write-Output "Assembly Version: $Version"
+        $AssemblyVersion = "-p:Version=$Version"
+    }
+    else {
+        $AssemblyVersion = ''
     }
 
-    function Get-PodeBuildService {
-        return 'github-actions'
+    # Use dotnet publish for .NET Core and .NET 5+
+    dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
+
+    if (!$?) {
+        throw "Build failed for target framework '$target'."
     }
+}
 
-    function Test-PodeBuildCommand($cmd) {
-        $path = $null
+function Get-PodeBuildPwshEOL {
+    $uri = 'https://endoflife.date/api/powershell.json'
+    try {
+        $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
+        return @{
+            eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
+            supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
+        }
+    }
+    catch {
+        Write-Warning "Invoke-RestMethod to $uri failed: $($_.ErrorDetails.Message)"
+        return  @{
+            eol       = ''
+            supported = ''
+        }
+    }
+}
 
-        if (Test-PodeBuildIsWindows) {
-            $path = (Get-Command $cmd -ErrorAction Ignore)
+
+function Get-PodeBuildDotNetEOL {
+    param(
+        [switch]
+        $LatestVersion
+    )
+    $uri = 'https://endoflife.date/api/dotnet.json'
+    try {
+        $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
+        if ($LatestVersion) {
+            return (($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle)[0]
         }
         else {
-            $path = (which $cmd)
-        }
-
-        return (![string]::IsNullOrWhiteSpace($path))
-    }
-
-    function Get-PodeBuildBranch {
-        return ($env:GITHUB_REF -ireplace 'refs\/heads\/', '')
-    }
-
-    function Invoke-PodeBuildInstall($name, $version) {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-        if (Test-PodeBuildIsWindows) {
-            if (Test-PodeBuildCommand 'choco') {
-                choco install $name --version $version -y --no-progress
-            }
-        }
-        else {
-            if (Test-PodeBuildCommand 'brew') {
-                brew install $name
-            }
-            elseif (Test-PodeBuildCommand 'apt-get') {
-                sudo apt-get install $name -y
-            }
-            elseif (Test-PodeBuildCommand 'yum') {
-                sudo yum install $name -y
-            }
-        }
-    }
-
-    function Install-PodeBuildModule($name) {
-        if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions[$name] })) {
-            return
-        }
-
-        Write-Host "Installing $($name) v$($Versions[$name])"
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
-    }
-
-    function Get-TargetFramework {
-        param(
-            [string]
-            $TargetFrameworks
-        )
-
-        switch ($TargetFrameworks) {
-            'netstandard2.0' { return  2 }
-            'netstandard2.1' { return  3 }
-            'netcoreapp3.0' { return  3 }
-            'net5.0' { return  5 }
-            'net6.0' { return  6 }
-            'net7.0' { return  7 }
-            'net8.0' { return 8 }
-            'net9.0' { return  9 }
-            default {
-                Write-Warning "$TargetFrameworks is not a valid  Framework. Rollback to netstandard2.0"
-                return 2
-            }
-        }
-    }
-
-
-    function Get-TargetFrameworkName {
-        param(
-            $Version
-        )
-
-        switch ( $Version) {
-            '2' { return 'netstandard2.0' }
-            '3' { return 'netstandard2.1' }
-            '5' { return  'net5.0' }
-            '6' { return  'net6.0' }
-            '7' { return  'net7.0' }
-            '8' { return  'net8.0' }
-            '9' { return 'net9.0' }
-            default {
-                Write-Warning "$Version is not a valid  Framework. Rollback to netstandard2.0"
-                return 'netstandard2.0'
-            }
-        }
-    }
-
-    function Invoke-PodeBuildDotnetBuild {
-        param (
-            [string]$target
-        )
-
-        # Retrieve the installed SDK versions
-        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-        if ([string]::IsNullOrEmpty($AvailableSdkVersion)) {
-            $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
-        }
-        else {
-            $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-TargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
-        }
-        # Map target frameworks to minimum SDK versions
-
-        if ($null -eq $majorVersions) {
-            Write-Error "The requested '$AvailableSdkVersion' framework is not available."
-            return
-        }
-        $requiredSdkVersion = Get-TargetFramework -TargetFrameworks $target
-
-        # Determine if the target framework is compatible
-        $isCompatible = $majorVersions -ge $requiredSdkVersion
-
-        if ($isCompatible) {
-            Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
-        }
-        else {
-            Write-Warning "SDK for target framework '$target' is not compatible with the '$AvailableSdkVersion' framework. Skipping build."
-            return
-        }
-
-        # Optionally set assembly version
-        if ($Version) {
-            Write-Output "Assembly Version: $Version"
-            $AssemblyVersion = "-p:Version=$Version"
-        }
-        else {
-            $AssemblyVersion = ''
-        }
-
-        # Use dotnet publish for .NET Core and .NET 5+
-        dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
-
-        if (!$?) {
-            throw "Build failed for target framework '$target'."
-        }
-    }
-
-    function Get-PodeBuildPwshEOL {
-        $uri = 'https://endoflife.date/api/powershell.json'
-        try {
-            $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
             return @{
                 eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
                 supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
             }
         }
-        catch {
-            Write-Warning "Invoke-RestMethod to $uri failed: $($_.ErrorDetails.Message)"
-            return  @{
-                eol       = ''
-                supported = ''
-            }
+    }
+    catch {
+        Write-Warning "Invoke-RestMethod to $uri failed: $($_.ErrorDetails.Message)"
+        return  @{
+            eol       = ''
+            supported = ''
         }
     }
+}
 
 
-    function Get-PodeBuildDotNetEOL {
-        param(
-            [switch]
-            $LatestVersion
-        )
-        $uri = 'https://endoflife.date/api/dotnet.json'
-        try {
-            $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
-            if ($LatestVersion) {
-                return (($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle)[0]
-            }
-            else {
-                return @{
-                    eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
-                    supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
-                }
-            }
-        }
-        catch {
-            Write-Warning "Invoke-RestMethod to $uri failed: $($_.ErrorDetails.Message)"
-            return  @{
-                eol       = ''
-                supported = ''
-            }
-        }
-    }
-    function Test-PodeBuildOSWindows {
-        return ($IsWindows -or
-            ![string]::IsNullOrEmpty($env:ProgramFiles) -or
+function Test-PodeBuildOSWindows {
+    return ($IsWindows -or
+        ![string]::IsNullOrEmpty($env:ProgramFiles) -or
         (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop')))
+}
+
+function Get-PodeBuildOSPwshName {
+    if (Test-PodeBuildOSWindows) {
+        return 'win'
     }
 
-    function Get-PodeBuildOSPwshName {
-        if (Test-PodeBuildOSWindows) {
-            return 'win'
-        }
-
-        if ($IsLinux) {
-            return 'linux'
-        }
-
-        if ($IsMacOS) {
-            return 'osx'
-        }
+    if ($IsLinux) {
+        return 'linux'
     }
 
-    function Get-PodeBuildOSPwshArchitecture {
-        $arch = [string]::Empty
+    if ($IsMacOS) {
+        return 'osx'
+    }
+}
 
-        # windows
-        if (Test-PodeBuildOSWindows) {
-            $arch = $env:PROCESSOR_ARCHITECTURE
-        }
+function Get-PodeBuildOSPwshArchitecture {
+    $arch = [string]::Empty
 
-        # unix
-        if ($IsLinux -or $IsMacOS) {
-            $arch = uname -m
-        }
-
-        Write-Host "OS Architecture: $($arch)"
-
-        # convert to pwsh arch
-        switch ($arch.ToLowerInvariant()) {
-            'amd64' { return 'x64' }
-            'x86' { return 'x86' }
-            'x86_64' { return 'x64' }
-            'armv7*' { return 'arm32' }
-            'aarch64*' { return 'arm64' }
-            'arm64' { return 'arm64' }
-            'arm64*' { return 'arm64' }
-            'armv8*' { return 'arm64' }
-            default { throw "Unsupported architecture: $($arch)" }
-        }
+    # windows
+    if (Test-PodeBuildOSWindows) {
+        $arch = $env:PROCESSOR_ARCHITECTURE
     }
 
-    function Convert-PodeBuildOSPwshTagToVersion {
-        $result = Invoke-RestMethod -Uri "https://aka.ms/pwsh-buildinfo-$($PowerShellVersion)"
-        return $result.ReleaseTag -ireplace '^v'
+    # unix
+    if ($IsLinux -or $IsMacOS) {
+        $arch = uname -m
     }
 
-    function Install-PodeBuildPwshWindows($target) {
-        $installFolder = "$($env:ProgramFiles)\PowerShell\7"
+    Write-Host "OS Architecture: $($arch)"
 
-        if (Test-Path $installFolder) {
-            Remove-Item $installFolder -Recurse -Force -ErrorAction Stop
-        }
+    # convert to pwsh arch
+    switch ($arch.ToLowerInvariant()) {
+        'amd64' { return 'x64' }
+        'x86' { return 'x86' }
+        'x86_64' { return 'x64' }
+        'armv7*' { return 'arm32' }
+        'aarch64*' { return 'arm64' }
+        'arm64' { return 'arm64' }
+        'arm64*' { return 'arm64' }
+        'armv8*' { return 'arm64' }
+        default { throw "Unsupported architecture: $($arch)" }
+    }
+}
 
-        Copy-Item -Path "$($target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
+function Convert-PodeBuildOSPwshTagToVersion {
+    $result = Invoke-RestMethod -Uri "https://aka.ms/pwsh-buildinfo-$($PowerShellVersion)"
+    return $result.ReleaseTag -ireplace '^v'
+}
+
+function Install-PodeBuildPwshWindows($target) {
+    $installFolder = "$($env:ProgramFiles)\PowerShell\7"
+
+    if (Test-Path $installFolder) {
+        Remove-Item $installFolder -Recurse -Force -ErrorAction Stop
     }
 
-    function Install-PodeBuildPwshUnix($target) {
-        $targetFullPath = Join-Path -Path $target -ChildPath 'pwsh'
-        $null = chmod 755 $targetFullPath
+    Copy-Item -Path "$($target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
+}
 
-        $symlink = $null
-        if ($IsMacOS) {
-            $symlink = '/usr/local/bin/pwsh'
-        }
-        else {
-            $symlink = '/usr/bin/pwsh'
-        }
+function Install-PodeBuildPwshUnix($target) {
+    $targetFullPath = Join-Path -Path $target -ChildPath 'pwsh'
+    $null = chmod 755 $targetFullPath
 
-        $uid = id -u
-        if ($uid -ne '0') {
-            $sudo = 'sudo'
-        }
-        else {
-            $sudo = ''
-        }
-
-        # Make symbolic link point to installed path
-        & $sudo ln -fs $targetFullPath $symlink
+    $symlink = $null
+    if ($IsMacOS) {
+        $symlink = '/usr/local/bin/pwsh'
+    }
+    else {
+        $symlink = '/usr/bin/pwsh'
     }
 
-    function Get-PodeBuildCurrentPwshVersion {
-        return ("$(pwsh -v)" -split ' ')[1].Trim()
+    $uid = id -u
+    if ($uid -ne '0') {
+        $sudo = 'sudo'
+    }
+    else {
+        $sudo = ''
     }
 
-    function Invoke-PodeBuildDockerBuild($tag, $file) {
-        docker build -t badgerati/pode:$tag -f $file .
-        if (!$?) {
-            throw "docker build failed for $($tag)"
-        }
+    # Make symbolic link point to installed path
+    & $sudo ln -fs $targetFullPath $symlink
+}
 
-        docker tag badgerati/pode:$tag docker.pkg.github.com/badgerati/pode/pode:$tag
-        if (!$?) {
-            throw "docker tag failed for $($tag)"
-        }
+<#
+.SYNOPSIS
+    Retrieves the currently installed PowerShell version.
+
+.DESCRIPTION
+    This function runs the `pwsh -v` command and parses the output to return only the version number.
+    This is useful for verifying the PowerShell version in the build environment.
+
+.OUTPUTS
+    [string] - The current PowerShell version.
+
+.EXAMPLE
+    $version = Get-PodeBuildCurrentPwshVersion
+    Write-Host "Current PowerShell version: $version"
+
+.NOTES
+    This function assumes that `pwsh` is available in the system PATH.
+#>
+function Get-PodeBuildCurrentPwshVersion {
+    # Run pwsh command, split by spaces, and return the version component
+    return ("$(pwsh -v)" -split ' ')[1].Trim()
+}
+
+<#
+.SYNOPSIS
+    Builds a Docker image and tags it for the Pode project.
+
+.DESCRIPTION
+    This function uses the Docker CLI to build an image for Pode, then tags it for GitHub Packages.
+    The function takes a tag and a Dockerfile path as parameters to build and tag the Docker image.
+
+.PARAMETER Tag
+    The Docker image tag, typically a version number or label (e.g., 'latest').
+
+.PARAMETER File
+    The path to the Dockerfile to use for building the image.
+
+.EXAMPLE
+    Invoke-PodeBuildDockerBuild -Tag '1.0.0' -File './Dockerfile'
+    # Builds a Docker image using './Dockerfile' and tags it as 'badgerati/pode:1.0.0'.
+
+.NOTES
+    Requires Docker to be installed and available in the system PATH.
+#>
+function Invoke-PodeBuildDockerBuild {
+    param (
+        [string]
+        $Tag,
+        [string]
+        $File
+    )
+
+    # Build the Docker image with the specified tag and Dockerfile
+    docker build -t badgerati/pode:$tTag -f $File .
+    if (!$?) {
+        throw "docker build failed for $($Tag)"
     }
 
-    function Split-PodeBuildPwshPath {
-        if (Test-PodeBuildOSWindows) {
-            return $env:PSModulePath -split ';'
-        }
-        else {
-            return $env:PSModulePath -split ':'
-        }
+    # Tag the image for GitHub Packages
+    docker tag badgerati/pode:$Tag docker.pkg.github.com/badgerati/pode/pode:$Tag
+    if (!$?) {
+        throw "docker tag failed for $($Tag)"
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Splits the PSModulePath environment variable into an array of paths.
+
+.DESCRIPTION
+    This function checks the operating system and splits the PSModulePath variable based on the appropriate separator:
+    ';' for Windows and ':' for Unix-based systems.
+
+.OUTPUTS
+    [string[]] - An array of paths from the PSModulePath variable.
+
+.EXAMPLE
+    $paths = Split-PodeBuildPwshPath
+    foreach ($path in $paths) {
+        Write-Host $path
+    }
+
+.NOTES
+    This function enables cross-platform support by handling path separators for Windows and Unix-like systems.
+#>
+function Split-PodeBuildPwshPath {
+    # Check if OS is Windows, then split PSModulePath by ';', otherwise use ':'
+    if (Test-PodeBuildOSWindows) {
+        return $env:PSModulePath -split ';'
+    }
+    else {
+        return $env:PSModulePath -split ':'
+    }
+}
+
+
+
+# Check if the script is running under Invoke-Build
+if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -or $null -ne $BuildRoot)) {
+
+
+    Add-BuildTask Default {
+        Write-Host 'Tasks in the Build Script:' -ForegroundColor DarkMagenta
+        Write-Host
+        Write-Host 'Primary Tasks:' -ForegroundColor Green
+        Write-Host '- Default: Lists all available tasks.'
+        Write-Host '- Build: Builds the .NET Listener for specified frameworks.'
+        Write-Host '- Pack: Packages the module, including ZIP, Chocolatey, and Docker.'
+        Write-Host '- Test: Runs tests after building the project.'
+        Write-Host '- Clean: Cleans the build environment, removing all generated files.'
+        Write-Host '- Install-Module: Installs the Pode module locally.'
+        Write-Host '- Remove-Module: Removes the Pode module from the local registry.'
+        Write-Host '- DocsBuild: Builds the documentation for distribution.'
+        Write-Host '- TestNoBuild: Runs tests without building, including Pester tests.'
+
+
+        Write-Host
+        Write-Host 'Other Tasks:' -ForegroundColor Green
+        Write-Host '- StampVersion: Stamps the specified version onto the module.'
+        Write-Host '- PrintChecksum: Generates and displays a checksum of the ZIP archive.'
+        Write-Host '- ChocoDeps: Installs Chocolatey (for Windows).'
+        Write-Host '- PackDeps: Installs dependencies required for packaging.'
+        Write-Host '- BuildDeps: Installs dependencies required for building/compiling.'
+        Write-Host '- TestDeps: Installs dependencies required for testing.'
+        Write-Host '- DocsDeps: Installs dependencies required for documentation generation.'
+        Write-Host '- IndexSamples: Indexes sample files for documentation.'
+        Write-Host '- 7Zip: Creates a ZIP archive of the module (Windows only).'
+        Write-Host '- DeliverableFolder: Creates a folder for deliverables.'
+        Write-Host '- Compress: Compresses the module into a ZIP format for distribution.'
+        Write-Host '- ChocoPack: Creates a Chocolatey package of the module (Windows only).'
+        Write-Host '- DockerPack: Builds Docker images for the module.'
+        Write-Host "- PackageFolder: Creates the `pkg` folder for module packaging."
+        Write-Host '- CheckFailedTests: Checks if any tests failed and throws an error if so.'
+        Write-Host '- PushCodeCoverage: Pushes code coverage results to a coverage service.'
+        Write-Host '- Docs: Serves the documentation locally for review.'
+        Write-Host '- DocsHelpBuild: Builds function help documentation.'
+        Write-Host "- CleanDeliverable: Removes the `deliverable` folder."
+        Write-Host "- CleanPkg: Removes the `pkg` folder."
+        Write-Host "- CleanLibs: Removes the `Libs` folder under `src`."
+        Write-Host '- CleanListener: Removes the Listener folder.'
+        Write-Host '- CleanDocs: Cleans up generated documentation files.'
+        Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
+        Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
     }
 
 
@@ -404,12 +607,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
 
     # Synopsis: Install dependencies for compiling/building
     Add-BuildTask BuildDeps {
-        if ([string]::IsNullOrEmpty($SdkVersion)) {
-            $_sdkVersion = Get-PodeBuildDotNetEOL -LatestVersion
-        }
-        else {
-            $_sdkVersion = $SdkVersion
-        }
+
 
         # install dotnet
         if (Test-PodeBuildIsWindows) {
@@ -419,32 +617,24 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
             $dotnet = 'dotnet-sdk'
         }
         else {
-            $dotnet = "dotnet-sdk-$_sdkVersion"
+            $dotnet = "dotnet-sdk-$SdkVersion"
         }
 
         if (!(Test-PodeBuildCommand 'dotnet')) {
-            Invoke-PodeBuildInstall $dotnet $_sdkVersion
+            Invoke-PodeBuildInstall $dotnet $SdkVersion
         }
-        elseif (![string]::IsNullOrEmpty($SdkVersion)) {
-            $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-            $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
-            if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
-                Invoke-PodeBuildInstall $dotnet $SdkVersion
-                $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-                $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
-                if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
-                    Write-Error "The requested framework '$SdkVersion' is not available."
-                    return
-                }
 
-            }
-            else {
-                $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
-                Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
-                return
-            }
+        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
+        $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
+
+        if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
+            Write-Error "The requested framework '$SdkVersion' is not available."
+            return
         }
-        $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $_sdkVersion
+        elseif ($majorVersions -gt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
+            Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
+        }
 
     }
 
@@ -522,26 +712,8 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
         if (Test-Path ./src/Libs) {
             Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
         }
-        if ($Versions.DotNet -eq 'auto') {
-            # Retrieve supported .NET versions
-            $eol = Get-PodeBuildDotNetEOL
 
-            $targetFrameworks = @()
 
-            if (![string]::IsNullOrEmpty($eol.supported)) {
-
-                # Parse supported versions into an array
-                $supportedVersions = $eol['supported'] -split ','
-
-                # Construct target framework monikers
-                $targetFrameworks += ($supportedVersions | ForEach-Object { "net$_.0" })
-            }
-        }
-        else {
-            $targetFrameworks = $Versions.DotNet
-        }
-        # Optionally include netstandard2.0
-        $targetFrameworks += 'netstandard2.0'
 
 
         # Retrieve the SDK version being used
