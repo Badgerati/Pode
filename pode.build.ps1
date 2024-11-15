@@ -107,7 +107,7 @@ param(
 
     [string[]]
     [ValidateSet('netstandard2.0', 'netstandard2.1', 'netcoreapp3.0', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')]
-    $TargetFrameworks = @('netstandard2.0', 'net8.0' ),
+    $TargetFrameworks = @('netstandard2.0', 'net8.0','net9.0'),
 
     [string]
     [ValidateSet('netstandard2.0', 'netstandard2.1', 'netcoreapp3.0', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')]
@@ -127,23 +127,132 @@ $Versions = @{
 
 
 # Helper Functions
+
+<#
+.SYNOPSIS
+    Checks if the current environment is running on Windows.
+
+.DESCRIPTION
+    This function determines if the current PowerShell session is running on Windows.
+    It inspects `$PSVersionTable.Platform` and `$PSVersionTable.PSEdition` to verify the OS,
+    returning `$true` for Windows and `$false` for other platforms.
+
+.OUTPUTS
+    [bool] - Returns `$true` if the current environment is Windows, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildIsWindows) {
+        Write-Host "This script is running on Windows."
+    }
+
+.NOTES
+    - Useful for cross-platform scripts to conditionally execute Windows-specific commands.
+    - The `$PSVersionTable.Platform` variable may be `$null` in certain cases, so `$PSEdition` is used as an additional check.
+#>
 function Test-PodeBuildIsWindows {
     $v = $PSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }
 
+<#
+.SYNOPSIS
+    Checks if the script is running in a GitHub Actions environment.
+
+.DESCRIPTION
+    This function verifies if the script is running in a GitHub Actions environment
+    by checking if the `GITHUB_REF` environment variable is defined and not empty.
+    It returns `$true` if the variable is present, indicating a GitHub Actions environment.
+
+.OUTPUTS
+    [bool] - Returns `$true` if the script is running on GitHub Actions, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildIsGitHub) {
+        Write-Host "Running in GitHub Actions."
+    }
+
+.NOTES
+    - This function is useful for CI/CD pipelines to identify if the script is running in GitHub Actions.
+    - Assumes that `GITHUB_REF` is always set in a GitHub Actions environment.
+#>
 function Test-PodeBuildIsGitHub {
     return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
 }
 
+<#
+.SYNOPSIS
+    Checks if code coverage is enabled for the build.
+
+.DESCRIPTION
+    This function checks if code coverage is enabled by evaluating the `PODE_RUN_CODE_COVERAGE`
+    environment variable. If the variable contains '1' or 'true' (case-insensitive), it returns `$true`;
+    otherwise, it returns `$false`.
+
+.OUTPUTS
+    [bool] - Returns `$true` if code coverage is enabled, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildCanCodeCoverage) {
+        Write-Host "Code coverage is enabled for this build."
+    }
+
+.NOTES
+    - Useful for conditional logic in build scripts that should only execute code coverage-related tasks if enabled.
+    - The `PODE_RUN_CODE_COVERAGE` variable is typically set by the CI/CD environment or the user.
+#>
 function Test-PodeBuildCanCodeCoverage {
     return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
 }
 
+<#
+.SYNOPSIS
+    Returns the name of the CI/CD service being used for the build.
+
+.DESCRIPTION
+    This function returns a string representing the CI/CD service in use.
+    Currently, it always returns 'github-actions', indicating that the build
+    is running in GitHub Actions.
+
+.OUTPUTS
+    [string] - The name of the CI/CD service, which is 'github-actions'.
+
+.EXAMPLE
+    $service = Get-PodeBuildService
+    Write-Host "The build service is: $service"
+    # Output: The build service is: github-actions
+
+.NOTES
+    - This function is useful for identifying the CI/CD service in logs or reporting.
+    - Future modifications could extend this function to detect other CI/CD services.
+#>
 function Get-PodeBuildService {
     return 'github-actions'
 }
 
+<#
+.SYNOPSIS
+    Checks if a specified command is available on the system.
+
+.DESCRIPTION
+    This function checks if a given command is available in the system's PATH.
+    On Windows, it uses `Get-Command`, and on Unix-based systems, it uses `which`.
+    It returns `$true` if the command exists and `$false` if it does not.
+
+.PARAMETER cmd
+    The name of the command to check for availability (e.g., 'choco', 'brew').
+
+.OUTPUTS
+    [bool] - Returns `$true` if the command is found, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildCommand -Cmd 'git') {
+        Write-Host "Git is available."
+    }
+
+.NOTES
+    - This function supports both Windows and Unix-based platforms.
+    - Requires `Test-PodeBuildIsWindows` to detect the OS type.
+#>
 function Test-PodeBuildCommand($cmd) {
     $path = $null
 
@@ -157,10 +266,59 @@ function Test-PodeBuildCommand($cmd) {
     return (![string]::IsNullOrWhiteSpace($path))
 }
 
+<#
+.SYNOPSIS
+    Retrieves the branch name from the GitHub Actions environment variable.
+
+.DESCRIPTION
+    This function extracts the branch name from the `GITHUB_REF` environment variable,
+    which is commonly set in GitHub Actions workflows. It removes the 'refs/heads/' prefix
+    from the branch reference, leaving only the branch name.
+
+.OUTPUTS
+    [string] - The name of the GitHub branch.
+
+.EXAMPLE
+    $branch = Get-PodeBuildBranch
+    Write-Host "Current branch: $branch"
+    # Output example: Current branch: main
+
+.NOTES
+    - Only relevant in environments where `GITHUB_REF` is defined (e.g., GitHub Actions).
+    - Returns an empty string if `GITHUB_REF` is not set.
+#>
 function Get-PodeBuildBranch {
     return ($env:GITHUB_REF -ireplace 'refs\/heads\/', '')
 }
 
+<#
+.SYNOPSIS
+    Installs a specified package using the appropriate package manager for the OS.
+
+.DESCRIPTION
+    This function installs a specified package at a given version using platform-specific
+    package managers. For Windows, it uses Chocolatey (`choco`). On Unix-based systems,
+    it checks for `brew`, `apt-get`, and `yum` to handle installations. The function sets
+    the security protocol to TLS 1.2 to ensure secure connections during the installation.
+
+.PARAMETER name
+    The name of the package to install (e.g., 'git').
+
+.PARAMETER version
+    The version of the package to install, required only for Chocolatey on Windows.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Invoke-PodeBuildInstall -Name 'git' -Version '2.30.0'
+    # Installs version 2.30.0 of Git on Windows if Chocolatey is available.
+
+.NOTES
+    - Requires administrator or sudo privileges on Unix-based systems.
+    - This function supports package installation on both Windows and Unix-based systems.
+    - If `choco` is available, it will use `choco` for Windows, and `brew`, `apt-get`, or `yum` for Unix-based systems.
+#>
 function Invoke-PodeBuildInstall($name, $version) {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
@@ -182,6 +340,30 @@ function Invoke-PodeBuildInstall($name, $version) {
     }
 }
 
+<#
+.SYNOPSIS
+    Installs a specified PowerShell module if it is not already installed at the required version.
+
+.DESCRIPTION
+    This function checks if the specified PowerShell module is available in the current session
+    at the specified version. If not, it installs the module using the PowerShell Gallery, setting
+    the security protocol to TLS 1.2. The module is installed in the current user's scope.
+
+.PARAMETER name
+    The name of the PowerShell module to check and install.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Install-PodeBuildModule -Name 'Pester'
+    # Installs the 'Pester' module if the specified version is not already installed.
+
+.NOTES
+    - Uses `$Versions` hashtable to look up the required version for the module.
+    - Requires internet access to download modules from the PowerShell Gallery.
+    - The `-SkipPublisherCheck` parameter bypasses publisher verification; use with caution.
+#>
 function Install-PodeBuildModule($name) {
     if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions[$name] })) {
         return
@@ -192,6 +374,29 @@ function Install-PodeBuildModule($name) {
     Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
 }
 
+<#
+.SYNOPSIS
+    Converts a .NET target framework identifier to a numeric version.
+
+.DESCRIPTION
+    This function maps common .NET target framework identifiers (e.g., 'netstandard2.0', 'net6.0') to their
+    numeric equivalents. It is used to ensure compatibility by returning the framework version number as an integer.
+
+.PARAMETER TargetFrameworks
+    The target framework identifier (e.g., 'netstandard2.0', 'net6.0').
+
+.OUTPUTS
+    [int] - The numeric version of the target framework. Defaults to 2 if an unrecognized framework is provided.
+
+.EXAMPLE
+    $version = Get-TargetFramework -TargetFrameworks 'net6.0'
+    Write-Host "Target framework version: $version"
+    # Output: Target framework version: 6
+
+.NOTES
+    - Returns 2 (netstandard2.0) by default if the input framework is not recognized.
+    - This function is useful in build scripts that require target framework versioning.
+#>
 function Get-TargetFramework {
     param(
         [string]
@@ -214,7 +419,29 @@ function Get-TargetFramework {
     }
 }
 
+<#
+.SYNOPSIS
+    Converts a .NET target framework version number to a framework identifier.
 
+.DESCRIPTION
+    This function maps a numeric version to a .NET target framework identifier (e.g., '2' to 'netstandard2.0').
+    If the version number is not recognized, it defaults to 'netstandard2.0'.
+
+.PARAMETER Version
+    The numeric version of the .NET target framework (e.g., 2, 6, 8).
+
+.OUTPUTS
+    [string] - The target framework identifier (e.g., 'netstandard2.0').
+
+.EXAMPLE
+    $frameworkName = Get-TargetFrameworkName -Version 6
+    Write-Host "Target framework name: $frameworkName"
+    # Output: Target framework name: net6.0
+
+.NOTES
+    - Returns 'netstandard2.0' by default if an unrecognized version is provided.
+    - Useful for converting numeric framework versions to identifier strings in build processes.
+#>
 function Get-TargetFrameworkName {
     param(
         $Version
@@ -284,6 +511,30 @@ function Invoke-PodeBuildDotnetBuild {
     }
 }
 
+<#
+.SYNOPSIS
+    Retrieves the end-of-life (EOL) and supported versions of PowerShell.
+
+.DESCRIPTION
+    This function queries an online API to retrieve the EOL and supported versions of PowerShell.
+    It uses the `Invoke-RestMethod` cmdlet to access data from endoflife.date and returns an object
+    with comma-separated lists of supported and EOL PowerShell versions based on the current date.
+
+.OUTPUTS
+    [hashtable] - A hashtable containing:
+                  - `eol`: Comma-separated string of EOL PowerShell versions.
+                  - `supported`: Comma-separated string of supported PowerShell versions.
+
+.EXAMPLE
+    $pwshEOLInfo = Get-PodeBuildPwshEOL
+    Write-Host "Supported PowerShell versions: $($pwshEOLInfo.supported)"
+    Write-Host "EOL PowerShell versions: $($pwshEOLInfo.eol)"
+
+.NOTES
+    - Requires internet access to query the endoflife.date API.
+    - If the request fails, the function returns an empty string for both `eol` and `supported`.
+    - API URL: https://endoflife.date/api/powershell.json
+#>
 function Get-PodeBuildPwshEOL {
     $uri = 'https://endoflife.date/api/powershell.json'
     try {
@@ -302,14 +553,58 @@ function Get-PodeBuildPwshEOL {
     }
 }
 
+<#
+.SYNOPSIS
+    Checks if the current OS is Windows.
 
+.DESCRIPTION
+    This function detects whether the current operating system is Windows by checking
+    the `$IsWindows` automatic variable, the presence of the `$env:ProgramFiles` variable,
+    and the PowerShell Edition in `$PSVersionTable`. This function returns `$true` if
+    any of these indicate Windows.
 
+.OUTPUTS
+    [bool] - Returns `$true` if the OS is Windows, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildOSWindows) {
+        Write-Host "Running on Windows"
+    }
+
+.NOTES
+    - Useful for distinguishing between Windows and Unix-based systems for conditional logic.
+    - May return `$true` in environments where Windows-related environment variables are present.
+#>
 function Test-PodeBuildOSWindows {
     return ($IsWindows -or
         ![string]::IsNullOrEmpty($env:ProgramFiles) -or
         (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop')))
 }
 
+<#
+.SYNOPSIS
+    Retrieves the current OS name in a PowerShell-compatible format.
+
+.DESCRIPTION
+    This function identifies the current operating system and returns a standardized string
+    representing the OS name ('win' for Windows, 'linux' for Linux, and 'osx' for macOS).
+    It relies on the `Test-PodeBuildOSWindows` function for Windows detection and `$IsLinux`
+    and `$IsMacOS` for Linux and macOS, respectively.
+
+.OUTPUTS
+    [string] - A string representing the OS name:
+               - 'win' for Windows
+               - 'linux' for Linux
+               - 'osx' for macOS
+
+.EXAMPLE
+    $osName = Get-PodeBuildOSPwshName
+    Write-Host "Operating system name: $osName"
+
+.NOTES
+    - This function enables cross-platform compatibility by standardizing OS name detection.
+    - For accurate results, ensure `$IsLinux` and `$IsMacOS` variables are defined for Unix-like systems.
+#>
 function Get-PodeBuildOSPwshName {
     if (Test-PodeBuildOSWindows) {
         return 'win'
@@ -696,21 +991,6 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
             $dotnet = "dotnet-sdk-$SdkVersion"
         }
 
-        #   if (!(Test-PodeBuildCommand 'dotnet')) {
-        #     Invoke-PodeBuildInstall $dotnet $SdkVersion
-        #  }
-
-  <#       if (Test-PodeBuildIsGitHub){
-            $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-            $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-            $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
-            if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
-                Write-Error "The requested framework '$SdkVersion' is not available."
-                return
-            }
-            return
-        }
-#>
         try {
             $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
         }
