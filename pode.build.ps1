@@ -845,7 +845,7 @@ function Invoke-PodeBuildDockerBuild {
     )
 
     # Build the Docker image with the specified tag and Dockerfile
-    docker build -t badgerati/pode:$tTag -f $File .
+    docker build -t badgerati/pode:$Tag -f $File .
     if (!$?) {
         throw "docker build failed for $($Tag)"
     }
