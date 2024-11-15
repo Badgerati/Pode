@@ -700,21 +700,17 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
         #     Invoke-PodeBuildInstall $dotnet $SdkVersion
         #  }
 
-        if (Test-PodeBuildIsGitHub){
+  <#       if (Test-PodeBuildIsGitHub){
             $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-            dotnet --list-sdks
-            Write-Warning $sdkVersions
             $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-            Write-Warning "Majorversion=$majorVersions"
             $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
-  Write-Warning "AvailableSdkVersion=$AvailableSdkVersion"
             if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
                 Write-Error "The requested framework '$SdkVersion' is not available."
                 return
             }
             return
         }
-
+#>
         try {
             $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
         }
