@@ -704,7 +704,7 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
             $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
             dotnet --list-sdks
             Write-Warning $sdkVersions
-            $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
+            $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
             Write-Warning "Majorversion=$majorVersions"
             $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
   Write-Warning "AvailableSdkVersion=$AvailableSdkVersion"
@@ -722,13 +722,13 @@ if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParamet
             Invoke-PodeBuildInstall $dotnet $SdkVersion
             $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
         }
-        $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
+        $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
         $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
 
         if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
             Invoke-PodeBuildInstall $dotnet $SdkVersion
             $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-            $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
+            $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
             $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
 
             if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
