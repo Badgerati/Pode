@@ -302,34 +302,7 @@ function Get-PodeBuildPwshEOL {
     }
 }
 
-
-function Get-PodeBuildDotNetEOL {
-    param(
-        [switch]
-        $LatestVersion
-    )
-    $uri = 'https://endoflife.date/api/dotnet.json'
-    try {
-        $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
-        if ($LatestVersion) {
-            return (($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle)[0]
-        }
-        else {
-            return @{
-                eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
-                supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
-            }
-        }
-    }
-    catch {
-        Write-Warning "Invoke-RestMethod to $uri failed: $($_.ErrorDetails.Message)"
-        return  @{
-            eol       = ''
-            supported = ''
-        }
-    }
-}
-
+ 
 
 function Test-PodeBuildOSWindows {
     return ($IsWindows -or
@@ -351,54 +324,158 @@ function Get-PodeBuildOSPwshName {
     }
 }
 
+<#
+.SYNOPSIS
+    Determines the OS architecture for the current system.
+
+.DESCRIPTION
+    This function detects the operating system's architecture and converts it into a format
+    compatible with PowerShell installation requirements. It handles both Windows and Unix-based
+    systems and maps various architecture identifiers to PowerShell-supported names (e.g., 'x64', 'arm64').
+
+.OUTPUTS
+    [string] - The architecture string, such as 'x64', 'x86', 'arm64', or 'arm32'.
+
+.EXAMPLE
+    $arch = Get-PodeBuildOSPwshArchitecture
+    Write-Host "Current architecture: $arch"
+
+.NOTES
+    - For Windows, the architecture is derived from the `PROCESSOR_ARCHITECTURE` environment variable.
+    - For Unix-based systems, the architecture is determined using the `uname -m` command.
+    - If the architecture is not supported, the function throws an exception.
+#>
 function Get-PodeBuildOSPwshArchitecture {
+    # Initialize architecture variable
     $arch = [string]::Empty
 
-    # windows
+    # Detect architecture on Windows
     if (Test-PodeBuildOSWindows) {
         $arch = $env:PROCESSOR_ARCHITECTURE
     }
 
-    # unix
+    # Detect architecture on Unix-based systems (Linux/macOS)
     if ($IsLinux -or $IsMacOS) {
         $arch = uname -m
     }
 
+    # Output detected architecture for debugging
     Write-Host "OS Architecture: $($arch)"
 
-    # convert to pwsh arch
+    # Convert detected architecture to a PowerShell-compatible format
     switch ($arch.ToLowerInvariant()) {
-        'amd64' { return 'x64' }
-        'x86' { return 'x86' }
-        'x86_64' { return 'x64' }
-        'armv7*' { return 'arm32' }
-        'aarch64*' { return 'arm64' }
-        'arm64' { return 'arm64' }
-        'arm64*' { return 'arm64' }
-        'armv8*' { return 'arm64' }
-        default { throw "Unsupported architecture: $($arch)" }
+        'amd64' { return 'x64' }          # 64-bit architecture (AMD64)
+        'x86' { return 'x86' }            # 32-bit architecture
+        'x86_64' { return 'x64' }         # 64-bit architecture (x86_64)
+        'armv7*' { return 'arm32' }       # 32-bit ARM architecture
+        'aarch64*' { return 'arm64' }     # 64-bit ARM architecture
+        'arm64' { return 'arm64' }        # Explicit ARM64
+        'arm64*' { return 'arm64' }       # Pattern matching for ARM64
+        'armv8*' { return 'arm64' }       # ARM v8 series
+        default { throw "Unsupported architecture: $($arch)" } # Throw exception for unsupported architectures
     }
 }
 
+
+<#
+.SYNOPSIS
+    Converts a PowerShell tag to a version number.
+
+.DESCRIPTION
+    This function retrieves PowerShell build information for a specified tag by querying
+    an online API. It then extracts and returns the release version associated with the tag.
+
+.PARAMETER PowerShellVersion
+    The PowerShell version tag to retrieve build information for (e.g., 'lts', 'stable', or a specific version).
+
+.OUTPUTS
+    [string] - The extracted version number corresponding to the provided tag.
+
+.EXAMPLE
+    $version = Convert-PodeBuildOSPwshTagToVersion
+    Write-Host "Resolved PowerShell version: $version"
+
+.NOTES
+    This function depends on internet connectivity to query the build information API.
+#>
 function Convert-PodeBuildOSPwshTagToVersion {
+    # Query PowerShell build info API with the specified tag
     $result = Invoke-RestMethod -Uri "https://aka.ms/pwsh-buildinfo-$($PowerShellVersion)"
+
+    # Extract and return the release tag without the leading 'v'
     return $result.ReleaseTag -ireplace '^v'
 }
 
-function Install-PodeBuildPwshWindows($target) {
+<#
+.SYNOPSIS
+    Installs PowerShell on a Windows system.
+
+.DESCRIPTION
+    This function installs PowerShell by copying files from a specified target directory
+    to the standard installation folder on a Windows system. It first removes any existing
+    installation in the Target directory.
+
+.PARAMETER Target
+    The directory containing the PowerShell installation files.
+
+.EXAMPLE
+    Install-PodeBuildPwshWindows -Target 'C:\Temp\PowerShell'
+    # Installs PowerShell from the 'C:\Temp\PowerShell' directory.
+
+.NOTES
+    This function requires administrative privileges to modify the Program Files directory.
+#>
+function Install-PodeBuildPwshWindows {
+    param (
+        [string]
+        $Target
+    )
+
+    # Define the installation folder path
     $installFolder = "$($env:ProgramFiles)\PowerShell\7"
 
+    # Remove the existing installation, if any
     if (Test-Path $installFolder) {
         Remove-Item $installFolder -Recurse -Force -ErrorAction Stop
     }
 
-    Copy-Item -Path "$($target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
+    # Copy the new PowerShell files to the installation folder
+    Copy-Item -Path "$($Target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
 }
 
-function Install-PodeBuildPwshUnix($target) {
-    $targetFullPath = Join-Path -Path $target -ChildPath 'pwsh'
+
+<#
+.SYNOPSIS
+    Installs PowerShell on a Unix-based system.
+
+.DESCRIPTION
+    This function installs PowerShell on Unix-based systems by copying files from a specified Target directory,
+    setting appropriate permissions, and creating a symbolic link to the PowerShell binary.
+
+.PARAMETER Target
+    The directory containing the PowerShell installation files.
+
+.EXAMPLE
+    Install-PodeBuildPwshUnix -Target '/tmp/powershell'
+    # Installs PowerShell from the '/tmp/powershell' directory.
+
+.NOTES
+    - This function requires administrative privileges to create symbolic links in system directories.
+    - The `sudo` command is used if the script is not run as root.
+#>
+function Install-PodeBuildPwshUnix {
+    param (
+        [string]
+        $Target
+    )
+
+    # Define the full path to the PowerShell binary
+    $targetFullPath = Join-Path -Path $Target -ChildPath 'pwsh'
+
+    # Set executable permissions on the PowerShell binary
     $null = chmod 755 $targetFullPath
 
+    # Determine the symbolic link location based on the operating system
     $symlink = $null
     if ($IsMacOS) {
         $symlink = '/usr/local/bin/pwsh'
@@ -407,6 +484,7 @@ function Install-PodeBuildPwshUnix($target) {
         $symlink = '/usr/bin/pwsh'
     }
 
+    # Check if the script is run as root
     $uid = id -u
     if ($uid -ne '0') {
         $sudo = 'sudo'
@@ -415,7 +493,7 @@ function Install-PodeBuildPwshUnix($target) {
         $sudo = ''
     }
 
-    # Make symbolic link point to installed path
+    # Create a symbolic link to the PowerShell binary
     & $sudo ln -fs $targetFullPath $symlink
 }
 
