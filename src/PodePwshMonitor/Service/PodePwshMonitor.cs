@@ -1,119 +1,79 @@
-/*
- * PodePwshMonitorService
- *
- * This service monitors and controls the execution of a Pode process using named pipes for communication.
- *
- * SC Command Reference for Managing Windows Services:
- *
- * Install Service:
- * sc create PodePwshMonitorService binPath= "C:\path\to\your\service\PodePwshMonitorService.exe" start= auto
- *
- * Start Service:
- * sc start PodePwshMonitorService
- *
- * Stop Service:
- * sc stop PodePwshMonitorService
- *
- * Delete Service:
- * sc delete PodePwshMonitorService
- *
- * Query Service Status:
- * sc query PodePwshMonitorService
- *
- * Configure Service to Restart on Failure:
- * sc failure PodePwshMonitorService reset= 0 actions= restart/60000
- *
- * Example for running the service:
- * sc start PodePwshMonitorService
- * sc stop PodePwshMonitorService
- * sc delete PodePwshMonitorService
- *
- */
 using System;
-using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
-using System.Threading.Tasks;
 using System.Threading;
-using Microsoft.Extensions.Options;
 
 namespace Pode.Service
 {
     public class PodePwshMonitor
     {
+        private readonly object _syncLock = new(); // Synchronization lock for thread safety
         private Process _powerShellProcess;
+        private NamedPipeClientStream _pipeClient;
+
         private readonly string _scriptPath;
         private readonly string _parameterString;
-        private string _pwshPath;
+        private readonly string _pwshPath;
         private readonly bool _quiet;
         private readonly bool _disableTermination;
         private readonly int _shutdownWaitTimeMs;
-        private string _pipeName;
-        private NamedPipeClientStream _pipeClient;  // Changed to client stream
+        private readonly string _pipeName;
+
         private DateTime _lastLogTime;
 
-        public int StartMaxRetryCount { get; private set; } // Maximum number of retries before breaking
-        public int StartRetryDelayMs { get; private set; } // Delay between retries in milliseconds
+        public int StartMaxRetryCount { get; }
+        public int StartRetryDelayMs { get; }
 
         public PodePwshMonitor(PodePwshWorkerOptions options)
         {
-            Console.WriteLine("logFilePath{0}", options.LogFilePath);
-            // Initialize fields with constructor arguments
-            _scriptPath = options.ScriptPath;                      // Path to the Pode script to be executed
-            _pwshPath = options.PwshPath;                          // Path to the Pode executable (pwsh)
-            _parameterString = options.ParameterString;            // Additional parameters to pass to the script (if any)
-            _disableTermination = options.DisableTermination;      // Flag to disable termination of the service
-            _quiet = options.Quiet;                                // Flag to suppress output for a quieter service
-            _shutdownWaitTimeMs = options.ShutdownWaitTimeMs;      // Maximum wait time before forcefully shutting down the process
+            _scriptPath = options.ScriptPath;
+            _pwshPath = options.PwshPath;
+            _parameterString = options.ParameterString;
+            _quiet = options.Quiet;
+            _disableTermination = options.DisableTermination;
+            _shutdownWaitTimeMs = options.ShutdownWaitTimeMs;
             StartMaxRetryCount = options.StartMaxRetryCount;
             StartRetryDelayMs = options.StartRetryDelayMs;
 
-            // Dynamically generate a unique PipeName for communication
-            _pipeName = $"PodePipe_{Guid.NewGuid()}";      // Generate a unique pipe name to avoid conflicts
+            _pipeName = $"PodePipe_{Guid.NewGuid()}";
+            Logger.Log(LogLevel.INFO, "Server", $"Initialized PodePwshMonitor with pipe name: {_pipeName}");
         }
-
 
         public void StartPowerShellProcess()
         {
-            if (_powerShellProcess == null || _powerShellProcess.HasExited)
+            lock (_syncLock)
             {
+                if (_powerShellProcess != null && !_powerShellProcess.HasExited)
+                {
+                    // Log only if more than a minute has passed since the last log
+                    if ((DateTime.Now - _lastLogTime).TotalMinutes >= 5)
+                    {
+                        Logger.Log(LogLevel.INFO, "Server", "Pode process is Alive.");
+                        _lastLogTime = DateTime.Now;
+                    }
+                    return;
+                }
+
                 try
                 {
-                    // Define the Pode process
                     _powerShellProcess = new Process
                     {
                         StartInfo = new ProcessStartInfo
                         {
-                            FileName = _pwshPath,           // Set the Pode executable path (pwsh)
-                            RedirectStandardOutput = true,  // Redirect standard output
-                            RedirectStandardError = true,   // Redirect standard error
-                            UseShellExecute = false,        // Do not use shell execution
-                            CreateNoWindow = true           // Do not create a new window
+                            FileName = _pwshPath,
+                            Arguments = BuildCommand(),
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
                         }
                     };
-                    Logger.Log(LogLevel.INFO, "Server", $"Starting ...");
-                    // Properly escape double quotes within the JSON string
-                    string podeServiceJson = $"{{\\\"DisableTermination\\\": {_disableTermination.ToString().ToLower()}, \\\"Quiet\\\": {_quiet.ToString().ToLower()}, \\\"PipeName\\\": \\\"{_pipeName}\\\"}}";
-                    Logger.Log(LogLevel.INFO, "Server", $"Pode path {_pwshPath}");
-                    Logger.Log(LogLevel.INFO, "Server", $"PodeService content:");
-                    Logger.Log(LogLevel.INFO, "Server", $"DisableTermination\t= {_disableTermination.ToString().ToLower()}");
-                    Logger.Log(LogLevel.INFO, "Server", $"Quiet\t= {_quiet.ToString().ToLower()}");
-                    Logger.Log(LogLevel.INFO, "Server", $"PipeName\t= {_pipeName}");
-                    // Build the Pode command with NoProfile and global variable initialization
-                    string command = $"-NoProfile -Command \"& {{ $global:PodeService = '{podeServiceJson}' | ConvertFrom-Json; . '{_scriptPath}' {_parameterString} }}\"";
 
-                    Logger.Log(LogLevel.INFO, "Server", $"Starting Pode process with command: {command}");
-
-                    // Set the arguments for the Pode process
-                    _powerShellProcess.StartInfo.Arguments = command;
-
-                    // Start the process
-                    _powerShellProcess.Start();
-
-                    // Log output and error asynchronously
                     _powerShellProcess.OutputDataReceived += (sender, args) => Logger.Log(LogLevel.INFO, "Server", args.Data);
-                    _powerShellProcess.ErrorDataReceived += (sender, args) => Logger.Log(LogLevel.INFO, "Server", args.Data);
+                    _powerShellProcess.ErrorDataReceived += (sender, args) => Logger.Log(LogLevel.ERROR, "Server", args.Data);
+
+                    _powerShellProcess.Start();
                     _powerShellProcess.BeginOutputReadLine();
                     _powerShellProcess.BeginErrorReadLine();
 
@@ -126,206 +86,145 @@ namespace Pode.Service
                     Logger.Log(LogLevel.DEBUG, ex);
                 }
             }
-            else
-            {
-                // Log only if more than a minute has passed since the last log
-                if ((DateTime.Now - _lastLogTime).TotalMinutes >= 5)
-                {
-                    Logger.Log(LogLevel.INFO, "Server", "Pode process is Alive.");
-                    _lastLogTime = DateTime.Now;
-                }
-            }
         }
 
         public void StopPowerShellProcess()
         {
-            try
+            lock (_syncLock)
             {
-                _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
-                Logger.Log(LogLevel.INFO, "Server", $"Connecting to the pipe server using pipe: {_pipeName}");
-
-                // Connect to the Pode pipe server
-                _pipeClient.Connect(10000);  // Wait for up to 10 seconds for the connection
-
-                if (_pipeClient.IsConnected)
+                if (_powerShellProcess == null || _powerShellProcess.HasExited)
                 {
-                    // Send shutdown message and wait for the process to exit
-                    SendPipeMessage("shutdown");
-                    Logger.Log(LogLevel.INFO, "Server", $"Waiting up to {_shutdownWaitTimeMs} milliseconds for the Pode process to exit...");
-
-                    // Timeout logic
-                    int waited = 0;
-                    int interval = 200; // Check every 200ms
-
-                    while (!_powerShellProcess.HasExited && waited < _shutdownWaitTimeMs)
-                    {
-                        Thread.Sleep(interval);
-                        waited += interval;
-                    }
-
-                    if (_powerShellProcess.HasExited)
-                    {
-                        Logger.Log(LogLevel.INFO, "Server", "Pode process has been shutdown gracefully.");
-                    }
-                    else
-                    {
-                        Logger.Log(LogLevel.WARN, "Server", $"Pode process did not exit in {_shutdownWaitTimeMs} milliseconds.");
-                    }
-                }
-                else
-                {
-                    Logger.Log(LogLevel.ERROR, "Server", $"Failed to connect to the Pode pipe server using pipe: {_pipeName}");
+                    Logger.Log(LogLevel.INFO, "Server", "Pode process is not running.");
+                    return;
                 }
 
-                // Forcefully kill the process if it's still running
-                if (_powerShellProcess != null && !_powerShellProcess.HasExited)
+                try
                 {
-                    try
+                    if (InitializePipeClient())
                     {
-                        _powerShellProcess.Kill();
-                        Logger.Log(LogLevel.INFO, "Server", "Pode process killed successfully.");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Log(LogLevel.ERROR, "Server", $"Error killing Pode process: {ex.Message}");
-                        Logger.Log(LogLevel.DEBUG, ex);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(LogLevel.ERROR, "Server", $"Error stopping Pode process: {ex.Message}");
-                Logger.Log(LogLevel.DEBUG, ex);
+                        SendPipeMessage("shutdown");
 
-            }
-            finally
-            {
-                // Set _powerShellProcess to null only if it's still not null
-                if (_powerShellProcess != null)
-                {
-                    _powerShellProcess?.Dispose();
-                    _powerShellProcess = null;
-                }
-                // Clean up the pipe client
-                if (_pipeClient != null)
-                {
-                    _pipeClient?.Dispose();
-                    _pipeClient = null;
-                }
-                Logger.Log(LogLevel.DEBUG, "Server", "Pode process and pipe client disposed.");
-                Logger.Log(LogLevel.INFO, "Server", "Done.");
-            }
-        }
+                        Logger.Log(LogLevel.INFO, "Server", $"Waiting for {_shutdownWaitTimeMs} milliseconds for Pode process to exit...");
+                        WaitForProcessExit(_shutdownWaitTimeMs);
 
-        public void RestartPowerShellProcess()
-        {
-            // Simply send the restart message, no need to stop and start again
-            if (_pipeClient != null && _pipeClient.IsConnected)
-            {
-                SendPipeMessage("restart"); // Inform Pode about the restart
-                Logger.Log(LogLevel.INFO, "Server", "Restart message sent to PowerShell.");
+                        if (!_powerShellProcess.HasExited)
+                        {
+                            Logger.Log(LogLevel.WARN, "Server", "Pode process did not terminate gracefully, killing process.");
+                            _powerShellProcess.Kill();
+                        }
+
+                        Logger.Log(LogLevel.INFO, "Server", "Pode process stopped successfully.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(LogLevel.ERROR, "Server", $"Error stopping Pode process: {ex.Message}");
+                    Logger.Log(LogLevel.DEBUG, ex);
+                }
+                finally
+                {
+                    CleanupResources();
+                }
             }
         }
 
         public void SuspendPowerShellProcess()
         {
-            try
-            {
-                _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
-                Logger.Log(LogLevel.INFO, "Server", $"Connecting to the pipe server using pipe: {_pipeName}");
-
-                // Connect to the Pode pipe server
-                _pipeClient.Connect(20000);  // Wait for up to 10 seconds for the connection
-                                             // Simply send the restart message, no need to stop and start again
-                if (_pipeClient.IsConnected)
-                {
-                    SendPipeMessage("suspend"); // Inform Pode about the restart
-                    Logger.Log(LogLevel.INFO, "Server", "Suspend message sent to PowerShell.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(LogLevel.ERROR, "Server", $"Error suspending Pode process: {ex.Message}");
-                Logger.Log(LogLevel.DEBUG, ex);
-            }
-            finally
-            {
-                // Clean up the pipe client
-                if (_pipeClient != null)
-                {
-                    _pipeClient?.Dispose();
-                    _pipeClient = null;
-                }
-                Logger.Log(LogLevel.DEBUG, "Server", "Pode process and pipe client disposed.");
-                Logger.Log(LogLevel.INFO, "Server", "Done.");
-            }
+            ExecutePipeCommand("suspend");
         }
 
         public void ResumePowerShellProcess()
         {
-            try
-            {
-                _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
-                Logger.Log(LogLevel.INFO, "Server", $"Connecting to the pipe server using pipe: {_pipeName}");
+            ExecutePipeCommand("resume");
+        }
 
-                // Connect to the Pode pipe server
-                _pipeClient.Connect(10000);  // Wait for up to 10 seconds for the connection
-                                             // Simply send the restart message, no need to stop and start again
-                if (_pipeClient != null && _pipeClient.IsConnected)
-                {
-                    SendPipeMessage("resume"); // Inform Pode about the restart
-                    Logger.Log(LogLevel.INFO, "Server", "Resume message sent to PowerShell.");
-                }
-            }
-            catch (Exception ex)
+        public void RestartPowerShellProcess()
+        {
+            ExecutePipeCommand("restart");
+        }
+
+        private void ExecutePipeCommand(string command)
+        {
+            lock (_syncLock)
             {
-                Logger.Log(LogLevel.ERROR, "Server", $"Error resuming Pode process: {ex.Message}");
-                Logger.Log(LogLevel.DEBUG, ex);
-            }
-            finally
-            {
-                // Clean up the pipe client
-                if (_pipeClient != null)
+                try
                 {
-                    _pipeClient?.Dispose();
-                    _pipeClient = null;
+                    if (InitializePipeClient())
+                    {
+                        SendPipeMessage(command);
+                        Logger.Log(LogLevel.INFO, "Server", $"{command.ToUpper()} command sent to Pode process.");
+                    }
                 }
-                Logger.Log(LogLevel.DEBUG, "Server", "Pode process and pipe client disposed.");
-                Logger.Log(LogLevel.INFO, "Server", "Done.");
+                catch (Exception ex)
+                {
+                    Logger.Log(LogLevel.ERROR, "Server", $"Error executing {command} command: {ex.Message}");
+                    Logger.Log(LogLevel.DEBUG, ex);
+                }
+                finally
+                {
+                    CleanupPipeClient();
+                }
             }
         }
 
-        private void SendPipeMessage(string message)
+        private string BuildCommand()
         {
-            Logger.Log(LogLevel.INFO, "Server", "SendPipeMessage: {0}", message);
+            string podeServiceJson = $"{{\\\"DisableTermination\\\": {_disableTermination.ToString().ToLower()}, \\\"Quiet\\\": {_quiet.ToString().ToLower()}, \\\"PipeName\\\": \\\"{_pipeName}\\\"}}";
+            return $"-NoProfile -Command \"& {{ $global:PodeService = '{podeServiceJson}' | ConvertFrom-Json; . '{_scriptPath}' {_parameterString} }}\"";
+        }
 
-            // Write the message to the pipe
-
+        private bool InitializePipeClient()
+        {
             if (_pipeClient == null)
             {
-                Logger.Log(LogLevel.ERROR, "Server", "Pipe client is not initialized, cannot send message.");
-                return;
+                _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
             }
 
             if (!_pipeClient.IsConnected)
             {
-                Logger.Log(LogLevel.ERROR, "Server", "Pipe client is not connected, cannot send message.");
-                return;
+                Logger.Log(LogLevel.INFO, "Server", "Connecting to pipe server...");
+                _pipeClient.Connect(10000);
             }
 
+            return _pipeClient.IsConnected;
+        }
+
+        private void SendPipeMessage(string message)
+        {
             try
             {
-                // Send the message using the pipe client stream
-                using var writer = new StreamWriter(_pipeClient, leaveOpen: true); // leaveOpen to keep the pipe alive for multiple writes
-                writer.AutoFlush = true;
+                using var writer = new StreamWriter(_pipeClient) { AutoFlush = true };
                 writer.WriteLine(message);
-                Logger.Log(LogLevel.INFO, "Server", $"Message sent to PowerShell: {message}");
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.ERROR, "Server", $"Failed to send message to PowerShell: {ex.Message}");
+                Logger.Log(LogLevel.ERROR, "Server", $"Error sending message to pipe: {ex.Message}");
                 Logger.Log(LogLevel.DEBUG, ex);
             }
+        }
+
+        private void WaitForProcessExit(int timeout)
+        {
+            int waited = 0;
+            while (!_powerShellProcess.HasExited && waited < timeout)
+            {
+                Thread.Sleep(200); // Check every 200ms
+                waited += 200;
+            }
+        }
+
+        private void CleanupResources()
+        {
+            _powerShellProcess?.Dispose();
+            _powerShellProcess = null;
+
+            CleanupPipeClient();
+        }
+
+        private void CleanupPipeClient()
+        {
+            _pipeClient?.Dispose();
+            _pipeClient = null;
         }
 
     }
