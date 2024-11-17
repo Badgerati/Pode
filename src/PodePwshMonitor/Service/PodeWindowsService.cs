@@ -23,15 +23,15 @@ namespace Pode.Service
 
         protected override void OnStart(string[] args)
         {
-            Logger.Log(LogLevel.INFO,"Server","Service starting...");
+            PodePwshLogger.Log(LogLevel.INFO,"Server","Service starting...");
             try{
                 base.OnStart(args);
                 _host.StartAsync().Wait();
-                Logger.Log(LogLevel.INFO,"Server","Service started successfully.");}
+                PodePwshLogger.Log(LogLevel.INFO,"Server","Service started successfully.");}
             catch (Exception ex)
             {
                  // Log the exception details to your custom log file
-                Logger.Log(LogLevel.ERROR,ex, "Service startup failed.");
+                PodePwshLogger.Log(LogLevel.ERROR,ex, "Service startup failed.");
 
                 // Optionally write to the Windows Event Viewer for critical errors
                 EventLog.WriteEntry(ServiceName, $"Critical failure during service startup: {ex.Message}\n{ex.StackTrace}",
@@ -44,41 +44,41 @@ namespace Pode.Service
 
         protected override void OnStop()
         {
-            Logger.Log(LogLevel.INFO,"Server","Service stopping...");
+            PodePwshLogger.Log(LogLevel.INFO,"Server","Service stopping...");
             base.OnStop();
             _host.StopAsync().Wait();
-            Logger.Log(LogLevel.INFO,"Server","Service stopped successfully.");
+            PodePwshLogger.Log(LogLevel.INFO,"Server","Service stopped successfully.");
         }
 
         protected override void OnPause()
         {
-            Logger.Log(LogLevel.INFO,"Server","Service pausing...");
+            PodePwshLogger.Log(LogLevel.INFO,"Server","Service pausing...");
             base.OnPause();
             var service = _host.Services.GetService(typeof(IPausableHostedService));
             if (service != null)
             {
-                Logger.Log(LogLevel.DEBUG,"Server",$"Resolved IPausableHostedService: {service.GetType().FullName}");
+                PodePwshLogger.Log(LogLevel.DEBUG,"Server",$"Resolved IPausableHostedService: {service.GetType().FullName}");
                 ((IPausableHostedService)service).OnPause();
             }
             else
             {
-                Logger.Log(LogLevel.ERROR,"Server","Error:Failed to resolve IPausableHostedService.");
+                PodePwshLogger.Log(LogLevel.ERROR,"Server","Error:Failed to resolve IPausableHostedService.");
             }
         }
 
         protected override void OnContinue()
         {
-            Logger.Log(LogLevel.INFO,"Server","Service resuming...");
+            PodePwshLogger.Log(LogLevel.INFO,"Server","Service resuming...");
             base.OnContinue();
             var service = _host.Services.GetService(typeof(IPausableHostedService));
             if (service != null)
             {
-                Logger.Log(LogLevel.DEBUG,"Server",$"Resolved IPausableHostedService: {service.GetType().FullName}");
+                PodePwshLogger.Log(LogLevel.DEBUG,"Server",$"Resolved IPausableHostedService: {service.GetType().FullName}");
                 ((IPausableHostedService)service).OnContinue();
             }
             else
             {
-                 Logger.Log(LogLevel.ERROR,"Server","Error:Failed to resolve IPausableHostedService.");
+                 PodePwshLogger.Log(LogLevel.ERROR,"Server","Error:Failed to resolve IPausableHostedService.");
             }
         }
     }

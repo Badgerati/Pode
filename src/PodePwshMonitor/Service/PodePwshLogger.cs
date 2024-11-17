@@ -16,7 +16,7 @@ namespace Pode.Service
         CRITICAL  // Critical errors indicating severe failures
     }
 
-    public static class Logger
+    public static class PodePwshLogger
     {
         private static readonly object _logLock = new();
         private static string logFilePath = "PodeService.log"; // Default log file path
@@ -52,7 +52,7 @@ namespace Pode.Service
             }
         }
 
-        public static void Log(LogLevel level, string context = "Client", string message = "", params object[] args)
+        public static void Log(LogLevel level, string context , string message = "", params object[] args)
         {
             if (level < minLogLevel || string.IsNullOrEmpty(message))
             {
@@ -63,9 +63,6 @@ namespace Pode.Service
             {
                 // Format the message with the provided arguments
                 var formattedMessage = string.Format(message, args);
-
-                // Ensure context is not null or empty
-                context = string.IsNullOrWhiteSpace(context) ? "Client" : context;
 
                 // Get the current time in ISO 8601 format in GMT/UTC
                 string timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");

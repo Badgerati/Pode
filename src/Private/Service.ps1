@@ -60,7 +60,7 @@ function Start-PodeServiceHearthbeat {
         $scriptBlock = {
 
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                Write-PodeHost -Message "[Client] - Start client receiver for pipe $($PodeContext.Server.Service.PipeName)" -Force
+                Write-PodeHost -Message "Start client receiver for pipe $($PodeContext.Server.Service.PipeName)" -Force
                 try {
                     Start-Sleep -Milliseconds 100
                     # Create a named pipe server stream
@@ -72,9 +72,9 @@ function Start-PodeServiceHearthbeat {
                         [System.IO.Pipes.PipeOptions]::None
                     )
 
-                    Write-PodeHost -Message "[Client] - Waiting for connection to the $($PodeContext.Server.Service.PipeName) pipe." -Force
+                    Write-PodeHost -Message "Waiting for connection to the $($PodeContext.Server.Service.PipeName) pipe." -Force
                     $pipeStream.WaitForConnection()  # Wait until a client connects
-                    Write-PodeHost -Message "[Client] - Connected to the $($PodeContext.Server.Service.PipeName) pipe." -Force
+                    Write-PodeHost -Message "Connected to the $($PodeContext.Server.Service.PipeName) pipe." -Force
 
                     # Create a StreamReader to read incoming messages from the pipe
                     $reader = [System.IO.StreamReader]::new($pipeStream)
@@ -86,26 +86,26 @@ function Start-PodeServiceHearthbeat {
                             return
                         }
                         if ($message) {
-                            Write-PodeHost -Message "[Client] - Received message: $message" -Force
+                            Write-PodeHost -Message "Received message: $message" -Force
 
                             switch ($message) {
                                 'shutdown' {
                                     # Process 'shutdown' message
-                                    Write-PodeHost -Message '[Client] - Server requested shutdown. Closing client...' -Force
+                                    Write-PodeHost -Message 'Server requested shutdown. Closing client...' -Force
                                     Close-PodeServer  # Gracefully stop Pode server
                                     return  # Exit the loop
                                 }
 
                                 'restart' {
                                     # Process 'restart' message
-                                    Write-PodeHost -Message '[Client] - Server requested restart. Restarting client...' -Force
+                                    Write-PodeHost -Message 'Server requested restart. Restarting client...' -Force
                                     Restart-PodeServer  # Restart Pode server
                                     return  # Exit the loop
                                 }
 
                                 'suspend' {
                                     # Process 'suspend' message
-                                    Write-PodeHost -Message '[Client] - Server requested suspend. Suspending client...' -Force
+                                    Write-PodeHost -Message 'Server requested suspend. Suspending client...' -Force
                                     Start-Sleep 5
                                     #Suspend-PodeServer  # Suspend Pode server
                                   # return  # Exit the loop
@@ -113,7 +113,7 @@ function Start-PodeServiceHearthbeat {
 
                                 'resume' {
                                     # Process 'resume' message
-                                    Write-PodeHost -Message '[Client] - Server requested resume. Resuming client...' -Force
+                                    Write-PodeHost -Message 'Server requested resume. Resuming client...' -Force
                                     Start-Sleep 5
                                     #Resume-PodeServer  # Resume Pode server
                                   #  return  # Exit the loop

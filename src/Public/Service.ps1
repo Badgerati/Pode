@@ -512,15 +512,9 @@ function Stop-PodeService {
     Suspend-PodeService -Name 'MyService'
 
 .NOTES
-    This function requires administrative/root privileges to execute. On non-Windows platforms, an error is logged indicating that this feature is not supported.
-
-.EXCEPTION
-    Throws an exception if the service cannot be found, is not running, or if an error occurs while attempting to suspend the service.
-
-.SUPPORT
-    This function supports Windows only.
+    - This function requires administrative/root privileges to execute. On non-Windows platforms, an error is logged indicating that this feature is not supported.
+    - This function supports Windows only.
 #>
-
 function Suspend-PodeService {
     param(
         [Parameter(Mandatory = $true)]
@@ -587,13 +581,8 @@ function Suspend-PodeService {
     Resume-PodeService -Name 'MyService'
 
 .NOTES
-    This function requires administrative/root privileges to execute. On non-Windows platforms, an error is logged indicating that this feature is not supported.
-
-.EXCEPTION
-    Throws an exception if the service cannot be found, is not suspended, or if an error occurs while attempting to resume the service.
-
-.SUPPORT
-    This function supports Windows only.
+    - This function requires administrative/root privileges to execute. On non-Windows platforms, an error is logged indicating that this feature is not supported.
+    - This function supports Windows only.
 #>
 function Resume-PodeService {
     param(

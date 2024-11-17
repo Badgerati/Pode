@@ -25,7 +25,7 @@ namespace Pode.Service
                 .AddJsonFile(customConfigFile, optional: false, reloadOnChange: true)
                 .Build();
             serviceName = config.GetSection("PodePwshWorker:Name").Value ?? serviceName;
-            Logger.Initialize(config.GetSection("PodePwshWorker:logFilePath").Value ?? "PodePwshMonitorService.log", LogLevel.INFO);
+            PodePwshLogger.Initialize(config.GetSection("PodePwshWorker:logFilePath").Value ?? "PodePwshMonitorService.log", LogLevel.INFO);
 
             var builder = Host.CreateDefaultBuilder(args)
                  .ConfigureAppConfiguration((context, config) =>
@@ -51,7 +51,7 @@ namespace Pode.Service
                             var options = serviceProvider.GetRequiredService<IOptions<PodePwshWorkerOptions>>().Value;
 
                             // Log the options for debugging
-                            Logger.Log(LogLevel.INFO,"Server","Initializing PodePwshMonitor with options: {0}", JsonSerializer.Serialize(options));
+                            PodePwshLogger.Log(LogLevel.INFO,"Server","Initializing PodePwshMonitor with options: {0}", JsonSerializer.Serialize(options));
 
                             // Return the configured PodePwshMonitor instance
                             return new PodePwshMonitor(options);
@@ -59,7 +59,7 @@ namespace Pode.Service
                         catch (Exception ex)
                         {
                             // Log and write critical errors to the Event Log
-                            Logger.Log(LogLevel.ERROR,ex, "Failed to initialize PodePwshMonitor.");
+                            PodePwshLogger.Log(LogLevel.ERROR,ex, "Failed to initialize PodePwshMonitor.");
 
 
                             throw; // Rethrow to terminate the application
@@ -100,7 +100,7 @@ namespace Pode.Service
             else
             {
                 // Fallback for unsupported platforms
-                Logger.Log(LogLevel.WARN, "Server", "Unsupported platform. Exiting.");
+                PodePwshLogger.Log(LogLevel.WARN, "Server", "Unsupported platform. Exiting.");
                 return;
             }
 
