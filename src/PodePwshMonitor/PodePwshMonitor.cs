@@ -45,7 +45,6 @@ namespace Pode.Services
         private readonly string _scriptPath;
         private readonly string _parameterString;
         private string _pwshPath;
-
         private readonly bool _quiet;
         private readonly bool _disableTermination;
         private readonly int _shutdownWaitTimeMs;
@@ -53,7 +52,7 @@ namespace Pode.Services
         private NamedPipeClientStream _pipeClient;  // Changed to client stream
         private DateTime _lastLogTime;
 
-        private readonly string _logFilePath; // Path to log file
+        // private static string _logFilePath; // Path to log file
 
         public PodePwshMonitor(string scriptPath, string pwshPath, string parameterString = "", string logFilePath = ".\\PodePwshMonitorService.log", bool quiet = true, bool disableTermination = true, int shutdownWaitTimeMs = 30000)
         {
@@ -65,7 +64,7 @@ namespace Pode.Services
             _disableTermination = disableTermination;      // Flag to disable termination of the service
             _quiet = quiet;                                // Flag to suppress output for a quieter service
             _shutdownWaitTimeMs = shutdownWaitTimeMs;      // Maximum wait time before forcefully shutting down the process
-            _logFilePath = logFilePath ?? ".\\PodePwshMonitorService.log"; // Default to local file if none provided
+                                                           //   _logFilePath = logFilePath ?? ".\\PodePwshMonitorService.log"; // Default to local file if none provided
 
             // Dynamically generate a unique PipeName for communication
             _pipeName = $"PodePipe_{Guid.NewGuid()}";      // Generate a unique pipe name to avoid conflicts
@@ -89,18 +88,18 @@ namespace Pode.Services
                             CreateNoWindow = true           // Do not create a new window
                         }
                     };
-                    Log($"[Server] - Starting ...");
+                    Program.Log($"Starting ...");
                     // Properly escape double quotes within the JSON string
                     string podeServiceJson = $"{{\\\"DisableTermination\\\": {_disableTermination.ToString().ToLower()}, \\\"Quiet\\\": {_quiet.ToString().ToLower()}, \\\"PipeName\\\": \\\"{_pipeName}\\\"}}";
-                    Log($"[Server] - Powershell path {_pwshPath}");
-                    Log($"[Server] - PodeService content:");
-                    Log($"[Server] - DisableTermination\t= {_disableTermination.ToString().ToLower()}");
-                    Log($"[Server] - Quiet\t= {_quiet.ToString().ToLower()}");
-                    Log($"[Server] - PipeName\t= {_pipeName}");
+                    Program.Log($"Powershell path {_pwshPath}");
+                    Program.Log($"PodeService content:");
+                    Program.Log($"DisableTermination\t= {_disableTermination.ToString().ToLower()}");
+                    Program.Log($"Quiet\t= {_quiet.ToString().ToLower()}");
+                    Program.Log($"PipeName\t= {_pipeName}");
                     // Build the PowerShell command with NoProfile and global variable initialization
                     string command = $"-NoProfile -Command \"& {{ $global:PodeService = '{podeServiceJson}' | ConvertFrom-Json; . '{_scriptPath}' {_parameterString} }}\"";
 
-                    Log($"[Server] - Starting PowerShell process with command: {command}");
+                    Program.Log($"Starting PowerShell process with command: {command}");
 
                     // Set the arguments for the PowerShell process
                     _powerShellProcess.StartInfo.Arguments = command;
@@ -109,17 +108,17 @@ namespace Pode.Services
                     _powerShellProcess.Start();
 
                     // Log output and error asynchronously
-                    _powerShellProcess.OutputDataReceived += (sender, args) => Log(args.Data);
-                    _powerShellProcess.ErrorDataReceived += (sender, args) => Log(args.Data);
+                    _powerShellProcess.OutputDataReceived += (sender, args) => Program.Log(args.Data);
+                    _powerShellProcess.ErrorDataReceived += (sender, args) => Program.Log(args.Data);
                     _powerShellProcess.BeginOutputReadLine();
                     _powerShellProcess.BeginErrorReadLine();
 
                     _lastLogTime = DateTime.Now;
-                    Log("[Server] - PowerShell process started successfully.");
+                    Program.Log("PowerShell process started successfully.");
                 }
                 catch (Exception ex)
                 {
-                    Log($"[Server] - Failed to start PowerShell process: {ex.Message}");
+                    Program.Log($"Failed to start PowerShell process: {ex.Message}");
                 }
             }
             else
@@ -127,7 +126,7 @@ namespace Pode.Services
                 // Log only if more than a minute has passed since the last log
                 if ((DateTime.Now - _lastLogTime).TotalMinutes >= 1)
                 {
-                    Log("[Server] - PowerShell process is already running.");
+                    Program.Log("PowerShell process is already running.");
                     _lastLogTime = DateTime.Now;
                 }
             }
@@ -138,7 +137,7 @@ namespace Pode.Services
             try
             {
                 _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
-                Log($"[Server] - Connecting to the pipe server using pipe: {_pipeName}");
+                Program.Log($"Connecting to the pipe server using pipe: {_pipeName}");
 
                 // Connect to the PowerShell pipe server
                 _pipeClient.Connect(10000);  // Wait for up to 10 seconds for the connection
@@ -147,7 +146,7 @@ namespace Pode.Services
                 {
                     // Send shutdown message and wait for the process to exit
                     SendPipeMessage("shutdown");
-                    Log($"[Server] - Waiting up to {_shutdownWaitTimeMs} milliseconds for the PowerShell process to exit...");
+                    Program.Log($"Waiting up to {_shutdownWaitTimeMs} milliseconds for the PowerShell process to exit...");
 
                     // Timeout logic
                     int waited = 0;
@@ -161,16 +160,16 @@ namespace Pode.Services
 
                     if (_powerShellProcess.HasExited)
                     {
-                        Log("[Server] - PowerShell process has been shutdown gracefully.");
+                        Program.Log("PowerShell process has been shutdown gracefully.");
                     }
                     else
                     {
-                        Log($"[Server] - PowerShell process did not exit in {_shutdownWaitTimeMs} milliseconds.");
+                        Program.Log($"PowerShell process did not exit in {_shutdownWaitTimeMs} milliseconds.");
                     }
                 }
                 else
                 {
-                    Log($"[Server] - Failed to connect to the PowerShell pipe server using pipe: {_pipeName}");
+                    Program.Log($"Failed to connect to the PowerShell pipe server using pipe: {_pipeName}");
                 }
 
                 // Forcefully kill the process if it's still running
@@ -179,17 +178,17 @@ namespace Pode.Services
                     try
                     {
                         _powerShellProcess.Kill();
-                        Log("[Server] - PowerShell process killed successfully.");
+                        Program.Log("PowerShell process killed successfully.");
                     }
                     catch (Exception ex)
                     {
-                        Log($"[Server] - Error killing PowerShell process: {ex.Message}");
+                        Program.Log($"Error killing PowerShell process: {ex.Message}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log($"[Server] - Error stopping PowerShell process: {ex.Message}");
+                Program.Log($"Error stopping PowerShell process: {ex.Message}");
             }
             finally
             {
@@ -205,8 +204,8 @@ namespace Pode.Services
                     _pipeClient?.Dispose();
                     _pipeClient = null;
                 }
-                Log("[Server] - PowerShell process and pipe client disposed.");
-                Log("[Server] - Done.");
+                Program.Log("PowerShell process and pipe client disposed.");
+                Program.Log("Done.");
             }
         }
 
@@ -216,57 +215,108 @@ namespace Pode.Services
             if (_pipeClient != null && _pipeClient.IsConnected)
             {
                 SendPipeMessage("restart"); // Inform PowerShell about the restart
-                Log("[Server] - Restart message sent to PowerShell.");
+                Program.Log("Restart message sent to PowerShell.");
+            }
+        }
+
+        public void SuspendPowerShellProcess()
+        {
+            try
+            {
+                _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
+                Program.Log($"Connecting to the pipe server using pipe: {_pipeName}");
+
+                // Connect to the PowerShell pipe server
+                _pipeClient.Connect(10000);  // Wait for up to 10 seconds for the connection
+                                             // Simply send the restart message, no need to stop and start again
+                if (_pipeClient != null && _pipeClient.IsConnected)
+                {
+                    Program.Log("maybe I'm here too.");
+                    SendPipeMessage("suspend"); // Inform PowerShell about the restart
+                    Program.Log("Suspend message sent to PowerShell.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.Log(ex, $"Error suspending PowerShell process");
+            }
+            finally
+            {
+                // Clean up the pipe client
+                if (_pipeClient != null)
+                {
+                    _pipeClient?.Dispose();
+                    _pipeClient = null;
+                }
+                Program.Log("PowerShell process and pipe client disposed.");
+                Program.Log("Done.");
+            }
+        }
+
+        public void ResumePowerShellProcess()
+        {
+            try
+            {
+                _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
+                Program.Log($"Connecting to the pipe server using pipe: {_pipeName}");
+
+                // Connect to the PowerShell pipe server
+                _pipeClient.Connect(10000);  // Wait for up to 10 seconds for the connection
+                                             // Simply send the restart message, no need to stop and start again
+                if (_pipeClient != null && _pipeClient.IsConnected)
+                {
+                    SendPipeMessage("resume"); // Inform PowerShell about the restart
+                    Program.Log("Resume message sent to PowerShell.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.Log(ex, $"Error resuming PowerShell process");
+            }
+            finally
+            {
+                // Clean up the pipe client
+                if (_pipeClient != null)
+                {
+                    _pipeClient?.Dispose();
+                    _pipeClient = null;
+                }
+                Program.Log("PowerShell process and pipe client disposed.");
+                Program.Log("Done.");
             }
         }
 
         private void SendPipeMessage(string message)
         {
+            Program.Log("SendPipeMessage: {0}", message);
+
+            // Write the message to the pipe
+
             if (_pipeClient == null)
             {
-                Log("[Server] - Pipe client is not initialized, cannot send message.");
+                Program.Log("Pipe client is not initialized, cannot send message.");
                 return;
             }
 
             if (!_pipeClient.IsConnected)
             {
-                Log("[Server] - Pipe client is not connected, cannot send message.");
+                Program.Log("Pipe client is not connected, cannot send message.");
                 return;
             }
 
             try
             {
                 // Send the message using the pipe client stream
-                using (var writer = new StreamWriter(_pipeClient, leaveOpen: true)) // leaveOpen to keep the pipe alive for multiple writes
-                {
-                    writer.AutoFlush = true;
-                    writer.WriteLine(message);
-                    Log($"[Server] - Message sent to PowerShell: {message}");
-                }
+                using var writer = new StreamWriter(_pipeClient, leaveOpen: true); // leaveOpen to keep the pipe alive for multiple writes
+                writer.AutoFlush = true;
+                writer.WriteLine(message);
+                Program.Log($"Message sent to PowerShell: {message}");
             }
             catch (Exception ex)
             {
-                Log($"[Server] - Failed to send message to PowerShell: {ex.Message}");
+                Program.Log($"Failed to send message to PowerShell: {ex.Message}");
             }
         }
 
-        private void Log(string data)
-        {
-            if (!string.IsNullOrEmpty(data))
-            {
-                try
-                {
-                    // Write log entry to file, create the file if it doesn't exist
-                    using (StreamWriter writer = new StreamWriter(_logFilePath, true))
-                    {
-                        writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {data}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[Server] - Failed to log to file: {ex.Message}");
-                }
-            }
-        }
     }
 }

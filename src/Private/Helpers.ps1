@@ -3885,13 +3885,17 @@ function Invoke-PodeWinElevatedCommand {
         [string]
         $Command,
         [string]
-        $Arguments
+        $Arguments,
+        [PSCredential] $Credential
     )
+
 
     # Check if the current session is elevated
     $isElevated = ([Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
+
     if (-not $isElevated) {
+
         # Escape the arguments by replacing " with `" (escaping quotes)
         $escapedArguments = $Arguments -replace '"', '"""'
 

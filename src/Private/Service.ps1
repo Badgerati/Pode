@@ -88,20 +88,38 @@ function Start-PodeServiceHearthbeat {
                         if ($message) {
                             Write-PodeHost -Message "[Client] - Received message: $message" -Force
 
-                            # Process 'shutdown' message
-                            if ($message -eq 'shutdown') {
+                            switch ($message) {
+                                'shutdown' {
+                                    # Process 'shutdown' message
+                                    Write-PodeHost -Message '[Client] - Server requested shutdown. Closing client...' -Force
+                                    Close-PodeServer  # Gracefully stop Pode server
+                                    return  # Exit the loop
+                                }
 
-                                Write-PodeHost -Message '[Client] - Server requested shutdown. Closing client...' -Force
-                                Close-PodeServer  # Gracefully stop the Pode server
-                                return  # Exit the loop
+                                'restart' {
+                                    # Process 'restart' message
+                                    Write-PodeHost -Message '[Client] - Server requested restart. Restarting client...' -Force
+                                    Restart-PodeServer  # Restart Pode server
+                                    return  # Exit the loop
+                                }
 
-                                # Process 'restart' message
+                                'suspend' {
+                                    # Process 'suspend' message
+                                    Write-PodeHost -Message '[Client] - Server requested suspend. Suspending client...' -Force
+                                    Start-Sleep 5
+                                    #Suspend-PodeServer  # Suspend Pode server
+                                    return  # Exit the loop
+                                }
+
+                                'resume' {
+                                    # Process 'resume' message
+                                    Write-PodeHost -Message '[Client] - Server requested resume. Resuming client...' -Force
+                                    Start-Sleep 5
+                                    #Resume-PodeServer  # Resume Pode server
+                                    return  # Exit the loop
+                                }
                             }
-                            elseif ($message -eq 'restart') {
-                                Write-PodeHost -Message '[Client] - Server requested restart. Restarting client...' -Force
-                                Restart-PodeServer  # Restart the Pode server
-                                return  # Exit the loop
-                            }
+
                         }
                     }
                 }
@@ -521,9 +539,6 @@ function Register-PodeWindowsService {
         Description    = $Description
         #DependsOn      = 'NetLogon'
     }
-    if ($Credential) {
-        $params['Credential'] = $Credential
-    }
     if ($SecurityDescriptorSddl) {
         $params['SecurityDescriptorSddl'] = $SecurityDescriptorSddl
     }
@@ -531,7 +546,10 @@ function Register-PodeWindowsService {
 
     try {
         $paramsString = $params.GetEnumerator() | ForEach-Object { "-$($_.Key) '$($_.Value)'" }
-        $sv = Invoke-PodeWinElevatedCommand -Command 'New-Service' -Arguments ($paramsString -join ' ')
+
+        $sv = Invoke-PodeWinElevatedCommand -Command 'New-Service' -Arguments ($paramsString -join ' ') -Credential $Credential
+
+
 
         if (!$sv) {
             # Service registration failed.

@@ -64,7 +64,7 @@ param(
     [Parameter(  ParameterSetName = 'Inbuilt')]
     [int]
     $Port = 8080,
-    
+
     [Parameter(Mandatory = $true, ParameterSetName = 'Register')]
     [switch]
     $Register,
@@ -87,7 +87,15 @@ param(
 
     [Parameter(  ParameterSetName = 'Query')]
     [switch]
-    $Query
+    $Query,
+
+    [Parameter(  ParameterSetName = 'Suspend')]
+    [switch]
+    $Suspend,
+
+    [Parameter(  ParameterSetName = 'Resume')]
+    [switch]
+    $Resume
 )
 try {
     # Get the path of the script being executed
@@ -112,7 +120,7 @@ catch {
 
 
 if ( $Register.IsPresent) {
-    Register-PodeService -Name 'Hello Service2' -ParameterString '-Port 8081'
+    Register-PodeService -Name 'Hello Service2' -ParameterString "-Port $Port"  # -Password (ConvertTo-SecureString  'Pata2Pata1' -AsPlainText -Force)
     exit
 }
 if ( $Unregister.IsPresent) {
@@ -126,6 +134,16 @@ if ($Start.IsPresent) {
 
 if ($Stop.IsPresent) {
     Stop-PodeService -Name 'Hello Service2'
+    exit
+}
+
+if ($Suspend.IsPresent) {
+    Suspend-PodeService -Name 'Hello Service2'
+    exit
+}
+
+if ($Resume.IsPresent) {
+    Resume-PodeService -Name 'Hello Service2'
     exit
 }
 

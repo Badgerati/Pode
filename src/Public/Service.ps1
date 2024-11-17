@@ -412,7 +412,7 @@ function Stop-PodeService {
             $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
             if ($service) {
                 # Check if the service is running
-                if ($service.Status -eq 'Running') {
+                if ($service.Status -eq 'Running' -or $service.Status -eq 'Paused') {
                     $null = Invoke-PodeWinElevatedCommand  -Command  'Stop-Service' -Arguments "-Name '$Name'"
                     $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
                     if ($service.Status -eq 'Stopped') {
@@ -495,6 +495,236 @@ function Stop-PodeService {
     return $true
 }
 
+
+<#
+.SYNOPSIS
+    Stops a Pode-based service across different platforms (Windows, Linux, and macOS).
+
+.DESCRIPTION
+    The `Stop-PodeService` function stops a Pode-based service by checking if it is currently running.
+    If the service is running, it will attempt to stop the service gracefully.
+    The function works on Windows, Linux (systemd), and macOS (launchctl).
+
+.PARAMETER Name
+    The name of the service.
+
+.EXAMPLE
+    Stop-PodeService
+
+    Stops the Pode-based service if it is currently running. If the service is not running, no action is taken.
+
+.NOTES
+    - The function retrieves the service name from the `srvsettings.json` file located in the script directory.
+    - On Windows, it uses `Get-Service` and `Stop-Service`.
+    - On Linux, it uses `systemctl` to stop the service.
+    - On macOS, it uses `launchctl` to stop the service.
+    - If the service is not registered, the function throws an error.
+#>
+function Suspend-PodeService {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+    try {
+        # Ensure the script is running with the necessary administrative/root privileges.
+        # Exits the script if the current user lacks the required privileges.
+        Confirm-PodeAdminPrivilege
+
+        if ($IsWindows) {
+
+            $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+            if ($service) {
+                # Check if the service is running
+                if ($service.Status -eq 'Running') {
+                    $null = Invoke-PodeWinElevatedCommand  -Command  'Suspend-Service' -Arguments "-Name '$Name'"
+                    $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+                    if ($service.Status -eq 'Paused') {
+                        Write-Verbose -Message "Service '$Name' suspended successfully."
+                    }
+                    else {
+                        # Service command '{0}' failed on service '{1}'.
+                        throw ($PodeLocale.serviceCommandFailedException -f 'Suspend-Service', $Name)
+                    }
+                }
+                else {
+                    Write-Verbose -Message "Service '$Name' is not running."
+                    return $false
+                }
+            }
+            else {
+                # Service is not registered
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
+            }
+        }
+        elseif ($IsLinux) {
+            <#   $nameService = "$Name.service".Replace(' ', '_')
+            # Check if the service is already registered
+            if ((Test-PodeLinuxServiceIsRegistered -Name $nameService)) {
+                # Check if the service is active
+                if ((Test-PodeLinuxServiceIsActive -Name  $nameService)) {
+                    #Stop the service
+                    if (( Stop-PodeLinuxService -Name $nameService)) {
+                        # Check if the service is active
+                        if (!(Test-PodeLinuxServiceIsActive -Name  $nameService)) {
+                            Write-Verbose -Message "Service '$Name' stopped successfully."
+                            return $true
+                        }
+                    }
+
+                    # Service command '{0}' failed on service '{1}'.
+                    throw ($PodeLocale.serviceCommandFailedException -f 'sudo launchctl stop', $Name)
+                }
+                else {
+                    Write-Verbose -Message "Service '$Name' is not running."
+                }
+            }
+            else {
+                # Service is not registered
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
+            }
+#>
+        }
+        elseif ($IsMacOS) {
+            <#
+            $nameService = "pode.$Name.service".Replace(' ', '_')
+            # Check if the service is already registered
+            if ((Test-PodeMacOsServiceIsRegistered -Name $nameService)) {
+                # Check if the service is active
+                if ((Test-PodeMacOsServiceIsActive $nameService)) {
+                    if ((Stop-PodeMacOsService $nameService)) {
+                        if (!(Test-PodeMacOsServiceIsActive -Name  $nameService)) {
+                            Write-Verbose -Message "Service '$Name' stopped successfully."
+                            return $true
+                        }
+                    }
+
+                    # Service command '{0}' failed on service '{1}'.
+                    throw ($PodeLocale.serviceCommandFailedException -f 'launchctl stop', $Name)
+
+                }
+                else {
+                    Write-Verbose -Message "Service '$Name' is not running."
+                }
+            }
+            else {
+                # Service is not registered
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService )
+            }
+                #>
+        }
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+        Write-Error -Exception $_.Exception
+        return $false
+    }
+    return $true
+}
+
+
+
+function Resume-PodeService {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+    try {
+        # Ensure the script is running with the necessary administrative/root privileges.
+        # Exits the script if the current user lacks the required privileges.
+        Confirm-PodeAdminPrivilege
+
+        if ($IsWindows) {
+
+            $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+            if ($service) {
+                # Check if the service is running
+                if ($service.Status -eq 'Paused') {
+                    $null = Invoke-PodeWinElevatedCommand  -Command  'Resume-Service' -Arguments "-Name '$Name'"
+                    $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+                    if ($service.Status -eq 'Running') {
+                        Write-Verbose -Message "Service '$Name' Resumed successfully."
+                    }
+                    else {
+                        # Service command '{0}' failed on service '{1}'.
+                        throw ($PodeLocale.serviceCommandFailedException -f 'Resume-Service', $Name)
+                    }
+                }
+                else {
+                    Write-Verbose -Message "Service '$Name' is not suspended."
+                    return $false
+                }
+            }
+            else {
+                # Service is not registered
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
+            }
+        }
+        elseif ($IsLinux) {
+            <#   $nameService = "$Name.service".Replace(' ', '_')
+            # Check if the service is already registered
+            if ((Test-PodeLinuxServiceIsRegistered -Name $nameService)) {
+                # Check if the service is active
+                if ((Test-PodeLinuxServiceIsActive -Name  $nameService)) {
+                    #Stop the service
+                    if (( Stop-PodeLinuxService -Name $nameService)) {
+                        # Check if the service is active
+                        if (!(Test-PodeLinuxServiceIsActive -Name  $nameService)) {
+                            Write-Verbose -Message "Service '$Name' stopped successfully."
+                            return $true
+                        }
+                    }
+
+                    # Service command '{0}' failed on service '{1}'.
+                    throw ($PodeLocale.serviceCommandFailedException -f 'sudo launchctl stop', $Name)
+                }
+                else {
+                    Write-Verbose -Message "Service '$Name' is not running."
+                }
+            }
+            else {
+                # Service is not registered
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
+            }
+#>
+        }
+        elseif ($IsMacOS) {
+            <#
+            $nameService = "pode.$Name.service".Replace(' ', '_')
+            # Check if the service is already registered
+            if ((Test-PodeMacOsServiceIsRegistered -Name $nameService)) {
+                # Check if the service is active
+                if ((Test-PodeMacOsServiceIsActive $nameService)) {
+                    if ((Stop-PodeMacOsService $nameService)) {
+                        if (!(Test-PodeMacOsServiceIsActive -Name  $nameService)) {
+                            Write-Verbose -Message "Service '$Name' stopped successfully."
+                            return $true
+                        }
+                    }
+
+                    # Service command '{0}' failed on service '{1}'.
+                    throw ($PodeLocale.serviceCommandFailedException -f 'launchctl stop', $Name)
+
+                }
+                else {
+                    Write-Verbose -Message "Service '$Name' is not running."
+                }
+            }
+            else {
+                # Service is not registered
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService )
+            }
+                #>
+        }
+    }
+    catch {
+        $_ | Write-PodeErrorLog
+        Write-Error -Exception $_.Exception
+        return $false
+    }
+    return $true
+}
 
 <#
 .SYNOPSIS
