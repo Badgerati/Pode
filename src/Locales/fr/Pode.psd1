@@ -299,4 +299,5 @@
     serviceIsRunningException                                         = "Le service '{0}' est en cours d'exécution. Utilisez le paramètre -Force pour forcer l'arrêt."
     serviceUnRegistrationException                                    = "La désinscription du service '{0}' a échoué."
     passwordRequiredForServiceUserException                           = "Un mot de passe est requis lors de la spécification d'un utilisateur de service sous Windows. Veuillez fournir un mot de passe valide pour l'utilisateur '{0}'."
+    featureNotSupportedException                                      = '{0} est pris en charge uniquement sous Windows.'
 }

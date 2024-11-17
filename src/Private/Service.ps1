@@ -58,9 +58,9 @@ function Start-PodeServiceHearthbeat {
 
         # Define the script block for the client receiver, listens for commands via the named pipe
         $scriptBlock = {
-            Write-PodeHost -Message "[Client] - Start client receiver for pipe $($PodeContext.Server.Service.PipeName)" -Force
 
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+                Write-PodeHost -Message "[Client] - Start client receiver for pipe $($PodeContext.Server.Service.PipeName)" -Force
                 try {
                     Start-Sleep -Milliseconds 100
                     # Create a named pipe server stream
@@ -108,7 +108,7 @@ function Start-PodeServiceHearthbeat {
                                     Write-PodeHost -Message '[Client] - Server requested suspend. Suspending client...' -Force
                                     Start-Sleep 5
                                     #Suspend-PodeServer  # Suspend Pode server
-                                    return  # Exit the loop
+                                  # return  # Exit the loop
                                 }
 
                                 'resume' {
@@ -116,7 +116,7 @@ function Start-PodeServiceHearthbeat {
                                     Write-PodeHost -Message '[Client] - Server requested resume. Resuming client...' -Force
                                     Start-Sleep 5
                                     #Resume-PodeServer  # Resume Pode server
-                                    return  # Exit the loop
+                                  #  return  # Exit the loop
                                 }
                             }
 
@@ -131,6 +131,7 @@ function Start-PodeServiceHearthbeat {
                     $reader.Dispose()
                     $pipeStream.Dispose()  # Always dispose of the pipe stream when done
                 }
+
             }
         }
 

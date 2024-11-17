@@ -299,4 +299,5 @@
     serviceIsRunningException                                         = "서비스 '{0}'가 실행 중입니다. 강제로 중지하려면 -Force 매개변수를 사용하세요."
     serviceUnRegistrationException                                    = "서비스 '{0}' 등록 취소에 실패했습니다."
     passwordRequiredForServiceUserException                           = "Windows에서 서비스 사용자를 지정할 때는 비밀번호가 필요합니다. 사용자 '{0}'에 대해 유효한 비밀번호를 입력하세요."
+    featureNotSupportedException                                      = '{0}는 Windows에서만 지원됩니다.'
 }

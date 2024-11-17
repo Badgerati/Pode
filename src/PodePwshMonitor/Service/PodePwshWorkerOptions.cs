@@ -1,6 +1,6 @@
 using System;
 
-namespace Pode.Services
+namespace Pode.Service
 {
     /// <summary>
     /// Configuration options for the PodePwshWorker service.

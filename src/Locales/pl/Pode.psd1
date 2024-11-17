@@ -299,4 +299,5 @@
     serviceIsRunningException                                         = "Usługa '{0}' jest uruchomiona. Użyj parametru -Force, aby wymusić zatrzymanie."
     serviceUnRegistrationException                                    = "Nie udało się wyrejestrować usługi '{0}'."
     passwordRequiredForServiceUserException                           = "Wymagane jest hasło podczas określania użytkownika usługi w systemie Windows. Podaj prawidłowe hasło dla użytkownika '{0}'."
+    featureNotSupportedException                                      = '{0} jest obsługiwane tylko w systemie Windows.'
 }

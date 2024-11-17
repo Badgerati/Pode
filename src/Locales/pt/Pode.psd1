@@ -299,4 +299,5 @@
     serviceIsRunningException                                         = "O serviço '{0}' está em execução. Use o parâmetro -Force para forçar a parada."
     serviceUnRegistrationException                                    = "A anulação do registro do serviço '{0}' falhou."
     passwordRequiredForServiceUserException                           = "Uma senha é necessária ao especificar um usuário de serviço no Windows. Por favor, forneça uma senha válida para o usuário '{0}'."
+    featureNotSupportedException                                      = '{0} é compatível apenas com o Windows.'
 }

@@ -299,4 +299,5 @@
     serviceIsRunningException                                         = "服务 '{0}' 正在运行。使用 -Force 参数强制停止。"
     serviceUnRegistrationException                                    = "服务 '{0}' 的注销失败。"
     passwordRequiredForServiceUserException                           = "在 Windows 中指定服务用户时需要密码。请为用户 '{0}' 提供有效的密码。"
+    featureNotSupportedException                                      = '{0} 仅支持 Windows。'
 }

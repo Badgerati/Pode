@@ -299,4 +299,5 @@
     serviceIsRunningException                                         = "Der Dienst '{0}' läuft. Verwenden Sie den Parameter -Force, um den Dienst zwangsweise zu stoppen."
     serviceUnRegistrationException                                    = "Die Abmeldung des Dienstes '{0}' ist fehlgeschlagen."
     passwordRequiredForServiceUserException                           = "Ein Passwort ist erforderlich, wenn ein Dienstbenutzer unter Windows angegeben wird. Bitte geben Sie ein gültiges Passwort für den Benutzer '{0}' an."
+    featureNotSupportedException                                      = '{0} wird nur unter Windows unterstützt.'
 }

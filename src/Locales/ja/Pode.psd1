@@ -299,4 +299,5 @@
     serviceIsRunningException                                         = "サービス '{0}' が実行中です。強制的に停止するには、-Force パラメーターを使用してください。"
     serviceUnRegistrationException                                    = "サービス '{0}' の登録解除に失敗しました。"
     passwordRequiredForServiceUserException                           = "Windowsでサービスユーザーを指定する際にはパスワードが必要です。ユーザー '{0}' に有効なパスワードを入力してください。"
+    featureNotSupportedException                                      = '{0} は Windows のみでサポートされています。'
 }

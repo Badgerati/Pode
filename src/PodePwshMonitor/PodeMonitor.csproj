@@ -16,7 +16,6 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" /> <!-- For logging -->
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.0" /> <!-- For Linux systemd support -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" /> <!-- For logging -->
   </ItemGroup>
 
 </Project>

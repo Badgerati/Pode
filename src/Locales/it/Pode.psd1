@@ -299,4 +299,5 @@
     serviceIsRunningException                                         = "Il servizio '{0}' è in esecuzione. Utilizzare il parametro -Force per interromperlo forzatamente."
     serviceUnRegistrationException                                    = "La cancellazione della registrazione del servizio '{0}' è fallita."
     passwordRequiredForServiceUserException                           = "È richiesta una password quando si specifica un utente del servizio su Windows. Si prega di fornire una password valida per l'utente '{0}'."
+    featureNotSupportedException                                      = '{0} è supportato solo su Windows.'
 }
