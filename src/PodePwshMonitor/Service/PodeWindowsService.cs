@@ -1,4 +1,3 @@
-#if WINDOWS
 using System;
 using Microsoft.Extensions.Hosting;
 using System.ServiceProcess;
@@ -108,4 +107,3 @@ namespace Pode.Service
         }
     }
 }
-#endif

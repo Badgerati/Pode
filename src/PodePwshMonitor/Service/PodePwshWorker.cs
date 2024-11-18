@@ -111,7 +111,7 @@ namespace Pode.Service
         /// <summary>
         /// Restarts the Pode PowerShell process by sending a restart command.
         /// </summary>
-        public void RestartAsync()
+        public void Restart()
         {
             PodePwshLogger.Log(LogLevel.INFO, "Server", "Service restarting at: {0}", DateTimeOffset.Now);
 
