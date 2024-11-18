@@ -31,6 +31,15 @@
 .PARAMETER Query
     Queries the status of the 'Hello Service'.
 
+.PARAMETER Suspend
+    Suspend the 'Hello Service'.
+
+.PARAMETER Resume
+    Resume the 'Hello Service'.
+
+.PARAMETER Restart
+    Restart the 'Hello Service'.
+
 .EXAMPLE
     Register the service:
         ./HelloService.ps1 -Register
@@ -95,7 +104,11 @@ param(
 
     [Parameter(  ParameterSetName = 'Resume')]
     [switch]
-    $Resume
+    $Resume,
+
+    [Parameter(  ParameterSetName = 'Restart')]
+    [switch]
+    $Restart
 )
 try {
     # Get the path of the script being executed
@@ -152,9 +165,14 @@ if ($Query.IsPresent) {
     exit
 }
 
+if ($Restart.IsPresent) {
+    Restart-PodeService -Name 'Hello Service2'
+    exit
+}
+
 # Start the Pode server
 Start-PodeServer {
-    New-PodeLoggingMethod -File -Name 'errors' -MaxDays 4 -Path './logs' | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -File -Name 'errors' -MaxDays 4 -Path './logs' | Enable-PodeErrorLogging -Levels Informational
 
     # Add an HTTP endpoint listening on localhost at port 8080
     Add-PodeEndpoint -Address localhost -Port $Port -Protocol Http

@@ -44,14 +44,14 @@ namespace Pode.Service
         /// <param name="stoppingToken">Cancellation token to signal when the worker should stop.</param>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "PodePwshWorker running at: {0}", DateTimeOffset.Now);
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "PodePwshWorker running at: {0}", DateTimeOffset.Now);
             int retryCount = 0; // Tracks the number of retries in case of failures
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 if (_isPaused)
                 {
-                    PodePwshLogger.Log(LogLevel.INFO, "Server", "Worker is paused. Waiting...");
+                    PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Worker is paused. Waiting...");
                     await Task.Delay(1000, stoppingToken); // Wait while paused
                     continue;
                 }
@@ -71,7 +71,7 @@ namespace Pode.Service
                     // If retries exceed the maximum, log and exit the loop
                     if (retryCount >= _pwshMonitor.StartMaxRetryCount)
                     {
-                        PodePwshLogger.Log(LogLevel.CRITICAL, "Maximum retry count reached. Exiting monitoring loop.");
+                        PodePwshLogger.Log(LogLevel.CRITICAL, "Server", Environment.ProcessId, "Maximum retry count reached. Exiting monitoring loop.");
                         break;
                     }
 
@@ -83,7 +83,7 @@ namespace Pode.Service
                 await Task.Delay(10000, stoppingToken);
             }
 
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Monitoring loop has stopped.");
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Monitoring loop has stopped.");
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Pode.Service
         /// <param name="stoppingToken">Cancellation token to signal when the stop should occur.</param>
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Service is stopping at: {0}", DateTimeOffset.Now);
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Service is stopping at: {0}", DateTimeOffset.Now);
 
             try
             {
@@ -105,7 +105,7 @@ namespace Pode.Service
 
             await base.StopAsync(stoppingToken); // Wait for the base StopAsync to complete
 
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Service stopped successfully at: {0}", DateTimeOffset.Now);
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Service stopped successfully at: {0}", DateTimeOffset.Now);
         }
 
         /// <summary>
@@ -113,12 +113,12 @@ namespace Pode.Service
         /// </summary>
         public void Restart()
         {
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Service restarting at: {0}", DateTimeOffset.Now);
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Service restarting at: {0}", DateTimeOffset.Now);
 
             try
             {
                 _pwshMonitor.RestartPowerShellProcess(); // Restart the process
-                PodePwshLogger.Log(LogLevel.INFO, "Server", "Restart message sent via pipe at: {0}", DateTimeOffset.Now);
+                PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Restart message sent via pipe at: {0}", DateTimeOffset.Now);
             }
             catch (Exception ex)
             {
@@ -131,14 +131,14 @@ namespace Pode.Service
         /// </summary>
         public void OnPause()
         {
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Pause command received at: {0}", DateTimeOffset.Now);
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Pause command received at: {0}", DateTimeOffset.Now);
 
             try
             {
                 _pwshMonitor.SuspendPowerShellProcess(); // Send pause command to the process
                 _isPaused = true; // Update the paused state
 
-                PodePwshLogger.Log(LogLevel.INFO, "Server", "Suspend message sent via pipe at: {0}", DateTimeOffset.Now);
+                PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Suspend message sent via pipe at: {0}", DateTimeOffset.Now);
 
                 AddOperationDelay("Pause"); // Delay to ensure stability
             }
@@ -153,14 +153,14 @@ namespace Pode.Service
         /// </summary>
         public void OnContinue()
         {
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Continue command received at: {0}", DateTimeOffset.Now);
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Continue command received at: {0}", DateTimeOffset.Now);
 
             try
             {
                 _pwshMonitor.ResumePowerShellProcess(); // Send resume command to the process
                 _isPaused = false; // Update the paused state
 
-                PodePwshLogger.Log(LogLevel.INFO, "Server", "Resume message sent via pipe at: {0}", DateTimeOffset.Now);
+                PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Resume message sent via pipe at: {0}", DateTimeOffset.Now);
 
                 AddOperationDelay("Resume"); // Delay to ensure stability
             }
@@ -176,7 +176,7 @@ namespace Pode.Service
         /// <param name="operation">The name of the operation (e.g., "Pause" or "Resume").</param>
         private void AddOperationDelay(string operation)
         {
-            PodePwshLogger.Log(LogLevel.DEBUG, "Server", "{0} operation completed. Adding delay of {1} ms.", operation, _delayMs);
+            PodePwshLogger.Log(LogLevel.DEBUG, "Server", Environment.ProcessId, "{0} operation completed. Adding delay of {1} ms.", operation, _delayMs);
             Thread.Sleep(_delayMs); // Introduce a delay
         }
     }

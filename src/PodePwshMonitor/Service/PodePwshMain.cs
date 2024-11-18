@@ -66,7 +66,7 @@ namespace Pode.Service
             }
             else
             {
-                PodePwshLogger.Log(LogLevel.WARN, "Server", "Unsupported platform. Exiting.");
+                PodePwshLogger.Log(LogLevel.WARN, "Server", Environment.ProcessId, "Unsupported platform. Exiting.");
             }
         }
 
@@ -91,7 +91,7 @@ namespace Pode.Service
                     services.AddSingleton<PodePwshMonitor>(serviceProvider =>
                     {
                         var options = serviceProvider.GetRequiredService<IOptions<PodePwshWorkerOptions>>().Value;
-                        PodePwshLogger.Log(LogLevel.INFO, "Server", "Initializing PodePwshMonitor with options: {0}", JsonSerializer.Serialize(options));
+                        PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Initializing PodePwshMonitor with options: {0}", JsonSerializer.Serialize(options));
                         return new PodePwshMonitor(options);
                     });
 
@@ -166,10 +166,10 @@ namespace Pode.Service
         {
             if (_workerInstance == null)
             {
-                PodePwshLogger.Log(LogLevel.ERROR, "Server", "Pause requested, but _workerInstance is null.");
+                PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, "Pause requested, but _workerInstance is null.");
                 return;
             }
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Pausing service...");
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Pausing service...");
             _workerInstance?.OnPause();
         }
 
@@ -180,10 +180,10 @@ namespace Pode.Service
         {
             if (_workerInstance == null)
             {
-                PodePwshLogger.Log(LogLevel.ERROR, "Server", "Continue requested, but _workerInstance is null.");
+                PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, "Continue requested, but _workerInstance is null.");
                 return;
             }
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Resuming service...");
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Resuming service...");
             _workerInstance?.OnContinue();
         }
 
@@ -194,10 +194,10 @@ namespace Pode.Service
         {
             if (_workerInstance == null)
             {
-                PodePwshLogger.Log(LogLevel.ERROR, "Server", "Restart requested, but _workerInstance is null.");
+                PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, "Restart requested, but _workerInstance is null.");
                 return;
             }
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Restarting service...");
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Restarting service...");
             _workerInstance?.Restart();
         }
 
@@ -206,7 +206,7 @@ namespace Pode.Service
         /// </summary>
         private static void Cleanup()
         {
-            PodePwshLogger.Log(LogLevel.INFO, "Server", "Performing cleanup...");
+            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Performing cleanup...");
             // Cleanup logic
         }
 #else

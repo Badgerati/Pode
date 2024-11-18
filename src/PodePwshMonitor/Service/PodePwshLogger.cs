@@ -44,7 +44,7 @@ namespace Pode.Service
                     using (File.Create(logFilePath)) { }
                 }
 
-                Log(LogLevel.INFO, "Server", "Logger initialized. LogFilePath: {0}, MinLogLevel: {1}", logFilePath, minLogLevel);
+                Log(LogLevel.INFO, "Server", Environment.ProcessId, "Logger initialized. LogFilePath: {0}, MinLogLevel: {1}", logFilePath, minLogLevel);
             }
             catch (Exception ex)
             {
@@ -52,7 +52,7 @@ namespace Pode.Service
             }
         }
 
-        public static void Log(LogLevel level, string context , string message = "", params object[] args)
+        public static void Log(LogLevel level, string context ,int pid, string message = "", params object[] args)
         {
             if (level < minLogLevel || string.IsNullOrEmpty(message))
             {
@@ -66,9 +66,6 @@ namespace Pode.Service
 
                 // Get the current time in ISO 8601 format in GMT/UTC
                 string timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-
-                // Get the current process ID
-                int pid = Environment.ProcessId;
 
                 // Build the log entry
                 string logEntry = $"{timestamp} [PID:{pid}] [{level}] [{context}] {formattedMessage}";

@@ -16,5 +16,9 @@ namespace Pode.Service
         /// This method is called when the service receives a continue command after being paused.
         /// </summary>
         void OnContinue();
+
+
+
+        void Restart();
     }
 }

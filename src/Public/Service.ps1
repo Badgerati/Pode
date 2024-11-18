@@ -1041,3 +1041,105 @@ function Get-PodeService {
         }
     }
 }
+
+<#
+.SYNOPSIS
+    Restarts a Pode service on Windows, Linux, or macOS by sending the appropriate restart signal.
+
+.DESCRIPTION
+    This function handles the restart operation for a Pode service across multiple platforms:
+    - On Windows: Sends a restart control signal (128) using `sc control`.
+    - On Linux and macOS: Sends the `SIGHUP` signal to the service's process ID.
+
+.PARAMETER Name
+    The name of the Pode service to restart.
+
+.NOTES
+    Requires administrative/root privileges to execute service operations.
+
+    This function leverages platform-specific methods:
+    - Windows: Uses `sc control` for service control commands.
+    - Linux/macOS: Uses `/bin/kill -SIGHUP` to signal the service's process.
+
+    For services not running, a verbose message is displayed, and no restart signal is sent.
+
+.EXAMPLE
+    Restart-PodeService -Name "MyPodeService"
+
+    Attempts to restart the Pode service named "MyPodeService" on the current platform.
+
+.EXAMPLE
+    Restart-PodeService -Name "AnotherService" -Verbose
+
+    Restarts the Pode service named "AnotherService" with detailed verbose output.
+
+#>
+function Restart-PodeService {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    try {
+        # Ensure the script is running with the necessary administrative/root privileges.
+        # Exits the script if the current user lacks the required privileges.
+        Confirm-PodeAdminPrivilege
+
+        Write-Verbose -Message "Attempting to restart service '$Name' on platform $([System.Environment]::OSVersion.Platform)..."
+
+        if ($IsWindows) {
+            # Handle Windows-specific restart logic
+            $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+            if ($service) {
+                if ($service.Status -eq 'Running' -or $service.Status -eq 'Paused') {
+                    Write-Verbose -Message "Sending restart (128) signal to service '$Name'."
+                    $null = Invoke-PodeWinElevatedCommand -Command 'sc control' -Arguments "'$Name' 128"
+                    $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+                    Write-Verbose -Message "Service '$Name' restart signal sent successfully."
+                }
+                else {
+                    Write-Verbose -Message "Service '$Name' is not running."
+                }
+            }
+            else {
+                # Service is not registered
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
+            }
+        }
+        elseif ($IsLinux -or $IsMacOS) {
+            # Standardize service naming for Linux/macOS
+            $nameService = $(if ($IsMacOS) { "pode.$Name.service".Replace(' ', '_') }else { "$Name.service".Replace(' ', '_') })
+            # Check if the service is registered
+            if ((Test-PodeServiceIsRegistered -Name $nameService)) {
+                if ((Test-PodeServiceIsActive -Name $nameService)) {
+                    Write-Verbose -Message "Service '$Name' is active. Sending SIGHUP signal."
+                    $svc = Get-PodeService -Name $nameService
+                    sudo /bin/kill -SIGHUP $svc.ProcessId
+                    Write-Verbose -Message "SIGHUP signal sent to service '$Name'."
+                }
+                else {
+                    Write-Verbose -Message "Service '$Name' is not running."
+                }
+            }
+            else {
+                # Service is not registered
+                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
+            }
+        }
+        else {
+            # Unsupported platform
+            Write-Error -Message "Unsupported platform. Unable to restart service '$Name'."
+            return $false
+        }
+    }
+    catch {
+        # Log and display the error
+        $_ | Write-PodeErrorLog
+        Write-Error -Exception $_.Exception
+        return $false
+    }
+
+    Write-Verbose -Message "Service '$Name' restart operation completed successfully."
+    return $true
+}

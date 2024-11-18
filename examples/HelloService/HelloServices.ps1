@@ -26,6 +26,15 @@
 .PARAMETER Query
     Queries the status of all services specified in the hashtable.
 
+.PARAMETER Suspend
+    Suspend the 'Hello Service'.
+
+.PARAMETER Resume
+    Resume the 'Hello Service'.
+
+.PARAMETER Restart
+    Restart the 'Hello Service'.
+
 .EXAMPLE
     Register all services:
         ./HelloServices.ps1 -Register
@@ -80,10 +89,22 @@ param(
     [Parameter(  ParameterSetName = 'Stop')]
     [switch]
     $Stop,
-    
+
     [Parameter(  ParameterSetName = 'Query')]
     [switch]
-    $Query
+    $Query,
+
+    [Parameter(  ParameterSetName = 'Suspend')]
+    [switch]
+    $Suspend,
+
+    [Parameter(  ParameterSetName = 'Resume')]
+    [switch]
+    $Resume,
+
+    [Parameter(  ParameterSetName = 'Restart')]
+    [switch]
+    $Restart
 )
 try {
     # Get the path of the script being executed
@@ -131,6 +152,21 @@ if ($Stop.IsPresent) {
 
 if ($Query.IsPresent) {
     $services.GetEnumerator() | ForEach-Object { Get-PodeService -Name $($_.Key) }
+    exit
+}
+
+if ($Resume.IsPresent) {
+    $services.GetEnumerator() | ForEach-Object { Resume-PodeService -Name $($_.Key) }
+    exit
+}
+
+if ($Query.IsPresent) {
+    $services.GetEnumerator() | ForEach-Object { Get-PodeService -Name $($_.Key) }
+    exit
+}
+
+if ($Restart.IsPresent) {
+    $services.GetEnumerator() | ForEach-Object { Restart-PodeService -Name $($_.Key) }
     exit
 }
 

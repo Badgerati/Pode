@@ -3723,10 +3723,10 @@ function Resolve-PodeObjectArray {
     # Changes to $clonedObject will not affect $originalObject and vice versa.
 
 .NOTES
-    This function uses the System.Management.Automation.PSSerializer class, which is available in
-    PowerShell 5.1 and later versions. The default depth parameter is set to 10 to handle nested
-    objects appropriately, but it can be customized via the -Deep parameter.
-    This is an internal function and may change in future releases of Pode.
+    - This function uses the System.Management.Automation.PSSerializer class, which is available in
+        PowerShell 5.1 and later versions. The default depth parameter is set to 10 to handle nested
+        objects appropriately, but it can be customized via the -Deep parameter.
+    - This is an internal function and may change in future releases of Pode.
 #>
 function Copy-PodeObjectDeepClone {
     param (
@@ -3746,6 +3746,7 @@ function Copy-PodeObjectDeepClone {
         return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }
+
 <#
 .SYNOPSIS
     Tests if the current user has administrative privileges on Windows or root/sudo privileges on Linux/macOS.
@@ -3786,9 +3787,10 @@ function Copy-PodeObjectDeepClone {
     otherwise returns $false.
 
 .NOTES
-    This function works across multiple platforms: Windows, Linux, and macOS.
-    On Linux/macOS, it checks for root, sudo, or admin group memberships, and optionally checks for elevation potential
-    if the -Elevate switch is used.
+    - This function works across multiple platforms: Windows, Linux, and macOS.
+        On Linux/macOS, it checks for root, sudo, or admin group memberships, and optionally checks for elevation potential
+        if the -Elevate switch is used.
+    - This is an internal function and may change in future releases of Pode.
 #>
 
 function Test-PodeAdminPrivilege {
@@ -3851,6 +3853,7 @@ function Test-PodeAdminPrivilege {
         return $false
     }
 }
+
 <#
 .SYNOPSIS
     Starts a command with elevated privileges if the current session is not already elevated.
@@ -3877,7 +3880,7 @@ function Test-PodeAdminPrivilege {
     This will run the script `MyScript.ps1` with elevated privileges, pass the parameters `-Param1` and `-Param2`, and return the result.
 
 .NOTES
-    This function is particularly useful when running commands or scripts that require administrator rights.
+    This is an internal function and may change in future releases of Pode.
 #>
 function Invoke-PodeWinElevatedCommand {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
@@ -3916,3 +3919,110 @@ function Invoke-PodeWinElevatedCommand {
     return Invoke-Expression "$Command $Arguments"
 }
 
+<#
+.SYNOPSIS
+    Converts a duration in milliseconds into a human-readable time format.
+
+.DESCRIPTION
+    This function takes an input duration in milliseconds and converts it into
+    a readable time format. It supports multiple output styles, such as verbose
+    (detailed text), compact (`dd:hh:mm:ss`), and concise (short notation).
+    Optionally, milliseconds can be excluded from the output.
+
+.PARAMETER Milliseconds
+    The duration in milliseconds to be converted.
+
+.PARAMETER VerboseOutput
+    If specified, outputs a detailed, descriptive format (e.g., "1 day, 2 hours, 3 minutes").
+
+.PARAMETER CompactOutput
+    If specified, outputs a compact format (e.g., "dd:hh:mm:ss").
+
+.PARAMETER ExcludeMilliseconds
+    If specified, excludes milliseconds from the output.
+
+.EXAMPLE
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789
+
+    Output:
+    1d 10h 17m 36s
+
+.EXAMPLE
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -VerboseOutput
+
+    Output:
+    1 day, 10 hours, 17 minutes, 36 seconds, 789 milliseconds
+
+.EXAMPLE
+    Convert-PodeMillisecondsToReadable -Milliseconds 123456789 -CompactOutput -ExcludeMilliseconds
+
+    Output:
+    01:10:17:36
+
+.NOTES
+    This is an internal function and may change in future releases of Pode.
+#>
+
+function Convert-PodeMillisecondsToReadable {
+    param (
+        [Parameter(Mandatory)]
+        [long]$Milliseconds,
+
+        [switch]$VerboseOutput, # Provide detailed descriptions
+        [switch]$CompactOutput, # Provide compact format like dd:hh:mm:ss or mm:ss:ms
+        [switch]$ExcludeMilliseconds # Exclude milliseconds from the output
+    )
+
+    $timeSpan = [timespan]::FromMilliseconds($Milliseconds)
+
+    if ($CompactOutput) {
+        # Dynamically build compact format
+        $components = @()
+
+        # Include days only if greater than 0
+        if ($timeSpan.Days -gt 0) { $components += '{0:D2}' -f $timeSpan.Days }
+
+        # Include hours only if greater than 0 or days are included
+        if ($timeSpan.Hours -gt 0 -or $components.Count -gt 0) { $components += '{0:D2}' -f $timeSpan.Hours }
+
+        # Include minutes if relevant
+        if ($timeSpan.Minutes -gt 0 -or $components.Count -gt 0) { $components += '{0:D2}' -f $timeSpan.Minutes }
+
+        # Add seconds as the final required time component
+        $components += '{0:D2}' -f $timeSpan.Seconds
+
+        # Append milliseconds if not excluded
+        if (-not $ExcludeMilliseconds) {
+            $components[-1] += ':{0:D3}' -f $timeSpan.Milliseconds
+        }
+
+        # Join with ":" and return
+        return $components -join ':'
+    }
+
+    # Default or verbose format
+    if ($VerboseOutput) {
+        $verboseParts = @()
+        if ($timeSpan.Days -gt 0) { $verboseParts += "$($timeSpan.Days) day$(if ($timeSpan.Days -ne 1) { 's' })" }
+        if ($timeSpan.Hours -gt 0) { $verboseParts += "$($timeSpan.Hours) hour$(if ($timeSpan.Hours -ne 1) { 's' })" }
+        if ($timeSpan.Minutes -gt 0) { $verboseParts += "$($timeSpan.Minutes) minute$(if ($timeSpan.Minutes -ne 1) { 's' })" }
+        if ($timeSpan.Seconds -gt 0) { $verboseParts += "$($timeSpan.Seconds) second$(if ($timeSpan.Seconds -ne 1) { 's' })" }
+        if (-not $ExcludeMilliseconds -and $timeSpan.Milliseconds -gt 0) {
+            $verboseParts += "$($timeSpan.Milliseconds) millisecond$(if ($timeSpan.Milliseconds -ne 1) { 's' })"
+        }
+
+        return $verboseParts -join ' '
+    }
+
+    # Default concise format
+    $parts = @()
+    if ($timeSpan.Days -gt 0) { $parts += "$($timeSpan.Days)d" }
+    if ($timeSpan.Hours -gt 0 -or $parts.Count -gt 0) { $parts += "$($timeSpan.Hours)h" }
+    if ($timeSpan.Minutes -gt 0 -or $parts.Count -gt 0) { $parts += "$($timeSpan.Minutes)m" }
+    if ($timeSpan.Seconds -gt 0 -or $parts.Count -gt 0) { $parts += "$($timeSpan.Seconds)s" }
+    if (-not $ExcludeMilliseconds -and $timeSpan.Milliseconds -gt 0 -or $parts.Count -gt 0) {
+        $parts += "$($timeSpan.Milliseconds)ms"
+    }
+
+    return $parts -join ':'
+}

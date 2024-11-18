@@ -61,6 +61,9 @@ function Start-PodeServiceHearthbeat {
 
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                 Write-PodeHost -Message "Start client receiver for pipe $($PodeContext.Server.Service.PipeName)" -Force
+                Write-PodeHost -Message "Total Uptime: $(Get-PodeServerUptime -Total -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
+                Write-PodeHost -Message "Uptime Since Last Restart: $(Get-PodeServerUptime -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
+                Write-PodeHost -Message "Total Number of Restart: $(Get-PodeServerRestartCount)" -Force
                 try {
                     Start-Sleep -Milliseconds 100
                     # Create a named pipe server stream
@@ -91,32 +94,32 @@ function Start-PodeServiceHearthbeat {
                             switch ($message) {
                                 'shutdown' {
                                     # Process 'shutdown' message
-                                    Write-PodeHost -Message 'Server requested shutdown. Closing client...' -Force
+                                    Write-PodeHost -Message 'Server requested shutdown. Closing Pode ...' -Force
                                     Close-PodeServer  # Gracefully stop Pode server
                                     return  # Exit the loop
                                 }
 
                                 'restart' {
                                     # Process 'restart' message
-                                    Write-PodeHost -Message 'Server requested restart. Restarting client...' -Force
+                                    Write-PodeHost -Message 'Server requested restart. Restarting Pode ...' -Force
                                     Restart-PodeServer  # Restart Pode server
                                     return  # Exit the loop
                                 }
 
                                 'suspend' {
                                     # Process 'suspend' message
-                                    Write-PodeHost -Message 'Server requested suspend. Suspending client...' -Force
+                                    Write-PodeHost -Message 'Server requested suspend. Suspending Pode ...' -Force
                                     Start-Sleep 5
                                     #Suspend-PodeServer  # Suspend Pode server
-                                  # return  # Exit the loop
+                                    # return  # Exit the loop
                                 }
 
                                 'resume' {
                                     # Process 'resume' message
-                                    Write-PodeHost -Message 'Server requested resume. Resuming client...' -Force
+                                    Write-PodeHost -Message 'Server requested resume. Resuming Pode ...' -Force
                                     Start-Sleep 5
                                     #Resume-PodeServer  # Resume Pode server
-                                  #  return  # Exit the loop
+                                    #  return  # Exit the loop
                                 }
                             }
 
@@ -394,7 +397,10 @@ ExecStart=$execStart
 WorkingDirectory=$BinPath
 Restart=always
 User=$User
-#Group=$Group
+KillMode=process
+Environment=NOTIFY_SOCKET=/run/systemd/notify
+# Uncomment and adjust if needed
+# Group=$Group
 # Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
 # Environment=ASPNETCORE_ENVIRONMENT=Production
 
@@ -620,21 +626,21 @@ function Confirm-PodeAdminPrivilege {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Tests if a Linux service is registered.
 
-    .DESCRIPTION
+.DESCRIPTION
     Checks if a specified Linux service is registered by using the `systemctl status` command.
     It returns `$true` if the service is found or its status code matches either `0` or `3`.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the Linux service to test.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is registered; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeLinuxServiceIsRegistered {
@@ -648,21 +654,21 @@ function Test-PodeLinuxServiceIsRegistered {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Tests if a Linux service is active.
 
-    .DESCRIPTION
+.DESCRIPTION
     Checks if a specified Linux service is currently active by using the `systemctl is-active` command.
     It returns `$true` if the service is active.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the Linux service to check.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is active; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeLinuxServiceIsActive {
@@ -676,21 +682,21 @@ function Test-PodeLinuxServiceIsActive {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Disables a Linux service.
 
-    .DESCRIPTION
+.DESCRIPTION
     Disables a specified Linux service by using the `sudo systemctl disable` command.
     It returns `$true` if the service is successfully disabled.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the Linux service to disable.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is successfully disabled; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Disable-PodeLinuxService {
@@ -704,21 +710,21 @@ function Disable-PodeLinuxService {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Enables a Linux service.
 
-    .DESCRIPTION
+.DESCRIPTION
     Enables a specified Linux service by using the `sudo systemctl enable` command.
     It returns `$true` if the service is successfully enabled.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the Linux service to enable.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is successfully enabled; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Enable-PodeLinuxService {
@@ -732,21 +738,21 @@ function Enable-PodeLinuxService {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Stops a Linux service.
 
-    .DESCRIPTION
+.DESCRIPTION
     Stops a specified Linux service by using the `systemctl stop` command.
     It returns `$true` if the service is successfully stopped.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the Linux service to stop.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is successfully stopped; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Stop-PodeLinuxService {
@@ -760,21 +766,21 @@ function Stop-PodeLinuxService {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Starts a Linux service.
 
-    .DESCRIPTION
+.DESCRIPTION
     Starts a specified Linux service by using the `systemctl start` command.
     It returns `$true` if the service is successfully started.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the Linux service to start.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is successfully started; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Start-PodeLinuxService {
@@ -788,21 +794,21 @@ function Start-PodeLinuxService {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Tests if a macOS service is registered.
 
-    .DESCRIPTION
+.DESCRIPTION
     Checks if a specified macOS service is registered by using the `launchctl list` command.
     It returns `$true` if the service is registered.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the macOS service to test.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is registered; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeMacOsServiceIsRegistered {
@@ -816,21 +822,98 @@ function Test-PodeMacOsServiceIsRegistered {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
+    Checks if a Pode service is registered on the current operating system.
+
+.DESCRIPTION
+    This function determines if a Pode service with the specified name is registered,
+    based on the operating system. It delegates the check to the appropriate
+    platform-specific function or logic.
+
+.PARAMETER Name
+    The name of the Pode service to check.
+
+.EXAMPLE
+    Test-PodeServiceIsRegistered -Name 'MyService'
+
+    Checks if the Pode service named 'MyService' is registered.
+
+.NOTES
+   This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeServiceIsRegistered {
+    param(
+        $Name
+    )
+    if ($IsLinux) {
+        return Test-PodeLinuxServiceIsRegistered
+    }
+    if ($IsMacOS) {
+        return Test-PodeMacOsServiceIsRegistered
+    }
+    if ($IsWindows) {
+        $service = Get-CimInstance -ClassName Win32_Service -Filter "Name='$Name'"
+        return $null -eq $service
+    }
+}
+
+<#
+.SYNOPSIS
+    Checks if a Pode service is active and running on the current operating system.
+
+.DESCRIPTION
+    This function determines if a Pode service with the specified name is active (running),
+    based on the operating system. It delegates the check to the appropriate platform-specific
+    function or logic.
+
+.PARAMETER Name
+    The name of the Pode service to check.
+
+.EXAMPLE
+    Test-PodeServiceIsActive -Name 'MyService'
+
+    Checks if the Pode service named 'MyService' is active and running.
+
+.NOTES
+   This is an internal function and may change in future releases of Pode.
+#>
+function Test-PodeServiceIsActive {
+    param(
+        $Name
+    )
+    if ($IsLinux) {
+        return Test-PodeLinuxServiceIsActive
+    }
+    if ($IsMacOS) {
+        return Test-PodeMacOsServiceIsActive
+    }
+    if ($IsWindows) {
+        $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+        if ($service) {
+            # Check if the service is already running
+           return ($service.Status -ne 'Running')
+        }
+        return $false
+    }
+}
+
+
+<#
+.SYNOPSIS
     Tests if a macOS service is active.
 
-    .DESCRIPTION
+.DESCRIPTION
     Checks if a specified macOS service is currently active by looking for the "PID" value in the output of `launchctl list`.
     It returns `$true` if the service is active (i.e., if a PID is found).
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the macOS service to check.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is active; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Test-PodeMacOsServiceIsActive {
@@ -844,21 +927,21 @@ function Test-PodeMacOsServiceIsActive {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Retrieves the PID of a macOS service.
 
-    .DESCRIPTION
+.DESCRIPTION
     Retrieves the process ID (PID) of a specified macOS service by using `launchctl list`.
     If the service is not active or a PID cannot be found, the function returns `0`.
 
-    .PARAMETER Name
+PARAMETER Name
     The name of the macOS service whose PID you want to retrieve.
 
-    .OUTPUTS
+.OUTPUTS
     [int]
     Returns the PID of the service if it is active; otherwise, returns `0`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Get-PodeMacOsServicePid {
@@ -872,21 +955,21 @@ function Get-PodeMacOsServicePid {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Disables a macOS service.
 
-    .DESCRIPTION
+.DESCRIPTION
     Disables a specified macOS service by using `launchctl unload` to unload the service's plist file.
     It returns `$true` if the service is successfully disabled.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the macOS service to disable.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is successfully disabled; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Disable-PodeMacOsService {
@@ -900,21 +983,21 @@ function Disable-PodeMacOsService {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Stops a macOS service.
 
-    .DESCRIPTION
+.DESCRIPTION
     Stops a specified macOS service by using the `launchctl stop` command.
     It returns `$true` if the service is successfully stopped.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the macOS service to stop.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is successfully stopped; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Stop-PodeMacOsService {
@@ -928,21 +1011,21 @@ function Stop-PodeMacOsService {
 }
 
 <#
-    .SYNOPSIS
+.SYNOPSIS
     Starts a macOS service.
 
-    .DESCRIPTION
+.DESCRIPTION
     Starts a specified macOS service by using the `launchctl start` command.
     It returns `$true` if the service is successfully started.
 
-    .PARAMETER Name
+.PARAMETER Name
     The name of the macOS service to start.
 
-    .OUTPUTS
+.OUTPUTS
     [bool]
     Returns `$true` if the service is successfully started; otherwise, `$false`.
 
-    .NOTES
+.NOTES
     This is an internal function and may change in future releases of Pode.
 #>
 function Start-PodeMacOsService {
