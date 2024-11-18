@@ -153,6 +153,42 @@ Describe 'Remove-PodeRoute' {
         $routes.ContainsKey('/users') | Should -Be $true
         $routes['/users'].Length | Should -Be 1
     }
+
+    It 'Removes a route and cleans up OpenAPI operationId' {
+        Add-PodeRoute -PassThru -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' } | Set-PodeOARouteInfo -Summary 'Test user' -OperationId 'getUsers'
+
+        $routes = $PodeContext.Server.Routes['GET']
+        $routes | Should -Not -Be $null
+        $routes.ContainsKey('/users') | Should -Be $true
+        $routes['/users'].Length | Should -Be 1
+
+        Remove-PodeRoute -Method Get -Path '/users'
+
+        $routes = $PodeContext.Server.Routes['GET']
+        $routes | Should -Not -Be $null
+        $routes.ContainsKey('/users') | Should -Be $false
+        $PodeContext.Server.OpenAPI.Definitions.default.hiddenComponents.operationId | Should -Not -Contain 'getUsers'
+    }
+
+    It 'Adds two routes and removes on route and cleans up OpenAPI operationId' {
+        Add-PodeEndpoint -Address '127.0.0.1' -Port 8080 -Protocol Http -Name user
+
+        Add-PodeRoute -PassThru -Method Get -Path '/users' -ScriptBlock { Write-Host 'hello' } | Set-PodeOARouteInfo -Summary 'Test user' -OperationId 'getUsers'
+        Add-PodeRoute -PassThru -Method Get -Path '/users' -EndpointName user -ScriptBlock { Write-Host 'hello' } | Set-PodeOARouteInfo -Summary 'Test user2' -OperationId 'getUsers2'
+
+        $routes = $PodeContext.Server.Routes['GET']
+        $routes | Should -Not -Be $null
+        $routes.ContainsKey('/users') | Should -Be $true
+        $routes['/users'].Length | Should -Be 2
+
+        Remove-PodeRoute -Method Get -Path '/users' -EndpointName 'user'
+
+        $routes = $PodeContext.Server.Routes['GET']
+        $routes | Should -Not -Be $null
+        $routes.ContainsKey('/users') | Should -Be $true
+        $routes['/users'].Length | Should -Be 1
+        $PodeContext.Server.OpenAPI.Definitions.default.hiddenComponents.operationId | Should -Not -Contain 'getUsers2'
+    }
 }
 
 Describe 'Remove-PodeStaticRoute' {
@@ -596,6 +632,11 @@ Describe 'ConvertTo-PodeRoute' {
 
     It 'Calls Add-PodeRoute twice for commands' {
         ConvertTo-PodeRoute -Commands @('Get-ChildItem', 'Invoke-Expression') -NoOpenApi
+        Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
+    }
+
+    It 'Calls Add-PodeRoute twice for commands by pipe' {
+        @('Get-ChildItem', 'Invoke-Expression') |  ConvertTo-PodeRoute   -NoOpenApi
         Assert-MockCalled Add-PodeRoute -Times 2 -Scope It
     }
 

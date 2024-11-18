@@ -66,11 +66,11 @@ function Start-PodeInternalServer {
             # start runspace for loggers
             Start-PodeLoggingRunspace
 
-            # start runspace for timers
-            Start-PodeTimerRunspace
-
             # start runspace for schedules
             Start-PodeScheduleRunspace
+
+            # start runspace for timers
+            Start-PodeTimerRunspace
 
             # start runspace for gui
             Start-PodeGuiRunspace
@@ -206,11 +206,10 @@ function Start-PodeInternalServer {
                     }
                 }
             }
-
         }
     }
     catch {
-        throw $_.Exception
+        throw
     }
 }
 
@@ -236,9 +235,9 @@ function Restart-PodeInternalServer {
         $PodeContext.Server.Modules.Clear()
 
         # clear up timers, schedules and loggers
-        $PodeContext.Server.Routes | Clear-PodeHashtableInnerKey
-        $PodeContext.Server.Handlers | Clear-PodeHashtableInnerKey
-        $PodeContext.Server.Events | Clear-PodeHashtableInnerKey
+        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Routes
+        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Handlers
+        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Events
 
         if ($null -ne $PodeContext.Server.Verbs) {
             $PodeContext.Server.Verbs.Clear()
@@ -254,7 +253,7 @@ function Restart-PodeInternalServer {
 
         # clear tasks
         $PodeContext.Tasks.Items.Clear()
-        $PodeContext.Tasks.Results.Clear()
+        $PodeContext.Tasks.Processes.Clear()
 
         # clear file watchers
         $PodeContext.Fim.Items.Clear()
@@ -271,7 +270,7 @@ function Restart-PodeInternalServer {
 
         # clear security headers
         $PodeContext.Server.Security.Headers.Clear()
-        $PodeContext.Server.Security.Cache | Clear-PodeHashtableInnerKey
+        Clear-PodeHashtableInnerKey -InputObject $PodeContext.Server.Security.Cache
 
         # clear endpoints
         $PodeContext.Server.Endpoints.Clear()
@@ -331,10 +330,10 @@ function Restart-PodeInternalServer {
 
         # recreate the session tokens
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Cancellation
-        $PodeContext.Tokens.Cancellation = New-Object System.Threading.CancellationTokenSource
+        $PodeContext.Tokens.Cancellation = [System.Threading.CancellationTokenSource]::new()
 
         Close-PodeDisposable -Disposable $PodeContext.Tokens.Restart
-        $PodeContext.Tokens.Restart = New-Object System.Threading.CancellationTokenSource
+        $PodeContext.Tokens.Restart = [System.Threading.CancellationTokenSource]::new()
 
         # reload the configuration
         $PodeContext.Server.Configuration = Open-PodeConfiguration -Context $PodeContext

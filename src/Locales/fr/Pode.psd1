@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'Le nom du dossier Views existe déjà: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Aucun Nom fourni pour réinitialiser le WebSocket.'
     mergeDefaultAuthNotInListExceptionMessage                         = "L'authentification MergeDefault '{0}' n'est pas dans la liste d'authentification fournie."
-    descriptionRequiredExceptionMessage                               = 'Une description est requise.'
+    descriptionRequiredExceptionMessage                               = 'Une description est requise pour le chemin:{0} Réponse:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'Le nom de la page doit être une valeur alphanumérique valide: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = "La valeur par défaut n'est pas un booléen et ne fait pas partie de l'énumération."
     openApiComponentSchemaDoesNotExistExceptionMessage                = "Le schéma du composant OpenApi {0} n'existe pas."
@@ -283,5 +283,13 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Le module Active Directory est uniquement disponible sur Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'La journalisation des requêtes est déjà activée.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durée Access-Control-Max-Age invalide fournie : {0}. Doit être supérieure à 0.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'La définition OpenAPI nommée {0} existe déjà.'
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag ne peut pas être utilisé à l'intérieur d'un 'ScriptBlock' de Select-PodeOADefinition."
+    taskProcessDoesNotExistExceptionMessage                           = "Le processus de la tâche '{0}' n'existe pas."
+    scheduleProcessDoesNotExistExceptionMessage                       = "Le processus de l'horaire '{0}' n'existe pas."
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Le tag de définition pour une Route ne peut pas être modifié.'
+    getRequestBodyNotAllowedExceptionMessage                          = "Les opérations '{0}' ne peuvent pas avoir de corps de requête. Utilisez -AllowNonStandardBody pour contourner cette restriction."
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La fonction '{0}' n'accepte pas un tableau en tant qu'entrée de pipeline."
+    unsupportedStreamCompressionEncodingExceptionMessage              = "La compression de flux {0} n'est pas prise en charge."
+    LocalEndpointConflictExceptionMessage                             = "Les deux '{0}' et '{1}' sont définis comme des points de terminaison locaux pour OpenAPI, mais un seul point de terminaison local est autorisé par définition d'API."
 }
-

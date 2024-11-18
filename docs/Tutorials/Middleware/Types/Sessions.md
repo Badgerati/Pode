@@ -111,9 +111,9 @@ For example, the following is a mock up of a Storage for Redis. Note that the fu
 
 ```powershell
 # create the object
-$store = New-Object -TypeName psobject
+$store = [psobject]::new()
 
-# add a Get property for retreiving a session's data by SessionId
+# add a Get property for retrieving a session's data by SessionId
 $store | Add-Member -MemberType NoteProperty -Name Get -Value {
     param($sessionId)
     $data = Get-RedisKey -Key $sessionId

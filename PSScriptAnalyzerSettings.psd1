@@ -1,15 +1,33 @@
-# PSScriptAnalyzerSettings.psd1
 @{
-    Severity     = @('Error', 'Warning', 'Information')
+    Severity            = @('Error', 'Warning', 'Information')
+    IncludeDefaultRules = $true
 
-    Rules = @{
+    CustomRulePath      = @(
+        './analyzers/AvoidNewObjectRule.psm1'
+    )
+
+    Rules               = @{
         PSReviewUnusedParameter = @{
             CommandsToTraverse = @(
-                'Where-Object','Remove-PodeRoute'
+                'Where-Object',
+                'Remove-PodeRoute'
             )
         }
+        AvoidNewObjectRule      = @{
+            Severity = 'Warning'
+        }
     }
-    ExcludeRules = @( 'PSAvoidUsingPlainTextForPassword','PSUseShouldProcessForStateChangingFunctions',
-    'PSAvoidUsingUsernameAndPasswordParams','PSUseProcessBlockForPipelineCommand','PSAvoidUsingConvertToSecureStringWithPlainText','PSReviewUnusedParameter' )
+
+    ExcludeRules        = @(
+        'PSAvoidUsingPlainTextForPassword',
+        'PSUseShouldProcessForStateChangingFunctions',
+        'PSAvoidUsingUsernameAndPasswordParams',
+        'PSUseProcessBlockForPipelineCommand',
+        'PSAvoidUsingConvertToSecureStringWithPlainText',
+        'PSReviewUnusedParameter',
+        'PSAvoidAssignmentToAutomaticVariable',
+        'PSUseBOMForUnicodeEncodedFile',
+        'PSAvoidTrailingWhitespace'
+    )
 
 }

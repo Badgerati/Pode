@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'Der Name des Ansichtsordners existiert bereits: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'Kein Name für das Zurücksetzen des WebSocket angegeben.'
     mergeDefaultAuthNotInListExceptionMessage                         = "Die MergeDefault-Authentifizierung '{0}' befindet sich nicht in der angegebenen Authentifizierungsliste."
-    descriptionRequiredExceptionMessage                               = 'Eine Beschreibung ist erforderlich.'
+    descriptionRequiredExceptionMessage                               = 'Eine Beschreibung ist erforderlich für Pfad:{0} Antwort:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'Der Seitenname sollte einen gültigen alphanumerischen Wert haben: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'Der Standardwert ist kein Boolean und gehört nicht zum Enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'Das OpenApi-Komponentenschema {0} existiert nicht.'
@@ -283,5 +283,13 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory-Modul nur unter Windows verfügbar.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'Die Anforderungsprotokollierung wurde bereits aktiviert.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Ungültige Access-Control-Max-Age-Dauer angegeben: {0}. Sollte größer als 0 sein.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'Die OpenAPI-Definition mit dem Namen {0} existiert bereits.'
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag kann nicht innerhalb eines 'ScriptBlock' von Select-PodeOADefinition verwendet werden."
+    taskProcessDoesNotExistExceptionMessage                           = "Der Aufgabenprozess '{0}' existiert nicht."
+    scheduleProcessDoesNotExistExceptionMessage                       = "Der Aufgabenplanerprozess '{0}' existiert nicht."
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Definitionstag für eine Route kann nicht geändert werden.'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' Operationen dürfen keinen Anfragekörper haben. Verwenden Sie -AllowNonStandardBody, um diese Einschränkung zu umgehen."
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "Die Funktion '{0}' akzeptiert kein Array als Pipeline-Eingabe."
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'Die Stream-Komprimierungskodierung wird nicht unterstützt: {0}'
+    LocalEndpointConflictExceptionMessage                             = "Sowohl '{0}' als auch '{1}' sind als lokale OpenAPI-Endpunkte definiert, aber es ist nur ein lokaler Endpunkt pro API-Definition erlaubt."
 }
-

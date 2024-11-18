@@ -1,4 +1,5 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseUsingScopeModifierInNewRunspaces', '', Justification = 'Using ArgumentList')]
 param()
 
 Describe 'Schedules' {
@@ -16,6 +17,35 @@ Describe 'Schedules' {
                 New-PodeLoggingMethod -Terminal | Enable-PodeErrorLogging
                 Add-PodeRoute -Method Get -Path '/close' -ScriptBlock {
                     Close-PodeServer
+                }
+
+                # schedule minutely using predefined cron
+
+                Set-PodeState -Name 'test3' -Value @{eventList = @() }
+
+                Add-PodeSchedule -Name 'TestEvents' -Cron '* * * * *' -Limit 2 -OnStart -ScriptBlock {
+                    param($Event )
+                    Lock-PodeObject -ScriptBlock {
+                        $test3 = (Get-PodeState -Name 'test3')
+                        $test3.eventList += @{
+                            message = 'Hello, world!'
+                            'Last'  = $Event.Sender.LastTriggerTime
+                            'Next'  = $Event.Sender.NextTriggerTime
+                        }
+                    }
+                }
+
+
+                Add-PodeRoute -Method Get -Path '/eventlist' -ScriptBlock {
+                    Lock-PodeObject -ScriptBlock {
+                        $test3 = (Get-PodeState -Name 'test3')
+                        if ($test3.eventList.Count -gt 1) {
+                            Write-PodeJsonResponse -Value  @{ ready = $true ; count = $test3.eventList.Count; eventList = $test3.eventList }
+                        }
+                        else {
+                            Write-PodeJsonResponse -Value  @{ ready = $false ; count = $test3.eventList.Count; }
+                        }
+                    }
                 }
 
                 # test1
@@ -53,14 +83,39 @@ Describe 'Schedules' {
         Get-Job -Name 'Pode' | Remove-Job -Force
     }
 
-
-    It 'schedule updates state value - full cron' {
+    It 'Schedule updates state value - full cron' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/test1" -Method Get
         $result.Result | Should -Be 1337
     }
 
-    It 'schedule updates state value - short cron' {
+    It 'Schedule updates state value - short cron' {
         $result = Invoke-RestMethod -Uri "$($Endpoint)/test2" -Method Get
         $result.Result | Should -Be 314
     }
+
+    It 'Check schedule events result' {
+
+        for ($i = 0; $i -lt 20; $i++) {
+            $result = Invoke-RestMethod -Uri "$($Endpoint)/eventlist" -Method Get
+            if ($result.ready) {
+                break
+            }
+            Start-Sleep -Seconds 10
+        }
+        $result.ready | Should -BeTrue
+        $result.Count | Should -Be 2
+        $result.eventList.GetType() | Should -Be 'System.Object[]'
+        $result.eventList.Count | Should -Be 2
+
+
+        if ( $null -eq $result.eventList[0].Next  ) { $index = 0 } else { $index = 1 }
+        $result.eventList[$index].Message | Should -Be 'Hello, world!'
+        $result.eventList[$index].Last | Should -not -BeNullOrEmpty
+        $result.eventList[$index].next | Should -BeNullOrEmpty
+        if ($index -eq 0) { $index = 1 }else { $index = 0 }
+        $result.eventList[$index].Message | Should -Be 'Hello, world!'
+        $result.eventList[$index].Last | Should -not -BeNullOrEmpty
+        $result.eventList[$index].next | Should -not -BeNullOrEmpty
+    }
+
 }

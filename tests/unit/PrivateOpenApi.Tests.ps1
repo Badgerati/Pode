@@ -14,7 +14,7 @@ Describe 'PrivateOpenApi' {
         function GetPodeContext {
             return @{
                 Server = @{
-                    Security        = @{
+                    Security               = @{
                         autoheaders = $false
                     }
                     Authentications = @{}
@@ -342,7 +342,6 @@ Describe 'PrivateOpenApi' {
 
             $openApiTable | Should -BeOfType [hashtable]
             $openApiTable.DefinitionTagSelectionStack -is [System.Collections.Generic.Stack[System.Object]] | Should -BeTrue
-            $openApiTable.DefaultDefinitionTag | Should -Be 'default'
             $openApiTable.SelectedDefinitionTag | Should -Be 'default'
             $openApiTable.Definitions | Should -BeOfType [hashtable]
             $openApiTable.Definitions['default'] | Should -BeOfType [hashtable]
@@ -351,8 +350,6 @@ Describe 'PrivateOpenApi' {
         It 'Initializes OpenAPI table with custom definition tag' {
             $customTag = 'api-v1'
             $openApiTable = Initialize-PodeOpenApiTable -DefaultDefinitionTag $customTag
-
-            $openApiTable.DefaultDefinitionTag | Should -Be $customTag
             $openApiTable.SelectedDefinitionTag | Should -Be $customTag
             $openApiTable.Definitions | Should -BeOfType [hashtable]
             $openApiTable.Definitions[$customTag] | Should -BeOfType [hashtable]
@@ -376,7 +373,7 @@ Describe 'PrivateOpenApi' {
             $result.Count | Should -Be 2
             $result['prop1'].processed | Should -Be $true
             $result['prop2'].processed | Should -Be $true
-            $result.ContainsKey('prop3') | Should -Be $false
+            $result.keys -contains 'prop3' | Should -Be $false
         }
 
         It 'Forms valid schema object for non-excluded properties' {
@@ -403,7 +400,7 @@ Describe 'PrivateOpenApi' {
             }
             $result = ConvertTo-PodeOAObjectSchema -Content $content -DefinitionTag 'myTag'
 
-            $result.ContainsKey('application/json') | Should -Be $true
+            $result.Keys -contains 'application/json' | Should -Be $true
             $result['application/json'].schema.type | Should -Be 'string'
         }
 
@@ -419,6 +416,26 @@ Describe 'PrivateOpenApi' {
             $result['application/json'].schema.type | Should -Be 'array'
             $result['application/json'].schema.Items.type | Should -Be 'string'
         }
+
+    }
+
+    Describe 'ConvertTo-PodeOARoutePath' {
+
+        It 'should convert the path "/v4.2/:potato" to OpenAPI format' {
+            $result = ConvertTo-PodeOARoutePath -Path '/v4.2/:potato'
+            $result | Should -BeExactly '/v4.2/{potato}'
+        }
+
+        It 'should convert the path "/:potato" to OpenAPI format' {
+            $result = ConvertTo-PodeOARoutePath -Path '/:potato'
+            $result | Should -BeExactly '/{potato}'
+        }
+
+        It 'should convert the path "/stores/order/:orderId/invoice" to OpenAPI format' {
+            $result = ConvertTo-PodeOARoutePath -Path '/stores/order/:orderId/invoice'
+            $result | Should -BeExactly '/stores/order/{orderId}/invoice'
+        }
+
 
     }
 

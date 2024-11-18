@@ -28,7 +28,7 @@ function Set-PodeState {
         [string]
         $Name,
 
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0)]
         [object]
         $Value,
 
@@ -37,21 +37,38 @@ function Set-PodeState {
         $Scope
     )
 
-    if ($null -eq $PodeContext.Server.State) {
-        # Pode has not been initialized
-        throw ($PodeLocale.podeNotInitializedExceptionMessage)
+    begin {
+        if ($null -eq $PodeContext.Server.State) {
+            # Pode has not been initialized
+            throw ($PodeLocale.podeNotInitializedExceptionMessage)
+        }
+
+        if ($null -eq $Scope) {
+            $Scope = @()
+        }
+
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    if ($null -eq $Scope) {
-        $Scope = @()
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
     }
 
-    $PodeContext.Server.State[$Name] = @{
-        Value = $Value
-        Scope = $Scope
-    }
+    end {
+        # Set Value to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Value = $pipelineValue
+        }
 
-    return $Value
+        $PodeContext.Server.State[$Name] = @{
+            Value = $Value
+            Scope = $Scope
+        }
+
+        return $Value
+    }
 }
 
 <#
@@ -114,6 +131,7 @@ $names = Get-PodeStateNames -Scope '<scope>'
 $names = Get-PodeStateNames -Pattern '^\w+[0-9]{0,2}$'
 #>
 function Get-PodeStateNames {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

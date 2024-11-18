@@ -182,11 +182,11 @@ function Start-PodeWebServer {
                             # if we have an sse clientId, verify it and then set details in WebEvent
                             if ($WebEvent.Request.HasSseClientId) {
                                 if (!(Test-PodeSseClientIdValid)) {
-                                    throw [System.Net.Http.HttpRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
+                                    throw [Pode.PodeRequestException]::new("The X-PODE-SSE-CLIENT-ID value is not valid: $($WebEvent.Request.SseClientId)")
                                 }
 
                                 if (![string]::IsNullOrEmpty($WebEvent.Request.SseClientName) -and !(Test-PodeSseClientId -Name $WebEvent.Request.SseClientName -ClientId $WebEvent.Request.SseClientId)) {
-                                    throw [System.Net.Http.HttpRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)")
+                                    throw [Pode.PodeRequestException]::new("The SSE Connection being referenced via the X-PODE-SSE-NAME and X-PODE-SSE-CLIENT-ID headers does not exist: [$($WebEvent.Request.SseClientName)] $($WebEvent.Request.SseClientId)", 404)
                                 }
 
                                 $WebEvent.Sse = @{
@@ -237,12 +237,12 @@ function Start-PodeWebServer {
                         catch [System.OperationCanceledException] {
                             $_ | Write-PodeErrorLog -Level Debug
                         }
-                        catch [System.Net.Http.HttpRequestException] {
+                        catch [Pode.PodeRequestException] {
                             if ($Response.StatusCode -ge 500) {
                                 $_.Exception | Write-PodeErrorLog -CheckInnerException
                             }
 
-                            $code = [int]($_.Exception.Data['PodeStatusCode'])
+                            $code = $_.Exception.StatusCode
                             if ($code -le 0) {
                                 $code = 400
                             }
@@ -280,7 +280,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Web -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+            Add-PodeRunspace -Type Web -Name 'Listener' -Id $_ -ScriptBlock $listenScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
     }
 
@@ -326,7 +326,7 @@ function Start-PodeWebServer {
                         # send the message to all found sockets
                         foreach ($socket in $sockets) {
                             try {
-                                $socket.Context.Response.SendSignal($message)
+                                $null = Wait-PodeTask -Task $socket.Context.Response.SendSignal($message)
                             }
                             catch {
                                 $null = $Listener.Signals.Remove($socket.ClientId)
@@ -355,7 +355,7 @@ function Start-PodeWebServer {
             }
         }
 
-        Add-PodeRunspace -Type Signals -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
+        Add-PodeRunspace -Type Signals -Name 'Listener' -ScriptBlock $signalScript -Parameters @{ 'Listener' = $listener }
     }
 
     # only if WS endpoint
@@ -438,7 +438,7 @@ function Start-PodeWebServer {
 
         # start the runspace for listening on x-number of threads
         1..$PodeContext.Threads.General | ForEach-Object {
-            Add-PodeRunspace -Type Signals -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
+            Add-PodeRunspace -Type Signals -Name 'Broadcaster' -Id $_ -ScriptBlock $clientScript -Parameters @{ 'Listener' = $listener; 'ThreadId' = $_ }
         }
     }
 
@@ -468,12 +468,13 @@ function Start-PodeWebServer {
         }
     }
 
-    $waitType = 'Web'
-    if (!(Test-PodeEndpointByProtocolType -Type Http)) {
-        $waitType = 'Signals'
-    }
 
-    Add-PodeRunspace -Type $waitType -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    if (Test-PodeEndpointByProtocolType -Type Http) {
+        Add-PodeRunspace -Type 'Web' -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    }
+    else {
+        Add-PodeRunspace -Type 'Signals' -Name 'KeepAlive' -ScriptBlock $waitScript -Parameters @{ 'Listener' = $listener } -NoProfile
+    }
 
     # browse to the first endpoint, if flagged
     if ($Browse) {

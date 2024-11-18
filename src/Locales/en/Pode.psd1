@@ -212,7 +212,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'The Views folder name already exists: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'No Name for a WebSocket to reset supplied.'
     mergeDefaultAuthNotInListExceptionMessage                         = "The MergeDefault Authentication '{0}' is not in the Authentication list supplied."
-    descriptionRequiredExceptionMessage                               = 'A Description is required.'
+    descriptionRequiredExceptionMessage                               = 'A Description is required for Path:{0} Response:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'The Page name should be a valid Alphanumeric value: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'The default value is not a boolean and is not part of the enum.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = "The OpenApi component schema {0} doesn't exist."
@@ -283,5 +283,13 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory module only available on Windows OS.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'Request Logging has already been enabled.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Invalid Access-Control-Max-Age duration supplied: {0}. Should be greater than 0.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'OpenAPI definition named {0} already exists.'
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag cannot be used inside a Select-PodeOADefinition 'ScriptBlock'."
+    taskProcessDoesNotExistExceptionMessage                           = 'Task process does not exist: {0}'
+    scheduleProcessDoesNotExistExceptionMessage                       = 'Schedule process does not exist: {0}'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Definition Tag for a Route cannot be changed.'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' operations cannot have a Request Body. Use -AllowNonStandardBody to override this restriction."
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "The function '{0}' does not accept an array as pipeline input."
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'Unsupported stream compression encoding: {0}'
+    LocalEndpointConflictExceptionMessage                             = "Both '{0}' and '{1}' are defined as local OpenAPI endpoints, but only one local endpoint is allowed per API definition."
 }
-

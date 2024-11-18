@@ -1,45 +1,45 @@
 <#
 .SYNOPSIS
-Adds a new Timer with logic to periodically invoke.
+    Adds a new Timer with logic to periodically invoke.
 
 .DESCRIPTION
-Adds a new Timer with logic to periodically invoke, with options to only run a specific number of times.
+    Adds a new Timer with logic to periodically invoke, with options to only run a specific number of times.
 
 .PARAMETER Name
-The Name of the Timer.
+    The Name of the Timer.
 
 .PARAMETER Interval
-The number of seconds to periodically invoke the Timer's ScriptBlock.
+    The number of seconds to periodically invoke the Timer's ScriptBlock.
 
 .PARAMETER ScriptBlock
-The script for the Timer.
+    The script for the Timer.
 
 .PARAMETER Limit
-The number of times the Timer should be invoked before being removed. (If 0, it will run indefinitely)
+    The number of times the Timer should be invoked before being removed. (If 0, it will run indefinitely)
 
 .PARAMETER Skip
-The number of "invokes" to skip before the Timer actually runs.
+    The number of "invokes" to skip before the Timer actually runs.
 
 .PARAMETER ArgumentList
-An array of arguments to supply to the Timer's ScriptBlock.
+    An array of arguments to supply to the Timer's ScriptBlock.
 
 .PARAMETER FilePath
-A literal, or relative, path to a file containing a ScriptBlock for the Timer's logic.
+    A literal, or relative, path to a file containing a ScriptBlock for the Timer's logic.
 
 .PARAMETER OnStart
-If supplied, the timer will trigger when the server starts.
+    If supplied, the timer will trigger when the server starts.
 
 .EXAMPLE
-Add-PodeTimer -Name 'Hello' -Interval 10 -ScriptBlock { 'Hello, world!' | Out-Default }
+    Add-PodeTimer -Name 'Hello' -Interval 10 -ScriptBlock { 'Hello, world!' | Out-Default }
 
 .EXAMPLE
-Add-PodeTimer -Name 'RunOnce' -Interval 1 -Limit 1 -ScriptBlock { /* logic */ }
+    Add-PodeTimer -Name 'RunOnce' -Interval 1 -Limit 1 -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeTimer -Name 'RunAfter60secs' -Interval 10 -Skip 6 -ScriptBlock { /* logic */ }
+    Add-PodeTimer -Name 'RunAfter60secs' -Interval 10 -Skip 6 -ScriptBlock { /* logic */ }
 
 .EXAMPLE
-Add-PodeTimer -Name 'Args' -Interval 2 -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
+    Add-PodeTimer -Name 'Args' -Interval 2 -ScriptBlock { /* logic */ } -ArgumentList 'arg1', 'arg2'
 #>
 function Add-PodeTimer {
     [CmdletBinding(DefaultParameterSetName = 'Script')]
@@ -155,7 +155,7 @@ Invoke-PodeTimer -Name 'timer-name'
 function Invoke-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -163,15 +163,16 @@ function Invoke-PodeTimer {
         [object[]]
         $ArgumentList = $null
     )
+    process {
+        # ensure the timer exists
+        if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
+            # Timer 'Name' does not exist
+            throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
+        }
 
-    # ensure the timer exists
-    if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-        # Timer 'Name' does not exist
-        throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
+        # run timer logic
+        Invoke-PodeInternalTimer -Timer $PodeContext.Timers.Items[$Name] -ArgumentList $ArgumentList
     }
-
-    # run timer logic
-    Invoke-PodeInternalTimer -Timer $PodeContext.Timers.Items[$Name] -ArgumentList $ArgumentList
 }
 
 <#
@@ -190,12 +191,13 @@ Remove-PodeTimer -Name 'SaveState'
 function Remove-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name
     )
-
-    $null = $PodeContext.Timers.Items.Remove($Name)
+    process {
+        $null = $PodeContext.Timers.Items.Remove($Name)
+    }
 }
 
 <#
@@ -209,6 +211,7 @@ Removes all Timers.
 Clear-PodeTimers
 #>
 function Clear-PodeTimers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param()
 
@@ -240,7 +243,7 @@ Edit-PodeTimer -Name 'Hello' -Interval 10
 function Edit-PodeTimer {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [string]
         $Name,
 
@@ -256,30 +259,31 @@ function Edit-PodeTimer {
         [object[]]
         $ArgumentList
     )
+    process {
+        # ensure the timer exists
+        if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
+            # Timer 'Name' does not exist
+            throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
+        }
 
-    # ensure the timer exists
-    if (!$PodeContext.Timers.Items.ContainsKey($Name)) {
-        # Timer 'Name' does not exist 
-        throw ($PodeLocale.timerDoesNotExistExceptionMessage -f $Name)
-    }
+        $_timer = $PodeContext.Timers.Items[$Name]
 
-    $_timer = $PodeContext.Timers.Items[$Name]
+        # edit interval if supplied
+        if ($Interval -gt 0) {
+            $_timer.Interval = $Interval
+        }
 
-    # edit interval if supplied
-    if ($Interval -gt 0) {
-        $_timer.Interval = $Interval
-    }
+        # edit scriptblock if supplied
+        if (!(Test-PodeIsEmpty $ScriptBlock)) {
+            $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+            $_timer.Script = $ScriptBlock
+            $_timer.UsingVariables = $usingVars
+        }
 
-    # edit scriptblock if supplied
-    if (!(Test-PodeIsEmpty $ScriptBlock)) {
-        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
-        $_timer.Script = $ScriptBlock
-        $_timer.UsingVariables = $usingVars
-    }
-
-    # edit arguments if supplied
-    if (!(Test-PodeIsEmpty $ArgumentList)) {
-        $_timer.Arguments = $ArgumentList
+        # edit arguments if supplied
+        if (!(Test-PodeIsEmpty $ArgumentList)) {
+            $_timer.Arguments = $ArgumentList
+        }
     }
 }
 
@@ -367,6 +371,7 @@ Use-PodeTimers
 Use-PodeTimers -Path './my-timers'
 #>
 function Use-PodeTimers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     [CmdletBinding()]
     param(
         [Parameter()]

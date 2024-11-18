@@ -856,13 +856,10 @@ function Invoke-PodeAuthInbuiltScriptBlock {
         $ScriptBlock,
 
         [Parameter()]
-        $UsingVariables,
-
-        [switch]
-        $NoSplat
+        $UsingVariables
     )
 
-    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $User -UsingVariables $UsingVariables -Return -Splat:(!$NoSplat))
+    return (Invoke-PodeScriptBlock -ScriptBlock $ScriptBlock -Arguments $User -UsingVariables $UsingVariables -Return)
 }
 
 function Get-PodeAuthWindowsLocalMethod {
@@ -947,7 +944,7 @@ function Get-PodeAuthWindowsADIISMethod {
         try {
             # parse the auth token and get the user
             $winAuthToken = [System.IntPtr][Int]"0x$($token)"
-            $winIdentity = New-Object System.Security.Principal.WindowsIdentity($winAuthToken, 'Windows')
+            $winIdentity = [System.Security.Principal.WindowsIdentity]::new($winAuthToken, 'Windows')
 
             # get user and domain
             $username = ($winIdentity.Name -split '\\')[-1]
@@ -1175,7 +1172,7 @@ function Invoke-PodeAuthValidation {
         if ($result.Success -and !$auth.PassOne) {
             # invoke scriptblock, or use result of merge default
             if ($null -ne $auth.ScriptBlock.Script) {
-                $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables -NoSplat
+                $result = Invoke-PodeAuthInbuiltScriptBlock -User $results -ScriptBlock $auth.ScriptBlock.Script -UsingVariables $auth.ScriptBlock.UsingVariables
             }
             else {
                 $result = $results[$auth.MergeDefault]
@@ -1421,6 +1418,8 @@ function Test-PodeAuthInternal {
 
     # did the auth force a redirect?
     if ($result.Redirected) {
+        $success = Get-PodeAuthSuccessInfo -Name $Name
+        Set-PodeAuthRedirectUrl -UseOrigin:($success.UseOrigin)
         return $false
     }
 
@@ -1650,9 +1649,6 @@ function Set-PodeAuthStatus {
     # get auth method
     $auth = $PodeContext.Server.Authentications.Methods[$Name]
 
-    # cookie redirect name
-    $redirectCookie = 'pode.redirecturl'
-
     # get Success object from auth
     $success = Get-PodeAuthSuccessInfo -Name $Name
 
@@ -1671,10 +1667,7 @@ function Set-PodeAuthStatus {
 
         # check if we have a failure url redirect
         if (!$NoFailureRedirect -and ![string]::IsNullOrWhiteSpace($failure.Url)) {
-            if ($success.UseOrigin -and ($WebEvent.Method -ieq 'get')) {
-                $null = Set-PodeCookie -Name $redirectCookie -Value $WebEvent.Request.Url.PathAndQuery
-            }
-
+            Set-PodeAuthRedirectUrl -UseOrigin:($success.UseOrigin)
             Move-PodeResponseUrl -Url $failure.Url
         }
         else {
@@ -1685,20 +1678,12 @@ function Set-PodeAuthStatus {
     }
 
     # if no statuscode, success, so check if we have a success url redirect (but only for auto-login routes)
-    if ((!$NoSuccessRedirect -or $LoginRoute) -and ![string]::IsNullOrWhiteSpace($success.Url)) {
-        $url = $success.Url
-
-        if ($success.UseOrigin) {
-            $tmpUrl = Get-PodeCookieValue -Name $redirectCookie
-            Remove-PodeCookie -Name $redirectCookie
-
-            if (![string]::IsNullOrWhiteSpace($tmpUrl)) {
-                $url = $tmpUrl
-            }
+    if (!$NoSuccessRedirect -or $LoginRoute) {
+        $url = Get-PodeAuthRedirectUrl -Url $success.Url -UseOrigin:($success.UseOrigin)
+        if (![string]::IsNullOrWhiteSpace($url)) {
+            Move-PodeResponseUrl -Url $url
+            return $false
         }
-
-        Move-PodeResponseUrl -Url $url
-        return $false
     }
 
     return $true
@@ -1914,10 +1899,10 @@ function Open-PodeAuthADConnection {
 
         'directoryservices' {
             if ([string]::IsNullOrWhiteSpace($Password)) {
-                $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)")
+                $ad = [System.DirectoryServices.DirectoryEntry]::new("$($Protocol)://$($Server)")
             }
             else {
-                $ad = (New-Object System.DirectoryServices.DirectoryEntry "$($Protocol)://$($Server)", "$($Username)", "$($Password)")
+                $ad = [System.DirectoryServices.DirectoryEntry]::new("$($Protocol)://$($Server)", "$($Username)", "$($Password)")
             }
 
             if (Test-PodeIsEmpty $ad.distinguishedName) {
@@ -1990,7 +1975,7 @@ function Get-PodeAuthADUser {
         }
 
         'directoryservices' {
-            $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
+            $Connection.Searcher = [System.DirectoryServices.DirectorySearcher]::new($Connection.Entry)
             $Connection.Searcher.filter = $query
 
             $result = $Connection.Searcher.FindOne().Properties
@@ -2130,7 +2115,7 @@ function Get-PodeAuthADGroupDirect {
 
         'directoryservices' {
             if ($null -eq $Connection.Searcher) {
-                $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
+                $Connection.Searcher = [System.DirectoryServices.DirectorySearcher]::new($Connection.Entry)
             }
 
             $Connection.Searcher.filter = $query
@@ -2179,7 +2164,7 @@ function Get-PodeAuthADGroupAll {
 
         'directoryservices' {
             if ($null -eq $Connection.Searcher) {
-                $Connection.Searcher = New-Object System.DirectoryServices.DirectorySearcher $Connection.Entry
+                $Connection.Searcher = [System.DirectoryServices.DirectorySearcher]::new($Connection.Entry)
             }
 
             $null = $Connection.Searcher.PropertiesToLoad.Add('samaccountname')
@@ -2192,22 +2177,29 @@ function Get-PodeAuthADGroupAll {
 }
 
 function Get-PodeAuthDomainName {
-    if (Test-PodeIsUnix) {
-        $dn = (dnsdomainname)
-        if ([string]::IsNullOrWhiteSpace($dn)) {
-            $dn = (/usr/sbin/realm list --name-only)
-        }
+    $domain = $null
 
-        return $dn
+    if (Test-PodeIsMacOS) {
+        $domain = (scutil --dns | grep -m 1 'search domain\[0\]' | cut -d ':' -f 2)
+    }
+    elseif (Test-PodeIsUnix) {
+        $domain = (dnsdomainname)
+        if ([string]::IsNullOrWhiteSpace($domain)) {
+            $domain = (/usr/sbin/realm list --name-only)
+        }
     }
     else {
         $domain = $env:USERDNSDOMAIN
         if ([string]::IsNullOrWhiteSpace($domain)) {
             $domain = (Get-CimInstance -Class Win32_ComputerSystem -Verbose:$false).Domain
         }
-
-        return $domain
     }
+
+    if (![string]::IsNullOrEmpty($domain)) {
+        $domain = $domain.Trim()
+    }
+
+    return $domain
 }
 
 function Find-PodeAuth {
@@ -2313,4 +2305,39 @@ function Get-PodeAuthADProvider {
 
     # ds
     return 'DirectoryServices'
+}
+
+function Set-PodeAuthRedirectUrl {
+    param(
+        [switch]
+        $UseOrigin
+    )
+
+    if ($UseOrigin -and ($WebEvent.Method -ieq 'get')) {
+        $null = Set-PodeCookie -Name 'pode.redirecturl' -Value $WebEvent.Request.Url.PathAndQuery
+    }
+}
+
+function Get-PodeAuthRedirectUrl {
+    param(
+        [Parameter()]
+        [string]
+        $Url,
+
+        [switch]
+        $UseOrigin
+    )
+
+    if (!$UseOrigin) {
+        return $Url
+    }
+
+    $tmpUrl = Get-PodeCookieValue -Name 'pode.redirecturl'
+    Remove-PodeCookie -Name 'pode.redirecturl'
+
+    if (![string]::IsNullOrWhiteSpace($tmpUrl)) {
+        $Url = $tmpUrl
+    }
+
+    return $Url
 }

@@ -94,22 +94,34 @@ function Start-PodeStopwatch {
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock
     )
+    begin {
+        $pipelineItemCount = 0
+    }
 
-    try {
-        $watch = [System.Diagnostics.Stopwatch]::StartNew()
-        . $ScriptBlock
+    process {
+        $pipelineItemCount++
     }
-    catch {
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
-    }
-    finally {
-        $watch.Stop()
-        "[Stopwatch]: $($watch.Elapsed) [$($Name)]" | Out-PodeHost
+
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        try {
+            $watch = [System.Diagnostics.Stopwatch]::StartNew()
+            . $ScriptBlock
+        }
+        catch {
+            $_ | Write-PodeErrorLog
+            throw $_.Exception
+        }
+        finally {
+            $watch.Stop()
+            "[Stopwatch]: $($watch.Elapsed) [$($Name)]" | Out-PodeHost
+        }
     }
 }
 
@@ -240,7 +252,7 @@ Add-PodeEndware -ScriptBlock { /* logic */ }
 function Add-PodeEndware {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [scriptblock]
         $ScriptBlock,
 
@@ -248,15 +260,27 @@ function Add-PodeEndware {
         [object[]]
         $ArgumentList
     )
+    begin {
+        $pipelineItemCount = 0
+    }
 
-    # check for scoped vars
-    $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+    process {
+        $pipelineItemCount++
+    }
 
-    # add the scriptblock to array of endware that needs to be run
-    $PodeContext.Server.Endware += @{
-        Logic          = $ScriptBlock
-        UsingVariables = $usingVars
-        Arguments      = $ArgumentList
+    end {
+        if ($pipelineItemCount -gt 1) {
+            throw ($PodeLocale.fnDoesNotAcceptArrayAsPipelineInputExceptionMessage -f $($MyInvocation.MyCommand.Name))
+        }
+        # check for scoped vars
+        $ScriptBlock, $usingVars = Convert-PodeScopedVariables -ScriptBlock $ScriptBlock -PSSession $PSCmdlet.SessionState
+
+        # add the scriptblock to array of endware that needs to be run
+        $PodeContext.Server.Endware += @{
+            Logic          = $ScriptBlock
+            UsingVariables = $usingVars
+            Arguments      = $ArgumentList
+        }
     }
 }
 
@@ -495,7 +519,7 @@ Spat the argument onto the ScriptBlock.
 Don't create a new closure before invoking the ScriptBlock.
 
 .EXAMPLE
-Invoke-PodeScriptBlock -ScriptBlock { Write-Host 'Hello!' }
+Invoke-PodeScriptBlock -ScriptBlock { Write-PodeHost 'Hello!' }
 
 .EXAMPLE
 Invoke-PodeScriptBlock -Arguments 'Morty' -ScriptBlock { /* logic */ }
@@ -588,6 +612,9 @@ $Arguments = @(Merge-PodeScriptblockArguments -ArgumentList $Arguments -UsingVar
 $Arguments = @(Merge-PodeScriptblockArguments -UsingVariables $UsingVariables)
 #>
 function Merge-PodeScriptblockArguments {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
+    [CmdletBinding()]
+    [OutputType([object[]])]
     param(
         [Parameter()]
         [object[]]
@@ -772,14 +799,34 @@ The object to output.
 function Out-PodeHost {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [object]
         $InputObject
     )
-
-    if (!$PodeContext.Server.Quiet) {
-        $InputObject | Out-Default
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
+
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        if ($PodeContext.Server.Quiet) {
+            return
+        }
+        # Set InputObject to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $InputObject = $pipelineValue
+            $InputObject | Out-Default
+        }
+        else {
+            Out-Default -InputObject $InputObject
+        }
+    }
+
 }
 
 <#
@@ -805,6 +852,9 @@ Show the object content
 .PARAMETER ShowType
 Show the Object Type
 
+.PARAMETER Label
+Show a label for the object
+
 .EXAMPLE
 'Some output' | Write-PodeHost -ForegroundColor Cyan
 #>
@@ -829,33 +879,66 @@ function Write-PodeHost {
 
         [Parameter( Mandatory = $false, ParameterSetName = 'object')]
         [switch]
-        $ShowType
-    )
+        $ShowType,
 
-    if ($PodeContext.Server.Quiet) {
-        return
+        [Parameter( Mandatory = $false, ParameterSetName = 'object')]
+        [string]
+        $Label
+    )
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
     }
 
-    if ($Explode.IsPresent ) {
-        if ($null -eq $Object) {
-            if ($ShowType) {
-                $Object = "`tNull Value"
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        if ($PodeContext.Server.Quiet) {
+            return
+        }
+        # Set Object to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Object = $pipelineValue
+        }
+
+        if ($Explode.IsPresent ) {
+            if ($null -eq $Object) {
+                if ($ShowType) {
+                    $Object = "`tNull Value"
+                }
+            }
+            else {
+                $type = $Object.gettype().FullName
+                $Object = $Object | Out-String
+                if ($ShowType) {
+                    $Object = "`tTypeName: $type`n$Object"
+                }
+            }
+            if ($Label) {
+                $Object = "`tName: $Label $Object"
+            }
+
+        }
+
+        if ($ForegroundColor) {
+            if ($pipelineValue.Count -gt 1) {
+                $Object | Write-Host -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
+            }
+            else {
+                Write-Host -Object $Object -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
             }
         }
         else {
-            $type = $Object.gettype().FullName
-            $Object = $Object | Out-String
-            if ($ShowType) {
-                $Object = "`tTypeName: $type`n$Object"
+            if ($pipelineValue.Count -gt 1) {
+                $Object | Write-Host -NoNewline:$NoNewLine
+            }
+            else {
+                Write-Host -Object $Object -NoNewline:$NoNewLine
             }
         }
-    }
-
-    if ($ForegroundColor) {
-        Write-Host -Object $Object -ForegroundColor $ForegroundColor -NoNewline:$NoNewLine
-    }
-    else {
-        Write-Host -Object $Object -NoNewline:$NoNewLine
     }
 }
 
@@ -954,12 +1037,28 @@ function Out-PodeVariable {
         [string]
         $Name,
 
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(Position = 0, ValueFromPipeline = $true)]
         [object]
         $Value
     )
+    begin {
+        # Initialize an array to hold piped-in values
+        $pipelineValue = @()
+    }
 
-    $PodeContext.Server.Output.Variables[$Name] = $Value
+    process {
+        # Add the current piped-in value to the array
+        $pipelineValue += $_
+    }
+
+    end {
+        # Set Value to the array of values
+        if ($pipelineValue.Count -gt 1) {
+            $Value = $pipelineValue
+        }
+
+        $PodeContext.Server.Output.Variables[$Name] = $Value
+    }
 }
 
 <#
@@ -1282,86 +1381,108 @@ Outputs an ordered hashtable representing the XML node structure.
 
 .NOTES
 This cmdlet is useful for transforming XML data into a structure that's easier to manipulate in PowerShell scripts.
-
-.LINK
-https://badgerati.github.io/Pode/Functions/Utility/ConvertFrom-PodeXml
-
 #>
 function ConvertFrom-PodeXml {
     [CmdletBinding()]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param
     (
-        [Parameter(Mandatory = $true, ValueFromPipeline)]
-        [System.Xml.XmlNode]$node, #we are working through the nodes
-        [string]$Prefix = '', #do we indicate an attribute with a prefix?
-        $ShowDocElement = $false, #Do we show the document element?,
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [System.Xml.XmlNode]$node,
+
+        [Parameter()]
+        [string]
+        $Prefix = '',
+
+        [Parameter()]
+        [switch]
+        $ShowDocElement,
+
+        [Parameter()]
         [switch]
         $KeepAttributes
     )
-    #if option set, we skip the Document element
-    if ($node.DocumentElement -and !($ShowDocElement))
-    { $node = $node.DocumentElement }
-    $oHash = [ordered] @{ } # start with an ordered hashtable.
-    #The order of elements is always significant regardless of what they are
-    if ($null -ne $node.Attributes  ) {
-        #if there are elements
-        # record all the attributes first in the ordered hash
-        $node.Attributes | ForEach-Object {
-            $oHash.$("$Prefix$($_.FirstChild.parentNode.LocalName)") = $_.FirstChild.value
+    process {
+        #if option set, we skip the Document element
+        if ($node.DocumentElement -and !($ShowDocElement.IsPresent))
+        { $node = $node.DocumentElement }
+        $oHash = [ordered] @{ } # start with an ordered hashtable.
+        #The order of elements is always significant regardless of what they are
+        if ($null -ne $node.Attributes  ) {
+            #if there are elements
+            # record all the attributes first in the ordered hash
+            $node.Attributes | ForEach-Object {
+                $oHash.$("$Prefix$($_.FirstChild.parentNode.LocalName)") = $_.FirstChild.value
+            }
         }
-    }
-    # check to see if there is a pseudo-array. (more than one
-    # child-node with the same name that must be handled as an array)
-    $node.ChildNodes | #we just group the names and create an empty
-        #array for each
-        Group-Object -Property LocalName | Where-Object { $_.count -gt 1 } | Select-Object Name |
-        ForEach-Object {
-            $oHash.($_.Name) = @() <# create an empty array for each one#>
-        }
-    foreach ($child in $node.ChildNodes) {
-        #now we look at each node in turn.
-        $childName = $child.LocalName
-        if ($child -is [system.xml.xmltext]) {
-            # if it is simple XML text
-            $oHash.$childname += $child.InnerText
-        }
-        # if it has a #text child we may need to cope with attributes
-        elseif ($child.FirstChild.Name -eq '#text' -and $child.ChildNodes.Count -eq 1) {
-            if ($null -ne $child.Attributes -and $KeepAttributes ) {
-                #hah, an attribute
-                <#we need to record the text with the #text label and preserve all
+        # check to see if there is a pseudo-array. (more than one
+        # child-node with the same name that must be handled as an array)
+        $node.ChildNodes | #we just group the names and create an empty
+            #array for each
+            Group-Object -Property LocalName | Where-Object { $_.count -gt 1 } | Select-Object Name |
+            ForEach-Object {
+                $oHash.($_.Name) = @() <# create an empty array for each one#>
+            }
+        foreach ($child in $node.ChildNodes) {
+            #now we look at each node in turn.
+            $childName = $child.LocalName
+            if ($child -is [system.xml.xmltext]) {
+                # if it is simple XML text
+                $oHash.$childname += $child.InnerText
+            }
+            # if it has a #text child we may need to cope with attributes
+            elseif ($child.FirstChild.Name -eq '#text' -and $child.ChildNodes.Count -eq 1) {
+                if ($null -ne $child.Attributes -and $KeepAttributes ) {
+                    #hah, an attribute
+                    <#we need to record the text with the #text label and preserve all
 					the attributes #>
-                $aHash = [ordered]@{ }
-                $child.Attributes | ForEach-Object {
-                    $aHash.$($_.FirstChild.parentNode.LocalName) = $_.FirstChild.value
+                    $aHash = [ordered]@{ }
+                    $child.Attributes | ForEach-Object {
+                        $aHash.$($_.FirstChild.parentNode.LocalName) = $_.FirstChild.value
+                    }
+                    #now we add the text with an explicit name
+                    $aHash.'#text' += $child.'#text'
+                    $oHash.$childname += $aHash
                 }
-                #now we add the text with an explicit name
-                $aHash.'#text' += $child.'#text'
-                $oHash.$childname += $aHash
+                else {
+                    #phew, just a simple text attribute.
+                    $oHash.$childname += $child.FirstChild.InnerText
+                }
+            }
+            elseif ($null -ne $child.'#cdata-section' ) {
+                # if it is a data section, a block of text that isnt parsed by the parser,
+                # but is otherwise recognized as markup
+                $oHash.$childname = $child.'#cdata-section'
+            }
+            elseif ($child.ChildNodes.Count -gt 1 -and
+                        ($child | Get-Member -MemberType Property).Count -eq 1) {
+                $oHash.$childname = @()
+                foreach ($grandchild in $child.ChildNodes) {
+                    $oHash.$childname += (ConvertFrom-PodeXml $grandchild)
+                }
             }
             else {
-                #phew, just a simple text attribute.
-                $oHash.$childname += $child.FirstChild.InnerText
+                # create an array as a value  to the hashtable element
+                $oHash.$childname += (ConvertFrom-PodeXml $child)
             }
         }
-        elseif ($null -ne $child.'#cdata-section' ) {
-            # if it is a data section, a block of text that isnt parsed by the parser,
-            # but is otherwise recognized as markup
-            $oHash.$childname = $child.'#cdata-section'
-        }
-        elseif ($child.ChildNodes.Count -gt 1 -and
-                        ($child | Get-Member -MemberType Property).Count -eq 1) {
-            $oHash.$childname = @()
-            foreach ($grandchild in $child.ChildNodes) {
-                $oHash.$childname += (ConvertFrom-PodeXml $grandchild)
-            }
-        }
-        else {
-            # create an array as a value  to the hashtable element
-            $oHash.$childname += (ConvertFrom-PodeXml $child)
-        }
+        return $oHash
     }
-    return $oHash
+}
 
+<#
+.SYNOPSIS
+Invokes the garbage collector.
+
+.DESCRIPTION
+Invokes the garbage collector.
+
+.EXAMPLE
+Invoke-PodeGC
+#>
+function Invoke-PodeGC {
+    [CmdletBinding()]
+    param()
+
+    [System.GC]::Collect()
 }

@@ -37,7 +37,7 @@ The following is an example of defining a JSON object that a Name, UserId, and a
 
 ```powershell
 # define a reusable request body
-New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/x-www-form-urlencoded' -Content (
+New-PodeOAContentMediaType -ContentType 'application/json', 'application/x-www-form-urlencoded' -Content (
     New-PodeOAStringProperty -Name 'Name' |
         New-PodeOAIntProperty -Name 'UserId' |
         New-PodeOABoolProperty -Name 'Enabled' |
@@ -90,7 +90,7 @@ The following is an example of defining a 200 response with a JSON payload of an
 ```powershell
 # defines a response with a json payload using New-PodeOAContentMediaType
 Add-PodeOAComponentResponse -Name 'OK' -Description 'A user object' -Content (
-        New-PodeOAContentMediaType -MediaType 'application/json' -Array -Content (
+        New-PodeOAContentMediaType -ContentType 'application/json' -Array -Content (
             New-PodeOAStringProperty -Name 'Name' |
                 New-PodeOAIntProperty -Name 'UserId' |
                 New-PodeOAObjectProperty
@@ -148,9 +148,9 @@ Add-PodeRoute -PassThru -Method Put -Path '/pet/:petId' -ScriptBlock {
             (New-PodeOAStringProperty -Name 'petId' -Description 'ID of pet that needs to be updated' | ConvertTo-PodeOAParameter -In Path -Required)
     ) -RequestBody (
         New-PodeOARequestBody -Description 'user to add to the system' -Content @{ 'application/json' = 'Pet' } -Examples (
-            New-PodeOAExample -ContentMediaType 'application/json', 'application/xml' -Reference 'cat-example' |
-                New-PodeOAExample -ContentMediaType 'application/json', 'application/xml'   -Reference 'dog-example' |
-                New-PodeOAExample -ContentMediaType 'application/json', 'application/xml' -Reference 'frog-example'
+            New-PodeOAExample -ContentType 'application/json', 'application/xml' -Reference 'cat-example' |
+                New-PodeOAExample -ContentType 'application/json', 'application/xml'   -Reference 'dog-example' |
+                New-PodeOAExample -ContentType 'application/json', 'application/xml' -Reference 'frog-example'
             )
         ) -PassThru |
         Add-PodeOAResponse -StatusCode 200 -Description 'Pet updated.'
@@ -173,7 +173,7 @@ Add-PodeRoute -PassThru -Method Get -Path '/user/login' -ScriptBlock {
     -Tags 'user' -OperationId 'loginUser' -PassThru |
     Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' `
         -Header @('X-Rate-Limit', 'X-Expires-After')  -Content (
-        New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'string'
+        New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'string'
     ) -PassThru |
     Add-PodeOAResponse -StatusCode 400 -Description 'Invalid username/password supplied'
 ```
@@ -191,7 +191,7 @@ Add-PodeRoute -PassThru -Method Post -Path '/petcallbackReference'  -Authenticat
     -Tags 'pet' -OperationId 'petcallbackReference' -PassThru |
     Set-PodeOARequest -RequestBody ( New-PodeOARequestBody -Reference 'PetBodySchema' ) -PassThru |
     Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (
-        New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml' -Content 'Pet'
+        New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet'
     ) -PassThru |
     Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception' -Content @{
         'application / json' = ( New-PodeOAStringProperty -Name 'result' |
@@ -220,7 +220,7 @@ Add-PodeRoute -PassThru -Method Put -Path '/userLinkByRef/:username' -ScriptBloc
         ( New-PodeOAStringProperty -Name 'username' -Description ' name that need to be updated.' -Required | ConvertTo-PodeOAParameter -In Path )
     ) -RequestBody (
         New-PodeOARequestBody -Required -Content (
-            New-PodeOAContentMediaType -MediaType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )
+            New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml', 'application/x-www-form-urlencoded' -Content 'User' )
     ) -PassThru |
     Add-PodeOAResponse -StatusCode 200 -Content @{'application/json' = 'User' }  -PassThru  -Links (
         New-PodeOAResponseLink -Name 'address2' -Reference 'address'

@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'ビューのフォルダ名は既に存在します: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'リセットする WebSocket の名前が指定されていません。'
     mergeDefaultAuthNotInListExceptionMessage                         = "MergeDefault認証'{0}'は提供された認証リストにありません。"
-    descriptionRequiredExceptionMessage                               = '説明が必要です。'
+    descriptionRequiredExceptionMessage                               = 'パス:{0} 応答:{1} に説明が必要です'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'ページ名は有効な英数字である必要があります: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'デフォルト値は boolean ではなく、enum に含まれていません。'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'OpenApi コンポーネントスキーマ {0} は存在しません。'
@@ -283,5 +283,13 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active DirectoryモジュールはWindowsでのみ利用可能です。'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'リクエストロギングは既に有効になっています。'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '無効な Access-Control-Max-Age 期間が提供されました：{0}。0 より大きくする必要があります。'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = '名前が {0} の OpenAPI 定義は既に存在します。'
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag は Select-PodeOADefinition 'ScriptBlock' 内で使用できません。"
+    taskProcessDoesNotExistExceptionMessage                           = 'タスクプロセスが存在しません: {0}'
+    scheduleProcessDoesNotExistExceptionMessage                       = 'スケジュールプロセスが存在しません: {0}'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Routeの定義タグは変更できません。'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' 操作にはリクエストボディを含めることはできません。-AllowNonStandardBody を使用してこの制限を回避してください。"
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "関数 '{0}' は配列をパイプライン入力として受け付けません。"
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'サポートされていないストリーム圧縮エンコーディングが提供されました: {0}'
+    LocalEndpointConflictExceptionMessage                             = "'{0}' と '{1}' は OpenAPI のローカルエンドポイントとして定義されていますが、API 定義ごとに 1 つのローカルエンドポイントのみ許可されます。"
 }
-

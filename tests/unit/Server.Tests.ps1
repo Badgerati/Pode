@@ -37,6 +37,7 @@ Describe 'Start-PodeInternalServer' {
         Mock Invoke-PodeEvent { }
         Mock Write-Verbose { }
         Mock Add-PodeScopedVariablesInbuilt { }
+        Mock Write-PodeHost { }
     }
 
     It 'Calls one-off script logic' {
@@ -107,11 +108,12 @@ Describe 'Restart-PodeInternalServer' {
         Mock Close-PodeDisposable { }
         Mock Invoke-PodeEvent { }
     }
+
     It 'Resetting the server values' {
         $PodeContext = @{
             Tokens    = @{
-                Cancellation = New-Object System.Threading.CancellationTokenSource
-                Restart      = New-Object System.Threading.CancellationTokenSource
+                Cancellation = [System.Threading.CancellationTokenSource]::new()
+                Restart      = [System.Threading.CancellationTokenSource]::new()
             }
             Server    = @{
                 Routes          = @{
@@ -221,11 +223,11 @@ Describe 'Restart-PodeInternalServer' {
                 Processes = @{}
             }
             Tasks     = @{
-                Enabled = $true
-                Items   = @{
+                Enabled   = $true
+                Items     = @{
                     key = 'value'
                 }
-                Results = @{}
+                Processes = @{}
             }
             Fim       = @{
                 Enabled = $true

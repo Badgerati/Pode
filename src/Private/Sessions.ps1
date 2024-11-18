@@ -232,7 +232,7 @@ function Remove-PodeSessionInternal {
 }
 
 function Get-PodeSessionInMemStore {
-    $store = New-Object -TypeName psobject
+    $store = [psobject]::new()
 
     # add in-mem storage
     $store | Add-Member -MemberType NoteProperty -Name Memory -Value @{}
@@ -290,7 +290,7 @@ function Set-PodeSessionInMemClearDown {
 
         # remove sessions that have expired, or where the parent is gone
         $now = [DateTime]::UtcNow
-        foreach ($key in $store.Memory.Keys) {
+        foreach ($key in $store.Memory.Keys.Clone()) {
             # expired
             if ($store.Memory[$key].Expiry -lt $now) {
                 $null = $store.Memory.Remove($key)

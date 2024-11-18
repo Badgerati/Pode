@@ -46,7 +46,7 @@ namespace Pode
             }
         }
 
-        public PodeListener(CancellationToken cancellationToken = default(CancellationToken))
+        public PodeListener(CancellationToken cancellationToken = default)
             : base(cancellationToken)
         {
             Sockets = new List<PodeSocket>();
@@ -77,12 +77,12 @@ namespace Pode
             Sockets.Add(socket);
         }
 
-        public PodeContext GetContext(CancellationToken cancellationToken = default(CancellationToken))
+        public PodeContext GetContext(CancellationToken cancellationToken = default)
         {
             return Contexts.Get(cancellationToken);
         }
 
-        public Task<PodeContext> GetContextAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task<PodeContext> GetContextAsync(CancellationToken cancellationToken = default)
         {
             return Contexts.GetAsync(cancellationToken);
         }
@@ -137,7 +137,7 @@ namespace Pode
 
         public void SendSseEvent(string name, string[] groups, string[] clientIds, string eventType, string data, string id = null)
         {
-            Task.Factory.StartNew(() =>
+            Task.Run(async () =>
             {
                 if (!ServerEvents.ContainsKey(name))
                 {
@@ -158,7 +158,7 @@ namespace Pode
 
                     if (ServerEvents[name][clientId].IsForGroup(groups))
                     {
-                        ServerEvents[name][clientId].Context.Response.SendSseEvent(eventType, data, id);
+                        await ServerEvents[name][clientId].Context.Response.SendSseEvent(eventType, data, id).ConfigureAwait(false);
                     }
                 }
             }, CancellationToken);
@@ -166,7 +166,7 @@ namespace Pode
 
         public void CloseSseConnection(string name, string[] groups, string[] clientIds)
         {
-            Task.Factory.StartNew(() =>
+            Task.Run(async () =>
             {
                 if (!ServerEvents.ContainsKey(name))
                 {
@@ -187,7 +187,7 @@ namespace Pode
 
                     if (ServerEvents[name][clientId].IsForGroup(groups))
                     {
-                        ServerEvents[name][clientId].Context.Response.CloseSseConnection();
+                        await ServerEvents[name][clientId].Context.Response.CloseSseConnection().ConfigureAwait(false);
                     }
                 }
             }, CancellationToken);
@@ -196,13 +196,13 @@ namespace Pode
         public bool TestSseConnectionExists(string name, string clientId)
         {
             // check name
-            if (!ServerEvents.ContainsKey(name))
+            if (!ServerEvents.TryGetValue(name, out IDictionary<string, PodeServerEvent> value))
             {
                 return false;
             }
 
             // check clientId
-            if (!string.IsNullOrEmpty(clientId) && !ServerEvents[name].ContainsKey(clientId))
+            if (!string.IsNullOrEmpty(clientId) && !value.ContainsKey(clientId))
             {
                 return false;
             }
@@ -211,12 +211,12 @@ namespace Pode
             return true;
         }
 
-        public PodeServerSignal GetServerSignal(CancellationToken cancellationToken = default(CancellationToken))
+        public PodeServerSignal GetServerSignal(CancellationToken cancellationToken = default)
         {
             return ServerSignals.Get(cancellationToken);
         }
 
-        public Task<PodeServerSignal> GetServerSignalAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task<PodeServerSignal> GetServerSignalAsync(CancellationToken cancellationToken = default)
         {
             return ServerSignals.GetAsync(cancellationToken);
         }
@@ -231,12 +231,12 @@ namespace Pode
             ServerSignals.RemoveProcessing(signal);
         }
 
-        public PodeClientSignal GetClientSignal(CancellationToken cancellationToken = default(CancellationToken))
+        public PodeClientSignal GetClientSignal(CancellationToken cancellationToken = default)
         {
             return ClientSignals.Get(cancellationToken);
         }
 
-        public Task<PodeClientSignal> GetClientSignalAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task<PodeClientSignal> GetClientSignalAsync(CancellationToken cancellationToken = default)
         {
             return ClientSignals.GetAsync(cancellationToken);
         }

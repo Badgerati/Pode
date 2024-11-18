@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = "Il nome della cartella 'Views' esiste già: {0}"
     noNameForWebSocketResetExceptionMessage                           = 'Nessun nome fornito per reimpostare il WebSocket.'
     mergeDefaultAuthNotInListExceptionMessage                         = "L'autenticazione MergeDefault '{0}' non è nella lista di autenticazione fornita."
-    descriptionRequiredExceptionMessage                               = 'È necessaria una descrizione.'
+    descriptionRequiredExceptionMessage                               = 'È necessaria una descrizione per il percorso:{0} Risposta:{1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'Il nome della pagina dovrebbe essere un valore alfanumerico valido: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = "Il valore predefinito non è un booleano e non fa parte dell'enum."
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'Lo schema del componente OpenAPI {0} non esiste.'
@@ -283,5 +283,13 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Il modulo Active Directory è disponibile solo su Windows OS.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'La registrazione delle richieste è già abilitata.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'Durata non valida fornita per Access-Control-Max-Age: {0}. Deve essere maggiore di 0.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'La definizione OpenAPI denominata {0} esiste già.'
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag non può essere utilizzato all'interno di un 'ScriptBlock' di Select-PodeOADefinition."
+    taskProcessDoesNotExistExceptionMessage                           = "Il processo dell'attività '{0}' non esiste."
+    scheduleProcessDoesNotExistExceptionMessage                       = "Il processo della programma '{0}' non esiste."
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Il tag di definizione per una Route non può essere cambiato.'
+    getRequestBodyNotAllowedExceptionMessage                          = "Le operazioni '{0}' non possono avere un corpo della richiesta. Utilizzare -AllowNonStandardBody per aggirare questa restrizione."
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "La funzione '{0}' non accetta una matrice come input della pipeline."
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'La compressione dello stream non è supportata per la codifica {0}'
+    LocalEndpointConflictExceptionMessage                             = "Sia '{0}' che '{1}' sono definiti come endpoint locali OpenAPI, ma è consentito solo un endpoint locale per definizione API."
 }
-

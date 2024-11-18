@@ -152,7 +152,7 @@ function Test-PodeIsAdminUser {
     }
 
     try {
-        $principal = New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
+        $principal = [System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent())
         if ($null -eq $principal) {
             return $false
         }
@@ -551,236 +551,6 @@ function Get-PodeSubnetRange {
     }
 }
 
-function Add-PodeRunspace {
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
-        [string]
-        $Type,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        [scriptblock]
-        $ScriptBlock,
-
-        [Parameter()]
-        $Parameters,
-
-        [Parameter()]
-        [System.Management.Automation.PSDataCollection[psobject]]
-        $OutputStream = $null,
-
-        [switch]
-        $Forget,
-
-        [switch]
-        $NoProfile,
-
-        [switch]
-        $PassThru
-    )
-
-    try {
-        # create powershell pipelines
-        $ps = [powershell]::Create()
-        $ps.RunspacePool = $PodeContext.RunspacePools[$Type].Pool
-
-        # load modules/drives
-        if (!$NoProfile) {
-            $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
-        }
-
-        # load main script
-        $null = $ps.AddScript($ScriptBlock)
-
-        # load parameters
-        if (!(Test-PodeIsEmpty $Parameters)) {
-            $Parameters.Keys | ForEach-Object {
-                $null = $ps.AddParameter($_, $Parameters[$_])
-            }
-        }
-
-        # start the pipeline
-        if ($null -eq $OutputStream) {
-            $pipeline = $ps.BeginInvoke()
-        }
-        else {
-            $pipeline = $ps.BeginInvoke($OutputStream, $OutputStream)
-        }
-
-        # do we need to remember this pipeline? sorry, what did you say?
-        if ($Forget) {
-            $null = $pipeline
-        }
-
-        # or do we need to return it for custom processing? ie: tasks
-        elseif ($PassThru) {
-            return @{
-                Pipeline = $ps
-                Handler  = $pipeline
-            }
-        }
-
-        # or store it here for later clean-up
-        else {
-            $PodeContext.Runspaces += @{
-                Pool     = $Type
-                Pipeline = $ps
-                Handler  = $pipeline
-                Stopped  = $false
-            }
-        }
-    }
-    catch {
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
-    }
-}
-
-<#
-.SYNOPSIS
-    Closes and disposes of the Pode runspaces, listeners, receivers, watchers, and optionally runspace pools.
-
-.DESCRIPTION
-    This function checks and waits for all Listeners, Receivers, and Watchers to be disposed of
-    before proceeding to close and dispose of the runspaces and optionally the runspace pools.
-    It ensures a clean shutdown by managing the disposal of resources in a specified order.
-    The function handles serverless and regular server environments differently, skipping
-    disposal actions in serverless contexts.
-
-.PARAMETER ClosePool
-    Specifies whether to close and dispose of the runspace pools along with the runspaces.
-    This is optional and should be specified if the pools need to be explicitly closed.
-
-.EXAMPLE
-    Close-PodeRunspace -ClosePool
-    This example closes all runspaces and their associated pools, ensuring that all resources are properly disposed of.
-
-.OUTPUTS
-    None
-    Outputs from this function are primarily internal state changes and verbose logging.
-
-.NOTES
-    It is recommended to use verbose logging to monitor the steps and understand the closing sequence during execution.
-#>
-function Close-PodeRunspace {
-    param(
-        [switch]
-        $ClosePool
-    )
-
-    # Early return if server is serverless, as disposal is not required.
-    if ($PodeContext.Server.IsServerless) {
-        return
-    }
-
-    try {
-        # Only proceed if there are runspaces to dispose of.
-        if (!(Test-PodeIsEmpty $PodeContext.Runspaces)) {
-            Write-Verbose 'Waiting until all Listeners are disposed'
-
-            $count = 0
-            $continue = $false
-            # Attempts to dispose of resources for up to 10 seconds.
-            while ($count -le 10) {
-                Start-Sleep -Seconds 1
-                $count++
-
-                $continue = $false
-                # Check each listener, receiver, and watcher; if any are not disposed, continue waiting.
-                foreach ($listener in $PodeContext.Listeners) {
-                    if (!$listener.IsDisposed) {
-                        $continue = $true
-                        break
-                    }
-                }
-
-                foreach ($receiver in $PodeContext.Receivers) {
-                    if (!$receiver.IsDisposed) {
-                        $continue = $true
-                        break
-                    }
-                }
-
-                foreach ($watcher in $PodeContext.Watchers) {
-                    if (!$watcher.IsDisposed) {
-                        $continue = $true
-                        break
-                    }
-                }
-                # If undisposed resources exist, continue waiting.
-                if ($continue) {
-                    continue
-                }
-
-                break
-            }
-
-            Write-Verbose 'All Listeners disposed'
-
-            # now dispose runspaces
-            Write-Verbose 'Disposing Runspaces'
-            $runspaceErrors = @(foreach ($item in $PodeContext.Runspaces) {
-                    if ($item.Stopped) {
-                        continue
-                    }
-
-                    try {
-                        # only do this, if the pool is in error
-                        if ($PodeContext.RunspacePools[$item.Pool].State -ieq 'error') {
-                            $item.Pipeline.EndInvoke($item.Handler)
-                        }
-                    }
-                    catch {
-                        "$($item.Pool) runspace failed to load: $($_.Exception.InnerException.Message)"
-                    }
-
-                    Close-PodeDisposable -Disposable $item.Pipeline
-                    $item.Stopped = $true
-                })
-
-            # dispose of schedule runspaces
-            if ($PodeContext.Schedules.Processes.Count -gt 0) {
-                foreach ($key in $PodeContext.Schedules.Processes.Keys.Clone()) {
-                    Close-PodeScheduleInternal -Process $PodeContext.Schedules.Processes[$key]
-                }
-            }
-
-            # dispose of task runspaces
-            if ($PodeContext.Tasks.Results.Count -gt 0) {
-                foreach ($key in $PodeContext.Tasks.Results.Keys.Clone()) {
-                    Close-PodeTaskInternal -Result $PodeContext.Tasks.Results[$key]
-                }
-            }
-
-            $PodeContext.Runspaces = @()
-            Write-Verbose 'Runspaces disposed'
-        }
-
-        # close/dispose the runspace pools
-        if ($ClosePool) {
-            Close-PodeRunspacePool
-        }
-
-        # Check for and throw runspace errors if any occurred during disposal.
-        if (($null -ne $runspaceErrors) -and ($runspaceErrors.Length -gt 0)) {
-            foreach ($err in $runspaceErrors) {
-                if ($null -eq $err) {
-                    continue
-                }
-
-                throw $err
-            }
-        }
-
-        # garbage collect
-        [GC]::Collect()
-    }
-    catch {
-        $_ | Write-PodeErrorLog
-        throw $_.Exception
-    }
-}
 
 function Get-PodeConsoleKey {
     if ([Console]::IsInputRedirected -or ![Console]::KeyAvailable) {
@@ -1145,7 +915,7 @@ function Join-PodeServerRoot {
 .EXAMPLE
     $myArray = "apple", "", "banana", "", "cherry"
     $filteredArray = Remove-PodeEmptyItemsFromArray -Array $myArray
-    Write-Host "Filtered array: $filteredArray"
+    Write-PodeHost "Filtered array: $filteredArray"
 
     This example removes empty items from the array and displays the filtered array.
 #>
@@ -1154,55 +924,15 @@ function Remove-PodeEmptyItemsFromArray {
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         $Array
     )
-
     if ($null -eq $Array) {
         return @()
     }
 
     return @( @($Array -ne ([string]::Empty)) -ne $null )
-}
 
-function Remove-PodeNullKeysFromHashtable {
-    param(
-        [Parameter(ValueFromPipeline = $true)]
-        [hashtable]
-        $Hashtable
-    )
-
-    foreach ($key in ($Hashtable.Clone()).Keys) {
-        if ($null -eq $Hashtable[$key]) {
-            $null = $Hashtable.Remove($key)
-            continue
-        }
-
-        if (($Hashtable[$key] -is [string]) -and [string]::IsNullOrEmpty($Hashtable[$key])) {
-            $null = $Hashtable.Remove($key)
-            continue
-        }
-
-        if ($Hashtable[$key] -is [array]) {
-            if (($Hashtable[$key].Length -eq 1) -and ($null -eq $Hashtable[$key][0])) {
-                $null = $Hashtable.Remove($key)
-                continue
-            }
-
-            foreach ($item in $Hashtable[$key]) {
-                if (($item -is [hashtable]) -or ($item -is [System.Collections.Specialized.OrderedDictionary])) {
-                    $item | Remove-PodeNullKeysFromHashtable
-                }
-            }
-
-            continue
-        }
-
-        if (($Hashtable[$key] -is [hashtable]) -or ($Hashtable[$key] -is [System.Collections.Specialized.OrderedDictionary])) {
-            $Hashtable[$key] | Remove-PodeNullKeysFromHashtable
-            continue
-        }
-    }
 }
 
 <#
@@ -1318,7 +1048,7 @@ function Get-PodeFileName {
 .EXAMPLE
     $exception = [System.Exception]::new("The network name is no longer available.")
     $isNetworkFailure = Test-PodeValidNetworkFailure -Exception $exception
-    Write-Host "Is network failure: $isNetworkFailure"
+    Write-PodeHost "Is network failure: $isNetworkFailure"
 
     This example tests whether the exception message "The network name is no longer available." indicates a network failure.
 #>
@@ -1348,35 +1078,37 @@ function Test-PodeValidNetworkFailure {
 
 function ConvertFrom-PodeHeaderQValue {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         [string]
         $Value
     )
 
-    $qs = [ordered]@{}
+    process {
+        $qs = [ordered]@{}
 
-    # return if no value
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        return $qs
-    }
-
-    # split the values up
-    $parts = @($Value -isplit ',').Trim()
-
-    # go through each part and check its q-value
-    foreach ($part in $parts) {
-        # default of 1 if no q-value
-        if ($part.IndexOf(';q=') -eq -1) {
-            $qs[$part] = 1.0
-            continue
+        # return if no value
+        if ([string]::IsNullOrWhiteSpace($Value)) {
+            return $qs
         }
 
-        # parse for q-value
-        $atoms = @($part -isplit ';q=')
-        $qs[$atoms[0]] = [double]$atoms[1]
-    }
+        # split the values up
+        $parts = @($Value -isplit ',').Trim()
 
-    return $qs
+        # go through each part and check its q-value
+        foreach ($part in $parts) {
+            # default of 1 if no q-value
+            if ($part.IndexOf(';q=') -eq -1) {
+                $qs[$part] = 1.0
+                continue
+            }
+
+            # parse for q-value
+            $atoms = @($part -isplit ';q=')
+            $qs[$atoms[0]] = [double]$atoms[1]
+        }
+
+        return $qs
+    }
 }
 
 function Get-PodeAcceptEncoding {
@@ -1638,14 +1370,12 @@ function New-PodeRequestException {
         $StatusCode
     )
 
-    $err = [System.Net.Http.HttpRequestException]::new()
-    $err.Data.Add('PodeStatusCode', $StatusCode)
-    return $err
+    return [PodeRequestException]::new($StatusCode)
 }
 
 function ConvertTo-PodeResponseContent {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         $InputObject,
 
         [Parameter()]
@@ -1663,7 +1393,6 @@ function ConvertTo-PodeResponseContent {
         [switch]
         $AsHtml
     )
-
     # split for the main content type
     $ContentType = Split-PodeContentType -ContentType $ContentType
 
@@ -1689,7 +1418,7 @@ function ConvertTo-PodeResponseContent {
             }
         }
 
-        { $_  -match '^(.*\/)?(.*\+)?yaml$' } {
+        { $_ -match '^(.*\/)?(.*\+)?yaml$' } {
             if ($InputObject -isnot [string]) {
                 if ($Depth -le 0) {
                     return (ConvertTo-PodeYamlInternal -InputObject $InputObject )
@@ -1707,7 +1436,7 @@ function ConvertTo-PodeResponseContent {
         { $_ -match '^(.*\/)?(.*\+)?xml$' } {
             if ($InputObject -isnot [string]) {
                 $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
+                        [pscustomobject]$item
                     })
 
                 return ($temp | ConvertTo-Xml -Depth $Depth -As String -NoTypeInformation)
@@ -1721,7 +1450,7 @@ function ConvertTo-PodeResponseContent {
         { $_ -ilike '*/csv' } {
             if ($InputObject -isnot [string]) {
                 $temp = @(foreach ($item in $InputObject) {
-                        New-Object psobject -Property $item
+                        [pscustomobject]$item
                     })
 
                 if (Test-PodeIsPSCore) {
@@ -1804,14 +1533,7 @@ function ConvertFrom-PodeRequestContent {
         else {
             # if the request is compressed, attempt to uncompress it
             if (![string]::IsNullOrWhiteSpace($TransferEncoding)) {
-                # create a compressed stream to decompress the req bytes
-                $ms = New-Object -TypeName System.IO.MemoryStream
-                $ms.Write($Request.RawBody, 0, $Request.RawBody.Length)
-                $null = $ms.Seek(0, 0)
-                $stream = New-Object "System.IO.Compression.$($TransferEncoding)Stream"($ms, [System.IO.Compression.CompressionMode]::Decompress)
-
-                # read the decompressed bytes
-                $Content = Read-PodeStreamToEnd -Stream $stream -Encoding $Request.ContentEncoding
+                $Content = [PodeHelpers]::DecompressBytes($Request.RawBody, $TransferEncoding, $Request.ContentEncoding)
             }
             else {
                 $Content = $Request.Body
@@ -3287,7 +3009,7 @@ function Find-PodeModuleFile {
 #>
 function Clear-PodeHashtableInnerKey {
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter()]
         [hashtable]
         $InputObject
     )
@@ -3723,7 +3445,7 @@ function ConvertTo-PodeYamlInternal {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $false)]
+        [parameter(Mandatory = $true)]
         [AllowNull()]
         $InputObject,
 
@@ -3842,7 +3564,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'hashtable' {
-                if ($InputObject.Count -gt 0 ) {
+                if ($InputObject.GetEnumerator().MoveNext()) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in $InputObject.Keys) {
@@ -3868,7 +3590,7 @@ function ConvertTo-PodeYamlInternal {
             }
 
             'pscustomobject' {
-                if ($InputObject.Count -gt 0 ) {
+                if ($InputObject.PSObject.Properties.Count -gt 0) {
                     $index = 0
                     $string = [System.Text.StringBuilder]::new()
                     foreach ($item in ($InputObject | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name)) {
@@ -3917,63 +3639,6 @@ function ConvertTo-PodeYamlInternal {
     }
 }
 
-<#
-.SYNOPSIS
-    Opens a runspace for Pode server operations based on the specified type.
-
-.DESCRIPTION
-    This function initializes a runspace for Pode server tasks by importing necessary
-    modules, adding PowerShell drives, and setting the state of the runspace pool to 'Ready'.
-    If an error occurs during the initialization, the state is adjusted to 'Error' if it
-    was previously set to 'waiting', and the error details are outputted.
-
-.PARAMETER Type
-    The type of the runspace pool to open. This parameter only accepts predefined values,
-    ensuring the runspace pool corresponds to a supported server operation type. The valid
-    types are: Main, Signals, Schedules, Gui, Web, Smtp, Tcp, Tasks, WebSockets, Files.
-
-.EXAMPLE
-    Open-PodeRunspace -Type "Web"
-
-    Opens a runspace for the 'Web' type, setting it ready for handling web server tasks.
-
-.NOTES
-    This function is not invoked directly but indirectly by `Add-PodeRunspace` function using
-    $null = $ps.AddScript("Open-PodeRunspace -Type '$($Type)'")
-#>
-
-function Open-PodeRunspace {
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Main', 'Signals', 'Schedules', 'Gui', 'Web', 'Smtp', 'Tcp', 'Tasks', 'WebSockets', 'Files')]
-        [string]
-        $Type
-    )
-
-    try {
-        # Importing internal Pode modules necessary for the runspace operations.
-        Import-PodeModulesInternal
-
-        # Adding PowerShell drives required by the runspace.
-        Add-PodePSDrivesInternal
-
-        # Setting the state of the runspace pool to 'Ready', indicating it is ready to process requests.
-        $PodeContext.RunspacePools[$Type].State = 'Ready'
-    }
-    catch {
-        # If an error occurs and the current state is 'waiting', set it to 'Error'.
-        if ($PodeContext.RunspacePools[$Type].State -ieq 'waiting') {
-            $PodeContext.RunspacePools[$Type].State = 'Error'
-        }
-
-        # Outputting the error to the default output stream, including the stack trace.
-        $_ | Out-Default
-        $_.ScriptStackTrace | Out-Default
-
-        # Rethrowing the error to be handled further up the call stack.
-        throw
-    }
-}
 
 <#
 .SYNOPSIS
@@ -4011,7 +3676,7 @@ function Resolve-PodeObjectArray {
     if ($Property -is [hashtable]) {
         # If the hashtable has only one item, convert it to a PowerShell object
         if ($Property.Count -eq 1) {
-            return New-Object psobject -Property $Property
+            return [pscustomobject]$Property
         }
         else {
             # If the hashtable has more than one item, recursively resolve each item
@@ -4033,6 +3698,72 @@ function Resolve-PodeObjectArray {
     }
     else {
         # For any other type, convert it to a PowerShell object
-        return New-Object psobject -Property $Property
+        return [pscustomobject]$Property
+    }
+}
+
+<#
+.SYNOPSIS
+    Creates a deep clone of a PSObject by serializing and deserializing the object.
+
+.DESCRIPTION
+    The Copy-PodeObjectDeepClone function takes a PSObject as input and creates a deep clone of it.
+    This is achieved by serializing the object using the PSSerializer class, and then
+    deserializing it back into a new instance. This method ensures that nested objects, arrays,
+    and other complex structures are copied fully, without sharing references between the original
+    and the cloned object.
+
+.PARAMETER InputObject
+    The PSObject that you want to deep clone. This object will be serialized and then deserialized
+    to create a deep copy.
+
+.PARAMETER Depth
+    Specifies the depth for the serialization. The depth controls how deeply nested objects
+    and properties are serialized. The default value is 10.
+
+.INPUTS
+    [PSObject] - The function accepts a PSObject to deep clone.
+
+.OUTPUTS
+    [PSObject] - The function returns a new PSObject that is a deep clone of the original.
+
+.EXAMPLE
+    $originalObject = [PSCustomObject]@{
+        Name = 'John Doe'
+        Age = 30
+        Address = [PSCustomObject]@{
+            Street = '123 Main St'
+            City = 'Anytown'
+            Zip = '12345'
+        }
+    }
+
+    $clonedObject = $originalObject | Copy-PodeObjectDeepClone -Deep 15
+
+    # The $clonedObject is now a deep clone of $originalObject.
+    # Changes to $clonedObject will not affect $originalObject and vice versa.
+
+.NOTES
+    This function uses the System.Management.Automation.PSSerializer class, which is available in
+    PowerShell 5.1 and later versions. The default depth parameter is set to 10 to handle nested
+    objects appropriately, but it can be customized via the -Deep parameter.
+    This is an internal function and may change in future releases of Pode.
+#>
+function Copy-PodeObjectDeepClone {
+    param (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [PSObject]$InputObject,
+
+        [Parameter()]
+        [int]$Depth = 10
+    )
+
+    process {
+        # Serialize the object to XML format using PSSerializer
+        # The depth parameter controls how deeply nested objects are serialized
+        $xmlSerializer = [System.Management.Automation.PSSerializer]::Serialize($InputObject, $Depth)
+
+        # Deserialize the XML back into a new PSObject, creating a deep clone of the original
+        return [System.Management.Automation.PSSerializer]::Deserialize($xmlSerializer)
     }
 }

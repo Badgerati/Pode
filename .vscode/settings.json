@@ -2,6 +2,8 @@
     "editor.formatOnSave": true,
     "editor.formatOnType": false,
     "editor.minimap.enabled": false,
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
     "powershell.codeFormatting.addWhitespaceAroundPipe": true,
     "powershell.codeFormatting.alignPropertyValuePairs": true,
     "powershell.codeFormatting.autoCorrectAliases": true,
@@ -21,6 +23,7 @@
     "powershell.codeFormatting.whitespaceBetweenParameters": false,
     "powershell.codeFormatting.whitespaceInsideBrace": true,
     "powershell.scriptAnalysis.settingsPath": "PSScriptAnalyzerSettings.psd1",
+    "powershell.scriptAnalysis.enable": true,
     "files.trimTrailingWhitespace": true,
     "files.associations": {
         "*.pode": "html"
@@ -32,5 +35,8 @@
     "javascript.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": false,
     "javascript.format.insertSpaceAfterKeywordsInControlFlowStatements": true,
     "javascript.format.insertSpaceBeforeAndAfterBinaryOperators": true,
-    "javascript.format.insertSpaceBeforeFunctionParenthesis": false
+    "javascript.format.insertSpaceBeforeFunctionParenthesis": false,
+    "[yaml]": {
+        "editor.tabSize": 2
+    }
 }

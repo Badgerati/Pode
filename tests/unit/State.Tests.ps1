@@ -24,6 +24,15 @@ Describe 'Set-PodeState' {
         $PodeContext.Server.State['test'].Value | Should -Be 7
         $PodeContext.Server.State['test'].Scope | Should -Be @()
     }
+
+    It 'Sets by pipe and returns an object array' {
+        $PodeContext.Server = @{ 'State' = @{} }
+        $result =  @(7,3,4)|Set-PodeState -Name 'test'
+
+        $result | Should -Be @(7,3,4)
+        $PodeContext.Server.State['test'].Value | Should -Be @(7,3,4)
+        $PodeContext.Server.State['test'].Scope | Should -Be @()
+    }
 }
 
 Describe 'Get-PodeState' {

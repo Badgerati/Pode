@@ -56,6 +56,29 @@ The default `Definition Tag` is named "default". This can be changed using the `
 }
 ```
 
+### Renaming a Definition Tag
+
+A Definition Tag can be renamed at any time using the `Rename-PodeOADefinitionTagName` function. This allows you to update the tag name for an existing OpenAPI definition, ensuring your tags remain organized and meaningful.
+
+```powershell
+Rename-PodeOADefinitionTagName -Tag 'v.3' -NewTag 'v.3.0.3'
+```
+
+In this example, the tag `'v.3'` is renamed to `'v.3.0.3'`.
+
+### Renaming the Default Definition Tag
+
+You can also rename the default `Definition Tag` without specifying the `Tag` parameter. This updates the default tag to the new name provided.
+
+```powershell
+Rename-PodeOADefinitionTagName -NewTag 'NewDefault'
+```
+
+In this example, the default definition tag is renamed to `'NewDefault'`.
+
+!!! note
+    The `Rename-PodeOADefinitionTagName` function cannot be used inside a `Select-PodeOADefinition` `[Scriptblock]`. Attempting to do so will result in an error.
+
 ### OpenAPI example
 
 A simple OpenAPI definition
@@ -95,9 +118,9 @@ Select-PodeOADefinition -Tag 'v3', 'v3.1'  -ScriptBlock {
             } | Set-PodeOARouteInfo -Summary 'Update an existing pet' -Description 'Update an existing pet by Id' -Tags 'pet' -OperationId 'updatePet' -PassThru |
                 Set-PodeOARequest -RequestBody (
                     New-PodeOARequestBody -Description  'Update an existent pet in the store' -Required -Content (
-                        New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet'  )
+                        New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet'  )
                 ) -PassThru |
-                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentMediaType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
+                Add-PodeOAResponse -StatusCode 200 -Description 'Successful operation' -Content (New-PodeOAContentMediaType -ContentType 'application/json', 'application/xml' -Content 'Pet' ) -PassThru |
                 Add-PodeOAResponse -StatusCode 400 -Description 'Invalid ID supplied' -PassThru |
                 Add-PodeOAResponse -StatusCode 404 -Description 'Pet not found' -PassThru |
                 Add-PodeOAResponse -StatusCode 405 -Description 'Validation exception'

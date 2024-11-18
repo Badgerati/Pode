@@ -1037,18 +1037,32 @@ function Protect-PodeContentSecurityKeyword {
     $Name = $Name.ToLowerInvariant()
 
     $keywords = @(
+        # standard keywords
         'none',
         'self',
+        'strict-dynamic',
+        'report-sample',
+        'inline-speculation-rules',
+
+        # unsafe keywords
         'unsafe-inline',
-        'unsafe-eval'
+        'unsafe-eval',
+        'unsafe-hashes',
+        'wasm-unsafe-eval'
     )
 
     $schemes = @(
         'http',
         'https',
+        'data',
+        'blob',
+        'filesystem',
+        'mediastream',
         'ws',
         'wss',
-        'data',
+        'ftp',
+        'mailto',
+        'tel',
         'file'
     )
 
@@ -1121,7 +1135,6 @@ function Protect-PodePermissionsPolicyKeyword {
     return "$($Name)=($($values -join ' '))"
 }
 
-
 <#
 .SYNOPSIS
 Sets the Content Security Policy (CSP) header for a Pode web server.
@@ -1155,7 +1168,6 @@ Set-PodeSecurityContentSecurityPolicyInternal -Params $policyParams -Append
 .NOTES
 This is an internal function and may change in future releases of Pode.
 #>
-
 function Set-PodeSecurityContentSecurityPolicyInternal {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
     [CmdletBinding()]
@@ -1185,9 +1197,21 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
         Protect-PodeContentSecurityKeyword -Name 'base-uri' -Value $Params.BaseUri -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'form-action' -Value $Params.FormAction -Append:$Append
         Protect-PodeContentSecurityKeyword -Name 'frame-ancestors' -Value $Params.FrameAncestor -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'fenched-frame-src' -Value $Params.FencedFrame -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'prefetch-src' -Value $Params.Prefetch -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'script-src-attr' -Value $Params.ScriptAttr -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'script-src-elem' -Value $Params.ScriptElem -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'style-src-attr' -Value $Params.StyleAttr -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'style-src-elem' -Value $Params.StyleElem -Append:$Append
+        Protect-PodeContentSecurityKeyword -Name 'worker-src' -Value $Params.Worker -Append:$Append
     )
 
-    if ($Params.Sandbox -ine 'None') {
+    # add "report-uri" if supplied
+    if (![string]::IsNullOrWhiteSpace($Params.ReportUri)) {
+        $values += "report-uri $($Params.ReportUri)".Trim()
+    }
+
+    if (![string]::IsNullOrWhiteSpace($Params.Sandbox) -and ($Params.Sandbox -ine 'None')) {
         $values += "sandbox $($Params.Sandbox.ToLowerInvariant())".Trim()
     }
 
@@ -1204,8 +1228,13 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
 
     # Add the Content Security Policy header to the response or relevant context. This cmdlet
     # sets the HTTP header with the name 'Content-Security-Policy' and the constructed value.
+    # if ReportOnly is set, the header name is set to 'Content-Security-Policy-Report-Only'.
+    $header = 'Content-Security-Policy'
+    if ($Params.ReportOnly) {
+        $header = 'Content-Security-Policy-Report-Only'
+    }
 
-    Add-PodeSecurityHeader -Name 'Content-Security-Policy' -Value $value
+    Add-PodeSecurityHeader -Name $header -Value $value
 
     # this is done to explicitly disable XSS auditors in modern browsers
     # as having it enabled has now been found to cause more vulnerabilities
@@ -1216,7 +1245,6 @@ function Set-PodeSecurityContentSecurityPolicyInternal {
         Add-PodeSecurityHeader -Name 'X-XSS-Protection' -Value '0'
     }
 }
-
 
 <#
 .SYNOPSIS
@@ -1249,8 +1277,7 @@ Set-PodeSecurityPermissionsPolicy -Params $policyParams -Append
 .NOTES
 This is an internal function and may change in future releases of Pode.
 #>
-
-function Set-PodeSecurityPermissionsPolicy {
+function Set-PodeSecurityPermissionsPolicyInternal {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSPossibleIncorrectComparisonWithNull', '')]
     [CmdletBinding()]
     param(
@@ -1289,9 +1316,9 @@ function Set-PodeSecurityPermissionsPolicy {
         Protect-PodePermissionsPolicyKeyword -Name 'publickey-credentials-get' -Value $Params.PublicKeyCredentials  -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'speaker-selection' -Value $Params.Speakers  -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'sync-xhr' -Value $Params.SyncXhr -Append:$Append
-        Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $Params.UnoptimisedImages -Append $Append
-        Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $Params.UnsizedMedia -Append $Append
-        Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Params.Usb -Append $Append
+        Protect-PodePermissionsPolicyKeyword -Name 'unoptimized-images' -Value $Params.UnoptimisedImages -Append:$Append
+        Protect-PodePermissionsPolicyKeyword -Name 'unsized-media' -Value $Params.UnsizedMedia -Append:$Append
+        Protect-PodePermissionsPolicyKeyword -Name 'usb' -Value $Params.Usb -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'screen-wake-lock' -Value $Params.ScreenWakeLake -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'web-share' -Value $Params.WebShare -Append:$Append
         Protect-PodePermissionsPolicyKeyword -Name 'xr-spatial-tracking' -Value $Params.XrSpatialTracking -Append:$Append
@@ -1302,7 +1329,6 @@ function Set-PodeSecurityPermissionsPolicy {
     # operator is faster because it is a direct array operation that internally skips the overhead of
     # piping through a cmdlet and processing each item individually.
     $values = ($values -ne $null)
-
     $value = ($values -join ', ')
 
     # Add the constructed Permissions Policy header to the response or relevant context. This cmdlet

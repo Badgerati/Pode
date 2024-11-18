@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = '뷰 폴더 이름이 이미 존재합니다: {0}'
     noNameForWebSocketResetExceptionMessage                           = '재설정할 WebSocket의 이름이 제공되지 않았습니다.'
     mergeDefaultAuthNotInListExceptionMessage                         = "병합 기본 인증 '{0}'이(가) 제공된 인증 목록에 없습니다."
-    descriptionRequiredExceptionMessage                               = '설명이 필요합니다.'
+    descriptionRequiredExceptionMessage                               = '경로:{0} 응답:{1} 에 대한 설명이 필요합니다'
     pageNameShouldBeAlphaNumericExceptionMessage                      = '페이지 이름은 유효한 알파벳 숫자 값이어야 합니다: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = '기본값이 boolean이 아니며 enum에 속하지 않습니다.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'OpenApi 구성 요소 스키마 {0}이(가) 존재하지 않습니다.'
@@ -283,5 +283,13 @@
     adModuleWindowsOnlyExceptionMessage                               = 'Active Directory 모듈은 Windows에서만 사용할 수 있습니다.'
     requestLoggingAlreadyEnabledExceptionMessage                      = '요청 로깅이 이미 활성화되었습니다.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = '잘못된 Access-Control-Max-Age 기간이 제공되었습니다: {0}. 0보다 커야 합니다.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = '이름이 {0}인 OpenAPI 정의가 이미 존재합니다.'
+    renamePodeOADefinitionTagExceptionMessage                         = "Rename-PodeOADefinitionTag은 Select-PodeOADefinition 'ScriptBlock' 내에서 사용할 수 없습니다."
+    taskProcessDoesNotExistExceptionMessage                           = '작업 프로세스가 존재하지 않습니다: {0}'
+    scheduleProcessDoesNotExistExceptionMessage                       = '스케줄 프로세스가 존재하지 않습니다: {0}'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'Route에 대한 정의 태그는 변경할 수 없습니다.'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' 작업은 요청 본문을 가질 수 없습니다. 이 제한을 무시하려면 -AllowNonStandardBody를 사용하세요."
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "함수 '{0}'은(는) 배열을 파이프라인 입력으로 받지 않습니다."
+    unsupportedStreamCompressionEncodingExceptionMessage              = '지원되지 않는 스트림 압축 인코딩: {0}'
+    LocalEndpointConflictExceptionMessage                             = "'{0}' 와 '{1}' 는 OpenAPI 로컬 엔드포인트로 정의되었지만, API 정의당 하나의 로컬 엔드포인트만 허용됩니다."
 }
-

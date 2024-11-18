@@ -211,7 +211,7 @@
     viewsFolderNameAlreadyExistsExceptionMessage                      = 'اسم مجلد العرض موجود بالفعل: {0}'
     noNameForWebSocketResetExceptionMessage                           = 'لا يوجد اسم لإعادة تعيين WebSocket من المزود.'
     mergeDefaultAuthNotInListExceptionMessage                         = "المصادقة MergeDefault '{0}' غير موجودة في قائمة المصادقة المقدمة."
-    descriptionRequiredExceptionMessage                               = 'الوصف مطلوب.'
+    descriptionRequiredExceptionMessage                               = 'مطلوب وصف للمسار: {0} الاستجابة: {1}'
     pageNameShouldBeAlphaNumericExceptionMessage                      = 'يجب أن يكون اسم الصفحة قيمة أبجدية رقمية صالحة: {0}'
     defaultValueNotBooleanOrEnumExceptionMessage                      = 'القيمة الافتراضية ليست من نوع boolean وليست جزءًا من التعداد.'
     openApiComponentSchemaDoesNotExistExceptionMessage                = 'مخطط مكون OpenApi {0} غير موجود.'
@@ -283,5 +283,13 @@
     adModuleWindowsOnlyExceptionMessage                               = 'وحدة Active Directory متاحة فقط على نظام Windows.'
     requestLoggingAlreadyEnabledExceptionMessage                      = 'تم تمكين تسجيل الطلبات بالفعل.'
     invalidAccessControlMaxAgeDurationExceptionMessage                = 'مدة Access-Control-Max-Age غير صالحة المقدمة: {0}. يجب أن تكون أكبر من 0.'
+    openApiDefinitionAlreadyExistsExceptionMessage                    = 'تعريف OpenAPI باسم {0} موجود بالفعل.'
+    renamePodeOADefinitionTagExceptionMessage                         = "لا يمكن استخدام Rename-PodeOADefinitionTag داخل Select-PodeOADefinition 'ScriptBlock'."
+    taskProcessDoesNotExistExceptionMessage                           = 'عملية المهمة غير موجودة: {0}'
+    scheduleProcessDoesNotExistExceptionMessage                       = 'عملية الجدول الزمني غير موجودة: {0}'
+    definitionTagChangeNotAllowedExceptionMessage                     = 'لا يمكن تغيير علامة التعريف لمسار.'
+    getRequestBodyNotAllowedExceptionMessage                          = "'{0}' لا يمكن أن يحتوي على جسم الطلب. استخدم -AllowNonStandardBody لتجاوز هذا التقييد."
+    fnDoesNotAcceptArrayAsPipelineInputExceptionMessage               = "الدالة '{0}' لا تقبل مصفوفة كمدخل لأنبوب البيانات."
+    unsupportedStreamCompressionEncodingExceptionMessage              = 'تشفير الضغط غير مدعوم للتشفير {0}'
+    LocalEndpointConflictExceptionMessage                             = "تم تعريف كل من '{0}' و '{1}' كنقاط نهاية محلية لـ OpenAPI، لكن يُسمح فقط بنقطة نهاية محلية واحدة لكل تعريف API."
 }
-
