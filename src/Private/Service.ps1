@@ -259,6 +259,10 @@ function Register-PodeMacService {
         <key>SuccessfulExit</key>
         <false/>
     </dict>
+
+    <!-- Enable advanced restart and recovery options -->
+    <key>EnableTransactions</key>
+    <true/>
 </dict>
 </plist>
 "@ | Set-Content -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -Encoding UTF8
@@ -399,9 +403,9 @@ Restart=always
 User=$User
 KillMode=process
 Environment=NOTIFY_SOCKET=/run/systemd/notify
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
 # Uncomment and adjust if needed
 # Group=$Group
-# Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
 # Environment=ASPNETCORE_ENVIRONMENT=Production
 
 [Install]
@@ -555,8 +559,6 @@ function Register-PodeWindowsService {
         $paramsString = $params.GetEnumerator() | ForEach-Object { "-$($_.Key) '$($_.Value)'" }
 
         $sv = Invoke-PodeWinElevatedCommand -Command 'New-Service' -Arguments ($paramsString -join ' ') -Credential $Credential
-
-
 
         if (!$sv) {
             # Service registration failed.
