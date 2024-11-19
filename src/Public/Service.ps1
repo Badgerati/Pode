@@ -28,6 +28,12 @@
 .PARAMETER ShutdownWaitTimeMs
     Maximum time in milliseconds to wait for the service to shut down gracefully before forcing termination. Defaults to 30,000 milliseconds.
 
+.PARAMETER StartMaxRetryCount
+    The maximum number of retries to start the PowerShell process before giving up.  Default is 3 retries.
+
+.PARAMETER StartRetryDelayMs
+    The delay (in milliseconds) between retry attempts to start the PowerShell process. Default is 5,000 milliseconds (5 seconds).
+
 .PARAMETER UserName
     Specifies the username under which the service will run by default is the current user.
 
@@ -87,6 +93,12 @@ function Register-PodeService {
 
         [int]
         $ShutdownWaitTimeMs = 30000,
+
+        [int]
+        $StartMaxRetryCount = 3,
+
+        [int]
+        $StartRetryDelayMs = 5000,
 
         [string]
         $UserName,
@@ -165,7 +177,7 @@ function Register-PodeService {
 
         # Generate the service settings JSON file
         $jsonContent = @{
-            PodePwshWorker = @{
+            PodeMonitorWorker = @{
                 ScriptPath         = $ScriptPath
                 PwshPath           = $PwshPath
                 ParameterString    = $ParameterString
@@ -174,6 +186,8 @@ function Register-PodeService {
                 DisableTermination = $true
                 ShutdownWaitTimeMs = $ShutdownWaitTimeMs
                 Name               = $Name
+                StartMaxRetryCount = $StartMaxRetryCount
+                StartRetryDelayMs  = $StartRetryDelayMs
             }
         }
 
@@ -198,7 +212,7 @@ function Register-PodeService {
                 SecurityDescriptorSddl = $SecurityDescriptorSddl
                 OsArchitecture         = "win-$osArchitecture"
             }
-            $operation = Register-PodeWindowsService  @param
+            $operation = Register-PodeMonitorWindowsService  @param
         }
         elseif ($IsLinux) {
             $param = @{

@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 
-namespace Pode.Service
+namespace PodeMonitor
 {
     using System;
     using System.IO;
@@ -16,7 +16,7 @@ namespace Pode.Service
         CRITICAL  // Critical errors indicating severe failures
     }
 
-    public static class PodePwshLogger
+    public static class PodeMonitorLogger
     {
         private static readonly object _logLock = new();
         private static string logFilePath = "PodeService.log"; // Default log file path
@@ -44,7 +44,7 @@ namespace Pode.Service
                     using (File.Create(logFilePath)) { }
                 }
 
-                Log(LogLevel.INFO, "Server", Environment.ProcessId, "Logger initialized. LogFilePath: {0}, MinLogLevel: {1}", logFilePath, minLogLevel);
+                Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Logger initialized. LogFilePath: {0}, MinLogLevel: {1}", logFilePath, minLogLevel);
             }
             catch (Exception ex)
             {
@@ -52,7 +52,7 @@ namespace Pode.Service
             }
         }
 
-        public static void Log(LogLevel level, string context ,int pid, string message = "", params object[] args)
+        public static void Log(LogLevel level, string context, int pid, string message = "", params object[] args)
         {
             if (level < minLogLevel || string.IsNullOrEmpty(message))
             {
@@ -131,7 +131,7 @@ namespace Pode.Service
                 int pid = Environment.ProcessId;
 
                 // Build the log entry
-                string logEntry = $"{timestamp} [PID:{pid}] [{level}] [Server] {logMessage}";
+                string logEntry = $"{timestamp} [PID:{pid}] [{level}] [PodeMonitor] {logMessage}";
 
                 // Thread-safe write to log file
                 lock (_logLock)

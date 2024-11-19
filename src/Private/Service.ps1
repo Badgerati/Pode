@@ -449,7 +449,7 @@ WantedBy=multi-user.target
     Registers a new Windows service to run a Pode-based PowerShell worker.
 
 .DESCRIPTION
-    The `Register-PodeWindowsService` function configures and registers a new Windows service to run a Pode-based PowerShell worker.
+    The `Register-PodeMonitorWindowsService` function configures and registers a new Windows service to run a Pode-based PowerShell worker.
     It sets up the service with the specified parameters, including paths to the Pode monitor executable, configuration file,
     credentials, and security descriptor. The service can be optionally started immediately after registration.
 
@@ -484,7 +484,7 @@ WantedBy=multi-user.target
     Returns $true if successful.
 
 .EXAMPLE
-    Register-PodeWindowsService -Name "PodeExampleService" -DisplayName "Pode Example Service" `
+    Register-PodeMonitorWindowsService -Name "PodeExampleService" -DisplayName "Pode Example Service" `
         -BinPath "C:\Pode" -SettingsFile "C:\Pode\settings.json" `
         -StartupType "Automatic" -Credential (Get-Credential) -Start -OsArchitecture "x64"
 
@@ -492,7 +492,7 @@ WantedBy=multi-user.target
     generates the service, and starts it.
 
 .EXAMPLE
-    Register-PodeWindowsService -Name "PodeExampleService" -BinPath "C:\Pode" `
+    Register-PodeMonitorWindowsService -Name "PodeExampleService" -BinPath "C:\Pode" `
         -SettingsFile "C:\Pode\settings.json" -OsArchitecture "x64"
 
     Registers a new Windows service without credentials or immediate startup.
@@ -503,7 +503,7 @@ WantedBy=multi-user.target
     - This is an internal function and may change in future releases of Pode.
 #>
 
-function Register-PodeWindowsService {
+function Register-PodeMonitorWindowsService {
     param(
         [string]
         $Name,
@@ -893,7 +893,7 @@ function Test-PodeServiceIsActive {
         $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
         if ($service) {
             # Check if the service is already running
-           return ($service.Status -ne 'Running')
+            return ($service.Status -ne 'Running')
         }
         return $false
     }

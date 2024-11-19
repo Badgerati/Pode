@@ -4,13 +4,13 @@ using System.IO;
 using System.IO.Pipes;
 using System.Threading;
 
-namespace Pode.Service
+namespace PodeMonitor
 {
     /// <summary>
-    /// The PodePwshMonitor class monitors and controls the execution of a Pode PowerShell process.
+    /// The PodeMonitor class monitors and controls the execution of a Pode PowerShell process.
     /// It communicates with the Pode process using named pipes.
     /// </summary>
-    public class PodePwshMonitor
+    public class PodeMonitor
     {
         private readonly object _syncLock = new(); // Synchronization lock for thread safety
         private Process _powerShellProcess; // PowerShell process instance
@@ -31,10 +31,10 @@ namespace Pode.Service
         public int StartRetryDelayMs { get; } // Delay between retries in milliseconds
 
         /// <summary>
-        /// Initializes a new instance of the PodePwshMonitor class.
+        /// Initializes a new instance of the PodeMonitor class.
         /// </summary>
-        /// <param name="options">The configuration options for the PodePwshWorker.</param>
-        public PodePwshMonitor(PodePwshWorkerOptions options)
+        /// <param name="options">The configuration options for the PodeMonitorWorker.</param>
+        public PodeMonitor(PodeMonitorWorkerOptions options)
         {
             // Initialize configuration properties from options
             _scriptPath = options.ScriptPath;
@@ -48,7 +48,7 @@ namespace Pode.Service
 
             // Generate a unique pipe name for communication
             _pipeName = $"PodePipe_{Guid.NewGuid()}";
-            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, $"Initialized PodePwshMonitor with pipe name: {_pipeName}");
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Initialized PodeMonitor with pipe name: {_pipeName}");
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace Pode.Service
                     // Log if the process is alive and log threshold is met
                     if ((DateTime.Now - _lastLogTime).TotalMinutes >= 5)
                     {
-                        PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Pode process is Alive.");
+                        PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pode process is Alive.");
                         _lastLogTime = DateTime.Now;
                     }
                     return;
@@ -88,8 +88,8 @@ namespace Pode.Service
                     };
 
                     // Subscribe to output and error streams
-                    _powerShellProcess.OutputDataReceived += (sender, args) => PodePwshLogger.Log(LogLevel.INFO, "Pode", _powerShellProcess.Id, args.Data);
-                    _powerShellProcess.ErrorDataReceived += (sender, args) => PodePwshLogger.Log(LogLevel.ERROR, "Pode", _powerShellProcess.Id, args.Data);
+                    _powerShellProcess.OutputDataReceived += (sender, args) => PodeMonitorLogger.Log(LogLevel.INFO, "Pode", _powerShellProcess.Id, args.Data);
+                    _powerShellProcess.ErrorDataReceived += (sender, args) => PodeMonitorLogger.Log(LogLevel.ERROR, "Pode", _powerShellProcess.Id, args.Data);
 
                     // Start the process
                     _powerShellProcess.Start();
@@ -98,13 +98,13 @@ namespace Pode.Service
 
                     // Log the process start time
                     _lastLogTime = DateTime.Now;
-                    PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Pode process started successfully.");
+                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pode process started successfully.");
                 }
                 catch (Exception ex)
                 {
                     // Log any errors during process start
-                    PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, $"Failed to start Pode process: {ex.Message}");
-                    PodePwshLogger.Log(LogLevel.DEBUG, ex);
+                    PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Failed to start Pode process: {ex.Message}");
+                    PodeMonitorLogger.Log(LogLevel.DEBUG, ex);
                 }
             }
         }
@@ -119,7 +119,7 @@ namespace Pode.Service
             {
                 if (_powerShellProcess == null || _powerShellProcess.HasExited)
                 {
-                    PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Pode process is not running.");
+                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pode process is not running.");
                     return;
                 }
 
@@ -130,24 +130,24 @@ namespace Pode.Service
                         // Send shutdown message and wait for process exit
                         SendPipeMessage("shutdown");
 
-                        PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, $"Waiting for {_shutdownWaitTimeMs} milliseconds for Pode process to exit...");
+                        PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Waiting for {_shutdownWaitTimeMs} milliseconds for Pode process to exit...");
                         WaitForProcessExit(_shutdownWaitTimeMs);
 
                         // If process does not exit gracefully, forcefully terminate
                         if (!_powerShellProcess.HasExited)
                         {
-                            PodePwshLogger.Log(LogLevel.WARN, "Server", Environment.ProcessId, "Pode process did not terminate gracefully, killing process.");
+                            PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, "Pode process did not terminate gracefully, killing process.");
                             _powerShellProcess.Kill();
                         }
 
-                        PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Pode process stopped successfully.");
+                        PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pode process stopped successfully.");
                     }
                 }
                 catch (Exception ex)
                 {
                     // Log errors during stop process
-                    PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, $"Error stopping Pode process: {ex.Message}");
-                    PodePwshLogger.Log(LogLevel.DEBUG, ex);
+                    PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Error stopping Pode process: {ex.Message}");
+                    PodeMonitorLogger.Log(LogLevel.DEBUG, ex);
                 }
                 finally
                 {
@@ -194,14 +194,14 @@ namespace Pode.Service
                     if (InitializePipeClient()) // Ensure pipe client is initialized
                     {
                         SendPipeMessage(command);
-                        PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, $"{command.ToUpper()} command sent to Pode process.");
+                        PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"{command.ToUpper()} command sent to Pode process.");
                     }
                 }
                 catch (Exception ex)
                 {
                     // Log errors during command execution
-                    PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, $"Error executing {command} command: {ex.Message}");
-                    PodePwshLogger.Log(LogLevel.DEBUG, ex);
+                    PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Error executing {command} command: {ex.Message}");
+                    PodeMonitorLogger.Log(LogLevel.DEBUG, ex);
                 }
                 finally
                 {
@@ -234,7 +234,7 @@ namespace Pode.Service
 
             if (!_pipeClient.IsConnected)
             {
-                PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Connecting to pipe server...");
+                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Connecting to pipe server...");
                 _pipeClient.Connect(10000); // Connect with a timeout of 10 seconds
             }
 
@@ -254,8 +254,8 @@ namespace Pode.Service
             }
             catch (Exception ex)
             {
-                PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, $"Error sending message to pipe: {ex.Message}");
-                PodePwshLogger.Log(LogLevel.DEBUG, ex);
+                PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Error sending message to pipe: {ex.Message}");
+                PodeMonitorLogger.Log(LogLevel.DEBUG, ex);
             }
         }
 

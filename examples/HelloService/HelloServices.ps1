@@ -11,6 +11,9 @@
 .PARAMETER Register
     Registers all services specified in the hashtable.
 
+.PARAMETER Password
+    A secure password for the service account (Windows only). If omitted, the service account will be 'NT AUTHORITY\SYSTEM'.
+    
 .PARAMETER Unregister
     Unregisters all services specified in the hashtable. Use with -Force to force unregistration.
 
@@ -74,6 +77,10 @@ param(
     [switch]
     $Register,
 
+    [Parameter(Mandatory = $false, ParameterSetName = 'Register', ValueFromPipeline = $true )]
+    [securestring]
+    $Password,
+
     [Parameter(Mandatory = $true, ParameterSetName = 'Unregister')]
     [switch]
     $Unregister,
@@ -133,7 +140,7 @@ $services=@{
 }
 
 if ( $Register.IsPresent) {
-    $services.GetEnumerator() | ForEach-Object { Register-PodeService -Name $($_.Key) -ParameterString "-Port $($_.Value)" }
+    $services.GetEnumerator() | ForEach-Object { Register-PodeService -Name $($_.Key) -ParameterString "-Port $($_.Value)" -Password $Password }
     exit
 }
 if ( $Unregister.IsPresent) {

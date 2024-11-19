@@ -452,7 +452,7 @@ Task Build BuildDeps, {
     }
 
     try {
-        Push-Location ./src/PodePwshMonitor
+        Push-Location ./src/PodeMonitor
         Invoke-PodeBuildDotnetMonitorSrvBuild
     }
     finally {

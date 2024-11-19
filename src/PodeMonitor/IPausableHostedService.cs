@@ -1,4 +1,4 @@
-namespace Pode.Service
+namespace PodeMonitor
 {
     /// <summary>
     /// Defines a contract for a hosted service that supports pausing and resuming.

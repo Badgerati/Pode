@@ -1,12 +1,12 @@
 using System;
 
-namespace Pode.Service
+namespace PodeMonitor
 {
     /// <summary>
-    /// Configuration options for the PodePwshWorker service.
+    /// Configuration options for the PodeMonitorWorker service.
     /// These options determine how the worker operates, including paths, parameters, and retry policies.
     /// </summary>
-    public class PodePwshWorkerOptions
+    public class PodeMonitorWorkerOptions
     {
 
         /// <summary>

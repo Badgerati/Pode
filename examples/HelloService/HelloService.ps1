@@ -3,7 +3,7 @@
     PowerShell script to register, start, stop, query, and unregister a Pode service, with a basic server setup.
 
 .DESCRIPTION
-    This script manages a Pode service named 'Hello Service' with commands to register, start, stop, query,
+    This script manages a Pode service named 'Hello Service3' with commands to register, start, stop, query,
     and unregister the service. Additionally, it sets up a Pode server that listens on port 8080 and includes
     a simple GET route that responds with 'Hello, Service!'.
 
@@ -14,31 +14,34 @@
         # Response: 'Hello, Service!'
 
 .PARAMETER Register
-    Registers the 'Hello Service' with Pode.
+    Registers the 'Hello Service3' with Pode.
+
+.PARAMETER Password
+    A secure password for the service account (Windows only). If omitted, the service account will be 'NT AUTHORITY\SYSTEM'.
 
 .PARAMETER Unregister
-    Unregisters the 'Hello Service' from Pode. Use with the -Force switch to forcefully unregister the service.
+    Unregisters the 'Hello Service3' from Pode. Use with the -Force switch to forcefully unregister the service.
 
 .PARAMETER Force
     Used with the -Unregister parameter to forcefully unregister the service.
 
 .PARAMETER Start
-    Starts the 'Hello Service'.
+    Starts the 'Hello Service3'.
 
 .PARAMETER Stop
-    Stops the 'Hello Service'.
+    Stops the 'Hello Service3'.
 
 .PARAMETER Query
-    Queries the status of the 'Hello Service'.
+    Queries the status of the 'Hello Service3'.
 
 .PARAMETER Suspend
-    Suspend the 'Hello Service'.
+    Suspend the 'Hello Service3'.
 
 .PARAMETER Resume
-    Resume the 'Hello Service'.
+    Resume the 'Hello Service3'.
 
 .PARAMETER Restart
-    Restart the 'Hello Service'.
+    Restart the 'Hello Service3'.
 
 .EXAMPLE
     Register the service:
@@ -78,6 +81,10 @@ param(
     [switch]
     $Register,
 
+    [Parameter(Mandatory = $false, ParameterSetName = 'Register', ValueFromPipeline = $true )]
+    [securestring]
+    $Password,
+
     [Parameter(Mandatory = $true, ParameterSetName = 'Unregister')]
     [switch]
     $Unregister,
@@ -109,6 +116,7 @@ param(
     [Parameter(  ParameterSetName = 'Restart')]
     [switch]
     $Restart
+
 )
 try {
     # Get the path of the script being executed
@@ -133,40 +141,40 @@ catch {
 
 
 if ( $Register.IsPresent) {
-    Register-PodeService -Name 'Hello Service2' -ParameterString "-Port $Port"  # -Password (ConvertTo-SecureString  'Pata2Pata1' -AsPlainText -Force)
+    Register-PodeService -Name 'Hello Service3' -ParameterString "-Port $Port" -Password $Password
     exit
 }
 if ( $Unregister.IsPresent) {
-    Unregister-PodeService -Name 'Hello Service2' -Force:$Force
+    Unregister-PodeService -Name 'Hello Service3' -Force:$Force
     exit
 }
 if ($Start.IsPresent) {
-    Start-PodeService -Name 'Hello Service2'
+    Start-PodeService -Name 'Hello Service3'
     exit
 }
 
 if ($Stop.IsPresent) {
-    Stop-PodeService -Name 'Hello Service2'
+    Stop-PodeService -Name 'Hello Service3'
     exit
 }
 
 if ($Suspend.IsPresent) {
-    Suspend-PodeService -Name 'Hello Service2'
+    Suspend-PodeService -Name 'Hello Service3'
     exit
 }
 
 if ($Resume.IsPresent) {
-    Resume-PodeService -Name 'Hello Service2'
+    Resume-PodeService -Name 'Hello Service3'
     exit
 }
 
 if ($Query.IsPresent) {
-    Get-PodeService -Name 'Hello Service2'
+    Get-PodeService -Name 'Hello Service3'
     exit
 }
 
 if ($Restart.IsPresent) {
-    Restart-PodeService -Name 'Hello Service2'
+    Restart-PodeService -Name 'Hello Service3'
     exit
 }
 

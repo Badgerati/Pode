@@ -11,14 +11,14 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Microsoft.Extensions.Logging;
 
-namespace Pode.Service
+namespace PodeMonitor
 {
     /// <summary>
     /// Entry point for the Pode service. Handles platform-specific configurations and signal-based operations.
     /// </summary>
     public static partial class Program
     {
-         // Platform-dependent signal registration (for Linux/macOS)
+        // Platform-dependent signal registration (for Linux/macOS)
         [LibraryImport("libc", EntryPoint = "signal")]
         private static partial int Signal(int signum, Action<int> handler);
 
@@ -26,7 +26,7 @@ namespace Pode.Service
         private const int SIGSTOP = 19; // Signal for pause
         private const int SIGCONT = 18; // Signal for continue
         private const int SIGHUP = 1;  // Signal for restart
-        private static PodePwshWorker _workerInstance; // Global instance for managing worker operations
+        private static PodeMonitorWorker _workerInstance; // Global instance for managing worker operations
 
         /// <summary>
         /// Entry point for the Pode service.
@@ -42,11 +42,11 @@ namespace Pode.Service
                 .AddJsonFile(customConfigFile, optional: false, reloadOnChange: true)
                 .Build();
 
-            serviceName = config.GetSection("PodePwshWorker:Name").Value ?? serviceName;
-            string logFilePath = config.GetSection("PodePwshWorker:logFilePath").Value ?? "PodePwshMonitorService.log";
+            serviceName = config.GetSection("PodeMonitorWorker:Name").Value ?? serviceName;
+            string logFilePath = config.GetSection("PodeMonitorWorker:logFilePath").Value ?? "PodeMonitorService.log";
 
             // Initialize logger
-            PodePwshLogger.Initialize(logFilePath, LogLevel.INFO);
+            PodeMonitorLogger.Initialize(logFilePath, LogLevel.INFO);
 
             // Configure host builder
             var builder = CreateHostBuilder(args, customConfigFile);
@@ -66,7 +66,7 @@ namespace Pode.Service
             }
             else
             {
-                PodePwshLogger.Log(LogLevel.WARN, "Server", Environment.ProcessId, "Unsupported platform. Exiting.");
+                PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, "Unsupported platform. Exiting.");
             }
         }
 
@@ -85,31 +85,31 @@ namespace Pode.Service
                 })
                 .ConfigureServices((context, services) =>
                 {
-                    services.Configure<PodePwshWorkerOptions>(context.Configuration.GetSection("PodePwshWorker"));
+                    services.Configure<PodeMonitorWorkerOptions>(context.Configuration.GetSection("PodeMonitorWorker"));
 
-                    // Register PodePwshMonitor
-                    services.AddSingleton<PodePwshMonitor>(serviceProvider =>
+                    // Register PodeMonitor
+                    services.AddSingleton<PodeMonitor>(serviceProvider =>
                     {
-                        var options = serviceProvider.GetRequiredService<IOptions<PodePwshWorkerOptions>>().Value;
-                        PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Initializing PodePwshMonitor with options: {0}", JsonSerializer.Serialize(options));
-                        return new PodePwshMonitor(options);
+                        var options = serviceProvider.GetRequiredService<IOptions<PodeMonitorWorkerOptions>>().Value;
+                        PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Initializing PodeMonitor with options: {0}", JsonSerializer.Serialize(options));
+                        return new PodeMonitor(options);
                     });
 
-                    // Register PodePwshWorker and track the instance
+                    // Register PodeMonitorWorker and track the instance
                     services.AddSingleton(provider =>
                     {
-                        var logger = provider.GetRequiredService<ILogger<PodePwshWorker>>();
-                        var monitor = provider.GetRequiredService<PodePwshMonitor>();
-                        var worker = new PodePwshWorker(logger, monitor);
+                        var logger = provider.GetRequiredService<ILogger<PodeMonitorWorker>>();
+                        var monitor = provider.GetRequiredService<PodeMonitor>();
+                        var worker = new PodeMonitorWorker(logger, monitor);
                         _workerInstance = worker; // Track the instance globally
                         return worker;
                     });
 
-                    // Add PodePwshWorker as a hosted service
-                    services.AddHostedService(provider => provider.GetRequiredService<PodePwshWorker>());
+                    // Add PodeMonitorWorker as a hosted service
+                    services.AddHostedService(provider => provider.GetRequiredService<PodeMonitorWorker>());
 
                     // Register IPausableHostedService
-                    services.AddSingleton<IPausableHostedService>(provider => provider.GetRequiredService<PodePwshWorker>());
+                    services.AddSingleton<IPausableHostedService>(provider => provider.GetRequiredService<PodeMonitorWorker>());
                 });
         }
 
@@ -154,7 +154,7 @@ namespace Pode.Service
         private static void ConfigureWindows(IHostBuilder builder, string serviceName)
         {
             using var host = builder.Build();
-            var service = new PodeWindowsService(host, serviceName);
+            var service = new PodeMonitorWindowsService(host, serviceName);
             ServiceBase.Run(service);
 
         }
@@ -166,10 +166,10 @@ namespace Pode.Service
         {
             if (_workerInstance == null)
             {
-                PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, "Pause requested, but _workerInstance is null.");
+                PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Pause requested, but _workerInstance is null.");
                 return;
             }
-            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Pausing service...");
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pausing service...");
             _workerInstance?.OnPause();
         }
 
@@ -180,10 +180,10 @@ namespace Pode.Service
         {
             if (_workerInstance == null)
             {
-                PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, "Continue requested, but _workerInstance is null.");
+                PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Continue requested, but _workerInstance is null.");
                 return;
             }
-            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Resuming service...");
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Resuming service...");
             _workerInstance?.OnContinue();
         }
 
@@ -194,10 +194,10 @@ namespace Pode.Service
         {
             if (_workerInstance == null)
             {
-                PodePwshLogger.Log(LogLevel.ERROR, "Server", Environment.ProcessId, "Restart requested, but _workerInstance is null.");
+                PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Restart requested, but _workerInstance is null.");
                 return;
             }
-            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Restarting service...");
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Restarting service...");
             _workerInstance?.Restart();
         }
 
@@ -206,7 +206,7 @@ namespace Pode.Service
         /// </summary>
         private static void Cleanup()
         {
-            PodePwshLogger.Log(LogLevel.INFO, "Server", Environment.ProcessId, "Performing cleanup...");
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Performing cleanup...");
             // Cleanup logic
         }
 #else
