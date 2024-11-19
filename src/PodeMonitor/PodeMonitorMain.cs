@@ -31,7 +31,7 @@ namespace PodeMonitor
         private const int SIGTERM = 15; // Signal for gracefully terminate a process.
 
         private static PodeMonitorWorker _workerInstance; // Global instance for managing worker operations
-        private static bool _terminating = false;
+        
         /// <summary>
         /// Entry point for the Pode service.
         /// </summary>
@@ -162,28 +162,25 @@ namespace PodeMonitor
 
         private static void HandleSignalStop(int signum)
         {
-            if(!_terminating){
-                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTSTP received. Pausing service.");
-                HandlePause();
-            }
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTSTP received.");
+            HandlePause();
         }
 
         private static void HandleSignalTerminate(int signum)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTERM received. Stopping service.");
-            _terminating=true;
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTERM received.");
             HandleStop();
         }
 
         private static void HandleSignalContinue(int signum)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGCONT received. Resuming service.");
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGCONT received.");
             HandleContinue();
         }
 
         private static void HandleSignalRestart(int signum)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGHUP received. Restarting service.");
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGHUP received.");
             HandleRestart();
         }
 

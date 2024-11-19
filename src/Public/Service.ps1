@@ -453,7 +453,7 @@ function Stop-PodeService {
                 # Check if the service is active
                 if ((Test-PodeLinuxServiceIsActive -Name  $nameService)) {
                     #Stop the service
-                    if (( Stop-PodeLinuxService -Name $nameService)) {
+                    if (( Stop-PodeLinuxService -Name $Name)) {
                         # Check if the service is active
                         if (!(Test-PodeLinuxServiceIsActive -Name  $nameService)) {
                             Write-Verbose -Message "Service '$Name' stopped successfully."
@@ -755,7 +755,7 @@ function Unregister-PodeService {
                 if ((Test-PodeLinuxServiceIsActive -Name  $nameService)) {
                     if ($Force.IsPresent) {
                         #Stop the service
-                        if (( Stop-PodeLinuxService -Name $nameService)) {
+                        if (( Stop-PodeLinuxService -Name $Name)) {
                             # Check if the service is active
                             if (!(Test-PodeLinuxServiceIsActive -Name  $nameService)) {
                                 Write-Verbose -Message "Service '$Name' stopped successfully."
@@ -1124,7 +1124,10 @@ function Restart-PodeService {
             }
         }
         elseif ($IsLinux -or $IsMacOS) {
-            Send-PodeServiceSignal -Name $Name -Signal 'SIGHUP'
+          if( !(Send-PodeServiceSignal -Name $Name -Signal 'SIGHUP')){
+            Write-Verbose -Message "Service '$Name' is not running."
+            return $false
+          }
         }
     }
     catch {

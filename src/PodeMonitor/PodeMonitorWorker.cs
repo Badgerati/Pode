@@ -22,6 +22,11 @@ namespace PodeMonitor
         // Delay in milliseconds to prevent rapid consecutive operations
         private readonly int _delayMs = 5000;
 
+        private bool _terminating=false;
+
+       private bool  _suspended=false;
+
+        private bool _running=false;
         /// <summary>
         /// Initializes a new instance of the PodeMonitorWorker class.
         /// </summary>
@@ -52,6 +57,7 @@ namespace PodeMonitor
 
                     // Start the Pode PowerShell process
                     _pwshMonitor.StartPowerShellProcess();
+                    _running=true;
                 }
                 catch (Exception ex)
                 {
@@ -95,17 +101,21 @@ namespace PodeMonitor
         /// </summary>
         public void Shutdown()
         {
+            if((! _terminating )&& _running){
+
+            _terminating=true;
             PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service is stopping at: {0}", DateTimeOffset.Now);
 
             try
             {
                 _pwshMonitor.StopPowerShellProcess(); // Stop the process
+                  _running=false;
                 PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Stop message sent via pipe at: {0}", DateTimeOffset.Now);
             }
             catch (Exception ex)
             {
                 PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Error stopping PowerShell process: {0}", ex.Message);
-            }
+            }}
         }
 
         /// <summary>
@@ -113,16 +123,19 @@ namespace PodeMonitor
         /// </summary>
         public void Restart()
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service restarting at: {0}", DateTimeOffset.Now);
+            if((! _terminating )&& _running){
 
-            try
-            {
-                _pwshMonitor.RestartPowerShellProcess(); // Restart the process
-                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Restart message sent via pipe at: {0}", DateTimeOffset.Now);
-            }
-            catch (Exception ex)
-            {
-                PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Error during restart: {0}", ex.Message);
+                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service restarting at: {0}", DateTimeOffset.Now);
+
+                try
+                {
+                    _pwshMonitor.RestartPowerShellProcess(); // Restart the process
+                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Restart message sent via pipe at: {0}", DateTimeOffset.Now);
+                }
+                catch (Exception ex)
+                {
+                    PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Error during restart: {0}", ex.Message);
+                }
             }
         }
 
@@ -131,12 +144,13 @@ namespace PodeMonitor
         /// </summary>
         public void OnPause()
         {
+              if((! _terminating )&& _running){
             PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pause command received at: {0}", DateTimeOffset.Now);
 
             try
             {
                 _pwshMonitor.SuspendPowerShellProcess(); // Send pause command to the process
-
+_suspended=true;
                 PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Suspend message sent via pipe at: {0}", DateTimeOffset.Now);
 
                 AddOperationDelay("Pause"); // Delay to ensure stability
@@ -145,6 +159,7 @@ namespace PodeMonitor
             {
                 PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Error during pause: {0}", ex.Message);
             }
+              }
         }
 
         /// <summary>
@@ -152,19 +167,22 @@ namespace PodeMonitor
         /// </summary>
         public void OnContinue()
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Continue command received at: {0}", DateTimeOffset.Now);
+            if((! _terminating )&& _suspended){
+                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Continue command received at: {0}", DateTimeOffset.Now);
 
-            try
-            {
-                _pwshMonitor.ResumePowerShellProcess(); // Send resume command to the process
+                try
+                {
+                    _pwshMonitor.ResumePowerShellProcess(); // Send resume command to the process
 
-                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Resume message sent via pipe at: {0}", DateTimeOffset.Now);
+_suspended=false;
+                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Resume message sent via pipe at: {0}", DateTimeOffset.Now);
 
-                AddOperationDelay("Resume"); // Delay to ensure stability
-            }
-            catch (Exception ex)
-            {
-                PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Error during continue: {0}", ex.Message);
+                    AddOperationDelay("Resume"); // Delay to ensure stability
+                }
+                catch (Exception ex)
+                {
+                    PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Error during continue: {0}", ex.Message);
+                }
             }
         }
 

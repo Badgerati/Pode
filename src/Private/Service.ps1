@@ -60,7 +60,7 @@ function Start-PodeServiceHearthbeat {
         $scriptBlock = {
 
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
-                Write-PodeHost -Message "Start client receiver for pipe $($PodeContext.Server.Service.PipeName)" -Force
+                Write-PodeHost -Message "Initialize Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
                 Write-PodeHost -Message "Total Uptime: $(Get-PodeServerUptime -Total -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
                 Write-PodeHost -Message "Uptime Since Last Restart: $(Get-PodeServerUptime -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
                 Write-PodeHost -Message "Total Number of Restart: $(Get-PodeServerRestartCount)" -Force
@@ -96,6 +96,8 @@ function Start-PodeServiceHearthbeat {
                                     # Process 'shutdown' message
                                     Write-PodeHost -Message 'Server requested shutdown. Closing Pode ...' -Force
                                     Close-PodeServer  # Gracefully stop Pode server
+                                     Start-Sleep 1
+                                     Write-PodeHost -Message "Closing Service Monitoring Heartbeat" -Force
                                     return  # Exit the loop
                                 }
 
@@ -103,7 +105,10 @@ function Start-PodeServiceHearthbeat {
                                     # Process 'restart' message
                                     Write-PodeHost -Message 'Server requested restart. Restarting Pode ...' -Force
                                     Restart-PodeServer  # Restart Pode server
-                                    return  # Exit the loop
+                                     Start-Sleep 1
+                                     Write-PodeHost -Message "Closing Service Monitoring Heartbeat" -Force
+                                     return
+                                       # Exit the loop
                                 }
 
                                 'suspend' {
@@ -124,6 +129,7 @@ function Start-PodeServiceHearthbeat {
                             }
 
                         }
+                        break
                     }
                 }
                 catch {
@@ -133,9 +139,11 @@ function Start-PodeServiceHearthbeat {
                 finally {
                     $reader.Dispose()
                     $pipeStream.Dispose()  # Always dispose of the pipe stream when done
+                    Write-PodeHost -Message "Disposing Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
                 }
 
             }
+            Write-PodeHost -Message "Closing Service Monitoring Heartbeat" -Force
         }
 
         # Assign a name to the Pode service
@@ -772,10 +780,12 @@ function Stop-PodeLinuxService {
         [string]
         $Name
     )
-    $serviceStopInfo = sudo systemctl stop $Name 2>&1
-    $success = $LASTEXITCODE -eq 0
-    Write-Verbose -Message ($serviceStopInfo -join "`n")
-    return $success
+
+    #return (Send-PodeServiceSignal -Name $Name -Signal SIGTERM)
+    $serviceStopInfo = sudo systemctl stop  $("$Name.service".Replace(' ', '_')) 2>&1
+     $success = $LASTEXITCODE -eq 0
+     Write-Verbose -Message ($serviceStopInfo -join "`n")
+     return $success
 }
 
 <#
@@ -1119,5 +1129,5 @@ function Send-PodeServiceSignal {
         # Service is not registered
         throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
     }
-
+return $false
 }
