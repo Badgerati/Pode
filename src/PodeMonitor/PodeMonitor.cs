@@ -47,7 +47,7 @@ namespace PodeMonitor
             StartRetryDelayMs = options.StartRetryDelayMs;
 
             // Generate a unique pipe name for communication
-            _pipeName = $"PodePipe_{Guid.NewGuid()}";
+            _pipeName = PipeNameGenerator.GeneratePipeName();
             PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Initialized PodeMonitor with pipe name: {_pipeName}");
         }
 

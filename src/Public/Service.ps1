@@ -480,7 +480,7 @@ function Stop-PodeService {
             if ((Test-PodeMacOsServiceIsRegistered -Name $nameService)) {
                 # Check if the service is active
                 if ((Test-PodeMacOsServiceIsActive $nameService)) {
-                    if ((Stop-PodeMacOsService $nameService)) {
+                    if ((Stop-PodeMacOsService $Name)) {
                         if (!(Test-PodeMacOsServiceIsActive -Name  $nameService)) {
                             Write-Verbose -Message "Service '$Name' stopped successfully."
                             return $true
@@ -565,9 +565,8 @@ function Suspend-PodeService {
                 throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
             }
         }
-        else {
-            # Feature not supported on Linux or macOS
-            throw ($PodeLocale.featureNotSupportedException -f 'Suspend Service')
+        elseif ($IsLinux -or $IsMacOS) {
+            Send-PodeServiceSignal -Name $Name -Signal 'SIGTSTP'
         }
     }
     catch {
@@ -635,10 +634,8 @@ function Resume-PodeService {
                 throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
             }
         }
-
-        else {
-            # Feature not supported on Linux or macOS
-            throw ($PodeLocale.featureNotSupportedException -f 'Resume Service')
+        elseif ($IsLinux -or $IsMacOS) {
+            Send-PodeServiceSignal -Name $Name -Signal 'SIGCONT'
         }
     }
     catch {
@@ -826,7 +823,7 @@ function Unregister-PodeService {
                 if ((Test-PodeMacOsServiceIsActive -Name  $nameService)) {
                     if ($Force.IsPresent) {
                         #Stop the service
-                        if (( Stop-PodeMacOsService -Name $nameService)) {
+                        if (( Stop-PodeMacOsService -Name $Name)) {
                             # Check if the service is active
                             if (!(Test-PodeMacOsServiceIsActive -Name  $nameService)) {
                                 Write-Verbose -Message "Service '$Name' stopped successfully."
@@ -956,6 +953,7 @@ function Get-PodeService {
                 Name   = $Name
                 Status = $status
                 Pid    = $service.ProcessId
+                Sudo   = $true
             }
         }
         else {
@@ -1006,13 +1004,12 @@ function Get-PodeService {
                     Name   = $Name
                     Status = $status
                     Pid    = $servicePid
+                    Sudo   = $true
                 }
             }
             else {
                 Write-Verbose -Message "Service '$nameService' not found."
             }
-
-
         }
         catch {
             $_ | Write-PodeErrorLog
@@ -1027,12 +1024,15 @@ function Get-PodeService {
             # Check if the service exists on macOS (launchctl)
             if ((Test-PodeMacOsServiceIsRegistered $nameService )) {
                 $servicePid = Get-PodeMacOsServicePid -Name $nameService # Extract the PID from the match
+
+                $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
                 # Check if the service has a PID entry
                 if ($servicePid -ne 0) {
                     return @{
                         Name   = $Name
                         Status = 'Running'
                         Pid    = $servicePid
+                        Sudo   = $sudo
                     }
                 }
                 else {
@@ -1040,6 +1040,7 @@ function Get-PodeService {
                         Name   = $Name
                         Status = 'Stopped'
                         Pid    = 0
+                        Sudo   = $sudo
                     }
                 }
             }
@@ -1122,29 +1123,7 @@ function Restart-PodeService {
             }
         }
         elseif ($IsLinux -or $IsMacOS) {
-            # Standardize service naming for Linux/macOS
-            $nameService = $(if ($IsMacOS) { "pode.$Name.service".Replace(' ', '_') }else { "$Name.service".Replace(' ', '_') })
-            # Check if the service is registered
-            if ((Test-PodeServiceIsRegistered -Name $nameService)) {
-                if ((Test-PodeServiceIsActive -Name $nameService)) {
-                    Write-Verbose -Message "Service '$Name' is active. Sending SIGHUP signal."
-                    $svc = Get-PodeService -Name $nameService
-                    sudo /bin/kill -SIGHUP $svc.ProcessId
-                    Write-Verbose -Message "SIGHUP signal sent to service '$Name'."
-                }
-                else {
-                    Write-Verbose -Message "Service '$Name' is not running."
-                }
-            }
-            else {
-                # Service is not registered
-                throw ($PodeLocale.serviceIsNotRegisteredException -f $nameService)
-            }
-        }
-        else {
-            # Unsupported platform
-            Write-Error -Message "Unsupported platform. Unable to restart service '$Name'."
-            return $false
+            Send-PodeServiceSignal -Name $Name -Signal 'SIGHUP'
         }
     }
     catch {

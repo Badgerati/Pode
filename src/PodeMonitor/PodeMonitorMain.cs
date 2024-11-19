@@ -18,14 +18,18 @@ namespace PodeMonitor
     /// </summary>
     public static partial class Program
     {
-        // Platform-dependent signal registration (for Linux/macOS)
+        // Platform-dependent signal registration (for linux/macOS)
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void SignalHandler(int signum);
+
         [LibraryImport("libc", EntryPoint = "signal")]
-        private static partial int Signal(int signum, Action<int> handler);
+        private static partial int Signal(int signum, SignalHandler handler);
 
-
-        private const int SIGSTOP = 19; // Signal for pause
+        private const int SIGTSTP = 20; // Signal for pause
         private const int SIGCONT = 18; // Signal for continue
         private const int SIGHUP = 1;  // Signal for restart
+        private const int SIGTERM = 15; // Signal for gracefully terminate a process.
+
         private static PodeMonitorWorker _workerInstance; // Global instance for managing worker operations
 
         /// <summary>
@@ -115,16 +119,17 @@ namespace PodeMonitor
 
 #if ENABLE_LIFECYCLE_OPERATIONS
         /// <summary>
-        /// Configures the Pode service for Linux, including signal handling.
+        /// Configures the Pode service for linux, including signal handling.
         /// </summary>
         /// <param name="builder">The host builder.</param>
-        [SupportedOSPlatform("Linux")]
+        [SupportedOSPlatform("linux")]
         private static void ConfigureLinux(IHostBuilder builder)
         {
-            // Handle Linux signals for pause, resume, and restart
-            _ = Signal(SIGSTOP, _ => HandlePause());
-            _ = Signal(SIGCONT, _ => HandleContinue());
-            _ = Signal(SIGHUP, _ => HandleRestart());
+            // Handle linux signals for pause, resume, and restart
+            Signal(SIGTSTP, HandleSignalStop);
+            Signal(SIGCONT, HandleSignalContinue);
+            Signal(SIGHUP, HandleSignalRestart);
+
 
             builder.UseSystemd();
             builder.Build().Run();
@@ -138,10 +143,10 @@ namespace PodeMonitor
         private static void ConfigureMacOS(IHostBuilder builder)
         {
             // Use launchd for macOS
-            _ = Signal(SIGSTOP, _ => HandlePause());
-            _ = Signal(SIGCONT, _ => HandleContinue());
-            _ = Signal(SIGHUP, _ => HandleRestart());
-
+            Signal(SIGTSTP, HandleSignalStop);
+            Signal(SIGCONT, HandleSignalContinue);
+            Signal(SIGHUP, HandleSignalRestart);
+            Signal(SIGTERM, HandleSignalTerminate);
             builder.Build().Run();
         }
 
@@ -156,92 +161,46 @@ namespace PodeMonitor
             using var host = builder.Build();
             var service = new PodeMonitorWindowsService(host, serviceName);
             ServiceBase.Run(service);
-
         }
 
-        /// <summary>
-        /// Handles the pause signal by pausing the Pode service.
-        /// </summary>
-        private static void HandlePause()
+        private static void HandleSignalStop(int signum)
         {
-            if (_workerInstance == null)
-            {
-                PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Pause requested, but _workerInstance is null.");
-                return;
-            }
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pausing service...");
-            _workerInstance?.OnPause();
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTSTP received. Pausing service.");
+            HandlePause();
         }
 
-        /// <summary>
-        /// Handles the continue signal by resuming the Pode service.
-        /// </summary>
-        private static void HandleContinue()
+        private static void HandleSignalTerminate(int signum)
         {
-            if (_workerInstance == null)
-            {
-                PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Continue requested, but _workerInstance is null.");
-                return;
-            }
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Resuming service...");
-            _workerInstance?.OnContinue();
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTERM received. Stopping service.");
+            HandleStop();
         }
 
-        /// <summary>
-        /// Handles the restart signal by restarting the Pode service.
-        /// </summary>
-        private static void HandleRestart()
+        private static void HandleSignalContinue(int signum)
         {
-            if (_workerInstance == null)
-            {
-                PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, "Restart requested, but _workerInstance is null.");
-                return;
-            }
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Restarting service...");
-            _workerInstance?.Restart();
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGCONT received. Resuming service.");
+            HandleContinue();
         }
 
-        /// <summary>
-        /// Performs cleanup operations before service termination.
-        /// </summary>
-        private static void Cleanup()
+        private static void HandleSignalRestart(int signum)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Performing cleanup...");
-            // Cleanup logic
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGHUP received. Restarting service.");
+            HandleRestart();
         }
+
+        private static void HandlePause() => _workerInstance?.OnPause();
+        private static void HandleContinue() => _workerInstance?.OnContinue();
+        private static void HandleRestart() => _workerInstance?.Restart();
+        private static void HandleStop() => _workerInstance?.Shutdown();
 #else
-        /// <summary>
-        /// Configures the Pode service for Linux, including signal handling.
-        /// </summary>
-        /// <param name="builder">The host builder.</param>
-        [SupportedOSPlatform("Linux")]
-        private static void ConfigureLinux(IHostBuilder builder)
-        {
-            builder.UseSystemd();
-            builder.Build().Run();
-        }
+        [SupportedOSPlatform("linux")]
+        private static void ConfigureLinux(IHostBuilder builder) => builder.UseSystemd().Build().Run();
 
-        /// <summary>
-        /// Configures the Pode service for macOS, including signal handling.
-        /// </summary>
-        /// <param name="builder">The host builder.</param>
         [SupportedOSPlatform("macOS")]
-        private static void ConfigureMacOS(IHostBuilder builder)
-        {
-            builder.Build().Run();
-        }
+        private static void ConfigureMacOS(IHostBuilder builder) => builder.Build().Run();
 
-        /// <summary>
-        /// Configures the Pode service for Windows, enabling pause and continue support.
-        /// </summary>
-        /// <param name="builder">The host builder.</param>
-        /// <param name="serviceName">The name of the service.</param>
-        private static void ConfigureWindows(IHostBuilder builder, string serviceName)
-        {
-            builder.UseWindowsService();
-            builder.Build().Run();
-        }
-
+        [SupportedOSPlatform("windows")]
+        private static void ConfigureWindows(IHostBuilder builder, string serviceName) =>
+                   builder.UseWindowsService().Build().Run();
 #endif
     }
 }

@@ -82,20 +82,30 @@ namespace PodeMonitor
         /// <param name="stoppingToken">Cancellation token to signal when the stop should occur.</param>
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
+            Shutdown();
+
+            await base.StopAsync(stoppingToken); // Wait for the base StopAsync to complete
+
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service stopped successfully at: {0}", DateTimeOffset.Now);
+        }
+
+
+        /// <summary>
+        /// Shutdown the Pode PowerShell process by sending a shutdown command.
+        /// </summary>
+        public void Shutdown()
+        {
             PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service is stopping at: {0}", DateTimeOffset.Now);
 
             try
             {
-                _pwshMonitor.StopPowerShellProcess(); // Stop the PowerShell process
+                _pwshMonitor.StopPowerShellProcess(); // Stop the process
+                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Stop message sent via pipe at: {0}", DateTimeOffset.Now);
             }
             catch (Exception ex)
             {
                 PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Error stopping PowerShell process: {0}", ex.Message);
             }
-
-            await base.StopAsync(stoppingToken); // Wait for the base StopAsync to complete
-
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service stopped successfully at: {0}", DateTimeOffset.Now);
         }
 
         /// <summary>

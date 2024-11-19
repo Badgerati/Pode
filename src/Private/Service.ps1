@@ -260,9 +260,10 @@ function Register-PodeMacService {
         <false/>
     </dict>
 
-    <!-- Enable advanced restart and recovery options -->
+    <!-- Enable advanced restart and recovery options
     <key>EnableTransactions</key>
     <true/>
+    -->
 </dict>
 </plist>
 "@ | Set-Content -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -Encoding UTF8
@@ -647,6 +648,8 @@ function Confirm-PodeAdminPrivilege {
 #>
 function Test-PodeLinuxServiceIsRegistered {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $systemctlStatus = systemctl status $Name 2>&1
@@ -675,6 +678,8 @@ function Test-PodeLinuxServiceIsRegistered {
 #>
 function Test-PodeLinuxServiceIsActive {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $systemctlIsActive = systemctl is-active $Name 2>&1
@@ -703,6 +708,8 @@ function Test-PodeLinuxServiceIsActive {
 #>
 function Disable-PodeLinuxService {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $systemctlDisable = sudo systemctl disable $Name 2>&1
@@ -731,6 +738,8 @@ function Disable-PodeLinuxService {
 #>
 function Enable-PodeLinuxService {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $systemctlEnable = sudo systemctl enable $Name 2>&1
@@ -759,6 +768,8 @@ function Enable-PodeLinuxService {
 #>
 function Stop-PodeLinuxService {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $serviceStopInfo = sudo systemctl stop $Name 2>&1
@@ -787,6 +798,8 @@ function Stop-PodeLinuxService {
 #>
 function Start-PodeLinuxService {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $serviceStartInfo = sudo systemctl start $Name 2>&1
@@ -815,6 +828,8 @@ function Start-PodeLinuxService {
 #>
 function Test-PodeMacOsServiceIsRegistered {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $systemctlStatus = launchctl list $Name 2>&1
@@ -845,13 +860,15 @@ function Test-PodeMacOsServiceIsRegistered {
 #>
 function Test-PodeServiceIsRegistered {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     if ($IsLinux) {
-        return Test-PodeLinuxServiceIsRegistered
+        return Test-PodeLinuxServiceIsRegistered -Name $Name
     }
     if ($IsMacOS) {
-        return Test-PodeMacOsServiceIsRegistered
+        return Test-PodeMacOsServiceIsRegistered -Name $Name
     }
     if ($IsWindows) {
         $service = Get-CimInstance -ClassName Win32_Service -Filter "Name='$Name'"
@@ -881,13 +898,15 @@ function Test-PodeServiceIsRegistered {
 #>
 function Test-PodeServiceIsActive {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     if ($IsLinux) {
-        return Test-PodeLinuxServiceIsActive
+        return Test-PodeLinuxServiceIsActive -Name $Name
     }
     if ($IsMacOS) {
-        return Test-PodeMacOsServiceIsActive
+        return Test-PodeMacOsServiceIsActive -Name $Name
     }
     if ($IsWindows) {
         $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
@@ -920,6 +939,8 @@ function Test-PodeServiceIsActive {
 #>
 function Test-PodeMacOsServiceIsActive {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $serviceInfo = launchctl list $name
@@ -948,6 +969,8 @@ PARAMETER Name
 #>
 function Get-PodeMacOsServicePid {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $serviceInfo = launchctl list $name
@@ -976,6 +999,8 @@ function Get-PodeMacOsServicePid {
 #>
 function Disable-PodeMacOsService {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $systemctlDisable = launchctl unload "$HOME/Library/LaunchAgents/$Name.plist" 2>&1
@@ -1004,12 +1029,16 @@ function Disable-PodeMacOsService {
 #>
 function Stop-PodeMacOsService {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
-    $serviceStopInfo = launchctl stop $Name 2>&1
-    $success = $LASTEXITCODE -eq 0
-    Write-Verbose -Message ($serviceStopInfo -join "`n")
-    return $success
+
+    return (Send-PodeServiceSignal -Name $Name -Signal SIGTERM)
+    #  $serviceStopInfo = launchctl stop $Name 2>&1
+    # $success = $LASTEXITCODE -eq 0
+    # Write-Verbose -Message ($serviceStopInfo -join "`n")
+    # return $success
 }
 
 <#
@@ -1032,10 +1061,63 @@ function Stop-PodeMacOsService {
 #>
 function Start-PodeMacOsService {
     param(
+        [Parameter(Mandatory = $true)]
+        [string]
         $Name
     )
     $serviceStartInfo = launchctl start $Name 2>&1
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($serviceStartInfo -join "`n")
     return $success
+}
+
+
+function Send-PodeServiceSignal {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('SIGTSTP', 'SIGCONT', 'SIGHUP', 'SIGTERM')]
+        [string]
+        $Signal
+    )
+
+    # Standardize service naming for Linux/macOS
+    $nameService = $(if ($IsMacOS) { "pode.$Name.service".Replace(' ', '_') }else { "$Name.service".Replace(' ', '_') })
+
+    $signalMap = @{
+        'SIGTSTP' = 20
+        'SIGCONT' = 18
+        'SIGHUP'  = 1
+        'SIGTERM' = 15
+    }
+    $level = $signalMap[$Signal]
+    # Check if the service is registered
+    if ((Test-PodeServiceIsRegistered -Name $nameService)) {
+        if ((Test-PodeServiceIsActive -Name $nameService)) {
+            Write-Verbose -Message "Service '$Name' is active. Sending $Signal signal."
+            $svc = Get-PodeService -Name $Name
+            if ($svc.Sudo) {
+                sudo /bin/kill -$($level) $svc.Pid
+            }
+            else {
+                /bin/kill -$($level) $svc.Pid
+            }
+            $success = $LASTEXITCODE -eq 0
+            if ($success) {
+                Write-Verbose -Message "$Signal signal sent to service '$Name'."
+            }
+            return $success
+        }
+        else {
+            Write-Verbose -Message "Service '$Name' is not running."
+        }
+    }
+    else {
+        # Service is not registered
+        throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
+    }
+
 }
