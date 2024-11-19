@@ -1124,10 +1124,10 @@ function Restart-PodeService {
             }
         }
         elseif ($IsLinux -or $IsMacOS) {
-          if( !(Send-PodeServiceSignal -Name $Name -Signal 'SIGHUP')){
-            Write-Verbose -Message "Service '$Name' is not running."
-            return $false
-          }
+            if ( !(Send-PodeServiceSignal -Name $Name -Signal 'SIGHUP')) {
+                Write-Verbose -Message "Service '$Name' is not running."
+                return $false
+            }
         }
     }
     catch {

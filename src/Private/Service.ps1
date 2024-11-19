@@ -22,7 +22,6 @@ function Test-PodeServiceEnabled {
     return $PodeContext.Server.ContainsKey('Service')
 }
 
-
 <#
 .SYNOPSIS
     Starts the Pode Service Heartbeat using a named pipe for communication with a C# service.
@@ -96,8 +95,8 @@ function Start-PodeServiceHearthbeat {
                                     # Process 'shutdown' message
                                     Write-PodeHost -Message 'Server requested shutdown. Closing Pode ...' -Force
                                     Close-PodeServer  # Gracefully stop Pode server
-                                     Start-Sleep 1
-                                     Write-PodeHost -Message "Closing Service Monitoring Heartbeat" -Force
+                                    Start-Sleep 1
+                                    Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
                                     return  # Exit the loop
                                 }
 
@@ -105,10 +104,10 @@ function Start-PodeServiceHearthbeat {
                                     # Process 'restart' message
                                     Write-PodeHost -Message 'Server requested restart. Restarting Pode ...' -Force
                                     Restart-PodeServer  # Restart Pode server
-                                     Start-Sleep 1
-                                     Write-PodeHost -Message "Closing Service Monitoring Heartbeat" -Force
-                                     return
-                                       # Exit the loop
+                                    Start-Sleep 1
+                                    Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
+                                    return
+                                    # Exit the loop
                                 }
 
                                 'suspend' {
@@ -143,7 +142,7 @@ function Start-PodeServiceHearthbeat {
                 }
 
             }
-            Write-PodeHost -Message "Closing Service Monitoring Heartbeat" -Force
+            Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
         }
 
         # Assign a name to the Pode service
@@ -783,9 +782,9 @@ function Stop-PodeLinuxService {
 
     #return (Send-PodeServiceSignal -Name $Name -Signal SIGTERM)
     $serviceStopInfo = sudo systemctl stop  $("$Name.service".Replace(' ', '_')) 2>&1
-     $success = $LASTEXITCODE -eq 0
-     Write-Verbose -Message ($serviceStopInfo -join "`n")
-     return $success
+    $success = $LASTEXITCODE -eq 0
+    Write-Verbose -Message ($serviceStopInfo -join "`n")
+    return $success
 }
 
 <#
@@ -1129,5 +1128,5 @@ function Send-PodeServiceSignal {
         # Service is not registered
         throw ($PodeLocale.serviceIsNotRegisteredException -f $Name)
     }
-return $false
+    return $false
 }
