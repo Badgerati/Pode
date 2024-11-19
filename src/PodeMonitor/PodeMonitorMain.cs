@@ -31,7 +31,7 @@ namespace PodeMonitor
         private const int SIGTERM = 15; // Signal for gracefully terminate a process.
 
         private static PodeMonitorWorker _workerInstance; // Global instance for managing worker operations
-
+        private static bool _terminating = false;
         /// <summary>
         /// Entry point for the Pode service.
         /// </summary>
@@ -40,7 +40,6 @@ namespace PodeMonitor
         {
             string customConfigFile = args.Length > 0 ? args[0] : "srvsettings.json"; // Default config file
             string serviceName = "PodeService";
-
             // Load configuration
             IConfigurationRoot config = new ConfigurationBuilder()
                 .AddJsonFile(customConfigFile, optional: false, reloadOnChange: true)
@@ -129,8 +128,6 @@ namespace PodeMonitor
             Signal(SIGTSTP, HandleSignalStop);
             Signal(SIGCONT, HandleSignalContinue);
             Signal(SIGHUP, HandleSignalRestart);
-
-
             builder.UseSystemd();
             builder.Build().Run();
         }
@@ -165,13 +162,16 @@ namespace PodeMonitor
 
         private static void HandleSignalStop(int signum)
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTSTP received. Pausing service.");
-            HandlePause();
+            if(!_terminating){
+                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTSTP received. Pausing service.");
+                HandlePause();
+            }
         }
 
         private static void HandleSignalTerminate(int signum)
         {
             PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "SIGTERM received. Stopping service.");
+            _terminating=true;
             HandleStop();
         }
 

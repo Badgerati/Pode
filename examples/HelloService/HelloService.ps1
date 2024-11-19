@@ -3,7 +3,7 @@
     PowerShell script to register, start, stop, query, and unregister a Pode service, with a basic server setup.
 
 .DESCRIPTION
-    This script manages a Pode service named 'Hello Service3' with commands to register, start, stop, query,
+    This script manages a Pode service named 'Hello Service' with commands to register, start, stop, query,
     and unregister the service. Additionally, it sets up a Pode server that listens on port 8080 and includes
     a simple GET route that responds with 'Hello, Service!'.
 
@@ -14,34 +14,34 @@
         # Response: 'Hello, Service!'
 
 .PARAMETER Register
-    Registers the 'Hello Service3' with Pode.
+    Registers the 'Hello Service' with Pode.
 
 .PARAMETER Password
     A secure password for the service account (Windows only). If omitted, the service account will be 'NT AUTHORITY\SYSTEM'.
 
 .PARAMETER Unregister
-    Unregisters the 'Hello Service3' from Pode. Use with the -Force switch to forcefully unregister the service.
+    Unregisters the 'Hello Service' from Pode. Use with the -Force switch to forcefully unregister the service.
 
 .PARAMETER Force
     Used with the -Unregister parameter to forcefully unregister the service.
 
 .PARAMETER Start
-    Starts the 'Hello Service3'.
+    Starts the 'Hello Service'.
 
 .PARAMETER Stop
-    Stops the 'Hello Service3'.
+    Stops the 'Hello Service'.
 
 .PARAMETER Query
-    Queries the status of the 'Hello Service3'.
+    Queries the status of the 'Hello Service'.
 
 .PARAMETER Suspend
-    Suspend the 'Hello Service3'.
+    Suspend the 'Hello Service'.
 
 .PARAMETER Resume
-    Resume the 'Hello Service3'.
+    Resume the 'Hello Service'.
 
 .PARAMETER Restart
-    Restart the 'Hello Service3'.
+    Restart the 'Hello Service'.
 
 .EXAMPLE
     Register the service:
@@ -141,40 +141,40 @@ catch {
 
 
 if ( $Register.IsPresent) {
-    Register-PodeService -Name 'Hello Service3' -ParameterString "-Port $Port" -Password $Password
+    Register-PodeService -Name 'Hello Service' -ParameterString "-Port $Port" -Password $Password
     exit
 }
 if ( $Unregister.IsPresent) {
-    Unregister-PodeService -Name 'Hello Service3' -Force:$Force
+    Unregister-PodeService -Name 'Hello Service' -Force:$Force
     exit
 }
 if ($Start.IsPresent) {
-    Start-PodeService -Name 'Hello Service3'
+    Start-PodeService -Name 'Hello Service'
     exit
 }
 
 if ($Stop.IsPresent) {
-    Stop-PodeService -Name 'Hello Service3'
+    Stop-PodeService -Name 'Hello Service'
     exit
 }
 
 if ($Suspend.IsPresent) {
-    Suspend-PodeService -Name 'Hello Service3'
+    Suspend-PodeService -Name 'Hello Service'
     exit
 }
 
 if ($Resume.IsPresent) {
-    Resume-PodeService -Name 'Hello Service3'
+    Resume-PodeService -Name 'Hello Service'
     exit
 }
 
 if ($Query.IsPresent) {
-    Get-PodeService -Name 'Hello Service3'
+    Get-PodeService -Name 'Hello Service'
     exit
 }
 
 if ($Restart.IsPresent) {
-    Restart-PodeService -Name 'Hello Service3'
+    Restart-PodeService -Name 'Hello Service'
     exit
 }
 

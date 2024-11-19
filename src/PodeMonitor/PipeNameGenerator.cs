@@ -3,8 +3,7 @@ using System.IO;
 namespace PodeMonitor
 {
     public static class PipeNameGenerator
-    {
-        private const string WindowsPipePrefix = @"\\.\pipe\"; // Windows pipe namespace
+    { 
         private const int MaxUnixPathLength = 104; // Max length for Unix domain sockets on macOS
         private const string UnixTempDir = "/tmp"; // Short temporary directory for Unix systems
 
@@ -16,7 +15,7 @@ namespace PodeMonitor
             if (OperatingSystem.IsWindows())
             {
                 // Use Windows named pipe format
-                return $"{WindowsPipePrefix}PodePipe_{uniqueId}";
+                return $"PodePipe_{uniqueId}";
             }
             else if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {

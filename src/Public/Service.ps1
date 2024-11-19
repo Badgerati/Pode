@@ -1115,6 +1115,7 @@ function Restart-PodeService {
                 }
                 else {
                     Write-Verbose -Message "Service '$Name' is not running."
+                    return $false
                 }
             }
             else {

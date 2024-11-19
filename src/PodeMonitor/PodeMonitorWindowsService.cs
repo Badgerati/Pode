@@ -61,10 +61,8 @@ namespace PodeMonitor
         /// </summary>
         protected override void OnStop()
         {
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service stopping...");
             base.OnStop(); // Call the base implementation
             _host.StopAsync().Wait(); // Stop the Pode host asynchronously and wait for it to complete
-            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service stopped successfully.");
         }
 
         /// <summary>
