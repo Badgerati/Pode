@@ -3803,13 +3803,22 @@ function Test-PodeAdminPrivilege {
     try {
         # Check if the operating system is Windows
         if ($IsWindows) {
-            $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+
+            # Retrieve the current Windows identity and token
+            $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+            $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+            
             if ($null -eq $principal) {
                 return $false
             }
 
             $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
             if ($isAdmin) {
+                return $true
+            }
+
+            # Check if the token is elevated
+            if ($identity.IsSystem || $identity.IsAuthenticated -and $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
                 return $true
             }
 
