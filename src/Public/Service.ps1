@@ -481,12 +481,14 @@ function Stop-PodeService {
                 # Check if the service is active
                 if ((Test-PodeMacOsServiceIsActive $nameService)) {
                     if ((Stop-PodeMacOsService $Name)) {
-                        if (!(Test-PodeMacOsServiceIsActive -Name  $nameService)) {
-                            Write-Verbose -Message "Service '$Name' stopped successfully."
-                            return $true
+                        for($i=0;$i -lt 30; $i++){
+                            if (!(Test-PodeMacOsServiceIsActive -Name  $nameService)) {
+                                Write-Verbose -Message "Service '$Name' stopped successfully."
+                                return $true
+                            }
+                            Start-Sleep 1
                         }
                     }
-
                     # Service command '{0}' failed on service '{1}'.
                     throw ($PodeLocale.serviceCommandFailedException -f 'launchctl stop', $Name)
 
@@ -508,8 +510,6 @@ function Stop-PodeService {
     }
     return $true
 }
-
-
 
 <#
 .SYNOPSIS
@@ -566,7 +566,7 @@ function Suspend-PodeService {
             }
         }
         elseif ($IsLinux -or $IsMacOS) {
-            Send-PodeServiceSignal -Name $Name -Signal 'SIGTSTP'
+            return Send-PodeServiceSignal -Name $Name -Signal 'SIGTSTP'
         }
     }
     catch {
@@ -576,8 +576,6 @@ function Suspend-PodeService {
     }
     return $true
 }
-
-
 
 <#
 .SYNOPSIS
@@ -607,7 +605,6 @@ function Resume-PodeService {
         # Ensure the script is running with the necessary administrative/root privileges.
         # Exits the script if the current user lacks the required privileges.
         Confirm-PodeAdminPrivilege
-
         if ($IsWindows) {
 
             $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
@@ -635,7 +632,7 @@ function Resume-PodeService {
             }
         }
         elseif ($IsLinux -or $IsMacOS) {
-            Send-PodeServiceSignal -Name $Name -Signal 'SIGCONT'
+           return Send-PodeServiceSignal -Name $Name -Signal 'SIGCONT'
         }
     }
     catch {
