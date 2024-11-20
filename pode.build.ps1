@@ -19,7 +19,10 @@ param(
     $ReleaseNoteVersion,
 
     [string]
-    $UICulture = 'en-US'
+    $UICulture = 'en-US',
+
+    [switch]
+    $DisableLifecycleServiceOperations
 )
 
 # Fix for PS7.5 Preview - https://github.com/PowerShell/PowerShell/issues/23868
@@ -169,7 +172,7 @@ function Invoke-PodeBuildDotnetMonitorSrvBuild() {
         $DefineConstants = @()
         $ParamConstants = ''
 
-        if (!$DisableSuspendSupport) {
+        if (!$DisableLifecycleServiceOperations) {
             $DefineConstants += 'ENABLE_LIFECYCLE_OPERATIONS'
         }
 
