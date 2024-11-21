@@ -1,12 +1,9 @@
-
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace PodeMonitor
 {
-    using System;
-    using System.IO;
-
     public enum LogLevel
     {
         DEBUG,    // Detailed information for debugging purposes
@@ -16,11 +13,14 @@ namespace PodeMonitor
         CRITICAL  // Critical errors indicating severe failures
     }
 
-    public static class PodeMonitorLogger
+    public static partial class PodeMonitorLogger
     {
-        private static readonly object _logLock = new();
-        private static string logFilePath = "PodeService.log"; // Default log file path
-        private static LogLevel minLogLevel = LogLevel.INFO;   // Default minimum log level
+        private static readonly object _logLock = new(); // Ensures thread-safe writes
+        private static string _logFilePath = "PodeService.log"; // Default log file path
+        private static LogLevel _minLogLevel = LogLevel.INFO;   // Default minimum log level
+
+        [GeneratedRegex(@"\x1B\[[0-9;]*[a-zA-Z]")]
+        private static partial Regex AnsiRegex();
 
         /// <summary>
         /// Initializes the logger with a custom log file path and minimum log level.
@@ -29,22 +29,25 @@ namespace PodeMonitor
         /// <param name="level">Minimum log level to record.</param>
         public static void Initialize(string filePath, LogLevel level)
         {
-            if (!string.IsNullOrWhiteSpace(filePath))
-            {
-                logFilePath = filePath;
-            }
-
-            minLogLevel = level;
-
             try
             {
-                // Create the log file if it doesn't exist
-                if (!File.Exists(logFilePath))
+                // Update the log file path and minimum log level
+                if (!string.IsNullOrWhiteSpace(filePath))
                 {
-                    using (File.Create(logFilePath)) { }
+                    _logFilePath = filePath;
                 }
 
-                Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Logger initialized. LogFilePath: {0}, MinLogLevel: {1}", logFilePath, minLogLevel);
+                _minLogLevel = level;
+
+                // Ensure the log file exists
+                if (!File.Exists(_logFilePath))
+                {
+                    using (File.Create(_logFilePath)) { };
+                }
+
+                // Log initialization success
+                Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId,
+                    "Logger initialized. LogFilePath: {0}, MinLogLevel: {1}", _logFilePath, _minLogLevel);
             }
             catch (Exception ex)
             {
@@ -52,28 +55,39 @@ namespace PodeMonitor
             }
         }
 
+        /// <summary>
+        /// Logs a message to the log file with the specified log level and context.
+        /// </summary>
+        /// <param name="level">Log level.</param>
+        /// <param name="context">Context of the log (e.g., "PodeMonitor").</param>
+        /// <param name="pid">Process ID to include in the log.</param>
+        /// <param name="message">Message to log.</param>
+        /// <param name="args">Optional arguments for formatting the message.</param>
         public static void Log(LogLevel level, string context, int pid, string message = "", params object[] args)
         {
-            if (level < minLogLevel || string.IsNullOrEmpty(message))
+            if (level < _minLogLevel || string.IsNullOrEmpty(message))
             {
-                return; // Skip logging for levels below the minimum log level
+                return; // Skip logging for levels below the minimum log level or empty messages
             }
 
             try
             {
-                // Format the message with the provided arguments
-                var formattedMessage = string.Format(message, args);
+                // Sanitize the message to remove ANSI escape codes
+                string sanitizedMessage = AnsiRegex().Replace(message, string.Empty);
 
-                // Get the current time in ISO 8601 format in GMT/UTC
+                // Format the sanitized message
+                string formattedMessage = string.Format(sanitizedMessage, args);
+
+                // Get the current time in ISO 8601 format (UTC)
                 string timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
 
-                // Build the log entry
+                // Construct the log entry
                 string logEntry = $"{timestamp} [PID:{pid}] [{level}] [{context}] {formattedMessage}";
 
-                // Thread-safe write to log file
+                // Thread-safe log file write
                 lock (_logLock)
                 {
-                    using StreamWriter writer = new(logFilePath, true);
+                    using StreamWriter writer = new(_logFilePath, true);
                     writer.WriteLine(logEntry);
                 }
             }
@@ -83,30 +97,32 @@ namespace PodeMonitor
             }
         }
 
-
+        /// <summary>
+        /// Logs an exception and an optional message to the log file.
+        /// </summary>
+        /// <param name="level">Log level.</param>
+        /// <param name="exception">Exception to log.</param>
+        /// <param name="message">Optional message to include.</param>
+        /// <param name="args">Optional arguments for formatting the message.</param>
         public static void Log(LogLevel level, Exception exception, string message = null, params object[] args)
         {
-            if (level < minLogLevel)
+            if (level < _minLogLevel || (exception == null && string.IsNullOrEmpty(message)))
             {
-                return; // Skip logging for levels below the minimum log level
-            }
-
-            if (exception == null && string.IsNullOrEmpty(message))
-            {
-                return; // Nothing to log
+                return; // Skip logging if the level is below the minimum or there's nothing to log
             }
 
             try
             {
-                // Get the current time in ISO 8601 format in GMT/UTC
+                // Get the current time in ISO 8601 format (UTC)
                 string timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
 
                 // Format the message if provided
-                var logMessage = string.Empty;
-
+                string logMessage = string.Empty;
                 if (!string.IsNullOrEmpty(message))
                 {
-                    logMessage = string.Format(message, args);
+                    // Sanitize the message to remove ANSI escape codes
+                    string sanitizedMessage = AnsiRegex().Replace(message, string.Empty);
+                    logMessage = string.Format(sanitizedMessage, args);
                 }
 
                 // Add exception details
@@ -130,13 +146,13 @@ namespace PodeMonitor
                 // Get the current process ID
                 int pid = Environment.ProcessId;
 
-                // Build the log entry
+                // Construct the log entry
                 string logEntry = $"{timestamp} [PID:{pid}] [{level}] [PodeMonitor] {logMessage}";
 
-                // Thread-safe write to log file
+                // Thread-safe log file write
                 lock (_logLock)
                 {
-                    using StreamWriter writer = new(logFilePath, true);
+                    using StreamWriter writer = new(_logFilePath, true);
                     writer.WriteLine(logEntry);
                 }
             }

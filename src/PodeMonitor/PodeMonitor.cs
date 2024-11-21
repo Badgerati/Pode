@@ -30,6 +30,34 @@ namespace PodeMonitor
         public int StartMaxRetryCount { get; } // Maximum retries to start the process
         public int StartRetryDelayMs { get; } // Delay between retries in milliseconds
 
+        // Thread-safe variable to track the service state
+        private volatile bool _suspended; // Volatile ensures the latest value is visible to all threads
+
+        public bool Suspended
+        {
+            get => _suspended; // Safe to read from multiple threads
+            private set => _suspended = value; // Written by only one thread
+        }
+
+        // Thread-safe variable to track the service state
+        private volatile bool _starting; // Volatile ensures the latest value is visible to all threads
+
+        public bool Starting
+        {
+            get => _starting; // Safe to read from multiple threads
+            private set => _starting = value; // Written by only one thread
+        }
+
+        // Thread-safe variable to track the service state
+        private volatile bool _running; // Volatile ensures the latest value is visible to all threads
+
+        public bool Running
+        {
+            get => _running; // Safe to read from multiple threads
+            private set => _running = value; // Written by only one thread
+        }
+
+
         /// <summary>
         /// Initializes a new instance of the PodeMonitor class.
         /// </summary>
@@ -88,7 +116,50 @@ namespace PodeMonitor
                     };
 
                     // Subscribe to output and error streams
-                    _powerShellProcess.OutputDataReceived += (sender, args) => PodeMonitorLogger.Log(LogLevel.INFO, "Pode", _powerShellProcess.Id, args.Data);
+                    //_powerShellProcess.OutputDataReceived += (sender, args) => PodeMonitorLogger.Log(LogLevel.INFO, "Pode", _powerShellProcess.Id, args.Data);
+
+                    // Subscribe to output and error streams
+                    _powerShellProcess.OutputDataReceived += (sender, args) =>
+                    {
+                        // Log the received message
+                        if (!string.IsNullOrEmpty(args.Data))
+                        {
+                            PodeMonitorLogger.Log(LogLevel.INFO, "Pode", _powerShellProcess.Id, args.Data);
+
+                            // Check if the message starts with "Service State:"
+                            if (args.Data.StartsWith("Service State: ", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Extract the state value and update the static variable
+                                string state = args.Data.Substring("Service State: ".Length).Trim().ToLowerInvariant();
+
+                                if (state == "running")
+                                {
+                                    Suspended = false;
+                                    Starting = false;
+                                    Running = true;
+                                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service state updated to: Running.");
+                                }
+                                else if (state == "suspended")
+                                {
+                                    Suspended = true;
+                                    Starting = false;
+                                    Running = false;
+                                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service state updated to: Suspended.");
+                                }
+                                else if (state == "starting")
+                                {
+                                    Suspended = false;
+                                    Starting = true;
+                                    Running = false;
+                                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service state updated to: Restarting.");
+                                }
+                                else
+                                {
+                                    PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, $"Unknown service state: {state}");
+                                }
+                            }
+                        }
+                    };
                     _powerShellProcess.ErrorDataReceived += (sender, args) => PodeMonitorLogger.Log(LogLevel.ERROR, "Pode", _powerShellProcess.Id, args.Data);
 
                     // Start the process

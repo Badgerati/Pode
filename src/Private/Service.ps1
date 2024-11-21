@@ -57,9 +57,11 @@ function Start-PodeServiceHearthbeat {
 
         # Define the script block for the client receiver, listens for commands via the named pipe
         $scriptBlock = {
-
+            $serviceState='running'
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
+
                 Write-PodeHost -Message "Initialize Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
+                Write-PodeHost -Message "Service State: $serviceState" -Force
                 Write-PodeHost -Message "Total Uptime: $(Get-PodeServerUptime -Total -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
                 Write-PodeHost -Message "Uptime Since Last Restart: $(Get-PodeServerUptime -Readable -OutputType Verbose -ExcludeMilliseconds)" -Force
                 Write-PodeHost -Message "Total Number of Restart: $(Get-PodeServerRestartCount)" -Force
@@ -105,7 +107,9 @@ function Start-PodeServiceHearthbeat {
                                     Write-PodeHost -Message 'Server requested restart. Restarting Pode ...' -Force
                                     Restart-PodeServer  # Restart Pode server
                                     Start-Sleep 1
+                                    $serviceState = 'starting'
                                     Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
+                                    Write-PodeHost -Message "Service State: $serviceState" -Force
                                     return
                                     # Exit the loop
                                 }
@@ -114,6 +118,7 @@ function Start-PodeServiceHearthbeat {
                                     # Process 'suspend' message
                                     Write-PodeHost -Message 'Server requested suspend. Suspending Pode ...' -Force
                                     Start-Sleep 5
+                                    $serviceState = 'suspended'
                                     #Suspend-PodeServer  # Suspend Pode server
                                     # return  # Exit the loop
                                 }
@@ -122,6 +127,7 @@ function Start-PodeServiceHearthbeat {
                                     # Process 'resume' message
                                     Write-PodeHost -Message 'Server requested resume. Resuming Pode ...' -Force
                                     Start-Sleep 5
+                                    $serviceState = 'running'
                                     #Resume-PodeServer  # Resume Pode server
                                     #  return  # Exit the loop
                                 }
@@ -136,9 +142,13 @@ function Start-PodeServiceHearthbeat {
                     throw $_
                 }
                 finally {
-                    $reader.Dispose()
-                    $pipeStream.Dispose()  # Always dispose of the pipe stream when done
-                    Write-PodeHost -Message "Disposing Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
+                    if ($reader) {
+                        $reader.Dispose()
+                    }
+                    if ( $pipeStream) {
+                        $pipeStream.Dispose()  # Always dispose of the pipe stream when done
+                        Write-PodeHost -Message "Disposing Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
+                    }
                 }
 
             }

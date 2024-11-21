@@ -328,13 +328,13 @@ function New-PodeContext {
 
     # routes for pages and api
     $ctx.Server.Routes = [ordered]@{
-# common methods
+        # common methods
         'get'     = [ordered]@{}
         'post'    = [ordered]@{}
         'put'     = [ordered]@{}
         'patch'   = [ordered]@{}
         'delete'  = [ordered]@{}
-# other methods
+        # other methods
         'connect' = [ordered]@{}
         'head'    = [ordered]@{}
         'merge'   = [ordered]@{}
@@ -445,7 +445,7 @@ function New-PodeContext {
         Tasks     = $null
         Files     = $null
         Timers    = $null
-        Service    =$null
+        Service   = $null
     }
 
     # threading locks, etc.
