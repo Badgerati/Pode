@@ -89,6 +89,7 @@ function Start-PodeServiceHearthbeat {
                         if ( $PodeContext.Tokens.Cancellation.IsCancellationRequested) {
                             return
                         }
+
                         if ($message) {
                             Write-PodeHost -Message "Received message: $message" -Force
 

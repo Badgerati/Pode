@@ -7,64 +7,68 @@ using System.Threading;
 namespace PodeMonitor
 {
     /// <summary>
-    /// The PodeMonitor class monitors and controls the execution of a Pode PowerShell process.
-    /// It communicates with the Pode process using named pipes.
+    /// Enum representing possible states of the Pode service.
+    /// </summary>
+    public enum ServiceState
+    {
+        Unknown,    // State is unknown
+        Running,    // Service is running
+        Suspended,  // Service is suspended
+        Starting    // Service is starting
+    }
+
+    /// <summary>
+    /// Class responsible for managing and monitoring the Pode PowerShell process.
+    /// Provides functionality for starting, stopping, suspending, resuming, and restarting the process.
+    /// Communicates with the Pode process via named pipes.
     /// </summary>
     public class PodeMonitor
     {
         private readonly object _syncLock = new(); // Synchronization lock for thread safety
-        private Process _powerShellProcess; // PowerShell process instance
-        private NamedPipeClientStream _pipeClient; // Named pipe client for communication
+        private Process _powerShellProcess;       // PowerShell process instance
+        private NamedPipeClientStream _pipeClient; // Named pipe client for inter-process communication
 
         // Configuration properties
-        private readonly string _scriptPath; // Path to the Pode script
-        private readonly string _parameterString; // Parameters to pass to the script
-        private readonly string _pwshPath; // Path to the PowerShell executable
-        private readonly bool _quiet; // Whether the process runs in quiet mode
-        private readonly bool _disableTermination; // Whether termination is disabled
+        private readonly string _scriptPath;      // Path to the Pode script
+        private readonly string _parameterString; // Parameters passed to the script
+        private readonly string _pwshPath;        // Path to the PowerShell executable
+        private readonly bool _quiet;            // Indicates whether the process runs in quiet mode
+        private readonly bool _disableTermination; // Indicates whether termination is disabled
         private readonly int _shutdownWaitTimeMs; // Timeout for shutting down the process
-        private readonly string _pipeName; // Name of the pipe for interprocess communication
+        private readonly string _pipeName;        // Name of the named pipe for communication
 
-        private DateTime _lastLogTime; // Last log timestamp
+        private DateTime _lastLogTime;           // Tracks the last time the process logged activity
 
-        public int StartMaxRetryCount { get; } // Maximum retries to start the process
-        public int StartRetryDelayMs { get; } // Delay between retries in milliseconds
+        public int StartMaxRetryCount { get; }   // Maximum number of retries for starting the process
+        public int StartRetryDelayMs { get; }   // Delay between retries in milliseconds
 
-        // Thread-safe variable to track the service state
-        private volatile bool _suspended; // Volatile ensures the latest value is visible to all threads
-
-        public bool Suspended
-        {
-            get => _suspended; // Safe to read from multiple threads
-            private set => _suspended = value; // Written by only one thread
-        }
-
-        // Thread-safe variable to track the service state
-        private volatile bool _starting; // Volatile ensures the latest value is visible to all threads
-
-        public bool Starting
-        {
-            get => _starting; // Safe to read from multiple threads
-            private set => _starting = value; // Written by only one thread
-        }
-
-        // Thread-safe variable to track the service state
-        private volatile bool _running; // Volatile ensures the latest value is visible to all threads
-
-        public bool Running
-        {
-            get => _running; // Safe to read from multiple threads
-            private set => _running = value; // Written by only one thread
-        }
-
+        // Volatile variables ensure thread-safe visibility for all threads
+        private volatile bool _suspended;
+        private volatile bool _starting;
+        private volatile bool _running;
 
         /// <summary>
-        /// Initializes a new instance of the PodeMonitor class.
+        /// Indicates whether the service is suspended.
         /// </summary>
-        /// <param name="options">The configuration options for the PodeMonitorWorker.</param>
+        public bool Suspended => _suspended;
+
+        /// <summary>
+        /// Indicates whether the service is starting.
+        /// </summary>
+        public bool Starting => _starting;
+
+        /// <summary>
+        /// Indicates whether the service is running.
+        /// </summary>
+        public bool Running => _running;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PodeMonitor"/> class with the specified configuration options.
+        /// </summary>
+        /// <param name="options">Configuration options for the PodeMonitor.</param>
         public PodeMonitor(PodeMonitorWorkerOptions options)
         {
-            // Initialize configuration properties from options
+            // Initialize configuration properties
             _scriptPath = options.ScriptPath;
             _pwshPath = options.PwshPath;
             _parameterString = options.ParameterString;
@@ -74,23 +78,20 @@ namespace PodeMonitor
             StartMaxRetryCount = options.StartMaxRetryCount;
             StartRetryDelayMs = options.StartRetryDelayMs;
 
-            // Generate a unique pipe name for communication
+            // Generate a unique pipe name
             _pipeName = PipeNameGenerator.GeneratePipeName();
             PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Initialized PodeMonitor with pipe name: {_pipeName}");
         }
 
         /// <summary>
-        /// Starts the Pode PowerShell process.
-        /// If the process is already running, logs its status.
+        /// Starts the Pode PowerShell process. If the process is already running, logs its status.
         /// </summary>
         public void StartPowerShellProcess()
         {
-            lock (_syncLock) // Ensure thread-safe access
+            lock (_syncLock)
             {
-                // Check if the process is already running
                 if (_powerShellProcess != null && !_powerShellProcess.HasExited)
                 {
-                    // Log if the process is alive and log threshold is met
                     if ((DateTime.Now - _lastLogTime).TotalMinutes >= 5)
                     {
                         PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pode process is Alive.");
@@ -108,72 +109,39 @@ namespace PodeMonitor
                         {
                             FileName = _pwshPath,
                             Arguments = BuildCommand(),
-                            RedirectStandardOutput = true, // Redirect standard output
-                            RedirectStandardError = true, // Redirect standard error
-                            UseShellExecute = false, // Do not use shell execution
-                            CreateNoWindow = true // Prevent creating a new window
+                            RedirectStandardOutput = true, // Redirect standard output for logging
+                            RedirectStandardError = true, // Redirect standard error for logging
+                            UseShellExecute = false,      // Run without using shell execution
+                            CreateNoWindow = true         // Prevent the creation of a window
                         }
                     };
 
-                    // Subscribe to output and error streams
-                    //_powerShellProcess.OutputDataReceived += (sender, args) => PodeMonitorLogger.Log(LogLevel.INFO, "Pode", _powerShellProcess.Id, args.Data);
-
-                    // Subscribe to output and error streams
+                    // Subscribe to the output stream for logging and state parsing
                     _powerShellProcess.OutputDataReceived += (sender, args) =>
                     {
-                        // Log the received message
                         if (!string.IsNullOrEmpty(args.Data))
                         {
                             PodeMonitorLogger.Log(LogLevel.INFO, "Pode", _powerShellProcess.Id, args.Data);
-
-                            // Check if the message starts with "Service State:"
-                            if (args.Data.StartsWith("Service State: ", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Extract the state value and update the static variable
-                                string state = args.Data.Substring("Service State: ".Length).Trim().ToLowerInvariant();
-
-                                if (state == "running")
-                                {
-                                    Suspended = false;
-                                    Starting = false;
-                                    Running = true;
-                                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service state updated to: Running.");
-                                }
-                                else if (state == "suspended")
-                                {
-                                    Suspended = true;
-                                    Starting = false;
-                                    Running = false;
-                                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service state updated to: Suspended.");
-                                }
-                                else if (state == "starting")
-                                {
-                                    Suspended = false;
-                                    Starting = true;
-                                    Running = false;
-                                    PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service state updated to: Restarting.");
-                                }
-                                else
-                                {
-                                    PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, $"Unknown service state: {state}");
-                                }
-                            }
+                            ParseServiceState(args.Data);
                         }
                     };
-                    _powerShellProcess.ErrorDataReceived += (sender, args) => PodeMonitorLogger.Log(LogLevel.ERROR, "Pode", _powerShellProcess.Id, args.Data);
 
-                    // Start the process
+                    // Subscribe to the error stream for logging errors
+                    _powerShellProcess.ErrorDataReceived += (sender, args) =>
+                    {
+                        PodeMonitorLogger.Log(LogLevel.ERROR, "Pode", _powerShellProcess.Id, args.Data);
+                    };
+
+                    // Start the process and begin reading the output/error streams
                     _powerShellProcess.Start();
                     _powerShellProcess.BeginOutputReadLine();
                     _powerShellProcess.BeginErrorReadLine();
 
-                    // Log the process start time
                     _lastLogTime = DateTime.Now;
                     PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pode process started successfully.");
                 }
                 catch (Exception ex)
                 {
-                    // Log any errors during process start
                     PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Failed to start Pode process: {ex.Message}");
                     PodeMonitorLogger.Log(LogLevel.DEBUG, ex);
                 }
@@ -181,12 +149,11 @@ namespace PodeMonitor
         }
 
         /// <summary>
-        /// Stops the Pode PowerShell process gracefully.
-        /// If the process does not terminate gracefully, it will be forcefully terminated.
+        /// Stops the Pode PowerShell process gracefully. If it does not terminate, it is forcefully killed.
         /// </summary>
         public void StopPowerShellProcess()
         {
-            lock (_syncLock) // Ensure thread-safe access
+            lock (_syncLock)
             {
                 if (_powerShellProcess == null || _powerShellProcess.HasExited)
                 {
@@ -196,18 +163,15 @@ namespace PodeMonitor
 
                 try
                 {
-                    if (InitializePipeClient()) // Ensure pipe client is initialized
+                    if (InitializePipeClientWithRetry())
                     {
-                        // Send shutdown message and wait for process exit
                         SendPipeMessage("shutdown");
-
                         PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Waiting for {_shutdownWaitTimeMs} milliseconds for Pode process to exit...");
                         WaitForProcessExit(_shutdownWaitTimeMs);
 
-                        // If process does not exit gracefully, forcefully terminate
                         if (!_powerShellProcess.HasExited)
                         {
-                            PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, "Pode process did not terminate gracefully, killing process.");
+                            PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, "Pode process did not terminate gracefully. Killing process.");
                             _powerShellProcess.Kill();
                         }
 
@@ -216,13 +180,11 @@ namespace PodeMonitor
                 }
                 catch (Exception ex)
                 {
-                    // Log errors during stop process
                     PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Error stopping Pode process: {ex.Message}");
                     PodeMonitorLogger.Log(LogLevel.DEBUG, ex);
                 }
                 finally
                 {
-                    // Clean up resources
                     CleanupResources();
                 }
             }
@@ -231,26 +193,17 @@ namespace PodeMonitor
         /// <summary>
         /// Sends a suspend command to the Pode process via named pipe.
         /// </summary>
-        public void SuspendPowerShellProcess()
-        {
-            ExecutePipeCommand("suspend");
-        }
+        public void SuspendPowerShellProcess() => ExecutePipeCommand("suspend");
 
         /// <summary>
         /// Sends a resume command to the Pode process via named pipe.
         /// </summary>
-        public void ResumePowerShellProcess()
-        {
-            ExecutePipeCommand("resume");
-        }
+        public void ResumePowerShellProcess() => ExecutePipeCommand("resume");
 
         /// <summary>
         /// Sends a restart command to the Pode process via named pipe.
         /// </summary>
-        public void RestartPowerShellProcess()
-        {
-            ExecutePipeCommand("restart");
-        }
+        public void RestartPowerShellProcess() => ExecutePipeCommand("restart");
 
         /// <summary>
         /// Executes a command by sending it to the Pode process via named pipe.
@@ -258,11 +211,11 @@ namespace PodeMonitor
         /// <param name="command">The command to execute (e.g., "suspend", "resume", "restart").</param>
         private void ExecutePipeCommand(string command)
         {
-            lock (_syncLock) // Ensure thread-safe access
+            lock (_syncLock)
             {
                 try
                 {
-                    if (InitializePipeClient()) // Ensure pipe client is initialized
+                    if (InitializePipeClientWithRetry())
                     {
                         SendPipeMessage(command);
                         PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"{command.ToUpper()} command sent to Pode process.");
@@ -270,16 +223,58 @@ namespace PodeMonitor
                 }
                 catch (Exception ex)
                 {
-                    // Log errors during command execution
                     PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Error executing {command} command: {ex.Message}");
                     PodeMonitorLogger.Log(LogLevel.DEBUG, ex);
                 }
                 finally
                 {
-                    // Clean up pipe client after sending the command
                     CleanupPipeClient();
                 }
             }
+        }
+
+        /// <summary>
+        /// Parses the service state from the provided output message and updates the state variables.
+        /// </summary>
+        /// <param name="output">The output message containing the service state.</param>
+        private void ParseServiceState(string output)
+        {
+            if (string.IsNullOrWhiteSpace(output)) return;
+
+            if (output.StartsWith("Service State: ", StringComparison.OrdinalIgnoreCase))
+            {
+                string state = output.Substring("Service State: ".Length).Trim().ToLowerInvariant();
+
+                switch (state)
+                {
+                    case "running":
+                        UpdateServiceState(ServiceState.Running);
+                        break;
+                    case "suspended":
+                        UpdateServiceState(ServiceState.Suspended);
+                        break;
+                    case "starting":
+                        UpdateServiceState(ServiceState.Starting);
+                        break;
+                    default:
+                        PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, $"Unknown service state: {state}");
+                        UpdateServiceState(ServiceState.Unknown);
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the internal state variables based on the provided service state.
+        /// </summary>
+        /// <param name="state">The new service state.</param>
+        private void UpdateServiceState(ServiceState state)
+        {
+            _suspended = state == ServiceState.Suspended;
+            _starting = state == ServiceState.Starting;
+            _running = state == ServiceState.Running;
+
+            PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Service state updated to: {state}");
         }
 
         /// <summary>
@@ -293,23 +288,41 @@ namespace PodeMonitor
         }
 
         /// <summary>
-        /// Initializes the named pipe client for communication with the Pode process.
+        /// Initializes the named pipe client with a retry mechanism.
         /// </summary>
-        /// <returns>True if the pipe client is successfully initialized and connected; otherwise, false.</returns>
-        private bool InitializePipeClient()
+        /// <param name="maxRetries">The maximum number of retries for connection.</param>
+        /// <returns>True if the pipe client is successfully connected; otherwise, false.</returns>
+        private bool InitializePipeClientWithRetry(int maxRetries = 3)
         {
-            if (_pipeClient == null)
+            int attempts = 0;
+
+            while (attempts < maxRetries)
             {
-                _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
+                try
+                {
+                    if (_pipeClient == null)
+                    {
+                        _pipeClient = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut);
+                    }
+
+                    if (!_pipeClient.IsConnected)
+                    {
+                        PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Connecting to pipe server (Attempt {attempts + 1})...");
+                        _pipeClient.Connect(10000); // Timeout of 10 seconds
+                    }
+
+                    return _pipeClient.IsConnected;
+                }
+                catch (Exception ex)
+                {
+                    PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Pipe connection attempt {attempts + 1} failed: {ex.Message}");
+                }
+
+                attempts++;
+                Thread.Sleep(1000);
             }
 
-            if (!_pipeClient.IsConnected)
-            {
-                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Connecting to pipe server...");
-                _pipeClient.Connect(10000); // Connect with a timeout of 10 seconds
-            }
-
-            return _pipeClient.IsConnected;
+            return false;
         }
 
         /// <summary>
@@ -321,7 +334,7 @@ namespace PodeMonitor
             try
             {
                 using var writer = new StreamWriter(_pipeClient) { AutoFlush = true };
-                writer.WriteLine(message); // Write the message to the pipe
+                writer.WriteLine(message);
             }
             catch (Exception ex)
             {
@@ -331,7 +344,7 @@ namespace PodeMonitor
         }
 
         /// <summary>
-        /// Waits for the Pode process to exit within the specified timeout period.
+        /// Waits for the Pode process to exit within the specified timeout.
         /// </summary>
         /// <param name="timeout">The timeout period in milliseconds.</param>
         private void WaitForProcessExit(int timeout)
@@ -339,13 +352,13 @@ namespace PodeMonitor
             int waited = 0;
             while (!_powerShellProcess.HasExited && waited < timeout)
             {
-                Thread.Sleep(200); // Check every 200ms
+                Thread.Sleep(200);
                 waited += 200;
             }
         }
 
         /// <summary>
-        /// Cleans up resources associated with the Pode process and named pipe client.
+        /// Cleans up resources associated with the Pode process and the pipe client.
         /// </summary>
         private void CleanupResources()
         {
