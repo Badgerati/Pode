@@ -34,11 +34,11 @@
 .PARAMETER StartRetryDelayMs
     The delay (in milliseconds) between retry attempts to start the PowerShell process. Default is 5,000 milliseconds (5 seconds).
 
-.PARAMETER UserName
-    Specifies the username under which the service will run by default is the current user.
+.PARAMETER WindowsUser
+    Specifies the username under which the service will run by default is the current user (Windows only).
 
-.PARAMETER CreateUser
-    A switch create the user if it does not exist (Linux Only).
+.PARAMETER LinuxUser
+    Specifies the username under which the service will run by default is the current user (Linux Only).
 
 .PARAMETER Start
     A switch to start the service immediately after registration.
@@ -101,10 +101,10 @@ function Register-PodeService {
         $StartRetryDelayMs = 5000,
 
         [string]
-        $UserName,
+        $WindowsUser,
 
-        [switch]
-        $CreateUser,
+        [string]
+        $LinuxUser,
 
         [switch]
         $Start,
@@ -154,21 +154,25 @@ function Register-PodeService {
         if (! (Test-Path -Path $SettingsPath -PathType Container)) {
             $null = New-Item -Path $settingsPath -ItemType Directory
         }
-
-        if ([string]::IsNullOrEmpty($UserName)) {
-            if ($IsWindows) {
+        if ($IsWindows) {
+            if ([string]::IsNullOrEmpty($WindowsUser)) {
                 if ( ($null -ne $Password)) {
                     $UserName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
                 }
             }
             else {
+                $UserName = $WindowsUser
+                if ( ($null -eq $Password)) {
+                    throw ($Podelocale.passwordRequiredForServiceUserException -f $UserName)
+                }
+            }
+        }
+        elseif ($IsLinux) {
+            if ([string]::IsNullOrEmpty($LinuxUser)) {
                 $UserName = [System.Environment]::UserName
             }
-
-        }
-        else {
-            if ($IsWindows -and ($null -eq $Password)) {
-                throw ($Podelocale.passwordRequiredForServiceUserException -f $UserName)
+            else {
+                $UserName = $LinuxUser
             }
         }
 
@@ -223,7 +227,6 @@ function Register-PodeService {
                 User           = $User
                 Group          = $Group
                 Start          = $Start
-                CreateUser     = $CreateUser
                 OsArchitecture = "linux-$osArchitecture"
             }
             $operation = Register-PodeLinuxService @param
@@ -482,7 +485,7 @@ function Stop-PodeService {
                 # Check if the service is active
                 if ((Test-PodeMacOsServiceIsActive $nameService)) {
                     if ((Stop-PodeMacOsService $Name)) {
-                        for($i=0;$i -lt 30; $i++){
+                        for ($i = 0; $i -lt 30; $i++) {
                             if (!(Test-PodeMacOsServiceIsActive -Name  $nameService)) {
                                 Write-Verbose -Message "Service '$Name' stopped successfully."
                                 return $true
@@ -633,7 +636,7 @@ function Resume-PodeService {
             }
         }
         elseif ($IsLinux -or $IsMacOS) {
-           return Send-PodeServiceSignal -Name $Name -Signal 'SIGCONT'
+            return Send-PodeServiceSignal -Name $Name -Signal 'SIGCONT'
         }
     }
     catch {

@@ -48,11 +48,11 @@ The `Register-PodeService` function offers several parameters to customize your 
 - **`-StartRetryDelayMs`** *(int)*:
   Delay in milliseconds between retry attempts to start the PowerShell process. Defaults to `5,000 ms`.
 
-- **`-UserName`** *(string)*:
-  Specifies the username under which the service will run. Defaults to the current user.
+- **`-WindowsUser`** *(string)*:
+  Specifies the username under which the service will run. Defaults to the current user (Windows only).
 
-- **`-CreateUser`** *(switch)*:
-  Creates the user if it does not exist (Linux only).
+- **`-LinuxUser`** *(string)*:
+  Specifies the username under which the service will run. Defaults to the current user (Linux Only).
 
 - **`-Start`** *(switch)*:
   Starts the service immediately after registration.
