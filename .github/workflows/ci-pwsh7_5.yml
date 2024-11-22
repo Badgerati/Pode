@@ -25,7 +25,8 @@ on:
 
 env:
   INVOKE_BUILD_VERSION: '5.12.1'
-  POWERSHELL_VERSION: '7.2.24'
+  POWERSHELL_VERSION: '7.5.0-rc.1'
+
 
 jobs:
   build:
