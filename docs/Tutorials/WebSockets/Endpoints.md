@@ -122,7 +122,7 @@ $('#form').submit(function(e) {
 })
 ```
 
-If you just want the server to on respond directlt back to the sending client, and not broadcast to all clients, then set `direct` to true:
+If you just want the server to on respond directly back to the sending client, and not broadcast to all clients, then set `direct` to true:
 
 ```javascript
 $('#form').submit(function(e) {

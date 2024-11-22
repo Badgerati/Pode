@@ -66,7 +66,7 @@ The raw Request hashtable that will be supplied to any Custom logging methods wi
     }
     Response = @{
         StatusCode = '200'
-        StautsDescription = 'OK'
+        StatusDescription = 'OK'
         Size = '9001'
     }
 }
