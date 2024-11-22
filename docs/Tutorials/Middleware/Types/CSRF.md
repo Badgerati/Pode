@@ -4,7 +4,7 @@ Pode has inbuilt support for CSRF validation using tokens on web requests. The s
 
 ## Usage
 
-In Pode you can either validate CSRF using global middleware, or you can assign local Route middleware for specifc routes instead. The tokens needed for validation can be generated in a route and returned in the response as a hidden input element, or other payload options.
+In Pode you can either validate CSRF using global middleware, or you can assign local Route middleware for specific routes instead. The tokens needed for validation can be generated in a route and returned in the response as a hidden input element, or other payload options.
 
 By default Pode's CSRF middleware will validate on every route, except for GET, HEAD, OPTIONS, and TRACE routes. The random secret used to generate tokens can be stored using either sessions or cookies.
 

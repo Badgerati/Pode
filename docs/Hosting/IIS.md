@@ -202,7 +202,7 @@ The server will get a URL path of `/api/etc`, but you can keep your route paths 
 
 Although Pode does have support for HTTPS/WSS, when running via IIS it takes control of HTTPS/WSS for us - this is why the endpoints are forced to HTTP/WS.
 
-You can setup a binding in IIS for HTTPS (still HTPPS for WSS) with a Certificate, and IIS will deal with SSL for you:
+You can setup a binding in IIS for HTTPS (still HTTPS for WSS) with a Certificate, and IIS will deal with SSL for you:
 
 1. Open IIS, and expand the Sites folder
 2. Right click your Site, and select "Edit Bindings..."
