@@ -1,3 +1,5 @@
+using namespace Pode
+
 <#
 .SYNOPSIS
 Create a new type of Authentication scheme.
@@ -113,6 +115,12 @@ If supplied, the token/key supplied for Bearer/API key authentication will be pa
 .PARAMETER Secret
 An optional Secret, used to sign/verify JWT signatures.
 
+.PARAMETER Negotiate
+If supplied, will use the inbuilt Negotiate Authentication scheme (Kerberos/NTLM).
+
+.PARAMETER KeytabPath
+The path to the Keytab file for Negotiate authentication.
+
 .EXAMPLE
 $basic_auth = New-PodeAuthScheme -Basic
 
@@ -179,7 +187,14 @@ function New-PodeAuthScheme {
         [string]
         $Description,
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'Basic')]
+        [Parameter(ParameterSetName = 'Bearer')]
+        [Parameter(ParameterSetName = 'Digest')]
+        [Parameter(ParameterSetName = 'Form')]
+        [Parameter(ParameterSetName = 'Custom')]
+        [Parameter(ParameterSetName = 'ClientCertificate')]
+        [Parameter(ParameterSetName = 'OAuth2')]
+        [Parameter(ParameterSetName = 'ApiKey')]
         [string]
         $Realm,
 
@@ -208,7 +223,7 @@ function New-PodeAuthScheme {
         [switch]
         $ClientCertificate,
 
-        [Parameter(ParameterSetName = 'OAuth2', Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'OAuth2')]
         [string]
         $ClientId,
 
@@ -224,7 +239,7 @@ function New-PodeAuthScheme {
         [string]
         $AuthoriseUrl,
 
-        [Parameter(ParameterSetName = 'OAuth2', Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'OAuth2')]
         [string]
         $TokenUrl,
 
@@ -285,7 +300,15 @@ function New-PodeAuthScheme {
         [Parameter(ParameterSetName = 'Bearer')]
         [Parameter(ParameterSetName = 'ApiKey')]
         [string]
-        $Secret
+        $Secret,
+
+        [Parameter(ParameterSetName = 'Negotiate')]
+        [switch]
+        $Negotiate,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Negotiate')]
+        [string]
+        $KeytabPath
     )
     begin {
         $pipelineItemCount = 0
@@ -507,6 +530,23 @@ function New-PodeAuthScheme {
                         LocationName = $LocationName
                         AsJWT        = $AsJWT
                         Secret       = $secretBytes
+                    }
+                }
+            }
+
+            'negotiate' {
+                return @{
+                    Name          = 'Negotiate'
+                    ScriptBlock   = @{
+                        Script         = (Get-PodeAuthNegotiateType)
+                        UsingVariables = $null
+                    }
+                    PostValidator = $null
+                    Middleware    = $Middleware
+                    InnerScheme   = $InnerScheme
+                    Scheme        = 'http'
+                    Arguments     = @{
+                        Authenticator = [PodeKerberosAuth]::new($KeytabPath)
                     }
                 }
             }
