@@ -10,6 +10,10 @@
     To build and start the Docker container, use:
     docker-compose up --force-recreate --build
 
+.EXAMPLE
+    Alternatively, to run the script, install the InvokeBuild module and run the following from the root of the repository:
+    Invoke-Build DockerTestRun
+
 .LINK
     https://github.com/Badgerati/Pode/blob/develop/examples/Web-Cookies.ps1
 

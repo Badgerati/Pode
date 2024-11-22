@@ -1343,11 +1343,10 @@ This example sets the path for the server's default 'Public' folder to 'C:\Pode\
 
 #>
 function Set-PodeDefaultFolder {
-
     [CmdletBinding()]
-    param (
+    param(
         [Parameter()]
-        [ValidateSet('Views', 'Public', 'Errors')]
+        [ValidateSet('Views', 'Public', 'Errors', 'Locales')]
         [string]
         $Type,
 
@@ -1355,6 +1354,7 @@ function Set-PodeDefaultFolder {
         [string]
         $Path
     )
+
     if (Test-Path -Path $Path -PathType Container) {
         $PodeContext.Server.DefaultFolders[$Type] = $Path
     }
@@ -1392,7 +1392,7 @@ function Get-PodeDefaultFolder {
     [OutputType([string])]
     param (
         [Parameter()]
-        [ValidateSet('Views', 'Public', 'Errors')]
+        [ValidateSet('Views', 'Public', 'Errors', 'Locales')]
         [string]
         $Type
     )

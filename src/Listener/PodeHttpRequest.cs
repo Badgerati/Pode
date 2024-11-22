@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Web;
@@ -10,6 +9,7 @@ using System.Linq;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Pode
 {
@@ -22,7 +22,9 @@ namespace Pode
         public string ContentType { get; private set; }
         public int ContentLength { get; private set; }
         public Encoding ContentEncoding { get; private set; }
-        public string TransferEncoding { get; private set; }
+        public OrderedDictionary TransferEncodings { get; private set; }
+        public OrderedDictionary AcceptEncodings { get; private set; }
+        public OrderedDictionary AcceptLanguages { get; private set; }
         public string UserAgent { get; private set; }
         public string UrlReferrer { get; private set; }
         public Uri Url { get; private set; }
@@ -34,6 +36,7 @@ namespace Pode
 
         private bool IsRequestLineValid;
         private MemoryStream BodyStream;
+        private static readonly Regex WeightedHeaderRegex = new Regex(@"([a-z\-*]+)(?:;q=([\d\.]+))?", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
         public string SseClientId { get; private set; }
         public string SseClientName { get; private set; }
@@ -264,8 +267,10 @@ namespace Pode
                 ContentLength = _contentLength;
             }
 
-            // set the transfer encoding
-            TransferEncoding = Headers["Transfer-Encoding"]?.ToString();
+            // parse any weighted headers
+            TransferEncodings = ParseWeightedHeader(Headers["Transfer-Encoding"]?.ToString());
+            AcceptEncodings = ParseWeightedHeader(Headers["Accept-Encoding"]?.ToString());
+            AcceptLanguages = ParseWeightedHeader(Headers["Accept-Language"]?.ToString());
 
             // set other default headers
             UrlReferrer = Headers["Referer"]?.ToString();
@@ -319,7 +324,7 @@ namespace Pode
             }
 
             // are we chunked?
-            var isChunked = !string.IsNullOrWhiteSpace(TransferEncoding) && TransferEncoding.Contains("chunked");
+            var isChunked = TransferEncodings.Contains("chunked");
 
             // if chunked, and we have a content-length, fail
             if (isChunked && ContentLength > 0)
@@ -399,6 +404,40 @@ namespace Pode
             }
 
             return true;
+        }
+
+        public static OrderedDictionary ParseWeightedHeader(string value)
+        {
+            var result = new OrderedDictionary(StringComparer.InvariantCultureIgnoreCase);
+
+            // return empty if no value
+            if (string.IsNullOrEmpty(value))
+            {
+                return result;
+            }
+
+            // parse weights and store
+            var weights = new List<KeyValuePair<string, double>>();
+            foreach (Match match in WeightedHeaderRegex.Matches(value))
+            {
+                var key = match.Groups[1].Value.Trim();
+                var weight = match.Groups[2].Success && double.TryParse(match.Groups[2].Value, out double _weight)
+                    ? _weight
+                    : 1.0;
+
+                weights.Add(new KeyValuePair<string, double>(key, weight));
+            }
+
+            // sort the weights
+            weights.Sort((x, y) => y.Value.CompareTo(x.Value));
+
+            // convert to ordered dictionary
+            foreach (var item in weights)
+            {
+                result.Add(item.Key, item.Value);
+            }
+
+            return result;
         }
 
         public override void PartialDispose()

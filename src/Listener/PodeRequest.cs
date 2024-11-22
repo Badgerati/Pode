@@ -287,6 +287,10 @@ namespace Pode
             {
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
             }
+            catch (ObjectDisposedException ex)
+            {
+                PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Verbose);
+            }
             catch (PodeRequestException ex)
             {
                 PodeHelpers.WriteException(ex, Context.Listener, PodeLoggingLevel.Error);

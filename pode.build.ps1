@@ -241,15 +241,17 @@ function Get-PodeBuildCurrentPwshVersion {
     return ("$(pwsh -v)" -split ' ')[1].Trim()
 }
 
-function Invoke-PodeBuildDockerBuild($tag, $file) {
+function Invoke-PodeBuildDockerBuild([string]$tag, [string]$file, [switch]$noTag) {
     docker build -t badgerati/pode:$tag -f $file .
     if (!$?) {
         throw "docker build failed for $($tag)"
     }
 
-    docker tag badgerati/pode:$tag docker.pkg.github.com/badgerati/pode/pode:$tag
-    if (!$?) {
-        throw "docker tag failed for $($tag)"
+    if (!$noTag) {
+        docker tag badgerati/pode:$tag docker.pkg.github.com/badgerati/pode/pode:$tag
+        if (!$?) {
+            throw "docker tag failed for $($tag)"
+        }
     }
 }
 
@@ -260,6 +262,17 @@ function Split-PodeBuildPwshPath {
     else {
         return $env:PSModulePath -split ':'
     }
+}
+
+function Test-PodeBuildDockerInstalled {
+    try {
+        docker --version
+    }
+    catch {
+        return $false
+    }
+
+    return $true
 }
 
 
@@ -353,7 +366,7 @@ Task IndexSamples {
     # List of directories to exclude
     $sampleMarkDownPath = './docs/Getting-Started/Samples.md'
     $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
-        'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues')
+        'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues', 'locales')
 
     # Convert exlusion list into single regex pattern for directory matching
     $dirSeparator = [IO.Path]::DirectorySeparatorChar
@@ -449,21 +462,19 @@ Task DockerPack PackageFolder, StampVersion, {
         return
     }
 
-    try {
-        # Try to get the Docker version to check if Docker is installed
-        docker --version
-    }
-    catch {
-        # If Docker is not available, exit the task
+    # test if docker is installed
+    if (!(Test-PodeBuildDockerInstalled)) {
         Write-Warning 'Docker is not installed or not available in the PATH. Exiting task.'
         return
     }
 
+    # build the docker images
     Invoke-PodeBuildDockerBuild -Tag $Version -File './Dockerfile'
     Invoke-PodeBuildDockerBuild -Tag 'latest' -File './Dockerfile'
     Invoke-PodeBuildDockerBuild -Tag "$Version-alpine" -File './alpine.dockerfile'
     Invoke-PodeBuildDockerBuild -Tag 'latest-alpine' -File './alpine.dockerfile'
 
+    # build the arm32 docker images
     if (!(Test-PodeBuildIsGitHub)) {
         Invoke-PodeBuildDockerBuild -Tag "$Version-arm32" -File './arm32.dockerfile'
         Invoke-PodeBuildDockerBuild -Tag 'latest-arm32' -File './arm32.dockerfile'
@@ -471,6 +482,31 @@ Task DockerPack PackageFolder, StampVersion, {
     else {
         Write-Warning 'Docker images for ARM32 are not built on GitHub runners due to having the wrong OS architecture. Skipping.'
     }
+}
+
+Task DockerTestPack PackageFolder, {
+    try {
+        # test if docker is installed
+        if (!(Test-PodeBuildDockerInstalled)) {
+            Write-Warning 'Docker is not installed or not available in the PATH. Exiting task.'
+            return
+        }
+
+        # build the docker images
+        Invoke-PodeBuildDockerBuild -Tag 'test' -File './Dockerfile'
+    }
+    finally {
+        # remove pkg folder
+        $path = './pkg'
+        if (Test-Path $path) {
+            Remove-Item -Path $path -Recurse -Force | Out-Null
+        }
+    }
+}
+
+Task DockerTestRun DockerTestPack, {
+    # run docker compose in /examples folder
+    docker-compose -f ./examples/docker-compose.yml up --force-recreate --build
 }
 
 # Synopsis: Package up the Module

@@ -1,7 +1,7 @@
-<html lang="en" ; style='background-color: #01b0c4' ;>
+<html style='background-color: #01b0c4'>
 
 <head>
-    <title>File Browser:$($Data.Path)</title>
+    <title>$(Get-PodeLocaleValue -Key "FileBrowser_Title" -Recurse): $($Data.Path)</title>
     <meta charset='utf-8'>
 
     <style>
@@ -122,145 +122,20 @@
 
 </head>
 <script>
-    let FolderPath = "Folder Path"; //Declare FolderPath global
+    let FolderPath = '$(Get-PodeLocaleValue -Key "FileBrowser_FolderPath" -Recurse)';
+    let Mode = '$(Get-PodeLocaleValue -Key "FileBrowser_Mode" -Recurse)';
+    let CreationTime = '$(Get-PodeLocaleValue -Key "FileBrowser_CreationTime" -Recurse)';
+    let LastWriteTime = '$(Get-PodeLocaleValue -Key "FileBrowser_LastWriteTime" -Recurse)';
+    let Size = '$(Get-PodeLocaleValue -Key "FileBrowser_Size" -Recurse)';
+    let Name = '$(Get-PodeLocaleValue -Key "FileBrowser_Name" -Recurse)';
+    let UnixMode = '$(Get-PodeLocaleValue -Key "FileBrowser_UnixMode" -Recurse)';
+    let User = '$(Get-PodeLocaleValue -Key "FileBrowser_User" -Recurse)';
+    let Group = '$(Get-PodeLocaleValue -Key "FileBrowser_Group" -Recurse)';
 
     document.addEventListener('DOMContentLoaded', function() {
         var WindowsMode = $($Data.windowsMode);
         var tableContent = '';
-        const userLang = navigator.language || navigator.userLanguage;
-        const lang = userLang.split('-')[0]; // Extract the language code (e.g., 'en' from 'en-US')
-        // Define variables for translations
-        let FileBrowserTitle = "File Browser";
-        let Mode = "Mode";
-        let CreationTime = "CreationTime";
-        let LastWriteTime = "LastWriteTime";
-        let Size = "Size";
-        let Name = "Name";
-        let UnixMode = "UnixMode";
-        let User = "User";
-        let Group = "Group";
-        switch (lang) {
-            case "fr":
-                FileBrowserTitle = "Explorateur de fichiers";
-                Mode = "Mode";
-                CreationTime = "Heure de création";
-                LastWriteTime = "Dernière modification";
-                Size = "Taille";
-                Name = "Nom";
-                UnixMode = "Mode Unix";
-                User = "Utilisateur";
-                Group = "Groupe";
-                FolderPath = "Chemin du dossier";
-                break;
-            case "es":
-                FileBrowserTitle = "Explorador de archivos";
-                Mode = "Modo";
-                CreationTime = "Hora de creación";
-                LastWriteTime = "Última modificación";
-                Size = "Tamaño";
-                Name = "Nombre";
-                UnixMode = "Modo Unix";
-                User = "Usuario";
-                Group = "Grupo";
-                FolderPath = "Ruta de la carpeta";
-                break;
-            case "ar":
-                FileBrowserTitle = "مستعرض الملفات";
-                Mode = "الوضع";
-                CreationTime = "وقت الإنشاء";
-                LastWriteTime = "آخر تعديل";
-                Size = "الحجم";
-                Name = "الاسم";
-                UnixMode = "وضع يونكس";
-                User = "المستخدم";
-                Group = "المجموعة";
-                FolderPath = "مسار المجلد";
-                break;
-            case "de":
-                FileBrowserTitle = "Dateibrowser";
-                Mode = "Modus";
-                CreationTime = "Erstellungszeit";
-                LastWriteTime = "Letzte Änderung";
-                Size = "Größe";
-                Name = "Name";
-                UnixMode = "Unix-Modus";
-                User = "Benutzer";
-                Group = "Gruppe";
-                FolderPath = "Ordnerpfad";
-                break;
-            case "it":
-                FileBrowserTitle = "Esplora file";
-                Mode = "Modalità";
-                CreationTime = "Ora di creazione";
-                LastWriteTime = "Ultima modifica";
-                Size = "Dimensione";
-                Name = "Nome";
-                UnixMode = "Modalità Unix";
-                User = "Utente";
-                Group = "Gruppo";
-                FolderPath = "Percorso della cartella";
-                break;
-            case "ja":
-                FileBrowserTitle = "ファイルブラウザ";
-                Mode = "モード";
-                CreationTime = "作成時間";
-                LastWriteTime = "最終更新時間";
-                Size = "サイズ";
-                Name = "名前";
-                UnixMode = "Unixモード";
-                User = "ユーザー";
-                Group = "グループ";
-                FolderPath = "フォルダーパス";
-                break;
-            case "ko":
-                FileBrowserTitle = "파일 탐색기";
-                Mode = "모드";
-                CreationTime = "생성 시간";
-                LastWriteTime = "마지막 수정 시간";
-                Size = "크기";
-                Name = "이름";
-                UnixMode = "유닉스 모드";
-                User = "사용자";
-                Group = "그룹";
-                FolderPath = "폴더 경로";
-                break;
-            case "pl":
-                FileBrowserTitle = "Przeglądarka plików";
-                Mode = "Tryb";
-                CreationTime = "Czas utworzenia";
-                LastWriteTime = "Ostatnia modyfikacja";
-                Size = "Rozmiar";
-                Name = "Nazwa";
-                UnixMode = "Tryb Unix";
-                User = "Użytkownik";
-                Group = "Grupa";
-                FolderPath = "Ścieżka folderu";
-                break;
-            case "pt":
-                FileBrowserTitle = "Navegador de arquivos";
-                Mode = "Modo";
-                CreationTime = "Hora de criação";
-                LastWriteTime = "Última modificação";
-                Size = "Tamanho";
-                Name = "Nome";
-                UnixMode = "Modo Unix";
-                User = "Usuário";
-                Group = "Grupo";
-                FolderPath = "Caminho da pasta";
-                break;
-            case "zh":
-                FileBrowserTitle = "文件浏览器";
-                Mode = "模式";
-                CreationTime = "创建时间";
-                LastWriteTime = "最后修改时间";
-                Size = "大小";
-                Name = "名称";
-                UnixMode = "Unix模式";
-                User = "用户";
-                Group = "组";
-                FolderPath = "文件夹路径";
-                break;
-        };
+
         if (WindowsMode) {
             tableContent += '<tr>' +
                 '<th class="mode">' + Mode + '</th>' +

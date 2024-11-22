@@ -151,6 +151,11 @@ function Get-PodeCookie {
         $Raw
     )
 
+    # just return null if the cookie doesn't exist
+    if (!$WebEvent.Cookies.ContainsKey($Name)) {
+        return $null
+    }
+
     # get the cookie from the request
     $cookie = $WebEvent.Cookies[$Name]
     if (!$Raw) {

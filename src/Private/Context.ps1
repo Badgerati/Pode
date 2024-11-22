@@ -185,9 +185,29 @@ function New-PodeContext {
 
     # default Folders
     $ctx.Server.DefaultFolders = @{
-        'Views'  = 'views'
-        'Public' = 'public'
-        'Errors' = 'errors'
+        Views   = 'views'
+        Public  = 'public'
+        Errors  = 'errors'
+        Locales = 'locales'
+    }
+
+    # setup localisation
+    $ctx.Server.Localisation = @{
+        Enabled    = $true
+        AutoDetect = $true
+        Locations  = @{
+            CookieName = $null
+            HeaderName = $null
+            SessionKey = $null
+            AuthKey    = $null
+        }
+        Defaults   = @{
+            Culture        = [cultureinfo]$PSUICulture
+            DateFormat     = 'LongDate'
+            TimeFormat     = 'ShortTime'
+            DateTimeFormat = 'FullDateTime'
+        }
+        Locales    = @{}
     }
 
     # check if there is any global configuration
@@ -320,13 +340,13 @@ function New-PodeContext {
 
     # routes for pages and api
     $ctx.Server.Routes = [ordered]@{
-# common methods
+        # common methods
         'get'     = [ordered]@{}
         'post'    = [ordered]@{}
         'put'     = [ordered]@{}
         'patch'   = [ordered]@{}
         'delete'  = [ordered]@{}
-# other methods
+        # other methods
         'connect' = [ordered]@{}
         'head'    = [ordered]@{}
         'merge'   = [ordered]@{}
@@ -889,11 +909,17 @@ function Set-PodeServerConfiguration {
         if ($Configuration.DefaultFolders.Public) {
             $Context.Server.DefaultFolders.Public = $Configuration.DefaultFolders.Public
         }
+
         if ($Configuration.DefaultFolders.Views) {
             $Context.Server.DefaultFolders.Views = $Configuration.DefaultFolders.Views
         }
+
         if ($Configuration.DefaultFolders.Errors) {
             $Context.Server.DefaultFolders.Errors = $Configuration.DefaultFolders.Errors
+        }
+
+        if ($Configuration.DefaultFolders.Locales) {
+            $Context.Server.DefaultFolders.Locales = $Configuration.DefaultFolders.Locales
         }
     }
 
@@ -901,6 +927,45 @@ function Set-PodeServerConfiguration {
     $Context.Server.Debug = @{
         Breakpoints = @{
             Enabled = [bool]$Configuration.Debug.Breakpoints.Enable
+        }
+    }
+
+    # localisation
+    if ($Configuration.Localisation) {
+        # set enabled, if supplied
+        if ($Configuration.Localisation.ContainsKey('Enable')) {
+            $Context.Server.Localisation.Enabled = [bool]$Configuration.Localisation.Enable
+        }
+
+        # set auto-detect, if supplied
+        if ($Configuration.Localisation.ContainsKey('AutoDetect')) {
+            $Context.Server.Localisation.AutoDetect = [bool]$Configuration.Localisation.AutoDetect
+        }
+
+        # set locations of where to find culture info
+        $Context.Server.Localisation.Locations = @{
+            CookieName = $Configuration.Localisation.Locations.CookieName
+            HeaderName = $Configuration.Localisation.Locations.HeaderName
+            SessionKey = $Configuration.Localisation.Locations.SessionKey
+            AuthKey    = $Configuration.Localisation.Locations.AuthKey
+        }
+
+        # set default for culture
+        if (![string]::IsNullOrEmpty($Configuration.Localisation.Defaults.Culture)) {
+            $Context.Server.Localisation.Defaults.Culture = [cultureinfo]$Configuration.Localisation.Defaults.Culture
+        }
+
+        # set defaults for date/time formats
+        if (![string]::IsNullOrEmpty($Configuration.Localisation.Defaults.DateFormat)) {
+            $Context.Server.Localisation.Defaults.DateFormat = $Configuration.Localisation.Defaults.DateFormat
+        }
+
+        if (![string]::IsNullOrEmpty($Configuration.Localisation.Defaults.TimeFormat)) {
+            $Context.Server.Localisation.Defaults.TimeFormat = $Configuration.Localisation.Defaults.TimeFormat
+        }
+
+        if (![string]::IsNullOrEmpty($Configuration.Localisation.Defaults.DateTimeFormat)) {
+            $Context.Server.Localisation.Defaults.DateTimeFormat = $Configuration.Localisation.Defaults.DateTimeFormat
         }
     }
 }

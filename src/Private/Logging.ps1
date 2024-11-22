@@ -340,12 +340,6 @@ function Write-PodeRequestLog {
 }
 
 function Add-PodeRequestLogEndware {
-    param(
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNull()]
-        $WebEvent
-    )
-
     # do nothing if logging is disabled, or request logging isn't setup
     $name = Get-PodeRequestLoggingName
     if (!(Test-PodeLoggerEnabled -Name $name)) {

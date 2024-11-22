@@ -14,8 +14,8 @@ namespace Pode
         public IList<PodeFormData> Data { get; private set; }
         public string Boundary { get; private set; }
 
-        private static readonly Regex BoundaryRegex = new Regex("boundary=\"?(?<boundary>.+?)\"?$");
-        private static readonly Regex HeaderRegex = new Regex("^(?<name>.*?)\\:\\s+(?<value>.*?)$");
+        private static readonly Regex BoundaryRegex = new Regex("boundary=\"?(?<boundary>.+?)\"?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex HeaderRegex = new Regex("^(?<name>.*?)\\:\\s+(?<value>.*?)$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         public PodeForm()
         {

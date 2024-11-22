@@ -1,0 +1,3 @@
+@{
+    'HelloWorld' = 'Bonjour, le monde!'
+}

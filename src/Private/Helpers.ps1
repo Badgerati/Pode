@@ -795,7 +795,6 @@ This example is typically called within the Pode server setup script or internal
 This is an internal function and may change in future releases of Pode.
 #>
 function Add-PodePSInbuiltDrive {
-
     # create drive for views, if path exists
     $path = (Join-PodeServerRoot -Folder $PodeContext.Server.DefaultFolders.Views)
     if (Test-Path $path) {
@@ -1076,64 +1075,14 @@ function Test-PodeValidNetworkFailure {
     return ($null -ne $match)
 }
 
-function ConvertFrom-PodeHeaderQValue {
-    param(
-        [Parameter()]
-        [string]
-        $Value
-    )
-
-    process {
-        $qs = [ordered]@{}
-
-        # return if no value
-        if ([string]::IsNullOrWhiteSpace($Value)) {
-            return $qs
-        }
-
-        # split the values up
-        $parts = @($Value -isplit ',').Trim()
-
-        # go through each part and check its q-value
-        foreach ($part in $parts) {
-            # default of 1 if no q-value
-            if ($part.IndexOf(';q=') -eq -1) {
-                $qs[$part] = 1.0
-                continue
-            }
-
-            # parse for q-value
-            $atoms = @($part -isplit ';q=')
-            $qs[$atoms[0]] = [double]$atoms[1]
-        }
-
-        return $qs
-    }
-}
-
 function Get-PodeAcceptEncoding {
     param(
-        [Parameter()]
-        [string]
-        $AcceptEncoding,
-
         [switch]
         $ThrowError
     )
 
-    # return if no encoding
-    if ([string]::IsNullOrWhiteSpace($AcceptEncoding)) {
-        return [string]::Empty
-    }
-
-    # return empty if not compressing
-    if (!$PodeContext.Server.Web.Compression.Enabled) {
-        return [string]::Empty
-    }
-
-    # convert encoding form q-form
-    $encodings = ConvertFrom-PodeHeaderQValue -Value $AcceptEncoding
-    if ($encodings.Count -eq 0) {
+    # return if no encoding, or compression is disabled
+    if (!$PodeContext.Server.Web.Compression.Enabled -or $WebEvent.Request.AcceptEncodings.Count -eq 0) {
         return [string]::Empty
     }
 
@@ -1142,11 +1091,11 @@ function Get-PodeAcceptEncoding {
     $valid = @()
 
     # build up supported and invalid
-    foreach ($encoding in $encodings.Keys) {
+    foreach ($encoding in $WebEvent.Request.AcceptEncodings.Keys) {
         if (($encoding -iin $PodeContext.Server.Compression.Encodings) -or ($encoding -iin $normal)) {
             $valid += @{
                 Name  = $encoding
-                Value = $encodings[$encoding]
+                Value = $WebEvent.Request.AcceptEncodings[$encoding]
             }
         }
     }
@@ -1288,22 +1237,12 @@ function Get-PodeRange {
 
 function Get-PodeTransferEncoding {
     param(
-        [Parameter()]
-        [string]
-        $TransferEncoding,
-
         [switch]
         $ThrowError
     )
 
     # return if no encoding
-    if ([string]::IsNullOrWhiteSpace($TransferEncoding)) {
-        return [string]::Empty
-    }
-
-    # convert encoding form q-form
-    $encodings = ConvertFrom-PodeHeaderQValue -Value $TransferEncoding
-    if ($encodings.Count -eq 0) {
+    if ($WebEvent.Request.TransferEncodings.Count -eq 0) {
         return [string]::Empty
     }
 
@@ -1312,7 +1251,7 @@ function Get-PodeTransferEncoding {
     $invalid = @()
 
     # if we see a supported one, return immediately. else build up invalid one
-    foreach ($encoding in $encodings.Keys) {
+    foreach ($encoding in $WebEvent.Request.TransferEncodings.Keys) {
         if ($encoding -iin $PodeContext.Server.Compression.Encodings) {
             if ($encoding -ieq 'x-gzip') {
                 return 'gzip'
@@ -1822,24 +1761,25 @@ function Test-PodePath {
         catch {
             $statusCode = 400
         }
-
     }
 
     if ($statusCode -eq 200) {
-        if ($ReturnItem.IsPresent) {
+        if ($ReturnItem) {
             return  $item
         }
+
         return $true
     }
 
     # if we failed to get the file, report back the status code and/or return true/false
-    if (!$NoStatus.IsPresent) {
+    if (!$NoStatus) {
         Set-PodeResponseStatus -Code $statusCode
     }
 
-    if ($ReturnItem.IsPresent) {
-        return  $null
+    if ($ReturnItem) {
+        return $null
     }
+
     return $false
 }
 

@@ -152,6 +152,11 @@ function Initialize-PodeAutoImportConfiguration {
                 ExportOnly = $false
             }
         }
+        Locales      = @{
+            Enabled    = $true
+            ExportList = @()
+            ExportOnly = $false
+        }
     }
 }
 
@@ -196,7 +201,7 @@ function Import-PodeSecretManagementVaultsIntoRegistry {
 
         # is a vault with this name already registered?
         if (Test-PodeSecretVault -Name $vault.Name) {
-            throw ($PodeLocale.secretVaultAlreadyRegisteredExceptionMessage -f $vault.Name,"")
+            throw ($PodeLocale.secretVaultAlreadyRegisteredExceptionMessage -f $vault.Name, '')
             #"A Secret Vault with the name '$($vault.Name)' has already been registered while auto-importing Secret Vaults"
         }
 
@@ -216,6 +221,34 @@ function Import-PodeSecretManagementVaultsIntoRegistry {
     }
 }
 
+function Import-PodeLocalesIntoMemory {
+    # do nothing if disabled
+    if (!$PodeContext.Server.AutoImport.Locales.Enabled) {
+        return
+    }
+
+    # if export only, and there are none, do nothing
+    if ($PodeContext.Server.AutoImport.Locales.ExportOnly -and ($PodeContext.Server.AutoImport.Locales.ExportList.Length -eq 0)) {
+        return
+    }
+
+    # get the default path
+    $path = Join-PodeServerRoot -Folder $PodeContext.Server.DefaultFolders.Locales
+
+    # import the locales, with optional export list of cultures, but only if the path exists
+    if (Test-Path $path) {
+        Import-PodeLocaleData -Path $path -Culture $PodeContext.Server.AutoImport.Locales.ExportList
+    }
+}
+
+function Import-PodeLocalesInternalIntoMemory {
+    # get the module misc locales path
+    $path = [System.IO.Path]::Combine((Get-PodeModuleMiscPath), 'locales')
+
+    # call Import-PodeLocaleData with path and optional export list of cultures
+    Import-PodeLocaleData -Path $path -Culture $PodeContext.Server.AutoImport.Locales.ExportList
+}
+
 function Read-PodeAutoImportConfiguration {
     param(
         [Parameter()]
@@ -227,6 +260,7 @@ function Read-PodeAutoImportConfiguration {
     $impSnapins = $Configuration.AutoImport.Snapins
     $impFuncs = $Configuration.AutoImport.Functions
     $impSecretVaults = $Configuration.AutoImport.SecretVaults
+    $impLocales = $Configuration.AutoImport.Locales
 
     return @{
         Modules      = @{
@@ -252,6 +286,11 @@ function Read-PodeAutoImportConfiguration {
                 ExportOnly = ([bool]$impSecretVaults.SecretManagement.ExportOnly)
             }
         }
+        Locales      = @{
+            Enabled    = (($null -eq $impLocales.Enable) -or [bool]$impLocales.Enable)
+            ExportList = @()
+            ExportOnly = ([bool]$impLocales.ExportOnly)
+        }
     }
 }
 
@@ -260,4 +299,5 @@ function Reset-PodeAutoImportConfiguration {
     $PodeContext.Server.AutoImport.Snapins.ExportList = @()
     $PodeContext.Server.AutoImport.Functions.ExportList = @()
     $PodeContext.Server.AutoImport.SecretVaults.SecretManagement.ExportList = @()
+    $PodeContext.Server.AutoImport.Locales.ExportList = @()
 }

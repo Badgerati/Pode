@@ -127,8 +127,7 @@ function Test-PodeHeader {
         $Name
     )
 
-    $header = (Get-PodeHeader -Name $Name)
-    return (![string]::IsNullOrWhiteSpace($header))
+    return $WebEvent.Request.Headers.ContainsKey($Name)
 }
 
 <#
@@ -165,6 +164,11 @@ function Get-PodeHeader {
         [switch]
         $Strict
     )
+
+    # just return null if the header doesn't exist
+    if (!$WebEvent.Request.Headers.ContainsKey($Name)) {
+        return $null
+    }
 
     # get the value for the header from the request
     $header = $WebEvent.Request.Headers.$Name

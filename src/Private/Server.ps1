@@ -46,6 +46,11 @@ function Start-PodeInternalServer {
         # load any functions
         Import-PodeFunctionsIntoRunspaceState -ScriptBlock $_script
 
+        # load any locales (internal first, then custom)
+        Import-PodeLocalesInternalIntoMemory
+        Import-PodeLocalesIntoMemory
+        Protect-PodeLocaleDefaultCulture
+
         # run start event hooks
         Invoke-PodeEvent -Type Start
 
@@ -316,6 +321,9 @@ function Restart-PodeInternalServer {
         Unregister-PodeSecretVaultsInternal -ThrowError
         $PodeContext.Server.Secrets.Vaults.Clear()
         $PodeContext.Server.Secrets.Keys.Clear()
+
+        # clear locales
+        $PodeContext.Server.Localisation.Locales.Clear()
 
         # dispose mutex/semaphores
         Clear-PodeLockables

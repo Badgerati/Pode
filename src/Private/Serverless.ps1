@@ -54,6 +54,7 @@ function Start-PodeAzFuncServer {
                 Timestamp        = [datetime]::UtcNow
                 TransferEncoding = $null
                 AcceptEncoding   = $null
+                Culture          = $null
                 Ranges           = $null
                 Metadata         = @{}
             }
@@ -187,6 +188,7 @@ function Start-PodeAwsLambdaServer {
                 Timestamp        = [datetime]::UtcNow
                 TransferEncoding = $null
                 AcceptEncoding   = $null
+                Culture          = $null
                 Ranges           = $null
                 Metadata         = @{}
             }

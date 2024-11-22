@@ -33,9 +33,7 @@
 
     .NOTES
     This is the entry point for the Pode module.
-
 #>
-
 param(
     [string]$UICulture
 )

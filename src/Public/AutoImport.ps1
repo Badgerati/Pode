@@ -111,3 +111,15 @@ function Export-PodeSecretVault {
     $PodeContext.Server.AutoImport.SecretVaults[$Type].ExportList += @($Name)
     $PodeContext.Server.AutoImport.SecretVaults[$Type].ExportList = @($PodeContext.Server.AutoImport.SecretVaults[$Type].ExportList | Sort-Object -Unique)
 }
+
+function Export-PodeLocale {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [cultureinfo]
+        $Culture
+    )
+
+    $PodeContext.Server.AutoImport.Locales.ExportList += @($Culture.Name)
+    $PodeContext.Server.AutoImport.Locales.ExportList = @($PodeContext.Server.AutoImport.Locales.ExportList | Sort-Object -Unique)
+}

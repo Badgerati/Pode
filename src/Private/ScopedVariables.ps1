@@ -53,6 +53,24 @@ function Add-PodeScopedVariablesInbuilt {
     Add-PodeScopedVariableInbuiltSecret
     Add-PodeScopedVariableInbuiltSession
     Add-PodeScopedVariableInbuiltState
+    Add-PodeScopedVariableInbuiltLocale
+}
+
+function Add-PodeScopedVariableInbuiltLocale {
+    Add-PodeScopedVariable -Name 'locale' `
+        -GetReplace "Get-PodeLocaleValue -Recurse -Key '{{name}}'"
+
+    Add-PodeScopedVariable -Name 'date' `
+        -GetReplace "Convert-PodeLocaleDate -Value `${{name}}"
+
+    Add-PodeScopedVariable -Name 'time' `
+        -GetReplace "Convert-PodeLocaleTime -Value `${{name}}"
+
+    Add-PodeScopedVariable -Name 'datetime' `
+        -GetReplace "Convert-PodeLocaleDateTime -Value `${{name}}"
+
+    Add-PodeScopedVariable -Name 'number' `
+        -GetReplace "Convert-PodeLocaleNumber -Value `${{name}}"
 }
 
 function Add-PodeScopedVariableInbuiltCache {
