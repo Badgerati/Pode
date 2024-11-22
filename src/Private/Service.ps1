@@ -106,11 +106,13 @@ function Start-PodeServiceHearthbeat {
                                 'restart' {
                                     # Process 'restart' message
                                     Write-PodeHost -Message 'Server requested restart. Restarting Pode ...' -Force
-                                    Restart-PodeServer  # Restart Pode server
-                                    Start-Sleep 1
+
                                     $serviceState = 'starting'
-                                    Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
                                     Write-PodeHost -Message "Service State: $serviceState" -Force
+                                    Start-Sleep 1
+                                    Restart-PodeServer  # Restart Pode server
+                                    Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force
+                                    Start-Sleep 1
                                     return
                                     # Exit the loop
                                 }

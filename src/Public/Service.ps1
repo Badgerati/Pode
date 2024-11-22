@@ -300,7 +300,7 @@ function Start-PodeService {
             $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
             if ($service) {
                 # Check if the service is already running
-                if ($service.Status -ne 'Running') {
+                if ($service.Status -eq 'Stopped') {
                     $null = Invoke-PodeWinElevatedCommand  -Command  'Start-Service' -Arguments "-Name '$Name'"
 
                     $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
@@ -313,7 +313,8 @@ function Start-PodeService {
                 }
                 else {
                     # Log service is already running
-                    Write-Verbose -Message "Service '$Name' is already running."
+                    Write-Verbose -Message "Service '$Name' is $($service.Status)."
+                    return ($service.Status -eq 'Running')
                 }
             }
             else {
@@ -1107,6 +1108,7 @@ function Restart-PodeService {
                 if ($service.Status -eq 'Running' -or $service.Status -eq 'Paused') {
                     Write-Verbose -Message "Sending restart (128) signal to service '$Name'."
                     $null = Invoke-PodeWinElevatedCommand -Command 'sc control' -Arguments "'$Name' 128"
+                    Start-Sleep 5
                     $service = Get-Service -Name $Name -ErrorAction SilentlyContinue
                     Write-Verbose -Message "Service '$Name' restart signal sent successfully."
                 }

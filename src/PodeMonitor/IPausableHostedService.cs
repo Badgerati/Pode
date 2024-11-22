@@ -20,5 +20,7 @@ namespace PodeMonitor
 
 
         void Restart();
+
+        public ServiceState State { get; }
     }
 }

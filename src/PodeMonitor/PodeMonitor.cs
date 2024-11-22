@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -36,31 +37,22 @@ namespace PodeMonitor
         private readonly bool _disableTermination; // Indicates whether termination is disabled
         private readonly int _shutdownWaitTimeMs; // Timeout for shutting down the process
         private readonly string _pipeName;        // Name of the named pipe for communication
+        private readonly string _stateFilePath; // Path to the service state file
 
         private DateTime _lastLogTime;           // Tracks the last time the process logged activity
 
         public int StartMaxRetryCount { get; }   // Maximum number of retries for starting the process
         public int StartRetryDelayMs { get; }   // Delay between retries in milliseconds
 
-        // Volatile variables ensure thread-safe visibility for all threads
-        private volatile bool _suspended;
-        private volatile bool _starting;
-        private volatile bool _running;
+        private volatile ServiceState _state;
 
-        /// <summary>
-        /// Indicates whether the service is suspended.
-        /// </summary>
-        public bool Suspended => _suspended;
 
-        /// <summary>
-        /// Indicates whether the service is starting.
-        /// </summary>
-        public bool Starting => _starting;
+        public ServiceState State { get => _state; set => _state = value; }
 
-        /// <summary>
-        /// Indicates whether the service is running.
-        /// </summary>
-        public bool Running => _running;
+        public bool DisableTermination { get => _disableTermination; }
+
+
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PodeMonitor"/> class with the specified configuration options.
@@ -81,6 +73,15 @@ namespace PodeMonitor
             // Generate a unique pipe name
             _pipeName = PipeNameGenerator.GeneratePipeName();
             PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Initialized PodeMonitor with pipe name: {_pipeName}");
+            // Define the state file path only for Linux/macOS
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+            {
+                // Define the state file path (default to /var/tmp for Linux/macOS)
+                _stateFilePath = Path.Combine("/var/tmp", $"PodeService_{Environment.ProcessId}.state");
+
+                PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Initialized PodeMonitor with pipe name: {_pipeName} and state file: {_stateFilePath}");
+            }
+
         }
 
         /// <summary>
@@ -155,7 +156,7 @@ namespace PodeMonitor
         {
             lock (_syncLock)
             {
-                if (_powerShellProcess == null || _powerShellProcess.HasExited)
+                if (_powerShellProcess == null || (_powerShellProcess.HasExited && Process.GetProcessById(_powerShellProcess.Id) == null))
                 {
                     PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pode process is not running.");
                     return;
@@ -169,8 +170,10 @@ namespace PodeMonitor
                         PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Waiting for {_shutdownWaitTimeMs} milliseconds for Pode process to exit...");
                         WaitForProcessExit(_shutdownWaitTimeMs);
 
-                        if (!_powerShellProcess.HasExited)
+                        if (_powerShellProcess != null || !_powerShellProcess.HasExited || Process.GetProcessById(_powerShellProcess.Id) != null)
                         {
+                            //  var p=Process.GetProcessById(_powerShellProcess.Id);
+                            // p.Kill();
                             PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, "Pode process did not terminate gracefully. Killing process.");
                             _powerShellProcess.Kill();
                         }
@@ -204,6 +207,8 @@ namespace PodeMonitor
         /// Sends a restart command to the Pode process via named pipe.
         /// </summary>
         public void RestartPowerShellProcess() => ExecutePipeCommand("restart");
+
+
 
         /// <summary>
         /// Executes a command by sending it to the Pode process via named pipe.
@@ -243,7 +248,7 @@ namespace PodeMonitor
 
             if (output.StartsWith("Service State: ", StringComparison.OrdinalIgnoreCase))
             {
-                string state = output.Substring("Service State: ".Length).Trim().ToLowerInvariant();
+                string state = output["Service State: ".Length..].Trim().ToLowerInvariant();
 
                 switch (state)
                 {
@@ -270,11 +275,14 @@ namespace PodeMonitor
         /// <param name="state">The new service state.</param>
         private void UpdateServiceState(ServiceState state)
         {
-            _suspended = state == ServiceState.Suspended;
-            _starting = state == ServiceState.Starting;
-            _running = state == ServiceState.Running;
-
+            _state = state;
             PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Service state updated to: {state}");
+            // Write the state to the state file only on Linux/macOS
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+            {
+                // Write the state to the state file
+                WriteServiceStateToFile(state);
+            }
         }
 
         /// <summary>
@@ -357,6 +365,49 @@ namespace PodeMonitor
             }
         }
 
+
+        /// <summary>
+        /// Writes the current service state to the state file.
+        /// </summary>
+        /// <param name="state">The service state to write.</param>
+        private void WriteServiceStateToFile(ServiceState state)
+        {
+            lock (_syncLock) // Ensure thread-safe access
+            {
+                try
+                {
+                    File.WriteAllText(_stateFilePath, state.ToString().ToLowerInvariant());
+                    PodeMonitorLogger.Log(LogLevel.DEBUG, "PodeMonitor", Environment.ProcessId, $"Service state written to file: {_stateFilePath}");
+                }
+                catch (Exception ex)
+                {
+                    PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Failed to write service state to file: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Deletes the service state file during cleanup.
+        /// </summary>
+        private void DeleteServiceStateFile()
+        {
+            lock (_syncLock) // Ensure thread-safe access
+            {
+                try
+                {
+                    if (File.Exists(_stateFilePath))
+                    {
+                        File.Delete(_stateFilePath);
+                        PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Service state file deleted: {_stateFilePath}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId, $"Failed to delete service state file: {ex.Message}");
+                }
+            }
+        }
+
         /// <summary>
         /// Cleans up resources associated with the Pode process and the pipe client.
         /// </summary>
@@ -366,6 +417,11 @@ namespace PodeMonitor
             _powerShellProcess = null;
 
             CleanupPipeClient();
+
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+            {
+                DeleteServiceStateFile();
+            }
         }
 
         /// <summary>

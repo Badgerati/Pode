@@ -24,6 +24,8 @@ namespace PodeMonitor
 
         private bool _terminating = false;
 
+        public ServiceState State =>  _pwshMonitor.State;
+
 
         /// <summary>
         /// Initializes a new instance of the PodeMonitorWorker class.
@@ -47,7 +49,7 @@ namespace PodeMonitor
             PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "PodeMonitorWorker running at: {0}", DateTimeOffset.Now);
             int retryCount = 0; // Tracks the number of retries in case of failures
 
-            while (!stoppingToken.IsCancellationRequested)
+            while (!stoppingToken.IsCancellationRequested && !_terminating)
             {
                 try
                 {
@@ -98,7 +100,7 @@ namespace PodeMonitor
         /// </summary>
         public void Shutdown()
         {
-            if ((!_terminating) && (_pwshMonitor.Running || _pwshMonitor.Suspended))
+            if ((!_terminating) && (_pwshMonitor.State == ServiceState.Running || _pwshMonitor.State == ServiceState.Suspended))
             {
 
                 _terminating = true;
@@ -122,7 +124,7 @@ namespace PodeMonitor
         /// </summary>
         public void Restart()
         {
-            if ((!_terminating) && _pwshMonitor.Running)
+            if ((!_terminating) && _pwshMonitor.State == ServiceState.Running)
             {
                 PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Service restarting at: {0}", DateTimeOffset.Now);
                 try
@@ -130,22 +132,11 @@ namespace PodeMonitor
                     _pwshMonitor.RestartPowerShellProcess(); // Restart the process
                     PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Restart message sent via pipe at: {0}", DateTimeOffset.Now);
 
-                    var retryCount = 0; // Reset retry count on success
-                    while (_pwshMonitor.Starting)
-                    {
-                        if (retryCount >= 100)
-                        {
-                            PodeMonitorLogger.Log(LogLevel.CRITICAL, "PodeMonitor", Environment.ProcessId, "Maximum retry count reached. Exiting monitoring loop.");
-                            break;
-                        }
-
-                        // Delay before retrying
-                        Thread.Sleep(200);
-                    }
+                    //AddOperationDelay("Pause"); // Delay to ensure stability
                 }
                 catch (Exception ex)
                 {
-                    PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Error during restart: {0}", ex.Message);
+                    PodeMonitorLogger.Log(LogLevel.ERROR, ex, "Error during pause: {0}", ex.Message);
                 }
             }
         }
@@ -155,7 +146,7 @@ namespace PodeMonitor
         /// </summary>
         public void OnPause()
         {
-            if ((!_terminating) && _pwshMonitor.Running)
+            if ((!_terminating) && _pwshMonitor.State == ServiceState.Running)
             {
                 PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Pause command received at: {0}", DateTimeOffset.Now);
 
@@ -165,7 +156,7 @@ namespace PodeMonitor
 
                     PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Suspend message sent via pipe at: {0}", DateTimeOffset.Now);
                     var retryCount = 0; // Reset retry count on success
-                    while (!_pwshMonitor.Suspended)
+                    while (_pwshMonitor.State != ServiceState.Suspended)
                     {
                         if (retryCount >= 100)
                         {
@@ -190,7 +181,7 @@ namespace PodeMonitor
         /// </summary>
         public void OnContinue()
         {
-            if ((!_terminating) && _pwshMonitor.Suspended)
+            if ((!_terminating) && _pwshMonitor.State == ServiceState.Suspended)
             {
                 PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Continue command received at: {0}", DateTimeOffset.Now);
 
@@ -200,7 +191,7 @@ namespace PodeMonitor
 
                     PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, "Resume message sent via pipe at: {0}", DateTimeOffset.Now);
                     var retryCount = 0; // Reset retry count on success
-                    while (_pwshMonitor.Suspended)
+                    while (_pwshMonitor.State == ServiceState.Suspended)
                     {
                         if (retryCount >= 100)
                         {
