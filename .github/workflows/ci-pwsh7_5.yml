@@ -1,4 +1,4 @@
-name: Pode CI - pwsh 7.2
+name: Pode CI - pwsh 7.5
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     - 'src/**'
     - 'tests/**'
     - 'pode.build.ps1'
-    - '.github/workflows/ci-pwsh7_2.yml'
+    - '.github/workflows/ci-pwsh7_5.yml'
     - 'Dockerfile'
     - '*.dockerfile'
   pull_request:
@@ -19,13 +19,13 @@ on:
     - 'src/**'
     - 'tests/**'
     - 'pode.build.ps1'
-    - '.github/workflows/ci-pwsh7_2.yml'
+    - '.github/workflows/ci-pwsh7_5.yml'
     - 'Dockerfile'
     - '*.dockerfile'
 
 env:
-  INVOKE_BUILD_VERSION: '5.12.0'
-  POWERSHELL_VERSION: '7.5.0'
+  INVOKE_BUILD_VERSION: '5.12.1'
+  POWERSHELL_VERSION: '7.2.24'
 
 jobs:
   build:

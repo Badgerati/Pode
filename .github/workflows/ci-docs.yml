@@ -24,7 +24,7 @@ on:
     - 'src/Pode.psd1'
 
 env:
-  INVOKE_BUILD_VERSION: '5.11.1'
+  INVOKE_BUILD_VERSION: '5.12.0'
 
 jobs:
   build:

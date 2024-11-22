@@ -106,11 +106,11 @@ param(
     $UICulture = 'en-US',
 
     [string[]]
-    [ValidateSet('netstandard2.0', 'netstandard2.1', 'netcoreapp3.0', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')]
-    $TargetFrameworks = @('netstandard2.0', 'net8.0','net9.0'),
+    [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
+    $TargetFrameworks = @('netstandard2.0', 'net8.0', 'net9.0'),
 
     [string]
-    [ValidateSet('netstandard2.0', 'netstandard2.1', 'netcoreapp3.0', 'netcoreapp3.1', 'net5.0', 'net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')]
+    [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
     $SdkVersion = 'net9.0'
 )
 
@@ -389,7 +389,7 @@ function Install-PodeBuildModule($name) {
     [int] - The numeric version of the target framework. Defaults to 2 if an unrecognized framework is provided.
 
 .EXAMPLE
-    $version = Get-TargetFramework -TargetFrameworks 'net6.0'
+    $version = Get-PodeTargetFramework -TargetFrameworks 'net6.0'
     Write-Host "Target framework version: $version"
     # Output: Target framework version: 6
 
@@ -397,7 +397,7 @@ function Install-PodeBuildModule($name) {
     - Returns 2 (netstandard2.0) by default if the input framework is not recognized.
     - This function is useful in build scripts that require target framework versioning.
 #>
-function Get-TargetFramework {
+function Get-PodeTargetFramework {
     param(
         [string]
         $TargetFrameworks
@@ -405,13 +405,9 @@ function Get-TargetFramework {
 
     switch ($TargetFrameworks) {
         'netstandard2.0' { return  2 }
-        'netstandard2.1' { return  3 }
-        'netcoreapp3.0' { return  3 }
-        'net5.0' { return  5 }
-        'net6.0' { return  6 }
-        'net7.0' { return  7 }
         'net8.0' { return 8 }
         'net9.0' { return  9 }
+        'net10.0' { return  10 }
         default {
             Write-Warning "$TargetFrameworks is not a valid  Framework. Rollback to netstandard2.0"
             return 2
@@ -434,7 +430,7 @@ function Get-TargetFramework {
     [string] - The target framework identifier (e.g., 'netstandard2.0').
 
 .EXAMPLE
-    $frameworkName = Get-TargetFrameworkName -Version 6
+    $frameworkName = Get-PodeTargetFrameworkName -Version 6
     Write-Host "Target framework name: $frameworkName"
     # Output: Target framework name: net6.0
 
@@ -442,7 +438,7 @@ function Get-TargetFramework {
     - Returns 'netstandard2.0' by default if an unrecognized version is provided.
     - Useful for converting numeric framework versions to identifier strings in build processes.
 #>
-function Get-TargetFrameworkName {
+function Get-PodeTargetFrameworkName {
     param(
         $Version
     )
@@ -473,7 +469,7 @@ function Invoke-PodeBuildDotnetBuild {
         $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
     }
     else {
-        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-TargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
+        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-PodeTargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
     }
     # Map target frameworks to minimum SDK versions
 
@@ -481,7 +477,7 @@ function Invoke-PodeBuildDotnetBuild {
         Write-Error "The requested '$AvailableSdkVersion' framework is not available."
         return
     }
-    $requiredSdkVersion = Get-TargetFramework -TargetFrameworks $target
+    $requiredSdkVersion = Get-PodeTargetFramework -TargetFrameworks $target
 
     # Determine if the target framework is compatible
     $isCompatible = $majorVersions -ge $requiredSdkVersion
@@ -891,847 +887,846 @@ function Split-PodeBuildPwshPath {
 
 
 # Check if the script is running under Invoke-Build
-if (($null -ne $PSCmdlet.MyInvocation) -and ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -or $null -ne $BuildRoot)) {
+if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
+    Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
+    return
+}
 
 
-    Add-BuildTask Default {
-        Write-Host 'Tasks in the Build Script:' -ForegroundColor DarkMagenta
-        Write-Host
-        Write-Host 'Primary Tasks:' -ForegroundColor Green
-        Write-Host '- Default: Lists all available tasks.'
-        Write-Host '- Build: Builds the .NET Listener for specified frameworks.'
-        Write-Host '- Pack: Packages the module, including ZIP, Chocolatey, and Docker.'
-        Write-Host '- Test: Runs tests after building the project.'
-        Write-Host '- Clean: Cleans the build environment, removing all generated files.'
-        Write-Host '- Install-Module: Installs the Pode module locally.'
-        Write-Host '- Remove-Module: Removes the Pode module from the local registry.'
-        Write-Host '- DocsBuild: Builds the documentation for distribution.'
-        Write-Host '- TestNoBuild: Runs tests without building, including Pester tests.'
+Add-BuildTask Default {
+    Write-Host 'Tasks in the Build Script:' -ForegroundColor DarkMagenta
+    Write-Host
+    Write-Host 'Primary Tasks:' -ForegroundColor Green
+    Write-Host '- Default: Lists all available tasks.'
+    Write-Host '- Build: Builds the .NET Listener for specified frameworks.'
+    Write-Host '- Pack: Packages the module, including ZIP, Chocolatey, and Docker.'
+    Write-Host '- Test: Runs tests after building the project.'
+    Write-Host '- Clean: Cleans the build environment, removing all generated files.'
+    Write-Host '- Install-Module: Installs the Pode module locally.'
+    Write-Host '- Remove-Module: Removes the Pode module from the local registry.'
+    Write-Host '- DocsBuild: Builds the documentation for distribution.'
+    Write-Host '- TestNoBuild: Runs tests without building, including Pester tests.'
 
 
-        Write-Host
-        Write-Host 'Other Tasks:' -ForegroundColor Green
-        Write-Host '- StampVersion: Stamps the specified version onto the module.'
-        Write-Host '- PrintChecksum: Generates and displays a checksum of the ZIP archive.'
-        Write-Host '- ChocoDeps: Installs Chocolatey (for Windows).'
-        Write-Host '- PackDeps: Installs dependencies required for packaging.'
-        Write-Host '- BuildDeps: Installs dependencies required for building/compiling.'
-        Write-Host '- TestDeps: Installs dependencies required for testing.'
-        Write-Host '- DocsDeps: Installs dependencies required for documentation generation.'
-        Write-Host '- IndexSamples: Indexes sample files for documentation.'
-        Write-Host '- 7Zip: Creates a ZIP archive of the module (Windows only).'
-        Write-Host '- DeliverableFolder: Creates a folder for deliverables.'
-        Write-Host '- Compress: Compresses the module into a ZIP format for distribution.'
-        Write-Host '- ChocoPack: Creates a Chocolatey package of the module (Windows only).'
-        Write-Host '- DockerPack: Builds Docker images for the module.'
-        Write-Host "- PackageFolder: Creates the `pkg` folder for module packaging."
-        Write-Host '- CheckFailedTests: Checks if any tests failed and throws an error if so.'
-        Write-Host '- PushCodeCoverage: Pushes code coverage results to a coverage service.'
-        Write-Host '- Docs: Serves the documentation locally for review.'
-        Write-Host '- DocsHelpBuild: Builds function help documentation.'
-        Write-Host "- CleanDeliverable: Removes the `deliverable` folder."
-        Write-Host "- CleanPkg: Removes the `pkg` folder."
-        Write-Host "- CleanLibs: Removes the `Libs` folder under `src`."
-        Write-Host '- CleanListener: Removes the Listener folder.'
-        Write-Host '- CleanDocs: Cleans up generated documentation files.'
-        Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
-        Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
-    }
+    Write-Host
+    Write-Host 'Other Tasks:' -ForegroundColor Green
+    Write-Host '- StampVersion: Stamps the specified version onto the module.'
+    Write-Host '- PrintChecksum: Generates and displays a checksum of the ZIP archive.'
+    Write-Host '- ChocoDeps: Installs Chocolatey (for Windows).'
+    Write-Host '- PackDeps: Installs dependencies required for packaging.'
+    Write-Host '- BuildDeps: Installs dependencies required for building/compiling.'
+    Write-Host '- TestDeps: Installs dependencies required for testing.'
+    Write-Host '- DocsDeps: Installs dependencies required for documentation generation.'
+    Write-Host '- IndexSamples: Indexes sample files for documentation.'
+    Write-Host '- 7Zip: Creates a ZIP archive of the module (Windows only).'
+    Write-Host '- DeliverableFolder: Creates a folder for deliverables.'
+    Write-Host '- Compress: Compresses the module into a ZIP format for distribution.'
+    Write-Host '- ChocoPack: Creates a Chocolatey package of the module (Windows only).'
+    Write-Host '- DockerPack: Builds Docker images for the module.'
+    Write-Host "- PackageFolder: Creates the `pkg` folder for module packaging."
+    Write-Host '- CheckFailedTests: Checks if any tests failed and throws an error if so.'
+    Write-Host '- PushCodeCoverage: Pushes code coverage results to a coverage service.'
+    Write-Host '- Docs: Serves the documentation locally for review.'
+    Write-Host '- DocsHelpBuild: Builds function help documentation.'
+    Write-Host "- CleanDeliverable: Removes the `deliverable` folder."
+    Write-Host "- CleanPkg: Removes the `pkg` folder."
+    Write-Host "- CleanLibs: Removes the `Libs` folder under `src`."
+    Write-Host '- CleanListener: Removes the Listener folder.'
+    Write-Host '- CleanDocs: Cleans up generated documentation files.'
+    Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
+    Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
+}
 
 
-    <#
+<#
 # Helper Tasks
 #>
 
-    # Synopsis: Stamps the version onto the Module
-    Add-BuildTask StampVersion {
-        $pwshVersions = Get-PodeBuildPwshEOL
+# Synopsis: Stamps the version onto the Module
+Add-BuildTask StampVersion {
+    $pwshVersions = Get-PodeBuildPwshEOL
     (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
     (Get-Content ./packers/choco/pode_template.nuspec) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/pode.nuspec
     (Get-Content ./packers/choco/tools/ChocolateyInstall_template.ps1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./packers/choco/tools/ChocolateyInstall.ps1
-    }
+}
 
-    # Synopsis: Generating a Checksum of the Zip
-    Add-BuildTask PrintChecksum {
-        $Script:Checksum = (Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
-        Write-Host "Checksum: $($Checksum)"
-    }
+# Synopsis: Generating a Checksum of the Zip
+Add-BuildTask PrintChecksum {
+    $Script:Checksum = (Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
+    Write-Host "Checksum: $($Checksum)"
+}
 
 
-    <#
+<#
 # Dependencies
 #>
 
-    # Synopsis: Installs Chocolatey
-    Add-BuildTask ChocoDeps -If (Test-PodeBuildIsWindows) {
-        if (!(Test-PodeBuildCommand 'choco')) {
-            Set-ExecutionPolicy Bypass -Scope Process -Force
-            Invoke-Expression ([System.Net.WebClient]::new().DownloadString('https://chocolatey.org/install.ps1'))
-        }
+# Synopsis: Installs Chocolatey
+Add-BuildTask ChocoDeps -If (Test-PodeBuildIsWindows) {
+    if (!(Test-PodeBuildCommand 'choco')) {
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        Invoke-Expression ([System.Net.WebClient]::new().DownloadString('https://chocolatey.org/install.ps1'))
+    }
+}
+
+# Synopsis: Install dependencies for packaging
+Add-BuildTask PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
+    if (!(Test-PodeBuildCommand '7z')) {
+        Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
+    }
+}
+
+# Synopsis: Install dependencies for compiling/building
+Add-BuildTask BuildDeps {
+    # install dotnet
+    if (Test-PodeBuildIsWindows) {
+        $dotnet = 'dotnet'
+    }
+    elseif (Test-PodeBuildCommand 'brew') {
+        $dotnet = 'dotnet-sdk'
+    }
+    else {
+        $dotnet = "dotnet-sdk-$SdkVersion"
     }
 
-    # Synopsis: Install dependencies for packaging
-    Add-BuildTask PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
-        if (!(Test-PodeBuildCommand '7z')) {
-            Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
-        }
+    try {
+        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
     }
+    catch {
+        Invoke-PodeBuildInstall $dotnet $SdkVersion
+        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+    }
+    $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
+    $script:AvailableSdkVersion = Get-PodeTargetFrameworkName  -Version $majorVersions
 
-    # Synopsis: Install dependencies for compiling/building
-    Add-BuildTask BuildDeps {
-        # install dotnet
-        if (Test-PodeBuildIsWindows) {
-            $dotnet = 'dotnet'
-        }
-        elseif (Test-PodeBuildCommand 'brew') {
-            $dotnet = 'dotnet-sdk'
-        }
-        else {
-            $dotnet = "dotnet-sdk-$SdkVersion"
-        }
-
-        try {
-            $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-        }
-        catch {
-            Invoke-PodeBuildInstall $dotnet $SdkVersion
-            $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-        }
+    if ($majorVersions -lt (Get-PodeTargetFramework -TargetFrameworks $SdkVersion)) {
+        Invoke-PodeBuildInstall $dotnet $SdkVersion
+        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
         $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-        $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
+        $script:AvailableSdkVersion = Get-PodeTargetFrameworkName  -Version $majorVersions
 
-        if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
-            Invoke-PodeBuildInstall $dotnet $SdkVersion
-            $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
-            $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-            $script:AvailableSdkVersion = Get-TargetFrameworkName  -Version $majorVersions
-
-            if ($majorVersions -lt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
-                Write-Error "The requested framework '$SdkVersion' is not available."
-                return
-            }
-        }
-        elseif ($majorVersions -gt (Get-TargetFramework -TargetFrameworks $SdkVersion)) {
-            Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
-        }
-
-    }
-
-    # Synopsis: Install dependencies for running tests
-    Add-BuildTask TestDeps {
-        # install pester
-        Install-PodeBuildModule Pester
-
-        # install PSCoveralls
-        if (Test-PodeBuildCanCodeCoverage) {
-            Install-PodeBuildModule PSCoveralls
-        }
-    }
-
-    # Synopsis: Install dependencies for documentation
-    Add-BuildTask DocsDeps ChocoDeps, {
-        # install mkdocs
-        if (!(Test-PodeBuildCommand 'mkdocs')) {
-            Invoke-PodeBuildInstall 'mkdocs' $Versions.MkDocs
-        }
-
-        $_installed = (pip list --format json --disable-pip-version-check | ConvertFrom-Json)
-        if (($_installed | Where-Object { $_.name -ieq 'mkdocs-material' -and $_.version -ieq $Versions.MkDocsTheme } | Measure-Object).Count -eq 0) {
-            pip install "mkdocs-material==$($Versions.MkDocsTheme)" --force-reinstall --disable-pip-version-check --quiet
-        }
-
-        # install platyps
-        Install-PodeBuildModule PlatyPS
-    }
-
-    Add-BuildTask IndexSamples {
-        $examplesPath = './examples'
-        if (!(Test-Path -PathType Container -Path $examplesPath)) {
+        if ($majorVersions -lt (Get-PodeTargetFramework -TargetFrameworks $SdkVersion)) {
+            Write-Error "The requested framework '$SdkVersion' is not available."
             return
         }
-
-        # List of directories to exclude
-        $sampleMarkDownPath = './docs/Getting-Started/Samples.md'
-        $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
-            'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues')
-
-        # Convert exlusion list into single regex pattern for directory matching
-        $dirSeparator = [IO.Path]::DirectorySeparatorChar
-        $excludeDirs = "\$($dirSeparator)($($excludeDirs -join '|'))\$($dirSeparator)"
-
-        # build the page content
-        Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse -File -Force |
-            Where-Object {
-                $_.FullName -inotmatch $excludeDirs
-            } |
-            Sort-Object -Property FullName |
-            ForEach-Object {
-                Write-Verbose "Processing Sample: $($_.FullName)"
-
-                # get the script help
-                $help = Get-Help -Name $_.FullName -ErrorAction Stop
-
-                # add help content
-                $urlFileName = ($_.FullName -isplit 'examples')[1].Trim('\/') -replace '[\\/]', '/'
-                $markdownContent += "## [$($_.BaseName)](https://github.com/Badgerati/Pode/blob/develop/examples/$($urlFileName))`n`n"
-                $markdownContent += "**Synopsis**`n`n$($help.Synopsis)`n`n"
-                $markdownContent += "**Description**`n`n$($help.Description.Text)`n`n"
-            }
-
-        Write-Output "Write Markdown document for the sample files to $($sampleMarkDownPath)"
-        Set-Content -Path $sampleMarkDownPath -Value "# Sample Scripts`n`n$($markdownContent)" -Force
+    }
+    elseif ($majorVersions -gt (Get-PodeTargetFramework -TargetFrameworks $SdkVersion)) {
+        Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
     }
 
-    <#
+}
+
+# Synopsis: Install dependencies for running tests
+Add-BuildTask TestDeps {
+    # install pester
+    Install-PodeBuildModule Pester
+
+    # install PSCoveralls
+    if (Test-PodeBuildCanCodeCoverage) {
+        Install-PodeBuildModule PSCoveralls
+    }
+}
+
+# Synopsis: Install dependencies for documentation
+Add-BuildTask DocsDeps ChocoDeps, {
+    # install mkdocs
+    if (!(Test-PodeBuildCommand 'mkdocs')) {
+        Invoke-PodeBuildInstall 'mkdocs' $Versions.MkDocs
+    }
+
+    $_installed = (pip list --format json --disable-pip-version-check | ConvertFrom-Json)
+    if (($_installed | Where-Object { $_.name -ieq 'mkdocs-material' -and $_.version -ieq $Versions.MkDocsTheme } | Measure-Object).Count -eq 0) {
+        pip install "mkdocs-material==$($Versions.MkDocsTheme)" --force-reinstall --disable-pip-version-check --quiet
+    }
+
+    # install platyps
+    Install-PodeBuildModule PlatyPS
+}
+
+Add-BuildTask IndexSamples {
+    $examplesPath = './examples'
+    if (!(Test-Path -PathType Container -Path $examplesPath)) {
+        return
+    }
+
+    # List of directories to exclude
+    $sampleMarkDownPath = './docs/Getting-Started/Samples.md'
+    $excludeDirs = @('scripts', 'views', 'static', 'public', 'assets', 'timers', 'modules',
+        'Authentication', 'certs', 'logs', 'relative', 'routes', 'issues')
+
+    # Convert exlusion list into single regex pattern for directory matching
+    $dirSeparator = [IO.Path]::DirectorySeparatorChar
+    $excludeDirs = "\$($dirSeparator)($($excludeDirs -join '|'))\$($dirSeparator)"
+
+    # build the page content
+    Get-ChildItem -Path $examplesPath -Filter *.ps1 -Recurse -File -Force |
+        Where-Object {
+            $_.FullName -inotmatch $excludeDirs
+        } |
+        Sort-Object -Property FullName |
+        ForEach-Object {
+            Write-Verbose "Processing Sample: $($_.FullName)"
+
+            # get the script help
+            $help = Get-Help -Name $_.FullName -ErrorAction Stop
+
+            # add help content
+            $urlFileName = ($_.FullName -isplit 'examples')[1].Trim('\/') -replace '[\\/]', '/'
+            $markdownContent += "## [$($_.BaseName)](https://github.com/Badgerati/Pode/blob/develop/examples/$($urlFileName))`n`n"
+            $markdownContent += "**Synopsis**`n`n$($help.Synopsis)`n`n"
+            $markdownContent += "**Description**`n`n$($help.Description.Text)`n`n"
+        }
+
+    Write-Output "Write Markdown document for the sample files to $($sampleMarkDownPath)"
+    Set-Content -Path $sampleMarkDownPath -Value "# Sample Scripts`n`n$($markdownContent)" -Force
+}
+
+<#
 # Building
 #>
 
-    # Synopsis: Build the .NET Listener
-    Add-BuildTask Build BuildDeps, {
-        if (Test-Path ./src/Libs) {
-            Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
-        }
-
-
-
-
-        # Retrieve the SDK version being used
-        #   $dotnetVersion = dotnet --version
-
-        # Display the SDK version
-        Write-Output "Building targets '$($targetFrameworks -join "','")' using .NET '$AvailableSdkVersion' framework."
-
-        # Build for supported target frameworks
-        try {
-            Push-Location ./src/Listener
-            foreach ($target in $targetFrameworks) {
-                Invoke-PodeBuildDotnetBuild -target $target
-                Write-Host
-                Write-Host '***********************' -ForegroundColor DarkMagenta
-
-            }
-        }
-        finally {
-            Pop-Location
-        }
-
+# Synopsis: Build the .NET Listener
+Add-BuildTask Build BuildDeps, {
+    if (Test-Path ./src/Libs) {
+        Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
 
 
-    <#
+
+
+    # Retrieve the SDK version being used
+    #   $dotnetVersion = dotnet --version
+
+    # Display the SDK version
+    Write-Output "Building targets '$($targetFrameworks -join "','")' using .NET '$AvailableSdkVersion' framework."
+
+    # Build for supported target frameworks
+    try {
+        Push-Location ./src/Listener
+        foreach ($target in $targetFrameworks) {
+            Invoke-PodeBuildDotnetBuild -target $target
+            Write-Host
+            Write-Host '***********************' -ForegroundColor DarkMagenta
+
+        }
+    }
+    finally {
+        Pop-Location
+    }
+
+}
+
+
+<#
 # Packaging
 #>
 
-    # Synopsis: Creates a Zip of the Module
-    Add-BuildTask 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
-        exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
-    }, PrintChecksum
+# Synopsis: Creates a Zip of the Module
+Add-BuildTask 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
+    exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
+}, PrintChecksum
 
-    #Synopsis: Create the Deliverable folder
-    Add-BuildTask DeliverableFolder {
-        $path = './deliverable'
-        if (Test-Path $path) {
-            Remove-Item -Path $path -Recurse -Force | Out-Null
-        }
-
-        # create the deliverable dir
-        New-Item -Path $path -ItemType Directory -Force | Out-Null
+#Synopsis: Create the Deliverable folder
+Add-BuildTask DeliverableFolder {
+    $path = './deliverable'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
 
-    # Synopsis: Creates a Zip of the Module
-    Add-BuildTask Compress PackageFolder, StampVersion, DeliverableFolder, {
-        $path = './deliverable'
-        if (Test-Path $path) {
-            Remove-Item -Path $path -Recurse -Force | Out-Null
-        }
-        # create the pkg dir
-        New-Item -Path $path -ItemType Directory -Force | Out-Null
-        Compress-Archive -Path './pkg/*' -DestinationPath "$path/$Version-Binaries.zip"
-    }, PrintChecksum
+    # create the deliverable dir
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+}
 
-    # Synopsis: Creates a Chocolately package of the Module
-    Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, PackageFolder, StampVersion, DeliverableFolder, {
-        exec { choco pack ./packers/choco/pode.nuspec }
-        Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
+# Synopsis: Creates a Zip of the Module
+Add-BuildTask Compress PackageFolder, StampVersion, DeliverableFolder, {
+    $path = './deliverable'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    # create the pkg dir
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
+    Compress-Archive -Path './pkg/*' -DestinationPath "$path/$Version-Binaries.zip"
+}, PrintChecksum
+
+# Synopsis: Creates a Chocolately package of the Module
+Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, PackageFolder, StampVersion, DeliverableFolder, {
+    exec { choco pack ./packers/choco/pode.nuspec }
+    Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
+}
+
+# Synopsis: Create docker tags
+Add-BuildTask DockerPack PackageFolder, StampVersion, {
+    # check if github and windows, and output warning
+    if ((Test-PodeBuildIsGitHub) -and (Test-PodeBuildIsWindows)) {
+        Write-Warning 'Docker images are not built on GitHub Windows runners, and Docker is in Windows container only mode. Exiting task.'
+        return
     }
 
-    # Synopsis: Create docker tags
-    Add-BuildTask DockerPack PackageFolder, StampVersion, {
-        # check if github and windows, and output warning
-        if ((Test-PodeBuildIsGitHub) -and (Test-PodeBuildIsWindows)) {
-            Write-Warning 'Docker images are not built on GitHub Windows runners, and Docker is in Windows container only mode. Exiting task.'
-            return
-        }
-
-        try {
-            # Try to get the Docker version to check if Docker is installed
-            docker --version
-        }
-        catch {
-            # If Docker is not available, exit the task
-            Write-Warning 'Docker is not installed or not available in the PATH. Exiting task.'
-            return
-        }
-
-        Invoke-PodeBuildDockerBuild -Tag $Version -File './Dockerfile'
-        Invoke-PodeBuildDockerBuild -Tag 'latest' -File './Dockerfile'
-        Invoke-PodeBuildDockerBuild -Tag "$Version-alpine" -File './alpine.dockerfile'
-        Invoke-PodeBuildDockerBuild -Tag 'latest-alpine' -File './alpine.dockerfile'
-
-        if (!(Test-PodeBuildIsGitHub)) {
-            Invoke-PodeBuildDockerBuild -Tag "$Version-arm32" -File './arm32.dockerfile'
-            Invoke-PodeBuildDockerBuild -Tag 'latest-arm32' -File './arm32.dockerfile'
-        }
-        else {
-            Write-Warning 'Docker images for ARM32 are not built on GitHub runners due to having the wrong OS architecture. Skipping.'
-        }
+    try {
+        # Try to get the Docker version to check if Docker is installed
+        docker --version
+    }
+    catch {
+        # If Docker is not available, exit the task
+        Write-Warning 'Docker is not installed or not available in the PATH. Exiting task.'
+        return
     }
 
-    # Synopsis: Package up the Module
-    Add-BuildTask Pack Compress, ChocoPack, DockerPack
+    Invoke-PodeBuildDockerBuild -Tag $Version -File './Dockerfile'
+    Invoke-PodeBuildDockerBuild -Tag 'latest' -File './Dockerfile'
+    Invoke-PodeBuildDockerBuild -Tag "$Version-alpine" -File './alpine.dockerfile'
+    Invoke-PodeBuildDockerBuild -Tag 'latest-alpine' -File './alpine.dockerfile'
 
-    # Synopsis: Package up the Module into a /pkg folder
-    Add-BuildTask PackageFolder Build, {
-        $path = './pkg'
-        if (Test-Path $path) {
-            Remove-Item -Path $path -Recurse -Force | Out-Null
-        }
+    if (!(Test-PodeBuildIsGitHub)) {
+        Invoke-PodeBuildDockerBuild -Tag "$Version-arm32" -File './arm32.dockerfile'
+        Invoke-PodeBuildDockerBuild -Tag 'latest-arm32' -File './arm32.dockerfile'
+    }
+    else {
+        Write-Warning 'Docker images for ARM32 are not built on GitHub runners due to having the wrong OS architecture. Skipping.'
+    }
+}
 
-        # create the pkg dir
-        New-Item -Path $path -ItemType Directory -Force | Out-Null
+# Synopsis: Package up the Module
+Add-BuildTask Pack Compress, ChocoPack, DockerPack
 
-        # which source folders do we need? create them and copy their contents
-        $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales')
-        $folders | ForEach-Object {
-            New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
-            Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
-        }
-
-        # which route folders to we need? create them and copy their contents
-        $folders = @('licenses')
-        $folders | ForEach-Object {
-            New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
-            Copy-Item -Path "./$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
-        }
-
-        # copy general files
-        $files = @('src/Pode.psm1', 'src/Pode.psd1', 'src/Pode.Internal.psm1', 'src/Pode.Internal.psd1', 'LICENSE.txt')
-        $files | ForEach-Object {
-            Copy-Item -Path "./$($_)" -Destination $path -Force | Out-Null
-        }
+# Synopsis: Package up the Module into a /pkg folder
+Add-BuildTask PackageFolder Build, {
+    $path = './pkg'
+    if (Test-Path $path) {
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
 
+    # create the pkg dir
+    New-Item -Path $path -ItemType Directory -Force | Out-Null
 
-    <#
+    # which source folders do we need? create them and copy their contents
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'Locales')
+    $folders | ForEach-Object {
+        New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
+        Copy-Item -Path "./src/$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
+    }
+
+    # which route folders to we need? create them and copy their contents
+    $folders = @('licenses')
+    $folders | ForEach-Object {
+        New-Item -ItemType Directory -Path (Join-Path $path $_) -Force | Out-Null
+        Copy-Item -Path "./$($_)/*" -Destination (Join-Path $path $_) -Force -Recurse | Out-Null
+    }
+
+    # copy general files
+    $files = @('src/Pode.psm1', 'src/Pode.psd1', 'src/Pode.Internal.psm1', 'src/Pode.Internal.psd1', 'LICENSE.txt')
+    $files | ForEach-Object {
+        Copy-Item -Path "./$($_)" -Destination $path -Force | Out-Null
+    }
+}
+
+
+<#
 # Testing
 #>
 
-    # Synopsis: Run the tests
-    Add-BuildTask TestNoBuild TestDeps, {
-        $p = (Get-Command Invoke-Pester)
-        if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
-            Remove-Module Pester -Force -ErrorAction Ignore
-            Import-Module Pester -Force -RequiredVersion $Versions.Pester
-        }
-
-        # for windows, output current netsh excluded ports
-        if (Test-PodeBuildIsWindows) {
-            netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
-        }
-        if ($UICulture -ne ([System.Threading.Thread]::CurrentThread.CurrentUICulture) ) {
-            $originalUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
-            Write-Output "Original UICulture is $originalUICulture"
-            Write-Output "Set UICulture to $UICulture"
-            # set new UICulture
-            [System.Threading.Thread]::CurrentThread.CurrentUICulture = $UICulture
-        }
-        $Script:TestResultFile = "$($pwd)/TestResults.xml"
-
-        # get default from static property
-        $configuration = [PesterConfiguration]::Default
-        $configuration.run.path = @('./tests/unit', './tests/integration')
-        $configuration.run.PassThru = $true
-        $configuration.TestResult.OutputFormat = 'NUnitXml'
-        $configuration.Output.Verbosity = $PesterVerbosity
-        $configuration.TestResult.OutputPath = $Script:TestResultFile
-
-        # if run code coverage if enabled
-        if (Test-PodeBuildCanCodeCoverage) {
-            $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
-            $configuration.CodeCoverage.Enabled = $true
-            $configuration.CodeCoverage.Path = $srcFiles
-            $Script:TestStatus = Invoke-Pester -Configuration $configuration
-        }
-        else {
-            $Script:TestStatus = Invoke-Pester -Configuration $configuration
-        }
-        if ($originalUICulture) {
-            Write-Output "Restore UICulture to $originalUICulture"
-            # restore original UICulture
-            [System.Threading.Thread]::CurrentThread.CurrentUICulture = $originalUICulture
-        }
-    }, PushCodeCoverage, CheckFailedTests
-
-    # Synopsis: Run tests after a build
-    Add-BuildTask Test Build, TestNoBuild
-
-    # Synopsis: Check if any of the tests failed
-    Add-BuildTask CheckFailedTests {
-        if ($TestStatus.FailedCount -gt 0) {
-            throw "$($TestStatus.FailedCount) tests failed"
-        }
+# Synopsis: Run the tests
+Add-BuildTask TestNoBuild TestDeps, {
+    $p = (Get-Command Invoke-Pester)
+    if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
+        Remove-Module Pester -Force -ErrorAction Ignore
+        Import-Module Pester -Force -RequiredVersion $Versions.Pester
     }
 
-    # Synopsis: If AppyVeyor or GitHub, push code coverage stats
-    Add-BuildTask PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
-        try {
-            $service = Get-PodeBuildService
-            $branch = Get-PodeBuildBranch
-
-            Write-Host "Pushing coverage for $($branch) from $($service)"
-            $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch
-            Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
-        }
-        catch {
-            $_.Exception | Out-Default
-        }
+    # for windows, output current netsh excluded ports
+    if (Test-PodeBuildIsWindows) {
+        netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
     }
+    if ($UICulture -ne ([System.Threading.Thread]::CurrentThread.CurrentUICulture) ) {
+        $originalUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
+        Write-Output "Original UICulture is $originalUICulture"
+        Write-Output "Set UICulture to $UICulture"
+        # set new UICulture
+        [System.Threading.Thread]::CurrentThread.CurrentUICulture = $UICulture
+    }
+    $Script:TestResultFile = "$($pwd)/TestResults.xml"
+
+    # get default from static property
+    $configuration = [PesterConfiguration]::Default
+    $configuration.run.path = @('./tests/unit', './tests/integration')
+    $configuration.run.PassThru = $true
+    $configuration.TestResult.OutputFormat = 'NUnitXml'
+    $configuration.Output.Verbosity = $PesterVerbosity
+    $configuration.TestResult.OutputPath = $Script:TestResultFile
+
+    # if run code coverage if enabled
+    if (Test-PodeBuildCanCodeCoverage) {
+        $srcFiles = (Get-ChildItem "$($pwd)/src/*.ps1" -Recurse -Force).FullName
+        $configuration.CodeCoverage.Enabled = $true
+        $configuration.CodeCoverage.Path = $srcFiles
+        $Script:TestStatus = Invoke-Pester -Configuration $configuration
+    }
+    else {
+        $Script:TestStatus = Invoke-Pester -Configuration $configuration
+    }
+    if ($originalUICulture) {
+        Write-Output "Restore UICulture to $originalUICulture"
+        # restore original UICulture
+        [System.Threading.Thread]::CurrentThread.CurrentUICulture = $originalUICulture
+    }
+}, PushCodeCoverage, CheckFailedTests
+
+# Synopsis: Run tests after a build
+Add-BuildTask Test Build, TestNoBuild
+
+# Synopsis: Check if any of the tests failed
+Add-BuildTask CheckFailedTests {
+    if ($TestStatus.FailedCount -gt 0) {
+        throw "$($TestStatus.FailedCount) tests failed"
+    }
+}
+
+# Synopsis: If AppyVeyor or GitHub, push code coverage stats
+Add-BuildTask PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
+    try {
+        $service = Get-PodeBuildService
+        $branch = Get-PodeBuildBranch
+
+        Write-Host "Pushing coverage for $($branch) from $($service)"
+        $coverage = New-CoverallsReport -Coverage $Script:TestStatus.CodeCoverage -ServiceName $service -BranchName $branch
+        Publish-CoverallsReport -Report $coverage -ApiToken $env:PODE_COVERALLS_TOKEN
+    }
+    catch {
+        $_.Exception | Out-Default
+    }
+}
 
 
-    <#
+<#
 # Docs
 #>
 
-    # Synopsis: Run the documentation locally
-    Add-BuildTask Docs DocsDeps, DocsHelpBuild, {
-        mkdocs serve --open
-    }
+# Synopsis: Run the documentation locally
+Add-BuildTask Docs DocsDeps, DocsHelpBuild, {
+    mkdocs serve --open
+}
 
-    # Synopsis: Build the function help documentation
-    Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
-        # import the local module
-        Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
-        Import-Module ./src/Pode.psm1 -Force | Out-Null
+# Synopsis: Build the function help documentation
+Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
+    # import the local module
+    Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
+    Import-Module ./src/Pode.psm1 -Force | Out-Null
 
-        # build the function docs
-        $path = './docs/Functions'
-        $map = @{}
+    # build the function docs
+    $path = './docs/Functions'
+    $map = @{}
 
     (Get-Module Pode).ExportedFunctions.Keys | ForEach-Object {
-            $type = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path -Leaf -Path (Get-Command $_ -Module Pode).ScriptBlock.File))
-            New-MarkdownHelp -Command $_ -OutputFolder (Join-Path $path $type) -Force -Metadata @{ PodeType = $type } -AlphabeticParamsOrder | Out-Null
-            $map[$_] = $type
-        }
-
-        # update docs to bind links to unlinked functions
-        $path = Join-Path $pwd 'docs'
-        Get-ChildItem -Path $path -Recurse -Filter '*.md' | ForEach-Object {
-            $depth = ($_.FullName.Replace($path, [string]::Empty).trim('\/') -split '[\\/]').Length
-            $updated = $false
-
-            $content = (Get-Content -Path $_.FullName | ForEach-Object {
-                    $line = $_
-
-                    while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
-                        $updated = $true
-                        $name = $Matches['name']
-                        $char = $Matches['char']
-                        $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
-                    }
-
-                    $line
-                })
-
-            if ($updated) {
-                $content | Out-File -FilePath $_.FullName -Force -Encoding ascii
-            }
-        }
-
-        # remove the module
-        Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
+        $type = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path -Leaf -Path (Get-Command $_ -Module Pode).ScriptBlock.File))
+        New-MarkdownHelp -Command $_ -OutputFolder (Join-Path $path $type) -Force -Metadata @{ PodeType = $type } -AlphabeticParamsOrder | Out-Null
+        $map[$_] = $type
     }
 
-    # Synopsis: Build the documentation
-    Add-BuildTask DocsBuild DocsDeps, DocsHelpBuild, {
-        mkdocs build --quiet
+    # update docs to bind links to unlinked functions
+    $path = Join-Path $pwd 'docs'
+    Get-ChildItem -Path $path -Recurse -Filter '*.md' | ForEach-Object {
+        $depth = ($_.FullName.Replace($path, [string]::Empty).trim('\/') -split '[\\/]').Length
+        $updated = $false
+
+        $content = (Get-Content -Path $_.FullName | ForEach-Object {
+                $line = $_
+
+                while ($line -imatch '\[`(?<name>[a-z]+\-pode[a-z]+)`\](?<char>([^(]|$))') {
+                    $updated = $true
+                    $name = $Matches['name']
+                    $char = $Matches['char']
+                    $line = ($line -ireplace "\[``$($name)``\]([^(]|$)", "[``$($name)``]($('../' * $depth)Functions/$($map[$name])/$($name))$($char)")
+                }
+
+                $line
+            })
+
+        if ($updated) {
+            $content | Out-File -FilePath $_.FullName -Force -Encoding ascii
+        }
     }
 
+    # remove the module
+    Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
+}
 
-    <#
+# Synopsis: Build the documentation
+Add-BuildTask DocsBuild DocsDeps, DocsHelpBuild, {
+    mkdocs build --quiet
+}
+
+
+<#
 # Clean-up
 #>
 
-    # Synopsis: Clean the build enviroment
-    Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
+# Synopsis: Clean the build enviroment
+Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
 
-    # Synopsis: Clean the Deliverable folder
-    Add-BuildTask CleanDeliverable {
-        $path = './deliverable'
-        if (Test-Path -Path $path -PathType Container) {
-            Write-Host 'Removing ./deliverable folder'
-            Remove-Item -Path $path -Recurse -Force | Out-Null
-        }
-        Write-Host "Cleanup $path done"
+# Synopsis: Clean the Deliverable folder
+Add-BuildTask CleanDeliverable {
+    $path = './deliverable'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host 'Removing ./deliverable folder'
+        Remove-Item -Path $path -Recurse -Force | Out-Null
+    }
+    Write-Host "Cleanup $path done"
+}
+
+# Synopsis: Clean the pkg directory
+Add-BuildTask CleanPkg {
+    $path = './pkg'
+    if ((Test-Path -Path $path -PathType Container )) {
+        Write-Host 'Removing ./pkg folder'
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
 
-    # Synopsis: Clean the pkg directory
-    Add-BuildTask CleanPkg {
-        $path = './pkg'
-        if ((Test-Path -Path $path -PathType Container )) {
-            Write-Host 'Removing ./pkg folder'
-            Remove-Item -Path $path -Recurse -Force | Out-Null
-        }
-
-        if ((Test-Path -Path .\packers\choco\tools\ChocolateyInstall.ps1 -PathType Leaf )) {
-            Write-Host 'Removing .\packers\choco\tools\ChocolateyInstall.ps1'
-            Remove-Item -Path .\packers\choco\tools\ChocolateyInstall.ps1
-        }
-
-        if ((Test-Path -Path .\packers\choco\pode.nuspec -PathType Leaf )) {
-            Write-Host 'Removing .\packers\choco\pode.nuspec'
-            Remove-Item -Path .\packers\choco\pode.nuspec
-        }
-
-        Write-Host "Cleanup $path done"
+    if ((Test-Path -Path .\packers\choco\tools\ChocolateyInstall.ps1 -PathType Leaf )) {
+        Write-Host 'Removing .\packers\choco\tools\ChocolateyInstall.ps1'
+        Remove-Item -Path .\packers\choco\tools\ChocolateyInstall.ps1
     }
 
-    # Synopsis: Clean the libs folder
-    Add-BuildTask CleanLibs {
-        $path = './src/Libs'
-        if (Test-Path -Path $path -PathType Container) {
-            Write-Host "Removing $path  contents"
-            Remove-Item -Path $path -Recurse -Force | Out-Null
-        }
-
-        Write-Host "Cleanup $path done"
+    if ((Test-Path -Path .\packers\choco\pode.nuspec -PathType Leaf )) {
+        Write-Host 'Removing .\packers\choco\pode.nuspec'
+        Remove-Item -Path .\packers\choco\pode.nuspec
     }
 
-    # Synopsis: Clean the Listener folder
-    Add-BuildTask CleanListener {
-        $path = './src/Listener/bin'
-        if (Test-Path -Path $path -PathType Container) {
-            Write-Host "Removing $path contents"
-            Remove-Item -Path $path -Recurse -Force | Out-Null
-        }
+    Write-Host "Cleanup $path done"
+}
 
-        Write-Host "Cleanup $path done"
+# Synopsis: Clean the libs folder
+Add-BuildTask CleanLibs {
+    $path = './src/Libs'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path  contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
 
-    Add-BuildTask CleanDocs {
-        $path = './docs/Getting-Started/Samples.md'
-        if (Test-Path -Path $path -PathType Leaf) {
-            Write-Host "Removing $path"
-            Remove-Item -Path $path -Force | Out-Null
-        }
+    Write-Host "Cleanup $path done"
+}
+
+# Synopsis: Clean the Listener folder
+Add-BuildTask CleanListener {
+    $path = './src/Listener/bin'
+    if (Test-Path -Path $path -PathType Container) {
+        Write-Host "Removing $path contents"
+        Remove-Item -Path $path -Recurse -Force | Out-Null
     }
-    <#
+
+    Write-Host "Cleanup $path done"
+}
+
+Add-BuildTask CleanDocs {
+    $path = './docs/Getting-Started/Samples.md'
+    if (Test-Path -Path $path -PathType Leaf) {
+        Write-Host "Removing $path"
+        Remove-Item -Path $path -Force | Out-Null
+    }
+}
+<#
 # Local module management
 #>
 
-    # Synopsis: Install Pode Module locally
-    Add-BuildTask Install-Module -If ($Version) Pack, {
-        $PSPaths = Split-PodeBuildPwshPath
+# Synopsis: Install Pode Module locally
+Add-BuildTask Install-Module -If ($Version) Pack, {
+    $PSPaths = Split-PodeBuildPwshPath
 
-        $dest = Join-Path -Path $PSPaths[0] -ChildPath 'Pode' -AdditionalChildPath "$Version"
-        if (Test-Path $dest) {
-            Remove-Item -Path $dest -Recurse -Force | Out-Null
-        }
-
-        # create the dest dir
-        New-Item -Path $dest -ItemType Directory -Force | Out-Null
-        $path = './pkg'
-
-        # copy over folders
-        $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses', 'Locales')
-        $folders | ForEach-Object {
-            Copy-Item -Path (Join-Path -Path $path -ChildPath $_) -Destination $dest -Force -Recurse | Out-Null
-        }
-
-        # copy over general files
-        $files = @('Pode.psm1', 'Pode.psd1', 'Pode.Internal.psm1', 'Pode.Internal.psd1', 'LICENSE.txt')
-        $files | ForEach-Object {
-            Copy-Item -Path (Join-Path -Path $path -ChildPath $_) -Destination $dest -Force | Out-Null
-        }
-
-        Write-Host "Deployed to $dest"
-    }
-
-    # Synopsis: Remove the Pode Module from the local registry
-    Add-BuildTask Remove-Module {
-        if (!$Version) {
-            throw 'Parameter -Version is required'
-        }
-
-        $PSPaths = Split-PodeBuildPwshPath
-
-        $dest = Join-Path -Path $PSPaths[0] -ChildPath 'Pode' -AdditionalChildPath "$Version"
-        if (!(Test-Path $dest)) {
-            Write-Warning "Directory $dest doesn't exist"
-        }
-
-        Write-Host "Deleting module from $dest"
+    $dest = Join-Path -Path $PSPaths[0] -ChildPath 'Pode' -AdditionalChildPath "$Version"
+    if (Test-Path $dest) {
         Remove-Item -Path $dest -Recurse -Force | Out-Null
     }
 
+    # create the dest dir
+    New-Item -Path $dest -ItemType Directory -Force | Out-Null
+    $path = './pkg'
 
-    <#
+    # copy over folders
+    $folders = @('Private', 'Public', 'Misc', 'Libs', 'licenses', 'Locales')
+    $folders | ForEach-Object {
+        Copy-Item -Path (Join-Path -Path $path -ChildPath $_) -Destination $dest -Force -Recurse | Out-Null
+    }
+
+    # copy over general files
+    $files = @('Pode.psm1', 'Pode.psd1', 'Pode.Internal.psm1', 'Pode.Internal.psd1', 'LICENSE.txt')
+    $files | ForEach-Object {
+        Copy-Item -Path (Join-Path -Path $path -ChildPath $_) -Destination $dest -Force | Out-Null
+    }
+
+    Write-Host "Deployed to $dest"
+}
+
+# Synopsis: Remove the Pode Module from the local registry
+Add-BuildTask Remove-Module {
+    if (!$Version) {
+        throw 'Parameter -Version is required'
+    }
+
+    $PSPaths = Split-PodeBuildPwshPath
+
+    $dest = Join-Path -Path $PSPaths[0] -ChildPath 'Pode' -AdditionalChildPath "$Version"
+    if (!(Test-Path $dest)) {
+        Write-Warning "Directory $dest doesn't exist"
+    }
+
+    Write-Host "Deleting module from $dest"
+    Remove-Item -Path $dest -Recurse -Force | Out-Null
+}
+
+
+<#
 # PowerShell setup
 #>
 
-    # Synopsis: Setup the PowerShell environment
-    Add-BuildTask SetupPowerShell {
-        # code for this step is altered versions of the code found here:
-        # - https://github.com/bjompen/UpdatePWSHAction/blob/main/UpgradePwsh.ps1
-        # - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1
+# Synopsis: Setup the PowerShell environment
+Add-BuildTask SetupPowerShell {
+    # code for this step is altered versions of the code found here:
+    # - https://github.com/bjompen/UpdatePWSHAction/blob/main/UpgradePwsh.ps1
+    # - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1
 
-        # fail if no version supplied
-        if ([string]::IsNullOrWhiteSpace($PowerShellVersion)) {
-            throw 'No PowerShell version supplied to set up'
-        }
+    # fail if no version supplied
+    if ([string]::IsNullOrWhiteSpace($PowerShellVersion)) {
+        throw 'No PowerShell version supplied to set up'
+    }
 
-        # is the version valid?
-        $tags = @('preview', 'lts', 'daily', 'stable')
-        if (($PowerShellVersion -inotin $tags) -and ($PowerShellVersion -inotmatch '^\d+\.\d+\.\d+(-\w+(\.\d+)?)?$')) {
-            throw "Invalid PowerShell version supplied: $($PowerShellVersion)"
-        }
+    # is the version valid?
+    $tags = @('preview', 'lts', 'daily', 'stable')
+    if (($PowerShellVersion -inotin $tags) -and ($PowerShellVersion -inotmatch '^\d+\.\d+\.\d+(-\w+(\.\d+)?)?$')) {
+        throw "Invalid PowerShell version supplied: $($PowerShellVersion)"
+    }
 
-        # tag version or literal version?
-        $isTagVersion = $PowerShellVersion -iin $tags
-        if ($isTagVersion) {
-            Write-Host "Release tag: $($PowerShellVersion)"
-            $PowerShellVersion = Convert-PodeBuildOSPwshTagToVersion
-        }
-        Write-Host "Release version: $($PowerShellVersion)"
+    # tag version or literal version?
+    $isTagVersion = $PowerShellVersion -iin $tags
+    if ($isTagVersion) {
+        Write-Host "Release tag: $($PowerShellVersion)"
+        $PowerShellVersion = Convert-PodeBuildOSPwshTagToVersion
+    }
+    Write-Host "Release version: $($PowerShellVersion)"
 
-        # base/prefix versions
-        $atoms = $PowerShellVersion -split '\-'
-        $baseVersion = $atoms[0]
+    # base/prefix versions
+    $atoms = $PowerShellVersion -split '\-'
+    $baseVersion = $atoms[0]
 
-        # do nothing if the current version is the version we're trying to set up
-        $currentVersion = Get-PodeBuildCurrentPwshVersion
-        Write-Host "Current PowerShell version: $($currentVersion)"
+    # do nothing if the current version is the version we're trying to set up
+    $currentVersion = Get-PodeBuildCurrentPwshVersion
+    Write-Host "Current PowerShell version: $($currentVersion)"
 
-        if ($baseVersion -ieq $currentVersion) {
-            Write-Host "PowerShell version $($PowerShellVersion) is already installed"
-            return
-        }
+    if ($baseVersion -ieq $currentVersion) {
+        Write-Host "PowerShell version $($PowerShellVersion) is already installed"
+        return
+    }
 
-        # build the package name
-        $arch = Get-PodeBuildOSPwshArchitecture
-        $os = Get-PodeBuildOSPwshName
+    # build the package name
+    $arch = Get-PodeBuildOSPwshArchitecture
+    $os = Get-PodeBuildOSPwshName
 
-        $packageName = (@{
-                win   = "PowerShell-$($PowerShellVersion)-$($os)-$($arch).zip"
-                linux = "powershell-$($PowerShellVersion)-$($os)-$($arch).tar.gz"
-                osx   = "powershell-$($PowerShellVersion)-$($os)-$($arch).tar.gz"
-            })[$os]
+    $packageName = (@{
+            win   = "PowerShell-$($PowerShellVersion)-$($os)-$($arch).zip"
+            linux = "powershell-$($PowerShellVersion)-$($os)-$($arch).tar.gz"
+            osx   = "powershell-$($PowerShellVersion)-$($os)-$($arch).tar.gz"
+        })[$os]
 
-        # build the URL
-        $urls = @{
-            Old = "https://pscoretestdata.blob.core.windows.net/v$($PowerShellVersion -replace '\.', '-')/$($packageName)"
-            New = "https://powershellinfraartifacts-gkhedzdeaghdezhr.z01.azurefd.net/install/v$($PowerShellVersion)/$($packageName)"
-        }
+    # build the URL
+    $urls = @{
+        Old = "https://pscoretestdata.blob.core.windows.net/v$($PowerShellVersion -replace '\.', '-')/$($packageName)"
+        New = "https://powershellinfraartifacts-gkhedzdeaghdezhr.z01.azurefd.net/install/v$($PowerShellVersion)/$($packageName)"
+    }
 
-        # download the package to a temp location
-        $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
-        $downloadParams = @{
-            Uri         = $urls.New
-            OutFile     = $outputFile
-            ErrorAction = 'Stop'
-        }
+    # download the package to a temp location
+    $outputFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath $packageName
+    $downloadParams = @{
+        Uri         = $urls.New
+        OutFile     = $outputFile
+        ErrorAction = 'Stop'
+    }
 
-        Write-Host "Output file: $($outputFile)"
+    Write-Host "Output file: $($outputFile)"
 
-        # retry the download 6 times, with a sleep of 10s between each attempt, and altering between old and new URLs
-        $counter = 0
-        $success = $false
+    # retry the download 6 times, with a sleep of 10s between each attempt, and altering between old and new URLs
+    $counter = 0
+    $success = $false
 
-        do {
-            try {
-                $counter++
-                Write-Host "Attempt $($counter) of 6"
+    do {
+        try {
+            $counter++
+            Write-Host "Attempt $($counter) of 6"
 
-                # use new URL for odd attempts, and old URL for even attempts
-                if ($counter % 2 -eq 0) {
-                    $downloadParams.Uri = $urls.Old
-                }
-                else {
-                    $downloadParams.Uri = $urls.New
-                }
-
-                # download the package
-                Write-Host "Attempting download of $($packageName) from $($downloadParams.Uri)"
-                Invoke-WebRequest @downloadParams
-
-                $success = $true
-                Write-Host "Downloaded $($packageName) successfully"
+            # use new URL for odd attempts, and old URL for even attempts
+            if ($counter % 2 -eq 0) {
+                $downloadParams.Uri = $urls.Old
             }
-            catch {
-                $success = $false
-                if ($counter -ge 6) {
-                    throw "Failed to download PowerShell package after 6 attempts. Error: $($_.Exception.Message)"
-                }
-
-                Start-Sleep -Seconds 5
-            }
-        } while (!$success)
-
-        # create target folder for package
-        $targetFolder = Join-Path -Path (Resolve-Path ~).Path -ChildPath ($packageName -ireplace '\.tar$')
-        if (!(Test-Path $targetFolder)) {
-            $null = New-Item -Path $targetFolder -ItemType Directory -Force
-        }
-
-        # extract the package
-        switch ($os) {
-            'win' {
-                Expand-Archive -Path $outputFile -DestinationPath $targetFolder -Force
+            else {
+                $downloadParams.Uri = $urls.New
             }
 
-            { $_ -iin 'linux', 'osx' } {
-                $null = tar -xzf $outputFile -C $targetFolder
+            # download the package
+            Write-Host "Attempting download of $($packageName) from $($downloadParams.Uri)"
+            Invoke-WebRequest @downloadParams
+
+            $success = $true
+            Write-Host "Downloaded $($packageName) successfully"
+        }
+        catch {
+            $success = $false
+            if ($counter -ge 6) {
+                throw "Failed to download PowerShell package after 6 attempts. Error: $($_.Exception.Message)"
             }
+
+            Start-Sleep -Seconds 5
+        }
+    } while (!$success)
+
+    # create target folder for package
+    $targetFolder = Join-Path -Path (Resolve-Path ~).Path -ChildPath ($packageName -ireplace '\.tar$')
+    if (!(Test-Path $targetFolder)) {
+        $null = New-Item -Path $targetFolder -ItemType Directory -Force
+    }
+
+    # extract the package
+    switch ($os) {
+        'win' {
+            Expand-Archive -Path $outputFile -DestinationPath $targetFolder -Force
         }
 
-        # install the package
-        Write-Host "Installing PowerShell $($PowerShellVersion) to $($targetFolder)"
-        if (Test-PodeBuildOSWindows) {
-            Install-PodeBuildPwshWindows -Target $targetFolder
-        }
-        else {
-            Install-PodeBuildPwshUnix -Target $targetFolder
+        { $_ -iin 'linux', 'osx' } {
+            $null = tar -xzf $outputFile -C $targetFolder
         }
     }
 
+    # install the package
+    Write-Host "Installing PowerShell $($PowerShellVersion) to $($targetFolder)"
+    if (Test-PodeBuildOSWindows) {
+        Install-PodeBuildPwshWindows -Target $targetFolder
+    }
+    else {
+        Install-PodeBuildPwshUnix -Target $targetFolder
+    }
+}
 
-    <#
+
+<#
 # Release Notes
 #>
 
-    # Synopsis: Build the Release Notes
-    task ReleaseNotes {
-        if ([string]::IsNullOrWhiteSpace($ReleaseNoteVersion)) {
-            Write-Host 'Please provide a ReleaseNoteVersion' -ForegroundColor Red
-            return
+# Synopsis: Build the Release Notes
+task ReleaseNotes {
+    if ([string]::IsNullOrWhiteSpace($ReleaseNoteVersion)) {
+        Write-Host 'Please provide a ReleaseNoteVersion' -ForegroundColor Red
+        return
+    }
+
+    # get the PRs for the ReleaseNoteVersion
+    $prs = gh search prs --milestone $ReleaseNoteVersion --repo badgerati/pode --merged --limit 200 --json 'number,title,labels,author' | ConvertFrom-Json
+
+    # group PRs into categories, filtering out some internal PRs
+    $categories = [ordered]@{
+        Features      = @()
+        Enhancements  = @()
+        Bugs          = @()
+        Documentation = @()
+    }
+
+    $dependabot = @{}
+
+    foreach ($pr in $prs) {
+        if ($pr.labels.name -icontains 'superseded') {
+            continue
         }
 
-        # get the PRs for the ReleaseNoteVersion
-        $prs = gh search prs --milestone $ReleaseNoteVersion --repo badgerati/pode --merged --limit 200 --json 'number,title,labels,author' | ConvertFrom-Json
-
-        # group PRs into categories, filtering out some internal PRs
-        $categories = [ordered]@{
-            Features      = @()
-            Enhancements  = @()
-            Bugs          = @()
-            Documentation = @()
+        $label = ($pr.labels[0].name -split ' ')[0]
+        if ($label -iin @('new-release', 'internal-code')) {
+            continue
         }
 
-        $dependabot = @{}
+        if ([string]::IsNullOrWhiteSpace($label)) {
+            $label = 'misc'
+        }
 
-        foreach ($pr in $prs) {
-            if ($pr.labels.name -icontains 'superseded') {
-                continue
-            }
+        switch ($label.ToLowerInvariant()) {
+            'feature' { $label = 'Features' }
+            'enhancement' { $label = 'Enhancements' }
+            'bug' { $label = 'Bugs' }
+        }
 
-            $label = ($pr.labels[0].name -split ' ')[0]
-            if ($label -iin @('new-release', 'internal-code')) {
-                continue
-            }
+        if (!$categories.Contains($label)) {
+            $categories[$label] = @()
+        }
 
-            if ([string]::IsNullOrWhiteSpace($label)) {
-                $label = 'misc'
-            }
-
-            switch ($label.ToLowerInvariant()) {
-                'feature' { $label = 'Features' }
-                'enhancement' { $label = 'Enhancements' }
-                'bug' { $label = 'Bugs' }
-            }
-
-            if (!$categories.Contains($label)) {
-                $categories[$label] = @()
-            }
-
-            if ($pr.author.login -ilike '*dependabot*') {
-                if ($pr.title -imatch 'Bump (?<name>\S+) from (?<from>[0-9\.]+) to (?<to>[0-9\.]+)') {
-                    if (!$dependabot.ContainsKey($Matches['name'])) {
-                        $dependabot[$Matches['name']] = @{
-                            Name   = $Matches['name']
-                            Number = $pr.number
-                            From   = [version]$Matches['from']
-                            To     = [version]$Matches['to']
-                        }
+        if ($pr.author.login -ilike '*dependabot*') {
+            if ($pr.title -imatch 'Bump (?<name>\S+) from (?<from>[0-9\.]+) to (?<to>[0-9\.]+)') {
+                if (!$dependabot.ContainsKey($Matches['name'])) {
+                    $dependabot[$Matches['name']] = @{
+                        Name   = $Matches['name']
+                        Number = $pr.number
+                        From   = [version]$Matches['from']
+                        To     = [version]$Matches['to']
                     }
-                    else {
-                        $item = $dependabot[$Matches['name']]
-                        if ([int]$pr.number -gt [int]$item.Number) {
-                            $item.Number = $pr.number
-                        }
-                        if ([version]$Matches['from'] -lt $item.From) {
-                            $item.From = [version]$Matches['from']
-                        }
-                        if ([version]$Matches['to'] -gt $item.To) {
-                            $item.To = [version]$Matches['to']
-                        }
-                    }
-
-                    continue
-                }
-            }
-
-            $titles = @($pr.title).Trim()
-            if ($pr.title.Contains(';')) {
-                $titles = ($pr.title -split ';').Trim()
-            }
-
-            $author = $null
-            if (($pr.author.login -ine 'badgerati') -and ($pr.author.login -inotlike '*dependabot*')) {
-                $author = $pr.author.login
-            }
-
-            foreach ($title in $titles) {
-                $str = "* #$($pr.number): $($title -replace '`', "'")"
-                if (![string]::IsNullOrWhiteSpace($author)) {
-                    $str += " (thanks @$($author)!)"
-                }
-
-                if ($str -imatch '\s+(docs|documentation)\s+') {
-                    $categories['Documentation'] += $str
                 }
                 else {
-                    $categories[$label] += $str
+                    $item = $dependabot[$Matches['name']]
+                    if ([int]$pr.number -gt [int]$item.Number) {
+                        $item.Number = $pr.number
+                    }
+                    if ([version]$Matches['from'] -lt $item.From) {
+                        $item.From = [version]$Matches['from']
+                    }
+                    if ([version]$Matches['to'] -gt $item.To) {
+                        $item.To = [version]$Matches['to']
+                    }
                 }
-            }
-        }
 
-        # add dependabot aggregated PRs
-        if ($dependabot.Count -gt 0) {
-            $label = 'dependencies'
-            if (!$categories.Contains($label)) {
-                $categories[$label] = @()
-            }
-
-            foreach ($dep in $dependabot.Values) {
-                $categories[$label] += "* #$($dep.Number): Bump $($dep.Name) from $($dep.From) to $($dep.To)"
-            }
-        }
-
-        # output the release notes
-        Write-Host "# v$($ReleaseNoteVersion)`n"
-
-        $culture = (Get-Culture).TextInfo
-        foreach ($category in $categories.Keys) {
-            if ($categories[$category].Length -eq 0) {
                 continue
             }
+        }
 
-            Write-Host "### $($culture.ToTitleCase($category))"
-            $categories[$category] | Sort-Object | ForEach-Object { Write-Host $_ }
-            Write-Host ''
+        $titles = @($pr.title).Trim()
+        if ($pr.title.Contains(';')) {
+            $titles = ($pr.title -split ';').Trim()
+        }
+
+        $author = $null
+        if (($pr.author.login -ine 'badgerati') -and ($pr.author.login -inotlike '*dependabot*')) {
+            $author = $pr.author.login
+        }
+
+        foreach ($title in $titles) {
+            $str = "* #$($pr.number): $($title -replace '`', "'")"
+            if (![string]::IsNullOrWhiteSpace($author)) {
+                $str += " (thanks @$($author)!)"
+            }
+
+            if ($str -imatch '\s+(docs|documentation)\s+') {
+                $categories['Documentation'] += $str
+            }
+            else {
+                $categories[$label] += $str
+            }
         }
     }
-}
-else {
-    Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
+
+    # add dependabot aggregated PRs
+    if ($dependabot.Count -gt 0) {
+        $label = 'dependencies'
+        if (!$categories.Contains($label)) {
+            $categories[$label] = @()
+        }
+
+        foreach ($dep in $dependabot.Values) {
+            $categories[$label] += "* #$($dep.Number): Bump $($dep.Name) from $($dep.From) to $($dep.To)"
+        }
+    }
+
+    # output the release notes
+    Write-Host "# v$($ReleaseNoteVersion)`n"
+
+    $culture = (Get-Culture).TextInfo
+    foreach ($category in $categories.Keys) {
+        if ($categories[$category].Length -eq 0) {
+            continue
+        }
+
+        Write-Host "### $($culture.ToTitleCase($category))"
+        $categories[$category] | Sort-Object | ForEach-Object { Write-Host $_ }
+        Write-Host ''
+    }
 }
