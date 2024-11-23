@@ -34,13 +34,11 @@
     - StampVersion: Stamps the specified version onto the module.
     - PrintChecksum: Generates and displays a checksum of the ZIP archive.
     - ChocoDeps: Installs Chocolatey (for Windows).
-    - PackDeps: Installs dependencies required for packaging.
     - BuildDeps: Installs dependencies required for building/compiling.
     - TestDeps: Installs dependencies required for testing.
     - DocsDeps: Installs dependencies required for documentation generation.
     - IndexSamples: Indexes sample files for documentation.
     - Build: Builds the .NET Listener for specified frameworks.
-    - 7Zip: Creates a ZIP archive of the module (Windows only).
     - DeliverableFolder: Creates a folder for deliverables.
     - Compress: Compresses the module into a ZIP format for distribution.
     - ChocoPack: Creates a Chocolatey package of the module (Windows only).
@@ -119,7 +117,6 @@ $Versions = @{
     Pester      = '5.6.1'
     MkDocs      = '1.6.1'
     PSCoveralls = '1.0.0'
-    SevenZip    = '18.5.0.20180730'
     DotNet      = $SdkVersion
     MkDocsTheme = '9.5.44'
     PlatyPS     = '0.14.2'
@@ -379,17 +376,17 @@ function Install-PodeBuildModule($name) {
     Converts a .NET target framework identifier to a numeric version.
 
 .DESCRIPTION
-    This function maps common .NET target framework identifiers (e.g., 'netstandard2.0', 'net6.0') to their
+    This function maps common .NET target framework identifiers (e.g., 'netstandard2.0', 'net9.0') to their
     numeric equivalents. It is used to ensure compatibility by returning the framework version number as an integer.
 
 .PARAMETER TargetFrameworks
-    The target framework identifier (e.g., 'netstandard2.0', 'net6.0').
+    The target framework identifier (e.g., 'netstandard2.0', 'net9.0').
 
 .OUTPUTS
     [int] - The numeric version of the target framework. Defaults to 2 if an unrecognized framework is provided.
 
 .EXAMPLE
-    $version = Get-PodeTargetFramework -TargetFrameworks 'net6.0'
+    $version = Get-PodeBuildTargetFramework -TargetFrameworks 'net9.0'
     Write-Host "Target framework version: $version"
     # Output: Target framework version: 6
 
@@ -397,7 +394,7 @@ function Install-PodeBuildModule($name) {
     - Returns 2 (netstandard2.0) by default if the input framework is not recognized.
     - This function is useful in build scripts that require target framework versioning.
 #>
-function Get-PodeTargetFramework {
+function Get-PodeBuildTargetFramework {
     param(
         [string]
         $TargetFrameworks
@@ -409,7 +406,7 @@ function Get-PodeTargetFramework {
         'net9.0' { return  9 }
         'net10.0' { return  10 }
         default {
-            Write-Warning "$TargetFrameworks is not a valid  Framework. Rollback to netstandard2.0"
+            Write-Warning "$TargetFrameworks is not a valid Framework. Rollback to netstandard2.0"
             return 2
         }
     }
@@ -430,29 +427,26 @@ function Get-PodeTargetFramework {
     [string] - The target framework identifier (e.g., 'netstandard2.0').
 
 .EXAMPLE
-    $frameworkName = Get-PodeTargetFrameworkName -Version 6
+    $frameworkName = Get-PodeBuildTargetFrameworkName -Version 9
     Write-Host "Target framework name: $frameworkName"
-    # Output: Target framework name: net6.0
+    # Output: Target framework name: net9.0
 
 .NOTES
     - Returns 'netstandard2.0' by default if an unrecognized version is provided.
     - Useful for converting numeric framework versions to identifier strings in build processes.
 #>
-function Get-PodeTargetFrameworkName {
+function Get-PodeBuildTargetFrameworkName {
     param(
         $Version
     )
 
     switch ( $Version) {
         '2' { return 'netstandard2.0' }
-        '3' { return 'netstandard2.1' }
-        '5' { return  'net5.0' }
-        '6' { return  'net6.0' }
-        '7' { return  'net7.0' }
         '8' { return  'net8.0' }
         '9' { return 'net9.0' }
+        '10' { return 'net10.0' }
         default {
-            Write-Warning "$Version is not a valid  Framework. Rollback to netstandard2.0"
+            Write-Warning "$Version is not a valid Framework. Rollback to netstandard2.0"
             return 'netstandard2.0'
         }
     }
@@ -469,7 +463,7 @@ function Invoke-PodeBuildDotnetBuild {
         $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
     }
     else {
-        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-PodeTargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
+        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-PodeBuildTargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
     }
     # Map target frameworks to minimum SDK versions
 
@@ -477,7 +471,7 @@ function Invoke-PodeBuildDotnetBuild {
         Write-Error "The requested '$AvailableSdkVersion' framework is not available."
         return
     }
-    $requiredSdkVersion = Get-PodeTargetFramework -TargetFrameworks $target
+    $requiredSdkVersion = Get-PodeBuildTargetFramework -TargetFrameworks $target
 
     # Determine if the target framework is compatible
     $isCompatible = $majorVersions -ge $requiredSdkVersion
@@ -913,12 +907,10 @@ Add-BuildTask Default {
     Write-Host '- StampVersion: Stamps the specified version onto the module.'
     Write-Host '- PrintChecksum: Generates and displays a checksum of the ZIP archive.'
     Write-Host '- ChocoDeps: Installs Chocolatey (for Windows).'
-    Write-Host '- PackDeps: Installs dependencies required for packaging.'
     Write-Host '- BuildDeps: Installs dependencies required for building/compiling.'
     Write-Host '- TestDeps: Installs dependencies required for testing.'
     Write-Host '- DocsDeps: Installs dependencies required for documentation generation.'
     Write-Host '- IndexSamples: Indexes sample files for documentation.'
-    Write-Host '- 7Zip: Creates a ZIP archive of the module (Windows only).'
     Write-Host '- DeliverableFolder: Creates a folder for deliverables.'
     Write-Host '- Compress: Compresses the module into a ZIP format for distribution.'
     Write-Host '- ChocoPack: Creates a Chocolatey package of the module (Windows only).'
@@ -970,13 +962,6 @@ Add-BuildTask ChocoDeps -If (Test-PodeBuildIsWindows) {
     }
 }
 
-# Synopsis: Install dependencies for packaging
-Add-BuildTask PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
-    if (!(Test-PodeBuildCommand '7z')) {
-        Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
-    }
-}
-
 # Synopsis: Install dependencies for compiling/building
 Add-BuildTask BuildDeps {
     # install dotnet
@@ -998,20 +983,20 @@ Add-BuildTask BuildDeps {
         $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
     }
     $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-    $script:AvailableSdkVersion = Get-PodeTargetFrameworkName  -Version $majorVersions
+    $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
 
-    if ($majorVersions -lt (Get-PodeTargetFramework -TargetFrameworks $SdkVersion)) {
+    if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
         Invoke-PodeBuildInstall $dotnet $SdkVersion
         $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
         $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
-        $script:AvailableSdkVersion = Get-PodeTargetFrameworkName  -Version $majorVersions
+        $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
 
-        if ($majorVersions -lt (Get-PodeTargetFramework -TargetFrameworks $SdkVersion)) {
+        if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
             Write-Error "The requested framework '$SdkVersion' is not available."
             return
         }
     }
-    elseif ($majorVersions -gt (Get-PodeTargetFramework -TargetFrameworks $SdkVersion)) {
+    elseif ($majorVersions -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
         Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
     }
 
@@ -1122,11 +1107,6 @@ Add-BuildTask Build BuildDeps, {
 # Packaging
 #>
 
-# Synopsis: Creates a Zip of the Module
-Add-BuildTask 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
-    exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
-}, PrintChecksum
-
 #Synopsis: Create the Deliverable folder
 Add-BuildTask DeliverableFolder {
     $path = './deliverable'
@@ -1150,7 +1130,7 @@ Add-BuildTask Compress PackageFolder, StampVersion, DeliverableFolder, {
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
-Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, PackageFolder, StampVersion, DeliverableFolder, {
+Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) ChocoDeps, PackageFolder, StampVersion, DeliverableFolder, {
     exec { choco pack ./packers/choco/pode.nuspec }
     Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
