@@ -496,32 +496,75 @@ function Invoke-PodeBuildDotnetBuild {
         $AssemblyVersion = ''
     }
 
-    # Use dotnet publish for .NET Core and .NET 5+
+    # Perform the build for the target runtime
     dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
 
+    # Throw an error if the build fails
     if (!$?) {
         throw "Build failed for target framework '$target'."
     }
 }
 
+<#
+.SYNOPSIS
+    Builds the Pode Monitor Service for multiple target platforms using .NET SDK.
 
+.DESCRIPTION
+    This function automates the build process for the Pode Monitor Service. It:
+    - Determines the highest installed .NET SDK version.
+    - Verifies compatibility with the required SDK version.
+    - Optionally sets an assembly version during the build.
+    - Builds the service for specified runtime targets across platforms (Windows, Linux, macOS).
+    - Allows defining custom constants for conditional compilation.
 
+.PARAMETER Version
+    Specifies the assembly version to use for the build. If not provided, no version is set.
 
+.PARAMETER DisableLifecycleServiceOperations
+    If specified, excludes lifecycle service operations during the build by omitting related compilation constants.
+
+.INPUTS
+    None. The function does not accept pipeline input.
+
+.OUTPUTS
+    None. The function produces build artifacts in the output directory.
+
+.NOTES
+    This function is designed to work with .NET SDK and assumes it is installed and configured properly.
+    It throws an error if the build process fails for any target.
+
+.EXAMPLE
+    Invoke-PodeBuildDotnetMonitorSrvBuild -Version "1.0.0"
+
+    Builds the Pode Monitor Service with an assembly version of 1.0.0.
+
+.EXAMPLE
+    Invoke-PodeBuildDotnetMonitorSrvBuild -DisableLifecycleServiceOperations
+
+    Builds the Pode Monitor Service without lifecycle service operations.
+
+.EXAMPLE
+    Invoke-PodeBuildDotnetMonitorSrvBuild
+
+    Builds the Pode Monitor Service for all target runtimes without a specific assembly version.
+#>
 function Invoke-PodeBuildDotnetMonitorSrvBuild() {
     # Retrieve the highest installed SDK version
     $majorVersion = ([version](dotnet --version)).Major
 
     # Determine if the target framework is compatible
-    $isCompatible = $majorVersion -ge 8
+    $isCompatible = $majorVersions -ge $requiredSdkVersion
 
     # Skip build if not compatible
     if ($isCompatible) {
-        Write-Host "SDK for target framework $target is compatible with the installed SDKs"
+        Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
     }
     else {
-        Write-Host "SDK for target framework $target is not compatible with the installed SDKs. Skipping build."
+        Write-Warning "SDK for target framework '$target' is not compatible with the '$AvailableSdkVersion' framework. Skipping build."
         return
     }
+
+    # Optionally set assembly version
     if ($Version) {
         Write-Host "Assembly Version $Version"
         $AssemblyVersion = "-p:Version=$Version"
@@ -529,25 +572,29 @@ function Invoke-PodeBuildDotnetMonitorSrvBuild() {
     else {
         $AssemblyVersion = ''
     }
+
     foreach ($target in @('win-x64', 'win-arm64' , 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')) {
         $DefineConstants = @()
         $ParamConstants = ''
 
+        # Add compilation constants if lifecycle operations are enabled
         if (!$DisableLifecycleServiceOperations) {
             $DefineConstants += 'ENABLE_LIFECYCLE_OPERATIONS'
         }
 
+        # Prepare constants for the build parameters
         if ($DefineConstants.Count -gt 0) {
             $ParamConstants = "-p:DefineConstants=`"$( $DefineConstants -join ';')`""
         }
 
+        # Perform the build for the target runtime
         dotnet publish --runtime $target --output ../Bin/$target --configuration Release $AssemblyVersion $ParamConstants
 
+        # Throw an error if the build fails
         if (!$?) {
             throw "dotnet publish failed for $($target)"
         }
     }
-
 }
 
 <#
@@ -927,8 +974,6 @@ function Split-PodeBuildPwshPath {
     }
 }
 
-
-
 # Check if the script is running under Invoke-Build
 if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
     Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
@@ -1125,9 +1170,6 @@ Add-BuildTask Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
-
-
-
 
     # Retrieve the SDK version being used
     #   $dotnetVersion = dotnet --version
@@ -1658,7 +1700,7 @@ Add-BuildTask SetupPowerShell {
 #>
 
 # Synopsis: Build the Release Notes
-task ReleaseNotes {
+Add-BuildTask ReleaseNotes {
     if ([string]::IsNullOrWhiteSpace($ReleaseNoteVersion)) {
         Write-Host 'Please provide a ReleaseNoteVersion' -ForegroundColor Red
         return
