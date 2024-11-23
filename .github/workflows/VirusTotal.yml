@@ -19,14 +19,25 @@ on:
     - cron: '0 12 * * *'
 
 env:
-  INVOKE_BUILD_VERSION: '5.11.1'
+  INVOKE_BUILD_VERSION: '5.12.0'
   POWERSHELL_VERSION: 'lts'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
+
+
+    - name: Check VIRUSTOTAL_API_KEY
+      env:
+        VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+      run: |
+        if [ -z "$VIRUSTOTAL_API_KEY" ]; then
+          echo "VIRUSTOTAL_API_KEY is not set. Exiting workflow."
+          exit 1
+        fi
+        echo "VIRUSTOTAL_API_KEY is set. Proceeding with the workflow.
+
     - uses: actions/checkout@v4
 
     - name: Setup .NET
