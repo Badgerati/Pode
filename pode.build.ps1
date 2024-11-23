@@ -1318,11 +1318,62 @@ Add-BuildTask TestNoBuild TestDeps, {
         Remove-Module Pester -Force -ErrorAction Ignore
         Import-Module Pester -Force -RequiredVersion $Versions.Pester
     }
-
+    Write-Output ''
     # for windows, output current netsh excluded ports
     if (Test-PodeBuildIsWindows) {
         netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
+
+        # Retrieve the current Windows identity and token
+        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+
+        # Gather user information
+        $user = $identity.Name
+        $isElevated = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        $adminStatus = if ($isElevated) { 'Administrator' } else { 'Standard User' }
+        $groups = $identity.Groups | ForEach-Object {
+            try {
+                $_.Translate([Security.Principal.NTAccount]).Value
+            }
+            catch {
+                $_.Value # Fallback to SID if translation fails
+            }
+        }
+
+        # Generate output
+        Write-Output 'Pester Execution Context (Windows):'
+        Write-Output "  - User:                $user"
+        Write-Output "  - Role:                $adminStatus"
+        Write-Output "  - Elevated Privileges: $isElevated"
+        Write-Output "  - Group Memberships:   $( $groups -join ', ')"
     }
+
+
+    if (Test-PodeIsUnix) {
+        $user = whoami
+        $groupsRaw = (groups $user | Out-String).Trim()
+        $groups = $groupsRaw -split '\s+' | Where-Object { $_ -ne ':' } | Sort-Object -Unique
+
+        # Check for sudo privileges based on group membership
+        $isSudoUser = $groups -match '\bwheel\b' -or $groups -match '\badmin\b' -or $groups -match '\bsudo\b'
+
+        Write-Output 'Pester Execution Context (Linux):'
+        Write-Output "  - User:    $user"
+        Write-Output "  - Groups:  $( $groups -join ', ')"
+        Write-Output "  - Sudo:    $($isSudoUser -eq $true)"
+    }
+
+    if (Test-PodeIsMacOS) {
+        $user = whoami
+        $groups = (id -Gn $user).Split(' ') # Use `id -Gn` for consistent group names on macOS
+        $formattedGroups = $groups -join ', '
+        Write-Output 'Pester Execution Context (macOS):'
+        Write-Output "  - User:    $user"
+        Write-Output "  - Groups:  $formattedGroups"
+    }
+
+    Write-Output ''
+
     if ($UICulture -ne ([System.Threading.Thread]::CurrentThread.CurrentUICulture) ) {
         $originalUICulture = [System.Threading.Thread]::CurrentThread.CurrentUICulture
         Write-Output "Original UICulture is $originalUICulture"
