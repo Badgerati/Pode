@@ -40,6 +40,9 @@
 .PARAMETER LinuxUser
     Specifies the username under which the service will run by default is the current user (Linux Only).
 
+.PARAMETER Agent
+    A switch to create an Agent instead of a Daemon in MacOS (MacOS Only).
+
 .PARAMETER Start
     A switch to start the service immediately after registration.
 
@@ -108,6 +111,9 @@ function Register-PodeService {
 
         [switch]
         $Start,
+
+        [switch]
+        $Agent,
 
         [securestring]
         $Password,
@@ -240,6 +246,7 @@ function Register-PodeService {
                 User           = $User
                 OsArchitecture = "osx-$osArchitecture"
                 LogPath        = $LogPath
+                Agent          = $Agent
             }
 
             $operation = Register-PodeMacService @param
@@ -846,7 +853,13 @@ function Unregister-PodeService {
                 }
 
                 if ((Disable-PodeMacOsService -Name $nameService)) {
-                    $plistFilePath = "$HOME/Library/LaunchAgents/$nameService.plist"
+                    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
+                    if ($sudo) {
+                        $plistFilePath = "/Library/LaunchDaemons/$nameService.plist"
+                    }
+                    else {
+                        $plistFilePath = "$HOME/Library/LaunchAgents/$nameService.plist"
+                    }
                     #Check if the plist file exists
                     if (Test-Path -Path $plistFilePath) {
                         # Read the content of the plist file
@@ -1031,12 +1044,18 @@ function Get-PodeService {
                 $servicePid = Get-PodeMacOsServicePid -Name $nameService # Extract the PID from the match
 
                 $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
-                $stateFilePath = "/private/var/run/podemonitor/$servicePid.state"
-                if (Test-Path -Path $stateFilePath) {
-                    $status = Get-Content -Path $stateFilePath
-                }
+
                 # Check if the service has a PID entry
                 if ($servicePid -ne 0) {
+                    if ($sudo) {
+                        $stateFilePath = "/Library/LaunchDaemons/PodeMonitor/$servicePid.state"
+                    }
+                    else {
+                        $stateFilePath = "$($HOME)/Library/LaunchAgents/PodeMonitor/$servicePid.state"
+                    }
+                    if (Test-Path -Path $stateFilePath) {
+                        $status = Get-Content -Path $stateFilePath
+                    }
                     return @{
                         Name   = $Name
                         Status = $status

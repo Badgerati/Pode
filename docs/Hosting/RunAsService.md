@@ -54,6 +54,9 @@ The `Register-PodeService` function offers several parameters to customize your 
 - **`-LinuxUser`** *(string)*:
   Specifies the username under which the service will run. Defaults to the current user (Linux Only).
 
+- **`-Agent`** *(switch)*:
+    Create an Agent instead of a Daemon in MacOS (MacOS Only).
+
 - **`-Start`** *(switch)*:
   Starts the service immediately after registration.
 

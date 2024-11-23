@@ -77,21 +77,33 @@ namespace PodeMonitor
             // Define the state file path only for Linux/macOS
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
-               string stateDirectory = OperatingSystem.IsLinux() ? "/run/podemonitor" :
-                        OperatingSystem.IsMacOS() ? "/private/var/run/podemonitor" :
-                        throw new PlatformNotSupportedException("The current platform is not supported for setting the state directory.");
 
-                if (!Directory.Exists(stateDirectory))
+                string homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                string stateDirectory = OperatingSystem.IsLinux()
+                    ? "/run/podemonitor"
+                    : OperatingSystem.IsMacOS()
+                        ? Path.Combine(homeDirectory, "Library", "LaunchAgents", "PodeMonitor")
+                        : throw new PlatformNotSupportedException("The current platform is not supported for setting the state directory.");
+                try
                 {
-                    Directory.CreateDirectory(stateDirectory);
+                    if (!Directory.Exists(stateDirectory))
+                    {
+                        Directory.CreateDirectory(stateDirectory);
+                    }
                 }
+                catch (Exception ex)
+                {
+                    PodeMonitorLogger.Log(LogLevel.ERROR, "PodeMonitor", Environment.ProcessId,
+                        $"Failed to create state directory at {stateDirectory}: {ex.Message}");
+                    throw;
+                }
+
                 // Define the state file path (default to /var/tmp for Linux/macOS)
                 _stateFilePath = Path.Combine(stateDirectory, $"{Environment.ProcessId}.state");
 
 
                 PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Initialized PodeMonitor with pipe name: {_pipeName} and state file: {_stateFilePath}");
             }
-
         }
 
         /// <summary>
@@ -180,8 +192,10 @@ namespace PodeMonitor
                         PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Waiting for {_shutdownWaitTimeMs} milliseconds for Pode process to exit...");
                         WaitForProcessExit(_shutdownWaitTimeMs);
 
-                        if (_powerShellProcess != null || !_powerShellProcess.HasExited || Process.GetProcessById(_powerShellProcess.Id) != null)
+                        if (_powerShellProcess != null &&  !_powerShellProcess.HasExited )
                         {
+                            PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, $"Pode process has exited:{_powerShellProcess.HasExited} Id:{_powerShellProcess.Id}");
+
                             PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, "Pode process did not terminate gracefully. Killing process.");
                             _powerShellProcess.Kill();
                         }

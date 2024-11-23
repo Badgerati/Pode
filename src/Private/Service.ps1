@@ -57,7 +57,7 @@ function Start-PodeServiceHearthbeat {
 
         # Define the script block for the client receiver, listens for commands via the named pipe
         $scriptBlock = {
-            $serviceState='running'
+            $serviceState = 'running'
             while (!$PodeContext.Tokens.Cancellation.IsCancellationRequested) {
 
                 Write-PodeHost -Message "Initialize Listener Pipe $($PodeContext.Server.Service.PipeName)" -Force
@@ -201,6 +201,9 @@ function Start-PodeServiceHearthbeat {
 .PARAMETER OsArchitecture
     Specifies the architecture of the operating system (e.g., `osx-x64` or `osx-arm64`).
 
+.PARAMETER Agent
+    A switch to create an Agent instead of a Daemon in MacOS.
+
 .OUTPUTS
     Returns $true if successful.
 
@@ -235,7 +238,10 @@ function Register-PodeMacService {
         $OsArchitecture,
 
         [string]
-        $LogPath
+        $LogPath,
+
+        [switch]
+        $Agent
     )
 
     $nameService = "pode.$Name.service".Replace(' ', '_')
@@ -248,7 +254,12 @@ function Register-PodeMacService {
 
     # Determine whether the service should run at load
     $runAtLoad = if ($Autostart.IsPresent) { '<true/>' } else { '<false/>' }
-
+    if ($Agent) {
+        $plistPath = "$($HOME)/Library/LaunchAgents/$($nameService).plist"
+    }
+    else {
+        $plistPath = "/Library/LaunchDaemons/$($nameService).plist"
+    }
     # Create the plist content
     @"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -288,16 +299,20 @@ function Register-PodeMacService {
     -->
 </dict>
 </plist>
-"@ | Set-Content -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -Encoding UTF8
+"@ | Set-Content -Path $plistPath -Encoding UTF8
 
     Write-Verbose  -Message "Service '$nameService' WorkingDirectory : $($BinPath)."
 
-    chmod +r "$($HOME)/Library/LaunchAgents/$($nameService).plist"
+    chmod +r $plistPath
 
     try {
         # Load the plist with launchctl
-        launchctl load "$($HOME)/Library/LaunchAgents/$($nameService).plist"
-
+        if ($Agent) {
+            launchctl load $plistPath
+        }
+        else {
+            sudo launchctl load $plistPat
+        }
         # Verify the service is now registered
         if (! (Test-PodeMacOsServiceIsRegistered $nameService)) {
             # Service registration failed.
@@ -1011,7 +1026,13 @@ function Disable-PodeMacOsService {
         [string]
         $Name
     )
-    $systemctlDisable = launchctl unload "$HOME/Library/LaunchAgents/$Name.plist" 2>&1
+    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($Name).plist" -PathType Leaf)
+    if ($sudo) {
+        $systemctlDisable = sudo launchctl unload "/Library/LaunchDaemons/$Name.plist" 2>&1
+    }
+    else {
+        $systemctlDisable = launchctl unload "$HOME/Library/LaunchAgents/$Name.plist" 2>&1
+    }
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($systemctlDisable -join '`n')
     return $success
@@ -1073,7 +1094,13 @@ function Start-PodeMacOsService {
         [string]
         $Name
     )
-    $serviceStartInfo = launchctl start $Name 2>&1
+    $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
+    if ($sudo) {
+        $serviceStartInfo = sudo launchctl start $Name 2>&1
+    }
+    else {
+        $serviceStartInfo = launchctl start $Name 2>&1
+    }
     $success = $LASTEXITCODE -eq 0
     Write-Verbose -Message ($serviceStartInfo -join "`n")
     return $success
@@ -1101,6 +1128,7 @@ function Send-PodeServiceSignal {
         'SIGHUP'  = 1
         'SIGTERM' = 15
     }
+    
     $level = $signalMap[$Signal]
     # Check if the service is registered
     if ((Test-PodeServiceIsRegistered -Name $nameService)) {

@@ -4,8 +4,7 @@ param()
 BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
-    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    #Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
+    Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ } 
 }
 
 
@@ -195,7 +194,7 @@ Describe 'Start-PodeService' {
             Assert-MockCalled -CommandName Start-PodeLinuxService -Exactly 0
         }
 
-        It 'Throws an error if the service is not registered' -Skip:(!$IsLinux) {
+        It 'Return false if the service is not registered' -Skip:(!$IsLinux) {
             Mock -CommandName Test-PodeLinuxServiceIsRegistered -MockWith { $false }
             Start-PodeService -Name 'NonExistentService' | Should -BeFalse
         }
@@ -204,9 +203,18 @@ Describe 'Start-PodeService' {
     Context 'On macOS platform' {
         It 'Starts a stopped service successfully' -Skip:(!$IsMacOS) {
             Mock -CommandName Test-PodeMacOsServiceIsRegistered -MockWith { $true }
-            Mock -CommandName Test-PodeMacOsServiceIsActive -MockWith { $false }
             Mock -CommandName Start-PodeMacOsService -MockWith { $true }
-            Mock -CommandName Test-PodeMacOsServiceIsActive -MockWith { $true }
+
+            $script:status = $null
+            Mock -CommandName Test-PodeMacOsServiceIsActive -MockWith {
+                if ($null -eq $script:status ) {
+                    $script:status = $false
+                }
+                else {
+                    $script:status = $true
+                }
+                return  $script:status
+            }
 
             # Act
             Start-PodeService -Name 'MacService' | Should -Be $true
@@ -215,10 +223,10 @@ Describe 'Start-PodeService' {
             Assert-MockCalled -CommandName Start-PodeMacOsService -Exactly 1
         }
 
-        It 'Throws an error if the service is not registered' -Skip:(!$IsMacOS) {
+        It 'Return false if the service is not registered' -Skip:(!$IsMacOS) {
             Mock -CommandName Test-PodeMacOsServiceIsRegistered -MockWith { $false }
 
-            { Start-PodeService -Name 'NonExistentService' } | Should -Throw
+            Start-PodeService -Name 'NonExistentService' | Should -BeFalse
         }
     }
 }
