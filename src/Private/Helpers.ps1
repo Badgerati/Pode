@@ -3846,7 +3846,7 @@ function Test-PodeAdminPrivilege {
                 $groups = (groups $user)
 
                 # macOS typically uses 'admin' group for sudo privileges
-                return ($groups -match '\bwheel\b' -or $groups -match '\badmin\b')
+                return ($groups -match '\bwheel\b' -or $groups -match '\badmin\b' -or $groups -match '\bsudo\b')
             }
             return $false
         }

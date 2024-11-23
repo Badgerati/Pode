@@ -943,7 +943,7 @@ function Get-PodeService {
             switch ($service.State) {
                 'Running' { $status = 'Running' }
                 'Stopped' { $status = 'Stopped' }
-                'Paused' { $status = 'Paused' }
+                'Paused' { $status = 'Suspended' }
                 'StartPending' { $status = 'Starting' }
                 'StopPending' { $status = 'Stopping' }
                 'PausePending' { $status = 'Pausing' }
@@ -971,10 +971,16 @@ function Get-PodeService {
                 $servicePid = 0
                 $status = $(systemctl show -p ActiveState $nameService | awk -F'=' '{print $2}')
 
+
+
+
                 switch ($status) {
                     'active' {
                         $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
-                        $status = 'Running'
+                        $stateFilePath = "/var/run/podemonitor/$servicePid.state"
+                        if (Test-Path -Path $stateFilePath) {
+                            $status = Get-Content -Path $stateFilePath
+                        }
                     }
                     'reloading' {
                         $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
@@ -982,10 +988,10 @@ function Get-PodeService {
                     }
                     'maintenance' {
                         $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
-                        $status = 'Paused'
+                        $status = 'Suspended'
                     }
                     'inactive' {
-                        $status = 'Stopped'
+                        $status = 'Suspended'
                     }
                     'failed' {
                         $status = 'Stopped'
@@ -1027,11 +1033,15 @@ function Get-PodeService {
                 $servicePid = Get-PodeMacOsServicePid -Name $nameService # Extract the PID from the match
 
                 $sudo = !(Test-Path -Path "$($HOME)/Library/LaunchAgents/$($nameService).plist" -PathType Leaf)
+                $stateFilePath = "/private/var/run/podemonitor/$servicePid.state"
+                if (Test-Path -Path $stateFilePath) {
+                    $status = Get-Content -Path $stateFilePath
+                }
                 # Check if the service has a PID entry
                 if ($servicePid -ne 0) {
                     return @{
                         Name   = $Name
-                        Status = 'Running'
+                        Status = $status
                         Pid    = $servicePid
                         Sudo   = $sudo
                     }

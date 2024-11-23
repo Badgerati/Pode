@@ -97,7 +97,7 @@ Describe 'Register-PodeService' {
             }
 
             # Act & Assert
-            Register-PodeService @params -ErrorAction SilentlyContinue| Should -BeFalse
+            Register-PodeService @params -ErrorAction SilentlyContinue | Should -BeFalse
         }
     }
 
@@ -106,7 +106,6 @@ Describe 'Start-PodeService' {
     BeforeAll {
         # Mock the required commands
         Mock -CommandName Confirm-PodeAdminPrivilege
-        Mock -CommandName Get-Service
         Mock -CommandName Invoke-PodeWinElevatedCommand
         Mock -CommandName Test-PodeLinuxServiceIsRegistered
         Mock -CommandName Test-PodeLinuxServiceIsActive
@@ -155,28 +154,50 @@ Describe 'Start-PodeService' {
 
         It 'Throws an error if the service is not registered' -Skip:(!$IsWindows) {
 
-            Start-PodeService -Name 'NonExistentService' -ErrorAction SilentlyContinue| Should -BeFalse
+            Start-PodeService -Name 'NonExistentService' -ErrorAction SilentlyContinue | Should -BeFalse
         }
     }
 
     Context 'On Linux platform' {
         It 'Starts a stopped service successfully' -Skip:(!$IsLinux) {
+            $script:status = $null
+            Mock -CommandName Test-PodeLinuxServiceIsActive -MockWith {
+                if ($null -eq $script:status ) {
+                    $script:status = $false
+                }
+                else {
+                    $script:status = $true
+                }
+                return  $script:status
+            }
+
             Mock -CommandName Test-PodeLinuxServiceIsRegistered -MockWith { $true }
-            Mock -CommandName Test-PodeLinuxServiceIsActive -MockWith { $false }
             Mock -CommandName Start-PodeLinuxService -MockWith { $true }
-            Mock -CommandName Test-PodeLinuxServiceIsActive -MockWith { $true }
 
             # Act
-            Start-PodeService -Name 'LinuxService' | Should -Be $true
+            Start-PodeService -Name 'TestService' | Should -Be $true
 
             # Assert
             Assert-MockCalled -CommandName Start-PodeLinuxService -Exactly 1
         }
 
+        It 'Starts a started service ' -Skip:(!$IsLinux) {
+
+            Mock -CommandName Test-PodeLinuxServiceIsActive -MockWith { $true }
+            Mock -CommandName Test-PodeLinuxServiceIsRegistered -MockWith { $true }
+            Mock -CommandName Start-PodeLinuxService -MockWith { $true }
+
+            # Act
+            Start-PodeService -Name 'TestService' | Should -Be $true
+
+            # Assert
+            Assert-MockCalled -CommandName Start-PodeLinuxService -Exactly 0
+        }
+
         It 'Throws an error if the service is not registered' -Skip:(!$IsLinux) {
             Mock -CommandName Test-PodeLinuxServiceIsRegistered -MockWith { $false }
 
-            { Start-PodeService -Name 'NonExistentService' } | Should -Throw
+            Start-PodeService -Name 'NonExistentService' | Should -BeFalse
         }
     }
 

@@ -97,6 +97,8 @@ function Start-PodeServiceHearthbeat {
                                 'shutdown' {
                                     # Process 'shutdown' message
                                     Write-PodeHost -Message 'Server requested shutdown. Closing Pode ...' -Force
+                                    $serviceState = 'stopping'
+                                    Write-PodeHost -Message "Service State: $serviceState" -Force
                                     Close-PodeServer  # Gracefully stop Pode server
                                     Start-Sleep 1
                                     Write-PodeHost -Message 'Closing Service Monitoring Heartbeat' -Force

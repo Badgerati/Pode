@@ -15,7 +15,8 @@ namespace PodeMonitor
         Unknown,    // State is unknown
         Running,    // Service is running
         Suspended,  // Service is suspended
-        Starting    // Service is starting
+        Starting,    // Service is starting
+        Stopping    // Service is stopping
     }
 
     /// <summary>
@@ -76,8 +77,17 @@ namespace PodeMonitor
             // Define the state file path only for Linux/macOS
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
+               string stateDirectory = OperatingSystem.IsLinux() ? "/run/podemonitor" :
+                        OperatingSystem.IsMacOS() ? "/private/var/run/podemonitor" :
+                        throw new PlatformNotSupportedException("The current platform is not supported for setting the state directory.");
+
+                if (!Directory.Exists(stateDirectory))
+                {
+                    Directory.CreateDirectory(stateDirectory);
+                }
                 // Define the state file path (default to /var/tmp for Linux/macOS)
-                _stateFilePath = Path.Combine("/var/tmp", $"PodeService_{Environment.ProcessId}.state");
+                _stateFilePath = Path.Combine(stateDirectory, $"{Environment.ProcessId}.state");
+
 
                 PodeMonitorLogger.Log(LogLevel.INFO, "PodeMonitor", Environment.ProcessId, $"Initialized PodeMonitor with pipe name: {_pipeName} and state file: {_stateFilePath}");
             }
@@ -172,8 +182,6 @@ namespace PodeMonitor
 
                         if (_powerShellProcess != null || !_powerShellProcess.HasExited || Process.GetProcessById(_powerShellProcess.Id) != null)
                         {
-                            //  var p=Process.GetProcessById(_powerShellProcess.Id);
-                            // p.Kill();
                             PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, "Pode process did not terminate gracefully. Killing process.");
                             _powerShellProcess.Kill();
                         }
@@ -260,6 +268,9 @@ namespace PodeMonitor
                         break;
                     case "starting":
                         UpdateServiceState(ServiceState.Starting);
+                        break;
+                    case "stopping":
+                        UpdateServiceState(ServiceState.Stopping);
                         break;
                     default:
                         PodeMonitorLogger.Log(LogLevel.WARN, "PodeMonitor", Environment.ProcessId, $"Unknown service state: {state}");

@@ -31,7 +31,7 @@ Describe 'Service Lifecycle' {
         start-sleep 5
       #  $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
         $status = . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
-        $status.Status | Should -Be 'Paused'
+        $status.Status | Should -Be 'Suspended'
         $status.Name | Should -Be 'Hello Service'
         $status.Pid | Should -BeGreaterThan 0
        # $webRequest | Should -BeNullOrEmpty
