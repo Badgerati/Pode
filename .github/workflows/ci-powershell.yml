@@ -51,8 +51,13 @@ jobs:
     - name: Run Pester Tests
       shell: powershell
       run: |
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        if ($env:ACTIONS_STEP_DEBUG -eq 'true') {
+        if ([string]::IsNullOrEmpty($env:ACTIONS_STEP_DEBUG)) {
+          $debug = $false
+        } else {
+            $debug = [bool]($env:ACTIONS_STEP_DEBUG -eq 'true')
+        }
+
+        if ($debug) {
             Invoke-Build Test -PesterVerbosity Diagnostic
         } else {
             Invoke-Build Test
