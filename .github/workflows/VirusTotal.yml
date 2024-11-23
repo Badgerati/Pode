@@ -36,7 +36,7 @@ jobs:
           echo "VIRUSTOTAL_API_KEY is not set. Exiting workflow."
           exit 1
         fi
-        echo "VIRUSTOTAL_API_KEY is set. Proceeding with the workflow.
+        echo "VIRUSTOTAL_API_KEY is set. Proceeding with the workflow."
 
     - uses: actions/checkout@v4
 
