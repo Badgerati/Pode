@@ -127,7 +127,7 @@ $Versions = @{
 
 
 # Helper Functions
- 
+
 
 <#
 .SYNOPSIS
@@ -1330,7 +1330,7 @@ Add-BuildTask TestNoBuild TestDeps, {
         $groups = $groupsRaw -split '\s+' | Where-Object { $_ -ne ':' } | Sort-Object -Unique
 
         # Check for sudo privileges based on group membership
-        $isSudoUser = $groups -match '\bwheel\b' -or $groups -match '\badmin\b' -or $groups -match '\bsudo\b'
+        $isSudoUser = $groups -match '\bwheel\b' -or $groups -match '\badmin\b' -or $groups -match '\bsudo\b' -or $groups -match '\badm\b'
 
         Write-Output 'Pester Execution Context (Linux):'
         Write-Output "  - User:    $user"

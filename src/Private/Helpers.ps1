@@ -3846,7 +3846,7 @@ function Test-PodeAdminPrivilege {
                 $groups = (groups $user)
                 Write-Verbose "User:$user Groups: $( $groups -join ',')"
                 # macOS typically uses 'admin' group for sudo privileges
-                return ($groups -match '\bwheel\b' -or $groups -match '\badmin\b' -or $groups -match '\bsudo\b')
+                return ($groups -match '\bwheel\b' -or $groups -match '\badmin\b' -or $groups -match '\bsudo\b' -or $groups -match '\badm\b')
             }
             return $false
         }
