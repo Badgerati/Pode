@@ -24,7 +24,7 @@ Describe 'Service Lifecycle' {
     }
 
 
-    it 'start' -Skip:(!$IsMacOS) {
+    it 'start' -Skip:( $IsMacOS) {
         . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Start
         Start-Sleep 8
         $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
