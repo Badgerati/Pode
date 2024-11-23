@@ -1,3 +1,85 @@
+<#
+.SYNOPSIS
+    Build script for the Pode project, defining tasks for compilation, testing, packaging, and deployment.
+
+.DESCRIPTION
+    This script uses Invoke-Build to automate the Pode project build process across different environments (Windows, macOS, Linux).
+    It includes tasks for setting up dependencies, compiling .NET targets, running tests, generating documentation, and packaging.
+
+.PARAMETER Version
+    Specifies the project version for stamping, packaging, and documentation. Defaults to '0.0.0'.
+
+.PARAMETER PesterVerbosity
+    Sets the verbosity level for Pester tests. Options: None, Normal, Detailed, Diagnostic.
+
+.PARAMETER PowerShellVersion
+    Defines the target PowerShell version for installation, e.g., 'lts' or a specific version.
+
+.PARAMETER ReleaseNoteVersion
+    Specifies the release version for generating release notes.
+
+.PARAMETER UICulture
+    Sets the culture for running tests, defaulting to 'en-US'.
+
+.PARAMETER TargetFrameworks
+    Specifies the target .NET frameworks for building the project, e.g., netstandard2.0, net8.0.
+
+.PARAMETER SdkVersion
+    Sets the SDK version used for building .NET projects, defaulting to net8.0.
+
+.NOTES
+    This build script requires Invoke-Build. Below is a list of all available tasks:
+
+    - Default: Lists all available tasks.
+    - StampVersion: Stamps the specified version onto the module.
+    - PrintChecksum: Generates and displays a checksum of the ZIP archive.
+    - ChocoDeps: Installs Chocolatey (for Windows).
+    - BuildDeps: Installs dependencies required for building/compiling.
+    - TestDeps: Installs dependencies required for testing.
+    - DocsDeps: Installs dependencies required for documentation generation.
+    - IndexSamples: Indexes sample files for documentation.
+    - Build: Builds the .NET Listener for specified frameworks.
+    - DeliverableFolder: Creates a folder for deliverables.
+    - Compress: Compresses the module into a ZIP format for distribution.
+    - ChocoPack: Creates a Chocolatey package of the module (Windows only).
+    - DockerPack: Builds Docker images for the module.
+    - Pack: Packages the module, including ZIP, Chocolatey, and Docker.
+    - PackageFolder: Creates the `pkg` folder for module packaging.
+    - TestNoBuild: Runs tests without building, including Pester tests.
+    - Test: Runs tests after building the project.
+    - CheckFailedTests: Checks if any tests failed and throws an error if so.
+    - PushCodeCoverage: Pushes code coverage results to a coverage service.
+    - Docs: Serves the documentation locally for review.
+    - DocsHelpBuild: Builds function help documentation.
+    - DocsBuild: Builds the documentation for distribution.
+    - Clean: Cleans the build environment, removing all generated files.
+    - CleanDeliverable: Removes the `deliverable` folder.
+    - CleanPkg: Removes the `pkg` folder.
+    - CleanLibs: Removes the `Libs` folder under `src`.
+    - CleanListener: Removes the Listener folder.
+    - CleanDocs: Cleans up generated documentation files.
+    - Install-Module: Installs the Pode module locally.
+    - Remove-Module: Removes the Pode module from the local registry.
+    - SetupPowerShell: Sets up the PowerShell environment for the build.
+    - ReleaseNotes: Generates release notes based on merged pull requests.
+
+.EXAMPLE
+    Invoke-Build -Task Default
+        # Displays a list of all available tasks.
+
+    Invoke-Build -Task Build -Version '1.2.3'
+        # Compiles the project for the specified version.
+
+    Invoke-Build -Task Test
+        # Runs tests on the project, including Pester tests.
+
+    Invoke-Build -Task Docs
+        # Builds and serves the documentation locally.
+
+.LINK
+    For more information, visit https://github.com/Badgerati/Pode
+#>
+
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
@@ -19,45 +101,155 @@ param(
     $ReleaseNoteVersion,
 
     [string]
-    $UICulture = 'en-US'
+    $UICulture = 'en-US',
+
+    [string[]]
+    [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
+    $TargetFrameworks = @('netstandard2.0', 'net8.0', 'net9.0'),
+
+    [string]
+    [ValidateSet('netstandard2.0', 'net8.0', 'net9.0', 'net10.0')]
+    $SdkVersion = 'net9.0'
 )
 
-# Fix for PS7.5 Preview - https://github.com/PowerShell/PowerShell/issues/23868
-$ProgressPreference = 'SilentlyContinue'
-
-<#
 # Dependency Versions
-#>
 $Versions = @{
     Pester      = '5.6.1'
-    MkDocs      = '1.6.0'
+    MkDocs      = '1.6.1'
     PSCoveralls = '1.0.0'
-    SevenZip    = '18.5.0.20180730'
-    DotNet      = '8.0'
-    MkDocsTheme = '9.5.23'
+    DotNet      = $SdkVersion
+    MkDocsTheme = '9.5.44'
     PlatyPS     = '0.14.2'
 }
 
-<#
+
 # Helper Functions
+
+<#
+.SYNOPSIS
+    Checks if the current environment is running on Windows.
+
+.DESCRIPTION
+    This function determines if the current PowerShell session is running on Windows.
+    It inspects `$PSVersionTable.Platform` and `$PSVersionTable.PSEdition` to verify the OS,
+    returning `$true` for Windows and `$false` for other platforms.
+
+.OUTPUTS
+    [bool] - Returns `$true` if the current environment is Windows, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildIsWindows) {
+        Write-Host "This script is running on Windows."
+    }
+
+.NOTES
+    - Useful for cross-platform scripts to conditionally execute Windows-specific commands.
+    - The `$PSVersionTable.Platform` variable may be `$null` in certain cases, so `$PSEdition` is used as an additional check.
 #>
 function Test-PodeBuildIsWindows {
     $v = $PSVersionTable
     return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
 }
 
+<#
+.SYNOPSIS
+    Checks if the script is running in a GitHub Actions environment.
+
+.DESCRIPTION
+    This function verifies if the script is running in a GitHub Actions environment
+    by checking if the `GITHUB_REF` environment variable is defined and not empty.
+    It returns `$true` if the variable is present, indicating a GitHub Actions environment.
+
+.OUTPUTS
+    [bool] - Returns `$true` if the script is running on GitHub Actions, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildIsGitHub) {
+        Write-Host "Running in GitHub Actions."
+    }
+
+.NOTES
+    - This function is useful for CI/CD pipelines to identify if the script is running in GitHub Actions.
+    - Assumes that `GITHUB_REF` is always set in a GitHub Actions environment.
+#>
 function Test-PodeBuildIsGitHub {
     return (![string]::IsNullOrWhiteSpace($env:GITHUB_REF))
 }
 
+<#
+.SYNOPSIS
+    Checks if code coverage is enabled for the build.
+
+.DESCRIPTION
+    This function checks if code coverage is enabled by evaluating the `PODE_RUN_CODE_COVERAGE`
+    environment variable. If the variable contains '1' or 'true' (case-insensitive), it returns `$true`;
+    otherwise, it returns `$false`.
+
+.OUTPUTS
+    [bool] - Returns `$true` if code coverage is enabled, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildCanCodeCoverage) {
+        Write-Host "Code coverage is enabled for this build."
+    }
+
+.NOTES
+    - Useful for conditional logic in build scripts that should only execute code coverage-related tasks if enabled.
+    - The `PODE_RUN_CODE_COVERAGE` variable is typically set by the CI/CD environment or the user.
+#>
 function Test-PodeBuildCanCodeCoverage {
     return (@('1', 'true') -icontains $env:PODE_RUN_CODE_COVERAGE)
 }
 
+<#
+.SYNOPSIS
+    Returns the name of the CI/CD service being used for the build.
+
+.DESCRIPTION
+    This function returns a string representing the CI/CD service in use.
+    Currently, it always returns 'github-actions', indicating that the build
+    is running in GitHub Actions.
+
+.OUTPUTS
+    [string] - The name of the CI/CD service, which is 'github-actions'.
+
+.EXAMPLE
+    $service = Get-PodeBuildService
+    Write-Host "The build service is: $service"
+    # Output: The build service is: github-actions
+
+.NOTES
+    - This function is useful for identifying the CI/CD service in logs or reporting.
+    - Future modifications could extend this function to detect other CI/CD services.
+#>
 function Get-PodeBuildService {
     return 'github-actions'
 }
 
+<#
+.SYNOPSIS
+    Checks if a specified command is available on the system.
+
+.DESCRIPTION
+    This function checks if a given command is available in the system's PATH.
+    On Windows, it uses `Get-Command`, and on Unix-based systems, it uses `which`.
+    It returns `$true` if the command exists and `$false` if it does not.
+
+.PARAMETER cmd
+    The name of the command to check for availability (e.g., 'choco', 'brew').
+
+.OUTPUTS
+    [bool] - Returns `$true` if the command is found, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildCommand -Cmd 'git') {
+        Write-Host "Git is available."
+    }
+
+.NOTES
+    - This function supports both Windows and Unix-based platforms.
+    - Requires `Test-PodeBuildIsWindows` to detect the OS type.
+#>
 function Test-PodeBuildCommand($cmd) {
     $path = $null
 
@@ -71,10 +263,59 @@ function Test-PodeBuildCommand($cmd) {
     return (![string]::IsNullOrWhiteSpace($path))
 }
 
+<#
+.SYNOPSIS
+    Retrieves the branch name from the GitHub Actions environment variable.
+
+.DESCRIPTION
+    This function extracts the branch name from the `GITHUB_REF` environment variable,
+    which is commonly set in GitHub Actions workflows. It removes the 'refs/heads/' prefix
+    from the branch reference, leaving only the branch name.
+
+.OUTPUTS
+    [string] - The name of the GitHub branch.
+
+.EXAMPLE
+    $branch = Get-PodeBuildBranch
+    Write-Host "Current branch: $branch"
+    # Output example: Current branch: main
+
+.NOTES
+    - Only relevant in environments where `GITHUB_REF` is defined (e.g., GitHub Actions).
+    - Returns an empty string if `GITHUB_REF` is not set.
+#>
 function Get-PodeBuildBranch {
     return ($env:GITHUB_REF -ireplace 'refs\/heads\/', '')
 }
 
+<#
+.SYNOPSIS
+    Installs a specified package using the appropriate package manager for the OS.
+
+.DESCRIPTION
+    This function installs a specified package at a given version using platform-specific
+    package managers. For Windows, it uses Chocolatey (`choco`). On Unix-based systems,
+    it checks for `brew`, `apt-get`, and `yum` to handle installations. The function sets
+    the security protocol to TLS 1.2 to ensure secure connections during the installation.
+
+.PARAMETER name
+    The name of the package to install (e.g., 'git').
+
+.PARAMETER version
+    The version of the package to install, required only for Chocolatey on Windows.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Invoke-PodeBuildInstall -Name 'git' -Version '2.30.0'
+    # Installs version 2.30.0 of Git on Windows if Chocolatey is available.
+
+.NOTES
+    - Requires administrator or sudo privileges on Unix-based systems.
+    - This function supports package installation on both Windows and Unix-based systems.
+    - If `choco` is available, it will use `choco` for Windows, and `brew`, `apt-get`, or `yum` for Unix-based systems.
+#>
 function Invoke-PodeBuildInstall($name, $version) {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
@@ -96,6 +337,30 @@ function Invoke-PodeBuildInstall($name, $version) {
     }
 }
 
+<#
+.SYNOPSIS
+    Installs a specified PowerShell module if it is not already installed at the required version.
+
+.DESCRIPTION
+    This function checks if the specified PowerShell module is available in the current session
+    at the specified version. If not, it installs the module using the PowerShell Gallery, setting
+    the security protocol to TLS 1.2. The module is installed in the current user's scope.
+
+.PARAMETER name
+    The name of the PowerShell module to check and install.
+
+.OUTPUTS
+    None.
+
+.EXAMPLE
+    Install-PodeBuildModule -Name 'Pester'
+    # Installs the 'Pester' module if the specified version is not already installed.
+
+.NOTES
+    - Uses `$Versions` hashtable to look up the required version for the module.
+    - Requires internet access to download modules from the PowerShell Gallery.
+    - The `-SkipPublisherCheck` parameter bypasses publisher verification; use with caution.
+#>
 function Install-PodeBuildModule($name) {
     if ($null -ne ((Get-Module -ListAvailable $name) | Where-Object { $_.Version -ieq $Versions[$name] })) {
         return
@@ -106,56 +371,230 @@ function Install-PodeBuildModule($name) {
     Install-Module -Name "$($name)" -Scope CurrentUser -RequiredVersion "$($Versions[$name])" -Force -SkipPublisherCheck
 }
 
-function Invoke-PodeBuildDotnetBuild($target) {
-    # Retrieve the highest installed SDK version
-    $majorVersion = ([version](dotnet --version)).Major
+<#
+.SYNOPSIS
+    Converts a .NET target framework identifier to a numeric version.
 
-    # Determine if the target framework is compatible
-    $isCompatible = $False
-    switch ($majorVersion) {
-        9 { if ($target -in @('net6.0', 'netstandard2.0', 'net8.0', 'net9.0')) { $isCompatible = $True } }
-        8 { if ($target -in @('net6.0', 'net48', 'net8.0')) { $isCompatible = $True } }
-        7 { if ($target -in @('net6.0', 'net48')) { $isCompatible = $True } }
-        6 { if ($target -in @('net6.0', 'net48')) { $isCompatible = $True } }
+.DESCRIPTION
+    This function maps common .NET target framework identifiers (e.g., 'netstandard2.0', 'net9.0') to their
+    numeric equivalents. It is used to ensure compatibility by returning the framework version number as an integer.
+
+.PARAMETER TargetFrameworks
+    The target framework identifier (e.g., 'netstandard2.0', 'net9.0').
+
+.OUTPUTS
+    [int] - The numeric version of the target framework. Defaults to 2 if an unrecognized framework is provided.
+
+.EXAMPLE
+    $version = Get-PodeBuildTargetFramework -TargetFrameworks 'net9.0'
+    Write-Host "Target framework version: $version"
+    # Output: Target framework version: 6
+
+.NOTES
+    - Returns 2 (netstandard2.0) by default if the input framework is not recognized.
+    - This function is useful in build scripts that require target framework versioning.
+#>
+function Get-PodeBuildTargetFramework {
+    param(
+        [string]
+        $TargetFrameworks
+    )
+
+    switch ($TargetFrameworks) {
+        'netstandard2.0' { return  2 }
+        'net8.0' { return 8 }
+        'net9.0' { return  9 }
+        'net10.0' { return  10 }
+        default {
+            Write-Warning "$TargetFrameworks is not a valid Framework. Rollback to netstandard2.0"
+            return 2
+        }
     }
+}
 
-    # Skip build if not compatible
-    if ($isCompatible) {
-        Write-Host "SDK for target framework $target is compatible with the installed SDKs"
+<#
+.SYNOPSIS
+    Converts a .NET target framework version number to a framework identifier.
+
+.DESCRIPTION
+    This function maps a numeric version to a .NET target framework identifier (e.g., '2' to 'netstandard2.0').
+    If the version number is not recognized, it defaults to 'netstandard2.0'.
+
+.PARAMETER Version
+    The numeric version of the .NET target framework (e.g., 2, 6, 8).
+
+.OUTPUTS
+    [string] - The target framework identifier (e.g., 'netstandard2.0').
+
+.EXAMPLE
+    $frameworkName = Get-PodeBuildTargetFrameworkName -Version 9
+    Write-Host "Target framework name: $frameworkName"
+    # Output: Target framework name: net9.0
+
+.NOTES
+    - Returns 'netstandard2.0' by default if an unrecognized version is provided.
+    - Useful for converting numeric framework versions to identifier strings in build processes.
+#>
+function Get-PodeBuildTargetFrameworkName {
+    param(
+        $Version
+    )
+
+    switch ( $Version) {
+        '2' { return 'netstandard2.0' }
+        '8' { return  'net8.0' }
+        '9' { return 'net9.0' }
+        '10' { return 'net10.0' }
+        default {
+            Write-Warning "$Version is not a valid Framework. Rollback to netstandard2.0"
+            return 'netstandard2.0'
+        }
+    }
+}
+
+function Invoke-PodeBuildDotnetBuild {
+    param (
+        [string]$target
+    )
+
+    # Retrieve the installed SDK versions
+    $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+    if ([string]::IsNullOrEmpty($AvailableSdkVersion)) {
+        $majorVersions = $sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique
     }
     else {
-        Write-Host "SDK for target framework $target is not compatible with the installed SDKs. Skipping build."
+        $majorVersions = $sdkVersions.Where( { ([version]$_).Major -ge (Get-PodeBuildTargetFramework -TargetFrameworks $AvailableSdkVersion) } ) | Sort-Object -Descending | Select-Object -Unique
+    }
+    # Map target frameworks to minimum SDK versions
+
+    if ($null -eq $majorVersions) {
+        Write-Error "The requested '$AvailableSdkVersion' framework is not available."
         return
     }
+    $requiredSdkVersion = Get-PodeBuildTargetFramework -TargetFrameworks $target
+
+    # Determine if the target framework is compatible
+    $isCompatible = $majorVersions -ge $requiredSdkVersion
+
+    if ($isCompatible) {
+        Write-Output "SDK for target framework '$target' is compatible with the '$AvailableSdkVersion' framework."
+    }
+    else {
+        Write-Warning "SDK for target framework '$target' is not compatible with the '$AvailableSdkVersion' framework. Skipping build."
+        return
+    }
+
+    # Optionally set assembly version
     if ($Version) {
-        Write-Host "Assembly Version $Version"
+        Write-Output "Assembly Version: $Version"
         $AssemblyVersion = "-p:Version=$Version"
     }
     else {
         $AssemblyVersion = ''
     }
 
+    # Use dotnet publish for .NET Core and .NET 5+
     dotnet publish --configuration Release --self-contained --framework $target $AssemblyVersion --output ../Libs/$target
+
     if (!$?) {
-        throw "dotnet publish failed for $($target)"
+        throw "Build failed for target framework '$target'."
     }
-
 }
 
+<#
+.SYNOPSIS
+    Retrieves the end-of-life (EOL) and supported versions of PowerShell.
+
+.DESCRIPTION
+    This function queries an online API to retrieve the EOL and supported versions of PowerShell.
+    It uses the `Invoke-RestMethod` cmdlet to access data from endoflife.date and returns an object
+    with comma-separated lists of supported and EOL PowerShell versions based on the current date.
+
+.OUTPUTS
+    [hashtable] - A hashtable containing:
+                  - `eol`: Comma-separated string of EOL PowerShell versions.
+                  - `supported`: Comma-separated string of supported PowerShell versions.
+
+.EXAMPLE
+    $pwshEOLInfo = Get-PodeBuildPwshEOL
+    Write-Host "Supported PowerShell versions: $($pwshEOLInfo.supported)"
+    Write-Host "EOL PowerShell versions: $($pwshEOLInfo.eol)"
+
+.NOTES
+    - Requires internet access to query the endoflife.date API.
+    - If the request fails, the function returns an empty string for both `eol` and `supported`.
+    - API URL: https://endoflife.date/api/powershell.json
+#>
 function Get-PodeBuildPwshEOL {
-    $eol = Invoke-RestMethod -Uri 'https://endoflife.date/api/powershell.json' -Headers @{ Accept = 'application/json' }
-    return @{
-        eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
-        supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
+    $uri = 'https://endoflife.date/api/powershell.json'
+    try {
+        $eol = Invoke-RestMethod -Uri $uri -Headers @{ Accept = 'application/json' }
+        return @{
+            eol       = ($eol | Where-Object { [datetime]$_.eol -lt [datetime]::Now }).cycle -join ','
+            supported = ($eol | Where-Object { [datetime]$_.eol -ge [datetime]::Now }).cycle -join ','
+        }
+    }
+    catch {
+        Write-Warning "Invoke-RestMethod to $uri failed: $($_.ErrorDetails.Message)"
+        return  @{
+            eol       = ''
+            supported = ''
+        }
     }
 }
 
+<#
+.SYNOPSIS
+    Checks if the current OS is Windows.
+
+.DESCRIPTION
+    This function detects whether the current operating system is Windows by checking
+    the `$IsWindows` automatic variable, the presence of the `$env:ProgramFiles` variable,
+    and the PowerShell Edition in `$PSVersionTable`. This function returns `$true` if
+    any of these indicate Windows.
+
+.OUTPUTS
+    [bool] - Returns `$true` if the OS is Windows, otherwise `$false`.
+
+.EXAMPLE
+    if (Test-PodeBuildOSWindows) {
+        Write-Host "Running on Windows"
+    }
+
+.NOTES
+    - Useful for distinguishing between Windows and Unix-based systems for conditional logic.
+    - May return `$true` in environments where Windows-related environment variables are present.
+#>
 function Test-PodeBuildOSWindows {
     return ($IsWindows -or
         ![string]::IsNullOrEmpty($env:ProgramFiles) -or
         (($PSVersionTable.Keys -contains 'PSEdition') -and ($PSVersionTable.PSEdition -eq 'Desktop')))
 }
 
+<#
+.SYNOPSIS
+    Retrieves the current OS name in a PowerShell-compatible format.
+
+.DESCRIPTION
+    This function identifies the current operating system and returns a standardized string
+    representing the OS name ('win' for Windows, 'linux' for Linux, and 'osx' for macOS).
+    It relies on the `Test-PodeBuildOSWindows` function for Windows detection and `$IsLinux`
+    and `$IsMacOS` for Linux and macOS, respectively.
+
+.OUTPUTS
+    [string] - A string representing the OS name:
+               - 'win' for Windows
+               - 'linux' for Linux
+               - 'osx' for macOS
+
+.EXAMPLE
+    $osName = Get-PodeBuildOSPwshName
+    Write-Host "Operating system name: $osName"
+
+.NOTES
+    - This function enables cross-platform compatibility by standardizing OS name detection.
+    - For accurate results, ensure `$IsLinux` and `$IsMacOS` variables are defined for Unix-like systems.
+#>
 function Get-PodeBuildOSPwshName {
     if (Test-PodeBuildOSWindows) {
         return 'win'
@@ -170,54 +609,158 @@ function Get-PodeBuildOSPwshName {
     }
 }
 
+<#
+.SYNOPSIS
+    Determines the OS architecture for the current system.
+
+.DESCRIPTION
+    This function detects the operating system's architecture and converts it into a format
+    compatible with PowerShell installation requirements. It handles both Windows and Unix-based
+    systems and maps various architecture identifiers to PowerShell-supported names (e.g., 'x64', 'arm64').
+
+.OUTPUTS
+    [string] - The architecture string, such as 'x64', 'x86', 'arm64', or 'arm32'.
+
+.EXAMPLE
+    $arch = Get-PodeBuildOSPwshArchitecture
+    Write-Host "Current architecture: $arch"
+
+.NOTES
+    - For Windows, the architecture is derived from the `PROCESSOR_ARCHITECTURE` environment variable.
+    - For Unix-based systems, the architecture is determined using the `uname -m` command.
+    - If the architecture is not supported, the function throws an exception.
+#>
 function Get-PodeBuildOSPwshArchitecture {
+    # Initialize architecture variable
     $arch = [string]::Empty
 
-    # windows
+    # Detect architecture on Windows
     if (Test-PodeBuildOSWindows) {
         $arch = $env:PROCESSOR_ARCHITECTURE
     }
 
-    # unix
+    # Detect architecture on Unix-based systems (Linux/macOS)
     if ($IsLinux -or $IsMacOS) {
         $arch = uname -m
     }
 
+    # Output detected architecture for debugging
     Write-Host "OS Architecture: $($arch)"
 
-    # convert to pwsh arch
+    # Convert detected architecture to a PowerShell-compatible format
     switch ($arch.ToLowerInvariant()) {
-        'amd64' { return 'x64' }
-        'x86' { return 'x86' }
-        'x86_64' { return 'x64' }
-        'armv7*' { return 'arm32' }
-        'aarch64*' { return 'arm64' }
-        'arm64' { return 'arm64' }
-        'arm64*' { return 'arm64' }
-        'armv8*' { return 'arm64' }
-        default { throw "Unsupported architecture: $($arch)" }
+        'amd64' { return 'x64' }          # 64-bit architecture (AMD64)
+        'x86' { return 'x86' }            # 32-bit architecture
+        'x86_64' { return 'x64' }         # 64-bit architecture (x86_64)
+        'armv7*' { return 'arm32' }       # 32-bit ARM architecture
+        'aarch64*' { return 'arm64' }     # 64-bit ARM architecture
+        'arm64' { return 'arm64' }        # Explicit ARM64
+        'arm64*' { return 'arm64' }       # Pattern matching for ARM64
+        'armv8*' { return 'arm64' }       # ARM v8 series
+        default { throw "Unsupported architecture: $($arch)" } # Throw exception for unsupported architectures
     }
 }
 
+
+<#
+.SYNOPSIS
+    Converts a PowerShell tag to a version number.
+
+.DESCRIPTION
+    This function retrieves PowerShell build information for a specified tag by querying
+    an online API. It then extracts and returns the release version associated with the tag.
+
+.PARAMETER PowerShellVersion
+    The PowerShell version tag to retrieve build information for (e.g., 'lts', 'stable', or a specific version).
+
+.OUTPUTS
+    [string] - The extracted version number corresponding to the provided tag.
+
+.EXAMPLE
+    $version = Convert-PodeBuildOSPwshTagToVersion
+    Write-Host "Resolved PowerShell version: $version"
+
+.NOTES
+    This function depends on internet connectivity to query the build information API.
+#>
 function Convert-PodeBuildOSPwshTagToVersion {
+    # Query PowerShell build info API with the specified tag
     $result = Invoke-RestMethod -Uri "https://aka.ms/pwsh-buildinfo-$($PowerShellVersion)"
+
+    # Extract and return the release tag without the leading 'v'
     return $result.ReleaseTag -ireplace '^v'
 }
 
-function Install-PodeBuildPwshWindows($target) {
+<#
+.SYNOPSIS
+    Installs PowerShell on a Windows system.
+
+.DESCRIPTION
+    This function installs PowerShell by copying files from a specified target directory
+    to the standard installation folder on a Windows system. It first removes any existing
+    installation in the Target directory.
+
+.PARAMETER Target
+    The directory containing the PowerShell installation files.
+
+.EXAMPLE
+    Install-PodeBuildPwshWindows -Target 'C:\Temp\PowerShell'
+    # Installs PowerShell from the 'C:\Temp\PowerShell' directory.
+
+.NOTES
+    This function requires administrative privileges to modify the Program Files directory.
+#>
+function Install-PodeBuildPwshWindows {
+    param (
+        [string]
+        $Target
+    )
+
+    # Define the installation folder path
     $installFolder = "$($env:ProgramFiles)\PowerShell\7"
 
+    # Remove the existing installation, if any
     if (Test-Path $installFolder) {
         Remove-Item $installFolder -Recurse -Force -ErrorAction Stop
     }
 
-    Copy-Item -Path "$($target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
+    # Copy the new PowerShell files to the installation folder
+    Copy-Item -Path "$($Target)\" -Destination "$($installFolder)\" -Recurse -ErrorAction Stop
 }
 
-function Install-PodeBuildPwshUnix($target) {
-    $targetFullPath = Join-Path -Path $target -ChildPath 'pwsh'
+
+<#
+.SYNOPSIS
+    Installs PowerShell on a Unix-based system.
+
+.DESCRIPTION
+    This function installs PowerShell on Unix-based systems by copying files from a specified Target directory,
+    setting appropriate permissions, and creating a symbolic link to the PowerShell binary.
+
+.PARAMETER Target
+    The directory containing the PowerShell installation files.
+
+.EXAMPLE
+    Install-PodeBuildPwshUnix -Target '/tmp/powershell'
+    # Installs PowerShell from the '/tmp/powershell' directory.
+
+.NOTES
+    - This function requires administrative privileges to create symbolic links in system directories.
+    - The `sudo` command is used if the script is not run as root.
+#>
+function Install-PodeBuildPwshUnix {
+    param (
+        [string]
+        $Target
+    )
+
+    # Define the full path to the PowerShell binary
+    $targetFullPath = Join-Path -Path $Target -ChildPath 'pwsh'
+
+    # Set executable permissions on the PowerShell binary
     $null = chmod 755 $targetFullPath
 
+    # Determine the symbolic link location based on the operating system
     $symlink = $null
     if ($IsMacOS) {
         $symlink = '/usr/local/bin/pwsh'
@@ -226,6 +769,7 @@ function Install-PodeBuildPwshUnix($target) {
         $symlink = '/usr/bin/pwsh'
     }
 
+    # Check if the script is run as root
     $uid = id -u
     if ($uid -ne '0') {
         $sudo = 'sudo'
@@ -234,27 +778,98 @@ function Install-PodeBuildPwshUnix($target) {
         $sudo = ''
     }
 
-    # Make symbolic link point to installed path
+    # Create a symbolic link to the PowerShell binary
     & $sudo ln -fs $targetFullPath $symlink
 }
 
+<#
+.SYNOPSIS
+    Retrieves the currently installed PowerShell version.
+
+.DESCRIPTION
+    This function runs the `pwsh -v` command and parses the output to return only the version number.
+    This is useful for verifying the PowerShell version in the build environment.
+
+.OUTPUTS
+    [string] - The current PowerShell version.
+
+.EXAMPLE
+    $version = Get-PodeBuildCurrentPwshVersion
+    Write-Host "Current PowerShell version: $version"
+
+.NOTES
+    This function assumes that `pwsh` is available in the system PATH.
+#>
 function Get-PodeBuildCurrentPwshVersion {
+    # Run pwsh command, split by spaces, and return the version component
     return ("$(pwsh -v)" -split ' ')[1].Trim()
 }
 
-function Invoke-PodeBuildDockerBuild($tag, $file) {
-    docker build -t badgerati/pode:$tag -f $file .
+<#
+.SYNOPSIS
+    Builds a Docker image and tags it for the Pode project.
+
+.DESCRIPTION
+    This function uses the Docker CLI to build an image for Pode, then tags it for GitHub Packages.
+    The function takes a tag and a Dockerfile path as parameters to build and tag the Docker image.
+
+.PARAMETER Tag
+    The Docker image tag, typically a version number or label (e.g., 'latest').
+
+.PARAMETER File
+    The path to the Dockerfile to use for building the image.
+
+.EXAMPLE
+    Invoke-PodeBuildDockerBuild -Tag '1.0.0' -File './Dockerfile'
+    # Builds a Docker image using './Dockerfile' and tags it as 'badgerati/pode:1.0.0'.
+
+.NOTES
+    Requires Docker to be installed and available in the system PATH.
+#>
+function Invoke-PodeBuildDockerBuild {
+    param (
+        [string]
+        $Tag,
+        [string]
+        $File
+    )
+
+    # Build the Docker image with the specified tag and Dockerfile
+    docker build -t badgerati/pode:$Tag -f $File .
     if (!$?) {
-        throw "docker build failed for $($tag)"
+        throw "docker build failed for $($Tag)"
     }
 
-    docker tag badgerati/pode:$tag docker.pkg.github.com/badgerati/pode/pode:$tag
+    # Tag the image for GitHub Packages
+    docker tag badgerati/pode:$Tag docker.pkg.github.com/badgerati/pode/pode:$Tag
     if (!$?) {
-        throw "docker tag failed for $($tag)"
+        throw "docker tag failed for $($Tag)"
     }
 }
 
+
+<#
+.SYNOPSIS
+    Splits the PSModulePath environment variable into an array of paths.
+
+.DESCRIPTION
+    This function checks the operating system and splits the PSModulePath variable based on the appropriate separator:
+    ';' for Windows and ':' for Unix-based systems.
+
+.OUTPUTS
+    [string[]] - An array of paths from the PSModulePath variable.
+
+.EXAMPLE
+    $paths = Split-PodeBuildPwshPath
+    foreach ($path in $paths) {
+        Write-Host $path
+    }
+
+.NOTES
+    This function enables cross-platform support by handling path separators for Windows and Unix-like systems.
+#>
 function Split-PodeBuildPwshPath {
+    # Check if OS is Windows, then split PSModulePath by ';', otherwise use ':'
     if (Test-PodeBuildOSWindows) {
         return $env:PSModulePath -split ';'
     }
@@ -264,12 +879,63 @@ function Split-PodeBuildPwshPath {
 }
 
 
+
+# Check if the script is running under Invoke-Build
+if (($null -eq $PSCmdlet.MyInvocation) -or ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('BuildRoot') -and ($null -eq $BuildRoot))) {
+    Write-Host 'This script is intended to be run with Invoke-Build. Please use Invoke-Build to execute the tasks defined in this script.' -ForegroundColor Yellow
+    return
+}
+
+
+Add-BuildTask Default {
+    Write-Host 'Tasks in the Build Script:' -ForegroundColor DarkMagenta
+    Write-Host
+    Write-Host 'Primary Tasks:' -ForegroundColor Green
+    Write-Host '- Default: Lists all available tasks.'
+    Write-Host '- Build: Builds the .NET Listener for specified frameworks.'
+    Write-Host '- Pack: Packages the module, including ZIP, Chocolatey, and Docker.'
+    Write-Host '- Test: Runs tests after building the project.'
+    Write-Host '- Clean: Cleans the build environment, removing all generated files.'
+    Write-Host '- Install-Module: Installs the Pode module locally.'
+    Write-Host '- Remove-Module: Removes the Pode module from the local registry.'
+    Write-Host '- DocsBuild: Builds the documentation for distribution.'
+    Write-Host '- TestNoBuild: Runs tests without building, including Pester tests.'
+
+
+    Write-Host
+    Write-Host 'Other Tasks:' -ForegroundColor Green
+    Write-Host '- StampVersion: Stamps the specified version onto the module.'
+    Write-Host '- PrintChecksum: Generates and displays a checksum of the ZIP archive.'
+    Write-Host '- ChocoDeps: Installs Chocolatey (for Windows).'
+    Write-Host '- BuildDeps: Installs dependencies required for building/compiling.'
+    Write-Host '- TestDeps: Installs dependencies required for testing.'
+    Write-Host '- DocsDeps: Installs dependencies required for documentation generation.'
+    Write-Host '- IndexSamples: Indexes sample files for documentation.'
+    Write-Host '- DeliverableFolder: Creates a folder for deliverables.'
+    Write-Host '- Compress: Compresses the module into a ZIP format for distribution.'
+    Write-Host '- ChocoPack: Creates a Chocolatey package of the module (Windows only).'
+    Write-Host '- DockerPack: Builds Docker images for the module.'
+    Write-Host "- PackageFolder: Creates the `pkg` folder for module packaging."
+    Write-Host '- CheckFailedTests: Checks if any tests failed and throws an error if so.'
+    Write-Host '- PushCodeCoverage: Pushes code coverage results to a coverage service.'
+    Write-Host '- Docs: Serves the documentation locally for review.'
+    Write-Host '- DocsHelpBuild: Builds function help documentation.'
+    Write-Host "- CleanDeliverable: Removes the `deliverable` folder."
+    Write-Host "- CleanPkg: Removes the `pkg` folder."
+    Write-Host "- CleanLibs: Removes the `Libs` folder under `src`."
+    Write-Host '- CleanListener: Removes the Listener folder.'
+    Write-Host '- CleanDocs: Cleans up generated documentation files.'
+    Write-Host '- SetupPowerShell: Sets up the PowerShell environment for the build.'
+    Write-Host '- ReleaseNotes: Generates release notes based on merged pull requests.'
+}
+
+
 <#
 # Helper Tasks
 #>
 
 # Synopsis: Stamps the version onto the Module
-Task StampVersion {
+Add-BuildTask StampVersion {
     $pwshVersions = Get-PodeBuildPwshEOL
     (Get-Content ./pkg/Pode.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version -replace '\$versionsUntested\$', $pwshVersions.eol -replace '\$versionsSupported\$', $pwshVersions.supported -replace '\$buildyear\$', ((get-date).Year) } | Set-Content ./pkg/Pode.psd1
     (Get-Content ./pkg/Pode.Internal.psd1) | ForEach-Object { $_ -replace '\$version\$', $Version } | Set-Content ./pkg/Pode.Internal.psd1
@@ -278,7 +944,7 @@ Task StampVersion {
 }
 
 # Synopsis: Generating a Checksum of the Zip
-Task PrintChecksum {
+Add-BuildTask PrintChecksum {
     $Script:Checksum = (Get-FileHash "./deliverable/$Version-Binaries.zip" -Algorithm SHA256).Hash
     Write-Host "Checksum: $($Checksum)"
 }
@@ -289,37 +955,55 @@ Task PrintChecksum {
 #>
 
 # Synopsis: Installs Chocolatey
-Task ChocoDeps -If (Test-PodeBuildIsWindows) {
+Add-BuildTask ChocoDeps -If (Test-PodeBuildIsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
         Invoke-Expression ([System.Net.WebClient]::new().DownloadString('https://chocolatey.org/install.ps1'))
     }
 }
 
-# Synopsis: Install dependencies for packaging
-Task PackDeps -If (Test-PodeBuildIsWindows) ChocoDeps, {
-    if (!(Test-PodeBuildCommand '7z')) {
-        Invoke-PodeBuildInstall '7zip' $Versions.SevenZip
-    }
-}
-
 # Synopsis: Install dependencies for compiling/building
-Task BuildDeps {
+Add-BuildTask BuildDeps {
     # install dotnet
     if (Test-PodeBuildIsWindows) {
         $dotnet = 'dotnet'
     }
+    elseif (Test-PodeBuildCommand 'brew') {
+        $dotnet = 'dotnet-sdk'
+    }
     else {
-        $dotnet = "dotnet-sdk-$($Versions.DotNet)"
+        $dotnet = "dotnet-sdk-$SdkVersion"
     }
 
-    if (!(Test-PodeBuildCommand 'dotnet')) {
-        Invoke-PodeBuildInstall $dotnet $Versions.DotNet
+    try {
+        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
     }
+    catch {
+        Invoke-PodeBuildInstall $dotnet $SdkVersion
+        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+    }
+    $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
+    $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
+
+    if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+        Invoke-PodeBuildInstall $dotnet $SdkVersion
+        $sdkVersions = dotnet --list-sdks | ForEach-Object { $_.Split('[')[0].Trim() }
+        $majorVersions = ($sdkVersions | ForEach-Object { ([version]$_).Major } | Sort-Object -Descending | Select-Object -Unique)[0]
+        $script:AvailableSdkVersion = Get-PodeBuildTargetFrameworkName  -Version $majorVersions
+
+        if ($majorVersions -lt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+            Write-Error "The requested framework '$SdkVersion' is not available."
+            return
+        }
+    }
+    elseif ($majorVersions -gt (Get-PodeBuildTargetFramework -TargetFrameworks $SdkVersion)) {
+        Write-Warning "The requested SDK version '$SdkVersion' is superseded by the installed '$($script:AvailableSdkVersion)' framework."
+    }
+
 }
 
 # Synopsis: Install dependencies for running tests
-Task TestDeps {
+Add-BuildTask TestDeps {
     # install pester
     Install-PodeBuildModule Pester
 
@@ -330,7 +1014,7 @@ Task TestDeps {
 }
 
 # Synopsis: Install dependencies for documentation
-Task DocsDeps ChocoDeps, {
+Add-BuildTask DocsDeps ChocoDeps, {
     # install mkdocs
     if (!(Test-PodeBuildCommand 'mkdocs')) {
         Invoke-PodeBuildInstall 'mkdocs' $Versions.MkDocs
@@ -345,7 +1029,7 @@ Task DocsDeps ChocoDeps, {
     Install-PodeBuildModule PlatyPS
 }
 
-Task IndexSamples {
+Add-BuildTask IndexSamples {
     $examplesPath = './examples'
     if (!(Test-Path -PathType Container -Path $examplesPath)) {
         return
@@ -388,20 +1072,34 @@ Task IndexSamples {
 #>
 
 # Synopsis: Build the .NET Listener
-Task Build BuildDeps, {
+Add-BuildTask Build BuildDeps, {
     if (Test-Path ./src/Libs) {
         Remove-Item -Path ./src/Libs -Recurse -Force | Out-Null
     }
 
+
+
+
+    # Retrieve the SDK version being used
+    #   $dotnetVersion = dotnet --version
+
+    # Display the SDK version
+    Write-Output "Building targets '$($targetFrameworks -join "','")' using .NET '$AvailableSdkVersion' framework."
+
+    # Build for supported target frameworks
     try {
         Push-Location ./src/Listener
-        Invoke-PodeBuildDotnetBuild -target 'net48'
-        Invoke-PodeBuildDotnetBuild -target 'net6.0'
-        Invoke-PodeBuildDotnetBuild -target 'net8.0'
+        foreach ($target in $targetFrameworks) {
+            Invoke-PodeBuildDotnetBuild -target $target
+            Write-Host
+            Write-Host '***********************' -ForegroundColor DarkMagenta
+
+        }
     }
     finally {
         Pop-Location
     }
+
 }
 
 
@@ -409,13 +1107,8 @@ Task Build BuildDeps, {
 # Packaging
 #>
 
-# Synopsis: Creates a Zip of the Module
-Task 7Zip -If (Test-PodeBuildIsWindows) PackDeps, StampVersion, {
-    exec { & 7z -tzip a $Version-Binaries.zip ./pkg/* }
-}, PrintChecksum
-
 #Synopsis: Create the Deliverable folder
-Task DeliverableFolder {
+Add-BuildTask DeliverableFolder {
     $path = './deliverable'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -426,7 +1119,7 @@ Task DeliverableFolder {
 }
 
 # Synopsis: Creates a Zip of the Module
-Task Compress PackageFolder, StampVersion, DeliverableFolder, {
+Add-BuildTask Compress PackageFolder, StampVersion, DeliverableFolder, {
     $path = './deliverable'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -437,13 +1130,13 @@ Task Compress PackageFolder, StampVersion, DeliverableFolder, {
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
-Task ChocoPack -If (Test-PodeBuildIsWindows) PackDeps, PackageFolder, StampVersion, DeliverableFolder, {
+Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) ChocoDeps, PackageFolder, StampVersion, DeliverableFolder, {
     exec { choco pack ./packers/choco/pode.nuspec }
     Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
 
 # Synopsis: Create docker tags
-Task DockerPack PackageFolder, StampVersion, {
+Add-BuildTask DockerPack PackageFolder, StampVersion, {
     # check if github and windows, and output warning
     if ((Test-PodeBuildIsGitHub) -and (Test-PodeBuildIsWindows)) {
         Write-Warning 'Docker images are not built on GitHub Windows runners, and Docker is in Windows container only mode. Exiting task.'
@@ -475,10 +1168,10 @@ Task DockerPack PackageFolder, StampVersion, {
 }
 
 # Synopsis: Package up the Module
-Task Pack Compress, ChocoPack, DockerPack
+Add-BuildTask Pack Compress, ChocoPack, DockerPack
 
 # Synopsis: Package up the Module into a /pkg folder
-Task PackageFolder Build, {
+Add-BuildTask PackageFolder Build, {
     $path = './pkg'
     if (Test-Path $path) {
         Remove-Item -Path $path -Recurse -Force | Out-Null
@@ -514,7 +1207,7 @@ Task PackageFolder Build, {
 #>
 
 # Synopsis: Run the tests
-Task TestNoBuild TestDeps, {
+Add-BuildTask TestNoBuild TestDeps, {
     $p = (Get-Command Invoke-Pester)
     if ($null -eq $p -or $p.Version -ine $Versions.Pester) {
         Remove-Module Pester -Force -ErrorAction Ignore
@@ -560,17 +1253,17 @@ Task TestNoBuild TestDeps, {
 }, PushCodeCoverage, CheckFailedTests
 
 # Synopsis: Run tests after a build
-Task Test Build, TestNoBuild
+Add-BuildTask Test Build, TestNoBuild
 
 # Synopsis: Check if any of the tests failed
-Task CheckFailedTests {
+Add-BuildTask CheckFailedTests {
     if ($TestStatus.FailedCount -gt 0) {
         throw "$($TestStatus.FailedCount) tests failed"
     }
 }
 
 # Synopsis: If AppyVeyor or GitHub, push code coverage stats
-Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
+Add-BuildTask PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
     try {
         $service = Get-PodeBuildService
         $branch = Get-PodeBuildBranch
@@ -590,12 +1283,12 @@ Task PushCodeCoverage -If (Test-PodeBuildCanCodeCoverage) {
 #>
 
 # Synopsis: Run the documentation locally
-Task Docs DocsDeps, DocsHelpBuild, {
+Add-BuildTask Docs DocsDeps, DocsHelpBuild, {
     mkdocs serve --open
 }
 
 # Synopsis: Build the function help documentation
-Task DocsHelpBuild IndexSamples, DocsDeps, Build, {
+Add-BuildTask DocsHelpBuild IndexSamples, DocsDeps, Build, {
     # import the local module
     Remove-Module Pode -Force -ErrorAction Ignore | Out-Null
     Import-Module ./src/Pode.psm1 -Force | Out-Null
@@ -639,7 +1332,7 @@ Task DocsHelpBuild IndexSamples, DocsDeps, Build, {
 }
 
 # Synopsis: Build the documentation
-Task DocsBuild DocsDeps, DocsHelpBuild, {
+Add-BuildTask DocsBuild DocsDeps, DocsHelpBuild, {
     mkdocs build --quiet
 }
 
@@ -649,10 +1342,10 @@ Task DocsBuild DocsDeps, DocsHelpBuild, {
 #>
 
 # Synopsis: Clean the build enviroment
-Task Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
+Add-BuildTask Clean  CleanPkg, CleanDeliverable, CleanLibs, CleanListener, CleanDocs
 
 # Synopsis: Clean the Deliverable folder
-Task CleanDeliverable {
+Add-BuildTask CleanDeliverable {
     $path = './deliverable'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host 'Removing ./deliverable folder'
@@ -662,7 +1355,7 @@ Task CleanDeliverable {
 }
 
 # Synopsis: Clean the pkg directory
-Task CleanPkg {
+Add-BuildTask CleanPkg {
     $path = './pkg'
     if ((Test-Path -Path $path -PathType Container )) {
         Write-Host 'Removing ./pkg folder'
@@ -683,7 +1376,7 @@ Task CleanPkg {
 }
 
 # Synopsis: Clean the libs folder
-Task CleanLibs {
+Add-BuildTask CleanLibs {
     $path = './src/Libs'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing $path  contents"
@@ -694,7 +1387,7 @@ Task CleanLibs {
 }
 
 # Synopsis: Clean the Listener folder
-Task CleanListener {
+Add-BuildTask CleanListener {
     $path = './src/Listener/bin'
     if (Test-Path -Path $path -PathType Container) {
         Write-Host "Removing $path contents"
@@ -704,7 +1397,7 @@ Task CleanListener {
     Write-Host "Cleanup $path done"
 }
 
-Task CleanDocs {
+Add-BuildTask CleanDocs {
     $path = './docs/Getting-Started/Samples.md'
     if (Test-Path -Path $path -PathType Leaf) {
         Write-Host "Removing $path"
@@ -716,7 +1409,7 @@ Task CleanDocs {
 #>
 
 # Synopsis: Install Pode Module locally
-Task Install-Module -If ($Version) Pack, {
+Add-BuildTask Install-Module -If ($Version) Pack, {
     $PSPaths = Split-PodeBuildPwshPath
 
     $dest = Join-Path -Path $PSPaths[0] -ChildPath 'Pode' -AdditionalChildPath "$Version"
@@ -744,7 +1437,7 @@ Task Install-Module -If ($Version) Pack, {
 }
 
 # Synopsis: Remove the Pode Module from the local registry
-Task Remove-Module {
+Add-BuildTask Remove-Module {
     if (!$Version) {
         throw 'Parameter -Version is required'
     }
@@ -766,7 +1459,7 @@ Task Remove-Module {
 #>
 
 # Synopsis: Setup the PowerShell environment
-Task SetupPowerShell {
+Add-BuildTask SetupPowerShell {
     # code for this step is altered versions of the code found here:
     # - https://github.com/bjompen/UpdatePWSHAction/blob/main/UpgradePwsh.ps1
     # - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1
