@@ -52,7 +52,11 @@ jobs:
       shell: powershell
       run: |
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-Build Test
+        if ($env:ACTIONS_STEP_DEBUG -eq 'true') {
+            Invoke-Build Test -PesterVerbosity Diagnostic
+        } else {
+            Invoke-Build Test
+        }
 
     - name: Build Packages
       shell: powershell

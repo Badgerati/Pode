@@ -5,7 +5,7 @@ BeforeAll {
     $path = $PSCommandPath
     $src = (Split-Path -Parent -Path $path) -ireplace '[\\/]tests[\\/]unit', '/src/'
     Get-ChildItem "$($src)/*.ps1" -Recurse | Resolve-Path | ForEach-Object { . $_ }
-    Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
+    #Import-LocalizedData -BindingVariable PodeLocale -BaseDirectory (Join-Path -Path $src -ChildPath 'Locales') -FileName 'Pode'
 }
 
 
@@ -114,6 +114,7 @@ Describe 'Start-PodeService' {
         Mock -CommandName Test-PodeMacOsServiceIsActive
         Mock -CommandName Start-PodeMacOsService
         Mock -CommandName Write-PodeErrorLog
+        Mock -CommandName Write-Error
     }
 
     Context 'On Windows platform' {
@@ -196,7 +197,6 @@ Describe 'Start-PodeService' {
 
         It 'Throws an error if the service is not registered' -Skip:(!$IsLinux) {
             Mock -CommandName Test-PodeLinuxServiceIsRegistered -MockWith { $false }
-
             Start-PodeService -Name 'NonExistentService' | Should -BeFalse
         }
     }
