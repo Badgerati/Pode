@@ -71,16 +71,14 @@ jobs:
     - name: Run Pester Tests
       shell: pwsh
       run: |
-        $debugEnabled = $false
-
-        # Check if logs are in debug mode by parsing an example debug output pattern
-        Get-Content -Path $env:GITHUB_ACTION_LOG -ErrorAction SilentlyContinue | ForEach-Object {
-            if ($_ -like "*##[debug]*") {
-                $debugEnabled = $true
-            }
+        # Check if the runner is in debug mode
+        if ($env:RUNNER_DEBUG -eq '1') {
+            $debug = $true
+        } else {
+            $debug = $false
         }
 
-        if ($debugEnabled) {
+        if ($debug) {
             Invoke-Build Test -PesterVerbosity Diagnostic
         } else {
             Invoke-Build Test
