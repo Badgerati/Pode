@@ -971,15 +971,13 @@ function Get-PodeService {
                 $servicePid = 0
                 $status = $(systemctl show -p ActiveState $nameService | awk -F'=' '{print $2}')
 
-
-
-
                 switch ($status) {
                     'active' {
                         $servicePid = $(systemctl show -p MainPID $nameService | awk -F'=' '{print $2}')
                         $stateFilePath = "/var/run/podemonitor/$servicePid.state"
                         if (Test-Path -Path $stateFilePath) {
-                            $status = Get-Content -Path $stateFilePath
+                            $status = Get-Content -Path $stateFilePath -Raw
+                            $status = $status.Substring(0, 1).ToUpper() + $status.Substring(1)
                         }
                     }
                     'reloading' {
@@ -991,7 +989,7 @@ function Get-PodeService {
                         $status = 'Suspended'
                     }
                     'inactive' {
-                        $status = 'Suspended'
+                        $status = 'Stopped'
                     }
                     'failed' {
                         $status = 'Stopped'

@@ -17,7 +17,7 @@ Describe 'Service Lifecycle' {
 
     it 'start' {
         . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Start
-        start-sleep 5
+        Start-Sleep 2
         $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
         $status = . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
         $status.Status | Should -Be 'Running'
@@ -28,7 +28,7 @@ Describe 'Service Lifecycle' {
 
     it  'pause' {
         . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Suspend
-        start-sleep 5
+        Start-Sleep 2
       #  $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
         $status = . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
         $status.Status | Should -Be 'Suspended'
@@ -39,7 +39,7 @@ Describe 'Service Lifecycle' {
 
     it  'resume' {
         . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -resume
-        start-sleep 5
+        Start-Sleep 2
         $webRequest = Invoke-WebRequest -uri http://localhost:8080 -ErrorAction SilentlyContinue
         $status = . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
         $status.Status | Should -Be 'Running'
@@ -49,7 +49,7 @@ Describe 'Service Lifecycle' {
     }
     it 'stop' {
         . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Stop
-        start-sleep 5
+        Start-Sleep 2
 
 
         $status = . "$($PSScriptRoot)\..\..\examples\HelloService\HelloService.ps1" -Query
