@@ -51,13 +51,16 @@ jobs:
     - name: Run Pester Tests
       shell: powershell
       run: |
-        if ([string]::IsNullOrEmpty($env:ACTIONS_STEP_DEBUG)) {
-          $debug = $false
-        } else {
-            $debug = [bool]($env:ACTIONS_STEP_DEBUG -eq 'true')
+        $debugEnabled = $false
+
+        # Check if logs are in debug mode by parsing an example debug output pattern
+        Get-Content -Path $env:GITHUB_ACTION_LOG -ErrorAction SilentlyContinue | ForEach-Object {
+            if ($_ -like "*##[debug]*") {
+                $debugEnabled = $true
+            }
         }
 
-        if ($debug) {
+        if ($debugEnabled) {
             Invoke-Build Test -PesterVerbosity Diagnostic
         } else {
             Invoke-Build Test
