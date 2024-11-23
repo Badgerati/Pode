@@ -127,32 +127,7 @@ $Versions = @{
 
 
 # Helper Functions
-
-<#
-.SYNOPSIS
-    Checks if the current environment is running on Windows.
-
-.DESCRIPTION
-    This function determines if the current PowerShell session is running on Windows.
-    It inspects `$PSVersionTable.Platform` and `$PSVersionTable.PSEdition` to verify the OS,
-    returning `$true` for Windows and `$false` for other platforms.
-
-.OUTPUTS
-    [bool] - Returns `$true` if the current environment is Windows, otherwise `$false`.
-
-.EXAMPLE
-    if (Test-PodeBuildIsWindows) {
-        Write-Host "This script is running on Windows."
-    }
-
-.NOTES
-    - Useful for cross-platform scripts to conditionally execute Windows-specific commands.
-    - The `$PSVersionTable.Platform` variable may be `$null` in certain cases, so `$PSEdition` is used as an additional check.
-#>
-function Test-PodeBuildIsWindows {
-    $v = $PSVersionTable
-    return ($v.Platform -ilike '*win*' -or ($null -eq $v.Platform -and $v.PSEdition -ieq 'desktop'))
-}
+ 
 
 <#
 .SYNOPSIS
@@ -251,12 +226,12 @@ function Get-PodeBuildService {
 
 .NOTES
     - This function supports both Windows and Unix-based platforms.
-    - Requires `Test-PodeBuildIsWindows` to detect the OS type.
+    - Requires `$IsWindows` to detect the OS type.
 #>
 function Test-PodeBuildCommand($cmd) {
     $path = $null
 
-    if (Test-PodeBuildIsWindows) {
+    if ($IsWindows) {
         $path = (Get-Command $cmd -ErrorAction Ignore)
     }
     else {
@@ -322,7 +297,7 @@ function Get-PodeBuildBranch {
 function Invoke-PodeBuildInstall($name, $version) {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-    if (Test-PodeBuildIsWindows) {
+    if ($IsWindows) {
         if (Test-PodeBuildCommand 'choco') {
             choco install $name --version $version -y --no-progress
         }
@@ -1049,7 +1024,7 @@ Add-BuildTask PrintChecksum {
 #>
 
 # Synopsis: Installs Chocolatey
-Add-BuildTask ChocoDeps -If (Test-PodeBuildIsWindows) {
+Add-BuildTask ChocoDeps -If ($IsWindows) {
     if (!(Test-PodeBuildCommand 'choco')) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
         Invoke-Expression ([System.Net.WebClient]::new().DownloadString('https://chocolatey.org/install.ps1'))
@@ -1059,7 +1034,7 @@ Add-BuildTask ChocoDeps -If (Test-PodeBuildIsWindows) {
 # Synopsis: Install dependencies for compiling/building
 Add-BuildTask BuildDeps {
     # install dotnet
-    if (Test-PodeBuildIsWindows) {
+    if ($IsWindows) {
         $dotnet = 'dotnet'
     }
     elseif (Test-PodeBuildCommand 'brew') {
@@ -1235,7 +1210,7 @@ Add-BuildTask Compress PackageFolder, StampVersion, DeliverableFolder, {
 }, PrintChecksum
 
 # Synopsis: Creates a Chocolately package of the Module
-Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) ChocoDeps, PackageFolder, StampVersion, DeliverableFolder, {
+Add-BuildTask ChocoPack -If ($IsWindows) ChocoDeps, PackageFolder, StampVersion, DeliverableFolder, {
     exec { choco pack ./packers/choco/pode.nuspec }
     Move-Item -Path "pode.$Version.nupkg" -Destination './deliverable'
 }
@@ -1243,7 +1218,7 @@ Add-BuildTask ChocoPack -If (Test-PodeBuildIsWindows) ChocoDeps, PackageFolder, 
 # Synopsis: Create docker tags
 Add-BuildTask DockerPack PackageFolder, StampVersion, {
     # check if github and windows, and output warning
-    if ((Test-PodeBuildIsGitHub) -and (Test-PodeBuildIsWindows)) {
+    if ((Test-PodeBuildIsGitHub) -and ($IsWindows)) {
         Write-Warning 'Docker images are not built on GitHub Windows runners, and Docker is in Windows container only mode. Exiting task.'
         return
     }
@@ -1320,7 +1295,7 @@ Add-BuildTask TestNoBuild TestDeps, {
     }
     Write-Output ''
     # for windows, output current netsh excluded ports
-    if (Test-PodeBuildIsWindows) {
+    if ($IsWindows) {
         netsh int ipv4 show excludedportrange protocol=tcp | Out-Default
 
         # Retrieve the current Windows identity and token
@@ -1349,7 +1324,7 @@ Add-BuildTask TestNoBuild TestDeps, {
     }
 
 
-    if (Test-PodeIsUnix) {
+    if ($IsLinux) {
         $user = whoami
         $groupsRaw = (groups $user | Out-String).Trim()
         $groups = $groupsRaw -split '\s+' | Where-Object { $_ -ne ':' } | Sort-Object -Unique
@@ -1363,7 +1338,7 @@ Add-BuildTask TestNoBuild TestDeps, {
         Write-Output "  - Sudo:    $($isSudoUser -eq $true)"
     }
 
-    if (Test-PodeIsMacOS) {
+    if ($IsMacOS) {
         $user = whoami
         $groups = (id -Gn $user).Split(' ') # Use `id -Gn` for consistent group names on macOS
         $formattedGroups = $groups -join ', '
