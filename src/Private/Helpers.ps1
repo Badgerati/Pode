@@ -3844,7 +3844,7 @@ function Test-PodeAdminPrivilege {
                 # Check if the user has sudo privileges by checking sudo group membership
                 $user = whoami
                 $groups = (groups $user)
-                Write-Output "User:$user Groups: $( $groups -join ',')"
+                Write-Verbose "User:$user Groups: $( $groups -join ',')"
                 # macOS typically uses 'admin' group for sudo privileges
                 return ($groups -match '\bwheel\b' -or $groups -match '\badmin\b' -or $groups -match '\bsudo\b')
             }
