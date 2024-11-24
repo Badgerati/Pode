@@ -104,11 +104,11 @@ try {
 
         # use netstandard if no folder found
         if ([string]::IsNullOrWhiteSpace($netFolder)) {
-            $netFolder = "$($libsPath)/netstandard2.0"
+            $netFolder = Join-Path -Path $libsPath -ChildPath "net48"
         }
 
         # append Pode.dll and mount
-        Add-Type -LiteralPath "$($netFolder)/Pode.dll" -ErrorAction Stop
+        Add-Type -LiteralPath (Join-Path -Path $netFolder -ChildPath "Pode.dll") -ErrorAction Stop
     }
 
     # load private functions
